@@ -1060,3 +1060,36 @@ verbatim in behavior and re-exported as `frob.dup.find_duplicates` for
 `frob check`'s dup stage and the `frob dup` CLI -- see "frob.ast
 retirement" above for what changed under the hood (parsing now goes
 through `frob.lang.raw_tree`, not the deleted `frob.ast` package).
+
+<a id="tests-directory-floor-t-2970"></a>
+<!-- frob:describes src/frob/dup/_legacy.py::_MIN_LINES_OVERRIDES -->
+<!-- frob:describes src/frob/dup/_legacy.py::_effective_min_lines -->
+### `tests/` directory floor (T-2970)
+
+`find_duplicates`'s repo-wide `min_lines=6` floor registers a large share
+of the `tests/` frob-dup cluster as its own duplicate group even though
+it is fixture/arrange-block repetition, not shared-logic debt (T-2955's
+triage of 4 sampled groups, all deliberate). A repo-wide re-measurement
+(T-2970, 2026-08-26) of the full unscoped `tests/` population (480
+unwaived groups) found 391 of them (81%) under 20 lines -- short
+setup/assertion echoes that trivially exceed the repo-wide floor by sheer
+repetition of test scaffolding shape.
+
+`min_lines_overrides` (default `_MIN_LINES_OVERRIDES = (("tests/", 20),)`)
+raises the effective floor to 20 lines for any fragment under `tests/`,
+via `_effective_min_lines` (the LARGER of the base `min_lines` and the
+first matching prefix's floor -- never lower than what a caller explicitly
+asked for). This is deliberately NOT a blanket `tests/` exclusion (real
+test-helper duplication exists and does desync, T-0375's own history) and
+NOT a per-group waiver at 480x volume (its own debt): every group at or
+above 20 lines, including T-2955's 4 sampled groups (47-50 lines each),
+still registers and is still individually reviewable.
+
+Positive control (required before this narrowing could land, per the
+playbook's "positive control or it proves nothing"):
+`tests/unit/test_dup.py::TestTestsDirectoryFloor::test_genuine_helper_duplicate_at_20_lines_still_fires`
+plants two synthetic `tests/`-rooted files sharing a real >=20-line
+assertion-sequence helper and asserts `find_duplicates` still reports it
+as a group under the new floor -- proving the narrowing does not blind
+the detector to genuine `tests/` duplication, only to sub-20-line
+fixture noise.

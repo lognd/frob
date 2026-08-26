@@ -120,6 +120,44 @@ class DupResult(BaseModel):
 # File scanning
 # ---------------------------------------------------------------------------
 
+#: T-2970: a directory-prefix-scoped floor layered ON TOP of the repo-wide
+#: `min_lines` default (never below it -- see `_effective_min_lines`).
+#: T-2955's triage of the unscoped `tests/` frob-dup cluster (480 unwaived
+#: groups, measured 2026-08-26) spot-checked 4 large/varied groups and
+#: found all 4 to be deliberate fixture/arrange-block repetition (a test's
+#: own setup calls -- `write_text(...)`, dict/tuple construction -- echoing
+#: a sibling test's setup), not shared-logic debt. A repo-wide measurement
+#: (T-2970) of the full 480-group population found the same shape
+#: dominates the small end: 391 of 480 groups (81%) are under 20 lines,
+#: the range where a short arrange-block or a handful of near-identical
+#: assertion calls trivially exceeds the repo-wide `min_lines=6` floor by
+#: sheer repetition of `frob check`/`assert`-shaped test scaffolding
+#: without encoding any independently-reusable LOGIC. Raising `tests/`'s
+#: own floor to 20 retires that population while leaving every group at or
+#: above 20 lines -- including every one of T-2955's 4 sampled groups
+#: (47-50 lines each) -- still individually reviewable, not silently
+#: exempted. This is deliberately NOT a blanket `tests/` exclusion (T-0375's
+#: own history shows real test-helper duplication exists and does desync)
+#: and NOT a per-group waiver at 480x volume (its own debt) -- see this
+#: module's `find_duplicates` docstring and
+#: `tests/unit/test_dup.py::TestTestsDirectoryFloor` for the positive
+#: control proving a genuine >=20-line test-helper duplicate still fires.
+_MIN_LINES_OVERRIDES: tuple[tuple[str, int], ...] = (("tests/", 20),)
+
+
+def _effective_min_lines(
+    rel: str, base_min_lines: int, overrides: tuple[tuple[str, int], ...]
+) -> int:
+    """The floor to apply to a fragment at `rel`: the LARGER of
+    `base_min_lines` and the first `overrides` entry whose prefix matches
+    `rel` (T-2970) -- an override only ever RAISES the floor for its
+    directory, never lowers it below what a caller explicitly asked for
+    (e.g. a test that passes `min_lines=3` to see everything)."""
+    for prefix, floor in overrides:
+        if rel.startswith(prefix):
+            return max(base_min_lines, floor)
+    return base_min_lines
+
 
 def _index_function(
     func_node: Node,
@@ -131,18 +169,22 @@ def _index_function(
     renamed_map: dict[str, list[CodeFragment]],
     collect_locals: Callable[[Node], set[str]],
     serialize_body: Callable[[Node, set[str]], str],
+    min_lines_overrides: tuple[tuple[str, int], ...] = (),
 ) -> None:
     """Fingerprint one function body into the exact/renamed hash maps.
 
     Exact hash is the whitespace-stripped original text; renamed hash is the
-    alpha-renamed serialized body. Bodies below `min_lines` are skipped.
+    alpha-renamed serialized body. Bodies below the EFFECTIVE floor
+    (`_effective_min_lines`: `min_lines`, raised by any matching
+    `min_lines_overrides` entry for `rel`'s directory, T-2970) are skipped.
     """
     body = _child(func_node, "body")
     if body is None:
         return
     start_line = body.start_point[0] + 1
     end_line = body.end_point[0] + 1
-    if end_line - start_line + 1 < min_lines:
+    floor = _effective_min_lines(rel, min_lines, min_lines_overrides)
+    if end_line - start_line + 1 < floor:
         return
 
     frag = CodeFragment(
@@ -162,6 +204,7 @@ def _scan_py_file(
     min_lines: int,
     exact_map: dict[str, list[CodeFragment]],
     renamed_map: dict[str, list[CodeFragment]],
+    min_lines_overrides: tuple[tuple[str, int], ...] = (),
 ) -> None:
     from frob.lang import raw_tree
 
@@ -182,6 +225,7 @@ def _scan_py_file(
             renamed_map,
             _collect_locals_py,
             _serialize_py_body,
+            min_lines_overrides,
         )
 
 
@@ -191,6 +235,7 @@ def _scan_cpp_file(
     min_lines: int,
     exact_map: dict[str, list[CodeFragment]],
     renamed_map: dict[str, list[CodeFragment]],
+    min_lines_overrides: tuple[tuple[str, int], ...] = (),
 ) -> None:
     from frob.lang import raw_tree
 
@@ -211,6 +256,7 @@ def _scan_cpp_file(
             renamed_map,
             _collect_locals_cpp,
             _serialize_cpp_body,
+            min_lines_overrides,
         )
 
 
@@ -224,14 +270,19 @@ def _scan_tree(
     min_lines: int,
     exact_map: dict[str, list[CodeFragment]],
     renamed_map: dict[str, list[CodeFragment]],
+    min_lines_overrides: tuple[tuple[str, int], ...] = (),
 ) -> None:
     """Scan every python/C++ file under `root` into the two hash maps."""
     for path in _walk(root):
         ext = path.suffix.lower()
         if ext in _PY_EXTS:
-            _scan_py_file(path, root, min_lines, exact_map, renamed_map)
+            _scan_py_file(
+                path, root, min_lines, exact_map, renamed_map, min_lines_overrides
+            )
         elif ext in _CPP_EXTS:
-            _scan_cpp_file(path, root, min_lines, exact_map, renamed_map)
+            _scan_cpp_file(
+                path, root, min_lines, exact_map, renamed_map, min_lines_overrides
+            )
 
 
 def _exact_groups(exact_map: dict[str, list[CodeFragment]]) -> list[CloneGroup]:
@@ -271,7 +322,11 @@ def _renamed_groups(
 # frob:tests tests/unit/test_memo.py::test_find_duplicates_second_call_is_memo_hit
 # frob:ticket T-0491
 @memoize_per_run
-def find_duplicates(root: Path, min_lines: int = 6) -> DupResult:
+def find_duplicates(
+    root: Path,
+    min_lines: int = 6,
+    min_lines_overrides: tuple[tuple[str, int], ...] = _MIN_LINES_OVERRIDES,
+) -> DupResult:
     """Scan root recursively for duplicate function bodies.
 
     Wrapped in `frob.check._memo.memoize_per_run` (T-0491, extending the
@@ -282,6 +337,14 @@ def find_duplicates(root: Path, min_lines: int = 6) -> DupResult:
     _prework`, `frob.gates._arch`, `frob.app.dup_runner`) with no call-site
     edits. Outside an active scope this is a transparent passthrough, same
     as the undecorated function always was.
+
+    `min_lines_overrides` (T-2970) raises the effective floor for fragments
+    whose relative path matches a prefix (see `_MIN_LINES_OVERRIDES`'s own
+    docstring for the tests/ floor and its measured justification); it
+    defaults to that repo-wide constant so every caller listed above gets
+    the narrowed `tests/` behavior automatically, and a caller that wants
+    the OLD unscoped-by-directory behavior (e.g. a test asserting on the
+    raw per-fragment floor) passes `min_lines_overrides=()` explicitly.
     """
     from frob.logging.quiet import quiet_stdout_logs
 
@@ -291,7 +354,7 @@ def find_duplicates(root: Path, min_lines: int = 6) -> DupResult:
     # frob.lang.raw_tree logs at INFO/DEBUG per parse; CLI callers piping
     # `--json` need that off stdout, same reasoning as frob.logging.quiet.
     with quiet_stdout_logs():
-        _scan_tree(root, min_lines, exact_map, renamed_map)
+        _scan_tree(root, min_lines, exact_map, renamed_map, min_lines_overrides)
 
     exact_groups = _exact_groups(exact_map)
     renamed_groups = _renamed_groups(renamed_map, exact_groups)

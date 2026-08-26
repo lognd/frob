@@ -393,6 +393,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2961: Windows: ty check fails on POSIX-only stdlib attrs (socket.AF_UNIX, socketserver.ThreadingUnixStreamServer, os.nice)
 - T-2966: frob-dup: finish src/frob/gates cluster triage (23 residue groups)
 - T-2969: Audit remaining test_cli_*.py fixtures for the same missing-git-init pattern as T-2943
+- T-2970: frob-dup: narrow the tests/ renamed-detector threshold (fixture-repetition false positives)
 
 ## [0.530.0] - unreleased
 

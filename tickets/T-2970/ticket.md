@@ -2,7 +2,7 @@
 id: T-2970
 title: 'frob-dup: narrow the tests/ renamed-detector threshold (fixture-repetition
   false positives)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -16,10 +16,15 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/dup/**
+evidence_scope:
+- tests/unit/test_dup.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_dup.py::TestTestsDirectoryFloor::test_short_fixture_style_duplicate_under_tests_is_no_longer_a_group
+- tests/unit/test_dup.py::TestTestsDirectoryFloor::test_genuine_helper_duplicate_at_20_lines_still_fires
 designated_repro_test: null
 acceptance:
 - text: given the tests/ frob-dup cluster and a chosen narrowing (directory-scoped
@@ -27,7 +32,9 @@ acceptance:
     test proving a real duplicate is still caught, then re-measuring the tests/ cluster
     shows a measured reduction with the before/after counts and retired-group list
     reported
-  evidence: []
+  evidence:
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_short_fixture_style_duplicate_under_tests_is_no_longer_a_group
+  - tests/unit/test_dup.py::TestTestsDirectoryFloor::test_genuine_helper_duplicate_at_20_lines_still_fires
 threat: null
 component: null
 anchor: false

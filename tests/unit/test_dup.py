@@ -124,6 +124,109 @@ class TestMinLinesThreshold:
 
 
 # ---------------------------------------------------------------------------
+# T-2970: tests/ directory floor -- narrows the repo-wide min_lines for
+# fragments under tests/ specifically, retiring short fixture/arrange-block
+# echoes while a positive control proves a genuine helper duplicate at or
+# above the new floor still fires.
+# ---------------------------------------------------------------------------
+
+
+class TestTestsDirectoryFloor:
+    """`find_duplicates`'s default `min_lines_overrides` (T-2970,
+    `frob.dup._legacy._MIN_LINES_OVERRIDES`): a `tests/`-scoped floor of 20
+    lines, layered on top of the repo-wide `min_lines=6` default."""
+
+    # frob:tests \
+    # tests/unit/test_dup.py::TestTestsDirectoryFloor.test_short_fixture_style_duplicat\
+    # e_under_tests_is_no_longer_a_group
+    def test_short_fixture_style_duplicate_under_tests_is_no_longer_a_group(
+        self, tmp_path
+    ):
+        """A short (<20-line), fixture-shaped arrange-block duplicate under
+        `tests/` no longer registers as its own group under the default
+        `min_lines_overrides` -- this is the exact false-positive shape
+        T-2955's triage found (a short setup/assert echo, not shared
+        logic), and it MUST still register at `min_lines_overrides=()`
+        (the pre-T-2970 unscoped behavior) to prove the retirement is the
+        override, not an unrelated regression."""
+        tests_dir = tmp_path / "tests"
+        tests_dir.mkdir()
+        body = (
+            "    write_text('a')\n"
+            "    write_text('b')\n"
+            "    write_text('c')\n"
+            "    write_text('d')\n"
+            "    write_text('e')\n"
+            "    write_text('f')\n"
+        )
+        (tests_dir / "test_one.py").write_text(f"def test_alpha():\n{body}")
+        (tests_dir / "test_two.py").write_text(f"def test_beta():\n{body}")
+
+        narrowed = find_duplicates(tmp_path, min_lines=6)
+        assert narrowed.groups == [], (
+            f"expected the 6-line tests/ fixture echo to be retired by the "
+            f"default tests/ floor; got groups={narrowed.groups!r}"
+        )
+
+        unscoped = find_duplicates(tmp_path, min_lines=6, min_lines_overrides=())
+        assert unscoped.groups, (
+            "the same fixture echo must still register with "
+            "min_lines_overrides=() disabled -- otherwise this is not "
+            "testing the override at all"
+        )
+
+    # frob:tests \
+    # tests/unit/test_dup.py::TestTestsDirectoryFloor.test_genuine_helper_duplicate_at_\
+    # 20_lines_still_fires
+    def test_genuine_helper_duplicate_at_20_lines_still_fires(self, tmp_path):
+        """POSITIVE CONTROL (required before T-2970's narrowing could land):
+        a genuine, non-trivial 20+-line assertion-sequence helper -- real
+        shared logic with a real desync risk, the shape T-0375's own
+        history says DOES occur under tests/ -- copied verbatim into two
+        DIFFERENT test files must still register as a duplicate group
+        under the narrowed default. If this test ever goes red, the
+        tests/ floor has grown too permissive and is hiding real
+        duplication, not just fixture noise."""
+        tests_dir = tmp_path / "tests"
+        tests_dir.mkdir()
+        helper = (
+            "def assert_ticket_is_clean(ticket):\n"
+            "    assert ticket.state in ('queued', 'done')\n"
+            "    assert ticket.scope, 'scope must be declared'\n"
+            "    assert ticket.acceptance, 'acceptance must be declared'\n"
+            "    for entry in ticket.acceptance:\n"
+            "        assert entry.index >= 0\n"
+            "        assert entry.text, 'acceptance text must be non-empty'\n"
+            "        if entry.bound:\n"
+            "            assert entry.evidence, 'bound acceptance needs evidence'\n"
+            "        else:\n"
+            "            assert not entry.required, 'required acceptance needs binding'\n"
+            "    if ticket.blocked_by:\n"
+            "        for dep in ticket.blocked_by:\n"
+            "            assert dep != ticket.id, 'cannot block on itself'\n"
+            "            assert dep.startswith('T-'), 'blocked_by id must be a ticket id'\n"
+            "    assert ticket.tier in ('leaf', 'epic')\n"
+            "    if ticket.tier == 'epic':\n"
+            "        assert ticket.children, 'epic must have children'\n"
+            "        for child in ticket.children:\n"
+            "            assert child.parent == ticket.id, 'child must point back'\n"
+            "    assert ticket.priority in ('low', 'normal', 'high')\n"
+        )
+        (tests_dir / "test_ticket_helpers_one.py").write_text(helper)
+        (tests_dir / "test_ticket_helpers_two.py").write_text(
+            helper.replace("assert_ticket_is_clean", "assert_ticket_is_clean_copy")
+        )
+
+        result = find_duplicates(tmp_path, min_lines=6)
+        assert result.groups, (
+            "expected a genuine >=20-line tests/ helper duplicate to still "
+            f"fire under the narrowed default floor; got groups={result.groups!r}"
+        )
+        symbols = {f.symbol for g in result.groups for f in g.fragments}
+        assert {"assert_ticket_is_clean", "assert_ticket_is_clean_copy"} <= symbols
+
+
+# ---------------------------------------------------------------------------
 # output format
 # ---------------------------------------------------------------------------
 
