@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_refs.py
+- tests/unit/gates/test_refs.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,11 @@ scope_changes:
   reason: T-2989 lease still recorded on this file; cluster A fix (REF001/PRE001/SCOPE001
     spurious findings) needs only _refs.py, cluster B self-conformance strata work
     deferred to a follow-up ticket
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/gates/test_refs.py
+  reason: scope closure requires test edge for ref_gate
   actor: logan
   at: '2026-08-26'
 triage_changes:
