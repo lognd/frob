@@ -252,6 +252,28 @@ class TestRunEndToEnd:
         assert payload["findings"]["measured"] is False
         assert payload["tickets_open"] is None
 
+    # frob:tests tests/test_status.py::TestRunEndToEnd.test_default_cfg_skips_ticket_flow_and_says_so kind="unit"  # noqa: E501
+    def test_default_cfg_skips_ticket_flow_and_says_so(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """T-2950: a bare `AppConfig` (no `--tickets`, no `--no-tickets` --
+        the real `frob status` default) must never even attempt the
+        expensive ticket-flow mining, and must say so honestly rather than
+        silently omitting the section."""
+        import subprocess
+
+        from frob.app.config import AppConfig, Subcommand
+        from frob.app.status_runner import run
+
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+        cfg = AppConfig(subcommand=Subcommand.status, status_path=tmp_path)
+        assert cfg.status_tickets is False
+        run(cfg)
+        out = capsys.readouterr().out
+        assert "== ticket movement ==" in out
+        assert "not measured: ticket-flow mining is off by default" in out
+        assert "--tickets" in out
+
 
 class TestAddStatusParser:
     """`_add_status_parser`'s own argparse wiring -- the CLI layer `run()`
@@ -260,9 +282,9 @@ class TestAddStatusParser:
 
     # frob:tests tests/test_status.py::TestAddStatusParser.test_registers_status_subcommand_with_expected_flags kind="unit"  # noqa: E501
     def test_registers_status_subcommand_with_expected_flags(self) -> None:
-        """`frob status --path DIR --json --only GATE --no-tickets` parses
-        into the exact `status_*` dest names `AppConfig`'s forwarding
-        tuples expect."""
+        """`frob status --path DIR --json --only GATE --tickets
+        --no-tickets` parses into the exact `status_*` dest names
+        `AppConfig`'s forwarding tuples expect."""
         import argparse
 
         from frob._cli_parsers._status import _add_status_parser
@@ -281,18 +303,22 @@ class TestAddStatusParser:
                 "invariant",
                 "--only",
                 "test",
+                "--tickets",
                 "--no-tickets",
             ]
         )
         assert args.status_path == "/tmp/x"
         assert args.status_json is True
         assert args.status_only == ["invariant", "test"]
+        assert args.status_tickets is True
         assert args.status_no_tickets is True
 
     # frob:tests tests/test_status.py::TestAddStatusParser.test_bare_status_has_no_op_defaults kind="unit"  # noqa: E501
     def test_bare_status_has_no_op_defaults(self) -> None:
         """A bare `frob status` with no flags parses with every optional
-        dest at its non-invasive default."""
+        dest at its non-invasive default -- T-2950: `status_tickets`
+        defaults to `False`, so the expensive ticket-flow mining is off
+        unless explicitly requested."""
         import argparse
 
         from frob._cli_parsers._status import _add_status_parser
@@ -305,4 +331,5 @@ class TestAddStatusParser:
         assert args.status_path is None
         assert args.status_json is False
         assert args.status_only == []
+        assert args.status_tickets is False
         assert args.status_no_tickets is False

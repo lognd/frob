@@ -1028,9 +1028,17 @@ class AppConfig(BaseModel):
     #: existing "gates-fast" stage group frob.check._STAGE_GROUPS already
     #: defines -- no new grouping invented). Repeatable.
     status_only: list[str] = []
-    #: skip the ticket-flow section entirely (frob.tickets.ticket_flow
-    #: mines the WHOLE ledger's git history, so it is the single most
-    #: expensive part of `frob status` on a large/old repo).
+    #: T-2950: opt IN to the ticket-flow section (default off).
+    #: `frob.tickets.ticket_flow` mines the WHOLE ledger's git history --
+    #: one `git log` subprocess pair per ticket id, active AND archived --
+    #: which measured over 5 minutes on this repo's own archive and blew
+    #: past the 200s foreground budget. Off by default so `frob status`
+    #: stays reflexive; the section reports honestly as "not measured"
+    #: rather than a silent omission when this is False.
+    status_tickets: bool = False
+    #: deprecated no-op (T-2950 flipped the default this flag used to
+    #: request): kept only so a pre-existing `--no-tickets` invocation in
+    #: a script/CI job does not break.
     status_no_tickets: bool = False
 
     # release

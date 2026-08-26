@@ -415,20 +415,22 @@ never automatic.
 
 ## `frob status` (T-2911)
 
-`frob status [--path DIR] [--json] [--only GATE] [--no-tickets]` is a
-delta-first movement summary: findings HEALED/INTRODUCED since the last
-`frob check --stamp-baseline` stamp, verification lag against the T-1686
-watermark, and ticket landing velocity -- built so a large absolute
-finding count does not read as "no progress" on its own (a newcomer
-seeing a four-figure `frob check` warning count has no way to tell that
-number is shrinking without this).
+`frob status [--path DIR] [--json] [--only GATE] [--tickets]
+[--no-tickets]` is a delta-first movement summary: findings HEALED/
+INTRODUCED since the last `frob check --stamp-baseline` stamp,
+verification lag against the T-1686 watermark, and (opt-in, see below)
+ticket landing velocity -- built so a large absolute finding count does
+not read as "no progress" on its own (a newcomer seeing a four-figure
+`frob check` warning count has no way to tell that number is shrinking
+without this). Default output is fast: well under a second on this
+repo's own tree.
 
 Reuses three existing stores as its single sources of truth, adding no
 parallel counter: `.frob/baseline` (`frob.gates.load_baseline`/
 `is_baseline_stale`/`violation_fingerprint` -- the exact identity `--delta`
 already uses), `frob.app.verify_runner.build_status` (the same function
-`frob verify status` calls), and `frob.tickets.ticket_flow` (the same
-function `frob ticket flow` calls).
+`frob verify status` calls), and, when requested, `frob.tickets.
+ticket_flow` (the same function `frob ticket flow` calls).
 
 **Findings-movement honesty rule**: a missing OR stale baseline reports
 `measured: false` with an explicit reason, never a fabricated delta --
@@ -436,9 +438,19 @@ motivated directly by a real incident where a 53-commit-stale watermark
 produced a confident-but-wrong result elsewhere in this repo's own
 history. `--only` selects which gate(s) to scan for the current side of
 the diff (default: the same `gates-fast` stage group `frob check --only
-gates-fast` already defines); `--no-tickets` skips the ticket-flow
-section, which mines the WHOLE ledger's git history and is the single
-most expensive part of this command.
+gates-fast` already defines).
+
+**Ticket movement is opt-in (T-2950)**: `ticket_flow` mines the WHOLE
+ledger's git history -- one `git log` subprocess pair per ticket id,
+active AND archived -- and measured at 5m41s wall clock on this repo's
+own ~1000-ticket archive, well past a newcomer-facing surface's 200s
+foreground budget. `frob status` therefore does NOT compute this section
+by default; pass `--tickets` to include it (and accept the wait on a
+large/old repo). The default human/JSON output still reports this
+section explicitly as "not measured" (naming `--tickets` as the remedy),
+never a silent omission or a fabricated zero. `--no-tickets` is a
+deprecated no-op kept only so a pre-T-2950 script/CI invocation that
+already passes it does not break.
 
 ## frob quality
 

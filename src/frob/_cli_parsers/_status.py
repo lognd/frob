@@ -9,6 +9,7 @@ from __future__ import annotations
 # frob:tests tests/test_status.py::TestAddStatusParser.test_registers_status_subcommand_with_expected_flags kind="unit"  # noqa: E501
 # frob:tests tests/test_status.py::TestAddStatusParser.test_bare_status_has_no_op_defaults kind="unit"  # noqa: E501
 # frob:ticket T-2911
+# frob:ticket T-2950
 def _add_status_parser(sub) -> None:  # noqa: ANN001 -- argparse _SubParsersAction
     """Register the `frob status` subcommand: no sub-actions of its own
     (unlike `frob verify`), just flags -- this is a single glanceable
@@ -32,9 +33,20 @@ def _add_status_parser(sub) -> None:  # noqa: ANN001 -- argparse _SubParsersActi
         "(repeatable; default: the existing gates-fast stage group)",
     )
     status_p.add_argument(
+        "--tickets",
+        dest="status_tickets",
+        action="store_true",
+        help="include the ticket-flow section (T-2950: OFF by default -- "
+        "it mines the whole ledger's git history, one git-log subprocess "
+        "pair per ticket id including every archived ticket, and measured "
+        "over 5 minutes on this repo's own archive; opt in only when you "
+        "want the movement numbers and can afford the wait)",
+    )
+    status_p.add_argument(
         "--no-tickets",
         dest="status_no_tickets",
         action="store_true",
-        help="skip the ticket-flow section (it mines the whole ledger's "
-        "git history and is the most expensive part of this command)",
+        help="deprecated, now the default: the ticket-flow section is "
+        "already skipped unless --tickets is passed. Kept as a no-op "
+        "flag so existing scripts/CI invocations do not break.",
     )

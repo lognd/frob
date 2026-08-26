@@ -553,6 +553,8 @@ _BOOL_FLAGS = (
     # frob:ticket T-2911
     "status_json",
     "status_no_tickets",
+    # frob:ticket T-2950
+    "status_tickets",
     # frob:ticket T-2004
     # Measured, real gaps -- see the _STRING_FIELDS T-2004 comment above
     # for the finding this closes. `ticket_doable_show_anchors` and

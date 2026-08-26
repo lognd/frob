@@ -29,6 +29,19 @@ This module adds exactly one new computation: the healed/introduced/net
 delta between a stamped baseline's fingerprints and a fresh gate run's
 fingerprints. Everything else is assembly.
 
+SPEED (T-2950): the ticket-movement section (`frob.tickets.ticket_flow`)
+mines the WHOLE ledger's git history -- one `git log` subprocess pair per
+ticket id, active AND archived -- and measured at 5m41s wall clock on this
+repo's own ~1000-ticket archive, blowing past the 200s foreground budget a
+newcomer-facing surface must fit inside. The findings-movement and
+verification-lag sections are both reused-artifact reads and measure
+under half a second each; they were never the bottleneck. Rather than
+force everyone to pay the ticket-flow cost (or silently drop the section),
+T-2950 makes it opt-in via `--tickets` (default OFF) -- the default
+`frob status` reports the ticket-movement section as an honest "not
+measured", in the same voice the stale-baseline refusal already uses,
+never a fabricated zero.
+
 HONEST ZERO, NEVER A FABRICATED DELTA (T-2911's own hard requirement,
 motivated by a real incident this same session: a 53-commit-stale
 watermark caused the post-land sweep to file three phantom regression
@@ -323,7 +336,12 @@ def _print_status_human(r: Renderer, report: StatusReport) -> None:
     r.line("")
     r.line("== ticket movement ==")
     if report.tickets_open is None:
-        r.line("  not measured (pass without --no-tickets to include)")
+        r.line(
+            "  not measured: ticket-flow mining is off by default (it "
+            "mines the whole ledger's git history, active and archived "
+            "tickets alike, and can take minutes on a large repo) -- "
+            "pass --tickets to include it"
+        )
     else:
         r.line(f"  open: {report.tickets_open}")
         r.line(f"  landed today: {report.tickets_landed_today}")
@@ -345,8 +363,12 @@ def run(cfg: AppConfig) -> None:
     non-zero on its own account (unlike `frob verify status`'s quarantine
     porcelain rule) -- this is a report, not a gate."""
     root = _resolve_root(cfg)
+    # T-2950: ticket-flow mining is opt-IN (default off) -- it measured
+    # over 5 minutes on this repo's own ticket archive (one git-log
+    # subprocess pair per ticket id, active AND archived). `--no-tickets`
+    # is kept as a deprecated no-op for scripts that already pass it.
     report = build_status_report(
-        root, only=cfg.status_only, include_tickets=not cfg.status_no_tickets
+        root, only=cfg.status_only, include_tickets=cfg.status_tickets
     )
     r = Renderer.for_stream(
         sys.stdout, color_flag=cfg.color, no_color_flag=cfg.no_color
