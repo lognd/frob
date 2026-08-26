@@ -54,8 +54,7 @@ special-cased continuation logic needed in this file.
 
 from __future__ import annotations
 
-from tree_sitter import Node, Tree
-from tree_sitter_language_pack import get_parser
+from tree_sitter import Node
 
 from frob.lang._common import (
     _canonical_tokens,
@@ -65,9 +64,6 @@ from frob.lang._common import (
     _span_of,
 )
 from frob.lang._models import RawSymbol, SymbolKind
-
-# tree-sitter-bash's grammar name inside tree-sitter-language-pack.
-_GRAMMAR_NAME = "bash"
 
 # frob:ticket T-1604
 # frob:doc docs/modules/lang.md#per-language-walker-notes
@@ -80,29 +76,6 @@ COMMENT_TYPES = frozenset({"comment"})
 # `local Y=2`) -- all share the single `declaration_command` node type in
 # this grammar (verified interactively, module docstring's exploration).
 _DECLARATION_WRAPPER = "declaration_command"
-
-
-# frob:ticket T-1604
-# frob:waive WIRE001 follow_up="T-2900" reason="deliberately test-only, same \
-# posture as kotlin's parse_kotlin (T-0613) before T-0723's dispatch wiring landed -- \
-# frob.lang.__init__'s _parse dispatch loads every tree-sitter grammar through its own \
-# generic get_parser(grammar_name) chokepoint, so this helper has no production call \
-# site to wire; kept only so this module's own tests can exercise the parse step in \
-# isolation from the full _walk_bash walk"
-def _parse_bash(source: bytes) -> Tree:
-    """Parse bash source bytes into a tree-sitter `Tree` via the language
-    pack's bundled bash grammar (no separate `tree-sitter-bash` pin
-    needed, same as kotlin -- `tree_sitter_language_pack.get_parser`
-    resolves the bundled grammar directly). Private (unlike kotlin's
-    `parse_kotlin`/`raw_kotlin_tree` pair, which T-0613 exposed publicly
-    ahead of T-0723's own dispatch wiring): `frob.lang.__init__`'s `_parse`
-    dispatch loads every tree-sitter grammar through its own generic
-    `get_parser(grammar_name)` chokepoint, so this helper has no real
-    production caller of its own to wire -- kept only for this module's
-    own tests to exercise the parse step in isolation from the full
-    `_walk_bash` walk."""
-    parser = get_parser(_GRAMMAR_NAME)
-    return parser.parse(source)
 
 
 def _bash_public(name: str) -> bool:

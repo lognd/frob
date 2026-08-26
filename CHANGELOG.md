@@ -352,6 +352,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2892: T-2384: bind evidence to acceptance criteria and close epic
 - T-2895: Root-write guard: cwd-keyed target, dead FROB_COORDINATOR hatch, mis-scoped ledger exemption
 - T-2899: post-land sweep regression from an unattributed source (sweep spawned by T-2361): 1 new (rule, file) identit(ies), 2 finding(s) (I001)
+- T-2900: wire or drop _parse_bash (bash raw-parse test helper)
 - T-2906: wire bash+csharp into frob.vet/frob.dup/frob.gates._docblocks (capability/dup/docblock facets)
 
 ## [0.530.0] - unreleased

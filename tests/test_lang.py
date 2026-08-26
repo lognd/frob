@@ -682,11 +682,20 @@ class TestBash:
     top-level-only symbol extraction (module docstring)."""
 
     # frob:ticket T-1604
+    # frob:ticket T-2900
     def test_parse_bash_produces_a_tree(self) -> None:
-        # frob:tests src/frob/lang/_walk_bash.py::_parse_bash
-        from frob.lang._walk_bash import _parse_bash
+        # frob:tests src/frob/lang/_walk_bash.py::_walk_bash kind="unit"
+        # T-2900: `_parse_bash` was a test-only wrapper around
+        # `get_parser(_GRAMMAR_NAME)` with no production caller of its own
+        # (frob.lang.__init__'s `_parse` dispatch loads every grammar
+        # through its own generic `get_parser` chokepoint, never through
+        # this module) -- deleted rather than invented a caller; this test
+        # calls `get_parser` directly, the same primitive the deleted
+        # helper wrapped.
+        from tree_sitter_language_pack import get_parser
 
-        tree = _parse_bash(b"greet() {\n    echo hi\n}\n")
+        parser = get_parser("bash")
+        tree = parser.parse(b"greet() {\n    echo hi\n}\n")
         assert tree.root_node.type == "program"
         assert any(c.type == "function_definition" for c in tree.root_node.children)
 

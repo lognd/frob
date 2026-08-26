@@ -1,7 +1,7 @@
 ---
 id: T-2900
 title: wire or drop _parse_bash (bash raw-parse test helper)
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-25'
@@ -15,10 +15,20 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/lang/_walk_bash.py
+- tests/test_lang.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_lang.py
+  reason: delete _parse_bash's test and inline get_parser directly, per wire-or-drop
+    verdict
+  actor: logan
+  at: '2026-08-25'
+evidence:
+- tests/test_lang.py::TestBash::test_parse_bash_produces_a_tree
 designated_repro_test: null
 threat: null
 component: null
