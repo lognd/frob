@@ -16,8 +16,11 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: tier=epic rollup per T-2920's own design doc; actual implementation
+  lands via child tickets (frob sys shrink, escalation-is-error enforcement, frob
+  sys init, and a sibling ticket unwiring the pre-existing _sync_may.py auto-widening
+  Tier-A fix in gates/)
 triage_changes:
 - field: tier
   old_value: ticket
