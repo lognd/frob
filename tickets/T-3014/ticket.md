@@ -1,7 +1,7 @@
 ---
 id: T-3014
 title: Wire NARR001 (T-2993's narrative-block detector) into gates/__init__.py
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-26'
@@ -16,10 +16,22 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
 - docs/modules/gates.md
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'NARR001 needs a _KNOWN_GATE_RULES entry in src/frob/gates/_waive.py for
+    the docs/modules/gates.md frob:enumerates member list (GATERULE001 rule-catalog
+    consistency) to match; this is a direct, minimal dependency of wiring NARR001''s
+    docs table row, not a scope expansion beyond the ticket''s own wiring task.
+
+    '
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
