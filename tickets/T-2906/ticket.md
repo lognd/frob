@@ -28,6 +28,7 @@ scope:
 - docs/modules/vet.md
 - docs/modules/gates.md
 - docs/modules/lang.md
+- docs/guides/extending/capability-registry.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -139,6 +140,11 @@ scope_changes:
 - op: add
   glob: docs/modules/lang.md
   reason: docs for the modules whose registries change
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/guides/extending/capability-registry.md
+  reason: capability registry extension guide
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
