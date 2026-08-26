@@ -1,7 +1,7 @@
 ---
 id: T-2934
 title: 'Fix 5 real PLATFORM001 findings: fcntl warn-and-continue in _lock.py/_land.py/_land_git_ops.py/_store.py'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -18,10 +18,25 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_land_git_ops.py
 - src/frob/tickets/_store.py
+- src/frob/gates/_walk_lint.py
+- tests/test_walk_lint_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_walk_lint.py
+  reason: 'narrow PLATFORM001 false positive: return Ok()/Err() (typani) is a declared
+    refusal, not silent warn-and-continue'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_walk_lint_gate.py
+  reason: 'narrow PLATFORM001 false positive: return Ok()/Err() (typani) is a declared
+    refusal, not silent warn-and-continue'
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
