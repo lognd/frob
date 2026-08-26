@@ -717,3 +717,80 @@ class TestSharedIdCounter:
         _allocate_ticket_id(primary, {}, {})
         assert counter_path.exists()
         assert not (primary / ".frob" / "frob-ticket-id-counter").exists()
+
+
+class TestSharedIdCounterPlatformBackends:
+    """T-2952: `_next_ticket_id_shared`'s msvcrt (Windows) backend and its
+    loud refusal when neither `fcntl` nor `msvcrt` exists -- the same
+    PLATFORM001-shaped fix T-2918/T-2934 applied elsewhere, closing this
+    module's own former bare, unconditional `import fcntl` (which crashed
+    every caller's import on Windows, not just this allocation path)."""
+
+    @staticmethod
+    def _git(*args: str, cwd: Path) -> None:
+        result = subprocess.run(
+            ["git", *args], cwd=cwd, capture_output=True, text=True, check=False
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+
+    def _init_repo_on_main(self, root: Path) -> None:
+        root.mkdir(parents=True, exist_ok=True)
+        self._git("init", "-q", "-b", "main", cwd=root)
+        self._git("config", "user.email", "test@example.com", cwd=root)
+        self._git("config", "user.name", "Test", cwd=root)
+        (root / "seed.txt").write_text("seed\n")
+        self._git("add", "-A", cwd=root)
+        self._git("commit", "-q", "-m", "seed", cwd=root)
+
+    def test_no_lock_primitive_refuses_loudly(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends.test_no_lock_primitive_refuses_loudly
+        import frob.tickets._new_renumber as _renumber_mod
+
+        monkeypatch.setattr(_renumber_mod, "fcntl", None)
+        monkeypatch.setattr(_renumber_mod, "msvcrt", None)
+        primary = tmp_path / "primary"
+        self._init_repo_on_main(primary)
+        with pytest.raises(_renumber_mod.TicketLockUnavailable):
+            _allocate_ticket_id(primary, {}, {})
+
+    def test_windows_backend_round_trips(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The msvcrt backend is exercised on Linux CI via a fake module
+        standing in for the real Windows-only `msvcrt`, backed by real
+        `fcntl.flock` under the hood -- proves the control flow (byte
+        seeded, acquire, release) the real backend only ever runs for
+        real on Windows."""
+        # frob:tests \
+        # tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends.test_windows_backend_round_trips
+        import fcntl as _real_fcntl
+
+        import frob.tickets._new_renumber as _renumber_mod
+
+        class _FakeMsvcrt:
+            LK_NBLCK = 1
+            LK_UNLCK = 2
+
+            @staticmethod
+            def locking(fd: int, mode: int, _nbytes: int) -> None:
+                if mode == _FakeMsvcrt.LK_UNLCK:
+                    _real_fcntl.flock(fd, _real_fcntl.LOCK_UN)
+                    return
+                try:
+                    _real_fcntl.flock(fd, _real_fcntl.LOCK_EX | _real_fcntl.LOCK_NB)
+                except OSError as exc:
+                    raise PermissionError(str(exc)) from exc
+
+        monkeypatch.setattr(_renumber_mod, "fcntl", None)
+        monkeypatch.setattr(_renumber_mod, "msvcrt", _FakeMsvcrt)
+
+        primary = tmp_path / "primary"
+        self._init_repo_on_main(primary)
+        first = _allocate_ticket_id(primary, {}, {})
+        second = _allocate_ticket_id(primary, {}, {})
+        assert first != second, (
+            "windows backend round-trip did not advance the shared counter"
+        )

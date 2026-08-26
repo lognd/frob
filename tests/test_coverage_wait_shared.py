@@ -13,6 +13,8 @@ import threading
 import time
 from pathlib import Path
 
+import pytest
+
 import frob.process._guard as _guard
 from frob.graph import build_graph
 from frob.testing._coverage_wait import (
@@ -373,3 +375,66 @@ class TestWorktreeLock:
             "no daemon reachable (FROB_NO_DAEMON=1) must fall back to the "
             "file lock exactly as before T-1126"
         )
+
+
+class TestCoverageLockPlatformBackends:
+    """T-2952: `_flock_path`'s msvcrt (Windows) backend and its loud
+    refusal when neither `fcntl` nor `msvcrt` exists -- the same
+    PLATFORM001-shaped fix T-2918/T-2934 applied elsewhere, closing this
+    module's own former bare, unconditional `import fcntl` (which crashed
+    every caller's import on Windows, not just coverage locking)."""
+
+    def test_no_lock_primitive_refuses_loudly(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends.test_no_lock_primitive_refuses_loudly
+        import frob.testing._coverage_wait as _cw
+
+        monkeypatch.setattr(_cw, "fcntl", None)
+        monkeypatch.setattr(_cw, "msvcrt", None)
+        with pytest.raises(_cw.CoverageLockUnavailable):
+            with _cw._coverage_lock(tmp_path):
+                pass
+
+    def test_windows_backend_round_trips(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The msvcrt backend is exercised on Linux CI via a fake module
+        standing in for the real Windows-only `msvcrt`, backed by real
+        `fcntl.flock` under the hood -- proves the control flow (byte
+        seeded, acquire, release) the real backend only ever runs for
+        real on Windows."""
+        # frob:tests \
+        # tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends.test_windows_backend_round_trips
+        import fcntl as _real_fcntl
+
+        import frob.testing._coverage_wait as _cw
+
+        class _FakeMsvcrt:
+            LK_NBLCK = 1
+            LK_UNLCK = 2
+
+            @staticmethod
+            def locking(fd: int, mode: int, _nbytes: int) -> None:
+                if mode == _FakeMsvcrt.LK_UNLCK:
+                    _real_fcntl.flock(fd, _real_fcntl.LOCK_UN)
+                    return
+                try:
+                    _real_fcntl.flock(fd, _real_fcntl.LOCK_EX | _real_fcntl.LOCK_NB)
+                except OSError as exc:
+                    raise PermissionError(str(exc)) from exc
+
+        monkeypatch.setattr(_cw, "fcntl", None)
+        monkeypatch.setattr(_cw, "msvcrt", _FakeMsvcrt)
+
+        entered = False
+        with _cw._coverage_lock(tmp_path):
+            entered = True
+        assert entered is True
+        # A second, independent acquire/release round-trip on the fake
+        # backend must also succeed -- proves release genuinely happened.
+        entered = False
+        with _cw._coverage_lock(tmp_path):
+            entered = True
+        assert entered is True
