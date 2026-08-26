@@ -22,6 +22,7 @@ scope:
 - tests/test_narrative_blocks.py
 - tests/test_narrative_migrate.py
 - docs/modules/gates.md
+- docs/commands/narrative.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -67,6 +68,11 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: T-2993 detector (NARR001) + migration verb (frob narrative move) + fixtures;
     gates/__init__.py wiring deferred, leased by T-2986
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/commands/narrative.md
+  reason: T-2993 doc page for the new frob narrative verb + NARR001 detector
   actor: logan
   at: '2026-08-26'
 triage_changes:
