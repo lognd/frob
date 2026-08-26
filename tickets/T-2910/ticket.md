@@ -24,6 +24,7 @@ scope:
 - tests/unit/test_app_runners_batch7.py
 - design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -74,6 +75,12 @@ scope_changes:
   reason: SYS111 ratchet ceiling bump for new fs.write/exec sites introduced by T-2910
   actor: logan
   at: '2026-08-25'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'WIRE001: wire new sys_init_check bool dest into the CLI-external-config
+    allow-list (T-2910)'
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: parent
   old_value: null
