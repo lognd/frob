@@ -18,6 +18,7 @@ scope:
 - strata-core/src/graph/**
 - strata-core/src/lib.rs
 - strata-core/Cargo.toml
+- docs/strata/graph.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
 - op: add
   glob: strata-core/Cargo.toml
   reason: new graph kernel module beside parse, plus pyo3 wiring in lib.rs
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/strata/graph.md
+  reason: kernel doc for new graph module
   actor: logan
   at: '2026-08-26'
 triage_changes:
