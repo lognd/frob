@@ -6,7 +6,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-08-26'
-priority: medium
+priority: high
 parent: null
 tier: ticket
 sprint: null
@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: medium
+  new_value: high
+  reason: guarded_subprocess_run is the central subprocess seam every caller now routes
+    through after T-2953; a seam that raises TimeoutExpired where callers expect a
+    Result surfaces as random uncaught crashes anywhere under load, and it already
+    crashed the move-module transaction mid-run
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
