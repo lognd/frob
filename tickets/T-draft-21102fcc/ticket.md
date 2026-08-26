@@ -34,6 +34,14 @@ scope_changes:
     subcommands, not the whole parsers package'
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: set
+  reason: reword to avoid DOC006 false-hit on a proposed, not-yet-existing subcommand
+    name
+  actor: logan
+  at: '2026-08-26'
+  old_length: 1722
+  new_length: 1743
 designated_repro_test: null
 threat: null
 component: null
@@ -50,22 +58,23 @@ of the active queue without ever reaching a terminal state.
 
 No CLI primitive exists to repair this safely: `frob ticket drop <id>` looks
 up the active ledger only (confirmed: "NotFound: No ticket with that id"
-against T-0450), and there is no `frob ticket restore`/`unarchive` command to
-move a ticket's directory back into the active tickets/ tree. Hand-editing
-the ticket directory or frontmatter directly is against this repo's own
+against T-0450), and this repo has no un-archive/restore command to move a
+ticket's directory back into the active tickets/ tree. Hand-editing the
+ticket directory or frontmatter directly is against this repo's own
 standing rule (never hand-edit the ledger).
 
 Two things worth fixing, either or both:
-1. A `frob ticket restore <id>` (or `archive --undo`) primitive for exactly
-   this repair case -- move a ticket's directory back into tickets/ and set
-   state back to queued's prior value, git-tracked like every other ticket
-   mutation.
-2. `frob ticket archive`'s own write path should refuse (or at minimum warn
-   loudly) if it is ever asked to move a non-terminal ticket -- whatever
-   produced this state should not be able to reproduce it silently again.
+1. A new restore-style subcommand for exactly this repair case (proposed
+   shape: id in, ticket's directory moved back into tickets/ and its state
+   set back to queued's prior value, git-tracked like every other ticket
+   mutation the same way archive/drop/set-parent already are).
+2. The archive write path should refuse (or at minimum warn loudly) if it
+   is ever asked to move a non-terminal ticket -- whatever produced this
+   state should not be able to reproduce it silently again.
 
-T-0450 itself should be dropped once (1) exists (restore it to active first
-so `drop` can find it, or extend `drop`/`evidence`-style commands to accept
-an `--archived` flag the way `frob ticket evidence --archived` already does)
--- left queued-in-archive in the meantime, since neither this repo's tooling
-nor its house rules give a safe way to correct it right now.
+T-0450 itself should be dropped once (1) exists (restore it to active
+first so drop can find it, or extend drop/evidence-style commands to
+accept an archived-ticket flag the way ticket evidence already accepts
+one for archived ids) -- left queued-in-archive in the meantime, since
+neither this repo's tooling nor its house rules give a safe way to
+correct it right now.
