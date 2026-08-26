@@ -210,3 +210,83 @@ class TestUnresolvedSeverity:
         matches = [v for v in violations if v.file == "plugins/greet.py"]
         assert [v.rule for v in matches] == ["REF002"]
         assert matches[0].severity == Severity.ERROR
+
+
+# frob:ticket T-2928
+class TestRef002FileGranularityMissesDeadSymbols:
+    """T-2928: measured on a real controlled deletion (T-2900/T-2905, two
+    provably dead private helpers), REF002 MISSED both -- it never fired
+    at all against a symbol with zero real callers. Root cause,
+    confirmed here rather than inferred: REF001/REF002 count inbound
+    REFERENCES TO A FILE (`_ref001_or_002`'s own `inbound: set[str]` is a
+    set of CONSUMER FILES, never symbols within a file) -- see this
+    module's own docstring and `frob.gates._refs`'s module docstring
+    ("anti-orphan gate over every git-tracked file"). A file with two or
+    more real, independent consumers clears REF002's 2+ pass bar even
+    when ONE particular symbol defined inside that file has zero
+    callers anywhere -- the dead symbol is invisible to a check that
+    only ever asks "is this FILE referenced", never "is this SYMBOL
+    referenced". This is DEAD001's job (`frob.gates._dead_symbols`,
+    symbol-granularity, WARN not ERROR) and is NOT fixable inside
+    REF001/REF002 without turning them into a second, ERROR-severity
+    symbol-level dead-code gate -- a distinct feature, not a bug fix,
+    and out of this ticket's scope. Recorded here as a structural
+    limitation, not silently left uncovered."""
+
+    def test_dead_private_symbol_in_a_well_referenced_file_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_refs.py::ref_gate
+        # Reconstructs the T-2900/T-2905 shape directly: a module with a
+        # dead private helper (_parse_bash/_parse_csharp's own shape --
+        # zero callers anywhere) living alongside a real, exported
+        # symbol that TWO other files genuinely import -- confirms REF002
+        # stays silent on the file as a whole (it has 2 real consumers)
+        # and, separately, never produces any finding scoped to the dead
+        # symbol itself (REF002 has no such granularity to report at).
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "pkg/walker.py",
+            "def _dead_helper():\n"
+            "    return 1\n\n"
+            "\n"
+            "def walk():\n"
+            "    return 2\n",
+        )
+        _write(tmp_path, "caller_one.py", "from pkg import walker\nwalker.walk()\n")
+        _write(tmp_path, "caller_two.py", "from pkg import walker\nwalker.walk()\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        file_findings = [v for v in violations if v.file == "pkg/walker.py"]
+        assert file_findings == [], (
+            "REF002 must stay quiet -- pkg/walker.py genuinely has 2 real "
+            "file-level consumers, exactly clearing its 2+ pass bar"
+        )
+        assert not any("_dead_helper" in v.message for v in violations), (
+            "REF001/REF002 have no symbol-level granularity at all -- "
+            "confirming the miss is structural, not a message that just "
+            "failed to mention the symbol by name"
+        )
+
+    def test_file_containing_only_the_dead_symbol_still_fires_ref001(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_refs.py::ref_gate
+        # Must-still-fire control: when the dead symbol IS effectively
+        # the whole file's own content (no other symbol gives the file a
+        # second life), REF001 fires exactly as designed -- proving
+        # REF001/REF002 are not simply broken, only scoped to the FILE,
+        # never the symbol, by design.
+        _init_repo(tmp_path)
+        _write(tmp_path, "pkg/only_dead.py", "def _dead_helper():\n    return 1\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        dead = [v for v in violations if v.file == "pkg/only_dead.py"]
+        assert len(dead) == 1
+        assert dead[0].rule == "REF001"
+        assert dead[0].severity == Severity.ERROR

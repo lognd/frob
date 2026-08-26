@@ -2669,6 +2669,26 @@ edges`'s "never a public symbol" rule) -- exactly backwards here. Instead:
 diff this ticket does not build; disclosed and filed as a follow-up
 (see this ticket's Done report for the id).
 
+**Structural limitation, confirmed by measurement (T-2928)**: WIRE001
+case 1 only ever evaluates a symbol whose ENTIRE span sits inside THIS
+diff's own added-line hunks (`_new_callable_records`) -- it cannot, and
+is not meant to, catch a symbol that has been dead since a PRIOR ticket
+and is simply being looked at again now (a waiver removed, a comment
+touched) without its own defining lines being part of the current diff.
+Measured directly on a real controlled deletion: `_parse_bash`/
+`_parse_csharp` (T-1604/T-1600, dead ever since, deleted for real by
+T-2900/T-2905) never tripped WIRE001 even with their `frob:waive
+WIRE001` comments removed, because the diffs that touched them never
+touched their own body lines. This is deliberate diff-scoping working
+as designed, not a bug -- DEAD001 already owns "does any private symbol
+anywhere in the tree have zero callers" (unconditional, WARN); making
+WIRE001 also answer that question would duplicate DEAD001 at ERROR
+severity, a distinct feature decision, not a fix. Regression fixture:
+`tests/test_gates.py::TestWire001DiffScopingMissesPreExistingDeadSymbols`
+(a must-stay-quiet case for the exact T-2900/T-2905 shape, paired with a
+must-still-fire control proving the SAME dead symbol is caught the
+moment it is genuinely introduced by the diff being measured).
+
 **Cross-test-file reachability for a helper DEFINED under `tests/`
 (T-1558)**: `_is_reached_outside_diff_tests`'s text scan used to skip
 EVERY test path unconditionally, on the theory that a production symbol
@@ -3903,6 +3923,31 @@ about, because every other gate reasons about SOURCE symbols
 (`frob.graph`'s import/DSL edges), never about a bare tracked file's
 existence being justified at all. This gate runs over EVERY git-tracked
 file, regardless of type (source, docs, config, data, assets).
+
+**Structural limitation, confirmed by measurement (T-2928)**: REF001/
+REF002 count inbound references to a whole FILE, never to a symbol
+inside it. A file with two or more real, independent consumers clears
+REF002's 2+ pass bar even when one particular symbol defined inside
+that file has zero callers anywhere -- the dead symbol is invisible to
+a check that only ever asks "is this file referenced," never "is this
+symbol referenced." Measured directly on a real controlled deletion:
+`_parse_bash`/`_parse_csharp` (`src/frob/lang/_walk_bash.py`/
+`_walk_csharp.py`, both files with plenty of other real consumers)
+never tripped REF001 or REF002, despite being provably dead private
+symbols later confirmed and deleted by T-2900/T-2905. This is not a
+bug: file-level anti-orphan detection is this gate's entire documented
+purpose (see this section's own opening paragraph); symbol-level
+dead-code detection is DEAD001's job
+(`frob.gates._dead_symbols`, unconditional, WARN not ERROR). Extending
+REF001/REF002 to symbol granularity would mean building a second,
+ERROR-severity duplicate of DEAD001's own scan -- a distinct feature
+decision, not a fix, and out of scope for a bug ticket. Regression
+fixture: `tests/unit/gates/test_refs.py::
+TestRef002FileGranularityMissesDeadSymbols` (a must-stay-quiet case for
+the exact T-2900/T-2905 shape -- a dead symbol inside an otherwise
+well-referenced file -- paired with a must-still-fire control proving
+REF001 still fires the moment the dead symbol IS effectively the whole
+file's content).
 
 Three detection layers, all feeding the same inbound-reference count per
 file (T-1665 adds the first):

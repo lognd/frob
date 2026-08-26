@@ -4197,6 +4197,105 @@ class TestWireGate:
         assert violations == []
 
 
+# frob:ticket T-2928
+class TestWire001DiffScopingMissesPreExistingDeadSymbols:
+    """T-2928: measured on a real controlled deletion (T-2900/T-2905, two
+    provably dead private helpers), WIRE001 MISSED both -- it never
+    fired at all against a symbol with zero real callers. Root cause,
+    confirmed here rather than inferred: WIRE001 case 1
+    (`_wire001_unwired_symbol_violations`) only ever evaluates
+    `_new_callable_records` -- symbols whose ENTIRE span sits inside one
+    of THIS diff's added-line hunks (`_new_callable_records`'s own
+    docstring: "the proxy this gate uses for 'this diff DEFINED this
+    symbol'"). `_parse_bash`/`_parse_csharp` were added under a much
+    earlier ticket (T-1604/T-1600); the T-2900/T-2905 diffs that
+    measured them touched only a `frob:waive` comment, never the dead
+    symbol's own lines, so `_new_callable_records` correctly found no
+    matching record and WIRE001 correctly evaluated nothing. This is NOT
+    a bug: WIRE001 is deliberately diff-scoped to catch a ticket
+    INTRODUCING new dead code (T-1428's own "landed, passed every gate,
+    did nothing" defect shape) -- it structurally cannot, and must not
+    be made to, retroactively flag code that has been sitting dead since
+    a prior ticket. That is DEAD001's job (`frob.gates._dead_symbols`,
+    symbol-granularity, unconditional, WARN not ERROR) -- see
+    docs/modules/gates.md's WIRE001 entry for the cross-reference this
+    ticket added. Not fixable inside WIRE001 without turning it into a
+    second, ERROR-severity repeat of DEAD001's own repo-wide scan,
+    which is a distinct feature, not a bug fix, and out of this
+    ticket's scope."""
+
+    def test_pre_existing_dead_symbol_untouched_by_this_diff_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        # Reconstructs the T-2900/T-2905 shape directly: `_dead_helper`
+        # already exists (zero callers, unrelated to this diff) and this
+        # diff's own hunk only touches a DIFFERENT line in the same file
+        # (its waiver comment) -- `_dead_helper`'s span is NOT inside the
+        # diff's hunks, so `_new_callable_records` never produces a
+        # record for it and WIRE001 has nothing to evaluate.
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            '# frob:waive WIRE001 reason="pre-existing, T-2928 fixture"\n'
+            "def _dead_helper() -> int:\n"
+            "    return 1\n\n"
+            "\n"
+            "def used() -> int:\n"
+            "    return 2\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "from src.a import used\n\n"
+            "def test_used() -> None:\n"
+            "    assert used() == 2\n",
+        )
+        snap = _snapshot(tmp_path)
+        # This diff's own hunk covers ONLY the waiver-comment line (line
+        # 1), never `_dead_helper`'s own body (lines 2-3) -- the exact
+        # T-2900/T-2905 shape (removing/touching the waiver, not the
+        # dead symbol itself).
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=(1, 1)),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(v.rule == "WIRE001" for v in violations), (
+            "WIRE001 must stay silent -- _dead_helper's span is not "
+            "inside this diff's own hunks, confirming the miss is "
+            "WIRE001's deliberate diff-scoping, not a detection bug"
+        )
+
+    def test_the_same_dead_symbol_newly_added_by_this_diff_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        # Must-still-fire control: the IDENTICAL dead symbol, this time
+        # genuinely introduced by the diff being measured (its span DOES
+        # sit inside the diff's hunk) -- WIRE001 fires exactly as
+        # designed, proving the prior test's silence is scope, not
+        # breakage.
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _dead_helper() -> int:\n    return 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(
+            r for r in snap.symbols.values() if "_dead_helper" in r.symref
+        )
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        v = _first_rule(violations, "WIRE001")
+        assert v is not None
+        assert "_dead_helper" in v.message
+        assert v.severity == Severity.ERROR
+
+
 class TestWire001RuleIdViolationsUnion:
     """T-2454: `_wire001_rule_id_violations` (WIRE001 case 2, T-1421's
     BUG002 shape) is the diff-scoped check that actually serialized this
