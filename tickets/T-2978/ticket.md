@@ -95,7 +95,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 81b56fcd56e71c8dc4388cf809d432ff05869208
 ---
 Long-running frob commands give the interactive operator nothing to look at
 while they run. Measured this session:
