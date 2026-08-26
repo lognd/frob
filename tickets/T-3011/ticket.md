@@ -27,6 +27,8 @@ scope:
 - docs/guides/install.md
 - docs/modules/cli.md
 - docs/guides/release.md
+- src/frob/gates/__init__.py
+- src/frob/gates/registry.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -99,6 +101,16 @@ scope_changes:
 - op: add
   glob: docs/guides/release.md
   reason: 'T-3011: doc edges for doctor.py touches + new release process doc'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'T-3011: wire new version-coupling gate into the check pipeline registry'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/registry.yaml
+  reason: 'T-3011: wire new version-coupling gate into the check pipeline registry'
   actor: logan
   at: '2026-08-26'
 triage_changes:
