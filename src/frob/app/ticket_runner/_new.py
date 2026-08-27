@@ -963,6 +963,8 @@ def _new(root: Path, cfg: AppConfig) -> None:
     )
     # frob:ticket T-2257
     _emit_scope_overlap_warnings(root, ticket.id, ticket.scope)
+    # frob:ticket T-3124
+    _emit_body_similarity_warnings(root, ticket.id, body)
     # frob:ticket T-0178
     from frob.app.telemetry import record_ticket_event
 
@@ -1196,6 +1198,79 @@ def _emit_scope_overlap_warnings(root: Path, ticket_id: str, scope) -> None:  # 
     warnings`'s own log-wrapper shape for the sibling scope-closure
     check."""
     for warning in _scope_overlap_warnings(root, ticket_id, scope):
+        _log.warning("ticket new: %s: %s", ticket_id, warning)
+
+
+# frob:ticket T-3124
+# T-1995's own related_tickets already catches an exact/near-exact TITLE
+# match (>= 0.8 SequenceMatcher ratio) and REFUSES the land unless
+# --ack-related is passed -- verified still live and firing (a live
+# probe: filing "DUPLICATE TITLE PROBE ZZZ TEST" twice in a row refuses
+# the second on a 100% title match). This threshold is for the dimension
+# that check does NOT cover: two tickets with DIFFERENT titles but a
+# near-identical BODY -- the T-3063/T-3070 incident this ticket measured
+# had byte-identical titles too (which the T-1995 gate should have
+# caught), but is exactly the shape a differently-worded successor
+# ticket over the same substance would slip past. 0.85 (stricter than
+# T-1995's 0.8 title threshold, since two DIFFERENT-titled tickets
+# sharing an accidentally similar body -- a shared template paragraph,
+# for instance -- is more plausible than two identical titles being
+# unrelated) chosen so a routine templated section does not itself
+# trigger a warning; a near-byte-identical body clears it easily (the
+# measured incident's two 10037-char bodies would score at or near 1.0).
+_BODY_SIMILARITY_WARN_THRESHOLD = 0.85
+#: Deliberately WARN-only, never a refusal (unlike T-1995's title gate)
+#: per this ticket's own acceptance: a similar body is a weaker signal
+#: than an identical title (bodies commonly share boilerplate -- a
+#: measured-incident preamble, an ACCEPTANCE section skeleton) and a
+#: false positive here must never block filing.
+
+
+# frob:ticket T-3124
+def _body_similarity_warnings(
+    root: Path, ticket_id: str, body: str
+) -> tuple[str, ...]:
+    """`(warning, ...)` for every OTHER non-terminal ticket whose own body
+    scores >= `_BODY_SIMILARITY_WARN_THRESHOLD` on `difflib.SequenceMatcher.
+    ratio()` against `body` (T-3124) -- the same simple, deterministic,
+    explainable comparison `related_tickets` already uses for titles (this
+    repo's standing directive against fuzzy semantic matching), applied to
+    the dimension that check does not cover. Scoped to `_NON_TERMINAL_
+    TICKET_STATES_FOR_OVERLAP` (queued/planned/in-progress/blocked) --
+    matching `_scope_overlap_warnings`'s own precedent one function up:
+    a done/dropped ticket's old body is history, not a live duplicate risk.
+    An empty `body` never matches anything (an empty ratio is meaningless
+    noise, not a signal)."""
+    if not body.strip():
+        return ()
+    from frob.tickets import load_all
+
+    loaded = load_all(root)
+    if loaded.is_err:
+        return ()
+    warnings: list[str] = []
+    for other_id, other in sorted(loaded.danger_ok.items()):
+        if other_id == ticket_id:
+            continue
+        if other.state not in _NON_TERMINAL_TICKET_STATES_FOR_OVERLAP:
+            continue
+        if not other.body.strip():
+            continue
+        ratio = difflib.SequenceMatcher(None, body, other.body).ratio()
+        if ratio >= _BODY_SIMILARITY_WARN_THRESHOLD:
+            warnings.append(
+                f"body {ratio * 100:.0f}% similar to {other_id} "
+                f"({other.state}): {other.title!r}"
+            )
+    return tuple(warnings)
+
+
+# frob:ticket T-3124
+def _emit_body_similarity_warnings(root: Path, ticket_id: str, body: str) -> None:
+    """Log `_body_similarity_warnings`'s output as `ticket new <id>: <warning>`
+    lines -- mirrors `_emit_scope_overlap_warnings`'s own log-wrapper shape
+    immediately above."""
+    for warning in _body_similarity_warnings(root, ticket_id, body):
         _log.warning("ticket new: %s: %s", ticket_id, warning)
 
 

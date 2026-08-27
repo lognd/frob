@@ -1,7 +1,7 @@
 ---
 id: T-3124
 title: frob ticket new warns on scope overlap but never on duplicate titles or bodies
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -48,6 +48,11 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 2814
+evidence:
+- tests/unit/test_new_ticket_body_similarity_warning.py::TestBodySimilarityWarnings::test_near_identical_body_different_title_warns
+- tests/unit/test_new_ticket_body_similarity_warning.py::TestBodySimilarityWarnings::test_genuinely_distinct_body_prints_nothing
+- tests/unit/test_new_ticket_body_similarity_warning.py::TestBodySimilarityWarnings::test_never_refuses_on_body_similarity_alone
+- tests/unit/test_new_ticket_body_similarity_warning.py::TestBodySimilarityWarnings::test_terminal_ticket_body_is_not_compared
 designated_repro_test: null
 threat: null
 component: null
