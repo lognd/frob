@@ -2,7 +2,7 @@
 id: T-3085
 title: 'post-land sweep regression from T-3065, T-3039, T-3060: 1 new (rule, file)
   identit(ies), 0 finding(s) (I001)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-27'
