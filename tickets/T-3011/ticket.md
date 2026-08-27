@@ -150,7 +150,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 76c3481b5d4b1a683aa241d1e253f42ecca95301
 ---
 frob's two Rust/PyO3 extensions are not on PyPI. Adopting frob in another repo
 therefore means building Rust from source, which is a poor first run for exactly
