@@ -463,6 +463,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3106: Fix fleet_status.py orphan false-positive and add frob process reap command
 - T-3107: Out-of-tree three-way squash compose via a disposable worktree
 - T-3109: refactor split/move: import-rewrite drops indentation on a nested (function-local/block) import
+- T-3110: frob refactor verbs have no realistic corpus test: three independent defects shipped and were found by one real extraction
 - T-3111: Move land's native rebuild after the landing commit, out of the dirty-root window
 - T-3114: Add resync_root_to_published_tip primitive for the post-CAS root resync
 

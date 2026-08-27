@@ -2,7 +2,7 @@
 id: T-3110
 title: 'frob refactor verbs have no realistic corpus test: three independent defects
   shipped and were found by one real extraction'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -28,6 +28,8 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 4237
+evidence:
+- tests/test_refactor_corpus.py::TestRefactorCorpus::test_split_moves_symbols_across_every_call_site_shape
 designated_repro_test: null
 threat: null
 component: null
