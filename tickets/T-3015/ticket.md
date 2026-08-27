@@ -71,7 +71,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 746e77f2a047e713599b8be17708c9951584cad6
 ---
 `frob.process._guard.guarded_subprocess_run` wraps `subprocess.run(args, **kwargs)`
 with no try/except around the call (src/frob/process/_guard.py, line ~116). Any
