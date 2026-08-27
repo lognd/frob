@@ -17,6 +17,10 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - docs/modules/tickets-landing.md
+- tests/test_ticket_land_ty_diff_attribution.py
+- tickets/T-3132/**
+evidence_scope:
+- tests/test_ticket_land_ty_diff_attribution.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +48,19 @@ scope_changes:
     behavior alongside the existing pre-land gate docs
   actor: logan
   at: '2026-08-27'
+- op: add
+  glob: tests/test_ticket_land_ty_diff_attribution.py
+  reason: T-3116's own new fixtures module (must-fire/must-stay-quiet pair) needs
+    write lease + COV/SCOPE coverage
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tickets/T-3132/**
+  reason: T-3132 was filed from this same series worktree (auditing T-3116 surfaced
+    the sibling lint-gate gap); its ledger dir is part of this worktree's own diff
+    until T-3116 lands, so SCOPE001 needs the lease
+  actor: logan
+  at: '2026-08-27'
 body_changes:
 - mode: set
   reason: Record the measured line-shift refusal and the suppression-factory dynamic
@@ -52,6 +69,11 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3225
+evidence:
+- tests/test_ticket_land_ty_diff_attribution.py::TestTyDiagnosticIdentity::test_ignores_line_and_col
+- tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand::test_pre_existing_finding_that_merely_shifted_lines_does_not_refuse
+- tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand::test_genuinely_new_finding_still_refuses
+- tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand::test_baseline_unmeasurable_falls_back_to_file_scoped_refusal
 designated_repro_test: null
 threat: null
 component: null
