@@ -4196,6 +4196,66 @@ class TestWireGate:
         violations = _wire003_stale_verb_references(tmp_path)
         assert violations == []
 
+    # frob:ticket T-3115
+    def test_wire003_direct_dispatch_verb_refactor_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::_wire003_live_verb_tokens kind="unit"
+        """`refactor` (and its `rename`/`move-module` subcommands) are
+        real, working verbs dispatched by `frob.__main__._dispatch`'s raw
+        argv scan BEFORE `_build_parser()` runs (T-3115) -- they must
+        resolve as live, not be reported as stale just because they never
+        reach the argparse tree the normal walk covers."""
+        from frob.gates._wire import _wire003_stale_verb_references
+
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            ".claude/hooks/frob-suggest.py",
+            'MSG = "Use `frob refactor rename` or `frob refactor move-module` '
+            'instead of a hand edit."\n',
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "add hook"], cwd=tmp_path, check=True
+        )
+        violations = _wire003_stale_verb_references(tmp_path)
+        assert not any(v.rule == "WIRE003" for v in violations)
+
+    # frob:ticket T-3115
+    # frob:waive DUP001 reason="deliberate must-fire/must-stay-quiet fixture pair \
+    # sharing the standard _wire003_stale_verb_references test shape \
+    # (git_init/_write/commit/assert) every other WIRE003 test in this class already \
+    # uses; extracting a shared helper would only hide which assertion belongs to \
+    # which scenario"
+    def test_wire003_still_flags_a_verb_shaped_like_the_hidden_set(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::_wire003_live_verb_tokens kind="unit"
+        """A verb that merely LOOKS like a direct-dispatch verb (same
+        shape, never actually registered anywhere -- refactor's own
+        `move`/`rename`/`split`/`move-module` real subcommand set, minus
+        a fabricated fifth one) must still fire -- the T-3115 fix widens
+        what counts as live, it does not turn WIRE003 off for this
+        family."""
+        from frob.gates._wire import _wire003_stale_verb_references
+
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            ".claude/hooks/frob-suggest.py",
+            'MSG = "Use `frob refactor totallynotarealsubcommand` instead."\n',
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "add hook"], cwd=tmp_path, check=True
+        )
+        violations = _wire003_stale_verb_references(tmp_path)
+        assert any(
+            v.rule == "WIRE003" and "totallynotarealsubcommand" in v.message
+            for v in violations
+        )
+
 
 # frob:ticket T-2928
 class TestWire001DiffScopingMissesPreExistingDeadSymbols:

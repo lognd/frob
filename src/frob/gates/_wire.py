@@ -1423,6 +1423,69 @@ def _wire003_subparsers_action(parser):  # noqa: ANN001, ANN202
     return None
 
 
+#: Top-level verb NAMES `frob.__main__._dispatch` routes by a raw argv[0]
+#: string check BEFORE `_build_parser()` is ever called (T-3115), so they
+#: never enter the argparse tree `_wire003_live_verb_tokens` walks below
+#: and are consequently absent from `frob --help` too -- a real, separate
+#: discoverability defect (T-3115's own report), not something this gate
+#: should paper over. `bind`/`agent`/`worktree`/`sync-skills` are ALSO
+#: raw-dispatched early but stay off this tuple deliberately: each still
+#: calls its own `_add_*_parser` inside `_build_parser()` (see
+#: `_add_workflow_subparsers`/`_add_analysis_subparsers` in
+#: `frob.__main__`), so the walk below already sees them live. Only
+#: `refactor` and `narrative` build their argparse tree from a throwaway
+#: local parser inside their own `_dispatch_*` helper and never register
+#: it on the real one. Source of truth: `frob.__main__._dispatch`'s
+#: if/elif chain -- update this tuple if that chain adds or removes a
+#: raw-dispatch-only branch (frob:tests below cover a must-fire case so a
+#: forgotten update still shows up as a stale-verb false-negative gap,
+#: not silently).
+# frob:ticket T-3115
+_WIRE003_HIDDEN_DIRECT_DISPATCH_VERBS: tuple[str, ...] = ("refactor", "narrative")
+
+
+# frob:ticket T-3115
+# frob:tests tests/test_gates.py::TestWireGate.test_wire003_direct_dispatch_verb_refactor_is_not_flagged kind="unit"  # noqa: E501
+# frob:tests tests/test_gates.py::TestWireGate.test_wire003_still_flags_a_verb_shaped_like_the_hidden_set kind="unit"  # noqa: E501
+def _wire003_hidden_verb_tokens() -> frozenset[str]:
+    """Subcommand/sub-subcommand NAMES for the direct-dispatch verbs in
+    `_WIRE003_HIDDEN_DIRECT_DISPATCH_VERBS` (T-3115), resolved against
+    each verb's OWN real `add_*_parser` registration function -- not a
+    second hand-typed list of their subcommand names, which would just
+    move the staleness risk WIRE003 exists to catch one level down."""
+    import argparse
+
+    from frob.narrative._cli import add_narrative_parser
+    from frob.refactor._cli import add_refactor_parser
+
+    registrars = {
+        "refactor": add_refactor_parser,
+        "narrative": add_narrative_parser,
+    }
+    tokens: set[str] = set()
+    for verb in _WIRE003_HIDDEN_DIRECT_DISPATCH_VERBS:
+        tokens.add(verb)
+        registrar = registrars.get(verb)
+        if registrar is None:
+            continue
+        p = argparse.ArgumentParser(prog="frob")
+        sub = p.add_subparsers(dest="subcommand")
+        registrar(sub)
+
+        def walk(parser) -> None:  # noqa: ANN001
+            action = _wire003_subparsers_action(parser)
+            if action is None:
+                return
+            for name, sub_parser in action.choices.items():
+                tokens.add(name)
+                walk(sub_parser)
+
+        walk(p)
+    return frozenset(tokens)
+
+
+# frob:ticket T-3115
+# frob:tests tests/test_gates.py::TestWireGate.test_wire003_direct_dispatch_verb_refactor_is_not_flagged kind="unit"  # noqa: E501
 def _wire003_live_verb_tokens() -> frozenset[str]:
     """Every subcommand/sub-subcommand NAME string reachable anywhere in
     the LIVE `frob` CLI dispatch tree (T-1725: resolve against the real
@@ -1434,7 +1497,13 @@ def _wire003_live_verb_tokens() -> frozenset[str]:
     in the tree", not "at this exact position" -- a coarser check than
     full positional validation, but one that still catches a rename
     (the token vanishes from the tree entirely) without needing this
-    module to hand-encode the tree's own shape a second time."""
+    module to hand-encode the tree's own shape a second time.
+
+    PLUS (T-3115) `_wire003_hidden_verb_tokens()`: verbs
+    `frob.__main__._dispatch` routes by raw argv scan before
+    `_build_parser()` runs, so they never reach the walk below on their
+    own -- `refactor`/`narrative` and their real subcommands, resolved
+    against those verbs' own `add_*_parser` functions, not a hand list."""
     from frob.__main__ import _build_parser
 
     tokens: set[str] = set()
@@ -1448,6 +1517,7 @@ def _wire003_live_verb_tokens() -> frozenset[str]:
             walk(sub)
 
     walk(_build_parser())
+    tokens |= _wire003_hidden_verb_tokens()
     return frozenset(tokens)
 
 

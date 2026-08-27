@@ -2,7 +2,7 @@
 id: T-3115
 title: WIRE003 reports the working 'frob refactor' verb as unresolvable; the verb
   is also missing from frob --help
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_wire.py
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +30,11 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3234
+evidence:
+- tests/test_gates.py::TestWireGate::test_wire003_direct_dispatch_verb_refactor_is_not_flagged
+- tests/test_gates.py::TestWireGate::test_wire003_still_flags_a_verb_shaped_like_the_hidden_set
+- tests/test_gates.py::TestWireGate::test_wire003_matcher_pattern_stale_verb_is_flagged
+- tests/test_gates.py::TestWireGate::test_wire003_real_verbs_are_not_flagged
 designated_repro_test: null
 threat: null
 component: null
