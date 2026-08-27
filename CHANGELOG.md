@@ -472,6 +472,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3115: WIRE003 reports the working 'frob refactor' verb as unresolvable; the verb is also missing from frob --help
 - T-3121: Flip the squash-apply stage onto a disposable worktree and publish by CAS
 - T-3122: frob refactor split moves symbol bodies without carrying their own needed imports
+- T-3126: Land-commit record still dirties root and moves main without CAS after the publish
 
 ## [0.530.0] - unreleased
 

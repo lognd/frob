@@ -2,7 +2,7 @@
 id: T-3126
 title: Land-commit record still dirties root and moves main without CAS after the
   publish
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_squash.py
 - tests/unit/test_land_record_commit.py
+evidence_scope:
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +31,11 @@ scope_changes:
     it cannot resolve
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_root_never_goes_dirty_while_the_record_is_made
+- tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_probe_catches_the_in_root_write_positive_control
+- tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_record_publishes_by_cas_and_refuses_a_moved_ref
+- tests/test_ticket_land.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
 designated_repro_test: null
 threat: null
 component: null

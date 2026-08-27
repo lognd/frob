@@ -44,6 +44,7 @@ helpers this family calls (`_apply_release_bump`/`_apply_gate_rule_sync`/
 
 from __future__ import annotations
 
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
@@ -61,7 +62,6 @@ from frob.tickets._land_git_ops import (
     _auto_resolve_out_of_scope_conflicts,
     _describe_git_failure,
     _land_internal_git_env,
-    _pathspec_targets,
     _porcelain_dirty_paths,
     _read_archive_text_or_empty,
     _read_ledger_text_or_empty,
@@ -75,9 +75,11 @@ from frob.tickets._land_git_ops import (
 )
 from frob.tickets._land_merge import _commit_message
 from frob.tickets._land_release import (
+    _add_scratch_worktree,
     _apply_gate_rule_sync,
     _apply_release_bump,
     _maybe_rebuild_natives,
+    _remove_scratch_worktree,
     _warn_if_native_stale,
 )
 from frob.tickets._models import (
@@ -711,30 +713,54 @@ def _land_commit_details(root: Path) -> tuple[str | None, tuple[str, ...]]:
 
 # frob:ticket T-2220
 # frob:ticket T-2274
+# frob:ticket T-3126
 # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_records_land_commit_field_in_a_follow_up_commit  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_plan_land_finalized_ticket_is_resolvable_by_ticket_id  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_record_land_commit_never_absorbs_a_bystanders_dirty_file  # noqa: E501
+# frob:tests tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree.test_root_never_goes_dirty_while_the_record_is_made  # noqa: E501
+# frob:tests tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree.test_probe_catches_the_in_root_write_positive_control  # noqa: E501
+# frob:tests tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree.test_record_publishes_by_cas_and_refuses_a_moved_ref  # noqa: E501
 def _record_land_commit(root: Path, final_id: str, land_sha: str) -> str | None:
     """Persist `land_sha` (the squash-apply commit that just landed
     `final_id`'s code) onto that ticket's own `land_commit` field, in a
-    small follow-up commit made right here, still inside this same `frob
-    ticket land` invocation (T-2220 -- see `Ticket.land_commit`'s own
-    docstring for why this cannot be baked into `land_sha`'s own commit: a
-    commit's tree/hash is fixed before the commit exists, so nothing can
+    small follow-up commit composed in a DISPOSABLE worktree checked out
+    at `land_sha` and published onto `root`'s current branch by
+    compare-and-swap (T-3126). `root`'s working tree is never written to
+    and its branch never moves except through that one atomic
+    `update-ref`.
+
+    WHY it is still a follow-up commit rather than being baked into
+    `land_sha` itself (T-2220 -- see `Ticket.land_commit`'s own docstring):
+    a commit's tree/hash is fixed before the commit exists, so nothing can
     embed its own future hash in its own content; the earliest a commit
-    can truthfully name a sha is the very next commit after it).
+    can truthfully name a sha is the very next commit after it.
+
+    WHY out-of-tree (T-3126): T-3121 moved the whole squash-apply
+    transaction off the shared root and made the landing commit public via
+    `publish_ref_cas`, but this step still ran `write_ticket` + `git add` +
+    `git commit` IN `root` afterwards -- so it re-opened the very dirty
+    window T-3121 had just closed (a sibling's `git status` sees a dirty
+    root for its duration) and, more seriously, it advanced
+    `refs/heads/<branch>` by plain fast-forward with NO compare-and-swap,
+    handing back exactly the atomicity the flip had bought. Composing in a
+    fresh checkout of `land_sha` also makes the T-2274 property structural
+    rather than computed: a worktree that never contained a bystander's
+    edit cannot absorb one, so no before/after porcelain diffing is needed
+    to keep a stranger's mid-edit out of this commit.
 
     Best-effort throughout, mirroring `_record_verify_intent_for_landed_
     commit`'s posture in `frob.tickets._land`: `land_sha` is already
-    durably on `root` by the time this runs, so a failure here (ticket
-    not found post-squash, a write/add/commit git failure) is logged
-    loudly and swallowed, never turned into a `LandError` -- an already-
-    sealed land must never be reported as failed over a missing
-    convenience field. Returns the new HEAD sha (this record commit) on
-    success, or `None` if no new commit was made (the field could not be
-    written, or nothing to commit)."""
+    durably public by the time this runs, so every failure here (ticket
+    not found post-squash, worktree/plumbing failure, a lost CAS because a
+    sibling published first) is logged loudly and swallowed, never turned
+    into a `LandError` -- an already-sealed land must never be reported as
+    failed over a missing convenience field. NOTHING here unwinds `root`:
+    this entire function runs post-publish, so there is no state of this
+    land's left in `root` to roll back, and a reset/unstage here could
+    only destroy a sibling's work (the shape T-3121's unwind audit found
+    in `_assert_still_on_expected_branch`). Returns the new HEAD sha (this
+    record commit) on success, or `None` if no new commit was made."""
     from frob.tickets import _load_one
-    from frob.tickets._store import write_ticket
 
     loaded = _load_one(root, final_id)
     if loaded.is_err:
@@ -748,100 +774,159 @@ def _record_land_commit(root: Path, final_id: str, land_sha: str) -> str | None:
             final_id,
         )
         return None
-    # T-2274: snapshot the dirty-path set BEFORE this write, so the
-    # `add` below can stage exactly (and only) the paths THIS write_ticket
-    # call itself produced -- never a bystander's unrelated dirty file
-    # already sitting in `root` at this moment (the T-2256 incident: a
-    # concurrent land's own uncommitted mid-edit to `_land.py` was ambient
-    # in the shared root when this exact step ran and got scooped into
-    # this commit by a blanket `git add -A`). Comparing the before/after
-    # porcelain sets is mode-agnostic -- it works whether `write_ticket`
-    # touches `tickets.md` (single mode), `tickets/<id>/ticket.md` (dir/v2
-    # mode), or some future storage shape, without this function needing
-    # to know or guess which.
-    before_dirty = frozenset(_porcelain_dirty_paths(root))
-    updated = loaded.danger_ok.model_copy(update={"land_commit": land_sha})
-    written = write_ticket(root, updated)
-    if written.is_err:
+    head_ref = _root_head_ref(root)
+    if head_ref is None:
         _log.error(
-            "land: %s land_commit write failed (%s) -- %s already landed "
-            "at %s, only the T-2220 record field is missing",
-            final_id,
-            written.danger_err,
-            final_id,
-            land_sha,
-        )
-        return None
-    return _stage_and_commit_land_commit_record(root, final_id, land_sha, before_dirty)
-
-
-# frob:ticket T-2274
-def _stage_and_commit_land_commit_record(
-    root: Path, final_id: str, land_sha: str, before_dirty: frozenset[str]
-) -> str | None:
-    """`_record_land_commit`'s own ARCH001 split (T-2274): stage exactly
-    the paths `write_ticket` itself made dirty (`before_dirty`'s
-    complement, see the caller's own T-2274 comment) and commit them --
-    never `git add -A`. Same best-effort, log-and-swallow posture as the
-    caller."""
-    new_paths = sorted(
-        _pathspec_targets(frozenset(_porcelain_dirty_paths(root)) - before_dirty)
-    )
-    if not new_paths:
-        _log.error(
-            "land: %s land_commit write produced no new dirty path in %s "
-            "-- %s already landed at %s, only the T-2220 record field is "
-            "missing (nothing to stage, so nothing committed)",
+            "land: %s could not resolve %s's own branch ref -- skipping the "
+            "T-2220 land_commit record for %s (already landed); a detached "
+            "root has no branch to compare-and-swap",
             final_id,
             root,
-            final_id,
             land_sha,
         )
         return None
+    updated = loaded.danger_ok.model_copy(update={"land_commit": land_sha})
+    return _compose_and_publish_land_commit_record(
+        root, final_id, land_sha, updated, head_ref
+    )
 
-    add_argv = ["git", "-C", str(root), "add", "--", *new_paths]
-    with _land_internal_git_env():
-        add = run_argv(add_argv)
-        if add.is_err or add.danger_ok.returncode != 0:
+
+# frob:ticket T-3126
+def _root_head_ref(root: Path) -> str | None:
+    """The full ref `root`'s `HEAD` symlinks to (`refs/heads/<branch>`), or
+    `None` when `HEAD` is detached -- the ref `_record_land_commit`'s
+    compare-and-swap publish must move. Read from `root` itself rather than
+    threaded down from the caller's `main_branch_name` so this stays
+    correct for a caller that never had one."""
+    read = run_argv(("git", "-C", str(root), "symbolic-ref", "-q", "HEAD"))
+    if read.is_err or read.danger_ok.returncode != 0:
+        return None
+    ref = read.danger_ok.stdout.strip()
+    return ref or None
+
+
+# frob:ticket T-3126
+def _compose_and_publish_land_commit_record(
+    root: Path, final_id: str, land_sha: str, updated: Ticket, head_ref: str
+) -> str | None:
+    """`_record_land_commit`'s out-of-tree half (T-3126, and its own ARCH001
+    split): write `updated` into a disposable worktree checked out at
+    `land_sha`, fold it into a commit parented on `land_sha`, CAS-publish
+    that onto `head_ref`, and bring `root`'s index/working tree up to it.
+    Same best-effort, log-and-swallow, never-unwind posture as the caller."""
+    from frob.tickets._store import write_ticket
+
+    with tempfile.TemporaryDirectory(prefix="frob-land-record-") as parent:
+        scratch = str(Path(parent) / "wt")
+        added = _add_scratch_worktree(root, scratch, land_sha, final_id)
+        if added.is_err:
             _log.error(
-                "land: %s land_commit add failed: %s -- %s already landed "
-                "at %s, only the T-2220 record field is missing",
-                final_id,
-                _describe_git_failure(add_argv, add),
+                "land: %s could not cut a disposable worktree at %s for the "
+                "T-2220 land_commit record -- %s already landed, only the "
+                "record field is missing",
                 final_id,
                 land_sha,
+                final_id,
             )
             return None
-        commit_argv = [
-            "git",
-            "-C",
-            str(root),
-            "commit",
-            "-m",
-            f"chore(tickets): record land commit for {final_id}",
-        ]
-        commit = run_argv(commit_argv)
-    if commit.is_err or commit.danger_ok.returncode != 0:
+        try:
+            written = write_ticket(Path(scratch), updated)
+            if written.is_err:
+                _log.error(
+                    "land: %s land_commit write failed (%s) -- %s already "
+                    "landed at %s, only the T-2220 record field is missing",
+                    final_id,
+                    written.danger_err,
+                    final_id,
+                    land_sha,
+                )
+                return None
+            return _publish_land_commit_record(
+                root, Path(scratch), final_id, land_sha, head_ref
+            )
+        finally:
+            _remove_scratch_worktree(root, scratch, final_id)
+
+
+# frob:ticket T-3126
+def _publish_land_commit_record(
+    root: Path, scratch: Path, final_id: str, land_sha: str, head_ref: str
+) -> str | None:
+    """Fold `scratch` (a disposable checkout of `land_sha` that
+    `write_ticket` has just edited) into a commit and CAS-publish it onto
+    `head_ref`, then resync `root` -- `_compose_and_publish_land_commit_
+    record`'s own ARCH001 split. Returns the published sha, or `None` when
+    the write changed nothing, the fold failed, or the compare-and-swap
+    lost to a sibling that published first."""
+    if not _porcelain_dirty_paths(scratch):
         _log.error(
-            "land: %s land_commit commit failed: %s -- %s already landed "
-            "at %s, only the T-2220 record field is missing",
+            "land: %s land_commit write produced no change against %s -- %s "
+            "already landed, only the T-2220 record field is missing "
+            "(nothing to commit)",
             final_id,
-            _describe_git_failure(commit_argv, commit),
+            land_sha,
+            final_id,
+        )
+        return None
+    folded = fold_worktree_into_commit(
+        root,
+        scratch,
+        land_sha,
+        f"chore(tickets): record land commit for {final_id}",
+    )
+    if folded.is_err:
+        _log.error(
+            "land: %s could not fold the T-2220 land_commit record into a "
+            "commit -- %s already landed at %s, only the record field is "
+            "missing; nothing was published",
+            final_id,
             final_id,
             land_sha,
         )
         return None
-
-    new_sha = _rev_parse(root, "HEAD")
-    if new_sha.is_err:
+    new_sha = folded.danger_ok
+    published = publish_ref_cas(root, head_ref, land_sha, new_sha)
+    if published.is_err:
+        _log.error(
+            "land: %s land_commit record %s was NOT published -- %s moved "
+            "away from %s while it was being composed (a sibling land "
+            "published first), so the compare-and-swap was rejected. %s is "
+            "landed at %s and nothing was overwritten; only the T-2220 "
+            "record field is missing",
+            final_id,
+            new_sha,
+            head_ref,
+            land_sha,
+            final_id,
+            land_sha,
+        )
         return None
+    resynced = resync_root_to_published_tip(root, land_sha, new_sha)
+    if resynced.is_err:
+        _log.error(
+            "land: %s land_commit record IS published as %s on %s -- the "
+            "commit is public and correct -- but %s's index/working tree "
+            "could not be advanced off %s (%s). This is NOT a land failure "
+            "and must not be reverted; run: git -C %s read-tree -m -u %s %s",
+            final_id,
+            new_sha,
+            head_ref,
+            root,
+            land_sha,
+            resynced.danger_err,
+            root,
+            land_sha,
+            new_sha,
+        )
     _log.info(
-        "land: %s land_commit recorded as %s (own record commit %s)",
+        "land: %s land_commit recorded as %s (own record commit %s, "
+        "published onto %s by CAS)",
         final_id,
         land_sha,
-        new_sha.danger_ok,
+        new_sha,
+        head_ref,
     )
-    return new_sha.danger_ok
+    return new_sha
 
 
 # frob:ticket T-1001
@@ -1491,9 +1576,7 @@ def _seal_squash_apply(
             pre_land_tip=pre_land_tip,
             main_branch_name=main_branch_name,
         )
-    committed = _commit_squash_apply(
-        stage, ticket, final_id, pre_land_tip=pre_land_tip
-    )
+    committed = _commit_squash_apply(stage, ticket, final_id, pre_land_tip=pre_land_tip)
     if committed.is_err:
         return Err(committed.danger_err)
     return Ok(False)
