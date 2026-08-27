@@ -2,7 +2,7 @@
 id: T-3147
 title: Audit closes landed 2026-08-10..2026-08-27 for D-02 self-cover false positives
   (T-1944/T-3141)
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-27'
@@ -33,6 +33,8 @@ triage_changes:
   at: '2026-08-27'
 evidence:
 - tests/test_measure_evidence_reach.py::TestMeasureEvidenceReachMain::test_runs_clean_over_a_minimal_ticket_ledger
+- cmd:uv run python /tmp/claude-1000/-home-logan-projects-frob/79c6402d-b401-4652-bea7-f81df1be9322/scratchpad/audit_d02.py
+  exit=0 sha256=13b392782051
 kind_history:
 - 2026-08-27 bug->docs evidence=1 done_report=no
 designated_repro_test: null
