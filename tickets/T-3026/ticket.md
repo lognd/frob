@@ -23,6 +23,7 @@ scope:
 - tests/unit/strata/entity_arch/storage_cheap.strata
 - docs/strata/surface.md
 - docs/index.md
+- docs/commands/narrative.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -68,6 +69,11 @@ scope_changes:
   glob: docs/index.md
   reason: 'T-3026: REF001/REF002/DOC001 fix for entity_architecture.md needs a second
     real inbound doc reference'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/commands/narrative.md
+  reason: 'T-3026: touch affects()-closure doc for run_narrative_command (AFFECT001)'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
