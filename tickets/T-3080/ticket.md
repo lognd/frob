@@ -1,7 +1,7 @@
 ---
 id: T-3080
 title: Remaining T-2394 empty-scope fixture drift (10 tests, T-3037 residue)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -20,11 +20,45 @@ scope:
 - tests/system/test_cli_ticket_promote.py
 - tests/test_ticket_leases.py
 - tests/system/test_cli_ticket_land.py
+- tickets/T-draft-2ff07395/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tickets/T-draft-2ff07395/**
+  reason: 'T-3080 filed a follow-up ticket (T-draft-2ff07395) for an unrelated pre-existing
+    test-exhaustiveness regression found while re-verifying this ticket''s own touched-set
+    tests; the filed ticket''s own directory is a byproduct of that filing, not code
+    this ticket modifies.
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tickets/T-draft-2ff07395/**
+  reason: 'T-3080 filed a follow-up ticket (T-draft-2ff07395) for an unrelated pre-existing
+    test-exhaustiveness regression found while re-verifying this ticket''s own touched-set
+    tests; the filed ticket''s own directory is a byproduct of that filing, not code
+    this ticket modifies.
+
+    '
+  actor: logan
+  at: '2026-08-27'
+evidence:
+- tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_skipped_unmeasured_is_not_printed_as_verified_true
+- tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_passed_healthy_path_is_unchanged
+- tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome::test_no_recorded_outcome_leaves_verified_unaffected
+- tests/test_ticket_evidence.py::TestEvidenceCmdCwd::test_relative_probe_only_succeeds_from_worktree
+- tests/system/test_cli_ticket_promote.py::TestPromoteCLI::test_promotes_a_draft_carrying_evidence_and_done_report
+- tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_start_auto_plans_queued_ticket
+- tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_close_without_evidence_fails
+- tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_close_with_evidence_and_done_report_succeeds
+- tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_plan_then_sweep_flow
+- tests/test_ticket_leases.py::TestCommitFullLedgerChange::test_archive_cli_leaves_repo_clean
+- tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
+designated_repro_test: tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_plan_then_sweep_flow
 threat: null
 component: null
 anchor: false
