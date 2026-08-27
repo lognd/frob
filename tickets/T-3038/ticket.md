@@ -36,7 +36,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7c0ebb08815a6a3f158fcc38931bda8c6889f41d
 ---
 Found while auditing T-3015's callers: `frob.tickets._evidence
 ._warn_bind_time_mutation_sweep_cost` wraps `guarded_subprocess_run(...)` in
