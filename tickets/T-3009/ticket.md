@@ -14,10 +14,42 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_tdd_order.py
+- src/frob/gates/__init__.py
+- tests/gates/test_tdd_order.py
+- docs/modules/gates.md
+- docs/strata/vmodel.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_tdd_order.py
+  reason: 'T-3009: TDD-ordering gate module, its tests, and doc updates'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'T-3009: TDD-ordering gate module, its tests, and doc updates'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/gates/test_tdd_order.py
+  reason: 'T-3009: TDD-ordering gate module, its tests, and doc updates'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-3009: TDD-ordering gate module, its tests, and doc updates'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/strata/vmodel.md
+  reason: 'T-3009: TDD-ordering gate module, its tests, and doc updates'
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: parent
   old_value: null
