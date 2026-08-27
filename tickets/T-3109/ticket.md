@@ -25,7 +25,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6030e2648def4f42985141554f0eb6c7d0a51bef
 ---
 `frob refactor split` (and any `frob refactor move`) corrupts a call site
 whose `from <module> import <name>` line is indented -- a function-local
