@@ -68,7 +68,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 06cb2ac0251596085f179ad80a07697492ed6184
 ---
 A SINGLE trivial, unattributed finding raises quarantine, and a raised
 quarantine turns OFF deferred rapid landing REPO-WIDE, forcing every land to run
