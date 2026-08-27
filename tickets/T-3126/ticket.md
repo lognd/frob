@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5f43a8ba5fad844562529e742d4c57f54b97dcd2
 ---
 Found while working T-3121 (which flipped the squash-apply transaction
 onto a disposable worktree and made the landing commit public via a
