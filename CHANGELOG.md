@@ -469,6 +469,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3111: Move land's native rebuild after the landing commit, out of the dirty-root window
 - T-3114: Add resync_root_to_published_tip primitive for the post-CAS root resync
 - T-3115: WIRE003 reports the working 'frob refactor' verb as unresolvable; the verb is also missing from frob --help
+- T-3121: Flip the squash-apply stage onto a disposable worktree and publish by CAS
 
 ## [0.530.0] - unreleased
 

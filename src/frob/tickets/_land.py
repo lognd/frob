@@ -83,6 +83,7 @@ from frob.logging import get_logger
 # same-named attribute" -- can see this module as a real caller.
 from frob.process._pid_liveness import pid_alive_tristate
 from frob.tickets._journal import _clear_intent, _write_intent
+from frob.tickets._land_compose import compose_squash_in_disposable_worktree
 from frob.tickets._land_finalize import _land_finalize_and_close
 from frob.tickets._land_git_ops import (
     _abort_merge,
@@ -2164,6 +2165,123 @@ def _land_plan_finish(
     )
 
 
+# frob:ticket T-3121
+# frob:doc docs/modules/tickets-landing.md#the-disposable-stage-flip-t-3121
+# frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_root_never_goes_dirty_during_the_squash_apply  # noqa: E501
+# frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_worktree_setup_failure_refuses_without_touching_root  # noqa: E501
+def _squash_apply_on_disposable_stage(
+    root: Path,
+    worktree: Path,
+    ticket: Ticket,
+    ticket_id: str,
+    final_id: str,
+    wip_committed: bool,
+    did_merge: bool,
+    main_branch_name: str,
+    *,
+    pre_land_tip: str,
+    bump_version=None,  # noqa: ANN001
+    rebuild_natives=None,  # noqa: ANN001
+    sync_gate_rules=None,  # noqa: ANN001
+    pre_commit_sweep=None,  # noqa: ANN001
+) -> Result[LandReport, LandError]:
+    """Run the whole six-stage squash-apply transaction inside a
+    DISPOSABLE worktree detached at `pre_land_tip` instead of in `root`,
+    and publish the result by compare-and-swap (T-3121 -- the flip
+    T-3089's `stage` parameter, T-3107's compose/fold primitives and
+    T-3088's CAS publish were each landed separately to make possible).
+
+    WHY: every stage of the old pipeline mutated `root`'s shared checkout
+    -- the squash-merge, the conflict resolution, the ledger splice, the
+    REL001 bump, the Tier-A sweep -- so for the whole length of a land
+    every sibling agent's `git status` saw a dirty root, a sibling
+    `frob ticket land` refused with `DirtyMain`, and `frob ticket new`
+    refused with `LandInProgress`. Composing off-tree and moving the
+    branch ref in one `git update-ref <ref> <new> <old>` collapses that
+    multi-minute window to a single atomic ref update.
+
+    `compose_squash_in_disposable_worktree` performs the real three-way
+    `git merge --squash` (so `_auto_resolve_out_of_scope_conflicts` keeps
+    its per-path semantics verbatim -- a conflict is DATA there, not an
+    error) and always removes the worktree on exit, which is also the
+    entire pre-publish unwind: nothing of this land is ever in `root`
+    before the publish, so there is nothing in `root` to roll back.
+    Failing to cut the worktree at all is refused as `GitFailed` with
+    `root` untouched.
+
+    DELIBERATE CARVE-OUT: a supplied `pre_commit_sweep` (T-1514, wired
+    only when the land profile does NOT set `override_ratchet` -- i.e.
+    every profile except `rapid`) keeps the old in-root path. That sweep
+    spawns an unscoped `frob check` in whatever directory it is handed,
+    and a freshly-cut disposable worktree has no `.venv`, no built
+    natives and no `.frob` cache, so the spawn would either report
+    `unmeasurable` (silently disabling a guard) or report mass phantom
+    findings (falsely refusing every land). Handing it `root` instead
+    would be worse still: under the flip `root` does not hold the staged
+    changeset, so the sweep would measure the wrong tree and return a
+    clean answer about nothing. Preserving the guard exactly is worth
+    more than widening the flip's reach; making the sweep stage-capable
+    is its own unit of work (see this ticket's Done report for the
+    residue filed)."""
+    if pre_commit_sweep is not None:
+        _log.info(
+            "land: %s running the squash-apply in %s rather than a "
+            "disposable stage -- the T-1514 pre-commit unscoped sweep is "
+            "wired for this profile and is not yet stage-capable (T-3121)",
+            final_id,
+            root,
+        )
+        return _land_squash_apply(
+            root,
+            worktree,
+            ticket,
+            ticket_id,
+            final_id,
+            wip_committed,
+            did_merge,
+            main_branch_name,
+            pre_land_tip=pre_land_tip,
+            bump_version=bump_version,
+            rebuild_natives=rebuild_natives,
+            sync_gate_rules=sync_gate_rules,
+            pre_commit_sweep=pre_commit_sweep,
+        )
+    branch = current_branch(worktree)
+    if branch.is_err:
+        return Err(LandError.GitFailed)
+    with compose_squash_in_disposable_worktree(
+        root, pre_land_tip, branch.danger_ok
+    ) as composed:
+        if composed.is_err:
+            _log.error(
+                "land: %s refused -- could not cut the disposable stage at "
+                "%s to compose the squash-apply in (%s); %s was not touched "
+                "and nothing was published",
+                final_id,
+                pre_land_tip,
+                composed.danger_err,
+                root,
+            )
+            return Err(LandError.GitFailed)
+        return _land_squash_apply(
+            root,
+            worktree,
+            ticket,
+            ticket_id,
+            final_id,
+            wip_committed,
+            did_merge,
+            main_branch_name,
+            pre_land_tip=pre_land_tip,
+            bump_version=bump_version,
+            rebuild_natives=rebuild_natives,
+            sync_gate_rules=sync_gate_rules,
+            pre_commit_sweep=pre_commit_sweep,
+            stage=composed.danger_ok.worktree,
+            squash_precomposed=True,
+        )
+
+
 # frob:waive ARCH001 reason="already the decomposed orchestrator (T-0577): delegates to _land_precheck/_land_merge_stage/_reverify_evidence_post_merge/_land_finalize_and_close/_land_squash_apply; remaining length is the try/finally intent-marker sequencing plus the D-05/T-0456 ordering-rationale comments themselves, not undecomposed logic"  # noqa: E501
 # frob:ticket T-0601
 # frob:ticket T-0907
@@ -2441,7 +2559,7 @@ def _land_locked(
         # repairs" half of the T-0907 fix requirement.
         _write_land_repair_marker(root, ticket_id, root_pre_land_tip.danger_ok)
         try:
-            squash_result = _land_squash_apply(
+            squash_result = _squash_apply_on_disposable_stage(
                 root,
                 worktree,
                 ticket,

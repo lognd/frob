@@ -1,7 +1,7 @@
 ---
 id: T-3121
 title: Flip the squash-apply stage onto a disposable worktree and publish by CAS
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -19,6 +19,9 @@ scope:
 - src/frob/tickets/_land_compose.py
 - docs/modules/tickets-landing.md
 - src/frob/tickets/_models.py
+evidence_scope:
+- tests/unit/test_land_stage_flip.py
+- tests/unit/test_land_squash_stage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,23 +40,32 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/unit/test_land_stage_flip.py::TestDisposableStageFlip::test_root_never_goes_dirty_during_the_squash_apply
+- tests/unit/test_land_stage_flip.py::TestPublishSquashApply::test_racing_publish_surfaces_dirtymain
+- tests/unit/test_land_stage_flip.py::TestPublishSquashApply::test_blocked_resync_is_not_a_land_failure
+- tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget::test_default_stage_runs_the_whole_transaction_in_root
 designated_repro_test: null
 acceptance:
 - text: Given a real land, when the squash-apply stage runs, then a concurrent `git
     --no-optional-locks -C <root> status --porcelain` poll observes no intermediate
     dirty state before the final atomic publish
-  evidence: []
+  evidence:
+  - tests/unit/test_land_stage_flip.py::TestDisposableStageFlip::test_root_never_goes_dirty_during_the_squash_apply
 - text: Given two lands racing the same base tip, when the second reaches publish,
     then it gets the existing DirtyMain-class refusal, not a corrupted ref and not
     a silent overwrite
-  evidence: []
+  evidence:
+  - tests/unit/test_land_stage_flip.py::TestPublishSquashApply::test_racing_publish_surfaces_dirtymain
 - text: Given a sibling holding an uncommitted edit to a path the land also changed,
     when the post-publish resync refuses, then land() still returns Ok and the failure
     is reported loudly with the published sha and the operator recovery command
-  evidence: []
+  evidence:
+  - tests/unit/test_land_stage_flip.py::TestPublishSquashApply::test_blocked_resync_is_not_a_land_failure
 - text: Given the existing land suites for BUG002/LAND-PROOF/T-3050/T-3061, when they
     run unmodified, then they still pass with zero edits to their assertions
-  evidence: []
+  evidence:
+  - tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget::test_default_stage_runs_the_whole_transaction_in_root
 threat: null
 component: null
 anchor: false

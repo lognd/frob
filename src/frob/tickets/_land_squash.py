@@ -51,6 +51,11 @@ from typani.result import Err, Ok, Result
 
 from frob.gitio import current_branch, run_argv
 from frob.logging import get_logger
+from frob.tickets._land_compose import (
+    fold_worktree_into_commit,
+    publish_ref_cas,
+    resync_root_to_published_tip,
+)
 from frob.tickets._land_git_ops import (
     _archived_ids,
     _auto_resolve_out_of_scope_conflicts,
@@ -222,6 +227,8 @@ def _squash_and_splice_ledger_v2(
     final_id: str,
     branch_name: str,
     pre_land_tip: str,
+    *,
+    merge_already_composed: bool = False,
 ) -> Result[None, LandError]:
     """v2-mode counterpart to `_squash_and_splice_ledger` (design section
     5): `git merge --squash --no-commit` the worktree's finalized branch
@@ -241,11 +248,12 @@ def _squash_and_splice_ledger_v2(
     today, a disposable worktree detached at `pre_land_tip` once the
     compose moves out of tree."""
     del final_id
-    squash = run_argv(
-        ["git", "-C", str(stage), "merge", "--squash", "--no-commit", branch_name]
-    )
-    if squash.is_err:
-        return Err(LandError.GitFailed)
+    if not merge_already_composed:
+        squash = run_argv(
+            ["git", "-C", str(stage), "merge", "--squash", "--no-commit", branch_name]
+        )
+        if squash.is_err:
+            return Err(LandError.GitFailed)
     return _check_squash_conflicted_v2(
         stage, worktree, ticket, branch_name, pre_land_tip
     )
@@ -263,6 +271,8 @@ def _squash_and_splice_ledger(
     branch_name: str,
     pre_land_tip: str,
     main_branch_name: str | None = None,
+    *,
+    merge_already_composed: bool = False,
 ) -> Result[None, LandError]:
     """`git merge --squash --no-commit` the worktree's finalized `branch_name`
     onto `root`, then splice tickets.md and tickets-archive.md (T-0959);
@@ -318,12 +328,22 @@ def _squash_and_splice_ledger(
     because T-1036's lost-update fix is about capturing whichever
     concurrent `frob ticket new`/`evidence` writer got to root's
     working-tree tickets.md first, and that writer never touches a
-    disposable stage."""
-    squash = run_argv(
-        ["git", "-C", str(stage), "merge", "--squash", "--no-commit", branch_name]
-    )
-    if squash.is_err:
-        return Err(LandError.GitFailed)
+    disposable stage.
+
+    T-3121: `merge_already_composed` says the caller
+    (`compose_squash_in_disposable_worktree`) has ALREADY run the real
+    `git merge --squash --no-commit` inside `stage`, so running it again
+    here would either be a no-op-with-an-error or, worse, re-merge an
+    already-resolved tree. Everything downstream of the merge -- the
+    per-path conflict resolution, the splice, the unwind -- is unchanged
+    and still reads `stage`'s index exactly as it did when this function
+    performed the merge itself."""
+    if not merge_already_composed:
+        squash = run_argv(
+            ["git", "-C", str(stage), "merge", "--squash", "--no-commit", branch_name]
+        )
+        if squash.is_err:
+            return Err(LandError.GitFailed)
 
     conflict_check = _check_squash_conflicted(
         stage, worktree, ticket, branch_name, pre_land_tip
@@ -919,6 +939,113 @@ def _report_stacked_sibling_absorption(
     )
 
 
+# frob:ticket T-3121
+# frob:doc docs/modules/tickets-landing.md#the-disposable-stage-flip-t-3121
+# frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_racing_publish_surfaces_dirtymain  # noqa: E501
+# frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_blocked_resync_is_not_a_land_failure  # noqa: E501
+# frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_clean_publish_advances_root_and_resyncs  # noqa: E501
+def _publish_squash_apply(
+    root: Path,
+    stage: Path,
+    ticket: Ticket,
+    final_id: str,
+    *,
+    pre_land_tip: str,
+    main_branch_name: str,
+) -> Result[bool, LandError]:
+    """`_commit_squash_apply`'s disposable-stage replacement (T-3121):
+    fold everything the transaction built in `stage` into a commit object
+    parented on `pre_land_tip`, publish it onto `refs/heads/
+    <main_branch_name>` by compare-and-swap, then bring `root`'s index and
+    working tree up to the published tip. Returns `Ok(root_resync_failed)`
+    -- `True` meaning the commit IS public and correct but `root` still
+    describes the old tip and needs an operator.
+
+    WHY this replaces the in-tree `git commit` wholesale rather than
+    wrapping it: a `git commit` writes the ref of whatever checkout it
+    runs in. Running it in `stage` would advance the disposable worktree's
+    detached HEAD and publish nothing; running it in `root` would put the
+    whole transaction back in the shared tree, which is the window this
+    ticket exists to close. Fold + CAS is the only shape that keeps the
+    build off `root` AND makes `main` move in one atomic ref update.
+    `fold_worktree_into_commit` refuses while any path is unmerged, which
+    is what keeps conflict markers out of a landing commit, and
+    `commit-tree` runs no hooks, so the `FROB_LAND_INTERNAL` env
+    `_commit_squash_apply` needed for the T-0731 pre-commit hook has no
+    counterpart here.
+
+    A lost CAS means `main` moved since `pre_land_tip` -- a concurrently
+    landed sibling -- which is the SAME condition `land()` already refuses
+    with `DirtyMain`, so it is reported as `DirtyMain` and not as a new
+    error class for an old condition.
+
+    The resync's failure semantics are settled (T-3114): post-publish
+    there is nothing to unwind, so an `Err` is logged loudly (the log line
+    carries the published sha and the `git read-tree -m -u` recovery
+    command) and returned as `True` rather than propagated as a land
+    failure, and it is attempted EXACTLY once -- a retry only races the
+    same sibling that blocked it."""
+    folded = fold_worktree_into_commit(
+        root, stage, pre_land_tip, _commit_message(ticket, final_id)
+    )
+    if folded.is_err:
+        _log.error(
+            "land: %s could not fold the composed stage %s into a commit "
+            "(unresolved conflict, or a git-plumbing failure) -- nothing "
+            "was published, %s is untouched",
+            final_id,
+            stage,
+            root,
+        )
+        _verified_reset_root(stage, pre_land_tip, final_id)
+        return Err(LandError.CommitFailed)
+    new_sha = folded.danger_ok
+
+    published = publish_ref_cas(
+        root, f"refs/heads/{main_branch_name}", pre_land_tip, new_sha
+    )
+    if published.is_err:
+        _log.error(
+            "land: %s refused -- %s moved away from %s while this land was "
+            "composing (a sibling land published first), so the "
+            "compare-and-swap publish of %s was rejected. Nothing was "
+            "overwritten and %s is untouched; re-run `frob ticket land %s "
+            "--worktree ...` against the new tip",
+            final_id,
+            main_branch_name,
+            pre_land_tip,
+            new_sha,
+            root,
+            final_id,
+        )
+        _verified_reset_root(stage, pre_land_tip, final_id)
+        return Err(LandError.DirtyMain)
+
+    resynced = resync_root_to_published_tip(root, pre_land_tip, new_sha)
+    if resynced.is_err:
+        _log.error(
+            "land: %s IS LANDED as %s on %s -- the commit is public and "
+            "correct -- but %s's index/working tree could not be advanced "
+            "off %s (%s). This is NOT a land failure and must not be "
+            "reverted. `git -C %s status` will report the whole landed "
+            "changeset as local modifications until an operator commits or "
+            "stashes the concurrent uncommitted edit that blocked it and "
+            "runs: git -C %s read-tree -m -u %s %s",
+            final_id,
+            new_sha,
+            main_branch_name,
+            root,
+            pre_land_tip,
+            resynced.danger_err,
+            root,
+            root,
+            pre_land_tip,
+            new_sha,
+        )
+        return Ok(True)
+    return Ok(False)
+
+
 # frob:ticket T-1740
 def _commit_squash_apply(
     stage: Path, ticket: Ticket, final_id: str, *, pre_land_tip: str
@@ -1040,6 +1167,7 @@ def _land_squash_apply(
     | None = None,
     pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
     stage: Path | None = None,
+    squash_precomposed: bool = False,
 ) -> Result[LandReport, LandError]:
     """Squash-apply the worktree's finalized branch onto `root`, splice
     tickets.md, apply an optional REL001 version bump (T-0338), assert
@@ -1088,7 +1216,16 @@ def _land_squash_apply(
     `root` keeps the roles that are genuinely about the repository rather
     than about the tree being built: `ledger_lock` and the live ledger
     base texts (T-1036), the absorption evidence, and the branch-drift
-    guard."""
+    guard.
+
+    T-3121: `squash_precomposed` says `stage` is a disposable worktree the
+    caller already ran the real `git merge --squash --no-commit` inside
+    (`compose_squash_in_disposable_worktree`). It changes exactly two
+    things and nothing else: the splice helpers skip their own merge so it
+    cannot run twice, and the transaction is sealed by fold + CAS publish
+    (`_publish_squash_apply`) instead of an in-tree `git commit`. It is an
+    error to pass it without also passing `stage`; the two always travel
+    together."""
     stage = root if stage is None else stage
     branch = current_branch(worktree)
     if branch.is_err:
@@ -1102,7 +1239,13 @@ def _land_squash_apply(
     v2_mode = _store_mode(root) == "v2"
     squashed = (
         _squash_and_splice_ledger_v2(
-            stage, worktree, ticket, final_id, branch_name, pre_land_tip
+            stage,
+            worktree,
+            ticket,
+            final_id,
+            branch_name,
+            pre_land_tip,
+            merge_already_composed=squash_precomposed,
         )
         if v2_mode
         else _squash_and_splice_ledger(
@@ -1114,6 +1257,7 @@ def _land_squash_apply(
             branch_name,
             pre_land_tip,
             main_branch_name=main_branch_name,
+            merge_already_composed=squash_precomposed,
         )
     )
     if squashed.is_err:
@@ -1135,6 +1279,7 @@ def _land_squash_apply(
         rebuild_natives=rebuild_natives,
         sync_gate_rules=sync_gate_rules,
         pre_commit_sweep=pre_commit_sweep,
+        squash_precomposed=squash_precomposed,
     )
 
 
@@ -1176,7 +1321,7 @@ def _apply_pre_commit_sweep_or_unwind(
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_branch_drift_before_final_commit_refuses_by_construction  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_no_drift_is_a_noop  # noqa: E501
 def _assert_still_on_expected_branch(
-    root: Path, expected_branch: str, ticket_id: str
+    root: Path, expected_branch: str, ticket_id: str, *, unstage_on_drift: bool = True
 ) -> Result[None, LandError]:
     """T-1920 (T-1910 residue, REQUIRED FIXES 2-4): re-derive `root`'s
     CURRENT checked-out branch fresh, right here, immediately before the
@@ -1231,7 +1376,16 @@ def _assert_still_on_expected_branch(
     `land_lock` was not observed. This guard closes the class BY
     CONSTRUCTION regardless: if a branch move can happen (any cause,
     reproduced or not), the terminal-state/bump write it would otherwise
-    poison now cannot occur without first passing this check."""
+    poison now cannot occur without first passing this check.
+
+    T-3121: `unstage_on_drift=False` suppresses the root-side unwind for a
+    land whose transaction is staged in a DISPOSABLE worktree instead of
+    `root`. The check itself still runs -- the CAS publish moves
+    `refs/heads/<expected_branch>`, so verifying `root`'s HEAD still names
+    that branch is exactly as load-bearing as before -- but root's index
+    then holds nothing of this land's, so `_unstage_index_only(root)`
+    could only discard a SIBLING's staged work. Refusing without touching
+    root is strictly the safer unwind in that mode."""
     current = current_branch(root)
     if current.is_err:
         _log.error(
@@ -1242,7 +1396,8 @@ def _assert_still_on_expected_branch(
             ticket_id,
             root,
         )
-        _unstage_index_only(root)
+        if unstage_on_drift:
+            _unstage_index_only(root)
         return Err(LandError.BranchDrift)
     if current.danger_ok != expected_branch:
         _log.error(
@@ -1260,7 +1415,8 @@ def _assert_still_on_expected_branch(
             current.danger_ok,
             expected_branch,
         )
-        _unstage_index_only(root)
+        if unstage_on_drift:
+            _unstage_index_only(root)
         return Err(LandError.BranchDrift)
     return Ok(None)
 
@@ -1304,6 +1460,45 @@ def _post_publish_native_rebuild(
     return _maybe_rebuild_natives(root, final_id, worktree_changeset, rebuild_natives)
 
 
+# frob:ticket T-3121
+# frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_clean_publish_advances_root_and_resyncs  # noqa: E501
+# frob:tests tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget.test_default_stage_runs_the_whole_transaction_in_root  # noqa: E501
+def _seal_squash_apply(
+    root: Path,
+    stage: Path,
+    ticket: Ticket,
+    final_id: str,
+    *,
+    pre_land_tip: str,
+    main_branch_name: str,
+    squash_precomposed: bool,
+) -> Result[bool, LandError]:
+    """The one step that makes the built transaction durable, in whichever
+    of its two forms applies -- split out of `_land_squash_apply_finish`
+    to keep that function under ARCH001's threshold (T-2214).
+
+    A pre-composed disposable `stage` is sealed by fold + CAS publish
+    (`_publish_squash_apply`); an in-root stage is sealed by the
+    historical in-tree `git commit` (`_commit_squash_apply`). Returns
+    `Ok(root_resync_failed)` -- always `False` on the in-root path, which
+    has no resync step because root IS the tree that was built."""
+    if squash_precomposed:
+        return _publish_squash_apply(
+            root,
+            stage,
+            ticket,
+            final_id,
+            pre_land_tip=pre_land_tip,
+            main_branch_name=main_branch_name,
+        )
+    committed = _commit_squash_apply(
+        stage, ticket, final_id, pre_land_tip=pre_land_tip
+    )
+    if committed.is_err:
+        return Err(committed.danger_err)
+    return Ok(False)
+
+
 # frob:ticket T-0907
 def _land_squash_apply_finish(
     root: Path,
@@ -1323,6 +1518,7 @@ def _land_squash_apply_finish(
     sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]]
     | None,
     pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
+    squash_precomposed: bool = False,
 ) -> Result[LandReport, LandError]:
     """`_land_squash_apply`'s post-squash half (T-1334, split to clear that
     function's ARCH001 finding): the release bump, gate-rule sync,
@@ -1338,7 +1534,17 @@ def _land_squash_apply_finish(
     against `stage` (see `_land_squash_apply`'s own docstring for the two
     roles and why they must move together); `root` is kept only for the
     branch-drift guard, the absorption evidence and the post-commit
-    report, none of which read the staged tree."""
+    report, none of which read the staged tree.
+
+    T-3121: under `squash_precomposed` the transaction lives entirely in
+    the disposable `stage` until `_publish_squash_apply` folds and
+    CAS-publishes it, so every pre-publish failure path here unwinds the
+    STAGE (or simply drops it -- the caller's context manager removes the
+    worktree either way) and `root` has nothing of this land's in it to
+    unwind. That is why the branch-drift guard's root-side unstage is
+    suppressed in this mode: root's index holds only whatever a sibling
+    put there, and unstaging it would destroy that sibling's staged
+    work."""
     bumped = _apply_release_bump(stage, ticket, final_id, bump_version, pre_land_tip)
     if bumped.is_err:
         return Err(bumped.danger_err)
@@ -1375,16 +1581,23 @@ def _land_squash_apply_finish(
         return Err(swept.danger_err)
 
     still_on_branch = _assert_still_on_expected_branch(
-        root, main_branch_name, ticket_id
+        root, main_branch_name, ticket_id, unstage_on_drift=not squash_precomposed
     )
     if still_on_branch.is_err:
         return Err(still_on_branch.danger_err)
 
-    committed = _commit_squash_apply(
-        stage, ticket, final_id, pre_land_tip=pre_land_tip
+    sealed = _seal_squash_apply(
+        root,
+        stage,
+        ticket,
+        final_id,
+        pre_land_tip=pre_land_tip,
+        main_branch_name=main_branch_name,
+        squash_precomposed=squash_precomposed,
     )
-    if committed.is_err:
-        return Err(committed.danger_err)
+    if sealed.is_err:
+        return Err(sealed.danger_err)
+    root_resync_failed = sealed.danger_ok
 
     # frob:ticket T-3111
     natives_rebuilt = _post_publish_native_rebuild(
@@ -1401,6 +1614,7 @@ def _land_squash_apply_finish(
         worktree_changeset=worktree_changeset,
         release_bumped_to=release_bumped_to,
         natives_rebuilt=natives_rebuilt,
+        root_resync_failed=root_resync_failed,
     )
 
 
@@ -1416,6 +1630,7 @@ def _finish_real_land_report(
     worktree_changeset: frozenset[str],
     release_bumped_to: str | None,
     natives_rebuilt: bool,
+    root_resync_failed: bool = False,
 ) -> Result[LandReport, LandError]:
     """`_land_squash_apply_finish`'s own tail (T-2220, split out to keep
     that function under ARCH001's 60-line threshold): the just-made
@@ -1440,5 +1655,6 @@ def _finish_real_land_report(
             worktree_changeset=tuple(sorted(worktree_changeset)),
             release_bumped_to=release_bumped_to,
             natives_rebuilt=natives_rebuilt,
+            root_resync_failed=root_resync_failed,
         )
     )

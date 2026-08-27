@@ -3170,3 +3170,116 @@ Every unwind path follows `stage`, not `root`: `_verified_reset_root`
 against a disposable worktree detached at `pre_land_tip` resets exactly the
 throwaway tree, which is the correct and cheapest unwind once the
 transaction no longer lives in the shared checkout.
+
+## The disposable-stage flip (T-3121)
+
+The primitives T-3088, T-3095, T-3107 and T-3114 landed separately, and
+T-3089 retargeted all six index-consuming squash-apply stages onto a
+`stage: Path` that still defaulted to `root`. This is the ticket that
+flips the switch: `frob ticket land` now builds the entire squash-apply
+transaction in a DISPOSABLE `git worktree` and makes it public with a
+single compare-and-swap ref update.
+
+### What changed
+
+`_land_locked` no longer calls `_land_squash_apply` directly. It calls
+`_squash_apply_on_disposable_stage`, which:
+
+1. cuts a disposable worktree detached at `pre_land_tip` and runs the real
+   three-way `git merge --squash --no-commit` inside it, via
+   `compose_squash_in_disposable_worktree`;
+2. hands that worktree to `_land_squash_apply` as `stage`, together with
+   `squash_precomposed=True` so the splice helpers skip a merge that has
+   already happened -- the merge must never run twice;
+3. seals the transaction with `_publish_squash_apply`: `fold_worktree_
+   into_commit` builds a commit object parented on `pre_land_tip`,
+   `publish_ref_cas` moves `refs/heads/<main>` onto it only if the ref
+   still names `pre_land_tip`, and `resync_root_to_published_tip` brings
+   root's index and working tree up to the published tip;
+4. drops the disposable worktree on the way out -- which is also the
+   entire pre-publish unwind.
+
+`_commit_squash_apply`'s in-tree `git commit` is replaced wholesale on
+this path. It is still the code that runs when the flip does not engage.
+
+### Why the window closes
+
+Before this, every stage -- the merge, the per-path conflict resolution,
+the ledger splice, the REL001 bump, the gate-rule sync, the Tier-A sweep
+-- mutated the shared root checkout, so for the full length of a land
+every sibling agent's `git status` saw a dirty root, a sibling `frob
+ticket land` refused with `DirtyMain`, and `frob ticket new` refused with
+`LandInProgress`. Now nothing of a land is in root until one atomic
+`git update-ref`.
+
+### Failure semantics
+
+- **Lost CAS.** `main` moved since `pre_land_tip`, i.e. a sibling landed
+  first. This is reported as the EXISTING `LandError.DirtyMain` refusal --
+  no new error class for an old condition. Nothing was overwritten and
+  root is untouched; re-run the land against the new tip.
+- **Unresolved conflict.** `fold_worktree_into_commit` refuses while any
+  path is unmerged, checked BEFORE staging, because `git add -A` would
+  otherwise resolve each unmerged entry by staging its conflict-marker
+  text verbatim. This is what keeps markers out of a landing commit.
+- **Blocked resync.** By the time the resync runs the commit is already
+  public and already correct, so an `Err` here is NOT a land failure.
+  `land()` still returns `Ok(LandReport)` with
+  `LandReport.root_resync_failed=True`, an ERROR log naming the ticket,
+  the published sha and the `git read-tree -m -u <old> <new>` recovery
+  command, exactly one attempt, and never a revert. A retry would only
+  race the same sibling that blocked it.
+
+### What deliberately did NOT move
+
+- **The T-1514 pre-commit unscoped sweep.** When a `pre_commit_sweep` is
+  supplied -- every profile except `rapid`, which is what this repo runs
+  -- `_squash_apply_on_disposable_stage` keeps the old in-root path. That
+  sweep spawns an unscoped `frob check` in whatever directory it is
+  handed, and a freshly-cut disposable worktree has no `.venv`, no built
+  natives and no `.frob` cache, so it would either report `unmeasurable`
+  (silently disabling a guard) or report mass phantom findings (falsely
+  refusing every land). Handing it `root` instead would be worse: under
+  the flip root does not hold the staged changeset, so the sweep would
+  return a clean answer about the wrong tree. Making the sweep
+  stage-capable is its own unit of work.
+- **`root`'s repository-level roles**, unchanged from T-3089:
+  `ledger_lock` and the T-1036 live ledger base texts, the absorption
+  evidence, and the T-1920 branch-drift guard. The drift guard's
+  root-side `_unstage_index_only` unwind IS suppressed under the flip
+  (`unstage_on_drift=False`): root's index then holds nothing of this
+  land's, so unstaging it could only discard a sibling's staged work.
+- **`_apply_release_bump_out_of_tree` (T-3095)** is not called from this
+  path. It exists to run the unmodified `_apply_release_bump` against a
+  disposable worktree; under the flip the stage already IS one, so
+  `_apply_release_bump(stage, ...)` reaches the same place without a
+  second compose.
+- **`_land_commit_details` / `_record_land_commit` /
+  `_post_publish_native_rebuild`** still run against `root`, after the
+  publish and resync. `_record_land_commit` makes its own follow-up
+  commit in root, so a small post-publish dirty window in root remains;
+  it is out of this ticket's scope and pre-dates it.
+
+### The T-1036 tradeoff, measured
+
+The v1 (monofile) ledger splice deliberately reads root's WORKING-TREE
+`tickets.md` as its base, so that a concurrent `frob ticket new` writer
+is captured rather than silently overwritten. Under the flip that content
+is carried into the composed commit while root still holds it
+uncommitted, which is precisely the shape `read-tree -m -u` refuses
+atomically -- so on a v1 repo a concurrent ledger writer turns into a
+blocked resync essentially every time.
+
+This repo is not affected: `_store_mode` reports `v2` (per-ticket
+`tickets/T-####/ticket.md` directories), and the v2 path
+(`_squash_and_splice_ledger_v2`) performs NO ledger splice at all and
+never reads root's working-tree `tickets.md`. A concurrent `frob ticket
+new` writes a NEW, untracked ticket directory, and untracked paths do not
+block `read-tree -m -u`; a concurrent `frob ticket evidence` modifies one
+tracked `tickets/T-####/ticket.md`, which blocks only if the land's own
+changeset touches that same ticket's file.
+
+The guaranteed-collision shape is therefore specific to v1 repos, and it
+degrades to a loud, non-destructive, operator-recoverable blocked resync
+rather than to data loss. That is a real hazard for a v1 consumer and is
+recorded here rather than accepted silently.

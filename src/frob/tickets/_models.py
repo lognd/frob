@@ -2743,6 +2743,17 @@ class LandReport(BaseModel):
     # changeset touched a native-extension source tree (frob-core/
     # strata-core).
     natives_rebuilt: bool = False
+    # T-3121: whether the post-CAS `resync_root_to_published_tip` step
+    # failed. This is deliberately NOT a land failure: the landing commit
+    # is already published and correct by the time the resync runs, so an
+    # Err there leaves root's index/working tree describing the OLD tip
+    # while `main` already names the new one. `land()` still returns
+    # `Ok(LandReport)`; this flag (plus the ERROR log naming the published
+    # sha and the `git read-tree -m -u <old> <new>` recovery command) is
+    # how a caller learns root needs an operator's attention. Always
+    # `False` on a dry run, on an absorbed land, and whenever the
+    # squash-apply ran in root rather than a disposable stage.
+    root_resync_failed: bool = False
 
 
 # frob:ticket T-1269
