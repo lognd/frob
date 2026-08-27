@@ -28,6 +28,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2fd517405f6f85f0fba93d90fedad9a212659098
 ---
 Found while working T-3078 (scope: strata-core/src/graph/model.rs only). frob check --only test reports TEST001 for strata-core/src/graph/query.rs::Graph.has_cycle -- no explicit frob:tests directive or convention-matched test name. Add a real unit test that directly calls has_cycle (e.g. a graph with a genuine cycle asserting true, and an acyclic graph asserting false), matching the pattern used for T-3078's model.rs coverage.
