@@ -1,7 +1,7 @@
 ---
 id: T-3038
 title: evidence bind-time cost probe loses timeout floor after T-3015
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_evidence.py
+- tests/test_tickets_mutation_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_mutation_evidence.py
+  reason: T-3038 acceptance requires a regression test; this file already covers _warn_bind_time_mutation_sweep_cost,
+    the caller of the function being fixed
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
