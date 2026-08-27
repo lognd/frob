@@ -596,6 +596,36 @@ runs the merge and finalize exactly as a real call would, then always
 so a concurrent `land()`/`land_plan()` call against the SAME `root` blocks
 at the lock acquire instead of racing this one.
 
+## Pre-land lint gate (T-3061)
+
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_lint_clean_pre_land -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_ruff_check_files -->
+
+`[profile] override_ratchet = true` (T-1681) disables the T-1514
+pre-commit sweep on the land path entirely (also TEST016, the baseline
+worktree, and REL001 -- see T-1575/T-1681's own docs) -- that sweep was
+the only thing that previously ran `ruff check` before a commit reached
+`main`. Under `override_ratchet`, a lint error committed to a ticket
+branch landed straight onto `main`; the deferred post-land sweep caught
+it afterward, by which point CI had already hit it (the real T-3061
+incident).
+
+`_assert_touched_files_lint_clean_pre_land`, called from
+`_land_core_prepare` immediately after
+`_assert_touched_files_type_check_pre_land`, closes this gap without
+reintroducing TEST016 (mutation testing, the actually-expensive
+component `override_ratchet` exists to skip -- measured ~2.9s for lint
+alone vs. a multi-minute mutation run). It runs `ruff check` scoped to
+just this ticket's own touched `.py` files (`_ruff_check_files`,
+`_touched_py_files`), UNCONDITIONALLY for every profile including
+`rapid` -- the same "not relaxed by rapid" posture the type-check gate
+already established. A violation refuses the land (`sys.exit(1)`) with
+the rule code, file, and line named directly in the error, so an agent
+never has to guess which of several possible refusal causes fired. An
+empty touched-`.py` set or a spawn that could not run degrades to a
+no-op, never a refusal -- matching every other touched-set guard's
+fail-open-on-unmeasurable posture in this module.
+
 ## Mutation-evidence obligation (TEST016, T-0755)
 
 <!-- frob:describes src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence -->

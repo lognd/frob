@@ -2,7 +2,7 @@
 id: T-3061
 title: Put the 2.9s lint gate back on the rapid land path without re-enabling TEST016
   mutation testing
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -50,6 +50,10 @@ scope_changes:
   reason: evidence tests for new pre-land lint gate
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand::test_a_lint_error_in_a_touched_file_refuses_the_land
+- tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand::test_a_clean_touched_file_does_not_refuse
+- tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand::test_empty_touched_set_is_a_no_op
 designated_repro_test: null
 threat: null
 component: null

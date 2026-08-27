@@ -780,6 +780,58 @@ class TestAssertTouchedFilesTypeCheckPreLand:
         assert loaded_main.danger_ok[tid].state != TicketState.DONE
 
 
+# frob:ticket T-3061
+class TestAssertTouchedFilesLintCleanPreLand:
+    """`_assert_touched_files_lint_clean_pre_land` (T-3061): a real `ruff
+    check` subprocess scoped to this ticket's own touched `.py` files,
+    run unconditionally at land regardless of profile -- mirrors
+    `TestAssertTouchedFilesTypeCheckPreLand` one class up, same real-
+    subprocess-not-mocked-parser posture, for the gap `override_ratchet`
+    (T-1681) opened: it disables the only sweep that used to run lint
+    before a commit reached main."""
+
+    def test_a_lint_error_in_a_touched_file_refuses_the_land(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_a_lint_error_in_a_touched_file_refuses_the_land  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_touched_files_lint_clean_pre_land,
+        )
+
+        bad = repo / "src" / "bad_lint.py"
+        bad.write_text("import os\n\n\ndef f():\n    return 1\n")
+        _run(["git", "add", "-A"], repo)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _assert_touched_files_lint_clean_pre_land(
+                repo, "T-3061", frozenset({"src/bad_lint.py"})
+            )
+        assert exc_info.value.code == 1
+
+    def test_a_clean_touched_file_does_not_refuse(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_a_clean_touched_file_does_not_refuse  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_touched_files_lint_clean_pre_land,
+        )
+
+        good = repo / "src" / "good_lint.py"
+        good.write_text('"""A clean module."""\n\n\ndef f() -> int:\n    return 1\n')
+        _run(["git", "add", "-A"], repo)
+
+        _assert_touched_files_lint_clean_pre_land(
+            repo, "T-3061", frozenset({"src/good_lint.py"})
+        )  # must not raise
+
+    def test_empty_touched_set_is_a_no_op(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_empty_touched_set_is_a_no_op  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_touched_files_lint_clean_pre_land,
+        )
+
+        _assert_touched_files_lint_clean_pre_land(repo, "T-3061", None)  # must not raise
+        _assert_touched_files_lint_clean_pre_land(
+            repo, "T-3061", frozenset()
+        )  # must not raise
+
+
 # frob:ticket T-2114
 # frob:ticket T-2201
 class TestAssertNewPublicSymbolsHaveDocAndTestEdges:

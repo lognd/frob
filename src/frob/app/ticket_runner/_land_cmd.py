@@ -3795,6 +3795,111 @@ def _assert_touched_files_type_check_pre_land(
     sys.exit(1)
 
 
+# frob:ticket T-3061
+# frob:doc docs/modules/tickets-landing.md#pre-land-lint-gate-t-3061
+def _ruff_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
+    """Spawn `ruff check --output-format json <py_files>` scoped to
+    `worktree` and return its parsed `ToolResult`, or `None` if the spawn
+    itself could not run (no `ruff` binary, or it hung past the timeout).
+    Mirrors `_ty_check_files`'s exact shape one function up in this same
+    module -- bare `ruff` argv per `frob.check._python._run_ruff`'s own
+    T-2252/T-3019 note (frob's `bin/` is already on `PATH` for children,
+    so `uv run ruff` is unnecessary and would create an untracked
+    `uv.lock` in the checked repo), scoped to explicit touched files
+    rather than a whole-root run since this is a touched-set check.
+
+    T-3061: this is the fix for a real incident -- `[profile]
+    override_ratchet = true` (T-1681) turns off the T-1514 pre-commit
+    sweep on the land path entirely, so a lint error committed under
+    rapid was published to `main` and only caught by the DEFERRED
+    post-land sweep, by which point CI had already hit it. TEST016
+    (mutation testing) is the expensive component `override_ratchet` was
+    actually turned on to avoid (measured ~2.9s for lint alone vs a
+    multi-minute mutation run) -- this function restores ONLY the lint
+    half, unconditionally, the same "not relaxed by rapid" posture
+    `_assert_touched_files_type_check_pre_land` already established for
+    `ty`."""
+    import subprocess
+
+    from frob.process.parsers import parse_ruff_json
+
+    cmd = ["ruff", "check", "--output-format", "json", *py_files]
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=worktree,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+            check=False,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return None
+    return parse_ruff_json(proc.stdout, exit_code=proc.returncode)
+
+
+# frob:ticket T-3061
+# frob:doc docs/modules/tickets-landing.md#pre-land-lint-gate-t-3061
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_a_lint_error_in_a_touched_file_refuses_the_land  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_a_clean_touched_file_does_not_refuse  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_empty_touched_set_is_a_no_op  # noqa: E501
+def _assert_touched_files_lint_clean_pre_land(
+    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+) -> None:
+    """T-3061: refuse the land (`sys.exit(1)`) when `ruff check` finds a
+    violation in one of THIS ticket's own touched `.py` files. Writes
+    nothing, read-only, unconditional -- called from `_land_core_prepare`
+    for EVERY profile, including `rapid`, exactly mirroring
+    `_assert_touched_files_type_check_pre_land`'s own posture one
+    function up: `[profile] override_ratchet = true` disables the T-1514
+    pre-commit sweep on the land path (the only thing that previously ran
+    lint before a commit was published), so under `override_ratchet` a
+    lint error committed to a ticket branch landed straight onto `main`
+    with nothing catching it until the deferred post-land sweep -- by
+    then it is already published, and in the real incident this closes,
+    CI hit it before the sweep's tracking ticket was ever fixed.
+
+    Reuses `_touched_py_files` (the same excludes-aware, still-exists-on-
+    disk filter `_assert_touched_files_type_check_pre_land` already
+    uses) so this stays cheap and touched-set-scoped, never a full-tree
+    `ruff check .` -- measured ~2.9s for the full-tree case; this is
+    bounded by the touched-file count instead, in practice smaller.
+    Degrades to a no-op (never a refusal) on an empty touched `.py`
+    subset or a spawn that could not run at all, matching every other
+    touched-set guard's fail-open-on-unmeasurable posture in this
+    module."""
+    py_files = _touched_py_files(worktree, touched_paths)
+    if not py_files:
+        return
+    parsed = _ruff_check_files(worktree, py_files)
+    if parsed is None:
+        _log.warning(
+            "ticket land: %s pre-land touched-file lint check could not "
+            "run -- skipped, not treated as a refusal",
+            ticket_id,
+        )
+        return
+    if not parsed.diagnostics:
+        return
+    _log.error(
+        "ticket land: %s refused -- `ruff check` found %d violation(s) in "
+        "this ticket's own touched file(s): %s; a scoped `ruff check "
+        "%s` re-run before retrying `frob ticket land %s` names the exact "
+        "line(s) (T-3061: this family is not relaxed by the rapid "
+        "profile)",
+        ticket_id,
+        len(parsed.diagnostics),
+        "; ".join(
+            f"{d.file}:{d.line}: {d.code} {d.message}" for d in parsed.diagnostics
+        ),
+        " ".join(py_files),
+        ticket_id,
+    )
+    sys.exit(1)
+
+
 # frob:ticket T-2114
 def _is_generated_or_test_path(worktree: Path, rel_path: str) -> bool:
     """`True` if `rel_path` is test code (doc/test-edge obligations do not
@@ -4674,7 +4779,13 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     T-1907: also runs `_assert_touched_files_type_check_pre_land`
     immediately after the T-1175 absorption step, UNCONDITIONALLY (every
     profile, including rapid) -- the minimum pre-land gate the rapid
-    profile may not relax, per T-1907's own required fix (1). T-2114:
+    profile may not relax, per T-1907's own required fix (1). T-3061:
+    `_assert_touched_files_lint_clean_pre_land` runs right after it, same
+    posture, for `ruff check` -- `override_ratchet` (T-1681) disables the
+    T-1514 pre-commit sweep, which was the only thing previously running
+    lint before a commit reached `main`; this closes that gap without
+    reintroducing TEST016 (mutation testing), the actually-expensive
+    component `override_ratchet` exists to skip. T-2114:
     `_assert_new_public_symbols_have_doc_and_test_edge_pre_land` runs
     right after it, generalizing the same "not relaxed by rapid" posture
     from the type family to the doc/test-edge families. T-2214:
@@ -4698,6 +4809,9 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     # frob:ticket T-1907
     touched_paths = _land_touched_paths(worktree, cfg.ticket_id)
     _assert_touched_files_type_check_pre_land(worktree, cfg.ticket_id, touched_paths)
+
+    # frob:ticket T-3061
+    _assert_touched_files_lint_clean_pre_land(worktree, cfg.ticket_id, touched_paths)
 
     # frob:ticket T-2114
     _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
