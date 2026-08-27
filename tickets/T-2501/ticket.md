@@ -1,7 +1,7 @@
 ---
 id: T-2501
 title: 'Declared provenance: one engine for confinement, config, and capability proofs'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-18'
