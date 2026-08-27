@@ -51,7 +51,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3886bd21206dddd3e8f59e259814b06959afa1f9
 ---
 MEASURED 2026-08-27 while binding evidence for T-3108. enforce_worktree_lease
 (T-0431) refuses new_ticket (and other lease-guarded ticket mutators) when
