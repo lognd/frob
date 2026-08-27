@@ -14,12 +14,18 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- scripts/fleet_status.py
 - tests/**/test_fleet_status*.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: scripts/fleet_status.py
+  reason: T-3152 holds a live write lease on this file; the fixture suite only needs
+    read access to fleet_status.py from tests/, not write scope on the file itself
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
