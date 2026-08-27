@@ -2,7 +2,7 @@
 id: T-3061
 title: Put the 2.9s lint gate back on the rapid land path without re-enabling TEST016
   mutation testing
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -19,6 +19,7 @@ scope:
 - src/frob/check/_python.py
 - src/frob/process/parsers/ruff.py
 - docs/modules/tickets-landing.md
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,11 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-landing.md
   reason: doc target for new pre-land lint gate function
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: evidence tests for new pre-land lint gate
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
