@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/tickets/_land.py
+- tests/unit/test_land_stage_flip.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,12 @@ scope_changes:
   reason: T-1514 sweep engagement for a non-rapid profile is decided in _land.py's
     disposable-stage carve-out, not _land_cmd.py; the persistent stage must be wired
     in there to satisfy T-3135's own acceptance criteria
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_land_stage_flip.py
+  reason: T-3135's own must-fire/must-stay-quiet fixtures live in this existing T-3121
+    stage-flip test file
   actor: logan
   at: '2026-08-27'
 evidence:
