@@ -50,14 +50,31 @@ def _make_ticket(
 
 
 class TestAddEvidenceAutoPopulatesEvidenceOnlyScope:
-    """`add_evidence` auto-populates `evidence_scope`, never `scope`,
-    for a cited node whose file is not already covered."""
+    """T-3141: `add_evidence` must NEVER auto-populate `evidence_scope`
+    for an arbitrary cited node -- the original T-1944 landing did
+    exactly that (unconditionally, for any node id not already covered),
+    which made D-02 (`evidence_covers_scope`) tautological: evidence_
+    scope's own self-cover route then always matched the very evidence
+    id that had just widened it, so ANY cited evidence -- however
+    unrelated -- satisfied close/land
+    (`tests/system/test_cli_evidence_enforcement.py::
+    TestCliEvidenceEnforcementEndToEnd.test_close_fails_on_unrelated_
+    evidence`, D-02's own end-to-end repro, caught this live). The
+    deliberate, reasoned remedy for T-1944's real scenario (a pre-
+    existing, genuinely-covering test wrongly forced into `scope` and
+    thus leased) is `demote_to_evidence_only` (see `TestDemoteToEvidence
+    Only` below) -- not an automatic side effect of every `--evidence`
+    citation."""
 
     # frob:ticket T-1944
+    # frob:ticket T-3141
     def test_new_evidence_widens_evidence_scope_not_scope(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_tickets_evidence_only_scope.py::TestAddEvidenceAutoPopulatesE\
         # videnceOnlyScope.test_new_evidence_widens_evidence_scope_not_scope
+        # T-3141: name kept (T-1944's own recorded evidence cites it) --
+        # the BODY now asserts the corrected behavior: `add_evidence`
+        # no longer auto-widens `evidence_scope` at all.
         ticket_id = _make_ticket(tmp_path, scope=("src/fix.py",))
 
         result = add_evidence(tmp_path, ticket_id, ["tests/test_existing.py::test_ok"])
@@ -65,7 +82,7 @@ class TestAddEvidenceAutoPopulatesEvidenceOnlyScope:
 
         updated = result.danger_ok
         assert updated.scope == ("src/fix.py",)
-        assert updated.evidence_scope == ("tests/test_existing.py",)
+        assert updated.evidence_scope == ()
 
     # frob:ticket T-1944
     def test_evidence_already_covered_by_scope_widens_nothing(
@@ -87,9 +104,13 @@ class TestAddEvidenceAutoPopulatesEvidenceOnlyScope:
 class TestEvidenceOnlyScopeNeverLeases:
     """A path present ONLY in `evidence_scope` never conflicts with
     another ticket's `--add` and is invisible to the lease-conflict
-    predicate -- the whole point of T-1944's fix."""
+    predicate -- the whole point of T-1944's fix. T-3141: `evidence_
+    scope` is reached here via the deliberate `demote_to_evidence_only`
+    (matching `TestDemoteToEvidenceOnly`), not via plain `add_evidence`,
+    which no longer auto-populates it."""
 
     # frob:ticket T-1944
+    # frob:ticket T-3141
     def test_evidence_scope_path_does_not_block_another_tickets_add(
         self, tmp_path: Path
     ) -> None:
@@ -97,13 +118,24 @@ class TestEvidenceOnlyScopeNeverLeases:
         # tests/unit/test_tickets_evidence_only_scope.py::TestEvidenceOnlyScopeNeverLea\
         # ses.test_evidence_scope_path_does_not_block_another_tickets_add
         holder_id = _make_ticket(
-            tmp_path, scope=("src/held.py",), state=TicketState.IN_PROGRESS
+            tmp_path,
+            scope=("tests/test_ticket_land.py",),
+            state=TicketState.IN_PROGRESS,
         )
         result = add_evidence(
             tmp_path, holder_id, ["tests/test_ticket_land.py::test_ok"]
         )
         assert result.is_ok, result
-        assert result.danger_ok.evidence_scope == ("tests/test_ticket_land.py",)
+
+        demoted = demote_to_evidence_only(
+            tmp_path,
+            holder_id,
+            ["tests/test_ticket_land.py"],
+            reason="T-3141 fixture: exercise the non-leasing invariant via the "
+            "deliberate demote path",
+        )
+        assert demoted.is_ok, demoted
+        assert demoted.danger_ok.evidence_scope == ("tests/test_ticket_land.py",)
 
         queue = load_queue(tmp_path).danger_ok
         conflict = scope_lease_conflict(
@@ -122,6 +154,7 @@ class TestEvidenceCoversScopeWithEvidenceOnlyScope:
     counting as covered."""
 
     # frob:ticket T-1944
+    # frob:ticket T-3141
     def test_evidence_covers_scope_true_via_evidence_scope_alone(
         self, tmp_path: Path
     ) -> None:
@@ -131,10 +164,25 @@ class TestEvidenceCoversScopeWithEvidenceOnlyScope:
         from frob.gates import evidence_covers_scope
         from frob.graph import GraphSnapshot
 
-        ticket_id = _make_ticket(tmp_path, scope=())
+        # T-3141: `evidence_scope` reached via the deliberate `demote_to_
+        # evidence_only`, not plain `add_evidence` (which no longer
+        # auto-populates it -- see `TestAddEvidenceAutoPopulatesEvidence
+        # OnlyScope`'s corrected docstring).
+        ticket_id = _make_ticket(
+            tmp_path, scope=("tests/test_existing.py",), state=TicketState.IN_PROGRESS
+        )
         result = add_evidence(tmp_path, ticket_id, ["tests/test_existing.py::test_ok"])
         assert result.is_ok, result
-        updated = result.danger_ok
+
+        demoted = demote_to_evidence_only(
+            tmp_path,
+            ticket_id,
+            ["tests/test_existing.py"],
+            reason="T-3141 fixture: exercise evidence_scope-alone coverage via the "
+            "deliberate demote path",
+        )
+        assert demoted.is_ok, demoted
+        updated = demoted.danger_ok
         assert updated.scope == ()
         assert updated.evidence_scope == ("tests/test_existing.py",)
 

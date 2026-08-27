@@ -1334,7 +1334,6 @@ def _append_evidence_and_write(
     two writes, so a crash between them can never leave evidence recorded
     without its acceptance mapping (or vice versa)."""
     from frob.tickets import write_ticket
-    from frob.tickets._models import is_cmd_evidence, scope_matches
 
     merged = ticket.evidence + tuple(
         nid for nid in node_ids if nid not in ticket.evidence
@@ -1352,30 +1351,36 @@ def _append_evidence_and_write(
             else c
             for i, c in enumerate(acceptance)
         )
-    # T-1944: any NEW node id whose file is not already covered by
-    # `scope` OR `evidence_scope` gets its file auto-added to `evidence_
-    # scope` -- non-leasing by default (no flag, no separate command),
-    # the standing directive's own preferred fix for the conflation this
-    # ticket exists to close. A node id already covered by `scope` adds
-    # nothing here (its ticket genuinely writes there, or already chose
-    # to lease it) -- this only ever WIDENS coverage for evidence that
-    # would otherwise force a `scope --add` and its write-lease side
-    # effect.
-    combined = ticket.scope + ticket.evidence_scope
-    new_evidence_scope = ticket.evidence_scope + tuple(
-        dict.fromkeys(
-            path
-            for nid in node_ids
-            if not is_cmd_evidence(nid)
-            for path in (nid.split("::", 1)[0],)
-            if not scope_matches(path, combined) and path not in ticket.evidence_scope
-        )
-    )
+    # T-1944 / T-3141: `evidence_scope` is a NON-LEASING coverage
+    # declaration -- but D-02 (`evidence_covers_scope`) treats a path
+    # inside it exactly like `scope` for self-cover purposes (route 2),
+    # so auto-populating it here for EVERY newly-cited node id -- as the
+    # original T-1944 landing did -- made D-02 tautological: any evidence
+    # a caller cites becomes "covered" by definition, the instant it is
+    # cited, regardless of any real relationship to the ticket's declared
+    # work. `tests/system/test_cli_evidence_enforcement.py::
+    # TestCliEvidenceEnforcementEndToEnd.test_close_fails_on_unrelated_
+    # evidence` (D-02's own end-to-end repro) caught this: a ticket
+    # scoped to `src_a/`, evidence bound to an unrelated, unreachable
+    # `tests/test_unrelated.py::test_it`, closed successfully -- D-02
+    # never fired.
+    #
+    # `add_evidence` must NOT be the deliberateness signal T-1944 needed:
+    # a plain `--evidence NODE-ID` is not itself a claim that NODE-ID is
+    # related, which is exactly the carelessness D-02 exists to catch.
+    # The genuinely deliberate, reasoned action for T-1944's real
+    # scenario (T-1686: an epic citing a pre-existing, ACTUALLY-covering
+    # test, wrongly forced to `scope --add` and thus lease the whole
+    # file) is `frob.tickets._scope.demote_to_evidence_only` -- it
+    # already exists, already requires an explicit `reason`, and already
+    # migrates an existing `scope` entry into `evidence_scope` without
+    # ever leaving D-02 coverage false. This call site no longer performs
+    # any implicit widening; `evidence_scope` only grows via that
+    # deliberate command.
     updated = ticket.model_copy(
         update={
             "evidence": merged,
             "acceptance": acceptance,
-            "evidence_scope": new_evidence_scope,
         }
     )
     write_result = write_ticket(root, updated)

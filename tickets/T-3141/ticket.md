@@ -1,7 +1,7 @@
 ---
 id: T-3141
 title: 'T-3034 residual: close may no longer refuse unrelated evidence (D-02 regression?)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -62,7 +62,24 @@ scope_changes:
     leases
   actor: logan
   at: '2026-08-27'
-designated_repro_test: null
+evidence:
+- tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_fails_on_unrelated_evidence
+- tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_fails_on_red_evidence
+- tests/unit/test_tickets_evidence_only_scope.py::TestAddEvidenceAutoPopulatesEvidenceOnlyScope::test_evidence_already_covered_by_scope_widens_nothing
+- tests/unit/test_tickets_evidence_only_scope.py::TestEvidenceOnlyScopeNeverLeases::test_evidence_scope_path_does_not_block_another_tickets_add
+- tests/unit/test_tickets_evidence_only_scope.py::TestEvidenceCoversScopeWithEvidenceOnlyScope::test_evidence_covers_scope_true_via_evidence_scope_alone
+- tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly::test_demote_releases_the_lease_and_keeps_evidence_covered
+- tests/unit/test_tickets_evidence_only_scope.py::TestAddEvidenceAutoPopulatesEvidenceOnlyScope::test_new_evidence_widens_evidence_scope_not_scope
+designated_repro_test: tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_fails_on_unrelated_evidence
+evidence_changes:
+- old_node: tests/unit/test_tickets_evidence_only_scope.py::TestAddEvidenceAutoPopulatesEvidenceOnlyScope::test_new_evidence_never_auto_widens_evidence_scope
+  new_node: tests/unit/test_tickets_evidence_only_scope.py::TestAddEvidenceAutoPopulatesEvidenceOnlyScope::test_evidence_already_covered_by_scope_widens_nothing
+  reason: 'T-3141: the renamed test was reverted back to its original T-1944 name
+    to avoid orphaning T-1944''s own evidence; this stale citation is being replaced
+    by another already-passing sibling test in the same class covering the same corrected
+    behavior'
+  actor: logan
+  at: '2026-08-27'
 threat: null
 component: null
 anchor: false
