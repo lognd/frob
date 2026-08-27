@@ -2,7 +2,7 @@
 id: T-3163
 title: 'T-1036 ledger-splice regression under T-3121 disposable-stage: concurrent
   sibling write can silently drop the just-landed ticket''s own record'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
