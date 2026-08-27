@@ -209,6 +209,13 @@ from frob.gates._sys import (  # noqa: F401 -- _DEFAULT_DESIGN_DIR/_claims_marke
     sys_gate,
 )
 from frob.gates._taint_gate import taint_gate
+from frob.gates._tdd_order import (
+    RULE_TDD001,
+    TDDOrder,
+    classify_order,
+    resolve_symbol_introduction,
+    tdd_order_violations,
+)
 from frob.gates._test_runner_schema import test_runner_schema_gate
 from frob.gates._testing_schema import testing_schema_gate
 from frob.gates._tickets_gate import (  # noqa: F401 -- _tick004_queue_rot re-exported for tests/test_tickets_priority.py's direct import
@@ -8402,6 +8409,11 @@ __all__ = [
     "BugReproOutcome",
     "designated_repro_test",
     "must_still_pass_violations",
+    "RULE_TDD001",
+    "TDDOrder",
+    "classify_order",
+    "resolve_symbol_introduction",
+    "tdd_order_violations",
     "compliance_gate",
     "cve_fingerprint_scan_gate",
     "debt_gate",

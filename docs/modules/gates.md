@@ -7041,6 +7041,7 @@ that table in this diff.
 | TICK002 | tickets_gate (ERROR) | a `T-draft-*` provisional id is still present in the ledger while `root` is on the default branch -- a draft id survived onto `main` instead of being renumbered at land |
 | TICK004 | tickets_gate (WARN, escalating to ERROR at 2x threshold, T-0411) | a QUEUED/PLANNED ticket has sat past its priority-specific rot-day threshold since `created` -- the queue-health signal that catches "we forgot we have a stack of things"; an already-decomposed epic/story or a `runs_last` ticket gets a distinct, action-specific message instead of the generic "work it" text |
 | TICK005 | tickets_gate (ERROR, T-0537) | after a genuine two-parent merge commit, a ticket that was DONE/DROPPED in the merge's first-parent ledger is neither terminal nor archived in the post-merge ledger -- a hand-resolved `tickets.md` merge conflict silently resurrected a closed ticket's stale state |
+| TDD001 | tdd_order (ERROR/UNRESOLVED, T-3009) | a `frob:tests` edge's artifact/implementation symbol was introduced (by real ast-symbol-level git history, not a text search) at or before the test that verifies it -- implementation-first or same-commit, neither test-first (T-3004 section 7); reports `Severity.UNRESOLVED`, not a pass, only when ordering is genuinely indeterminate (an unresolvable commit, or diverged histories) |
 | VET-JS | vet_scan (ERROR) | a `node_modules` package declares a lifecycle script (`preinstall`/`install`/`postinstall`) not covered by an explicit `[vet.allow]` entry -- install-time code execution outside the reviewed allowlist |
 | VET-JS003 | vet_scan (ERROR) | a newly-encountered npm dependency's name is a possible typosquat of a known popular package (Levenshtein-adjacent name match) -- flagged before any capability scan runs |
 | VET-JS004 | vet_ecosystem (WARN) | an npm dependency resolves to a non-registry source (git/http/file URL, not `registry.npmjs.org`) -- declarable-only, review the pin |
@@ -7052,3 +7053,63 @@ that table in this diff.
 | VET-SOURCE-UNAVAILABLE | vet_scan (ERROR, T-0400) | a dependency's source could not be located locally (not installed/cached) so its capability scan never ran -- fail-closed: a dependency that was never read must never look indistinguishable from one that was read and found clean |
 | VET-TIMEOUT | vet_scan (WARN, T-0208) | a dependency's per-package scan budget expired before the capability scan completed -- an honest incomplete-verdict outcome, never silently dropped from the report; WARN since a timeout means "not fully checked", not "found bad" |
 | WAIVE008 | waive (WARN) | a `frob:waive WIRE001 ...` directive sits on a symbol that is one of WIRE001's own dynamic-dispatch rescue predicates (an autouse pytest fixture or pydantic validator), now unconditionally exempt from WIRE001 regardless of diff -- a permanently dead waiver that WAIVE004's own diff-scoped staleness check cannot see |
+
+## TDD001 (T-3009)
+
+Enforces T-3004 section 7's TDD discipline as a checkable git-history
+fact: a `frob:tests` edge's test symbol must be introduced BEFORE the
+artifact/implementation symbol it verifies. Generalises BUG002's
+single-case precedent (`frob.gates._bug_repro` requires a bug ticket's
+designated repro test to fail at the parent commit -- proof it existed
+and genuinely failed before the fix) from one designated repro to every
+`frob:tests` binding.
+
+WHERE THIS RUNS: pre-land, against a ticket's own worktree branch commit
+sequence -- never post-land against `main`. `frob ticket land` squashes a
+ticket's commits into one, so on `main` a `frob:tests` pair's two symbols
+necessarily share the SAME introducing commit and ordering is
+structurally unobservable there; running this check only while the
+worktree branch's unsquashed history still exists is the one placement
+that can actually see the fact this rule is about.
+
+MECHANISM (`frob.gates._tdd_order`): `resolve_symbol_introduction` finds
+a `path::qualname` symref's introducing commit by scanning that file's
+own commit history OLDEST-first and `ast.parse`-ing each revision's real
+content (`_ast_qualnames`), returning the first revision whose actual
+function/class qualname set contains the symbol -- SYMBOL-LEVEL, not a
+`git log -S<needle>` pickaxe text search: the standing "checks must
+compare symbols, never substrings" directive rules out matching inside a
+comment/docstring/string literal that merely mentions the name.
+Python-only for now; a symbol this cannot resolve degrades to `None`
+(`Severity.UNRESOLVED`) rather than a lexical fallback.
+
+`classify_order` compares two introducing commits by git ANCESTRY (`git
+merge-base --is-ancestor`, never committer timestamp, which is trivially
+wrong under clock skew or a rebase) and reports one of three outcomes,
+never two:
+
+- `TDDOrder.TEST_FIRST` (silent): the test's commit is a STRICT ancestor
+  of the artifact's.
+- `TDDOrder.IMPLEMENTATION_FIRST` (`Severity.ERROR`, TDD001 fires): the
+  artifact's commit is an ancestor of the test's, OR the two commits are
+  IDENTICAL. A same-commit pair (this repo's dominant squash-land shape)
+  is a DETERMINATE "not test-first" fact, not an unknown -- collapsing it
+  into `UNRESOLVED` would make TDD001 structurally unable to ever fire
+  against the workflow it exists to police while still reading as a
+  passing check, exactly the silent-zero shape T-1664 exists to rule out.
+- `TDDOrder.UNRESOLVED` (`Severity.UNRESOLVED`, T-1664's doctrine): either
+  commit is genuinely unresolvable, or the two (distinct) commits'
+  histories have diverged (neither is an ancestor of the other) --
+  ancestry itself cannot order those. Never rendered as a silent pass --
+  an honest "cannot tell" beats a comfortable "fine".
+
+`tdd_order_violations(root, edges)` is the whole surface: it filters
+`edges` to `EdgeKind.TESTS` (`src`=artifact, `target`=test, the existing
+one-level binding T-3004 section 1 identifies as the thing to
+generalise) and classifies each pair. It MUST be called pre-land against
+a ticket's own worktree branch -- a post-land call against `main` cannot
+observe the ordering fact this rule checks. Wiring this into `frob
+ticket land`'s pre-land check path (mirroring BUG002's own
+`bug_repro_violations` call site in `frob.tickets._land`) is deferred to
+a follow-up ticket -- this ticket's scope is the check and its rule, not
+the waterfall gate T-3004 section 9 explicitly defers.
