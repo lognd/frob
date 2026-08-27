@@ -10,10 +10,10 @@ from frob.verify._quarantine import (
     QuarantinedFinding,
     QuarantineError,
     QuarantineRecord,
+    _normalize_finding_path,
     clear_quarantine,
     is_quarantined,
     load_quarantine,
-    _normalize_finding_path,
     raise_quarantine,
     retire_unidentifiable_findings,
 )
