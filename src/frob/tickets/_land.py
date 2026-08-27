@@ -3633,6 +3633,138 @@ def _check_mutation_evidence(
     return _mutation_evidence_synchronous(worktree, ticket, base_ref, skip)
 
 
+# frob:ticket T-3057
+# frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_logs_a_warning_for_an_implementation_first_pair_without_blocking  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_stays_quiet_when_no_tests_edges_are_touched  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_never_refuses_the_land  # noqa: E501
+def _check_tdd_order(
+    worktree: Path, ticket: Ticket, base_ref: str
+) -> Result[None, LandError]:
+    """T-3057: run TDD001 (`frob.gates._tdd_order.tdd_order_violations`,
+    T-3009) against this land's own diff-scoped `frob:tests` edges, PRE-
+    land against `worktree`'s own unsquashed branch history -- the
+    identical placement constraint `bug_repro_violations`/BUG002 already
+    documents (T-2019/T-2025: `frob ticket land` squashes a ticket's
+    commits into one, so a post-land call against `main` could never see
+    per-commit ordering again). Called from here, never from inside
+    `frob.gates._tdd_order` itself, mirroring that module's own
+    `frob:waive WIRE001` note that its call site is this ticket's job,
+    not T-3009's.
+
+    Diff-scoped like `_touched_symrefs_for_intent` above: only `frob:
+    tests` edges whose artifact or test symbol was touched by THIS land
+    are checked, not the whole repo's graph -- `tdd_order_violations`
+    spawns several git subprocesses per edge (T-3009's own oldest-first
+    history walk), so an unscoped repo-wide pass measured well over an
+    hour against this repo's ~12k TESTS edges and is not a viable per-
+    land cost.
+
+    WARN-ONLY, deliberately, not yet a bug in this wiring: a sampled
+    measurement across this repo's existing `frob:tests` edges (T-3057's
+    own pre-wiring measurement, see its Done report) found same-commit
+    IMPLEMENTATION_FIRST in roughly three-quarters of a random sample --
+    this repo's DOMINANT commit shape today, not a rare lapse. Blocking
+    lands on it before that backlog is worked down would repeat the
+    LARGE001/TICK011 waiver-flood pattern (87 waivers, zero findings)
+    rather than raise real practice. Every finding is logged at WARNING
+    and counted; NONE refuses the land -- this function always returns
+    `Ok(None)`. Promoting TDD001 to a land-blocking severity is a later
+    ticket's decision, made with this measured count in hand.
+
+    ARCH001 split (T-3057): the diff/graph/scoping resolution lives in
+    `_tdd_order_scoped_edges` below; this function is purely the run-and-
+    log half."""
+    from frob.gates._models import Severity
+    from frob.gates._tdd_order import tdd_order_violations
+
+    scoped_edges = _tdd_order_scoped_edges(worktree, ticket, base_ref)
+    if not scoped_edges:
+        return Ok(None)
+
+    violations = tdd_order_violations(worktree, scoped_edges)
+    for v in violations:
+        _log.warning(
+            "land: %s TDD001 (WARN-only, T-3057) %s: %s",
+            ticket.id,
+            v.severity,
+            v.message,
+        )
+    error_count = sum(1 for v in violations if v.severity == Severity.ERROR)
+    if violations:
+        _log.warning(
+            "land: %s TDD001 found %d finding(s) (%d implementation-"
+            "first/same-commit) among %d touched frob:tests edge(s) -- "
+            "WARN-only, not blocking this land (T-3057)",
+            ticket.id,
+            len(violations),
+            error_count,
+            len(scoped_edges),
+        )
+    else:
+        _log.info(
+            "land: %s: TDD001 clean across %d touched frob:tests edge(s)",
+            ticket.id,
+            len(scoped_edges),
+        )
+    return Ok(None)
+
+
+def _tdd_order_scoped_edges(worktree: Path, ticket: Ticket, base_ref: str) -> list:
+    """`_check_tdd_order`'s own ARCH001 split (T-3057): resolve this
+    land's diff, (re)build/load the graph snapshot, and return only the
+    `EdgeKind.TESTS` edges whose artifact or test symbol was touched by
+    this land -- an empty list on any resolution failure (diff, graph
+    build) or when nothing touched is bound to a test, each logged, never
+    raised. Kept separate from the run-and-log half purely to stay under
+    ARCH001's line threshold; no behavior split intended."""
+    from frob.gitio import working_diff
+    from frob.graph import build_graph, load_graph
+    from frob.graph._models import EdgeKind
+
+    diff = working_diff(worktree, base_ref)
+    if diff.is_err:
+        _log.warning(
+            "land: %s: could not compute diff for TDD001 (%s) -- skipping",
+            ticket.id,
+            diff.danger_err,
+        )
+        return []
+
+    cache = worktree / ".frob" / "cache.db"
+    loaded = load_graph(cache)
+    if loaded.is_ok:
+        snapshot = loaded.danger_ok
+    else:
+        built = build_graph(worktree, cache)
+        if built.is_err:
+            _log.warning(
+                "land: %s: graph unavailable for TDD001 (%s) -- skipping",
+                ticket.id,
+                built.danger_err,
+            )
+            return []
+        snapshot = built.danger_ok
+
+    touched = _touched_symrefs_for_intent(diff.danger_ok, snapshot)
+    if not touched:
+        _log.info("land: %s: TDD001 -- no touched symbols, nothing to check", ticket.id)
+        return []
+
+    scoped_edges = [
+        edge
+        for edge in snapshot.edges
+        if edge.kind is EdgeKind.TESTS
+        and (edge.src in touched or edge.target in touched)
+    ]
+    if not scoped_edges:
+        _log.info(
+            "land: %s: TDD001 -- no frob:tests edges among this land's "
+            "touched symbols",
+            ticket.id,
+        )
+    return scoped_edges
+
+
 # frob:ticket T-1593
 def _mutation_evidence_sync_decision(
     worktree: Path, ticket: Ticket
@@ -6008,6 +6140,10 @@ def _land_precheck_remaining_checks(
     orphan_check = _check_orphaned_evidence_deletion(worktree, ticket, main_branch_name)
     if orphan_check.is_err:
         return Err(orphan_check.danger_err)
+
+    # T-3057: WARN-only, never returns Err -- see _check_tdd_order's own
+    # docstring for why this does not gate the land (yet).
+    _check_tdd_order(worktree, ticket, main_branch_name)
 
     return _check_mutation_evidence(
         worktree,

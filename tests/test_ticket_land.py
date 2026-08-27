@@ -7342,6 +7342,161 @@ class TestMutationEvidencePrecheck:
         assert result.is_ok
 
 
+# frob:ticket T-3057
+class TestCheckTddOrder:
+    """T-3057: `_check_tdd_order` wires TDD001 into the pre-land path,
+    WARN-only -- every finding is logged, none ever refuses the land
+    (deliberate, see the function's own docstring on why this is not
+    promoted to blocking yet)."""
+
+    def _ticket(self) -> Any:
+        from datetime import date as _date
+
+        from frob.tickets._models import Ticket
+
+        return Ticket(
+            id="T-0900",
+            title="sample",
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=_date(2026, 1, 1),
+            blocked_by=(),
+            parent=None,
+            scope=("m.py",),
+            evidence=("test_m.py::test_add",),
+            attachments=(),
+            body="## Description\nx\n",
+        )
+
+    def _snapshot(self) -> Any:
+        from frob.graph import Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.graph._models import Edge, EdgeKind
+        from frob.lang import SymbolKind
+
+        return GraphSnapshot(
+            root="/repo",
+            symbols={
+                "m.py::fn": SymbolRecord(
+                    id=SymbolId(path="m.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 10),
+                )
+            },
+            edges=(
+                Edge(
+                    src="m.py::fn",
+                    kind=EdgeKind.TESTS,
+                    target="test_m.py::test_add",
+                    origin="frob:tests",
+                ),
+            ),
+        )
+
+    def test_logs_a_warning_for_an_implementation_first_pair_without_blocking(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: Any
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_logs_a_warning_for_an_implementation_first_pair_without_blocking  # noqa: E501
+        import frob.gates._tdd_order as _tdd_mod
+        import frob.gitio as _gitio_mod
+        import frob.graph as _graph_mod
+        from frob.gates._models import Severity, Violation
+        from frob.gitio import Diff, Hunk
+
+        ticket = self._ticket()
+        snapshot = self._snapshot()
+
+        monkeypatch.setattr(
+            _gitio_mod,
+            "working_diff",
+            lambda *a, **k: Ok(Diff(base="deadbeef", hunks=(Hunk(file="m.py", span=(1, 10)),))),
+        )
+        monkeypatch.setattr(_graph_mod, "load_graph", lambda *a, **k: Ok(snapshot))
+        monkeypatch.setattr(
+            _tdd_mod,
+            "tdd_order_violations",
+            lambda *a, **k: (
+                Violation(
+                    rule="TDD001",
+                    severity=Severity.ERROR,
+                    file="m.py",
+                    line=0,
+                    message="TDD001: implementation-first",
+                ),
+            ),
+        )
+        with caplog.at_level("WARNING", logger="frob.tickets._land"):
+            result = _land_mod._check_tdd_order(tmp_path, ticket, "main")
+        assert result.is_ok
+        assert any("TDD001" in r.message for r in caplog.records)
+
+    def test_stays_quiet_when_no_tests_edges_are_touched(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_stays_quiet_when_no_tests_edges_are_touched  # noqa: E501
+        import frob.gitio as _gitio_mod
+        import frob.graph as _graph_mod
+        from frob.gitio import Diff, Hunk
+
+        ticket = self._ticket()
+        snapshot = self._snapshot()
+
+        monkeypatch.setattr(
+            _gitio_mod,
+            "working_diff",
+            lambda *a, **k: Ok(
+                Diff(base="deadbeef", hunks=(Hunk(file="unrelated.py", span=(1, 10)),))
+            ),
+        )
+        monkeypatch.setattr(_graph_mod, "load_graph", lambda *a, **k: Ok(snapshot))
+        result = _land_mod._check_tdd_order(tmp_path, ticket, "main")
+        assert result.is_ok
+
+    def test_never_refuses_the_land(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_never_refuses_the_land  # noqa: E501
+        import frob.gates._tdd_order as _tdd_mod
+        import frob.gitio as _gitio_mod
+        import frob.graph as _graph_mod
+        from frob.gates._models import Severity, Violation
+        from frob.gitio import Diff, Hunk
+
+        ticket = self._ticket()
+        snapshot = self._snapshot()
+
+        monkeypatch.setattr(
+            _gitio_mod,
+            "working_diff",
+            lambda *a, **k: Ok(Diff(base="deadbeef", hunks=(Hunk(file="m.py", span=(1, 10)),))),
+        )
+        monkeypatch.setattr(_graph_mod, "load_graph", lambda *a, **k: Ok(snapshot))
+        monkeypatch.setattr(
+            _tdd_mod,
+            "tdd_order_violations",
+            lambda *a, **k: (
+                Violation(
+                    rule="TDD001",
+                    severity=Severity.ERROR,
+                    file="m.py",
+                    line=0,
+                    message="TDD001: implementation-first, should never block",
+                ),
+                Violation(
+                    rule="TDD001",
+                    severity=Severity.UNRESOLVED,
+                    file="m.py",
+                    line=0,
+                    message="TDD001: unresolved",
+                ),
+            ),
+        )
+        result = _land_mod._check_tdd_order(tmp_path, ticket, "main")
+        assert result.is_ok
+
+
 # frob:ticket T-0854
 class TestLiveTrackerCitationPrecheck:
     """T-0854: `_check_live_tracker_citations` blocks land when a registry

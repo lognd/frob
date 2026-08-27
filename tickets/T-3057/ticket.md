@@ -1,7 +1,7 @@
 ---
 id: T-3057
 title: Wire TDD001 ordering check into frob ticket land pre-land path
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -15,10 +15,16 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
+evidence_scope:
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ticket_land.py::TestCheckTddOrder::test_logs_a_warning_for_an_implementation_first_pair_without_blocking
+- tests/test_ticket_land.py::TestCheckTddOrder::test_stays_quiet_when_no_tests_edges_are_touched
+- tests/test_ticket_land.py::TestCheckTddOrder::test_never_refuses_the_land
 designated_repro_test: null
 threat: null
 component: null

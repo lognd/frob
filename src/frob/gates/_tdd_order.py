@@ -318,8 +318,9 @@ def _tdd001_unresolved_message(artifact_symref: str, test_symref: str) -> str:
 # frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_ignores_non_tests_edges  # noqa: E501
 # frob:waive WIRE001 reason="T-3009's own scope is the ordering check and its rule, \
 # not the land-time call site -- mirrors bug_repro_violations, which is likewise \
-# called from frob.tickets._land rather than from within this module" \
-# follow_up="T-3057"
+# called from frob.tickets._land rather than from within this module; T-3057 wired the \
+# call site (frob.tickets._land._check_tdd_order), closing the follow-up this waiver \
+# used to point at"
 def tdd_order_violations(root: Path, edges: Sequence[Edge]) -> list[Violation]:
     """TDD001's whole surface: every `EdgeKind.TESTS` edge (`src` = the
     artifact/implementation symbol the directive sits on, `target` = the
