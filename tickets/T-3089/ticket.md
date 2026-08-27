@@ -22,6 +22,7 @@ scope:
 - tests/test_ticket_land.py
 - docs/modules/tickets-landing.md
 - frob.lock
+- tests/unit/test_land_squash_stage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -92,6 +93,14 @@ scope_changes:
   reason: frob ack (AFFECT001 re-verification of the two v2-mode helpers whose parameter
     this ticket renamed) writes its digests into frob.lock; the file is a required
     artifact of this ticket's own doc-drift acknowledgement, not an unrelated edit
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_land_squash_stage.py
+  reason: the T-3089 must-fire/must-stay-quiet pair lives in its own module because
+    tests/test_ticket_land.py leaks FROB_WORKTREE in-process (145 WorktreeLeaseViolation
+    refusals measured on unmodified main), which makes evidence bound there fail to
+    resolve
   actor: logan
   at: '2026-08-27'
 body_changes:
