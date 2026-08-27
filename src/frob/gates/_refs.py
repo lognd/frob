@@ -128,6 +128,22 @@ git-committed project -- including this repo's OWN
 undermining the very "clean project passes cleanly" guarantee that gate
 exists to protect.
 
+T-3031: two further gaps in the same spirit, found via a real TypeScript
+project fixture (`tests/system/test_cli_check.py::TestCheckTypescript`).
+First, `package.json`/`tsconfig.json` are the JS/TS-world analogs of
+`pyproject.toml` and join `_DEFAULT_ROOT_MANIFEST_EXEMPT` for the same
+reason. Second, and more structural: `ref_gate` previously consulted only
+`[graph].exclude` globs from `frob.toml` for what to skip, never `frob.
+excludes.BUILTIN_SKIP_DIRS` (`_is_under_vendored_tree`) -- so a project
+that commits (or, like that fixture, symlinks in) a `node_modules` at its
+root failed REF001 on that single tracked entry, even though every OTHER
+stage in this repo already prunes that exact directory name before
+scanning. A vendored/dependency tree is tooling-managed, never
+"referenced" by another tracked file's text the way authored source is,
+so it needed the same treatment REF001 already gives root manifests, not
+a per-project `[graph].exclude` a real adopter should never have had to
+write.
+
 A `.md` file's OWN text can also carry an inline `frob:waive REF001
 reason="..."` or `frob:waive REF002 reason="..."` directive, text-scanned
 directly the same way `_docblocks.py` honors `frob:waive DOC004` on a doc
@@ -144,7 +160,7 @@ import tomllib
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
-from frob.excludes import is_excluded, load_exclude_globs
+from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
 from frob.gates._models import Severity, Violation
 from frob.gates._tracked_files import tracked_files as _shared_tracked_files
 from frob.graph.imports import ImportGraph, UnresolvedImport, build_import_graph
@@ -253,9 +269,44 @@ def _is_collectible_test_filename(rel_path: str) -> bool:
 #: universal to every real project, and -- like `pyproject.toml`/
 #: `frob.toml` -- never referenced from other tracked source files by
 #: design.
+#:
+#: T-3031: `package.json`/`tsconfig.json` are the JS/TS-world analogs of
+#: `pyproject.toml` -- read by tooling (npm/tsc), universal to every real
+#: TypeScript/JavaScript project, never referenced from other tracked
+#: source files by design. Same exact-literal-root-path-only rule: a
+#: nested `packages/sub/package.json` workspace member stays fully
+#: subject to REF001/REF002.
 _DEFAULT_ROOT_MANIFEST_EXEMPT = frozenset(
-    {"pyproject.toml", "frob.toml", "frob-coverage.lock.json", ".gitignore"}
+    {
+        "pyproject.toml",
+        "frob.toml",
+        "frob-coverage.lock.json",
+        ".gitignore",
+        "package.json",
+        "tsconfig.json",
+    }
 )
+
+
+# frob:ticket T-3031
+# frob:tests tests/test_refs_gate.py::TestVendoredTreeExempt.test_node_modules_root_entry_is_exempt kind="unit"  # noqa: E501
+# frob:tests tests/test_refs_gate.py::TestVendoredTreeExempt.test_a_real_orphan_outside_any_vendored_tree_still_fires kind="unit"  # noqa: E501
+def _is_under_vendored_tree(rel_path: str) -> bool:
+    """T-3031: `True` iff any path component of `rel_path` is a built-in
+    vendored/dependency-tree directory name (`frob.excludes.
+    BUILTIN_SKIP_DIRS` -- `node_modules`, `.venv`, `target`, `build`,
+    `dist`, ...). `ref_gate` previously consulted only `[graph].exclude`
+    globs from `frob.toml`, never this built-in skip set, so a project
+    that commits (or symlinks, as `tests/system/test_cli_check.py`'s own
+    TypeScript fixture does to let `npx`/`tsc` resolve locally) a
+    `node_modules` at its root failed REF001 on that tracked entry --
+    every OTHER stage in this repo already prunes these exact directory
+    names (`frob.excludes.is_skipped_dir`/`walk_pruned`) before scanning,
+    so REF001 silently NOT doing the same was the actual gap, not a
+    missing per-project `[graph].exclude`/`frob:waive` a real adopter
+    should never have had to write for build tooling frob itself already
+    treats as out-of-scope everywhere else."""
+    return any(is_skipped_dir(part) for part in PurePosixPath(rel_path).parts)
 
 
 def _load_allowlist(root: Path) -> dict[str, str]:
@@ -892,6 +943,7 @@ def _ref_gate_file_violations(
         rel_path in _DEFAULT_ROOT_MANIFEST_EXEMPT
         or _allowlist_covers(rel_path, allowlist)
         or _is_collectible_test_filename(rel_path)
+        or _is_under_vendored_tree(rel_path)
     ):
         return violations
 

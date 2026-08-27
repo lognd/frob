@@ -425,6 +425,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3019: frob check fires spurious REF001/PRE001/SCOPE001 on any clean project; frob check is not repo-clean on main
 - T-3025: A single trivial unattributed finding disables fleet-wide landing: four occurrences today, ~90 minutes lost, no severity proportionality
 - T-3026: Post-land findings from the T-3006/T-2995/T-3014 batch: ARCH103, DOC001, E501, 2x LARGE001, REF001, REF002
+- T-3031: TestCheckTypescript::test_clean_ts_passes_tsc fails on main (REF001 on node_modules/package.json/tsconfig.json, MILE003 on real tickets.md)
 - T-3035: ticket-leases dispatch-table fixture missing --reason for mutate verbs (5 tests)
 - T-3037: stale ticket-minting test fixture trips T-2394 empty-scope guard (28 tests)
 - T-3038: evidence bind-time cost probe loses timeout floor after T-3015

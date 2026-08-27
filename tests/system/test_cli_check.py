@@ -826,6 +826,14 @@ class TestCheckTypescript:
             "[gates.severity]\n"
             'COV001 = "warn"\nTEST001 = "warn"\nTEST002 = "warn"\n'
             'TEST003 = "warn"\nTEST005 = "warn"\nTEST006 = "warn"\n'
+            # T-3031: this fixture's `tickets.md`/`src.ts` are each a
+            # single, deliberately-minimal file with no OTHER tracked
+            # file in this isolated fixture to reference them by text --
+            # the exact same inherent-single-file-fixture orphan shape
+            # `_make_project`'s own REF001 override above documents for
+            # its Python `__init__.py` (T-3019), applied here for the
+            # same reason.
+            'REF001 = "warn"\n'
         )
         (tmp_path / "tickets.md").write_text(
             "<!-- ticket:T-0329 -->\n"
@@ -836,6 +844,12 @@ class TestCheckTypescript:
             "kind: feature\n"
             "origin: human\n"
             f"created: '{date.today().isoformat()}'\n"
+            # T-3031: MILE003 (added after this fixture was first written)
+            # requires every OPEN ticket to resolve a milestone -- a real
+            # gap this synthetic ticket must satisfy exactly like a real
+            # project's own open ticket would, not a product bug to work
+            # around.
+            "milestone: '0.1.0'\n"
             "blocked_by: []\n"
             "parent: null\n"
             "scope: []\n"

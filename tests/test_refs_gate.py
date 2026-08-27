@@ -642,3 +642,95 @@ class TestBacktickTokenizer:
         violations = ref_gate(tmp_path)
 
         assert "REF001" in _rule_ids(violations, "orphan.yaml")
+
+
+# frob:ticket T-3031
+class TestJsTsRootManifestExempt:
+    """T-3031: the JS/TS analogs of `_DEFAULT_ROOT_MANIFEST_EXEMPT`'s
+    Python-world `pyproject.toml` -- every real TypeScript/JavaScript
+    project has exactly one root `package.json`/`tsconfig.json`, read by
+    tooling (npm/tsc) rather than referenced from other tracked source
+    files, so a clean TS project must not fail REF001 on these two
+    universal files any more than a clean Python project fails it on
+    `pyproject.toml` (T-3019's own precedent)."""
+
+    def test_root_package_json_and_tsconfig_are_exempt_with_no_declaration(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_refs_gate.py::TestJsTsRootManifestExempt.test_root_package_json_and_tsconfig_are_exempt_with_no_declaration kind="unit"  # noqa: E501
+        _init_repo(tmp_path)
+        _write(tmp_path, "package.json", '{"name": "x"}\n')
+        _write(tmp_path, "tsconfig.json", "{}\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert _rule_ids(violations, "package.json") == []
+        assert _rule_ids(violations, "tsconfig.json") == []
+
+    def test_nested_package_json_still_subject_to_ref001(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_refs_gate.py::TestJsTsRootManifestExempt.test_nested_package_json_still_subject_to_ref001 kind="unit"  # noqa: E501
+        # A workspace-member manifest is not automatically read the way
+        # the project ROOT's own manifest is -- only the exact literal
+        # root path is exempt (mirrors TestDefaultRootManifestExempt's
+        # own nested-pyproject.toml case).
+        _init_repo(tmp_path)
+        (tmp_path / "packages" / "sub").mkdir(parents=True)
+        _write(tmp_path, "packages/sub/package.json", '{"name": "y"}\n')
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert "REF001" in _rule_ids(violations, "packages/sub/package.json")
+
+
+# frob:ticket T-3031
+class TestVendoredTreeExempt:
+    """T-3031: a git-tracked path under a built-in vendored/dependency
+    tree (`frob.excludes.BUILTIN_SKIP_DIRS` -- `node_modules`, `.venv`,
+    `target`, `build`, `dist`, ...) is exempt from REF001/REF002 --
+    such a tree is tooling-managed and never "referenced" by another
+    tracked file's text the way authored source is, and every OTHER
+    stage in this repo already prunes these same directory names
+    (`frob.excludes.is_skipped_dir`/`walk_pruned`) before scanning.
+    Previously `ref_gate` only consulted `[graph].exclude` globs, never
+    the built-in skip set -- a project committing (or, as here,
+    symlinking) `node_modules` at its root failed REF001 on that single
+    tracked entry with no way to silence it short of a manual
+    `[graph].exclude`/`frob:waive` a real adopter should never have to
+    write for a directory frob itself already treats as build tooling
+    everywhere else."""
+
+    def test_node_modules_root_entry_is_exempt(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_refs_gate.py::TestVendoredTreeExempt.test_node_modules_root_entry_is_exempt kind="unit"  # noqa: E501
+        _init_repo(tmp_path)
+        # A real node_modules is usually .gitignored; this repo's own TS
+        # system-test fixture instead SYMLINKS it in (so npx/tsc resolve
+        # locally) -- git tracks the symlink itself as one entry named
+        # exactly "node_modules", the exact shape that fired REF001 live.
+        vendor_dir = tmp_path.parent / "vendor_node_modules"
+        vendor_dir.mkdir()
+        (tmp_path / "node_modules").symlink_to(vendor_dir)
+        _write(tmp_path, "package.json", '{"name": "x"}\n')
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert _rule_ids(violations, "node_modules") == []
+
+    def test_a_real_orphan_outside_any_vendored_tree_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_refs_gate.py::TestVendoredTreeExempt.test_a_real_orphan_outside_any_vendored_tree_still_fires kind="unit"  # noqa: E501
+        # Must-stay-fire sibling: an ordinary unreferenced file that is
+        # NOT under a built-in-skip directory name is unaffected by this
+        # exemption -- it is a genuine orphan and must still be reported.
+        _init_repo(tmp_path)
+        _write(tmp_path, "genuinely_orphaned.py", "x = 1\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert "REF001" in _rule_ids(violations, "genuinely_orphaned.py")
