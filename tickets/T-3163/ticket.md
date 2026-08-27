@@ -87,7 +87,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 31ecab73b86983e81ea6ad9611d39589e07e6771
 ---
 MEASURED 2026-08-27, while fixing T-3144's stale test-infra (tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land).
 
