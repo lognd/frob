@@ -1,7 +1,7 @@
 ---
 id: T-3081
 title: TicketSpec.no_scope_declared silently dropped by new_ticket
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -15,10 +15,20 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_new_renumber.py
+- tests/test_tickets_no_scope.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_no_scope.py
+  reason: 'T-3081: add regression test file for the no_scope_declared/no_scope_declared_reason
+    (and runs_last_parallel_safe/_reason) round-trip drop bug fixed in _ticket_from_spec
+
+    '
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
