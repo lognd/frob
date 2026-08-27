@@ -3233,3 +3233,4 @@
 {"commit": "b43e4e86f905f3a892231db9af2376c1bfda260d", "skipped": "close-rel001-preflight-skipped", "ticket": "T-3133"}
 {"commit": "92fb4500236042c7cbb83a14d84fe63cda06a607", "skipped": "land-evidence-scope-unbound", "ticket": "T-3133"}
 {"commit": "88ac4ddcee8ad6a2dc0cd28bfc57f2431f083239", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-3133"}
+{"commit": "a36870c038f0f1f7645debb832e4e4cb47482e82", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-3172"}
