@@ -35,7 +35,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: edf1c4f79e902a68604772f5646993e1362ebb11
 ---
 MEASURED 2026-08-27. `frob refactor split` produced THREE distinct, independent
 defects in a single day, every one of them found by attempting ONE real
