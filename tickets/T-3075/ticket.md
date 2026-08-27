@@ -2,7 +2,7 @@
 id: T-3075
 title: Five tests read ambient developer state (global git identity, real ~/.claude)
   and so pass locally but fail in CI
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'

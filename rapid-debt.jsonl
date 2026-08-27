@@ -3039,6 +3039,9 @@
 {"commit": "b7c84a4178cbb979ac3373a761d2fde3c78d1aef", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-3033"}
 {"commit": "5d2ddb1e6dbaa97c3610d42d57f99088360ddc7e", "skipped": "land-evidence-scope-unbound", "ticket": "T-3094"}
 {"commit": "b969f779edd2a4f16bb4aaff7ddc834b6dc5b98d", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-3080"}
+{"commit": "7bd51e09492e24d41c49957e113df7789b3a8642", "skipped": "close-rel001-preflight-skipped", "ticket": "T-3075"}
+{"commit": "319730a2cacb12f5c3cb5914850064a392f08e46", "skipped": "close-rel001-preflight-skipped", "ticket": "T-3075"}
+{"commit": "03cd77163f4841ad84e6688b4317dd777f52ac09", "skipped": "land-evidence-scope-unbound", "ticket": "T-3075"}
 {"commit": "af466b661786be46defcee24fb9cf347a1566bc8", "skipped": "post-land-sweep-attribution-skipped-stale-baseline", "ticket": "T-3080"}
 {"commit": "3898f96ddb2e10990942e87695009ffcaeeb67bb", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-3094"}
 {"commit": "6ee226fc5cb9522f0fd704c3c946ec5b09a9bb5b", "skipped": "post-land-sweep-attribution-skipped-stale-baseline", "ticket": "T-3094"}

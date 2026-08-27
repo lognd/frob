@@ -59,6 +59,24 @@ def _git_init(root: Path, *, branch: str = "main") -> None:
     (root / ".gitignore").write_text(".frob/\n")
 
 
+# frob:ticket T-3075
+def _git_clone(src: Path, dest: Path, parent: Path) -> None:
+    """`git clone` PLUS a per-repo `user.email`/`user.name` in the clone
+    (T-3075): `git clone` never copies the SOURCE repo's local (non-
+    global) config, so a clone made this way relied on the ambient
+    developer/CI machine's global git identity for any commit made
+    inside it -- present on a developer's own machine (so these tests
+    passed locally), absent on a bare CI runner (`Author identity
+    unknown ... tell me who you are`, confirmed in the GitHub Actions job
+    log this ticket investigated). Every call site in this file that
+    commits inside a cloned `worktree` must go through this helper, not
+    a raw `git clone`, so the fixture is hermetic to ambient identity in
+    both directions -- absent (CI) and present (a normal dev machine)."""
+    _run(["git", "clone", "-q", str(src), str(dest)], parent)
+    _run(["git", "config", "user.email", "test@example.com"], dest)
+    _run(["git", "config", "user.name", "Test"], dest)
+
+
 def _commit_all(root: Path, message: str) -> None:
     _run(["git", "add", "-A"], root)
     _run(["git", "commit", "-q", "-m", message], root)
@@ -130,7 +148,7 @@ class TestDetectDuplicateTicketIdCollisions:
         (root / "README.md").write_text("seed\n")
         _commit_all(root, "seed (no T-4000 on either side yet)")
 
-        _run(["git", "clone", "-q", str(root), str(worktree)], tmp_path)
+        _git_clone(root, worktree, tmp_path)
         _run(["git", "-C", str(worktree), "checkout", "-q", "-b", "feature"], tmp_path)
 
         # AFTER the two sides diverge, root independently allocates T-4000
@@ -161,7 +179,7 @@ class TestDetectDuplicateTicketIdCollisions:
         _seed_v2_ticket(root, "T-4001", scope=("src/a.py",))
         _commit_all(root, "root writes T-4001")
 
-        _run(["git", "clone", "-q", str(root), str(worktree)], tmp_path)
+        _git_clone(root, worktree, tmp_path)
         _run(["git", "-C", str(worktree), "checkout", "-q", "-b", "feature"], tmp_path)
 
         # The worktree's OWN change to the ticket actually being landed --
@@ -181,7 +199,7 @@ class TestDetectDuplicateTicketIdCollisions:
         _git_init(root)
         _seed_v2_ticket(root, "T-4002", scope=("src/a.py",))
         _commit_all(root, "root writes T-4002")
-        _run(["git", "clone", "-q", str(root), str(worktree)], tmp_path)
+        _git_clone(root, worktree, tmp_path)
 
         found = detect_duplicate_ticket_id_collisions(worktree, root, "T-9999", "main")
         assert found == frozenset()
@@ -201,7 +219,7 @@ class TestDetectDuplicateTicketIdCollisions:
         _seed_v2_ticket(root, "T-4003", scope=("src/a.py",))
         _commit_all(root, "root writes T-4003 (the shared base)")
 
-        _run(["git", "clone", "-q", str(root), str(worktree)], tmp_path)
+        _git_clone(root, worktree, tmp_path)
         _run(["git", "-C", str(worktree), "checkout", "-q", "-b", "feature"], tmp_path)
 
         # Worktree retitles T-4003 after the branch point.
