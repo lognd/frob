@@ -29,7 +29,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: bbfba455e4ff27e8727fc0ed703ea4674ec413f6
 ---
 MEASURED 2026-08-27, T-3086 attempt 4 (after T-3066/T-3105/T-3109 all
 landed). Ran the exact split from T-3086's brief:
