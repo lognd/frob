@@ -23,6 +23,7 @@ scope:
 - docs/modules/tickets-landing.md
 - frob.lock
 - tests/unit/test_land_squash_stage.py
+- src/frob/tickets/_land_compose.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -101,6 +102,14 @@ scope_changes:
     tests/test_ticket_land.py leaks FROB_WORKTREE in-process (145 WorktreeLeaseViolation
     refusals measured on unmodified main), which makes evidence bound there fail to
     resolve
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/tickets/_land_compose.py
+  reason: T-3107's and T-3114's WIRE001 waivers name T-3089 as their follow_up tracker;
+    this ticket delivers only the retargeting half, so those three rows must be re-pointed
+    at T-3121 (the flip) in this same change -- LiveTrackerCited refuses the close
+    otherwise
   actor: logan
   at: '2026-08-27'
 body_changes:
