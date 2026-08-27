@@ -22,6 +22,7 @@ scope:
 - strata_core.pyi
 - docs/strata/vmodel.md
 - docs/strata/graph.md
+- strata-core/src/graph/query.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -114,6 +115,17 @@ scope_changes:
     layer that declares which kinds require which attrs, plus the PyO3
 
     boundary function and its stub that expose node/edge data to Python.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: strata-core/src/graph/query.rs
+  reason: 'query.rs''s own test fixture constructs an EdgeKindSchema literal; adding
+
+    the required_attrs field to that struct (T-3044 H3) is a mechanical
+
+    compile-fix in the same struct''s other construction site, not new scope.
 
     '
   actor: logan
