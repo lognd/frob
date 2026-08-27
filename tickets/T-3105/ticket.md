@@ -1,7 +1,7 @@
 ---
 id: T-3105
 title: 'refactor split: import-rewrite drags unmoved names to destination module'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -15,10 +15,20 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/refactor/_scan.py
+- tests/test_refactor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_refactor.py
+  reason: 'T-3105: adding tests/test_refactor.py to scope, edited to cover the T-3105
+    fix (mixed moved/unmoved import fixtures)
+
+    '
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
