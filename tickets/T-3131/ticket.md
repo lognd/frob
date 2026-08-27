@@ -1,7 +1,7 @@
 ---
 id: T-3131
 title: 'UNCONFIRMED-ONCE: close disclosure-guard false-fire on exempt Changed subsection'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
