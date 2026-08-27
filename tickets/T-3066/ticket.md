@@ -38,7 +38,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7a02dfee2bea11b97db1c73e34930124e91ecba4
 ---
 `frob refactor split` (and by extension anything sharing
 `src/frob/refactor/_scan.py`'s import-resolution scan, e.g. `move-module`)
