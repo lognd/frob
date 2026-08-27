@@ -1,7 +1,7 @@
 ---
 id: T-3070
 title: Wire evidence-reach classifier (T-3046) into frob check as a real WARN gate
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -50,3 +50,6 @@ Plan:
   anything in its own declared scope. Must-quiet fixture: a genuine
   covering test.
 - Doc update: docs/modules/gates.md, once unleased.
+
+## Drop reason
+- 2026-08-27: Exact duplicate of T-3063: identical title and byte-identical body (10037 chars each), both queued, both unblocked now that T-3009 is done. T-3063 was filed first and is retained. Filed separately: frob ticket new does not detect duplicate titles/bodies.
