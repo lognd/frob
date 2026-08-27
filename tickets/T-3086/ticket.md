@@ -11,6 +11,7 @@ blocked_by:
 - T-3105
 - T-3109
 - T-3122
+- T-3136
 parent: null
 tier: ticket
 sprint: null
@@ -110,3 +111,4 @@ ACCEPTANCE
 - 2026-08-27 attempt 1: frob refactor split completed for gates._models->frob.findings but its call-site import rewriter (src/frob/refactor/_scan.py::_rebuild_from_import) drags every unmoved name on a shared import line to the destination module too, breaking ~130 files' imports (frob.gates unimportable); reverted the worktree clean, filed T-3105 to fix the rewriter before retrying this extraction
 - 2026-08-27 attempt 2: frob refactor split ran after T-3105 landed and hit a THIRD distinct defect: import-rewrite drops leading indentation on a function-local/block-nested import, producing an unexpected-indent syntax error (confirmed at src/frob/tickets/_land.py line 3705 and 3 other files). Verify phase caught it and rolled back cleanly; no damage committed. Worktree reset clean. Filed T-3109 to fix the indentation-loss bug before retrying.
 - 2026-08-27 attempt 3: 2026-08-27 attempt 4: frob refactor split ran cleanly (140 ops/131 files, committed) but the moved class bodies (Severity/WaiverRef/DebtEntry/Violation) landed in frob.findings with zero imports -- StrEnum/BaseModel/ConfigDict all undefined, import frob.findings raises NameError immediately. Worktree reset clean, no damage committed. Filed T-3122 (split move-definition logic never carries forward the moved symbols' own needed imports) to fix before retrying.
+- 2026-08-27 attempt 5: verify_pytest_collect passes non-Python touched files (e.g. docs/design/check-fix-engine.md) straight to pytest's own argv with no .py filter, false-refusing with rc=4 USAGE_ERROR -- the split itself is correct (import_resolution and module_import both pass, both modules import cleanly, confirmed by running with --skip-pytest-collect); blocked on T-3136 which fixes verify_pytest_collect's missing filter, mirroring T-1885's existing filter in verify_import_resolution
