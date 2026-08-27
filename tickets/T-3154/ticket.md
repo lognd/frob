@@ -1,7 +1,7 @@
 ---
 id: T-3154
 title: 'post-land sweep regression from T-3145: 1 new (rule, file) identit(ies) (SEC110)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-27'
