@@ -2,7 +2,7 @@
 id: T-2573
 title: 'Milestone sequencing: make a do-last ticket reachable and release deadlocks
   statically provable'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-18'
