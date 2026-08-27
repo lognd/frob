@@ -2282,6 +2282,74 @@ class TestLandLockHolderPids:
         assert fleet_status.land_lock_holder_pids(root, proc=proc) == []
 
 
+def _write_proc_locks(proc: Path, lines: list[str]) -> None:
+    """Fake `<proc>/locks` (T-3093) -- `_true_flock_holder_pid` reads
+    this exact path."""
+    proc.mkdir(parents=True, exist_ok=True)
+    (proc / "locks").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+class TestTrueFlockHolderPid:
+    """`fleet_status._true_flock_holder_pid` (T-3093): the true-holder-vs-
+    waiter distinction, read from `/proc/locks` rather than fd-open
+    membership."""
+
+    def test_finds_the_true_holder(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid.test_finds_the_true_holder  # noqa: E501
+        lock_path = tmp_path / "land.lock"
+        lock_path.write_text("{}", encoding="utf-8")
+        st = lock_path.stat()
+        maj, minor = os.major(st.st_dev), os.minor(st.st_dev)
+        proc = tmp_path / "proc"
+        _write_proc_locks(
+            proc,
+            [f"1: FLOCK  ADVISORY  WRITE 555 {maj:02x}:{minor:02x}:{st.st_ino} 0 EOF"],
+        )
+        assert fleet_status._true_flock_holder_pid(lock_path, proc=proc) == (
+            True,
+            555,
+        )
+
+    def test_ignores_a_lock_on_a_different_inode(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid.test_ignores_a_lock_on_a_different_inode  # noqa: E501
+        """A waiter that later acquires an UNRELATED file's lock must
+        never be misread as this lock's holder."""
+        lock_path = tmp_path / "land.lock"
+        lock_path.write_text("{}", encoding="utf-8")
+        st = lock_path.stat()
+        maj, minor = os.major(st.st_dev), os.minor(st.st_dev)
+        proc = tmp_path / "proc"
+        _write_proc_locks(
+            proc,
+            [f"1: FLOCK  ADVISORY  WRITE 999 {maj:02x}:{minor:02x}:{st.st_ino + 1} 0 EOF"],
+        )
+        assert fleet_status._true_flock_holder_pid(lock_path, proc=proc) == (
+            True,
+            None,
+        )
+
+    def test_unreadable_proc_locks_is_indeterminate(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid.test_unreadable_proc_locks_is_indeterminate  # noqa: E501
+        """T-3093's own explicit requirement: when `/proc/locks` cannot
+        be read at all, this MUST say "not determinable", never guess a
+        pid or silently claim "no holder"."""
+        lock_path = tmp_path / "land.lock"
+        lock_path.write_text("{}", encoding="utf-8")
+        proc = tmp_path / "proc-does-not-exist"
+        assert fleet_status._true_flock_holder_pid(lock_path, proc=proc) == (
+            False,
+            None,
+        )
+
+    def test_missing_lock_file_is_true_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid.test_missing_lock_file_is_true_none  # noqa: E501
+        proc = tmp_path / "proc"
+        _write_proc_locks(proc, [])
+        assert fleet_status._true_flock_holder_pid(
+            tmp_path / "does-not-exist.lock", proc=proc
+        ) == (True, None)
+
+
 class TestPrintLandStatus:
     """`fleet_status._print_land_status` (T-2180)."""
 
@@ -2304,6 +2372,9 @@ class TestPrintLandStatus:
             ],
         )
         monkeypatch.setattr(fleet_status, "land_lock_holder_pids", lambda root: [100])
+        monkeypatch.setattr(
+            fleet_status, "_true_flock_holder_pid", lambda lock_path: (True, 100)
+        )
         monkeypatch.setattr(fleet_status, "host_load", lambda: (19.5, 10 * 1024 * 1024))
         monkeypatch.setattr(fleet_status, "leases", lambda: [{"ticket_id": "T-1"}])
         monkeypatch.setattr(fleet_status, "live_lease_count", lambda held: 1)
@@ -2311,7 +2382,7 @@ class TestPrintLandStatus:
         out = capsys.readouterr().out
         assert "LANDS IN FLIGHT: 1" in out
         assert "T-1234" in out and "elapsed=300s" in out and "cpu=270s" in out
-        assert "LAND LOCK: held, live holder pid(s)=[100]" in out
+        assert "LAND LOCK: held by pid=100" in out
         assert "LOAD 19.5" in out and "MEM 10.0GB avail" in out
         assert "1 live lease(s) (1 total)" in out
 
@@ -2397,6 +2468,101 @@ class TestPrintLandStatus:
         assert "no live holder" in out.lower()
         assert "normal resting state" in out.lower()
         assert "LOAD: unknown" in out
+
+    def test_distinguishes_true_holder_from_waiters(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_distinguishes_true_holder_from_waiters  # noqa: E501
+        """T-3093 must-fire: one land running, two waiting -- the output
+        must name the single true holder and count the waiters
+        separately, never label all three "holder"."""
+        monkeypatch.setattr(fleet_status, "land_invocations", lambda: [])
+        monkeypatch.setattr(
+            fleet_status, "land_lock_holder_pids", lambda root: [100, 200, 300]
+        )
+        monkeypatch.setattr(
+            fleet_status, "_true_flock_holder_pid", lambda lock_path: (True, 100)
+        )
+        monkeypatch.setattr(fleet_status, "host_load", lambda: None)
+        monkeypatch.setattr(fleet_status, "swap_pressure", lambda: None)
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "live_lease_count", lambda held: 0)
+        monkeypatch.setattr(fleet_status, "orphaned_forkserver_count", lambda: None)
+        monkeypatch.setattr(fleet_status, "concurrent_check_count", lambda: None)
+        monkeypatch.setattr(
+            fleet_status, "stale_forkserver_count", lambda **kwargs: None
+        )
+        monkeypatch.setattr(fleet_status, "forkserver_swap_held_kb", lambda: None)
+        fleet_status._print_land_status()
+        out = capsys.readouterr().out
+        land_lock_line = next(
+            line for line in out.splitlines() if line.startswith("LAND LOCK")
+        )
+        assert "held by pid=100" in land_lock_line
+        assert "2 waiter(s)" in land_lock_line
+        assert "200" in land_lock_line and "300" in land_lock_line
+
+    def test_must_stay_quiet_single_holder_no_waiters_unchanged_meaning(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_must_stay_quiet_single_holder_no_waiters_unchanged_meaning  # noqa: E501
+        """T-3093 must-stay-quiet: a single land, no waiters -- the
+        output's MEANING is unchanged (still names pid=100 as the
+        holder, no waiter count printed)."""
+        monkeypatch.setattr(fleet_status, "land_invocations", lambda: [])
+        monkeypatch.setattr(fleet_status, "land_lock_holder_pids", lambda root: [100])
+        monkeypatch.setattr(
+            fleet_status, "_true_flock_holder_pid", lambda lock_path: (True, 100)
+        )
+        monkeypatch.setattr(fleet_status, "host_load", lambda: None)
+        monkeypatch.setattr(fleet_status, "swap_pressure", lambda: None)
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "live_lease_count", lambda held: 0)
+        monkeypatch.setattr(fleet_status, "orphaned_forkserver_count", lambda: None)
+        monkeypatch.setattr(fleet_status, "concurrent_check_count", lambda: None)
+        monkeypatch.setattr(
+            fleet_status, "stale_forkserver_count", lambda **kwargs: None
+        )
+        monkeypatch.setattr(fleet_status, "forkserver_swap_held_kb", lambda: None)
+        fleet_status._print_land_status()
+        out = capsys.readouterr().out
+        land_lock_line = next(
+            line for line in out.splitlines() if line.startswith("LAND LOCK")
+        )
+        assert "held by pid=100" in land_lock_line
+        assert "waiter" not in land_lock_line.lower()
+
+    def test_indeterminate_true_holder_says_so_not_a_confident_number(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_indeterminate_true_holder_says_so_not_a_confident_number  # noqa: E501
+        """T-3093's own explicit requirement: when the true holder cannot
+        be determined from /proc, say so -- never print the fd-open set
+        under a "holder" label."""
+        monkeypatch.setattr(fleet_status, "land_invocations", lambda: [])
+        monkeypatch.setattr(
+            fleet_status, "land_lock_holder_pids", lambda root: [100, 200]
+        )
+        monkeypatch.setattr(
+            fleet_status, "_true_flock_holder_pid", lambda lock_path: (False, None)
+        )
+        monkeypatch.setattr(fleet_status, "host_load", lambda: None)
+        monkeypatch.setattr(fleet_status, "swap_pressure", lambda: None)
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "live_lease_count", lambda held: 0)
+        monkeypatch.setattr(fleet_status, "orphaned_forkserver_count", lambda: None)
+        monkeypatch.setattr(fleet_status, "concurrent_check_count", lambda: None)
+        monkeypatch.setattr(
+            fleet_status, "stale_forkserver_count", lambda **kwargs: None
+        )
+        monkeypatch.setattr(fleet_status, "forkserver_swap_held_kb", lambda: None)
+        fleet_status._print_land_status()
+        out = capsys.readouterr().out
+        land_lock_line = next(
+            line for line in out.splitlines() if line.startswith("LAND LOCK")
+        )
+        assert "not determinable" in land_lock_line.lower()
+        assert "held by pid=" not in land_lock_line
 
     # frob:ticket T-2222
     def test_guidance_line_uses_live_count_not_raw_count(
@@ -3012,6 +3178,41 @@ class TestConcurrentCheckCount:
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount.test_missing_proc_returns_none  # noqa: E501
         assert fleet_status.concurrent_check_count(tmp_path / "no-proc") is None
+
+    def test_counts_module_invoked_check(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount.test_counts_module_invoked_check  # noqa: E501
+        """T-3093 regression: `python -m frob check ...` -- the fleet's
+        own dominant invocation shape under `uv run` -- must count, not
+        silently vanish. The anchor-bugged regex this replaced
+        (`re.compile(rb"(?:^|/)frob\\x00")`) never matched a bare `frob`
+        token that is neither the first token nor preceded by `/`."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        self._write_entry(
+            proc,
+            100,
+            cmdline=(
+                b"/x/.venv/bin/python\x00-m\x00frob\x00check\x00--json\x00"
+                b"--budget\x00300\x00"
+            ),
+        )
+        assert fleet_status.concurrent_check_count(proc) == 1
+
+
+class TestIsLiveCheckCmdline:
+    """`fleet_status._is_live_check_cmdline` (T-3093)."""
+
+    def test_does_not_match_check_repro_subcommand(self) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestIsLiveCheckCmdline.test_does_not_match_check_repro_subcommand  # noqa: E501
+        """Must not fire on a DIFFERENT ticket subcommand that merely
+        contains the substring 'check' -- token equality, never a
+        substring match."""
+        assert (
+            fleet_status._is_live_check_cmdline(
+                b"frob\x00ticket\x00check-repro\x00T-1\x00"
+            )
+            is False
+        )
 
 
 class TestSwapGuidance:

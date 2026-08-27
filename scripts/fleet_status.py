@@ -1773,8 +1773,8 @@ def _parse_land_argv_ticket_id(argv: str) -> str | None:
 # frob:ticket T-2475
 #: `/proc/<pid>/cmdline`'s NUL-delimited token pair identifying a REAL
 #: `... ticket land ...` invocation -- `ticket` and `land` as two
-#: SEPARATE argv elements, mirroring `_FROB_CHECK_TOKEN_RE`/
-#: `_CHECK_TOKEN_RE`'s own token-not-substring contract below (T-2473).
+#: SEPARATE argv elements, mirroring `_is_live_check_cmdline`'s own
+#: token-not-substring contract below (T-2473/T-3093).
 #: This is the structural check `_LAND_ARGV_TICKET_RE`'s text-substring
 #: match cannot make: a coordinator's own wait-loop shell running
 #: `pgrep -f "frob ticket land T-2408"` has `ticket` and `land` GLUED
@@ -2083,6 +2083,103 @@ def land_lock_holder_pids(root: Path, proc: Path = Path("/proc")) -> list[int]:
                 holders.append(int(pid_dir.name))
                 break
     return holders
+
+
+# frob:doc docs/guides/coordinator-scripts.md#land_lock_holder_pids
+# frob:ticket T-3093
+def _read_proc_locks(proc: Path = Path("/proc")) -> list[str] | None:
+    """`/proc/locks`'s own lines, or `None` if unreadable (non-Linux, a
+    sandboxed container with no `/proc/locks` exposed) -- T-3093's own
+    readability half of the true-holder-vs-waiter distinction. Injectable
+    `proc` for tests (a fake `<tmp>/locks` file), matching every other
+    `/proc`-scanning function in this module."""
+    try:
+        return (proc / "locks").read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+
+
+# frob:doc docs/guides/coordinator-scripts.md#land_lock_holder_pids
+# frob:ticket T-3093
+def _true_flock_holder_pid(
+    lock_path: Path, proc: Path = Path("/proc")
+) -> tuple[bool, int | None]:
+    """Which live pid, if any, ACTUALLY holds `lock_path`'s `flock`
+    (T-3093) -- as opposed to `land_lock_holder_pids`, which reports
+    every pid with the file merely OPEN (T-2180's `_land_lock` is a
+    NON-BLOCKING flock poll loop, so a WAITING process also holds the
+    file open, without holding the flock, for its whole polling window --
+    the incident this closes: three fd-open pids read as three
+    simultaneous "holders", when it was one real holder plus two
+    waiters).
+
+    `/proc/locks` (`man proc`) lists every currently GRANTED advisory
+    lock with its holding pid and `device:inode` -- unlike fd-open
+    membership, a WAITING `flock()` call never appears here at all, so a
+    `device:inode` match against `lock_path`'s own `os.stat` is a direct,
+    race-free answer to "who actually holds this", not an inference.
+
+    Returns `(determinable, pid)`: `determinable=False, pid=None` when
+    `/proc/locks` itself could not be read (`_read_proc_locks` returned
+    `None`) -- flock ownership genuinely cannot be established from
+    `/proc` here, and the caller must say so rather than print the
+    fd-open set under a "holder" label (T-3093's own explicit
+    requirement: an honest "not determinable" beats a confident wrong
+    number). `determinable=True, pid=None` when `/proc/locks` was
+    readable but no entry currently matches `lock_path` (no flock
+    presently granted on it -- e.g. a benign race between the fd-open
+    scan and this read, or genuinely no active land). `determinable=True,
+    pid=<N>` is the real answer: exactly one live pid holds the flock.
+    Multiple matching entries (should never happen for one exclusively-
+    held `flock`, but a malformed/multi-lock read is possible) also reads
+    as `(True, None)` -- ambiguous is not the same claim as "no holder",
+    but this function's contract is "the ONE true holder or nothing",
+    matching an exclusive `flock`'s own real-world semantics; the caller
+    still has the raw fd-open set for context."""
+    try:
+        lock_stat = lock_path.stat()
+    except OSError:
+        return (True, None)
+    lines = _read_proc_locks(proc)
+    if lines is None:
+        return (False, None)
+    matches = _flock_holders_matching(lines, lock_stat)
+    if len(matches) == 1:
+        return (True, next(iter(matches)))
+    return (True, None)
+
+
+# frob:ticket T-3093
+def _flock_holders_matching(lines: list[str], lock_stat: os.stat_result) -> set[int]:
+    """ARCH001 split of `_true_flock_holder_pid` (T-3093): parses
+    `/proc/locks`' own lines (`man proc`: `"<id>: FLOCK ADVISORY WRITE
+    <pid> <maj>:<min>:<ino> ..."`, device/inode in HEX) and returns the
+    set of live pids holding a GRANTED `FLOCK` matching `lock_stat`'s own
+    device/inode -- `_true_flock_holder_pid`'s own docstring covers the
+    full contract; this is purely the mechanical parse/match step."""
+    target_major = os.major(lock_stat.st_dev)
+    target_minor = os.minor(lock_stat.st_dev)
+    matches: set[int] = set()
+    for line in lines:
+        fields = line.split()
+        if len(fields) < 6 or fields[1] != "FLOCK":
+            continue
+        dev_major_hex, _, rest = fields[5].partition(":")
+        dev_minor_hex, _, inode_field = rest.partition(":")
+        try:
+            dev_major = int(dev_major_hex, 16)
+            dev_minor = int(dev_minor_hex, 16)
+            inode = int(inode_field)
+            pid = int(fields[4])
+        except ValueError:
+            continue
+        if (
+            dev_major == target_major
+            and dev_minor == target_minor
+            and inode == lock_stat.st_ino
+        ):
+            matches.add(pid)
+    return matches
 
 
 #: Below this many concurrent agents, host load is not this repo's own
@@ -2478,9 +2575,10 @@ def _live_check_pids(proc: Path = Path("/proc")) -> set[int] | None:
     can test ancestor-pid MEMBERSHIP without re-scanning `/proc` a second
     time (DUP001 -- `concurrent_check_count` below is now `len(_live_
     check_pids(proc) or ())`, same behavior, one shared scan). Matches
-    `_FROB_CHECK_TOKEN_RE`/`_CHECK_TOKEN_RE` as separate cmdline tokens,
-    never a substring. Returns `None` only when `/proc` is unreadable,
-    matching every other best-effort function in this module."""
+    via `_is_live_check_cmdline` (T-3093) -- whole-token comparison,
+    never a substring/regex. Returns `None` only when `/proc` is
+    unreadable, matching every other best-effort function in this
+    module."""
     if not proc.is_dir():
         return None
     try:
@@ -2495,9 +2593,7 @@ def _live_check_pids(proc: Path = Path("/proc")) -> set[int] | None:
             raw = (entry / "cmdline").read_bytes()
         except OSError:
             continue
-        if not raw.endswith(b"\x00"):
-            raw += b"\x00"
-        if _FROB_CHECK_TOKEN_RE.search(raw) and _CHECK_TOKEN_RE.search(raw):
+        if _is_live_check_cmdline(raw):
             pids.add(int(entry.name))
     return pids
 
@@ -2719,12 +2815,43 @@ def forkserver_swap_held_kb(proc: Path = Path("/proc")) -> int | None:
 
 # frob:doc docs/guides/coordinator-scripts.md#concurrent_check_count
 # frob:ticket T-2473
-#: `cmdline` token-pair identifying a live `frob check` invocation --
-#: duplicated in plain form from `frob.process._reap._FROB_TOKEN_RE`/
-#: `_CHECK_TOKEN_RE` (this script's own "no `frob` import" contract, the
-#: same posture `_FORKSERVER_CMDLINE_RE` above already takes for T-2443).
-_FROB_CHECK_TOKEN_RE = re.compile(rb"(?:^|/)frob\x00")
-_CHECK_TOKEN_RE = re.compile(rb"\x00check\x00|\x00check$")
+# frob:ticket T-3093
+#: T-3093: this used to be `_FROB_CHECK_TOKEN_RE = re.compile(rb"(?:^|/)
+#: frob\x00")` -- `^` anchors ONLY the whole cmdline blob's start, not
+#: each NUL-delimited argv token, so a bare `frob` token that is neither
+#: the FIRST token nor preceded by a literal `/` never matched. That is
+#: exactly the shape `python -m frob check ...` produces (`-m` precedes
+#: `frob`, not `/`) -- this fleet's own dominant invocation shape under
+#: `uv run`. CONFIRMED LIVE 2026-08-27: two running `python -m frob
+#: check ...` launchers were both alive while this script reported ALL
+#: of their descendant forkservers ORPHANED (T-3072's own Done report).
+#: `_is_live_check_cmdline` below compares whole tokens after splitting
+#: on `\x00`, which has no equivalent anchor bug by construction --
+#: replaces both `_FROB_CHECK_TOKEN_RE` and `_CHECK_TOKEN_RE`. Still
+#: duplicated in plain form rather than `import frob.process._reap`
+#: (this script's own "no `frob` import" contract, the same posture
+#: `_FORKSERVER_CMDLINE_RE` above already takes for T-2443) -- `frob.
+#: process._reap` carries the SAME fix (T-3072's own `_is_live_check_
+#: process`) as its own canonical, importable copy for any caller that
+#: is NOT bound by this script's standalone contract.
+_LIVE_CHECK_EXE_TOKEN = b"frob"
+_LIVE_CHECK_SUBCOMMAND_TOKEN = b"check"
+
+
+# frob:ticket T-3093
+def _is_live_check_cmdline(raw: bytes) -> bool:
+    """`True` when NUL-separated `raw` (a `/proc/<pid>/cmdline` read) is a
+    live `frob check` invocation: some token equals `frob` (or ends
+    `/frob`, the executable-path form) AND some token equals `check` --
+    whole-token comparison, never a substring/regex over the raw joined
+    bytes (`_LIVE_CHECK_EXE_TOKEN`'s own docstring: the false-negative
+    this replaces)."""
+    tokens = raw.split(b"\x00")
+    has_exe = any(
+        token == _LIVE_CHECK_EXE_TOKEN or token.endswith(b"/" + _LIVE_CHECK_EXE_TOKEN)
+        for token in tokens
+    )
+    return has_exe and _LIVE_CHECK_SUBCOMMAND_TOKEN in tokens
 
 
 # frob:doc docs/guides/coordinator-scripts.md#concurrent_check_count
@@ -3557,6 +3684,8 @@ def _land_status_lines(
     concurrent_checks: int | None = None,
     stale_forkservers: int | None = None,
     forkserver_swap_kb: int | None = None,
+    true_holder_determinable: bool | None = None,
+    true_holder_pid: int | None = None,
 ) -> list[str]:
     """Render the LANDS/LAND LOCK/LOAD block as plain text lines from
     already-computed inputs -- the PURE-COMPUTE half of the ARCH103 split
@@ -3603,7 +3732,19 @@ def _land_status_lines(
     claiming a deadlock; and each land's `cpu=` figure now also reports
     `child_cpu_s` (`land_invocations`' own field) when nonzero, so a
     healthy land running `frob check` as a child process no longer reads
-    as a near-zero-CPU stall."""
+    as a near-zero-CPU stall.
+
+    T-3093: `holder_pids` (fd-OPEN membership, `land_lock_holder_pids`)
+    is no longer printed under a "holder" label by itself -- `_land_lock`
+    is a NON-BLOCKING flock poll loop, so a WAITING process also holds
+    the file open for its whole polling window, and three fd-open pids
+    were once read as three simultaneous holders (a serious correctness
+    bug, had it been real) when it was one true holder plus two waiters.
+    `true_holder_pid`/`true_holder_determinable`
+    (`_true_flock_holder_pid`, a real `/proc/locks` read) distinguish the
+    one true holder from the rest; `true_holder_determinable=None` (the
+    default) preserves this function's PRE-T-3093 rendering exactly, for
+    a caller that has not opted into the new fields."""
     lines = [f"LANDS IN FLIGHT: {len(invocations)}"]
     for inv in invocations:
         # T-2193: land_invocations() drops any row it cannot parse a
@@ -3617,7 +3758,36 @@ def _land_status_lines(
         )
 
     if holder_pids:
-        lines.append(f"LAND LOCK: held, live holder pid(s)={holder_pids}")
+        if true_holder_determinable is None:
+            # Legacy caller (a test predating T-3093, or one that has not
+            # opted into the true-holder distinction) -- unchanged wording.
+            lines.append(f"LAND LOCK: held, live holder pid(s)={holder_pids}")
+        elif not true_holder_determinable:
+            lines.append(
+                f"LAND LOCK: {len(holder_pids)} process(es) have the lock "
+                f"file open (pid(s)={holder_pids}); true holder not "
+                "determinable from /proc (flock ownership is not directly "
+                "exposed there on this platform/sandbox, T-3093)"
+            )
+        elif true_holder_pid is None:
+            lines.append(
+                f"LAND LOCK: {len(holder_pids)} process(es) have the lock "
+                f"file open (pid(s)={holder_pids}) but none currently hold "
+                "the flock -- a transient race (a land starting/finishing) "
+                "or all are waiters, not a stuck lock (T-3093)"
+            )
+        else:
+            waiters = [pid for pid in holder_pids if pid != true_holder_pid]
+            waiter_part = (
+                f"; {len(waiters)} waiter(s) with the file open "
+                f"pid(s)={waiters}"
+                if waiters
+                else ""
+            )
+            lines.append(
+                f"LAND LOCK: held by pid={true_holder_pid} (T-3093, via "
+                f"/proc/locks){waiter_part}"
+            )
     elif lock_exists:
         lines.append(
             "LAND LOCK: file exists, no live holder -- normal resting "
@@ -3783,6 +3953,7 @@ def _print_land_status() -> None:
     invocations = land_invocations()
     holder_pids = land_lock_holder_pids(REPO)
     lock_path = REPO / ".frob" / "land.lock"
+    true_holder_determinable, true_holder_pid = _true_flock_holder_pid(lock_path)
     load = host_load()
     swap = swap_pressure()
     held = leases()
@@ -3799,6 +3970,8 @@ def _print_land_status() -> None:
         concurrent_checks,
         stale_forkserver_count(concurrent_checks=concurrent_checks),
         forkserver_swap_held_kb(),
+        true_holder_determinable,
+        true_holder_pid,
     ):
         print(line)
 
