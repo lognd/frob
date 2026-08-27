@@ -1198,6 +1198,12 @@ def _worktree_started_ticket_ids(path: Path) -> list[str]:
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket.test_series_workt\
 # ree_matches_sibling_ticket_via_start_transition
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit.test_l\
+# ive_worktree_with_lease_file_removed_is_not_leaked
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit.test_n\
+# o_worktree_and_no_lease_is_still_leaked
 def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> list[str]:
     """Names of live worktrees whose branch carries an unlanded commit
     that, in that SAME commit's own diff, BOTH (a) touches
@@ -1252,10 +1258,34 @@ def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> lis
         # named one like `waive-liveness`, or a series worktree holding
         # several tickets' leases where the name resolves to only one of
         # them) -- so it only needs the (weaker, ARCH001-split-out)
-        # scope-only check; every other worktree still needs the
-        # original, stricter dual-condition correlation -- see the two
-        # helpers' own docstrings for why each applies to its own case.
+        # scope-only check.
+        #
+        # T-3128: a worktree can ALSO carry no start-transition commit
+        # for `ticket_id` in `main..HEAD` while genuinely being its
+        # worktree -- e.g. its own `frob ticket start`/`work` commit has
+        # already landed onto `main` through a sibling ticket's squash
+        # (dropping out of `main..HEAD` entirely), or the worktree
+        # predates that commit's introduction. The strict dual-condition
+        # correlation below then sees no single commit touching both
+        # `tickets/<id>/` and scope (the start-transition commit and the
+        # real work commits are normally separate commits to begin with)
+        # and reports a live, in-use worktree as leaked -- MEASURED for
+        # real against T-3122. The dual-condition check exists
+        # specifically to rule out a worktree that structurally started a
+        # DIFFERENT ticket and merely shares scope-glob files with this
+        # one (T-2114/T-2181); that collision risk requires the worktree
+        # to have started SOME ticket. A worktree whose own history names
+        # NO start-transition commit for ANY ticket at all
+        # (`_worktree_started_ticket_ids` empty) carries none of that
+        # risk, so scope-only correlation is safe there too -- this is
+        # the discriminator: not "did this worktree start `ticket_id`"
+        # but "did this worktree structurally start ANYTHING else that
+        # scope-only matching could misattribute". Every worktree that
+        # started at least one OTHER ticket still gets the stricter,
+        # original dual-condition check.
         if _worktree_started_ticket(path, ticket_id):
+            matched = _worktree_matches_ticket_by_scope_only(path, scope_globs)
+        elif not _worktree_started_ticket_ids(path):
             matched = _worktree_matches_ticket_by_scope_only(path, scope_globs)
         else:
             matched = _worktree_matches_ticket_by_dual_correlation(
@@ -2674,18 +2704,56 @@ def _forkserver_root_is_live_check(
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_zero_forkser\
 # vers_reports_zero
+#: T-3139: mirrors `frob.process._reap.DEFAULT_ORPHAN_AGE_FLOOR_S` exactly
+#: (a second copy: `scripts/fleet_status.py` has a documented "no frob
+#: import" contract, so it cannot import the canonical constant -- same
+#: constraint as this module's own duplicated ancestry-walk helpers,
+#: T-3072's Done report). MEASURED DIVERGENCE this closes: `frob ops
+#: process reap` applies this floor before ever SIGTERMing a forkserver
+#: (age too young = never a reap candidate, regardless of ancestry), but
+#: `orphaned_forkserver_count` below used to apply NO floor at all -- a
+#: forkserver spawned seconds ago by a live pytest-xdist worker (a
+#: legitimate `frob test` run, not a `frob check` one, so it structurally
+#: has no `frob check` ancestor by design) read as ORPHANED here the
+#: instant it appeared, while `reap` correctly left it alone. Keep this
+#: value equal to `_reap.DEFAULT_ORPHAN_AGE_FLOOR_S` if either changes --
+#: `tests/unit/test_coordinator_scripts.py::
+#: TestOrphanedForkserverCountAgreesWithReap` runs BOTH copies against the
+#: same constructed process tree and fails loudly on divergence, which is
+#: what should have caught this the first time.
+_ORPHAN_AGE_FLOOR_S = 300.0
+
+
+# frob:doc docs/guides/coordinator-scripts.md#orphaned_forkserver_count
+# frob:ticket T-3139
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_unmeasurable\
+# _age_never_counted
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_young_forkse\
+# rver_with_no_check_ancestor_is_not_orphaned
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_old_forkserv\
+# er_with_no_check_ancestor_is_orphaned
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCountAgreesWithReap.tes\
+# t_young_xdist_parented_forkserver_agrees
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCountAgreesWithReap.tes\
+# t_old_no_ancestor_forkserver_agrees
 def orphaned_forkserver_count(proc: Path = Path("/proc")) -> int | None:
     """How many live `multiprocessing.forkserver` helper processes on this
-    host do NOT have a live `frob check` anywhere in their ancestry (T-2443,
-    fixed by T-2818 to walk the whole chain rather than the immediate
-    parent alone). Read directly from `/proc` (no `frob` import, no
-    subprocess -- matching `host_load`/`swap_pressure`'s own contract
-    exactly) so an operator staring at `_swap_guidance`'s '1 agent (SWAP
-    ...)' clause can see WHETHER this specific, actionable leak is the
-    cause, rather than guessing. Returns `None` if `/proc`, the ancestry
-    map, or the live-check-pid set is missing/unreadable (a non-Linux
-    host, a sandboxed container) -- the caller must treat that as
-    'unknown', never '0 orphans', mirroring every other best-effort
+    host are BOTH (a) at least `_ORPHAN_AGE_FLOOR_S` old and (b) do NOT
+    have a live `frob check` anywhere in their ancestry (T-2443, fixed by
+    T-2818 to walk the whole chain rather than the immediate parent
+    alone; T-3139 added the age floor). Read directly from `/proc` (no
+    `frob` import, no subprocess -- matching `host_load`/`swap_pressure`'s
+    own contract exactly) so an operator staring at `_swap_guidance`'s '1
+    agent (SWAP ...)' clause can see WHETHER this specific, actionable
+    leak is the cause, rather than guessing. Returns `None` if `/proc`,
+    the ancestry map, or the live-check-pid set is missing/unreadable (a
+    non-Linux host, a sandboxed container) -- the caller must treat that
+    as 'unknown', never '0 orphans', mirroring every other best-effort
     `/proc`-scanning function in this module.
 
     T-2818 ROOT CAUSE this replaced: T-2443's original version counted
@@ -2699,7 +2767,22 @@ def orphaned_forkserver_count(proc: Path = Path("/proc")) -> int | None:
     check`) and only calls a forkserver healthy if a live `frob check` pid
     is found somewhere in it -- at any depth, per the ticket's own
     positive control that a genuinely running check's worker pool must
-    never read as orphaned regardless of chain depth."""
+    never read as orphaned regardless of chain depth.
+
+    T-3139 ROOT CAUSE this ALSO fixes: the ancestry walk alone still
+    misclassifies a genuinely-legitimate forkserver spawned by a live
+    `frob test`/pytest-xdist run, because such a forkserver's real
+    ancestry chain never passes through a `frob check` process at all --
+    that is expected, not a leak, and MEASURED for real (`frob ops
+    process reap` correctly declined to touch 5 such forkservers while
+    this function reported them ORPHANED, the divergence T-3139 was filed
+    from). `reap_orphaned_forkservers`'s own `age_floor_s` parameter
+    already existed to give a legitimately-spawned forkserver time to
+    either exit on its own or grow old enough that 'no live check
+    ancestor after 5 minutes' becomes a meaningful signal instead of a
+    race against its own startup; this function did not apply that same
+    floor to its REPORT, so the two tools disagreed about the exact same
+    processes at the exact same moment."""
     snapshot = _forkserver_snapshot(proc)
     if snapshot is None:
         return None
@@ -2709,14 +2792,36 @@ def orphaned_forkserver_count(proc: Path = Path("/proc")) -> int | None:
     live_check_pids = _live_check_pids(proc)
     if ppid_map is None or live_check_pids is None:
         return None
-    orphaned = 0
-    for p in snapshot:
-        pid_value = p["pid"]
-        if not isinstance(pid_value, int):
-            continue
-        if not _forkserver_root_is_live_check(pid_value, ppid_map, live_check_pids):
-            orphaned += 1
-    return orphaned
+    return sum(
+        1
+        for p in snapshot
+        if _forkserver_entry_is_orphaned(p, ppid_map, live_check_pids)
+    )
+
+
+# frob:ticket T-3139
+def _forkserver_entry_is_orphaned(
+    entry: dict[str, int | float | None],
+    ppid_map: dict[int, int],
+    live_check_pids: set[int],
+) -> bool:
+    """`orphaned_forkserver_count`'s own ARCH001 split (T-3139): the per-
+    entry age-floor-then-ancestry classification for one `_forkserver_
+    snapshot` row -- `True` only when `entry` has cleared `_ORPHAN_AGE_
+    FLOOR_S` (or its age is measurable at all; unmeasurable age reads as
+    'cannot confirm', never a guess, matching `_reap._reap_orphaned_
+    pids`'s own `age_s is None -> continue` posture exactly) AND its
+    ancestry never reaches a live `frob check` pid."""
+    pid_value = entry["pid"]
+    if not isinstance(pid_value, int):
+        return False
+    age_s = entry.get("age_s")
+    if not isinstance(age_s, (int, float)) or age_s < _ORPHAN_AGE_FLOOR_S:
+        # Too young to judge (or age unmeasurable): matches `reap_
+        # orphaned_forkservers`'s own age_floor_s posture -- never a
+        # candidate regardless of ancestry, so never counted here.
+        return False
+    return not _forkserver_root_is_live_check(pid_value, ppid_map, live_check_pids)
 
 
 # frob:doc docs/guides/coordinator-scripts.md#stale_forkserver_count
@@ -3779,8 +3884,7 @@ def _land_status_lines(
         else:
             waiters = [pid for pid in holder_pids if pid != true_holder_pid]
             waiter_part = (
-                f"; {len(waiters)} waiter(s) with the file open "
-                f"pid(s)={waiters}"
+                f"; {len(waiters)} waiter(s) with the file open pid(s)={waiters}"
                 if waiters
                 else ""
             )

@@ -1,7 +1,7 @@
 ---
 id: T-3128
 title: fleet_status reports a live registered worktree as a leaked lease
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -27,7 +27,10 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3168
-designated_repro_test: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
+- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_no_worktree_and_no_lease_is_still_leaked
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
 threat: null
 component: null
 anchor: false

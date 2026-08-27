@@ -16,6 +16,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
@@ -2321,7 +2322,9 @@ class TestTrueFlockHolderPid:
         proc = tmp_path / "proc"
         _write_proc_locks(
             proc,
-            [f"1: FLOCK  ADVISORY  WRITE 999 {maj:02x}:{minor:02x}:{st.st_ino + 1} 0 EOF"],
+            [
+                f"1: FLOCK  ADVISORY  WRITE 999 {maj:02x}:{minor:02x}:{st.st_ino + 1} 0 EOF"
+            ],
         )
         assert fleet_status._true_flock_holder_pid(lock_path, proc=proc) == (
             True,
@@ -2830,14 +2833,48 @@ class TestSwapPressure:
 # frob:ticket T-2443
 class TestOrphanedForkserverCount:
     """`fleet_status.orphaned_forkserver_count` (T-2443, ancestry-walk fix
-    T-2818)."""
+    T-2818, age-floor fix T-3139)."""
+
+    #: T-3139: `_write_entry`'s default age when a test does not care
+    #: about the floor -- comfortably above `fleet_status._ORPHAN_AGE_
+    #: FLOOR_S` (300s) so every pre-T-3139 test in this class keeps its
+    #: original meaning without having to reason about age at all.
+    _OLD_AGE_S = 3600.0
 
     @staticmethod
-    def _write_entry(proc: Path, pid: int, *, cmdline: bytes, ppid: int) -> None:
+    def _write_proc_uptime(proc: Path, *, uptime_s: float = 10_000_000.0) -> None:
+        proc.joinpath("uptime").write_text(f"{uptime_s} 0.0\n", encoding="utf-8")
+
+    @classmethod
+    def _write_entry(
+        cls,
+        proc: Path,
+        pid: int,
+        *,
+        cmdline: bytes,
+        ppid: int,
+        age_s: float | None = None,
+    ) -> None:
+        """A `/proc/<pid>` forkserver-shaped entry, `age_s` old (default
+        `_OLD_AGE_S`, comfortably past the T-3139 floor) -- `age_s=None`
+        writes the original short `stat` line (unmeasurable age, matching
+        `reap_orphaned_forkservers`'s own 'never a candidate' posture for
+        that case, exercised by `test_unmeasurable_age_never_counted`)."""
+        if not (proc / "uptime").exists():
+            cls._write_proc_uptime(proc)
         entry = proc / str(pid)
         entry.mkdir(parents=True)
         (entry / "cmdline").write_bytes(cmdline)
-        (entry / "stat").write_text(f"{pid} (python3) S {ppid} {pid} 0 0 -1 0\n")
+        if age_s is None:
+            (entry / "stat").write_text(f"{pid} (python3) S {ppid} {pid} 0 0 -1 0\n")
+            return
+        clk_tck = os.sysconf("SC_CLK_TCK")
+        uptime_s = float((proc / "uptime").read_text(encoding="utf-8").split()[0])
+        starttime_ticks = int((uptime_s - age_s) * clk_tck)
+        stat_fields = ["S", str(ppid), str(pid), "0", "0", "-1", "0"]
+        stat_fields += ["0"] * 12  # pad up through nice/num_threads/itrealvalue
+        stat_fields.append(str(starttime_ticks))  # fields[19] == starttime
+        (entry / "stat").write_text(f"{pid} (python3) " + " ".join(stat_fields) + "\n")
 
     @staticmethod
     def _write_live_check(proc: Path, pid: int, *, ppid: int = 1) -> None:
@@ -2850,6 +2887,20 @@ class TestOrphanedForkserverCount:
         (entry / "cmdline").write_bytes(b"/x/.venv/bin/frob\x00check\x00")
         (entry / "stat").write_text(f"{pid} (frob) S {ppid} {pid} 0 0 -1 0\n")
 
+    @staticmethod
+    def _write_xdist_worker(proc: Path, pid: int, *, ppid: int) -> None:
+        """A live pytest-xdist remote-exec worker -- T-3139's own MEASURED
+        real-fleet shape: alive, no `frob` token anywhere in its cmdline,
+        so it is never a `frob check` process, yet it is a perfectly
+        legitimate parent for a forkserver a `frob test` run spawned."""
+        entry = proc / str(pid)
+        entry.mkdir(parents=True)
+        (entry / "cmdline").write_bytes(
+            b"/x/.venv/bin/python\x00-u\x00-c\x00"
+            b"import sys;exec(eval(sys.stdin.readline()))\x00"
+        )
+        (entry / "stat").write_text(f"{pid} (python) S {ppid} {pid} 0 0 -1 0\n")
+
     _FORKSERVER_CMDLINE = (
         b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00"
     )
@@ -2857,7 +2908,9 @@ class TestOrphanedForkserverCount:
     def test_counts_forkserver_reparented_to_init(self, tmp_path: Path) -> None:
         proc = tmp_path / "proc"
         proc.mkdir()
-        self._write_entry(proc, 4242, cmdline=self._FORKSERVER_CMDLINE, ppid=1)
+        self._write_entry(
+            proc, 4242, cmdline=self._FORKSERVER_CMDLINE, ppid=1, age_s=self._OLD_AGE_S
+        )
         assert fleet_status.orphaned_forkserver_count(proc) == 1
 
     def test_ignores_forkserver_with_live_parent(self, tmp_path: Path) -> None:
@@ -2867,13 +2920,21 @@ class TestOrphanedForkserverCount:
         proc = tmp_path / "proc"
         proc.mkdir()
         self._write_live_check(proc, 999)
-        self._write_entry(proc, 4242, cmdline=self._FORKSERVER_CMDLINE, ppid=999)
+        self._write_entry(
+            proc,
+            4242,
+            cmdline=self._FORKSERVER_CMDLINE,
+            ppid=999,
+            age_s=self._OLD_AGE_S,
+        )
         assert fleet_status.orphaned_forkserver_count(proc) == 0
 
     def test_ignores_non_forkserver_processes(self, tmp_path: Path) -> None:
         proc = tmp_path / "proc"
         proc.mkdir()
-        self._write_entry(proc, 4242, cmdline=b"sleep\x00600\x00", ppid=1)
+        self._write_entry(
+            proc, 4242, cmdline=b"sleep\x00600\x00", ppid=1, age_s=self._OLD_AGE_S
+        )
         assert fleet_status.orphaned_forkserver_count(proc) == 0
 
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
@@ -2888,8 +2949,16 @@ class TestOrphanedForkserverCount:
         must classify BOTH as orphaned."""
         proc = tmp_path / "proc"
         proc.mkdir()
-        self._write_entry(proc, 5000, cmdline=self._FORKSERVER_CMDLINE, ppid=1)
-        self._write_entry(proc, 4242, cmdline=self._FORKSERVER_CMDLINE, ppid=5000)
+        self._write_entry(
+            proc, 5000, cmdline=self._FORKSERVER_CMDLINE, ppid=1, age_s=self._OLD_AGE_S
+        )
+        self._write_entry(
+            proc,
+            4242,
+            cmdline=self._FORKSERVER_CMDLINE,
+            ppid=5000,
+            age_s=self._OLD_AGE_S,
+        )
         assert fleet_status.orphaned_forkserver_count(proc) == 2
 
     def test_deep_chain_under_a_live_check_is_not_orphaned(
@@ -2902,8 +2971,20 @@ class TestOrphanedForkserverCount:
         proc = tmp_path / "proc"
         proc.mkdir()
         self._write_live_check(proc, 6000)
-        self._write_entry(proc, 5000, cmdline=self._FORKSERVER_CMDLINE, ppid=6000)
-        self._write_entry(proc, 4242, cmdline=self._FORKSERVER_CMDLINE, ppid=5000)
+        self._write_entry(
+            proc,
+            5000,
+            cmdline=self._FORKSERVER_CMDLINE,
+            ppid=6000,
+            age_s=self._OLD_AGE_S,
+        )
+        self._write_entry(
+            proc,
+            4242,
+            cmdline=self._FORKSERVER_CMDLINE,
+            ppid=5000,
+            age_s=self._OLD_AGE_S,
+        )
         assert fleet_status.orphaned_forkserver_count(proc) == 0
 
     def test_zero_forkservers_reports_zero(self, tmp_path: Path) -> None:
@@ -2914,6 +2995,179 @@ class TestOrphanedForkserverCount:
         proc.mkdir()
         self._write_live_check(proc, 100)
         assert fleet_status.orphaned_forkserver_count(proc) == 0
+
+    def test_unmeasurable_age_never_counted(self, tmp_path: Path) -> None:
+        """T-3139: `stat` too short to derive `starttime` (age
+        unmeasurable) must never be counted -- matches `reap_orphaned_
+        forkservers`'s own `age_s is None -> continue` posture exactly
+        (`_reap._reap_orphaned_pids`), the same conservative direction as
+        every other 'cannot confirm' case in this module."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        self._write_entry(
+            proc, 4242, cmdline=self._FORKSERVER_CMDLINE, ppid=1, age_s=None
+        )
+        assert fleet_status.orphaned_forkserver_count(proc) == 0
+
+    # frob:ticket T-3139
+    def test_young_forkserver_with_no_check_ancestor_is_not_orphaned(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET, T-3139's own measured incident: a forkserver
+        spawned SECONDS ago by a live pytest-xdist worker (a `frob test`
+        run, not `frob check` -- structurally never has a `frob check`
+        ancestor) must NOT be reported orphaned just because the ancestry
+        walk finds no `frob check` pid. `frob ops process reap` already
+        applies this same age floor before ever treating a forkserver as
+        a reap candidate; this is the count this module reports
+        disagreeing with that until now."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        xdist_ppid = 5555
+        self._write_xdist_worker(proc, xdist_ppid, ppid=100)
+        self._write_entry(
+            proc,
+            4242,
+            cmdline=self._FORKSERVER_CMDLINE,
+            ppid=xdist_ppid,
+            age_s=5.0,
+        )
+        assert fleet_status.orphaned_forkserver_count(proc) == 0
+
+    # frob:ticket T-3139
+    def test_old_forkserver_with_no_check_ancestor_is_orphaned(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE, the direction a floor-only fix could silently break:
+        once a forkserver with no `frob check` ancestor has aged PAST the
+        floor, it must still be reported orphaned -- the floor defers
+        judgment, it does not grant permanent immunity."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        xdist_ppid = 5555
+        self._write_xdist_worker(proc, xdist_ppid, ppid=100)
+        self._write_entry(
+            proc,
+            4242,
+            cmdline=self._FORKSERVER_CMDLINE,
+            ppid=xdist_ppid,
+            age_s=self._OLD_AGE_S,
+        )
+        assert fleet_status.orphaned_forkserver_count(proc) == 1
+
+
+# frob:ticket T-3139
+class TestOrphanedForkserverCountAgreesWithReap:
+    """Cross-check (T-3139's own chosen agreement mechanism): `scripts/
+    fleet_status.py::orphaned_forkserver_count` and `frob.process._reap.
+    reap_orphaned_forkservers` are two independent copies of the same
+    liveness rule (fleet_status cannot import the `frob` package -- see
+    `_ORPHAN_AGE_FLOOR_S`'s own docstring) -- this class runs BOTH against
+    the SAME constructed `/proc` tree and fails if they disagree about
+    which pids are orphaned, the cheapest of the three options T-3139
+    weighed and the one that would have caught this divergence itself."""
+
+    @staticmethod
+    def _write_xdist_worker(proc: Path, pid: int, *, ppid: int) -> None:
+        entry = proc / str(pid)
+        entry.mkdir(parents=True)
+        (entry / "cmdline").write_bytes(
+            b"/x/.venv/bin/python\x00-u\x00-c\x00"
+            b"import sys;exec(eval(sys.stdin.readline()))\x00"
+        )
+        (entry / "stat").write_text(f"{pid} (python) S {ppid} {pid} 0 0 -1 0\n")
+
+    @staticmethod
+    def _write_forkserver(
+        proc: Path, pid: int, *, ppid: int, age_s: float, uptime_s: float
+    ) -> None:
+        clk_tck = os.sysconf("SC_CLK_TCK")
+        starttime_ticks = int((uptime_s - age_s) * clk_tck)
+        entry = proc / str(pid)
+        entry.mkdir(parents=True)
+        (entry / "cmdline").write_bytes(
+            b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00"
+        )
+        stat_fields = ["S", str(ppid), str(pid), "0", "0", "-1", "0"]
+        stat_fields += ["0"] * 12
+        stat_fields.append(str(starttime_ticks))
+        entry.joinpath("stat").write_text(
+            f"{pid} (python3) " + " ".join(stat_fields) + "\n"
+        )
+        # `_reap._process_start_age_s` derives age from the `<proc>/<pid>`
+        # DIRECTORY's own mtime (a different, cheaper heuristic than
+        # fleet_status's stat-starttime approach) -- backdate it so both
+        # tools' independent age computations agree on this fixture.
+        now = time.time()
+        os.utime(entry, (now - age_s, now - age_s))
+
+    def test_young_xdist_parented_forkserver_agrees(self, tmp_path: Path) -> None:
+        """T-3139's exact measured shape: a forkserver, 5s old, parented
+        by a live xdist worker. Neither tool may treat it as orphaned."""
+        from frob.process import reap_orphaned_forkservers
+
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        uptime_s = 10_000_000.0
+        proc.joinpath("uptime").write_text(f"{uptime_s} 0.0\n", encoding="utf-8")
+        self._write_xdist_worker(proc, 5555, ppid=100)
+        self._write_forkserver(proc, 4242, ppid=5555, age_s=5.0, uptime_s=uptime_s)
+
+        fleet_status_count = fleet_status.orphaned_forkserver_count(proc)
+        reaped = reap_orphaned_forkservers(proc=proc)
+
+        assert fleet_status_count == 0, "fleet_status must not report this orphaned"
+        assert reaped == [], "reap must not touch this pid"
+
+    def test_old_no_ancestor_forkserver_agrees(self, tmp_path: Path) -> None:
+        """The must-fire counterpart, same shared tree: a forkserver old
+        enough to clear both tools' age floor, with no `frob check`
+        anywhere in its ancestry, must be flagged as a reap CANDIDATE by
+        both tools' own classification logic. Asserted at the classifier
+        level (`_reap`'s own ancestry walk plus its age-floor comparison),
+        not via `reap_orphaned_forkservers`'s actual `os.kill` -- the
+        fixture pid is not a real OS process, so a real SIGTERM would
+        raise `ProcessLookupError` regardless of classification and
+        `reaped == []` would be true either way, proving nothing."""
+        from frob.process._reap import (
+            DEFAULT_ORPHAN_AGE_FLOOR_S,
+            _is_live_check_process,
+            _process_start_age_s,
+        )
+        from frob.process._reap import (
+            _all_process_ppids as reap_all_process_ppids,
+        )
+        from frob.process._reap import (
+            _forkserver_root_is_live_check as reap_root_is_live_check,
+        )
+
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        uptime_s = 10_000_000.0
+        proc.joinpath("uptime").write_text(f"{uptime_s} 0.0\n", encoding="utf-8")
+        self._write_forkserver(proc, 4242, ppid=1, age_s=3600.0, uptime_s=uptime_s)
+
+        fleet_status_count = fleet_status.orphaned_forkserver_count(proc)
+        assert fleet_status_count == 1
+
+        reap_ppid_map = reap_all_process_ppids(proc)
+        reap_live_check_pids = {
+            pid for pid in reap_ppid_map if _is_live_check_process(pid, proc)
+        }
+        is_orphaned_per_reap = not reap_root_is_live_check(
+            4242, reap_ppid_map, reap_live_check_pids
+        )
+        age_s = _process_start_age_s(4242, proc, time.time())
+        is_reap_candidate = (
+            is_orphaned_per_reap
+            and age_s is not None
+            and age_s >= DEFAULT_ORPHAN_AGE_FLOOR_S
+        )
+        assert is_reap_candidate is True, (
+            "reap's own classifier must independently agree this pid is a "
+            "genuine orphan past the age floor, matching fleet_status's "
+            "count of 1 above"
+        )
 
 
 # frob:ticket T-2517
@@ -5325,8 +5579,12 @@ class TestFleetStatusLarge001WaiverParses:
         waived_offenders = [
             v for v in waived if v.rule == "LARGE001" and "fleet_status.py" in v.file
         ]
-        assert kept_offenders == [], f"unwaived LARGE001 on fleet_status.py: {kept_offenders}"
-        assert waived_offenders != [], "expected fleet_status.py's LARGE001 to be waived"
+        assert kept_offenders == [], (
+            f"unwaived LARGE001 on fleet_status.py: {kept_offenders}"
+        )
+        assert waived_offenders != [], (
+            "expected fleet_status.py's LARGE001 to be waived"
+        )
 
 
 # frob:ticket T-2854
