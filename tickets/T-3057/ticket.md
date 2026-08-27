@@ -30,7 +30,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 75717e16e63c508da728f88cd22fec6b0632227c
 ---
 ## Description
 T-3009 built `frob.gates._tdd_order.tdd_order_violations` (TDD001: a
