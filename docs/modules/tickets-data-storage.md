@@ -1287,6 +1287,43 @@ pytest fallback, `_run_pytest_directly`, is unaffected either way: it
 already passes `-o addopts=`, fully overriding `addopts` and never
 invoking `-n auto` in the first place.)
 
+**T-3094: `agent_env_exports` alone never reached a running pytest
+worker.** Measured 2026-08-27 under a live three-agent fleet: 0 of 40
+running pytest workers carried `PYTEST_XDIST_AUTO_NUM_WORKERS`, despite 3
+live leases satisfying the precondition above. Diagnosis, before any fix:
+`agent_env_exports`/`_bounded_xdist_workers` compute the bound correctly
+(a fleet context always produced a real value -- not a detection bug);
+the ONLY consumers anywhere in the codebase (`frob agent env`'s CLI
+output, `ticket work`'s hint line) both only ever PRINT the export as
+`export KEY=VALUE` text for a human/agent to `eval`. Nothing anywhere
+ever applied it to a process's own `os.environ`, so the bound survived
+only as long as the one shell that ran the `eval` -- and a dispatched
+agent's tool-driven shell typically does not persist state between
+separate command invocations, so even a compliant `eval` is usually gone
+before the very next command (the one that actually runs pytest) starts.
+This is the shipped-but-not-reachable class this repo has hit
+repeatedly: a function exists, is exported, is tested, and nothing in
+the real delivery path lets its value survive to the process that needs
+it.
+
+<!-- frob:describes src/frob/tickets/_worktree_guard.py::apply_agent_env -->
+<!-- frob:describes src/frob/tickets/_worktree_guard.py::warn_if_xdist_bound_missing -->
+
+`apply_agent_env(root)` closes the delivery gap for any caller running
+IN-PROCESS before it spawns pytest: it calls `agent_env_exports` and then
+mutates the CURRENT process's `os.environ` with the result, so a child
+`subprocess.run`/`Popen` (which inherits the parent's environment by
+default) picks up the bound with no shell `eval` hop at all. This does
+NOT retroactively fix a raw shell `pytest` invocation an agent types in a
+later, unrelated command -- that still needs the `eval` mechanism (or a
+future in-process wiring at each frob-internal pytest-spawn call site,
+tracked as residue from T-3094 since it spans files outside that
+ticket's single-file scope). `warn_if_xdist_bound_missing(root)` is the
+loud half: call it immediately before spawning pytest to log an ERROR
+when a fleet context is detected but the bound never made it into the
+current environment, instead of that gap being discoverable only via a
+live `/proc/<pid>/environ` fleet scan after the fact.
+
 **Git hook (defense in depth).**
 `frob.scaffold.install_worktree_lease_hook(root, *, force=False)`
 (docs/commands/scaffold.md) installs `pre-commit` and `pre-merge-commit`

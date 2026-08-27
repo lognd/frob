@@ -26,7 +26,9 @@ from frob.tickets._worktree_guard import (
     FROB_WORKTREE_ENV,
     PYTEST_XDIST_AUTO_NUM_WORKERS_ENV,
     agent_env_exports,
+    apply_agent_env,
     enforce_worktree_lease,
+    warn_if_xdist_bound_missing,
 )
 
 
@@ -212,6 +214,135 @@ class TestAgentEnvExports:
         # 3 other agents + this one joining = 4-way split, never the raw
         # per-agent `-n auto` count that caused the measured oversubscription.
         assert workers < cpu_count or cpu_count == 1
+
+
+class TestApplyAgentEnv:
+    """T-3094: `agent_env_exports` is computed correctly (T-2221) but its
+    ONLY consumer anywhere in the codebase is print-for-`eval` text
+    (`frob agent env`'s CLI output, `ticket work`'s hint line) -- nothing
+    ever applies it to a process's own environment. A live fleet measured
+    0 of 40 running pytest workers carrying `PYTEST_XDIST_AUTO_NUM_WORKERS`
+    despite 3 live leases. `apply_agent_env` closes the delivery gap for
+    any caller running IN-PROCESS before it spawns a pytest subprocess:
+    `subprocess.run`/`Popen` inherit the parent's `os.environ` by default,
+    so a bound applied here reaches a child pytest with no shell `eval`
+    hop at all -- the hop that a per-command harness (state reset between
+    invocations) or an unread playbook line silently drops."""
+
+    def test_mutates_current_process_env_under_fleet_context(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestApplyAgentEnv.test_mutates_current_process_env_under_fleet_context  # noqa: E501
+        monkeypatch.delenv(PYTEST_XDIST_AUTO_NUM_WORKERS_ENV, raising=False)
+        _init_repo(tmp_path)
+        for i in range(3):
+            _write_lease(tmp_path, f"T-200{i}", tmp_path.parent / f"apply-peer-{i}")
+        result = apply_agent_env(tmp_path)
+        assert result.is_ok
+        exports = result.danger_ok
+        assert PYTEST_XDIST_AUTO_NUM_WORKERS_ENV in exports
+        # The whole point: the CURRENT process's real os.environ carries it,
+        # not just the returned dict -- this is what a child subprocess.run
+        # inherits automatically.
+        assert (
+            os.environ[PYTEST_XDIST_AUTO_NUM_WORKERS_ENV]
+            == exports[PYTEST_XDIST_AUTO_NUM_WORKERS_ENV]
+        )
+
+    def test_must_stay_quiet_no_fleet_context_leaves_env_unset(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestApplyAgentEnv.test_must_stay_quiet_no_fleet_context_leaves_env_unset  # noqa: E501
+        """Must-stay-quiet: a single agent with no sibling leases is NOT
+        bounded -- `apply_agent_env` must not invent a value, matching
+        `agent_env_exports`'s own single-developer control."""
+        monkeypatch.delenv(PYTEST_XDIST_AUTO_NUM_WORKERS_ENV, raising=False)
+        _init_repo(tmp_path)
+        result = apply_agent_env(tmp_path)
+        assert result.is_ok
+        assert PYTEST_XDIST_AUTO_NUM_WORKERS_ENV not in result.danger_ok
+        assert PYTEST_XDIST_AUTO_NUM_WORKERS_ENV not in os.environ
+
+    def test_child_subprocess_inherits_the_bound(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestApplyAgentEnv.test_child_subprocess_inherits_the_bound  # noqa: E501
+        """The actual delivery proof this ticket requires: a REAL child
+        process, spawned the ordinary way (`subprocess.run` with no
+        explicit `env=`), inherits `PYTEST_XDIST_AUTO_NUM_WORKERS` once
+        `apply_agent_env` has mutated the parent's `os.environ` -- no
+        `eval`, no shell hop, no playbook line to remember."""
+        monkeypatch.delenv(PYTEST_XDIST_AUTO_NUM_WORKERS_ENV, raising=False)
+        _init_repo(tmp_path)
+        for i in range(2):
+            _write_lease(tmp_path, f"T-201{i}", tmp_path.parent / f"child-peer-{i}")
+        result = apply_agent_env(tmp_path)
+        assert result.is_ok
+        expected = result.danger_ok[PYTEST_XDIST_AUTO_NUM_WORKERS_ENV]
+
+        proc = subprocess.run(
+            [
+                "python3",
+                "-c",
+                f"import os; print(os.environ.get({PYTEST_XDIST_AUTO_NUM_WORKERS_ENV!r}, ''))",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        assert proc.stdout.strip() == expected
+
+
+class TestWarnIfXdistBoundMissing:
+    """T-3094: the loud half. A pytest spawned where a fleet-context bound
+    SHOULD be in effect but is not silently falls back to xdist's plain
+    `-n auto` (full CPU count) -- exactly the measured incident. This
+    surfaces that gap in the spawning process's own log instead of only
+    being discoverable via a live `/proc` scan after the fact."""
+
+    def test_must_fire_fleet_context_with_bound_missing_logs_error(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_must_fire_fleet_context_with_bound_missing_logs_error  # noqa: E501
+        monkeypatch.delenv(PYTEST_XDIST_AUTO_NUM_WORKERS_ENV, raising=False)
+        _init_repo(tmp_path)
+        _write_lease(tmp_path, "T-2020", tmp_path.parent / "warn-peer-0")
+        with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
+            warn_if_xdist_bound_missing(tmp_path)
+        assert any(
+            "xdist" in record.message.lower() and "not set" in record.message.lower()
+            for record in caplog.records
+        )
+
+    def test_must_stay_quiet_bound_present_no_log(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_must_stay_quiet_bound_present_no_log  # noqa: E501
+        _init_repo(tmp_path)
+        _write_lease(tmp_path, "T-2021", tmp_path.parent / "warn-peer-1")
+        monkeypatch.setenv(PYTEST_XDIST_AUTO_NUM_WORKERS_ENV, "2")
+        with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
+            warn_if_xdist_bound_missing(tmp_path)
+        assert [r for r in caplog.records if r.levelname == "ERROR"] == []
+
+    def test_must_stay_quiet_no_fleet_context_no_log(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_must_stay_quiet_no_fleet_context_no_log  # noqa: E501
+        monkeypatch.delenv(PYTEST_XDIST_AUTO_NUM_WORKERS_ENV, raising=False)
+        _init_repo(tmp_path)
+        with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
+            warn_if_xdist_bound_missing(tmp_path)
+        assert [r for r in caplog.records if r.levelname == "ERROR"] == []
 
 
 class TestAgentRunnerEnv:

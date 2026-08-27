@@ -2,7 +2,7 @@
 id: T-3094
 title: 'T-2221 fleet xdist bound never reaches pytest: 0 of 40 running workers carry
   PYTEST_XDIST_AUTO_NUM_WORKERS'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_worktree_guard.py
 - docs/modules/tickets-data-storage.md
+evidence_scope:
+- tests/test_worktree_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +42,13 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3646
+evidence:
+- tests/test_worktree_guard.py::TestApplyAgentEnv::test_mutates_current_process_env_under_fleet_context
+- tests/test_worktree_guard.py::TestApplyAgentEnv::test_must_stay_quiet_no_fleet_context_leaves_env_unset
+- tests/test_worktree_guard.py::TestApplyAgentEnv::test_child_subprocess_inherits_the_bound
+- tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing::test_must_fire_fleet_context_with_bound_missing_logs_error
+- tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing::test_must_stay_quiet_bound_present_no_log
+- tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing::test_must_stay_quiet_no_fleet_context_no_log
 designated_repro_test: null
 threat: null
 component: null

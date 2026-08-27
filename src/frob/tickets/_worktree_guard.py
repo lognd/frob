@@ -175,10 +175,113 @@ def agent_env_exports(root: Path) -> Result[dict[str, str], GitError]:
     return Ok(exports)
 
 
+# frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
+# frob:ticket T-3094
+# frob:tests tests/test_worktree_guard.py::TestApplyAgentEnv.test_mutates_current_process_env_under_fleet_context  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestApplyAgentEnv.test_must_stay_quiet_no_fleet_context_leaves_env_unset  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestApplyAgentEnv.test_child_subprocess_inherits_the_bound  # noqa: E501
+def apply_agent_env(root: Path) -> Result[dict[str, str], GitError]:
+    """`agent_env_exports(root)`, ALSO applied to this process's own
+    `os.environ` (T-3094): the delivery-gap fix for the T-2221 fleet-aware
+    xdist bound.
+
+    T-2221/T-0574 shipped `agent_env_exports` and a CLI (`frob agent env`)
+    that PRINTS its result as `export KEY=VALUE` lines for a human/agent to
+    `eval` into the shell that later runs pytest. Measured 2026-08-27 under
+    a live three-agent fleet: 0 of 40 running pytest workers carried
+    `PYTEST_XDIST_AUTO_NUM_WORKERS` despite 3 live leases satisfying the
+    precondition. Root cause, established by evidence before this function
+    was written: `agent_env_exports` is correct (a fleet context computes a
+    real bound -- ruling out a detection bug) and its ONLY consumers in the
+    codebase (`frob.app.agent_runner`, `_lifecycle._print_agent_env_hint`)
+    both only ever PRINT it. Nothing anywhere calls
+    `os.environ[...] = ...` with the result, so the bound survives only as
+    long as the one shell that ran `eval` -- and a dispatched agent's
+    tool-driven shell does not persist state between separate command
+    invocations, so even a compliant `eval` is typically gone before the
+    next command (the one that actually runs pytest) starts. This is
+    failure mode (b) in T-3094's diagnosis: invoked and printed, but never
+    actually sourced into the environment of the process tree that spawns
+    pytest.
+
+    `apply_agent_env` closes that gap for any caller running IN-PROCESS
+    before it spawns pytest: `subprocess.run`/`Popen` inherit the parent's
+    `os.environ` by default, so mutating the CURRENT process's environment
+    here reaches a child pytest with no shell `eval` hop at all. This does
+    NOT retroactively fix a raw shell invocation of `pytest` typed by an
+    agent in a later, unrelated command -- that class of gap needs the
+    caller to invoke this (or the CLI's export text) in the SAME process
+    tree as the pytest call, which is wiring work outside this ticket's
+    single-file scope (residue ticket filed).
+
+    On `Err` (root does not resolve to a git worktree), nothing is
+    mutated -- identical to `agent_env_exports`'s own error behavior."""
+    exports = agent_env_exports(root)
+    if exports.is_err:
+        return exports
+    os.environ.update(exports.danger_ok)
+    return exports
+
+
+# frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
+# frob:ticket T-3094
+# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_must_fire_fleet_context_with_bound_missing_logs_error  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_must_stay_quiet_bound_present_no_log  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_must_stay_quiet_no_fleet_context_no_log  # noqa: E501
+def warn_if_xdist_bound_missing(root: Path) -> None:
+    """LOUD half of the T-3094 fix: logs ERROR when `root` has a fleet
+    context (`_bounded_xdist_workers` returns non-`None`) but this
+    process's CURRENT `os.environ` does not actually carry
+    `PYTEST_XDIST_AUTO_NUM_WORKERS` -- the exact silent-fallback-to-`-n
+    auto` condition T-3094 measured (0 of 40 running workers bounded
+    despite 3 live leases).
+
+    Call this immediately before spawning a pytest subprocess so the gap
+    is visible in THAT process's own log, rather than only discoverable
+    after the fact via a live `/proc/<pid>/environ` fleet scan. Declaring
+    the boundary loudly rather than degrading silently is the standing
+    doctrine this repo has hit repeatedly (T-2221's own docstring already
+    names this class).
+
+    Best-effort diagnostic, never raises: an unresolvable `root` (not a
+    git worktree) degrades to a DEBUG log and returns, matching
+    `enforce_worktree_lease`'s "cannot resolve a root" posture -- this is
+    not a gate. No fleet context (`_bounded_xdist_workers` is `None`) is
+    silent by design -- the must-still-pass single-developer control, the
+    same one `agent_env_exports` itself protects."""
+    actual = repo_root(root)
+    if actual.is_err:
+        _log.debug(
+            "xdist-bound check: %s unresolvable as a repo (%s), skipping",
+            root,
+            actual.danger_err,
+        )
+        return
+    resolved = actual.danger_ok.resolve()
+    expected = _bounded_xdist_workers(resolved)
+    if expected is None:
+        return
+    if PYTEST_XDIST_AUTO_NUM_WORKERS_ENV in os.environ:
+        return
+    _log.error(
+        "xdist-bound: fleet context detected for %s (bound would be %d) but "
+        "%s is NOT set in this process's environment -- a pytest spawned "
+        "here falls back to xdist's plain -n auto (full CPU count) instead "
+        "of the fleet-aware bound (T-3094); call apply_agent_env(%s) before "
+        "spawning pytest to fix this in-process",
+        resolved,
+        expected,
+        PYTEST_XDIST_AUTO_NUM_WORKERS_ENV,
+        resolved,
+    )
+
+
 __all__ = [
     "FROB_AGENT_ENV",
     "FROB_WORKTREE_ENV",
     "PYTEST_XDIST_AUTO_NUM_WORKERS_ENV",
     "agent_env_exports",
+    "apply_agent_env",
     "enforce_worktree_lease",
+    "warn_if_xdist_bound_missing",
 ]
