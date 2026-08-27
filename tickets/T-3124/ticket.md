@@ -15,6 +15,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_new.py
+- tests/unit/test_new_ticket_body_similarity_warning.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ scope_changes:
   reason: declared scope named src/frob/tickets/_setters.py, which has no new_ticket/scope-overlap
     machinery at all; the actual scope-overlap check (_scope_overlap_warnings/_emit_scope_overlap_warnings)
     this ticket must generalize lives in src/frob/app/ticket_runner/_new.py
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_new_ticket_body_similarity_warning.py
+  reason: T-3124's own new must-fire/must-stay-quiet fixture module
   actor: logan
   at: '2026-08-27'
 body_changes:
