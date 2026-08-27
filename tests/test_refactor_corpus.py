@@ -18,11 +18,17 @@ import ast
 import subprocess
 from pathlib import Path
 
-from frob.refactor import RefactorKind, SymbolRef, run_split
+from frob.refactor import run_split
 from frob.tickets import TicketKind, TicketSpec, new_ticket
 from frob.tickets._models import Origin
 
 
+# frob:waive DUP001 reason="the git-init/config trio is the established \
+# test-repo-fixture shape shared by tests/test_refactor.py::_repo, \
+# tests/test_stats.py::_repo and several other test modules -- each test module owns \
+# its own tiny fixture builder by convention rather than importing a cross-file \
+# shared helper; extracting one would be a cross-file refactor out of T-3110's declared \
+# scope (tests/test_refactor_corpus.py only)"
 def _repo(tmp_path: Path) -> Path:
     """A git-initialized repo root -- same fixture shape as
     `test_refactor.py::_repo` (T-1197's established convention); not
@@ -40,6 +46,11 @@ def _write(root: Path, rel: str, text: str) -> Path:
     return path
 
 
+# frob:waive DUP001 reason="the git-add/commit pair is the established \
+# test-repo-fixture shape shared by tests/test_refactor.py::_commit_all -- each test \
+# module owns its own tiny fixture builder by convention rather than importing a \
+# cross-file shared helper; extracting one would be a cross-file refactor out of \
+# T-3110's declared scope (tests/test_refactor_corpus.py only)"
 def _commit_all(root: Path, subject: str) -> None:
     subprocess.run(["git", "add", "-A"], cwd=root, check=True)
     subprocess.run(["git", "commit", "-q", "-m", subject], cwd=root, check=True)
@@ -117,7 +128,7 @@ def _corpus_repo(tmp_path: Path) -> Path:
         "import typing\n\n"
         "if typing.TYPE_CHECKING:\n"
         "    from pkg.mod import moved_a\n\n"
-        "def use() -> \"moved_a\":\n    pass\n",
+        'def use() -> "moved_a":\n    pass\n',
     )
     # `try`/`except ImportError`-guarded import (T-3066 shape).
     _write(
@@ -236,23 +247,17 @@ class TestRefactorCorpus:
 
         # TYPE_CHECKING-guarded import: rewritten, still indented under
         # the `if` block, and does not false-refuse (T-3066).
-        tc_text = (root / "src/pkg/caller_type_checking.py").read_text(
-            encoding="utf-8"
-        )
+        tc_text = (root / "src/pkg/caller_type_checking.py").read_text(encoding="utf-8")
         assert "    from pkg.newmod import moved_a" in tc_text
 
         # try/except-guarded import: rewritten, still indented under
         # `try:`, and does not false-refuse (T-3066).
-        try_text = (root / "src/pkg/caller_try_except.py").read_text(
-            encoding="utf-8"
-        )
+        try_text = (root / "src/pkg/caller_try_except.py").read_text(encoding="utf-8")
         assert "    from pkg.newmod import moved_a" in try_text
 
         # Deeply-nested import (function -> if -> for): rewritten at its
         # own (deeper) indent depth, not module scope (T-3109).
-        nested_text = (root / "src/pkg/caller_nested.py").read_text(
-            encoding="utf-8"
-        )
+        nested_text = (root / "src/pkg/caller_nested.py").read_text(encoding="utf-8")
         assert "            from pkg.newmod import moved_b" in nested_text
 
         # Mixed moved/untouched import line: left alone entirely
@@ -274,9 +279,7 @@ class TestRefactorCorpus:
         # canonical destination name instead of trying to preserve `as
         # ma` (matching `_handle_from_import`'s documented `bound_as !=
         # new_name` rename-usages path).
-        aliased_text = (root / "src/pkg/caller_aliased.py").read_text(
-            encoding="utf-8"
-        )
+        aliased_text = (root / "src/pkg/caller_aliased.py").read_text(encoding="utf-8")
         assert "from pkg.newmod import moved_a" in aliased_text
         assert "return moved_a()" in aliased_text
 
