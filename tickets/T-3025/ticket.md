@@ -2,7 +2,7 @@
 id: T-3025
 title: 'A single trivial unattributed finding disables fleet-wide landing: four occurrences
   today, ~90 minutes lost, no severity proportionality'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -20,6 +20,7 @@ scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - tests/unit/test_rapid_sweep.py
 - docs/modules/tickets-verify-sweep.md
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +49,11 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-verify-sweep.md
   reason: 'T-3025: severity-proportional quarantine raise + supporting tests/docs'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'T-3025: register F401 ruff rule id in _KNOWN_GATE_RULES (GATERULE001)'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
