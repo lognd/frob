@@ -56,6 +56,21 @@ struct ModuleAst {
     // structural, not documentary, enforcement of "extend-only, never
     // override" (docs/strata/surface.md#fragments-t-2502).
     extends: Vec<serde_json::Value>,
+    // T-3006: entity/architecture/configuration (docs/strata/entity_architecture.md)
+    // -- VHDL's entity/architecture/configuration split, T-3004 section 5.
+    // `entity NAME { may "ATOM"; obligation "text"; }` declares the
+    // BEHAVIOUR half (obligations + a may-ceiling, no implementation);
+    // `architecture NAME of ENTITY { binds MODULE; }` declares which
+    // MODULE's already-parsed node/flow/store body realizes that entity's
+    // obligations (the IMPLEMENTATION half -- today's whole `.strata`
+    // surface, unchanged); `configuration NAME { entity E; architecture
+    // A; }` names which architecture is selected for an entity. Deliberately
+    // single-file scope for this first slice: `of ENTITY`/`binds MODULE`
+    // resolve only against entities/the module already parsed earlier in
+    // THIS file, never across files -- see the module doc for why.
+    entities: Vec<serde_json::Value>,
+    architectures: Vec<serde_json::Value>,
+    configurations: Vec<serde_json::Value>,
 }
 
 impl Parser {
@@ -105,16 +120,15 @@ impl Parser {
         }
     }
 
-    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s \
-    // module split -- git shows the whole file as newly added since one file split \
-    // into six, so the dup scanner treats this small, already-existing helper as \
-    // fresh/new and re-flags its structural similarity to unrelated code that was \
-    // never a real duplication before the split either; no behavior or code shape \
-    // changed"
-    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- \
-    // this method and its sibling both existed verbatim, side by side, in the \
-    // pre-split monolithic parse.rs; the split did not introduce a new duplication, \
-    // only a new file boundary the dup scanner reads as 'both new in this diff'"
+    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s module split -- \
+    // git shows the whole file as newly added since one file split into six, so the dup scanner \
+    // treats this small, already-existing helper as fresh/new and re-flags its structural \
+    // similarity to unrelated code that was never a real duplication before the split either; no \
+    // behavior or code shape changed"
+    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- this method \
+    // and its sibling both existed verbatim, side by side, in the pre-split monolithic parse.rs; \
+    // the split did not introduce a new duplication, only a new file boundary the dup scanner \
+    // reads as 'both new in this diff'"
     fn expect_ident(&mut self, what: &str) -> Result<String, ParseError> {
         match &self.cur().kind {
             TokKind::Ident(s) => {
@@ -141,16 +155,15 @@ impl Parser {
         Ok(n as i64)
     }
 
-    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s \
-    // module split -- git shows the whole file as newly added since one file split \
-    // into six, so the dup scanner treats this small, already-existing helper as \
-    // fresh/new and re-flags its structural similarity to unrelated code that was \
-    // never a real duplication before the split either; no behavior or code shape \
-    // changed"
-    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- \
-    // this method and its sibling both existed verbatim, side by side, in the \
-    // pre-split monolithic parse.rs; the split did not introduce a new duplication, \
-    // only a new file boundary the dup scanner reads as 'both new in this diff'"
+    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s module split -- \
+    // git shows the whole file as newly added since one file split into six, so the dup scanner \
+    // treats this small, already-existing helper as fresh/new and re-flags its structural \
+    // similarity to unrelated code that was never a real duplication before the split either; no \
+    // behavior or code shape changed"
+    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- this method \
+    // and its sibling both existed verbatim, side by side, in the pre-split monolithic parse.rs; \
+    // the split did not introduce a new duplication, only a new file boundary the dup scanner \
+    // reads as 'both new in this diff'"
     fn expect_string(&mut self, what: &str) -> Result<String, ParseError> {
         match &self.cur().kind {
             TokKind::Str(s) => {
@@ -226,16 +239,15 @@ impl Parser {
     /// UNIT := IDENT ('/' IDENT)* | '%'; the next bare IDENT after a
     /// complete unit is never consumed (surface.md: "min" alone, "req/s"
     /// as one unit).
-    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s \
-    // module split -- git shows the whole file as newly added since one file split \
-    // into six, so the dup scanner treats this small, already-existing helper as \
-    // fresh/new and re-flags its structural similarity to unrelated code that was \
-    // never a real duplication before the split either; no behavior or code shape \
-    // changed"
-    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- \
-    // this method and its sibling both existed verbatim, side by side, in the \
-    // pre-split monolithic parse.rs; the split did not introduce a new duplication, \
-    // only a new file boundary the dup scanner reads as 'both new in this diff'"
+    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s module split -- \
+    // git shows the whole file as newly added since one file split into six, so the dup scanner \
+    // treats this small, already-existing helper as fresh/new and re-flags its structural \
+    // similarity to unrelated code that was never a real duplication before the split either; no \
+    // behavior or code shape changed"
+    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- this method \
+    // and its sibling both existed verbatim, side by side, in the pre-split monolithic parse.rs; \
+    // the split did not introduce a new duplication, only a new file boundary the dup scanner \
+    // reads as 'both new in this diff'"
     fn parse_unit(&mut self) -> Result<String, ParseError> {
         if self.at_symbol('%') {
             self.advance();
@@ -345,16 +357,15 @@ impl Parser {
         Ok(())
     }
 
-    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s \
-    // module split -- git shows the whole file as newly added since one file split \
-    // into six, so the dup scanner treats this small, already-existing helper as \
-    // fresh/new and re-flags its structural similarity to unrelated code that was \
-    // never a real duplication before the split either; no behavior or code shape \
-    // changed"
-    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- \
-    // this method and its sibling both existed verbatim, side by side, in the \
-    // pre-split monolithic parse.rs; the split did not introduce a new duplication, \
-    // only a new file boundary the dup scanner reads as 'both new in this diff'"
+    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s module split -- \
+    // git shows the whole file as newly added since one file split into six, so the dup scanner \
+    // treats this small, already-existing helper as fresh/new and re-flags its structural \
+    // similarity to unrelated code that was never a real duplication before the split either; no \
+    // behavior or code shape changed"
+    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- this method \
+    // and its sibling both existed verbatim, side by side, in the pre-split monolithic parse.rs; \
+    // the split did not introduce a new duplication, only a new file boundary the dup scanner \
+    // reads as 'both new in this diff'"
     fn parse_module(
         &mut self,
         ast: &mut ModuleAst,
@@ -458,6 +469,234 @@ impl Parser {
         ast.extends.push(json!({
             "id": id,
             "may_grants": may_grants,
+        }));
+        Ok(())
+    }
+
+    /// T-3006: `entity NAME { may "ATOM"; obligation "text"; }` -- the
+    /// BEHAVIOUR half. `may` here is a FLAT ceiling atom (no `via`/`of`
+    /// scoping -- that belongs to node-level grants inside an
+    /// implementation), and `obligation` is a free-text declarative
+    /// requirement: not machine-checkable content, but its EXISTENCE is
+    /// what the closure rules in docs/strata/entity_architecture.md
+    /// check for (T-3004 section 2: structural closure, not quality).
+    fn parse_entity(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'entity'
+        let name = self.expect_ident("entity name")?;
+        if ast.entities.iter().any(|e| e["name"] == json!(name)) {
+            return self.err(format!("duplicate entity {:?}", name));
+        }
+        self.expect_symbol('{')?;
+        let mut may: Vec<String> = Vec::new();
+        let mut obligations: Vec<String> = Vec::new();
+        while !self.at_symbol('}') {
+            if self.at_keyword("may") {
+                self.advance();
+                may.push(self.expect_string("entity may capability")?);
+            } else if self.at_keyword("obligation") {
+                self.advance();
+                obligations.push(self.expect_string("entity obligation text")?);
+            } else {
+                return self.err("expected 'may' or 'obligation' inside entity block");
+            }
+            if self.at_symbol(';') {
+                self.advance();
+            }
+        }
+        self.expect_symbol('}')?;
+        if obligations.is_empty() {
+            return self.err(format!(
+                "entity {:?} declares no obligations -- an entity with no obligation is not a \
+                 behaviour contract, it is an empty block; declare at least one 'obligation \"...\"'",
+                name
+            ));
+        }
+        ast.entities.push(json!({
+            "name": name,
+            "may": may,
+            "obligations": obligations,
+        }));
+        Ok(())
+    }
+
+    /// T-3006: `architecture NAME of ENTITY { binds MODULE; }` -- the
+    /// IMPLEMENTATION half. `of ENTITY` must name an entity already
+    /// declared earlier in THIS file (SYS300: undeclared entity, single-
+    /// file scope for this slice); `binds MODULE` must name THIS file's
+    /// own `module` (SYS301: an architecture cannot claim to realize a
+    /// module it does not contain -- cross-file binding is future work).
+    /// Refuses (SYS302, the shrink-only ratchet carried into this model,
+    /// T-2920/T-2922) if any node in the bound module grants a `may` atom
+    /// the entity's ceiling never declared -- an architecture may realize
+    /// a SUBSET of its entity's ceiling, never exceed it, and this is
+    /// never auto-widened.
+    fn parse_architecture(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'architecture'
+        let name = self.expect_ident("architecture name")?;
+        if ast.architectures.iter().any(|a| a["name"] == json!(name)) {
+            return self.err(format!("duplicate architecture {:?}", name));
+        }
+        if !self.at_keyword("of") {
+            return self.err("expected 'of ENTITY' after architecture name");
+        }
+        self.advance(); // 'of'
+        let entity_name = self.expect_ident("entity name")?;
+        let entity = ast
+            .entities
+            .iter()
+            .find(|e| e["name"] == json!(entity_name))
+            .cloned()
+            .ok_or_else(|| {
+                let t = self.cur();
+                ParseError {
+                    line: t.line,
+                    col: t.col,
+                    message: format!(
+                        "architecture {:?} references undeclared entity {:?} -- an entity must \
+                         be declared earlier in this file before an architecture can bind it \
+                         (SYS300)",
+                        name, entity_name
+                    ),
+                }
+            })?;
+        self.expect_symbol('{')?;
+        let mut binds: Option<String> = None;
+        while !self.at_symbol('}') {
+            if self.at_keyword("binds") {
+                self.advance();
+                let module_name = self.expect_ident("bound module name")?;
+                if module_name != ast.name {
+                    return self.err(format!(
+                        "architecture {:?} binds module {:?}, but this file's own module is \
+                         {:?} -- an architecture may only bind the module declared in its own \
+                         file (cross-file binding is not yet supported, SYS301)",
+                        name, module_name, ast.name
+                    ));
+                }
+                binds = Some(module_name);
+            } else {
+                return self.err("expected 'binds MODULE' inside architecture block");
+            }
+            if self.at_symbol(';') {
+                self.advance();
+            }
+        }
+        self.expect_symbol('}')?;
+        let binds = binds.ok_or_else(|| {
+            let t = self.cur();
+            ParseError {
+                line: t.line,
+                col: t.col,
+                message: format!(
+                    "architecture {:?} declares no 'binds MODULE' -- an architecture with \
+                     nothing bound realizes no implementation",
+                    name
+                ),
+            }
+        })?;
+
+        let ceiling: BTreeSet<String> = entity["may"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|v| v.as_str().map(str::to_string))
+            .collect();
+        for node in &ast.nodes {
+            let node_id = node["id"].as_str().unwrap_or("<unknown>");
+            for atom in node["may"].as_array().into_iter().flatten() {
+                let atom = atom.as_str().unwrap_or_default();
+                if !ceiling.contains(atom) {
+                    return self.err(format!(
+                        "architecture {:?} (binding module {:?}) grants may \"{}\" on node {:?}, \
+                         which exceeds entity {:?}'s may ceiling {:?} -- an architecture may only \
+                         realize a SUBSET of its entity's ceiling, never widen it (SYS302, the \
+                         shrink-only ratchet, T-2920/T-2922)",
+                        name, binds, atom, node_id, entity_name, ceiling
+                    ));
+                }
+            }
+        }
+
+        ast.architectures.push(json!({
+            "name": name,
+            "of_entity": entity_name,
+            "binds": binds,
+        }));
+        Ok(())
+    }
+
+    /// T-3006: `configuration NAME { entity E; architecture A; }` -- names
+    /// which architecture is currently selected to satisfy which entity.
+    /// Refuses if either name is undeclared, or if the named architecture
+    /// does not actually bind the named entity (SYS303) -- a configuration
+    /// cannot silently pair mismatched halves. Milestone/partial-closure
+    /// semantics (T-3004 section 6) are deferred; this is the plain
+    /// selection edge they will build on.
+    fn parse_configuration(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'configuration'
+        let name = self.expect_ident("configuration name")?;
+        if ast.configurations.iter().any(|c| c["name"] == json!(name)) {
+            return self.err(format!("duplicate configuration {:?}", name));
+        }
+        self.expect_symbol('{')?;
+        let mut entity_name: Option<String> = None;
+        let mut arch_name: Option<String> = None;
+        while !self.at_symbol('}') {
+            if self.at_keyword("entity") {
+                self.advance();
+                entity_name = Some(self.expect_ident("configuration entity name")?);
+            } else if self.at_keyword("architecture") {
+                self.advance();
+                arch_name = Some(self.expect_ident("configuration architecture name")?);
+            } else {
+                return self.err("expected 'entity NAME' or 'architecture NAME' inside configuration block");
+            }
+            if self.at_symbol(';') {
+                self.advance();
+            }
+        }
+        self.expect_symbol('}')?;
+        let entity_name = match entity_name {
+            Some(v) => v,
+            None => return self.err("configuration missing 'entity NAME'"),
+        };
+        let arch_name = match arch_name {
+            Some(v) => v,
+            None => return self.err("configuration missing 'architecture NAME'"),
+        };
+        if !ast.entities.iter().any(|e| e["name"] == json!(entity_name)) {
+            return self.err(format!(
+                "configuration {:?} references undeclared entity {:?}",
+                name, entity_name
+            ));
+        }
+        let arch = ast
+            .architectures
+            .iter()
+            .find(|a| a["name"] == json!(arch_name))
+            .cloned()
+            .ok_or_else(|| {
+                let t = self.cur();
+                ParseError {
+                    line: t.line,
+                    col: t.col,
+                    message: format!(
+                        "configuration {:?} references undeclared architecture {:?}",
+                        name, arch_name
+                    ),
+                }
+            })?;
+        if arch["of_entity"] != json!(entity_name) {
+            return self.err(format!(
+                "configuration {:?} pairs architecture {:?} with entity {:?}, but {:?} is \
+                 declared 'of {}' -- a configuration cannot pair mismatched halves (SYS303)",
+                name, arch_name, entity_name, arch_name, arch["of_entity"]
+            ));
+        }
+        ast.configurations.push(json!({
+            "name": name,
+            "entity": entity_name,
+            "architecture": arch_name,
         }));
         Ok(())
     }

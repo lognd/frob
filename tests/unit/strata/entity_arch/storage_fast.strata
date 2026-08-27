@@ -1,0 +1,26 @@
+// T-3006 worked example: one entity, two architectures.
+//
+// This file and storage_cheap.strata each declare the SAME entity
+// (storage_component) and one architecture satisfying it -- the "one
+// entity, many architectures" property T-3010 (incremental releases)
+// needs. Deliberately single-file scope (T-3006 first slice): each
+// architecture binds the module declared in ITS OWN file, not a shared
+// cross-file entity. A future ticket may lift `of ENTITY` to resolve
+// across files once the loader has a place to put that (see
+// docs/strata/entity_architecture.md#migration).
+
+entity storage_component {
+    may "net.out:s3.amazonaws.com";
+    obligation "persist a submitted blob durably before acknowledging the caller";
+    obligation "reject a write once past-quota rather than silently drop it";
+}
+
+module storage_fast
+
+node writer : trusted {
+    may "net.out:s3.amazonaws.com" via "src/frob/storage/fast_writer.py";
+}
+
+architecture fast of storage_component {
+    binds storage_fast;
+}

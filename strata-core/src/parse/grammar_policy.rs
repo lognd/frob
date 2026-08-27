@@ -3,16 +3,15 @@
 
 impl Parser {
     /// claim_body := noflow ID -> ID | reach ID -> ID | bound METRIC ID <= NUMBER UNIT
-    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s \
-    // module split -- git shows the whole file as newly added since one file split \
-    // into six, so the dup scanner treats this small, already-existing helper as \
-    // fresh/new and re-flags its structural similarity to unrelated code that was \
-    // never a real duplication before the split either; no behavior or code shape \
-    // changed"
-    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- \
-    // this method and its sibling both existed verbatim, side by side, in the \
-    // pre-split monolithic parse.rs; the split did not introduce a new duplication, \
-    // only a new file boundary the dup scanner reads as 'both new in this diff'"
+    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s module split -- \
+    // git shows the whole file as newly added since one file split into six, so the dup scanner \
+    // treats this small, already-existing helper as fresh/new and re-flags its structural \
+    // similarity to unrelated code that was never a real duplication before the split either; no \
+    // behavior or code shape changed"
+    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- this method \
+    // and its sibling both existed verbatim, side by side, in the pre-split monolithic parse.rs; \
+    // the split did not introduce a new duplication, only a new file boundary the dup scanner \
+    // reads as 'both new in this diff'"
     fn parse_claim_body(&mut self) -> Result<(String, serde_json::Value), ParseError> {
         if self.at_keyword("noflow") {
             self.advance();
@@ -82,16 +81,15 @@ impl Parser {
     }
 
     /// SCOPESPEC := "component" IDENT | "trust" ">=" IDENT | "label" ">=" IDENT
-    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s \
-    // module split -- git shows the whole file as newly added since one file split \
-    // into six, so the dup scanner treats this small, already-existing helper as \
-    // fresh/new and re-flags its structural similarity to unrelated code that was \
-    // never a real duplication before the split either; no behavior or code shape \
-    // changed"
-    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- \
-    // this method and its sibling both existed verbatim, side by side, in the \
-    // pre-split monolithic parse.rs; the split did not introduce a new duplication, \
-    // only a new file boundary the dup scanner reads as 'both new in this diff'"
+    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s module split -- \
+    // git shows the whole file as newly added since one file split into six, so the dup scanner \
+    // treats this small, already-existing helper as fresh/new and re-flags its structural \
+    // similarity to unrelated code that was never a real duplication before the split either; no \
+    // behavior or code shape changed"
+    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- this method \
+    // and its sibling both existed verbatim, side by side, in the pre-split monolithic parse.rs; \
+    // the split did not introduce a new duplication, only a new file boundary the dup scanner \
+    // reads as 'both new in this diff'"
     fn parse_scope_spec(&mut self) -> Result<serde_json::Value, ParseError> {
         if self.at_keyword("component") {
             self.advance();
@@ -118,16 +116,15 @@ impl Parser {
     ///              | "mediate" DOTTEDIDENT "via" STRING
     ///              | "enables" IDENT
     ///              | "rationale" STRING
-    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s \
-    // module split -- git shows the whole file as newly added since one file split \
-    // into six, so the dup scanner treats this small, already-existing helper as \
-    // fresh/new and re-flags its structural similarity to unrelated code that was \
-    // never a real duplication before the split either; no behavior or code shape \
-    // changed"
-    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- \
-    // this method and its sibling both existed verbatim, side by side, in the \
-    // pre-split monolithic parse.rs; the split did not introduce a new duplication, \
-    // only a new file boundary the dup scanner reads as 'both new in this diff'"
+    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s module split -- \
+    // git shows the whole file as newly added since one file split into six, so the dup scanner \
+    // treats this small, already-existing helper as fresh/new and re-flags its structural \
+    // similarity to unrelated code that was never a real duplication before the split either; no \
+    // behavior or code shape changed"
+    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- this method \
+    // and its sibling both existed verbatim, side by side, in the pre-split monolithic parse.rs; \
+    // the split did not introduce a new duplication, only a new file boundary the dup scanner \
+    // reads as 'both new in this diff'"
     fn parse_policy_rule(&mut self) -> Result<serde_json::Value, ParseError> {
         if self.at_keyword("forbid") {
             self.advance();
@@ -356,6 +353,36 @@ impl Parser {
                     }
                     self.parse_extend_node(&mut ast)?
                 }
+                // T-3006: entity/architecture/configuration -- the
+                // behaviour/implementation/configuration split (T-3004
+                // section 5). Valid anywhere a top-level statement is
+                // valid, including BEFORE `module` (an entity is pure
+                // behaviour and does not need an implementation to exist
+                // yet); `architecture`/`configuration` still require
+                // `seen_module` transitively via their own internal
+                // lookups (they reference `ast.nodes`/`ast.name`, which
+                // are only meaningful once a module exists), but that is
+                // enforced by the reference failing to resolve, not by a
+                // redundant gate here.
+                "entity" | "architecture" | "configuration" if ast.part_of.is_some() => {
+                    return self.err(format!(
+                        "fragment file ('part of {}') may only contain 'extend' statements -- \
+                         found top-level '{}', which belongs to a root file",
+                        ast.part_of.as_deref().unwrap_or(""),
+                        kw
+                    ));
+                }
+                "entity" => self.parse_entity(&mut ast)?,
+                "architecture" => {
+                    if !seen_module {
+                        return self.err(
+                            "'architecture ... binds MODULE' requires a module statement first \
+                             -- an architecture realizes a module that must already exist",
+                        );
+                    }
+                    self.parse_architecture(&mut ast)?
+                }
+                "configuration" => self.parse_configuration(&mut ast)?,
                 "node" | "flow" | "boundary" | "assert" | "assume" | "refine" | "store"
                 | "cache" | "queue" | "cdn" | "balancer" | "policy" | "operation"
                 | "scenario" | "secret" | "resource" => {

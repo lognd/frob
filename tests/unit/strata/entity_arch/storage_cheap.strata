@@ -1,0 +1,25 @@
+// T-3006 worked example: same entity as storage_fast.strata, a SECOND
+// architecture realizing it with a narrower implementation (no network
+// capability granted at all -- still within the entity's ceiling, since
+// the ceiling is a MAXIMUM, not a requirement to use everything it
+// allows). See storage_fast.strata for the full note.
+
+entity storage_component {
+    may "net.out:s3.amazonaws.com";
+    obligation "persist a submitted blob durably before acknowledging the caller";
+    obligation "reject a write once past-quota rather than silently drop it";
+}
+
+module storage_cheap
+
+node writer : trusted {
+}
+
+architecture cheap of storage_component {
+    binds storage_cheap;
+}
+
+configuration default {
+    entity storage_component;
+    architecture cheap;
+}

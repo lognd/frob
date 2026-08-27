@@ -2,7 +2,7 @@
 id: T-3006
 title: 'Multi-modal strata redesign: behaviour/implementation/configuration split,
   VHDL entity-architecture model (T-3004 section 5)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -123,6 +123,11 @@ triage_changes:
   reason: T-3004 decomposition per the owner design decision
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/test_lang_strata_entity_arch.py::TestEntityArchitectureFixtures::test_fast_architecture_binds_its_own_module_within_ceiling
+- tests/unit/test_lang_strata_entity_arch.py::TestEntityArchitectureFixtures::test_cheap_architecture_is_a_second_realization_of_the_same_entity
+- tests/unit/test_lang_strata_entity_arch.py::TestEntityArchitectureFixtures::test_existing_bare_module_source_parses_unchanged
+- tests/unit/test_lang_strata_entity_arch.py::TestEntityArchitectureFixtures::test_architecture_referencing_undeclared_entity_is_refused
 designated_repro_test: null
 threat: null
 component: null

@@ -34,6 +34,7 @@
 
 use serde::Serialize;
 use serde_json::json;
+use std::collections::BTreeSet;
 
 include!("lexer.rs");
 include!("grammar_core.rs");
@@ -96,6 +97,209 @@ mod tests {
         v.get("err")
             .unwrap_or_else(|| panic!("expected err, got {}", s))
             .clone()
+    }
+
+    // T-3006: entity/architecture/configuration (docs/strata/entity_architecture.md)
+    // -- one entity, two architectures satisfying it, and both fixture
+    // directions (must-fire, must-stay-quiet) for each new SYS30x rule.
+
+    #[test]
+    // frob:ticket T-3006
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+    fn one_entity_many_architectures_both_satisfy_it() {
+        // must-stay-quiet: two DIFFERENT architectures, each in its own
+        // file (single-file scope), both binding a module that realizes
+        // the same entity's obligations within its may ceiling.
+        let fast = ok(r#"
+            entity storage_component {
+                may "net.out:s3.amazonaws.com";
+                obligation "persist a blob durably";
+            }
+            module storage_fast
+            node writer : trusted { may "net.out:s3.amazonaws.com"; }
+            architecture fast of storage_component {
+                binds storage_fast;
+            }
+        "#);
+        assert_eq!(fast["entities"][0]["name"], "storage_component");
+        assert_eq!(fast["architectures"][0]["name"], "fast");
+        assert_eq!(fast["architectures"][0]["of_entity"], "storage_component");
+
+        let cheap = ok(r#"
+            entity storage_component {
+                may "net.out:s3.amazonaws.com";
+                obligation "persist a blob durably";
+            }
+            module storage_cheap
+            node writer : trusted { }
+            architecture cheap of storage_component {
+                binds storage_cheap;
+            }
+        "#);
+        assert_eq!(cheap["architectures"][0]["name"], "cheap");
+        assert_eq!(cheap["architectures"][0]["of_entity"], "storage_component");
+    }
+
+    #[test]
+    // frob:ticket T-3006
+    fn entity_with_no_obligations_is_refused() {
+        // must-fire: an entity block with no obligation is an empty
+        // behaviour contract, not a real one.
+        let e = err(r#"
+            entity empty_thing {
+                may "net.out:x";
+            }
+            module m
+        "#);
+        assert!(e["message"].as_str().unwrap().contains("no obligations"));
+    }
+
+    #[test]
+    // frob:ticket T-3006
+    fn architecture_of_undeclared_entity_is_refused_sys300() {
+        // must-fire: SYS300, the entity name architecture references does
+        // not exist anywhere earlier in the file.
+        let e = err(r#"
+            module m
+            node n : trusted { }
+            architecture a of ghost_entity {
+                binds m;
+            }
+        "#);
+        assert!(e["message"].as_str().unwrap().contains("undeclared entity"));
+    }
+
+    #[test]
+    // frob:ticket T-3006
+    fn architecture_of_declared_entity_is_accepted() {
+        // must-stay-quiet twin of the SYS300 fixture above: identical
+        // shape, entity actually declared.
+        let v = ok(r#"
+            entity real_entity {
+                obligation "do the thing";
+            }
+            module m
+            node n : trusted { }
+            architecture a of real_entity {
+                binds m;
+            }
+        "#);
+        assert_eq!(v["architectures"][0]["of_entity"], "real_entity");
+    }
+
+    #[test]
+    // frob:ticket T-3006
+    fn architecture_binding_a_foreign_module_is_refused_sys301() {
+        // must-fire: SYS301, 'binds' names a module that is not this
+        // file's own module.
+        let e = err(r#"
+            entity e { obligation "x"; }
+            module m
+            node n : trusted { }
+            architecture a of e {
+                binds some_other_module;
+            }
+        "#);
+        assert!(e["message"].as_str().unwrap().contains("may only bind the module declared in its own file"));
+    }
+
+    #[test]
+    // frob:ticket T-3006
+    fn architecture_widening_beyond_entity_ceiling_is_refused_sys302() {
+        // must-fire: the shrink-only ratchet (T-2920/T-2922) applied at
+        // the entity/architecture level -- an implementation may not grant
+        // a capability its entity never declared as part of the ceiling.
+        let e = err(r#"
+            entity e {
+                may "net.out:allowed.example";
+                obligation "x";
+            }
+            module m
+            node n : trusted { may "net.out:NOT-ALLOWED.example"; }
+            architecture a of e {
+                binds m;
+            }
+        "#);
+        assert!(e["message"].as_str().unwrap().contains("exceeds entity"));
+    }
+
+    #[test]
+    // frob:ticket T-3006
+    fn architecture_within_entity_ceiling_is_accepted() {
+        // must-stay-quiet twin of the SYS302 fixture: same shape, the
+        // node's grant is a SUBSET of (not equal to, not exceeding) the
+        // entity's ceiling.
+        let v = ok(r#"
+            entity e {
+                may "net.out:allowed.example";
+                may "net.out:also-allowed.example";
+                obligation "x";
+            }
+            module m
+            node n : trusted { may "net.out:allowed.example"; }
+            architecture a of e {
+                binds m;
+            }
+        "#);
+        assert_eq!(v["architectures"][0]["name"], "a");
+    }
+
+    #[test]
+    // frob:ticket T-3006
+    fn configuration_pairing_mismatched_entity_and_architecture_is_refused_sys303() {
+        // must-fire: SYS303, the architecture named is not actually 'of'
+        // the entity the configuration claims to pair it with.
+        let e = err(r#"
+            entity e1 { obligation "x"; }
+            entity e2 { obligation "y"; }
+            module m
+            node n : trusted { }
+            architecture a of e1 {
+                binds m;
+            }
+            configuration c {
+                entity e2;
+                architecture a;
+            }
+        "#);
+        assert!(e["message"].as_str().unwrap().contains("pairs architecture"));
+    }
+
+    #[test]
+    // frob:ticket T-3006
+    fn configuration_pairing_matching_entity_and_architecture_is_accepted() {
+        // must-stay-quiet twin of the SYS303 fixture.
+        let v = ok(r#"
+            entity e1 { obligation "x"; }
+            module m
+            node n : trusted { }
+            architecture a of e1 {
+                binds m;
+            }
+            configuration c {
+                entity e1;
+                architecture a;
+            }
+        "#);
+        assert_eq!(v["configurations"][0]["name"], "c");
+        assert_eq!(v["configurations"][0]["entity"], "e1");
+        assert_eq!(v["configurations"][0]["architecture"], "a");
+    }
+
+    #[test]
+    // frob:ticket T-3006
+    fn existing_bare_module_files_parse_unchanged_no_entity_required() {
+        // Migration guarantee: a file with zero entity/architecture/
+        // configuration blocks (all 8 existing .strata files, today)
+        // parses exactly as before -- entities/architectures/
+        // configurations are simply empty arrays, additive not breaking.
+        let v = ok(r#"
+            module legacy
+            node n : trusted { }
+        "#);
+        assert_eq!(v["entities"].as_array().unwrap().len(), 0);
+        assert_eq!(v["architectures"].as_array().unwrap().len(), 0);
+        assert_eq!(v["configurations"].as_array().unwrap().len(), 0);
     }
 
     #[test]
