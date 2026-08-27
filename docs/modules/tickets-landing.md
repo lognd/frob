@@ -596,6 +596,55 @@ runs the merge and finalize exactly as a real call would, then always
 so a concurrent `land()`/`land_plan()` call against the SAME `root` blocks
 at the lock acquire instead of racing this one.
 
+## Touched-file `ty` gate attributes findings to the diff, not the file (T-3116)
+
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_ty_diagnostic_identity -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_ty_baseline_diagnostic_identities -->
+
+`_assert_touched_files_type_check_pre_land` (T-1907) originally refused
+the land on ANY `ty` error in a touched `.py` file, regardless of
+whether the diff introduced it. The measured incident: an agent's diff
+shifted a pre-existing error a few lines down the file -- it neither
+introduced the finding nor touched the offending expression -- and the
+gate refused anyway, forcing a `# ty: ignore` suppression onto code the
+ticket had no business touching. Against a repo already carrying
+hundreds of `frob:waive`/`# ty: ignore` directives, a gate that charges
+a suppression as the price of touching a file with a pre-existing
+finding is a suppression factory: every ticket editing such a file must
+either fix an unrelated defect out of scope, or silence it, and under
+time pressure silencing is always cheaper.
+
+T-3116 fixes this by attributing findings to the DIFF rather than the
+file. When the touched-set `ty` pass finds at least one error (the
+pre-T-3116 fast path is unchanged: most lands have zero errors and pay
+nothing extra for this), a second `ty` pass runs against the SAME
+touched files at this ticket's merge-base with `main`
+(`_ty_baseline_diagnostic_identities`, scanning a detached
+`git worktree add --detach` snapshot -- the same race-free primitive
+`_capture_pre_land_baseline` already uses -- so `worktree`'s own live
+files are never mutated in place). Only a finding whose `(file, code,
+message)` identity (`_ty_diagnostic_identity`, DELIBERATELY excluding
+`line`/`col` -- line number is not identity, T-3065's own lesson)
+exceeds its baseline OCCURRENCE COUNT refuses the land. Comparing counts
+rather than plain set membership matters: `(file, code, message)` is not
+unique within a file (two unrelated functions can share an identical
+mistake), so a second, genuinely new occurrence of an already-present
+shape must still refuse even though ONE occurrence of that shape already
+existed at the parent.
+
+A pre-existing finding that is merely carried forward this way is NOT
+exempted from the repo-wide count -- it still shows up in a full `frob
+check`/`ty check .` run, just not charged to THIS land. If the baseline
+itself is unmeasurable (no merge-base, snapshot worktree spawn failure,
+`ty` could not run there), this degrades to the pre-T-3116 file-scoped
+posture rather than reading "unmeasurable" as "everything is
+pre-existing" -- an unmeasurable baseline is not license to waive
+everything in the file.
+
+Audited whether the pre-land lint gate (T-3061, immediately below) has
+the same file-vs-diff attribution gap: it does. T-3116 did not fix it
+(out of this ticket's declared scope) -- filed as a follow-up.
+
 ## Pre-land lint gate (T-3061)
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_lint_clean_pre_land -->

@@ -470,6 +470,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3113: frob ticket block is add-only: a mistaken blocked_by edge cannot be removed without hand-editing the ledger
 - T-3114: Add resync_root_to_published_tip primitive for the post-CAS root resync
 - T-3115: WIRE003 reports the working 'frob refactor' verb as unresolvable; the verb is also missing from frob --help
+- T-3116: Land's ty gate refuses on pre-existing findings in touched files, manufacturing unrelated suppressions
 - T-3119: frob refactor verbs' Verify phase never checks import breakage outside the plan's own touched files
 - T-3120: TEST001 gap: Graph::has_cycle in strata-core/src/graph/query.rs has no unit test
 - T-3121: Flip the squash-apply stage onto a disposable worktree and publish by CAS

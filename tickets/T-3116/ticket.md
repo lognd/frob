@@ -2,7 +2,7 @@
 id: T-3116
 title: Land's ty gate refuses on pre-existing findings in touched files, manufacturing
   unrelated suppressions
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'

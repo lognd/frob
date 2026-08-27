@@ -3725,11 +3725,129 @@ def _ty_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
     return parse_ty(proc.stdout + proc.stderr, exit_code=proc.returncode)
 
 
+# frob:ticket T-3116
+def _ty_diagnostic_identity(  # noqa: ANN001
+    file: str | None, diag
+) -> tuple[str | None, str | None, str]:
+    """`(file, code, message)` for one `ty` `Diagnostic`, DELIBERATELY
+    omitting `line`/`col` (T-3116: line number is not identity -- a
+    finding whose surrounding code merely shifted a few lines, the exact
+    incident this ticket was filed from, must still compare equal to
+    itself). `file` is passed in rather than read off `diag.file` because
+    both the current-content and parent-content `ty` invocations are
+    spawned with the identical explicit argv path list
+    (`_touched_py_files`'s output, unchanged between the two calls), so
+    `diag.file` is already guaranteed to match; passing it explicitly
+    just keeps this function pure and trivially testable on a bare
+    `Diagnostic`-shaped stand-in without constructing one."""
+    return (file, diag.code, diag.message)
+
+
+# frob:ticket T-3116
+def _ty_baseline_diagnostic_identities(
+    worktree: Path, merge_base: str, py_files: list[str]
+) -> Counter[tuple[str | None, str | None, str]] | None:
+    """The `_ty_diagnostic_identity` MULTISET (a `Counter`, not a `set`)
+    `ty check` reports for `py_files` AT `merge_base` -- the parent
+    commit this ticket's branch diverged from -- so `_assert_touched_
+    files_type_check_pre_land` can tell a PRE-EXISTING finding (present
+    at the parent, regardless of its current line number) from a
+    genuinely NEW one the diff introduced.
+
+    A `Counter`, deliberately, not a `frozenset`: `(file, code, message)`
+    is not unique WITHIN a file -- two textually-identical mistakes in
+    two different functions (e.g. `return "x"` from two separate `int`-
+    returning functions) share one identity. A plain set-difference would
+    then read a genuinely NEW second occurrence as "already present" the
+    moment ONE occurrence of that shape exists at the parent. Comparing
+    counts instead (`current_count - baseline_count` excess-per-identity,
+    in `_assert_touched_files_type_check_pre_land`) keeps exactly one
+    relocation invisible while still catching a second, brand-new
+    occurrence of the same shape.
+
+    Scans a detached `git worktree add --detach` snapshot at
+    `merge_base` (`_spawn_baseline_snapshot_worktree`, the SAME
+    race-free primitive `_capture_pre_land_baseline` already uses for
+    the unrelated unscoped-error-sweep baseline) rather than mutating
+    `worktree`'s own live files in place -- `worktree` stays untouched
+    for the whole comparison, matching every other pre-land guard's
+    read-only posture in this module (T-1338: a land killed mid-write can
+    garble a source file, and this function's whole reason to exist is to
+    run ONLY on the already-rare path where `ty` found an error, so
+    paying for a real snapshot checkout there is cheap next to the risk
+    of an in-place swap-and-restore).
+
+    A file with no parent-commit version (new in this diff) contributes
+    no baseline identities for itself -- every one of its findings is, by
+    definition, new. Returns `None` (never raises) if the snapshot
+    worktree cannot be created at all, or if `ty` cannot be run there --
+    the caller degrades to the pre-T-3116 file-scoped behavior in that
+    case, since "no baseline could be measured" is not license to treat
+    every current finding as pre-existing."""
+    existing_files = []
+    for f in py_files:
+        exists = run_argv(
+            ["git", "-C", str(worktree), "cat-file", "-e", f"{merge_base}:{f}"]
+        )
+        if exists.is_ok and exists.danger_ok.returncode == 0:
+            existing_files.append(f)
+    if not existing_files:
+        return Counter()
+    snapshot = _spawn_baseline_snapshot_worktree(worktree, merge_base)
+    if snapshot is None:
+        return None
+    try:
+        baseline = _ty_check_files(snapshot, existing_files)
+    finally:
+        _remove_baseline_snapshot_worktree(worktree, snapshot)
+    if baseline is None:
+        return None
+    return Counter(
+        _ty_diagnostic_identity(d.file, d)
+        for d in baseline.diagnostics
+        if d.severity == "error"
+    )
+
+
+# frob:ticket T-3116
+def _ty_new_errors(
+    errors: list, baseline_counts: Counter[tuple[str | None, str | None, str]]
+) -> list:  # noqa: ANN201
+    """The subset of `errors` (current-pass `ty` diagnostics) that
+    EXCEEDS `baseline_counts`'s per-identity occurrence count -- the
+    multiset-excess half of `_assert_touched_files_type_check_pre_land`
+    (T-3116 ARCH001 split, zero behavior change), pulled out so that
+    function's own body stays under the module's per-function line
+    threshold. A `Counter` copy of `baseline_counts` is decremented as
+    each error is matched against its identity's remaining baseline
+    count (`_ty_diagnostic_identity`) -- see `_ty_baseline_diagnostic_
+    identities`'s own docstring for why this must be a multiset
+    comparison, not set membership: two textually-identical mistakes in
+    two different functions share one `(file, code, message)` identity,
+    so a plain set-difference would let a genuinely new SECOND
+    occurrence hide behind one pre-existing occurrence of the same
+    shape."""
+    remaining = Counter(baseline_counts)
+    new_errors = []
+    for d in errors:
+        identity = _ty_diagnostic_identity(d.file, d)
+        if remaining[identity] > 0:
+            remaining[identity] -= 1
+        else:
+            new_errors.append(d)
+    return new_errors
+
+
 # frob:ticket T-1907
+# frob:ticket T-3116
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_type_error_in_a_touched_file_refuses_the_land  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_clean_touched_file_does_not_refuse  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_empty_touched_set_is_a_no_op  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_cli_land_end_to_end_refuses_a_worktree_with_a_real_ty_error  # noqa: E501
+# frob:tests tests/test_ticket_land_ty_diff_attribution.py::TestTyDiagnosticIdentity.test_ignores_line_and_col  # noqa: E501
+# frob:tests tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand.test_pre_existing_finding_that_merely_shifted_lines_does_not_refuse  # noqa: E501
+# frob:tests tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand.test_genuinely_new_finding_still_refuses  # noqa: E501
+# frob:tests tests/test_ticket_land_ty_diff_attribution.py::TestAssertTouchedFilesTypeCheckPreLand.test_baseline_unmeasurable_falls_back_to_file_scoped_refusal  # noqa: E501
 # frob:waive ARCH103 reason="this IS _assert_design_loads_pre_land's own established \
 # guard shape one function up in this same module (filter/spawn/decide-refuse-or-not, \
 # three short-circuit returns): the decision points are early-outs for 'nothing to \
@@ -3766,7 +3884,25 @@ def _assert_touched_files_type_check_pre_land(
     at all, is a no-op: there is nothing new to type-check (or nothing
     measurable), matching every other touched-set guard's degrade-to-no-
     op-not-refuse posture in this module when the touched set itself is
-    unknown."""
+    unknown.
+
+    T-3116: attributes findings to the DIFF, not the FILE. Before this,
+    ANY `ty` error in a touched file refused the land even when the
+    diff did not introduce or worsen it -- the measured incident was a
+    pre-existing finding whose surrounding code the diff merely SHIFTED
+    a few lines down the file. When `ty` reports at least one error
+    here (the pre-T-3116 fast path -- most lands have zero, and pay
+    nothing extra), a second `ty` pass runs against the SAME files at
+    this ticket's merge-base with `main` (`_ty_baseline_diagnostic_
+    identities`) and only a finding whose `(file, code, message)`
+    identity is ABSENT from that baseline -- genuinely new, never a
+    relocation -- refuses the land. A pre-existing finding still counts
+    in the repo-wide total; it is simply not charged to this land. If
+    the baseline itself cannot be measured (no merge-base, snapshot
+    worktree failed, `ty` could not run there), this degrades to the
+    pre-T-3116 file-scoped behavior rather than silently waiving
+    everything -- an unmeasurable baseline is not license to treat every
+    current finding as pre-existing."""
     py_files = _touched_py_files(worktree, touched_paths)
     if not py_files:
         return
@@ -3781,15 +3917,38 @@ def _assert_touched_files_type_check_pre_land(
     errors = [d for d in parsed.diagnostics if d.severity == "error"]
     if not errors:
         return
+    diff_result = working_diff(worktree, "main")
+    baseline_counts: Counter[tuple[str | None, str | None, str]] | None = None
+    if diff_result.is_ok:
+        baseline_counts = _ty_baseline_diagnostic_identities(
+            worktree, diff_result.danger_ok.base, py_files
+        )
+    if baseline_counts is not None:
+        new_errors = _ty_new_errors(errors, baseline_counts)
+    else:
+        # Baseline unmeasurable (no merge-base, snapshot/spawn failure) --
+        # degrade to the pre-T-3116 file-scoped posture rather than treat
+        # an unmeasurable baseline as "everything is pre-existing".
+        new_errors = errors
+    if not new_errors:
+        _log.warning(
+            "ticket land: %s touched-file type check found %d error(s) "
+            "but all are pre-existing at merge-base (T-3116: attributed "
+            "to the diff, not the file) -- not refusing",
+            ticket_id,
+            len(errors),
+        )
+        return
     _log.error(
-        "ticket land: %s refused -- `ty check` found %d error(s) in this "
-        "ticket's own touched file(s) (%s); a scoped `frob check --only "
-        "ty`/`frob check` re-run before retrying `frob ticket land %s` "
-        "names the exact line(s) (T-1907: this family is not relaxed by "
-        "the rapid profile)",
+        "ticket land: %s refused -- `ty check` found %d NEW error(s) in "
+        "this ticket's own touched file(s) (%s); a scoped `frob check "
+        "--only ty`/`frob check` re-run before retrying `frob ticket land "
+        "%s` names the exact line(s) (T-1907: this family is not relaxed "
+        "by the rapid profile; T-3116: pre-existing findings that did not "
+        "worsen are excluded)",
         ticket_id,
-        len(errors),
-        ", ".join(py_files),
+        len(new_errors),
+        ", ".join(sorted({d.file for d in new_errors})),
         ticket_id,
     )
     sys.exit(1)
