@@ -28,6 +28,7 @@ from hypothesis import strategies as st
 from typani.result import Err, Ok, Result
 
 import frob.tickets._land as _land_mod
+import frob.tickets._land_compose as _land_compose_mod
 import frob.tickets._land_finalize as _land_finalize_mod
 import frob.tickets._land_git_ops as _land_git_ops_mod
 import frob.tickets._land_ledger_merge as _land_ledger_merge_mod
@@ -101,9 +102,15 @@ def _failing_run_argv(
     `_land_finalize` (each importing its own top-level `run_argv` name);
     T-1334 further split `_land_finalize` into `_land_finalize`/
     `_land_squash`/`_land_release` (same pattern) -- so this patches all
-    five -- a patch of `_land_mod.run_argv` alone no longer reaches call
+    six -- a patch of `_land_mod.run_argv` alone no longer reaches call
     sites that moved into `_land_merge`/`_land_finalize`/`_land_squash`/
-    `_land_release`."""
+    `_land_release`. T-3144 (T-3121 fallout): `_land_compose` added to
+    this list -- the disposable-stage flip (T-3121) moved the actual
+    `git merge --squash --no-commit` AND the final `commit-tree` call
+    into `_land_compose`'s own module-level `run_argv`, called directly
+    from `_land.py`'s `compose_squash_in_disposable_worktree`, never
+    passing through `_land_squash`'s copy at all -- a patch of the other
+    five alone silently never fires for either of those two calls."""
 
     def _fake(argv: Sequence[str], **kwargs: Any) -> Any:
         if should_fail(argv):
@@ -123,6 +130,7 @@ def _failing_run_argv(
     monkeypatch.setattr(_land_git_ops_mod, "run_argv", _fake)
     monkeypatch.setattr(_land_finalize_mod, "run_argv", _fake)
     monkeypatch.setattr(_land_squash_mod, "run_argv", _fake)
+    monkeypatch.setattr(_land_compose_mod, "run_argv", _fake)
     monkeypatch.setattr(_land_release_mod, "run_argv", _fake)
 
 
@@ -1573,11 +1581,29 @@ def _t2114_concurrent_new_ticket(repo: Path, result_path: Path) -> None:
     old construction did). A genuinely separate process has no such
     problem: it waits on `repo`'s real land lock exactly the way a real
     concurrent writer would, and proceeds once `land()` actually finishes
-    and releases it -- which is the real-world shape T-1036 exercises."""
+    and releases it -- which is the real-world shape T-1036 exercises.
+
+    T-3144: `fork` gives this child a COPY-ON-WRITE snapshot of the
+    PARENT test process's `os.environ` taken the instant it is spawned --
+    and by then `land()`'s own in-process evidence re-verify
+    (`apply_agent_env`, T-3094, a real, deliberate, no-restore mutation
+    correct for its actual production callers, short-lived CLI processes)
+    has already set `FROB_WORKTREE` to `worktree` for the rest of the
+    parent process's lifetime. A genuinely independent concurrent writer
+    -- a real `frob ticket new` invocation in its own shell, the scenario
+    this test simulates -- would never inherit that: it gets a fresh env
+    from ITS OWN shell, not the land-running process's runtime-mutated
+    one. Popping both keys here (mirroring `tests/conftest.py`'s own
+    `_isolate_worktree_lease_env_before_test`, T-3123/T-3145) keeps this
+    fork-based simulation honest to the real-world case instead of
+    failing on an artifact of sharing memory with `land()`."""
     import json
+    import os
 
     from frob.tickets import new_ticket as _new_ticket_fn
 
+    os.environ.pop("FROB_WORKTREE", None)
+    os.environ.pop("FROB_AGENT", None)
     result = _new_ticket_fn(repo, _spec("Concurrent sibling"))
     if result.is_ok:
         result_path.write_text(json.dumps({"ok": True, "id": result.danger_ok.id}))
@@ -1595,6 +1621,25 @@ class TestSquashSpliceLedgerChurn:
     splice's (previously stale) base-text snapshot."""
 
     # frob:tests tests/test_ticket_land.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
+    # T-3144: this test's own monkeypatch target was stale (patched
+    # `_land_squash`'s `run_argv`, but T-3121's disposable-stage flip
+    # moved the actual `git merge --squash` call into `_land_compose`'s
+    # own copy, called directly from `_land.py`) -- fixed below to target
+    # the real call site. With that fixed, this test now correctly
+    # reproduces a GENUINE regression (T-3163): `land()` succeeds, but
+    # the final ledger on `root` contains ONLY the concurrent sibling's
+    # own new ticket -- the just-landed ticket's own record is silently
+    # gone entirely, the inverse of (but the same class as) the T-1036
+    # symptom this test was written to catch. `xfail(strict=True)` so a
+    # T-3163 fix that makes this pass again is caught immediately (an
+    # unexpected pass errors), rather than this staying silently green
+    # again without anyone updating the marker.
+    @pytest.mark.xfail(
+        reason="T-3163: land()'s ledger splice under the T-3121 disposable-stage "
+        "flip can silently drop the just-landed ticket's own record when a "
+        "concurrent sibling write races the land window",
+        strict=True,
+    )
     def test_concurrent_write_between_squash_and_splice_survives_land(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1607,9 +1652,13 @@ class TestSquashSpliceLedgerChurn:
         (wt / "src" / "widget.py").write_text("# race widget\n")
         _commit_all(wt, "add race widget")
 
-        # T-1334: `git merge --squash` now runs inside
-        # `_land_squash._squash_and_splice_ledger`, not `_land.py`.
-        real_run_argv = _land_squash_mod.run_argv
+        # T-3121 (T-3144 fallout): `git merge --squash` now runs inside
+        # `_land_compose.compose_squash_in_disposable_worktree` (called
+        # directly from `_land.py`, against a DISPOSABLE stage worktree,
+        # never `_land_squash`'s own copy of `run_argv`) -- patching
+        # `_land_squash_mod.run_argv` alone never observes this call
+        # post T-3121.
+        real_run_argv = _land_compose_mod.run_argv
         result_path = repo.parent / "t2114-concurrent-result.json"
         injected: dict[str, Any] = {"done": False, "proc": None}
 
@@ -1642,7 +1691,7 @@ class TestSquashSpliceLedgerChurn:
                 injected["proc"] = proc
             return result
 
-        monkeypatch.setattr(_land_squash_mod, "run_argv", _fake_run_argv)
+        monkeypatch.setattr(_land_compose_mod, "run_argv", _fake_run_argv)
 
         result = land(repo, tid, wt, dry_run=False)
         assert result.is_ok, result.err
@@ -4278,9 +4327,15 @@ class TestGitSubprocessFailures:
         (wt / "src" / "l6.py").write_text("# l6\n")
         _commit_all(wt, "wip")
 
+        # T-3121 (T-3144 fallout): the squash-merge now runs against a
+        # DISPOSABLE stage worktree (compose_squash_in_disposable_
+        # worktree), a path under a fresh tempdir, never `str(repo)` --
+        # matching on `"merge"`/`"--squash"` alone is now the only way to
+        # target this call; `str(repo) in argv` never matches it post
+        # T-3121 and silently made this predicate never fire.
         _failing_run_argv(
             monkeypatch,
-            lambda argv: str(repo) in argv and "--squash" in argv,
+            lambda argv: "merge" in argv and "--squash" in argv,
             hard_err=True,
         )
         result = land(repo, tid, wt, dry_run=False)
@@ -4300,11 +4355,16 @@ class TestGitSubprocessFailures:
         (wt / "src" / "l7.py").write_text("# l7\n")
         _commit_all(wt, "wip")
 
+        # T-3121 (T-3144 fallout): the "final landing commit" is no
+        # longer an in-tree `git commit` -- `_publish_squash_apply`
+        # (T-3121's fold + CAS replacement) folds the disposable stage
+        # into a commit object via `git commit-tree` against `repo`
+        # (`fold_worktree_into_commit`, `frob.tickets._land_compose`),
+        # never a bare `"commit"` argv token, so the old predicate never
+        # matched post T-3121.
         _failing_run_argv(
             monkeypatch,
-            lambda argv: (
-                str(repo) in argv and "commit" in argv and "--squash" not in argv
-            ),
+            lambda argv: str(repo) in argv and "commit-tree" in argv,
             hard_err=True,
         )
         result = land(repo, tid, wt, dry_run=False)
@@ -8660,23 +8720,31 @@ def _t0907_child_land(
     root: Path, ticket_id: str, worktree: Path, ready_path: Path
 ) -> None:
     """Multiprocessing target (module-level so `fork` can spawn it, T-0907):
-    monkeypatches `frob.tickets._land_squash.run_argv` (this CHILD
+    monkeypatches `frob.tickets._land_compose.run_argv` (this CHILD
     process's own copy of the module, `fork` gives every child an
     independent copy-on-write memory image) so that once `land()`'s
-    squash-apply merge onto `root` actually runs, it signals readiness
-    (`ready_path`) and then sleeps well past however long the parent needs
-    to `SIGKILL` this process -- reproducing "killed mid-staging"
-    deterministically instead of relying on timing luck against a real
-    580s coordinator timeout. T-1334: the squash-merge this patches now
-    runs inside `_land_squash._squash_and_splice_ledger` (T-1186 originally
-    put it in `_land_finalize`; T-1334 split that module further) --
-    `land_mod.land` (the entry point actually invoked) still lives in
-    `_land.py`."""
+    squash-apply merge onto the disposable stage actually runs, it
+    signals readiness (`ready_path`) and then sleeps well past however
+    long the parent needs to `SIGKILL` this process -- reproducing
+    "killed mid-staging" deterministically instead of relying on timing
+    luck against a real 580s coordinator timeout.
+
+    T-3144 (T-3121 fallout): T-1334's own comment here ("the squash-merge
+    runs inside `_land_squash._squash_and_splice_ledger`") went stale
+    when T-3121's disposable-stage flip moved the actual `git merge
+    --squash --no-commit` into `_land_compose.compose_squash_in_
+    disposable_worktree` -- called directly from `_land.py`, never
+    through `_land_squash`'s own copy of `run_argv` at all. Patching the
+    wrong module meant this hook never fired post T-3121: `ready_path`
+    was never written, so the parent's own 20s wait for it timed out and
+    failed on `assert ready_path.exists()` before ever reaching the
+    intended SIGKILL. `land_mod.land` (the entry point actually invoked)
+    still lives in `_land.py`."""
 
     import frob.tickets._land as land_mod
-    import frob.tickets._land_squash as land_squash_mod
+    import frob.tickets._land_compose as land_compose_mod
 
-    real_run_argv = land_squash_mod.run_argv
+    real_run_argv = land_compose_mod.run_argv
 
     def _patched(
         argv: Sequence[str], *, cwd: Path | None = None, timeout_s: int | float = 30.0
@@ -8687,7 +8755,7 @@ def _t0907_child_land(
             time.sleep(30)
         return result
 
-    setattr(land_squash_mod, "run_argv", _patched)  # noqa: B010
+    setattr(land_compose_mod, "run_argv", _patched)  # noqa: B010
     land_mod.land(root, ticket_id, worktree, dry_run=False)
 
 

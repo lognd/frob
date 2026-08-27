@@ -1,7 +1,7 @@
 ---
 id: T-3144
 title: 5 real failures in test_ticket_land.py masked by the FROB_WORKTREE leak (T-3123)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -19,6 +19,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ticket_land.py::TestGitSubprocessFailures::test_squash_command_failure
+- tests/test_ticket_land.py::TestGitSubprocessFailures::test_final_commit_failure
+- tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
+- tests/test_ticket_land.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content
 designated_repro_test: null
 threat: null
 component: null
