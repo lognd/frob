@@ -504,6 +504,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3152: fleet_status and frob.process._reap use different age heuristics for the same forkserver (mtime vs stat starttime)
 - T-3155: Extract evidence_covers_scope out of frob.gates to break the gates<->tickets edge
 - T-3156: D-02 has no legitimate evidence route for docs-only bug-kind or Rust-only tickets
+- T-3163: T-1036 ledger-splice regression under T-3121 disposable-stage: concurrent sibling write can silently drop the just-landed ticket's own record
 
 ## [0.530.0] - unreleased
 

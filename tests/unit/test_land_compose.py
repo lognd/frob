@@ -32,12 +32,23 @@ def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
 def scratch_repo(tmp_path: Path) -> Path:
     """A minimal git repo with one file committed on `main`, plus a
     `feature` branch that adds a second file -- the base fixture every
-    test in this module composes against."""
+    test in this module composes against.
+
+    T-3163: gitignores `.frob/` from the very first commit (mirroring
+    `tests/test_ticket_land.py::_git_init`'s own established T-1393
+    pattern) -- `compose_squash_in_disposable_worktree` now takes `repo`'s
+    `ledger_lock` for its whole lifetime, which creates `.frob/tickets.
+    lock` as a side effect; an un-gitignored fixture would surface that
+    as an untracked path in a must-stay-quiet porcelain-equality
+    assertion, an artifact of the fixture, not of the product."""
     repo = tmp_path / "repo"
     repo.mkdir()
     _run(["git", "init", "-q", "-b", "main"], repo)
     _run(["git", "config", "user.email", "test@example.com"], repo)
     _run(["git", "config", "user.name", "Test"], repo)
+    (repo / ".gitignore").write_text(".frob/\n")
+    _run(["git", "add", ".gitignore"], repo)
+    _run(["git", "commit", "-q", "-m", "gitignore .frob/"], repo)
     (repo / "a.txt").write_text("base\n")
     _run(["git", "add", "a.txt"], repo)
     _run(["git", "commit", "-q", "-m", "base"], repo)
@@ -278,7 +289,10 @@ class TestFoldWorktreeIntoCommit:
             text=True,
             check=True,
         ).stdout.split()
-        assert sorted(listed) == ["a.txt", "b.txt"]
+        # T-3163: `scratch_repo` now commits its own `.gitignore` first
+        # (see that fixture's docstring), so the base commit's tree --
+        # and therefore this folded commit's -- carries it too.
+        assert sorted(listed) == [".gitignore", "a.txt", "b.txt"]
         parent = subprocess.run(
             ["git", "-C", str(scratch_repo), "rev-parse", f"{sha}^"],
             capture_output=True,

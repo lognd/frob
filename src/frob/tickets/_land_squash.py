@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import tempfile
 from collections.abc import Callable
+from contextlib import nullcontext
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
@@ -1025,10 +1026,12 @@ def _report_stacked_sibling_absorption(
 
 
 # frob:ticket T-3121
+# frob:ticket T-3163
 # frob:doc docs/modules/tickets-landing.md#the-disposable-stage-flip-t-3121
 # frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_racing_publish_surfaces_dirtymain  # noqa: E501
 # frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_blocked_resync_is_not_a_land_failure  # noqa: E501
 # frob:tests tests/unit/test_land_stage_flip.py::TestPublishSquashApply.test_clean_publish_advances_root_and_resyncs  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
 def _publish_squash_apply(
     root: Path,
     stage: Path,
@@ -1069,7 +1072,68 @@ def _publish_squash_apply(
     carries the published sha and the `git read-tree -m -u` recovery
     command) and returned as `True` rather than propagated as a land
     failure, and it is attempted EXACTLY once -- a retry only races the
-    same sibling that blocked it."""
+    same sibling that blocked it.
+
+    T-3163: fold + CAS + resync run under `root`'s OWN `ledger_lock`,
+    nested inside a WIDER hold `_land_squash_apply` (this function's
+    caller) now takes across the whole splice-through-publish span for a
+    precomposed land -- see that function's own docstring for the full
+    incident this closes and why the lock has to start back at the
+    splice, not just here. In short: before this fix, T-3121's flip
+    released `ledger_lock` the moment the splice finished staging its
+    write into the DISPOSABLE `stage` -- root's own on-disk tickets.md
+    was, at that point, still untouched and several git operations (a
+    version bump, a native rebuild, a gate-rule sync, an optional pre-
+    commit sweep) away from actually being published, and a sibling's
+    `new_ticket()` had that whole window free to acquire the lock, read
+    root's on-disk tickets.md (still describing the OLD pre-land tip),
+    append its own ticket, and write straight back to root's WORKING
+    TREE. By the time this function's CAS moved `refs/heads/<main>` to
+    the new tip and the sibling's own pathspec-scoped `git commit --
+    tickets.md` (`commit_ticket_ledger_change`) ran, root's HEAD had
+    already advanced past the sibling's read, but its INDEX still held
+    the sibling's stale-based tickets.md write -- so that commit's tree
+    took every OTHER path from the new HEAD (correct) but REPLACED
+    tickets.md wholesale with the sibling's stale-based version, silently
+    discarding this land's own ledger splice (`final_id`'s own record)
+    the moment it landed. Holding `ledger_lock(root)` across fold+CAS+
+    resync closes
+    exactly this gap. `ledger_lock` is re-entrant per thread (see its own
+    docstring), so this hold nests harmlessly inside the WIDER hold
+    `_land_squash_apply` (this function's caller) now takes across the
+    whole splice-through-publish span for a precomposed land -- see that
+    function's own docstring for why a sibling must be kept out of the
+    ENTIRE gap, not just this final tail: by the time control reaches
+    here, a sibling with no wider lock to wait on has often already
+    finished its own read-write-commit cycle against `root`'s stale
+    pre-publish tickets.md, long before this function's own acquisition
+    would ever have blocked it."""
+    with ledger_lock(root):
+        return _fold_publish_and_resync(
+            root,
+            stage,
+            ticket,
+            final_id,
+            pre_land_tip=pre_land_tip,
+            main_branch_name=main_branch_name,
+        )
+
+
+# frob:ticket T-3163
+def _fold_publish_and_resync(
+    root: Path,
+    stage: Path,
+    ticket: Ticket,
+    final_id: str,
+    *,
+    pre_land_tip: str,
+    main_branch_name: str,
+) -> Result[bool, LandError]:
+    """`_publish_squash_apply`'s actual fold+CAS+resync body, split out so
+    the lock acquisition wrapping it (T-3163) reads as a single obvious
+    critical section at the call site rather than being interleaved with
+    the git-plumbing steps themselves. Same contract as
+    `_publish_squash_apply` -- see that function's docstring."""
     folded = fold_worktree_into_commit(
         root, stage, pre_land_tip, _commit_message(ticket, final_id)
     )
@@ -1310,62 +1374,92 @@ def _land_squash_apply(
     cannot run twice, and the transaction is sealed by fold + CAS publish
     (`_publish_squash_apply`) instead of an in-tree `git commit`. It is an
     error to pass it without also passing `stage`; the two always travel
-    together."""
+    together.
+
+    T-3163: for a precomposed land (`squash_precomposed=True`), everything
+    from here through `_publish_squash_apply`'s own fold+CAS+resync now
+    runs under ONE continuous hold of `root`'s `ledger_lock` -- not just
+    `_squash_and_splice_ledger`'s own read-splice-write, and not just
+    `_publish_squash_apply`'s fold+CAS+resync tail (each already took the
+    lock for its own narrow step, but RELEASED it in between, across the
+    version bump / native rebuild / gate-rule sync / pre-commit sweep
+    stages `_land_squash_apply_finish` runs against `stage`). That gap was
+    the actual incident: a concurrent `new_ticket()` need only win the
+    lock ONCE, any time in that multi-stage window (which can run for
+    seconds), to read root's still-pre-land tickets.md, append its own
+    ticket, and write it straight back -- long before this land ever
+    reaches `_publish_squash_apply` and would have blocked it there. A
+    single continuous hold starting here means a sibling's `ledger_lock`
+    acquisition now queues behind the ENTIRE precomposed transaction,
+    including its final resync, so its read is always taken against
+    root's fully-published (or, on a genuine `ResyncBlocked`, loudly
+    flagged) state -- never a stale pre-publish snapshot. In-root landing
+    (`squash_precomposed=False`, `stage is root`) is unaffected: that path
+    has no separate publish step to race, so no extra hold is taken."""
     stage = root if stage is None else stage
     branch = current_branch(worktree)
     if branch.is_err:
         return Err(LandError.GitFailed)
     branch_name = branch.danger_ok
 
-    # frob:ticket T-1258
-    # Ledger v2 design section 5: a v2-mode `root` (any `tickets/T-####/
-    # ticket.md` present) needs no ledger splice at all -- the squash-merge
-    # already stages disjoint ticket directories correctly on its own.
-    v2_mode = _store_mode(root) == "v2"
-    squashed = (
-        _squash_and_splice_ledger_v2(
-            stage,
-            worktree,
-            ticket,
-            final_id,
-            branch_name,
-            pre_land_tip,
-            merge_already_composed=squash_precomposed,
+    # frob:ticket T-3163
+    # T-3163: reentrant (see `ledger_lock`'s own docstring) with the
+    # narrower holds `_squash_and_splice_ledger`/`_publish_squash_apply`
+    # still take internally -- this is the OUTER hold that closes the gap
+    # between them (see this function's own docstring above). A no-op
+    # `nullcontext` for in-root landing, which has no such gap to close.
+    publish_lock = ledger_lock(root) if squash_precomposed else nullcontext()
+    with publish_lock:
+        # frob:ticket T-1258
+        # Ledger v2 design section 5: a v2-mode `root` (any `tickets/T-####/
+        # ticket.md` present) needs no ledger splice at all -- the squash-
+        # merge already stages disjoint ticket directories correctly on its
+        # own.
+        v2_mode = _store_mode(root) == "v2"
+        squashed = (
+            _squash_and_splice_ledger_v2(
+                stage,
+                worktree,
+                ticket,
+                final_id,
+                branch_name,
+                pre_land_tip,
+                merge_already_composed=squash_precomposed,
+            )
+            if v2_mode
+            else _squash_and_splice_ledger(
+                root,
+                stage,
+                worktree,
+                ticket,
+                final_id,
+                branch_name,
+                pre_land_tip,
+                main_branch_name=main_branch_name,
+                merge_already_composed=squash_precomposed,
+            )
         )
-        if v2_mode
-        else _squash_and_splice_ledger(
-            root,
-            stage,
-            worktree,
-            ticket,
-            final_id,
-            branch_name,
-            pre_land_tip,
-            main_branch_name=main_branch_name,
-            merge_already_composed=squash_precomposed,
-        )
-    )
-    if squashed.is_err:
-        return Err(squashed.danger_err)
+        if squashed.is_err:
+            return Err(squashed.danger_err)
 
-    return _land_squash_apply_finish(
-        root,
-        worktree,
-        ticket,
-        ticket_id,
-        final_id,
-        wip_committed,
-        did_merge,
-        main_branch_name,
-        v2_mode,
-        stage,
-        pre_land_tip=pre_land_tip,
-        bump_version=bump_version,
-        rebuild_natives=rebuild_natives,
-        sync_gate_rules=sync_gate_rules,
-        pre_commit_sweep=pre_commit_sweep,
-        squash_precomposed=squash_precomposed,
-    )
+        return _land_squash_apply_finish(
+            root,
+            worktree,
+            ticket,
+            ticket_id,
+            final_id,
+            wip_committed,
+            did_merge,
+            main_branch_name,
+            v2_mode,
+            stage,
+            pre_land_tip=pre_land_tip,
+            bump_version=bump_version,
+            rebuild_natives=rebuild_natives,
+            sync_gate_rules=sync_gate_rules,
+            pre_commit_sweep=pre_commit_sweep,
+            squash_precomposed=squash_precomposed,
+        )
 
 
 # frob:ticket T-1514

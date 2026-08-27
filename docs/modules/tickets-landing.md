@@ -3402,3 +3402,55 @@ The guaranteed-collision shape is therefore specific to v1 repos, and it
 degrades to a loud, non-destructive, operator-recoverable blocked resync
 rather than to data loss. That is a real hazard for a v1 consumer and is
 recorded here rather than accepted silently.
+
+### T-3163 correction: "blocked resync" was not actually the end of it
+
+The paragraph above is only half the story, and the missing half was a
+genuine silent-data-loss bug (T-1036's regression test caught the
+symptom; this section is the postmortem). A blocked `read-tree -m -u`
+IS loud and non-destructive by itself -- but by the time it fires, the
+concurrent single-ticket writer (`new_ticket`/`evidence`/...) has
+ALREADY written its own edit straight to `root`'s on-disk `tickets.md`,
+based on whatever `root` showed BEFORE this land published anything.
+That writer's own commit (`commit_ticket_ledger_change`, pathspec-scoped
+to `-- tickets.md`) then runs against `root`'s CURRENT `HEAD` -- which
+the CAS publish had, by then, already moved to the new landed tip -- but
+against an INDEX that still described the OLD pre-land tree for every
+path except the writer's own. `git commit -- <pathspec>` builds its tree
+from HEAD, overlaid ONLY with the pathspec's staged content; every other
+path is correctly inherited from the new HEAD, but `tickets.md` itself
+was REPLACED wholesale by the writer's stale-based version, discarding
+this land's own ledger splice (the just-landed ticket's own record) the
+instant that commit landed on top. No error, no log line, no operator
+signal at all: the blocked resync's own loud `ResyncBlocked` log fires
+and is treated as non-fatal (correctly, in isolation), but the REAL
+damage happens moments later, silently, in a completely different
+function this land's own code never observes.
+
+**The fix**: `root`'s `ledger_lock` now spans the ENTIRE precomposed
+transaction -- acquired in `compose_squash_in_disposable_worktree`
+before the squash-merge even runs, held continuously through
+`_publish_squash_apply`'s fold + CAS + resync, released only once the
+disposable worktree is torn down. A concurrent single-ticket writer's
+own `ledger_lock` acquisition (inside `_allocate_and_write_new_ticket`/
+`add_evidence`/...) now queues behind the WHOLE transaction, so its read
+of `root`'s on-disk ledger is always taken AFTER root is either fully
+resynced to the published tip or the land has given up and logged the
+recovery command -- never against a pre-publish snapshot. This
+necessarily reopens part of the very window T-3121 shrank: ledger-
+mutating verbs can once again wait for most of a land's duration, not
+just the squash-merge -- a narrower regression than reverting T-3121
+outright (T-3121's actual measured win was on `_land_lock`/`DirtyMain`
+refusals, a different, wider lock this fix does not touch at all), and
+one this ticket's severity (silent, permanent ledger data loss) was
+judged to be worth paying.
+
+The v2 path was reasoned to be exempt above ("a concurrent `frob ticket
+new` writes a NEW, untracked ticket directory... untracked paths do not
+block `read-tree -m -u`") -- that reasoning covers ONLY the resync step,
+which was never the actual mechanism of loss. A v2 writer's own
+`git commit -- tickets/T-####/` is subject to the exact same stale-
+index-plus-moved-HEAD shape for ITS pathspec, so v2 was never actually
+exempt from this bug; it was exempt from the misdiagnosis this section
+corrects. The `ledger_lock`-widening fix above applies unconditionally
+to both modes.

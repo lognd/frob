@@ -32,6 +32,7 @@ from typani.result import Err, Ok, Result
 
 from frob.gitio import excerpt, run_argv
 from frob.logging import get_logger
+from frob.tickets._store import ledger_lock
 
 _log = get_logger(__name__)
 
@@ -309,9 +310,11 @@ def _squash_into_worktree(
 # frob:tests tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_conflicting_squash_reports_the_conflicted_paths  # noqa: E501
 # frob:tests tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_root_worktree_untouched_by_clean_squash  # noqa: E501
 # frob:tests tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_root_worktree_untouched_by_conflicted_squash  # noqa: E501
+# frob:ticket T-3163
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three\
 # -way-squash-compose-t-3107
+# frob:tests tests/test_ticket_land.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
 @contextmanager
 def compose_squash_in_disposable_worktree(
     repo: Path, base_commit: str, branch_name: str
@@ -344,8 +347,33 @@ def compose_squash_in_disposable_worktree(
     A conflicted merge yields `Ok` with a non-empty
     `SquashStage.conflicted`, not an `Err` -- resolution is the caller's
     job and is deliberately unchanged by this primitive.
+
+    T-3163: held under `repo`'s `ledger_lock` for this generator's ENTIRE
+    lifetime -- from before the squash-merge runs, across the whole
+    `yield` (i.e. everything the caller does with the composed stage:
+    resolve conflicts, splice the ledger, bump the version, rebuild
+    natives, sync gate rules, run an optional pre-commit sweep, fold,
+    CAS-publish, resync `repo`), through worktree teardown. Before this
+    fix, NOTHING serialized this whole span against a concurrent single-
+    ticket ledger write: T-1036's `ledger_lock` was only ever acquired
+    deep inside the pipeline, well after the squash-merge (which is what
+    this function's own injected-hook test point fires on), so a sibling
+    `new_ticket()` routinely won the lock, read `repo`'s still-pre-land
+    tickets.md, appended its own ticket, and committed straight back
+    BEFORE this land ever reached its own first `ledger_lock`
+    acquisition -- landing its pathspec-scoped commit on top of the
+    eventually-CAS-published tip and silently REPLACING tickets.md with
+    its stale-based version, discarding this land's own ledger splice
+    entirely (T-3163's incident). `ledger_lock` is re-entrant per thread
+    (its own docstring), so the narrower holds `_squash_and_splice_
+    ledger`/`_publish_squash_apply` already take internally nest inside
+    this one at no extra cost. `frob.tickets._store` cannot import this
+    module (no cycle): `_store` sits below the land pipeline in this
+    package's own layering, so a downward import here is safe.
     """
-    with tempfile.TemporaryDirectory(prefix="frob-land-squash-") as scratch:
+    with ledger_lock(repo), tempfile.TemporaryDirectory(prefix="frob-land-squash-") as (
+        scratch
+    ):
         worktree = Path(scratch) / "wt"
         added = run_argv(
             (
