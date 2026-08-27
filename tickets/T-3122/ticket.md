@@ -1,7 +1,7 @@
 ---
 id: T-3122
 title: frob refactor split moves symbol bodies without carrying their own needed imports
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-27'
