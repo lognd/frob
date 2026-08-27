@@ -1,7 +1,7 @@
 ---
 id: T-3106
 title: Fix fleet_status.py orphan false-positive and add frob process reap command
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers
 - src/frob/app
+- tests/unit/test_app_runners_process.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
     command (parser + dispatch wiring), not the fleet_status.py fix.
 
     '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_app_runners_process.py
+  reason: 'T-3106: new dedicated test file for the process reap CLI wiring'
   actor: logan
   at: '2026-08-27'
 designated_repro_test: null
