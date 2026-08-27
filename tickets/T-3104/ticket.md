@@ -16,10 +16,29 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_bug_repro.py
+- tests/test_gates_mutation_evidence.py
+- tests/gates/test_bug_repro_at_ref_public.py
+- tests/gates/test_env_absent_bug002_repro.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates_mutation_evidence.py
+  reason: T-3104's own bound evidence lives in these three test files
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/gates/test_bug_repro_at_ref_public.py
+  reason: T-3104's own bound evidence lives in these three test files
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/gates/test_env_absent_bug002_repro.py
+  reason: T-3104's own bound evidence lives in these three test files
+  actor: logan
+  at: '2026-08-27'
 body_changes:
 - mode: set
   reason: Record the verification gap surfaced by T-3075's forced BUG002/TEST016 waiver,
@@ -28,7 +47,25 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3842
-designated_repro_test: null
+evidence:
+- tests/test_gates_mutation_evidence.py::TestEnvAbsent::test_single_directive_extracted
+- tests/test_gates_mutation_evidence.py::TestEnvAbsent::test_comma_separated_names_extracted_in_order
+- tests/test_gates_mutation_evidence.py::TestEnvAbsent::test_no_directive_is_empty
+- tests/test_gates_mutation_evidence.py::TestEnvAbsent::test_duplicate_names_deduplicated_first_wins
+- tests/test_gates_mutation_evidence.py::TestEnvAbsentUnverifiable::test_reason_present_recognized
+- tests/test_gates_mutation_evidence.py::TestEnvAbsentUnverifiable::test_bare_directive_without_reason_not_recognized
+- tests/test_gates_mutation_evidence.py::TestEnvAbsentUnverifiableOutcome::test_unverifiable_directive_short_circuits_before_repro_run
+- tests/gates/test_env_absent_bug002_repro.py::TestEnvAbsentBug002Repro::test_env_absent_kwarg_reproduces_identity_absence_defect_at_parent
+- tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic::test_wraps_the_private_classifier
+- tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic::test_default_base_ref_is_main
+designated_repro_test: tests/gates/test_env_absent_bug002_repro.py::TestEnvAbsentBug002Repro::test_env_absent_kwarg_reproduces_identity_absence_defect_at_parent
+evidence_changes:
+- old_node: tests/test_gates_mutation_evidence.py::TestEnvAbsentRepro::test_env_absent_directive_makes_identity_absence_defect_reproduce
+  new_node: tests/gates/test_env_absent_bug002_repro.py::TestEnvAbsentBug002Repro::test_env_absent_kwarg_reproduces_identity_absence_defect_at_parent
+  reason: moved to a dedicated repro-shaped file so the designated repro test's parent-commit
+    failure is a clean TypeError, not a whole-module import error
+  actor: logan
+  at: '2026-08-27'
 threat: null
 component: null
 anchor: false
