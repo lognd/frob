@@ -32,6 +32,14 @@ body_changes:
   at: '2026-08-27'
   old_length: 2574
   new_length: 4298
+- mode: append
+  reason: 'series BM: record the post-publish root-resync problem (root is a checked-out
+    worktree, so a CAS ref move desynchronizes it) plus the measured pre-fix dirty-window
+    baseline and the --no-optional-locks requirement for the acceptance poll'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 4298
+  new_length: 6513
 designated_repro_test: null
 acceptance:
 - text: Given a concurrent git status poll during a real land, when the squash-apply
@@ -124,3 +132,43 @@ real `git merge --squash` there, reuse `_auto_resolve_out_of_scope_conflicts`
 verbatim against that worktree, then write-tree/commit-tree/`publish_ref_cas`.
 T-3107 builds that primitive; this ticket is now the WIRING of it and is
 blocked on T-3107.
+
+
+UNANSWERED DESIGN QUESTION the re-scoped plan must settle before any code
+(series BM, recorded so the next agent does not rediscover it):
+
+ROOT RESYNC AFTER THE CAS PUBLISH. Root is not a bare repo -- it is a
+CHECKED-OUT worktree sitting on `main`. `publish_ref_cas` moves
+`refs/heads/main` underneath it, which leaves root's HEAD, index and
+working tree all still at `pre_land_tip`. The instant the CAS succeeds,
+root's `git status` reports the ENTIRE landed changeset as reverted local
+modifications -- which is a worse dirty-root than the one this epic exists
+to remove, and it is the state every sibling agent's DirtyMain check would
+then read.
+
+So the transaction does not end at the publish. It needs a resync of root
+onto the new tip immediately after (`git -C root reset --keep <new>` or
+`read-tree -m -u`), and that resync:
+  - is itself a working-tree mutation with a real, if short, window;
+  - can FAIL if a concurrent agent has dirtied root in the meantime, and
+    the failure happens AFTER the commit is already public, so it cannot
+    unwind -- same posture as T-3111's post-publish rebuild: report
+    loudly, never revert;
+  - must not clobber a sibling's uncommitted work in root, which rules out
+    `reset --hard` (the T-1740 lesson `_commit_squash_apply`'s own
+    fallback already encodes).
+
+Decide and write down the resync mechanism and its failure semantics
+BEFORE retargeting the six index-consuming stages. An out-of-tree compose
+that publishes and then leaves root desynchronized would trade a ~1.5s
+staged window for a permanent one.
+
+MEASURED BASELINE for comparison (2026-08-27, rapid profile, live fleet):
+a concurrent `git --no-optional-locks -C <root> status --porcelain` poll at
+0.5s during T-3107's real land read DIRTY at 3 of 97 samples -- a ~1.5s
+window carrying 7 then 9 changed paths. Note the poll MUST use
+`--no-optional-locks`: a plain `git status` poll takes `.git/index.lock`
+and races the land's own commit. It did exactly that on the first attempt
+here and killed the land with `CommitFailed: Unable to create index.lock`.
+Also note a 0.5s poll in a live fleet cannot attribute a dirty sample to a
+particular land; only a quiet-fleet measurement is attributable.
