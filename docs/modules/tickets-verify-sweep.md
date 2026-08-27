@@ -928,6 +928,24 @@ exists, and a `disposition` that starts empty). Logged at ERROR, naming
 the batch and every finding -- T-1686's own standing rule that a
 state-changing event on the land path must never be silent.
 
+**Proportional to the trigger (T-3025).** Not every red finding is worth
+disabling fleet-wide deferred landing over. `raise_quarantine` drops a
+finding before persisting when it is BOTH a proven-deterministic-autofix
+rule (`_RUFF_DETERMINISTIC_AUTOFIX_RULES`: ruff's own `I001`/`F401`,
+deliberately narrow -- never "any ruff code") AND genuinely unattributed
+(`commit_sha is None and ticket_id is None`, `_is_trivial_unattributed`).
+Both halves matter: an attributed trivial finding already has a real
+commit/ticket home and still raises; an unattributed non-trivial finding
+is still real "we don't know what broke this" signal and still raises.
+Only their intersection -- cosmetic AND undisposable by the normal
+`frob verify dispose` route, since there is no commit to attribute a
+filed ticket's evidence against -- is exempted, and it is still filed as
+an ordinary regression ticket by the caller's own unaffected filing
+path, recorded as debt rather than silently dropped. Four measured
+2026-08-26 incidents (an `I001` and two `F401` findings, each an
+unattributed cosmetic lint result) pinned quarantine for hours across
+several failed land attempts before this filter existed.
+
 **While raised, deferred landing is off.** `is_quarantined(root)` is
 `True` the moment a raised record's `cleared_at` is still `None`.
 `frob.app.ticket_runner._land_cmd._quarantine_override_ceilings` is the

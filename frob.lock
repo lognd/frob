@@ -1610,6 +1610,24 @@
       "old_digest": "e43b18b0f2b794a97513e3685fb0c637a78e68a95b2ec189cdb21c67bcd914eb",
       "reason": "T-2944: added a WARNING log call to the existing sys.platform != \"linux\" early return in arm_parent_death_signal so the guard is loud in its own body (PLATFORM001 second shape); return value, conditions, and public contract are unchanged, so all dependent docs/tests remain accurate. (re-acked post-land after the pre-land frob.lock diff was dropped to resolve a CrossTicketLeakage refusal against T-2961.)",
       "ref": "src/frob/process/_reap.py::arm_parent_death_signal"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-26",
+      "facet": "body",
+      "new_digest": "63ae6436f4b1657f22cc399afa95f56c55dbc43aa3434a7c06c6d5c67c1e672f",
+      "old_digest": "2275e0baa30ff561aec57c92517d14ebb1a58a191cd3ea5736cabd25c264deb6",
+      "reason": "T-3025: added a severity filter (drop trivial-and-unattributed findings before persisting) inside raise_quarantine's existing body; docs/modules/tickets-verify-sweep.md's Quarantine circuit breaker section updated in the same change with a new 'Proportional to the trigger' paragraph describing it",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-26",
+      "facet": "sig",
+      "new_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "old_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "reason": "T-3025: added a severity filter (drop trivial-and-unattributed findings before persisting) inside raise_quarantine's existing body; docs/modules/tickets-verify-sweep.md's Quarantine circuit breaker section updated in the same change with a new 'Proportional to the trigger' paragraph describing it",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
     }
   ],
   "entries": [
@@ -2794,7 +2812,7 @@
       "ref": "src/frob/verify/_quarantine.py::QuarantineError"
     },
     {
-      "digest": "2275e0baa30ff561aec57c92517d14ebb1a58a191cd3ea5736cabd25c264deb6",
+      "digest": "63ae6436f4b1657f22cc399afa95f56c55dbc43aa3434a7c06c6d5c67c1e672f",
       "facet": "body",
       "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
     },

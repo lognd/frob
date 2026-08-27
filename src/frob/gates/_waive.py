@@ -1150,6 +1150,11 @@ _KNOWN_GATE_RULES = frozenset(
         # its burn-down reached zero findings repo-wide; same registry
         # obligation as E501 immediately above.
         "I001",
+        # T-3025: F401 (ruff unused-import) reused verbatim, alongside
+        # I001 immediately above, in `frob.verify._quarantine.
+        # _RUFF_DETERMINISTIC_AUTOFIX_RULES` -- same registry obligation,
+        # same "real ruff rule id emitted as a construction literal" shape.
+        "F401",
         # T-1937: eight ids `scan_emitted_rule_ids`'s own disclosed gaps
         # (out-of-SCANNED_BASES, plus two previously-undisclosed
         # construction shapes -- a bare positional arg and a typed const

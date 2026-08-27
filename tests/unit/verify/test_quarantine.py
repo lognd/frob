@@ -220,6 +220,133 @@ class TestRaiseQuarantine:
         assert len(record.findings) == 1
         assert record.findings[0].rule_id == "TEST001"
 
+    # frob:ticket T-3025
+    def test_a_trivial_unattributed_ruff_finding_alone_does_not_raise(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        # MUST-STAY-QUIET fixture, incident shape 1/3: I001 (import sort),
+        # unattributed -- ruff's own `--fix` resolves this with zero
+        # semantic content, and there is no commit/ticket to attribute a
+        # dispose to. Must not disable fleet-wide deferred landing.
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=(),
+            findings=(
+                QuarantinedFinding(
+                    rule_id="I001", file="tests/unit/verify/test_x.py", line=1
+                ),
+            ),
+        )
+        assert result.is_err
+        assert result.danger_err is QuarantineError.EmptyFindings
+        assert is_quarantined(tmp_path).danger_ok is False
+
+    # frob:ticket T-3025
+    def test_a_trivial_unattributed_unused_import_finding_does_not_raise(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        # MUST-STAY-QUIET fixture, incident shape 2/3: F401 (unused
+        # import), unattributed.
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=(),
+            findings=(
+                QuarantinedFinding(rule_id="F401", file="src/x.py", line=3),
+            ),
+        )
+        assert result.is_err
+        assert result.danger_err is QuarantineError.EmptyFindings
+        assert is_quarantined(tmp_path).danger_ok is False
+
+    # frob:ticket T-3025
+    def test_an_unattributed_frob_gate_autofix_rule_is_deliberately_not_exempt(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        # BOUNDARY fixture: E501 has a real frob Tier-A handler
+        # (`frob.gates._fix_engine.TIER_A_HANDLERS`), but T-3025's own
+        # exemption is deliberately narrowed to ruff codes only
+        # (`_RUFF_DETERMINISTIC_AUTOFIX_RULES`) to avoid a new
+        # `frob.verify` -> `frob.gates` architectural dependency --
+        # this must still raise, unlike I001/F401 above.
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=(),
+            findings=(QuarantinedFinding(rule_id="E501", file="src/y.py", line=9),),
+        )
+        assert result.is_ok
+        assert is_quarantined(tmp_path).danger_ok is True
+
+    # frob:ticket T-3025
+    def test_an_attributed_trivial_finding_still_raises(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        # MUST-FIRE fixture 1/2: the SAME trivial rule (I001), but this
+        # time attributed to a real commit -- a real commit/ticket
+        # already names it, so "the fix is easy" does not exempt it.
+        # Do not solve T-3025 by never raising.
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(
+                QuarantinedFinding(
+                    rule_id="I001",
+                    file="tests/unit/verify/test_x.py",
+                    line=1,
+                    commit_sha="abc123",
+                    ticket_id="T-9999",
+                ),
+            ),
+        )
+        assert result.is_ok
+        assert is_quarantined(tmp_path).danger_ok is True
+
+    # frob:ticket T-3025
+    def test_an_unattributed_non_trivial_finding_still_raises(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        # MUST-FIRE fixture 2/2: unattributed, but NOT a proven
+        # deterministic-autofix rule (a real test failure) -- genuine
+        # breakage with no known cause must still stop the fleet. This is
+        # the exact case T-1686/T-2132 already require and T-3025 must
+        # never weaken.
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(
+                QuarantinedFinding(rule_id="TEST001", file="src/z.py", line=4),
+            ),
+        )
+        assert result.is_ok
+        assert is_quarantined(tmp_path).danger_ok is True
+
+    # frob:ticket T-3025
+    def test_a_mixed_batch_drops_only_the_trivial_unattributed_finding(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        # A batch with a trivial-unattributed finding alongside a real
+        # unattributed finding still raises (the real one is genuine),
+        # but the persisted record drops the trivial one -- it is still
+        # filed as an ordinary regression ticket by the caller's own
+        # unaffected filing path, just not sent to the dispose queue.
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(
+                QuarantinedFinding(rule_id="I001", file="tests/x.py", line=1),
+                QuarantinedFinding(rule_id="TEST001", file="src/z.py", line=4),
+            ),
+        )
+        assert result.is_ok
+        record = result.danger_ok
+        assert len(record.findings) == 1
+        assert record.findings[0].rule_id == "TEST001"
+
 
 # frob:ticket T-1693
 # frob:ticket T-2744

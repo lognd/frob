@@ -2,7 +2,7 @@
 id: T-3025
 title: 'A single trivial unattributed finding disables fleet-wide landing: four occurrences
   today, ~90 minutes lost, no severity proportionality'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -56,6 +56,13 @@ scope_changes:
   reason: 'T-3025: register F401 ruff rule id in _KNOWN_GATE_RULES (GATERULE001)'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_a_trivial_unattributed_ruff_finding_alone_does_not_raise
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_a_trivial_unattributed_unused_import_finding_does_not_raise
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_an_attributed_trivial_finding_still_raises
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_an_unattributed_non_trivial_finding_still_raises
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_a_mixed_batch_drops_only_the_trivial_unattributed_finding
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_an_unattributed_frob_gate_autofix_rule_is_deliberately_not_exempt
 designated_repro_test: null
 threat: null
 component: null

@@ -422,6 +422,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3015: guarded_subprocess_run raises subprocess.TimeoutExpired uncaught instead of returning Err
 - T-3018: os.kill(pid,0) liveness probe can actually TerminateProcess on Windows (land.py, leases.py)
 - T-3019: frob check fires spurious REF001/PRE001/SCOPE001 on any clean project; frob check is not repo-clean on main
+- T-3025: A single trivial unattributed finding disables fleet-wide landing: four occurrences today, ~90 minutes lost, no severity proportionality
 
 ## [0.530.0] - unreleased
 

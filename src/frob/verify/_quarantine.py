@@ -1,4 +1,6 @@
 # frob:ticket T-1693
+# frob:ticket T-3025
+# frob:waive LARGE001 reason="T-3025's severity-proportional raise filter (_RUFF_DETERMINISTIC_AUTOFIX_RULES/_trivial_autofixable_rules/_is_trivial_unattributed plus their frob:tests directives) pushed this file ~90 lines past the 800 threshold; the addition is a single small, cohesive filter co-located with the raise/clear logic it modifies (T-1693's own module), not a candidate for an arbitrary split -- a real file-split ticket is a separate, larger architecture decision out of this bugfix's scope"  # noqa: E501
 """T-1693: the quarantine circuit breaker -- the T-1686 epic's single most
 important rule (this ticket's own text). Landing on top of a known-broken
 base is what makes attribution cost explode: every subsequent land widens
@@ -24,6 +26,17 @@ finding the raise recorded, either a real ticket id that now tracks it
 (`FindingDisposition.filed`) or an explicit human dismissal
 (`FindingDisposition.dismissed`, always carrying a `reason`) --
 `_all_findings_disposed` refuses to clear otherwise, per finding, by id.
+
+PROPORTIONAL TO THE TRIGGER (T-3025). `raise_quarantine` drops a finding
+that is BOTH a proven-deterministic-autofix rule (ruff's own `I001`/
+`F401`, deliberately narrow) AND genuinely unattributed (no commit, no
+ticket) before persisting -- see `_is_trivial_unattributed`. A real
+regression that IS attributed still raises even if trivial; an
+unattributed finding without a proven mechanical fix still raises. Only
+the intersection is exempted (still filed as an ordinary regression
+ticket, recorded as debt, not dropped) -- the shape of all four measured
+2026-08-26 incidents (I001 x2, F401 x1), each pinning quarantine for
+hours across several failed land attempts.
 
 DURABLE ACROSS A WORKER RESTART. `.frob/quarantine.json` (mirroring
 `frob.verify._watermark`'s own `.frob/verify-watermark.json` persistence
@@ -95,6 +108,53 @@ _QUARANTINE_LOCK_REL = Path(".frob") / "quarantine.lock"
 #: age computation, false for anything that reads source, config, or
 #: generated artifacts a commit could change.
 _NATURALLY_UNATTRIBUTABLE_RULES: frozenset[str] = frozenset({"TICK004"})
+
+# frob:ticket T-3025
+#: T-3025: ruff rule ids whose ENTIRE fix is a blind, deterministic,
+#: no-judgment-required mechanical rewrite (`I001` reorders an import
+#: block, `F401` deletes a name nothing references) -- deliberately
+#: narrow, never "any ruff code": a rule whose fix could change runtime
+#: behavior has no business here. Each of T-3025's four measured
+#: incidents was exactly one of these two codes.
+_RUFF_DETERMINISTIC_AUTOFIX_RULES: frozenset[str] = frozenset({"I001", "F401"})
+
+
+def _trivial_autofixable_rules() -> frozenset[str]:
+    """T-3025: the rule ids treated as TRIVIAL for `raise_quarantine`'s
+    unattributed-exemption -- exactly `_RUFF_DETERMINISTIC_AUTOFIX_
+    RULES` above. Deliberately NOT widened to frob's own Tier-A-handled
+    gate rules (e.g. `E501`, `frob.gates.__init__._KNOWN_RULE_
+    FIXABILITY`'s "auto" tier): `frob.verify` has no existing
+    architectural dependency on `frob.gates` (SYS003 would need a new
+    declared Flow), and every measured incident was a ruff code. Widen
+    this only against a real measured frob-gate-rule incident, via a
+    follow-up ticket that declares the Flow."""
+    return _RUFF_DETERMINISTIC_AUTOFIX_RULES
+
+
+def _is_trivial_unattributed(finding: QuarantinedFinding) -> bool:
+    """T-3025: `True` iff `finding` is BOTH (a) a rule with a proven
+    deterministic auto-fix (`_trivial_autofixable_rules`) AND (b)
+    genuinely unattributed (`commit_sha is None and ticket_id is None`).
+
+    Both halves matter: a trivial rule ATTRIBUTED to a real commit/
+    ticket already has a home and still raises (the fix being easy does
+    not change that a regression was pinned); a non-trivial rule that is
+    unattributed is real "we don't know what broke this" signal
+    (`_NATURALLY_UNATTRIBUTABLE_RULES`'s own docstring) and still
+    raises. Only the intersection -- cosmetic AND undisposable by the
+    normal `--file-ticket`/`--dismiss` route, since there is no commit to
+    attribute a filed ticket's evidence against -- is exempted here
+    (the exact shape of all four measured T-3025 incidents). Still
+    filed as an ordinary regression ticket by the sweep's own unaffected
+    filing path (`frob.app.ticket_runner._rapid_sweep._file_regression_
+    ticket`, which reads the pre-filter `pairs`, never this function's
+    output) -- recorded as debt, not silently dropped."""
+    return (
+        finding.rule_id in _trivial_autofixable_rules()
+        and finding.commit_sha is None
+        and finding.ticket_id is None
+    )
 
 
 def _is_unidentifiable(finding: QuarantinedFinding) -> bool:
@@ -280,6 +340,12 @@ def is_quarantined(root: Path) -> Result[bool, QuarantineError]:
 # frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_survives_a_fresh_load_reflecting_a_restart kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_raise_quarantine_drops_identity_less_findings_at_write_time kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_raise_quarantine_refuses_when_only_identity_less_findings_given kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_a_trivial_unattributed_ruff_finding_alone_does_not_raise kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_a_trivial_unattributed_unused_import_finding_does_not_raise kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_an_unattributed_frob_gate_autofix_rule_is_deliberately_not_exempt kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_an_attributed_trivial_finding_still_raises kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_an_unattributed_non_trivial_finding_still_raises kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_a_mixed_batch_drops_only_the_trivial_unattributed_finding kind="unit"  # noqa: E501
 # frob:waive DUP001 reason="T-2207: the new identity-less filter block mirrors this function's OWN pre-existing _NATURALLY_UNATTRIBUTABLE_RULES filter shape on purpose (deliberate consistency, see this function's docstring) -- the resulting structural match against unrelated filter/log/drop bodies across the tree (native-stub pairs, compliance-catalog tests, etc) is the generic shape, not shared logic worth extracting"  # noqa: E501
 def raise_quarantine(
     root: Path,
@@ -314,7 +380,14 @@ def raise_quarantine(
     `commit_sha=None` because the reachability walk found zero or >1
     candidates) is NEVER in this set and always passes through unchanged
     -- see `_NATURALLY_UNATTRIBUTABLE_RULES`'s own docstring for exactly
-    where that line is drawn."""
+    where that line is drawn.
+
+    T-3025: a SECOND, independent filter runs right after this one -- a
+    finding matching `_is_trivial_unattributed` (both a proven-
+    deterministic-autofix rule AND genuinely unattributed) is also
+    dropped before persisting. This is a SEVERITY cut, not an
+    attribution one -- see that function's own docstring for why both
+    halves are required and how narrow the resulting intersection is."""
     exempted = tuple(
         f for f in findings if f.rule_id in _NATURALLY_UNATTRIBUTABLE_RULES
     )
@@ -329,6 +402,26 @@ def raise_quarantine(
         findings = tuple(
             f for f in findings if f.rule_id not in _NATURALLY_UNATTRIBUTABLE_RULES
         )
+
+    # T-3025: drop a finding that is BOTH a proven-deterministic-autofix
+    # rule AND genuinely unattributed -- see `_is_trivial_unattributed`'s
+    # own docstring for exactly why both halves are required and what
+    # stays OUT of this set. Still filed as an ordinary regression ticket
+    # by the caller's own unaffected filing path (this only changes what
+    # reaches the quarantine dispose queue, matching `_NATURALLY_
+    # UNATTRIBUTABLE_RULES`'s own precedent immediately above).
+    trivial_unattributed = tuple(f for f in findings if _is_trivial_unattributed(f))
+    if trivial_unattributed:
+        _log.info(
+            "quarantine: %d trivial-and-unattributed finding(s) dropped from "
+            "this raise (rule=file: %s) -- a proven deterministic auto-fix "
+            "with no commit/ticket to attribute it to does not warrant "
+            "disabling fleet-wide deferred landing; still filed as an "
+            "ordinary regression ticket (T-3025)",
+            len(trivial_unattributed),
+            [(f.rule_id, f.file) for f in trivial_unattributed],
+        )
+        findings = tuple(f for f in findings if not _is_trivial_unattributed(f))
 
     # T-2207: reject an identity-less finding (rule_id AND file both
     # empty) at write time -- something upstream persisting one is the
