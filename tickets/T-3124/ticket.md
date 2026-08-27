@@ -58,7 +58,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 75deddeddd7da05ff8f2be4f1d948c3330d313a8
 ---
 MEASURED 2026-08-27. T-3063 and T-3070 were both queued, both titled
 "Wire evidence-reach classifier (T-3046) into frob check as a real WARN gate",
