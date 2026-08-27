@@ -280,7 +280,7 @@ def _close_failure_hint(ticket_id: str, state, err, *, verb: str = "close") -> s
 # frob:ticket T-0398
 def _covers_scope_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
     """D-02 CLI wiring: whether `ticket`'s evidence covers a touched/scope
-    symbol, via `frob.gates.evidence_covers_scope` over the current graph.
+    symbol, via `frob.tickets.evidence_covers_scope` over the current graph.
 
     Returns `None` (skip the check entirely) when `ticket` carries NO
     non-cmd evidence at all -- a docs-kind ticket closed purely via
@@ -297,8 +297,8 @@ def _covers_scope_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
     full check). Returns `False` (fail-closed, blocking the close) if the
     graph itself cannot be loaded/built -- "cannot verify" must never
     silently become "verified"."""
-    from frob.gates import evidence_covers_scope
     from frob.tickets._models import is_cmd_evidence
+    from frob.tickets._scope_coverage import evidence_covers_scope
 
     non_cmd = [e for e in ticket.evidence if not is_cmd_evidence(e)]
     if not non_cmd or not ticket.scope:

@@ -2,7 +2,7 @@
 id: T-3155
 title: Extract evidence_covers_scope out of frob.gates to break the gates<->tickets
   edge
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -22,6 +22,20 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): Pure structural refactor: moved evidence_covers_scope
+    and its D-02 helpers from frob.gates to frob.tickets._scope_coverage via frob
+    refactor split, plus a backward-compat re-export and a repointed deferred import
+    in _close_cmd.py. No caller-visible behavior changed -- same function bodies,
+    same logic, same tests pass identically before and after.'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 3941
+  new_length: 4324
+evidence:
+- tests/test_evidence_integrity.py::TestD02ScopeBinding::test_evidence_covers_scope_true_for_bound_test
+- tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref::test_dotted_symref_exact_match
 designated_repro_test: null
 threat: null
 component: null
@@ -100,3 +114,5 @@ three; checked before filing.
 - src/frob/gates/__init__.py
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/tickets/__init__.py
+
+frob:no-behavior-change reason="Pure structural refactor: moved evidence_covers_scope and its D-02 helpers from frob.gates to frob.tickets._scope_coverage via frob refactor split, plus a backward-compat re-export and a repointed deferred import in _close_cmd.py. No caller-visible behavior changed -- same function bodies, same logic, same tests pass identically before and after."
