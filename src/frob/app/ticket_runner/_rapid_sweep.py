@@ -2044,6 +2044,11 @@ def _build_regression_body(
 # tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_all_attributed_to_open_tickets_files_nothing  # noqa: E501
 # frob:ticket T-2312
+# frob:ticket T-3051
+# frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unrelated_duplicate_fin\
+# ding_in_a_different_file_still_refuses
 # frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Symbolic \
 # attribution (T-1690) section documents several symbols under one section, not just a \
 # public entry point -- the many-symbols- one-section convention this repo already \
@@ -2063,15 +2068,29 @@ def _dispose_to_existing_duplicate_or_none(
     `unfiled_pairs` to it, exactly as if this call had just filed it,
     returning its id.
 
-    Every OTHER failure -- including a `DuplicateTicket` whose duplicate
+    T-3051 (H4): a `DuplicateFinding` refusal is the SAME shape under a
+    different identity check (T-2760's `(rule, file)` overlap instead of
+    title+scope) -- it fires precisely when an open ticket already
+    DECLARES the finding this sweep just re-measured, which is the
+    expected, encouraged steady state for a fix ticket that names its own
+    findings via `--finding`. Before this branch existed, that refusal
+    dropped disposal entirely: `_file_regression_ticket` returned `None`,
+    the watermark stayed pinned (T-2324's unfiled branch), and quarantine
+    had no ticket to resolve against (T-2744) -- the fixing ticket's own
+    land was then blocked by the very finding it fixes (the measured
+    2026-08-26 T-2977 incident). This mirrors the DuplicateTicket branch
+    exactly: resolve the declaring ticket via `_find_finding_duplicate`
+    and dispose to it.
+
+    Every OTHER failure -- including either duplicate kind whose match
     cannot be re-resolved (a TOCTOU race between the refusal and this
     lookup; never expected in practice) -- is logged at ERROR and returns
     `None`, unchanged from the pre-T-2312 behavior: an unfiled regression
     with NO known owner at all is the one outcome quarantine must keep
-    blocking on, and this split must never widen that to cover a filing
-    failure that is not actually a duplicate."""
+    blocking on, and this must never widen to cover a filing failure that
+    is not actually a duplicate of either kind."""
     from frob.tickets._models import TicketError
-    from frob.tickets._new_renumber import _find_exact_duplicate
+    from frob.tickets._new_renumber import _find_exact_duplicate, _find_finding_duplicate
 
     if error is TicketError.DuplicateTicket:
         existing = _find_exact_duplicate(root, spec)
@@ -2080,6 +2099,19 @@ def _dispose_to_existing_duplicate_or_none(
                 "rapid sweep: %s: %s already covers this exact title "
                 "and scope -- disposing %d finding(s) to it instead "
                 "of filing a duplicate",
+                final_id,
+                existing.id,
+                len(unfiled_pairs),
+            )
+            _auto_dispose_filed_findings(root, unfiled_pairs, existing.id)
+            return existing.id
+    elif error is TicketError.DuplicateFinding:
+        existing = _find_finding_duplicate(root, spec)
+        if existing is not None:
+            _log.info(
+                "rapid sweep: %s: %s already declares this finding -- "
+                "disposing %d finding(s) to it instead of filing a "
+                "duplicate (T-3051)",
                 final_id,
                 existing.id,
                 len(unfiled_pairs),

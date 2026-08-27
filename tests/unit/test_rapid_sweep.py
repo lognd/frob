@@ -2871,6 +2871,7 @@ class TestBuildRegressionBody:
 
 # frob:ticket T-1791
 # frob:ticket T-2744
+# frob:ticket T-3051
 class TestFileRegressionTicket:
     """T-1690: attributed findings owned by a still-open ticket are not
     re-filed; everything else is filed with a full attribution trail."""
@@ -3173,6 +3174,132 @@ class TestFileRegressionTicket:
             "quarantine must clear once the duplicate-owned findings are "
             "disposed to the existing ticket"
         )
+
+    # frob:ticket T-3051
+    def test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping  # noqa: E501
+        """T-3051 (H4) acceptance [0] (must-work): the routine, encouraged
+        workflow of a fix ticket declaring the finding it fixes must not
+        deadlock a later sweep's re-measurement of that SAME finding. An
+        open ticket with a DIFFERENT title (so `_find_exact_duplicate`'s
+        title+scope check does not fire at all) that already declares
+        `("RULE1", "a.py")` in its structured `findings` field reproduces
+        the real T-2977 incident directly: `_file_regression_ticket`'s own
+        `new_ticket(...)` call is refused with `DuplicateFinding`
+        (T-2760), and before this fix that refusal fell through to the
+        generic ERROR branch and returned `None` -- an unfiled regression
+        with no owner, which pins the watermark (T-2324) and leaves
+        quarantine undisposable (T-2744) even though the finding already
+        has a perfectly good owner. The fix must resolve that owner via
+        `_find_finding_duplicate` and dispose to it, exactly as the
+        DuplicateTicket branch already does."""
+        from frob.graph import CallGraph, GraphSnapshot
+        from frob.tickets import TicketSpec, new_ticket
+        from frob.tickets._models import Origin, TicketKind
+        from frob.verify import record_intent
+        from frob.verify._quarantine import load_quarantine
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-0001",
+            touched_symbols=("unrelated.py::other",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(root=str(tmp_path), symbols={}, edges=())
+        self._patch_graph(monkeypatch, snapshot, CallGraph(calls={}))
+
+        # An open ticket, filed under a title sharing no words with the
+        # sweep's own generated title, that already declares the finding
+        # this sweep is about to re-measure -- the "fix ticket declares
+        # its own findings" shape T-2760's docstring names explicitly.
+        declaring = new_ticket(
+            tmp_path,
+            TicketSpec(
+                title="fix the F401 unused import",
+                kind=TicketKind.BUG,
+                origin=Origin.AGENT,
+                scope=("a.py",),
+                findings=(("RULE1", "a.py"),),
+            ),
+            no_commit=True,
+            warn_if_dirty=False,
+        )
+        assert declaring.is_ok
+        declaring_id = declaring.danger_ok.id
+
+        pairs = frozenset({("RULE1", "a.py")})
+        filed = _file_regression_ticket(tmp_path, "T-9000", "deadbeef", pairs)
+
+        assert filed == declaring_id, (
+            "a DuplicateFinding refusal must dispose to the ticket that "
+            "already declares the finding, never return None and "
+            "abandon it"
+        )
+
+        record = load_quarantine(tmp_path).danger_ok
+        assert record is not None
+        assert record.cleared_at is not None, (
+            "quarantine must clear once the duplicate-owned findings are "
+            "disposed to the declaring ticket"
+        )
+
+    # frob:ticket T-3051
+    def test_unrelated_duplicate_finding_in_a_different_file_still_refuses(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unrelated_duplicate_finding_in_a_different_file_still_refuses  # noqa: E501
+        """T-3051 (H4) acceptance [1] (must-still-refuse positive
+        control): a ticket declaring a DIFFERENT (rule, file) pair must
+        not be mistaken for the owner of this sweep's finding -- the fix
+        must resolve the ACTUAL declaring ticket via `_find_finding_
+        duplicate`, never accept any open ticket as a stand-in. With no
+        ticket declaring the real pair, filing genuinely fails (no
+        DuplicateFinding refusal fires at all here, since the identities
+        never overlap) and this must file its own new ticket rather than
+        silently disposing to the unrelated one."""
+        from frob.graph import CallGraph, GraphSnapshot
+        from frob.tickets import TicketSpec, load_queue, new_ticket
+        from frob.tickets._models import Origin, TicketKind
+        from frob.verify import record_intent
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-0001",
+            touched_symbols=("unrelated.py::other",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(root=str(tmp_path), symbols={}, edges=())
+        self._patch_graph(monkeypatch, snapshot, CallGraph(calls={}))
+
+        unrelated = new_ticket(
+            tmp_path,
+            TicketSpec(
+                title="fix an unrelated finding",
+                kind=TicketKind.BUG,
+                origin=Origin.AGENT,
+                scope=("b.py",),
+                findings=(("RULE2", "b.py"),),
+            ),
+            no_commit=True,
+            warn_if_dirty=False,
+        )
+        assert unrelated.is_ok
+
+        pairs = frozenset({("RULE1", "a.py")})
+        filed = _file_regression_ticket(tmp_path, "T-9000", "deadbeef", pairs)
+
+        assert filed is not None
+        assert filed != unrelated.danger_ok.id, (
+            "a ticket declaring an unrelated (rule, file) pair must "
+            "never be treated as this finding's owner"
+        )
+        queue = load_queue(tmp_path).danger_ok
+        assert queue is not None
+        assert queue.tickets[filed].findings == (("RULE1", "a.py"),)
 
     # frob:ticket T-2312
     def test_non_duplicate_filing_failure_still_leaves_quarantine_raised(

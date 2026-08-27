@@ -2,7 +2,7 @@
 id: T-3051
 title: 'Land H4: the quarantine deadlock is UNFIXED -- _dispose_to_existing_duplicate_or_none
   handles DuplicateTicket but not DuplicateFinding'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -38,6 +38,9 @@ scope_changes:
   reason: evidence tests for the H4 fix
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping
+- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_unrelated_duplicate_finding_in_a_different_file_still_refuses
 designated_repro_test: null
 threat: null
 component: null
