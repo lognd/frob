@@ -28,6 +28,9 @@ scope_changes:
     existing scan_references test suite
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/test_refactor.py::TestScanReferences::test_function_local_import_rewrite_preserves_indentation
+- tests/test_refactor.py::TestApplyPlan::test_apply_indented_import_call_site_stays_parseable
 designated_repro_test: null
 threat: null
 component: null
