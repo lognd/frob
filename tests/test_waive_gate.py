@@ -36,10 +36,12 @@ from frob.gates import (
 )
 from frob.gates._waive import (
     _reason_promises_followup,
+    _reason_reads_as_deferred_work,
     _reason_ticket_ids,
     _waive004_dead_count_by_rule,
     census_gate_rules,
     waive009_violations,
+    waive010_violations,
 )
 from frob.graph import build_graph
 from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
@@ -946,6 +948,123 @@ class TestWaive009Violations:
 
     def test_known_gate_rule_ids_includes_waive009(self) -> None:
         assert "WAIVE009" in known_gate_rule_ids()
+
+
+class TestWaive010Violations:
+    """`waive010_violations` (T-3062): a `frob:waive` reason worded as
+    deferred/temporary work is a WARNING, regardless of whether a cited
+    ticket resolves -- the PROVENANCE/DEFERRED-WORK discriminator is
+    wording, never ticket-citation shape (see the module-level note
+    above `_WAIVE010_DEFERRED_PHRASE_RES` in `frob.gates._waive` for why
+    citation shape cannot be the signal)."""
+
+    def test_bare_until_wording_warns(self, tmp_path: Path) -> None:
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive AFFECT001 reason="waived until T-0010 fixes '
+            'the underlying model"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        violations = waive010_violations(snap)
+        assert len(violations) == 1
+        assert violations[0].rule == "WAIVE010"
+        assert violations[0].severity == Severity.WARN
+
+    def test_pending_wording_warns(self, tmp_path: Path) -> None:
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive AFFECT001 reason="pending a fix, not a '
+            'permanent exemption"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        violations = waive010_violations(snap)
+        assert len(violations) == 1
+        assert violations[0].rule == "WAIVE010"
+
+    def test_promise_phrase_with_resolved_ticket_still_warns(
+        self, tmp_path: Path
+    ) -> None:
+        """The DEFERRED-WORK shape: citing a ticket as the thing that
+        will fix this is misuse EVEN IF that ticket already resolved (or
+        is closed) -- unlike WAIVE009, ticket-resolution state must not
+        silence this rule, since a resolved-ticket citation is also the
+        normal shape of the legitimate PROVENANCE case (see
+        `test_provenance_reasoning_does_not_warn` below)."""
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive AFFECT001 reason="a follow-up ticket T-0010 '
+            'updates this once T-0010 lands"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        violations = waive010_violations(snap)
+        assert len(violations) == 1
+        assert violations[0].rule == "WAIVE010"
+
+    def test_provenance_reasoning_does_not_warn(self, tmp_path: Path) -> None:
+        """The PROVENANCE shape: a ticket cited as the reasoning for why
+        this is deliberately, permanently exempt -- no deferred-work
+        wording, so this must stay quiet even though a ticket is named."""
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive AFFECT001 reason="T-1024: this is '
+            "deliberately dead because the fallback path documented there "
+            'is unreachable by construction"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        violations = waive010_violations(snap)
+        assert violations == ()
+
+    def test_plain_permanent_reason_does_not_warn(self, tmp_path: Path) -> None:
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive AFFECT001 reason="legacy, dead by '
+            'construction"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        violations = waive010_violations(snap)
+        assert violations == ()
+
+    def test_known_gate_rule_ids_includes_waive010(self) -> None:
+        assert "WAIVE010" in known_gate_rule_ids()
+
+
+class TestReasonReadsAsDeferredWork:
+    """`_reason_reads_as_deferred_work` -- the pure wording predicate
+    WAIVE010's assembled gate filters on."""
+
+    def test_until_matches(self) -> None:
+        assert _reason_reads_as_deferred_work("fine until the refactor lands")
+
+    def test_for_now_matches(self) -> None:
+        assert _reason_reads_as_deferred_work("acceptable for now")
+
+    def test_temporarily_matches(self) -> None:
+        assert _reason_reads_as_deferred_work("temporarily disabled")
+
+    def test_plain_reason_does_not_match(self) -> None:
+        assert not _reason_reads_as_deferred_work("legacy, dead by construction")
+
+    def test_pending_inside_a_filename_does_not_match(self) -> None:
+        """T-3062 real-repo calibration finding: a hyphenated filename
+        that happens to contain the word "pending" (e.g.
+        `pending-background-guard.py`, a real sibling hook this repo's
+        own comments reference) is not deferred-work wording."""
+        assert not _reason_reads_as_deferred_work(
+            "shares the same shape as pending-background-guard.py's main()"
+        )
+
+    def test_until_inside_a_hyphenated_token_does_not_match(self) -> None:
+        assert not _reason_reads_as_deferred_work("see the until-cleanup.py script")
 
 
 class TestWaive009Wiring:

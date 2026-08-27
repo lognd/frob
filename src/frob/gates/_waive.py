@@ -359,6 +359,18 @@ _KNOWN_GATE_RULES = frozenset(
         # comment suppressing the finding that should have surfaced it
         # (the T-2588 AFFECT001 incident this rule exists to catch).
         "WAIVE009",
+        # T-3062: a `frob:waive` reason phrased as DEFERRED work (bare
+        # "until"/"pending"/"for now"/"temporarily" wording, or one of
+        # WAIVE009's own promise phrases) -- regardless of whether a cited
+        # ticket resolves. `frob:debt`/`until=` exist for exactly this
+        # shape and can be acted on; a `frob:waive` cannot, so the
+        # temporariness ends up recorded only as prose nobody enforces.
+        # WARNING-tier and deliberately narrow: only high-confidence
+        # deferred-work wording fires, never a bare ticket citation alone
+        # (which conflates with the legitimate PROVENANCE shape -- "T-1024:
+        # deliberately dead because <reasoning established there>" -- that
+        # this rule must never flag).
+        "WAIVE010",
         "DEC001",
         "DEC002",
         "REL001",
@@ -1862,6 +1874,144 @@ def waive009_violations(
         file, line = _site_from_edge_origin(edge.origin)
         out.append(
             _waive009_violation(
+                file=file,
+                line=line,
+                site=edge.src,
+                rule_and_target=f"frob:waive {edge.target}",
+            )
+        )
+    return tuple(out)
+
+
+# T-3062: measured 2117 `frob:waive` uses vs. 85 `frob:debt` and 23
+# `until=` -- of 1475 waivers scanned, 3% carry `follow_up=`, 0% carry
+# `until=`, but 58% cite a T-id somewhere in `reason=` prose. The
+# temporariness IS usually being expressed -- as prose nothing can act
+# on -- rather than through either of the two structured "this is
+# temporary" channels frob already has (`frob:debt`, `until=`).
+#
+# The hard part (this ticket's own investigation, not solved by a bigger
+# regex): a waiver reason citing a ticket is not automatically misuse.
+# Two shapes share that surface:
+#   - PROVENANCE: "T-1024: this is deliberately dead because <reasoning
+#     established there>" -- legitimate, permanent, must stay quiet.
+#   - DEFERRED WORK: "waived until T-1024 fixes this" -- genuinely debt.
+# 767 waivers cite ONLY resolved tickets, and citation shape alone cannot
+# tell these apart -- a resolved-ticket citation is the PROVENANCE case's
+# own normal shape too (the reasoning ticket closed; the exemption did
+# not expire with it). So this rule does NOT key off ticket-resolution
+# state at all (unlike WAIVE009, which is a different question -- "does
+# a promised ticket exist" -- and deliberately continues to ignore this
+# one). It keys ONLY on WORDING: `_reason_reads_as_deferred_work` reuses
+# WAIVE009's own curated promise-phrase set (already tuned against this
+# repo's real waivers to avoid provenance-style "this will not affect X"
+# false positives) plus a small set of bare temporal words the owner
+# named directly ("until", "pending", "for now", "temporarily") --
+# deliberately NOT a bare ticket-citation check, which is exactly the
+# shape that would have mis-flagged all 767 provenance-shaped waivers.
+#
+# Calibration note: a bare "until"/"pending" is still a real false-
+# positive surface (rare, but possible provenance prose like "true until
+# a later refactor removes the branch entirely" reads temporal without
+# being deferred work) -- WARNING-tier, not ERROR, is the deliberate
+# choice for that residual risk; see this ticket's Done report for the
+# measured repo-wide count and how many of the flagged sites were
+# reviewed by hand.
+_WAIVE010_DEFERRED_PHRASE_RES = _WAIVE009_PROMISE_PHRASE_RES + tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        # T-3062 real-repo calibration (see this ticket's Done report):
+        # the naive `\buntil\b`/`\bpending\b` bare match fired on
+        # `pending-background-guard.py` (a FILENAME containing "pending",
+        # not the word used temporally) -- `(?!-)`/`(?<!-)` reject a
+        # match immediately adjacent to a hyphen, the shape every
+        # hyphenated identifier/filename in this repo's own comments
+        # takes, without narrowing the genuine "pending T-1234"/"until
+        # T-1234 lands" phrasing this rule exists to catch.
+        r"(?<!-)\buntil\b(?!-)",
+        r"(?<!-)\bpending\b(?!-)",
+        r"\bfor\s+now\b",
+        r"\btemporar(?:y|ily)\b",
+    )
+)
+
+
+def _reason_reads_as_deferred_work(reason: str) -> bool:
+    """WAIVE010's trigger condition: `reason` uses wording that reads as
+    temporary/deferred-work framing (`_WAIVE010_DEFERRED_PHRASE_RES`) --
+    independent of whether the reason cites any ticket, or whether a
+    cited ticket resolves (see the module-level note above for why
+    ticket-resolution state is not part of this rule's discriminator)."""
+    return any(pattern.search(reason) for pattern in _WAIVE010_DEFERRED_PHRASE_RES)
+
+
+def _waive010_violation(
+    *, file: str, line: int, site: str, rule_and_target: str
+) -> Violation:
+    """The single WAIVE010 `Violation` for one waiver whose reason reads
+    as deferred/temporary work rather than a permanent exemption."""
+    _log.warning(
+        "WAIVE010: %s (%s) reason reads as deferred/temporary work -- "
+        "consider frob:debt or until= instead of frob:waive",
+        site,
+        rule_and_target,
+    )
+    return Violation(
+        rule="WAIVE010",
+        severity=Severity.WARN,
+        file=file,
+        line=line,
+        message=(
+            f"WAIVE010: {site} waives {rule_and_target}, and its reason "
+            f"reads as deferred/temporary work ('until', 'pending', 'for "
+            f"now', 'temporarily', or a WAIVE009-style promise phrase) "
+            f"rather than a permanent exemption -- if this is genuinely "
+            f"temporary, `frob:debt`/`until=` are the channels that can "
+            f"actually be acted on (tracked, expired, drained); a "
+            f"`frob:waive` with temporariness written only in prose "
+            f"records nothing anything can enforce. If this IS a "
+            f"permanent exemption (the ticket cited is PROVENANCE for "
+            f"why, not a fix this waits on), reword the reason to state "
+            f"that plainly and this will stop firing"
+        ),
+    )
+
+
+# frob:enforces CHK-GATE-WAIVE010
+# frob:ticket T-3062
+# frob:doc docs/modules/gates.md#rule-catalog
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive010Violations.test_bare_until_wording_warns
+# frob:tests tests/test_waive_gate.py::TestWaive010Violations.test_pending_wording_warns
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive010Violations.test_promise_phrase_with_resolved_ticket_still_warns  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive010Violations.test_provenance_reasoning_does_not_warn  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive010Violations.test_plain_permanent_reason_does_not_warn  # noqa: E501
+def waive010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """WAIVE010: a `frob:waive` reason that reads as deferred/temporary
+    work (`_reason_reads_as_deferred_work`) rather than a permanent
+    exemption -- `frob:debt`/`until=` are the structured channels for
+    genuine temporariness; a `frob:waive` cannot be acted on the same
+    way, so writing the "this is temporary" fact only in `reason=` prose
+    means nothing can ever enforce, expire, or drain it. Deliberately does
+    NOT take `TicketQueue` (unlike its WAIVE009 sibling immediately
+    above) -- ticket-resolution state is not part of this rule's
+    discriminator at all (see the module-level note above
+    `_WAIVE010_DEFERRED_PHRASE_RES` for why: a resolved-ticket citation is
+    the normal shape of the legitimate PROVENANCE case too, so it cannot
+    be the signal)."""
+    out: list[Violation] = []
+    for edge in _waive_edges(snapshot):
+        reason = edge.attrs.get("reason", "")
+        if not _reason_reads_as_deferred_work(reason):
+            continue
+        from frob.gates import _site_from_edge_origin  # local: avoids circularity
+
+        file, line = _site_from_edge_origin(edge.origin)
+        out.append(
+            _waive010_violation(
                 file=file,
                 line=line,
                 site=edge.src,
