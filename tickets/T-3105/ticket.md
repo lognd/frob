@@ -1,7 +1,7 @@
 ---
 id: T-3105
 title: 'refactor split: import-rewrite drags unmoved names to destination module'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
