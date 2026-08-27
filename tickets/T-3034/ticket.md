@@ -14,13 +14,131 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- tests/
+- tests/system/test_cli_evidence_enforcement.py
+- tests/system/test_cli_graph.py
+- tests/test_app_daemon_proxy.py
+- tests/test_clean.py
+- tests/test_dup_smart.py
+- tests/test_gates.py
+- tests/test_gates_tick009_tick010.py
+- tests/test_makefile_lock_sync.py
+- tests/test_stats.py
+- tests/unit/test_app_runners_batch7.py
+- tests/unit/test_app_runners_t0714_doable_summary.py
+- tests/unit/test_app_runners_t1822_already_landed.py
+- tests/unit/test_coordinator_scripts.py
+- tests/unit/test_exports.py
+- tests/unit/test_gitattributes_merge.py
+- tests/unit/test_new_ticket_scope_breadth_ack_flag.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: T-3034 is a per-test triage ticket over 26 failures scattered
   across tests/; the real touched set is not knowable until each is individually triaged,
   narrowing after the fact once known
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/system/test_cli_evidence_enforcement.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/system/test_cli_graph.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_app_daemon_proxy.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_clean.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_dup_smart.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_gates_tick009_tick010.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_makefile_lock_sync.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_stats.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_app_runners_t0714_doable_summary.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_app_runners_t1822_already_landed.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_exports.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_gitattributes_merge.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_new_ticket_scope_breadth_ack_flag.py
+  reason: 'T-3034: narrow to the 26 named failing tests'' own files, avoiding collision
+    with T-3116''s lease on test_ticket_land_ty_diff_attribution.py'
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
