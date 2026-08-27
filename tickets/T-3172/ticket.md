@@ -2,7 +2,7 @@
 id: T-3172
 title: 'post-land sweep regression from T-3156: 2 new (rule, file) identit(ies), 7
   finding(s) (DRIFT001, SYS003)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-27'
