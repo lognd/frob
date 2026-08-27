@@ -2,8 +2,8 @@
 id: T-3158
 title: 'post-land sweep regression from T-3139: 2 new (rule, file) identit(ies), 1
   finding(s) (DOC006, DRIFT001)'
-state: in-progress
-kind: bug
+state: done
+kind: docs
 origin: agent
 created: '2026-08-27'
 priority: high
@@ -34,6 +34,18 @@ scope_changes:
     dispatch branch undocumented), not just a digest bump; need to edit the doc
   actor: logan
   at: '2026-08-27'
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: the actual fix landed here was a pure documentation edit (docs/guides/coordinator-scripts.md's
+    worktrees_touching_ticket anchor) plus a re-verified frob ack -- no code surface
+    changed, matching T-3147's own precedent for a close whose only legitimate D-02/evidence
+    route post-T-3141 is the docs/ux --evidence-cmd channel (T-0215)
+  actor: logan
+  at: '2026-08-27'
+kind_history:
+- 2026-08-27 bug->docs evidence=0 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
