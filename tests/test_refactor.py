@@ -318,6 +318,125 @@ class TestScanReferences:
         assert "pkg.mod.greet" in unresolved[0]
         assert "caller.py" in unresolved[0]
 
+    def test_mixed_moved_and_untouched_names_leaves_import_alone(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestScanReferences.test_mixed_moved_and_untouched_nam\
+        # es_leaves_import_alone
+        # T-3105: a call site importing the moved name ALONGSIDE an
+        # untouched name must not have the whole statement repointed at
+        # the destination module -- `farewell` is not defined there. The
+        # split's own re-export shim keeps `pkg.mod` re-exporting `greet`
+        # for anyone who did not need an edit, so the correct mechanical
+        # action here is no rewrite at all.
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def greet():\n    return 'hi'\n\n\ndef farewell():\n    return 'bye'\n",
+        )
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "from pkg.mod import greet, farewell\n\n"
+            "def use():\n    return greet() + farewell()\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        dest = SymbolRef(module="pkg.newmod", qualname="greet")
+        ops, aliases, unresolved = scan_references(root, resolved, dest)
+        assert ops == []
+        assert aliases == []
+        assert unresolved == []
+
+    def test_reexport_line_with_many_names_leaves_import_alone(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestScanReferences.test_reexport_line_with_many_names\
+        # _leaves_import_alone
+        # T-3105: the same mixed-names hazard, but with more names on one
+        # line (the `gates/__init__.py`-shaped re-export case that broke
+        # ~130 files in the first T-3086 attempt).
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def greet():\n    return 'hi'\n\n\n"
+            "def farewell():\n    return 'bye'\n\n\n"
+            "def other():\n    return 'x'\n",
+        )
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "from pkg.mod import greet, farewell, other\n\n"
+            "def use():\n    return greet() + farewell() + other()\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        dest = SymbolRef(module="pkg.newmod", qualname="greet")
+        ops, aliases, unresolved = scan_references(root, resolved, dest)
+        assert ops == []
+        assert aliases == []
+        assert unresolved == []
+
+    def test_type_checking_guarded_mixed_import_not_rewritten(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestScanReferences.test_type_checking_guarded_mixed_i\
+        # mport_not_rewritten
+        # T-3105: mixed moved/untouched names inside a `TYPE_CHECKING`
+        # block must get the same treatment as module-scope -- left alone.
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def greet():\n    return 'hi'\n\n\ndef farewell():\n    return 'bye'\n",
+        )
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "import typing\n\n"
+            "if typing.TYPE_CHECKING:\n"
+            "    from pkg.mod import greet, farewell\n\n"
+            "def use():\n    pass\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        dest = SymbolRef(module="pkg.newmod", qualname="greet")
+        ops, aliases, unresolved = scan_references(root, resolved, dest)
+        assert ops == []
+        assert aliases == []
+        assert unresolved == []
+
+    def test_function_local_mixed_import_not_rewritten(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestScanReferences.test_function_local_mixed_import_n\
+        # ot_rewritten
+        # T-3105 + T-3066 combined shape: a function-local import naming
+        # both a moved and an untouched name must neither false-refuse
+        # (T-3066) nor get repointed as a whole (T-3105) -- left alone.
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def greet():\n    return 'hi'\n\n\ndef farewell():\n    return 'bye'\n",
+        )
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "def use():\n"
+            "    from pkg.mod import greet, farewell\n"
+            "    return greet() + farewell()\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        dest = SymbolRef(module="pkg.newmod", qualname="greet")
+        ops, aliases, unresolved = scan_references(root, resolved, dest)
+        assert ops == []
+        assert aliases == []
+        assert unresolved == []
+
 
 class TestApplyPlan:
     def test_apply_then_rollback_restores_tree(self, tmp_path):
@@ -1992,15 +2111,15 @@ class TestRunSplit:
         assert "alpha" in mod_text
         assert "beta" in mod_text
 
-        # scan_references already rewrites every repo-local call site it
-        # finds directly at the new module -- the re-export shim's own
-        # value is for a call site this scan does NOT reach (a caller
-        # outside this repo, or a dynamic import); a repo-local caller
-        # simply gets its import statement rewritten in place.
+        # T-3105: scan_references runs once per symbol with no visibility
+        # into its sibling moves in the same chunk, so a shared import
+        # line naming multiple symbols is left untouched rather than
+        # risking a partial/incorrect rewrite -- the re-export shim
+        # (`from pkg.newmod import (...)` added to pkg.mod above) keeps
+        # `from pkg.mod import alpha, beta` valid unmodified, so the
+        # repo-local caller needs no edit at all.
         caller_text = (root / "src/pkg/caller.py").read_text(encoding="utf-8")
-        assert "from pkg.newmod import" in caller_text
-        assert "alpha" in caller_text
-        assert "beta" in caller_text
+        assert "from pkg.mod import alpha, beta" in caller_text
 
         status = subprocess.run(
             ["git", "status", "--porcelain"],

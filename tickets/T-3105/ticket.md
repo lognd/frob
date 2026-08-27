@@ -1,7 +1,7 @@
 ---
 id: T-3105
 title: 'refactor split: import-rewrite drags unmoved names to destination module'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -29,7 +29,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-27'
-designated_repro_test: null
+evidence:
+- tests/test_refactor.py::TestScanReferences::test_mixed_moved_and_untouched_names_leaves_import_alone
+- tests/test_refactor.py::TestScanReferences::test_reexport_line_with_many_names_leaves_import_alone
+- tests/test_refactor.py::TestScanReferences::test_type_checking_guarded_mixed_import_not_rewritten
+- tests/test_refactor.py::TestScanReferences::test_function_local_mixed_import_not_rewritten
+- tests/test_refactor.py::TestRunSplit::test_split_moves_symbols_and_leaves_reexport_shim
+designated_repro_test: tests/test_refactor.py::TestScanReferences::test_mixed_moved_and_untouched_names_leaves_import_alone
 threat: null
 component: null
 anchor: false
