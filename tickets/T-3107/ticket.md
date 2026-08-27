@@ -16,10 +16,19 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_compose.py
 - tests/unit/test_land_compose.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: the new public compose primitives need frob:doc edges (COV001) and LandComposeError's
+    new variant needs its affects-closure doc re-acked (AFFECT001); both land in the
+    existing _land_compose section of this file
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
