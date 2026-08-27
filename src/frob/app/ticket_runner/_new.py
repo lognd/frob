@@ -414,7 +414,7 @@ def _ticket_spec_from_cfg(
         # (the annotated field type is the POST-validation shape).
         # frob:ticket T-0737
         # `_resolve_new_acceptance` picks --acceptance or --acceptance-file.
-        acceptance=tuple(  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+        acceptance=tuple(  # type: ignore[arg-type]  # noqa: E501  # ty: ignore[invalid-argument-type,unused-ignore-comment]
             _resolve_new_acceptance(cfg)
         ),
         threat=Stride(cfg.ticket_threat) if cfg.ticket_threat else None,

@@ -1,7 +1,7 @@
 ---
 id: T-3106
 title: Fix fleet_status.py orphan false-positive and add frob process reap command
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -58,6 +58,15 @@ scope_changes:
     pattern (no write needed)'
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/unit/test_app_runners_process.py::TestProcessReapParser::test_process_reap_parses_and_dispatches
+- tests/unit/test_app_runners_process.py::TestProcessReapParser::test_process_reap_json_flag_parses
+- tests/unit/test_app_runners_process.py::TestProcessReapParser::test_process_reap_json_flag_reaches_appconfig
+- tests/unit/test_app_runners_process.py::TestOpsRunnerProcessDelegation::test_process_subcommand_delegates_to_process_runner
+- tests/unit/test_app_runners_process.py::TestProcessRunnerReap::test_reap_reports_reaped_pids
+- tests/unit/test_app_runners_process.py::TestProcessRunnerReap::test_reap_reports_nothing_reaped
+- tests/unit/test_app_runners_process.py::TestProcessRunnerReap::test_reap_json_mode_emits_json
+- tests/unit/test_app_runners_process.py::TestProcessRunnerReap::test_unknown_process_subcommand_exits_1
 designated_repro_test: null
 threat: null
 component: null

@@ -10,17 +10,21 @@ _log = get_logger(__name__)
 
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-1569
+# frob:ticket T-3106
 # frob:tests tests/unit/test_app_runners.py::TestOpsRunner.test_subcommand_delegates_to_matching_runner  # noqa: E501
 # frob:tests tests/unit/test_app_runners.py::TestOpsRunner.test_stats_subcommand_delegates_to_stats_runner  # noqa: E501
 # frob:tests \
 # tests/unit/test_app_runners.py::TestOpsRunner.test_unknown_subcommand_exits_1
+# frob:tests tests/unit/test_app_runners_process.py::TestOpsRunnerProcessDelegation.test_process_subcommand_delegates_to_process_runner  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob ops <release|natives|doctor|clean|fleet|deploy|scaffold|
-    gitlog|stats>`: the T-1569 verb-group front door onto the release/
-    fleet/infra-plumbing porcelain -- delegates straight into the
+    gitlog|stats|process>`: the T-1569 verb-group front door onto the
+    release/fleet/infra-plumbing porcelain -- delegates straight into the
     existing per-command runner logic (same `AppConfig` dests each
     subcommand's parser populates), so behavior is identical to invoking
-    the standalone top-level command directly."""
+    the standalone top-level command directly. `process` (T-3106) is the
+    exception: it has no separate standalone top-level command -- `frob
+    ops process reap` is its only entry point."""
     if cfg.ops_command == "release":
         from frob.app.release_runner import run as release_run
 
@@ -57,9 +61,13 @@ def run(cfg: AppConfig) -> None:
         from frob.app.stats_runner import run as stats_run
 
         stats_run(cfg)
+    elif cfg.ops_command == "process":
+        from frob.app.process_runner import run as process_run
+
+        process_run(cfg)
     else:
         _log.error(
             "frob ops requires a subcommand: release, natives, doctor, "
-            "clean, fleet, deploy, scaffold, gitlog, or stats"
+            "clean, fleet, deploy, scaffold, gitlog, stats, or process"
         )
         sys.exit(1)
