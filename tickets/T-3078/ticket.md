@@ -1,7 +1,7 @@
 ---
 id: T-3078
 title: 'TEST001 gap: T-3044''s new graph::model attrs API has no bound unit test'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -19,6 +19,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- strata-core/src/graph/model.rs::tests::declare_node_kind_registers_kind_and_is_idempotent
+- strata-core/src/graph/model.rs::tests::declare_level_registers_level
+- strata-core/src/graph/model.rs::tests::declare_edge_kind_registers_and_replaces_contract
+- strata-core/src/graph/model.rs::tests::require_attrs_populates_required_attrs_set
+- strata-core/src/graph/model.rs::tests::declare_required_node_attrs_populates_schema_map
+- strata-core/src/graph/model.rs::tests::add_node_with_attrs_refuses_missing_required_attr
+- strata-core/src/graph/model.rs::tests::add_edge_with_attrs_refuses_missing_required_attr
 designated_repro_test: null
 threat: null
 component: null

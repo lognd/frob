@@ -606,4 +606,119 @@ mod tests {
         g.add_edge("blocked_by", "r1", "r2").unwrap();
         assert_eq!(g.edges().len(), 1);
     }
+
+    #[test]
+    // frob:ticket T-3078
+    fn declare_node_kind_registers_kind_and_is_idempotent() {
+        let mut s = GraphSchema::new();
+        s.declare_node_kind("requirement");
+        assert!(s.node_kinds.contains("requirement"));
+        // Declaring the same kind twice is additive, not an error.
+        s.declare_node_kind("requirement");
+        assert_eq!(s.node_kinds.len(), 1);
+    }
+
+    #[test]
+    // frob:ticket T-3078
+    fn declare_level_registers_level() {
+        let mut s = GraphSchema::new();
+        s.declare_level("requirement-level");
+        assert!(s.levels.contains("requirement-level"));
+    }
+
+    #[test]
+    // frob:ticket T-3078
+    fn declare_edge_kind_registers_and_replaces_contract() {
+        let mut s = GraphSchema::new();
+        s.declare_edge_kind("blocked_by", EdgeKindSchema::unconstrained());
+        assert!(s.edge_kinds.contains_key("blocked_by"));
+        assert_eq!(
+            s.edge_kinds["blocked_by"].level_relation,
+            LevelRelation::Any
+        );
+        // Declaring the same kind again REPLACES the prior contract.
+        s.declare_edge_kind(
+            "blocked_by",
+            EdgeKindSchema::unconstrained().require_attrs(["reason"]),
+        );
+        assert!(s.edge_kinds["blocked_by"]
+            .required_attrs
+            .contains("reason"));
+    }
+
+    #[test]
+    // frob:ticket T-3078
+    fn require_attrs_populates_required_attrs_set() {
+        let schema = EdgeKindSchema::unconstrained().require_attrs(["reason"]);
+        assert_eq!(
+            schema.required_attrs,
+            BTreeSet::from(["reason".to_string()])
+        );
+    }
+
+    #[test]
+    // frob:ticket T-3078
+    fn declare_required_node_attrs_populates_schema_map() {
+        let mut s = GraphSchema::new();
+        s.declare_required_node_attrs("test", ["runnable"]);
+        assert_eq!(
+            s.required_node_attrs["test"],
+            BTreeSet::from(["runnable".to_string()])
+        );
+    }
+
+    #[test]
+    // frob:ticket T-3078
+    fn add_node_with_attrs_refuses_missing_required_attr() {
+        let mut s = GraphSchema::new();
+        s.declare_node_kind("test");
+        s.declare_required_node_attrs("test", ["runnable"]);
+        let mut g = Graph::new(s);
+        let err = g
+            .add_node_with_attrs("t1", "test", None, BTreeMap::new())
+            .unwrap_err();
+        assert_eq!(
+            err,
+            GraphError::MissingNodeAttr {
+                kind: "test".into(),
+                attr: "runnable".into(),
+            }
+        );
+        // Supplying the required attr succeeds and the node carries it.
+        let mut attrs = BTreeMap::new();
+        attrs.insert("runnable".to_string(), "pytest::test_x".to_string());
+        g.add_node_with_attrs("t2", "test", None, attrs.clone())
+            .unwrap();
+        assert_eq!(g.node("t2").unwrap().attrs, attrs);
+    }
+
+    #[test]
+    // frob:ticket T-3078
+    fn add_edge_with_attrs_refuses_missing_required_attr() {
+        let mut s = GraphSchema::new();
+        s.declare_node_kind("decision");
+        s.declare_edge_kind(
+            "supersedes",
+            EdgeKindSchema::unconstrained().require_attrs(["reason"]),
+        );
+        let mut g = Graph::new(s);
+        g.add_node("d1", "decision", None).unwrap();
+        g.add_node("d2", "decision", None).unwrap();
+        let err = g
+            .add_edge_with_attrs("supersedes", "d1", "d2", BTreeMap::new())
+            .unwrap_err();
+        assert_eq!(
+            err,
+            GraphError::MissingEdgeAttr {
+                edge_kind: "supersedes".into(),
+                attr: "reason".into(),
+            }
+        );
+        // Supplying the required attr succeeds and the edge carries it.
+        let mut attrs = BTreeMap::new();
+        attrs.insert("reason".to_string(), "renamed for clarity".to_string());
+        g.add_edge_with_attrs("supersedes", "d1", "d2", attrs.clone())
+            .unwrap();
+        assert_eq!(g.edges()[0].attrs, attrs);
+    }
 }
