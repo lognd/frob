@@ -29,7 +29,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5a85d246675cfab80b1b394ce717b48fe52d9546
 ---
 T-3123 fixed the FROB_WORKTREE cross-test env leak in tests/test_ticket_land.py
 (autouse fixture in tests/conftest.py). With the leak contained, the file's
