@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 11c99626b2c6ddc65dadfe5666dc07fa53745862
 ---
 MEASURED 2026-08-27. `scripts/fleet_status.py` reported:
 
