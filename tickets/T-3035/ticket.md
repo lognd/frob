@@ -30,7 +30,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 82bfac71850cd7c31bad60396e0c10442c41bfd1
 ---
 Linux full-suite triage (T-2992): 5 tests in
 tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable
