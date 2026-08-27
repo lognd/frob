@@ -13711,7 +13711,14 @@ class TestAutofixManifest:
         root = tmp_path / "repo"
         root.mkdir(parents=True)
 
-        def _boom(root, snapshot, queue, ticket_id=None):  # noqa: ANN001, ANN202
+        # T-3034: was `_boom(root, snapshot, queue, ticket_id=None)` --
+        # `apply_tier_a_fixes` now calls every handler with a 5th
+        # positional arg (`merge_target_ids`), added after this test was
+        # written; the fake handler's signature drifted from the real
+        # call site it stands in for.
+        def _boom(  # noqa: ANN001, ANN202
+            root, snapshot, queue, ticket_id=None, merge_target_ids=None
+        ):
             raise RuntimeError("simulated kill mid-handler")
 
         monkeypatch.setitem(fix_engine.TIER_A_HANDLERS, "DOC007", _boom)
@@ -13926,9 +13933,19 @@ class TestFixEngineTierABatch2:
         )
         (root / "docs").mkdir()
         doc_path = root / "docs" / "catalog.md"
+        # T-3034: T-2664 added a stricter DOCENUM001 sub-check -- every
+        # claimed member also needs a resolvable table row/heading
+        # somewhere in the doc, not just an entry in `members=`; this
+        # fixture predates that and had none, so the AFTER assertion
+        # below started failing on a genuine (WARN-severity, by-design)
+        # new finding rather than the sync bug this test targets.
         doc_path.write_text(
             "# catalog\n"
-            '<!-- frob:enumerates src/rules.py::_KNOWN members="A001,A002" -->\n',
+            '<!-- frob:enumerates src/rules.py::_KNOWN members="A001,A002" -->\n'
+            "\n"
+            "## A001\n"
+            "## A002\n"
+            "## A003\n",
             encoding="utf-8",
         )
 
@@ -16554,10 +16571,13 @@ class TestOptInGates:
         _write(tmp_path, "src/broken.py", "def scan(x):\n    return x\n")
         snap = _snapshot(tmp_path)
 
-        def _fake_parse_file(path: Path):
+        # T-3034: `parse_file` gained a keyword-only `expect_heterogeneous`
+        # param (T-2575) after this fake was written; the real caller now
+        # passes it, so the fake must accept it too.
+        def _fake_parse_file(path: Path, *, expect_heterogeneous: bool = False):
             if path.name == "broken.py":
                 return Err(LangError.ParseFailed)
-            return real_parse_file(path)
+            return real_parse_file(path, expect_heterogeneous=expect_heterogeneous)
 
         monkeypatch.setattr("frob.lang.parse_file", _fake_parse_file)
 

@@ -258,16 +258,35 @@ class TestCliEvidenceEnforcementEndToEnd:
             str(root),
         )
         assert created.returncode == 0, created.stdout + created.stderr
+        # T-3034: T-2394/T-2557 made `start` refuse an EMPTY scope; this
+        # ticket genuinely has none (a pure docs-kind ticket), so declare
+        # that explicitly rather than adding a scope this test does not
+        # need.
+        declared = run(
+            "ticket",
+            "scope",
+            "T-0001",
+            "--declare-no-scope",
+            "--reason",
+            "docs-only ticket, no file scope",
+            "--path",
+            str(root),
+        )
+        assert declared.returncode == 0, declared.stdout + declared.stderr
         run("ticket", "plan", "T-0001", "--path", str(root))
         started = run("ticket", "start", "T-0001", "--path", str(root))
         assert started.returncode == 0, started.stdout + started.stderr
 
+        # T-3034: was `"true"` -- T-1892's EvidenceCmdSilent check now
+        # refuses an evidence command that exits 0 with empty stdout+
+        # stderr (proves nothing); use a command that emits its own
+        # finding, per that error message's own suggestion.
         result = run(
             "ticket",
             "close",
             "T-0001",
             "--evidence-cmd",
-            "true",
+            "echo docs verified",
             "--path",
             str(root),
         )

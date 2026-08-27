@@ -77,7 +77,14 @@ class TestScopeBreadthAckFlag:
             ticket_path=tmp_path,
             ticket_title="broad scope ticket, unacknowledged",
             ticket_kind="bug",
-            ticket_scope=["src/frob/**"],
+            # T-3034: was "src/frob/**" -- over_broad_literal_globs (T-2771)
+            # now derives package-prefix globs from tmp_path's OWN
+            # pyproject.toml (there is none here), so "src/frob/**" no
+            # longer resolves in this fixture; "tests/**" stays a
+            # repo-convention literal in OVER_BROAD_LITERAL_GLOBS
+            # regardless of package-name resolution, so it still exercises
+            # the same WARN path this test is actually about.
+            ticket_scope=["tests/**"],
         )
         with caplog.at_level("WARNING"):
             ticket_run(cfg)

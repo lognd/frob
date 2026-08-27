@@ -73,7 +73,13 @@ def test_collect_combines_both(tmp_path):
     queue = load_queue(root).danger_ok
     report = collect(root, queue, window_days=7).danger_ok
     assert report.tickets.total == 1
-    assert report.commits.total == 1
+    # T-3034: was `== 1` -- T-1130 made `new_ticket` auto-commit the
+    # ticket file it writes (degrading to a WARN-only skip, never a hard
+    # failure, if that commit itself cannot complete -- see `new_ticket`'s
+    # own docstring), so the init commit above is no longer reliably the
+    # ONLY commit; assert at least the two we know are attempted rather
+    # than hardcoding a count this test cannot itself guarantee.
+    assert report.commits.total >= 1
 
 
 def test_collect_injected_queue_matches_direct_ticket_stats(tmp_path):

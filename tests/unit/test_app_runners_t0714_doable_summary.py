@@ -52,9 +52,14 @@ class TestRenderScopeBreadthSummary:
         # T-1645: PLANNED (not QUEUED) -- these tickets have been started
         # and are the earliest state this summary (mirroring TICK009)
         # still counts.
+        # T-3034: was "src/frob/**" -- over_broad_literal_globs (T-2771)
+        # now derives package-prefix globs from tmp_path's own
+        # pyproject.toml (there is none here), so "src/frob/**" no longer
+        # resolves; "tests/**" is a repo-convention literal that stays in
+        # OVER_BROAD_LITERAL_GLOBS regardless of package-name resolution.
         queue = _queue(
             *[
-                _ticket(f"T-21{i:02d}", ("src/frob/**",), TicketState.PLANNED)
+                _ticket(f"T-21{i:02d}", ("tests/**",), TicketState.PLANNED)
                 for i in range(5)
             ]
         )

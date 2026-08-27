@@ -78,7 +78,16 @@ class TestAck:
     def test_ack_then_requery_clean(self, tmp_path):
         _init_repo(tmp_path)
         run("graph", "build", str(tmp_path))
-        r = run("ack", "pkg.py::add", "--path", str(tmp_path))
+        # T-3034: T-1317 made `frob ack` require --reason; this test
+        # predates that and was calling ack with no reason at all.
+        r = run(
+            "ack",
+            "pkg.py::add",
+            "--path",
+            str(tmp_path),
+            "--reason",
+            "confirmed the add() signature and doc anchor still match after review",
+        )
         out = r.stdout + r.stderr
         assert r.returncode == 0, out
         lock = tmp_path / "frob.lock"
@@ -88,7 +97,18 @@ class TestAck:
     def test_ack_then_drift_after_change(self, tmp_path):
         _init_repo(tmp_path)
         run("graph", "build", str(tmp_path))
-        ack = run("ack", "pkg.py::add", "--path", str(tmp_path))
+        # T-3034: T-1317 made `frob ack` require --reason, and its
+        # AckReasonBoilerplate check (also T-1317) refuses a rubber-stamp
+        # value like "re-verified" outright -- needs a real vouching
+        # sentence.
+        ack = run(
+            "ack",
+            "pkg.py::add",
+            "--path",
+            str(tmp_path),
+            "--reason",
+            "confirmed the add() signature and doc anchor still match after review",
+        )
         assert ack.returncode == 0, ack.stdout + ack.stderr
 
         (tmp_path / "pkg.py").write_text(

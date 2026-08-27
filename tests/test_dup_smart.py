@@ -68,10 +68,20 @@ class TestFindClones:
     def test_core_unavailable_is_honest_err_not_silent_downgrade(
         self, snapshot, monkeypatch
     ):
-        monkeypatch.setattr(dup_core, "core_available", lambda: False)
-        # _pipeline imported core_available via `from frob.dup import _core`
-        # and calls `_core.core_available()`, so patching the module
-        # attribute above is what the pipeline actually observes.
+        # T-3034: was `monkeypatch.setattr(dup_core, "core_available", ...)`
+        # -- `find_clones` (src/frob/dup/_pipeline/_fingerprint.py) now
+        # does `from frob.dup._core import ... core_available` directly,
+        # binding its OWN local name at import time; patching the
+        # attribute on the source module `frob.dup._core` no longer
+        # reaches that already-bound name (import binds where a name is
+        # LOOKED UP, not where it is defined -- the test was silently
+        # patching a name nothing reads any more, so `find_clones` kept
+        # calling the real `core_available()`, which was actually
+        # available in this test env, giving Ok instead of the expected
+        # Err). Patch the name where `find_clones` actually looks it up.
+        monkeypatch.setattr(
+            "frob.dup._pipeline._fingerprint.core_available", lambda: False
+        )
         result = find_clones(snapshot, DupConfig(min_tokens=5))
         assert result.is_err
         assert result.err == DupError.CoreUnavailable

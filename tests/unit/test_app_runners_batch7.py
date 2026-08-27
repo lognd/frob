@@ -630,7 +630,14 @@ class TestTicketStart:
             ticket_path=tmp_path,
             ticket_title="broad scope ticket",
             ticket_kind="bug",
-            ticket_scope=["src/frob/**"],
+            # T-3034: was "src/frob/**" -- over_broad_literal_globs
+            # (T-2771) now derives package-prefix globs from tmp_path's
+            # own pyproject.toml (there is none here), so "src/frob/**"
+            # no longer resolves; "tests/**" is a repo-convention literal
+            # that stays in OVER_BROAD_LITERAL_GLOBS regardless of
+            # package-name resolution, so it still exercises this test's
+            # actual subject (start's hard refusal on a broad scope).
+            ticket_scope=["tests/**"],
         )
         ticket_run(cfg)
         cfg = AppConfig(

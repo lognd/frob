@@ -47,7 +47,13 @@ class TestTick009ScopeBreadthNudges:
         # ticket start` runs) is the earliest state TICK009 still fires
         # on -- the code is open and the ticket is a real, actionable
         # nudge target by this point.
-        ticket = _ticket("T-1101", ("src/frob/**",), TicketState.PLANNED)
+        # T-3034: was "src/frob/**" -- over_broad_literal_globs (T-2771)
+        # now derives package-prefix globs from tmp_path's own
+        # pyproject.toml (there is none here), so "src/frob/**" no longer
+        # resolves; "tests/**" is a repo-convention literal that stays in
+        # OVER_BROAD_LITERAL_GLOBS regardless of package-name resolution,
+        # so it still exercises TICK009's own warn path unchanged.
+        ticket = _ticket("T-1101", ("tests/**",), TicketState.PLANNED)
         violations = [
             v for v in tickets_gate(tmp_path, _queue(ticket)) if v.rule == "TICK009"
         ]
@@ -60,7 +66,9 @@ class TestTick009ScopeBreadthNudges:
         # frob:tests tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges.test_in_progress_over_broad_glob_still_warns  # noqa: E501
         # T-1645: the ticket's own claim -- "IN-PROGRESS/done: finding as
         # today" -- verified directly, unchanged by the QUEUED exemption.
-        ticket = _ticket("T-1103", ("src/frob/**",), TicketState.IN_PROGRESS)
+        # T-3034: was "src/frob/**" -- same over_broad_literal_globs
+        # (T-2771) resolution gap as the test above.
+        ticket = _ticket("T-1103", ("tests/**",), TicketState.IN_PROGRESS)
         violations = [
             v for v in tickets_gate(tmp_path, _queue(ticket)) if v.rule == "TICK009"
         ]
