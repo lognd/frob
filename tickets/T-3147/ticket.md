@@ -2,8 +2,8 @@
 id: T-3147
 title: Audit closes landed 2026-08-10..2026-08-27 for D-02 self-cover false positives
   (T-1944/T-3141)
-state: queued
-kind: bug
+state: in-progress
+kind: docs
 origin: human
 created: '2026-08-27'
 priority: medium
@@ -21,6 +21,20 @@ scope_breadth_ack_reason: audit ticket over ticket history/evidence bindings, no
   a code-scope change; no narrower glob applies
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: 'pure audit/measurement ticket, no code change -- matches the established
+    convention for this shape (T-2892, T-2909: investigation/audit closing on doc
+    output only), which is the ONLY legitimate D-02 route available post-T-3141 fix
+    for a no-code-surface ticket'
+  actor: logan
+  at: '2026-08-27'
+evidence:
+- tests/test_measure_evidence_reach.py::TestMeasureEvidenceReachMain::test_runs_clean_over_a_minimal_ticket_ledger
+kind_history:
+- 2026-08-27 bug->docs evidence=1 done_report=no
 designated_repro_test: null
 threat: null
 component: null
