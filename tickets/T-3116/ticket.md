@@ -79,7 +79,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 47bb9b4b1f2adf0c0e6f7e57d0012de756c136e2
 ---
 MEASURED 2026-08-27. While landing T-3106, an agent reported:
 
