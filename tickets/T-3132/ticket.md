@@ -32,7 +32,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2803e1ad543db578f9e7b703ed7552c30e442429
 ---
 MEASURED 2026-08-27 while auditing T-3116 (ty gate diff-attribution fix).
 T-3116's own ticket explicitly asked: "whether other pre-land stages
