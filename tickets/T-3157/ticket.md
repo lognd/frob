@@ -1,7 +1,7 @@
 ---
 id: T-3157
 title: Ground-truth fixture suite for scripts/fleet_status.py
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
