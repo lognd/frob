@@ -2,7 +2,7 @@
 id: T-3044
 title: 'V-model H3: graph nodes carry no payload -- test nodes bind to nothing runnable,
   artifacts bind to no code, supersedes cannot carry a reason'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -295,6 +295,13 @@ scope_changes:
   reason: correct path for the .pyi stub (was wrongly declared at repo root)
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckNodePayload::test_artifact_node_missing_code_ref_is_a_construction_error
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckNodePayload::test_test_node_missing_runnable_is_a_construction_error
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckNodePayload::test_supersedes_edge_missing_reason_is_a_construction_error
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckNodePayload::test_payload_present_on_every_kind_stays_quiet
+- tests/test_gates_vmodel.py::TestVmodelGate::test_fires_vmod001_on_missing_payload_attr
+- tests/test_gates_vmodel.py::TestVmodelGate::test_quiet_when_payload_attrs_are_present
 designated_repro_test: null
 threat: null
 component: null

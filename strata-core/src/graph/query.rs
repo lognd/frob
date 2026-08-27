@@ -175,6 +175,7 @@ mod tests {
                 allowed_src_kinds: BTreeSet::new(),
                 allowed_dst_kinds: BTreeSet::new(),
                 level_relation: LevelRelation::Any,
+                required_attrs: BTreeSet::new(),
             },
         );
         s.declare_edge_kind("decides", EdgeKindSchema::unconstrained());

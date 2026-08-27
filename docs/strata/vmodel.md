@@ -21,11 +21,42 @@ the kernel.
 
 - `artifact` -- a left-side V-model artifact at some level (requirement,
   requirement specification, system specification, system design,
-  component design).
-- `test` -- a right-side verification artifact at a paired level.
+  component design). REQUIRES a `code_ref` attr (below).
+- `test` -- a right-side verification artifact at a paired level. REQUIRES
+  a `runnable` attr (below).
 - `decision` -- a decision record; the source of a `decides`/`supersedes`
   edge (T-3004 section 8: change justification is a typed edge, never
-  inline prose).
+  inline prose). Carries no required attr of its own -- T-3049 owns
+  normalizing the decision/invariant/review-record SHAPE as one canonical
+  schema, and this ticket deliberately does not invent a second one.
+
+## Node/edge payload (T-3044 H3)
+
+Before this ticket a `test` node was an id with nothing runnable behind
+it, an `artifact` node bound to no code, and a `supersedes` edge could not
+carry a change reason -- the graph could be fully closed and mean
+nothing. The kernel (`graph::model`) now supports a generic, caller-typed
+attribute payload on every node/edge (`attrs: BTreeMap<String, String>`),
+enforced the SAME way kind/level already are: `GraphSchema::
+declare_required_node_attrs`/`EdgeKindSchema::require_attrs` name which
+keys a kind must carry, and `Graph::add_node_with_attrs`/
+`add_edge_with_attrs` refuse construction (`GraphError::MissingNodeAttr`/
+`MissingEdgeAttr`) if one is missing. `add_node`/`add_edge` are thin
+empty-attrs wrappers, so any kind with no required attrs is unaffected.
+
+The V-model schema declares three required keys:
+
+- `ATTR_CODE_REF` (`"code_ref"`) on every `artifact` node -- a
+  `path[:symbol]` reference into the repo the artifact binds to.
+- `ATTR_RUNNABLE` (`"runnable"`) on every `test` node -- the runnable
+  evidence it binds to, in the same `path::Class.method` (or
+  `path::function`) qualname form `frob:tests`/pytest collection use.
+- `ATTR_REASON` (`"reason"`) on every `supersedes` edge -- the change
+  justification, free-text but mandatory.
+
+The kernel stays domain-agnostic: it does not know what a "runnable" or a
+"code_ref" IS, only that the schema says the key must be present. Giving
+these keys MEANING is entirely `graph::vmodel`'s job (this module).
 
 ## Levels: the V pairing (T-3004 section 1)
 
@@ -110,19 +141,23 @@ it is the only one a Python caller needs right now:
 
 ```
 vmodel_check(
-    nodes: list[tuple[str, str, str | None]],   # (id, kind, level)
-    edges: list[tuple[str, str, str]],          # (kind, src, dst)
+    nodes: list[tuple[str, str, str | None, dict[str, str]]],
+        # (id, kind, level, attrs)
+    edges: list[tuple[str, str, str, dict[str, str]]],
+        # (kind, src, dst, attrs)
 ) -> tuple[list[str], list[tuple[str, str]]]
     # (construction_errors, [(rule_name, node_id), ...])
 ```
 
 Builds a `Graph` against `v_model_schema()` from the flattened tuples.
 Every node/edge that the kernel refuses at construction (unknown kind,
-dangling endpoint, wrong endpoint kind, wrong paired level) is collected as
-a debug-formatted string in the first return slot -- collected rather than
-raising, so a caller sees every malformed input in one call instead of
-stopping at the first. The second slot is every `check_closure` violation
-as `(rule_name, node_id)`, where `rule_name` is one of
+dangling endpoint, wrong endpoint kind, wrong paired level, T-3044 H3's
+missing required attr) is collected as a debug-formatted string in the
+first return slot -- collected rather than raising, so a caller sees every
+malformed input in one call instead of stopping at the first. `attrs` is
+`{}` for a kind with no required payload. The second slot is every
+`check_closure` violation as `(rule_name, node_id)`, where `rule_name` is
+one of
 `orphan_requirement`/`unjustified_design`/`untested_artifact`/`orphan_test`.
 
 A broader PyO3 export (raw `Graph`/`GraphSchema` bindings, arbitrary
@@ -145,26 +180,37 @@ exactly empty `vmodel_nodes`/`vmodel_edges` arrays --
 `tests/unit/strata/test_vmodel_authoring.py::TestVmodelAuthoringFormat::test_designs_own_frob_strata_still_parses`):
 
 ```
-vmodel_node req_1 kind "artifact" level "requirements";
-vmodel_node design_1 kind "artifact" level "component-design";
+vmodel_node req_1 kind "artifact" level "requirements" code_ref "src/x.rs:Req1";
+vmodel_node design_1 kind "artifact" level "component-design" code_ref "src/y.rs:Design1";
 vmodel_edge kind "satisfies" src design_1 dst req_1;
 ```
 
-- `vmodel_node NAME kind "..." [level "..."];` declares one node. `kind`
-  and `level` are plain strings here, NOT validated against
-  `KIND_ARTIFACT`/`KIND_TEST`/`KIND_DECISION` or the ten V-model levels at
-  parse time -- that validation is the KERNEL's job (`Graph::add_node`),
-  so it can never drift from the schema's actual source of truth. `level`
-  is optional (a `decision` node has none). Only a same-file duplicate
-  NAME is refused at parse time.
-- `vmodel_edge kind "..." src NAME dst NAME;` declares one edge. `src`/
-  `dst` are deliberately NOT resolved against declared nodes at parse
-  time, unlike `architecture`'s `of ENTITY`/`binds MODULE` -- a real
-  V-model spans MANY files (a requirement in one, its verifying test in
-  another), so per-file existence checking would be actively wrong for
+- `vmodel_node NAME kind "..." [level "..."] [runnable "..."] [code_ref
+  "..."];` declares one node. `kind` and `level` are plain strings here,
+  NOT validated against `KIND_ARTIFACT`/`KIND_TEST`/`KIND_DECISION` or the
+  ten V-model levels at parse time -- that validation is the KERNEL's job
+  (`Graph::add_node_with_attrs`), so it can never drift from the schema's
+  actual source of truth. `level` is optional (a `decision` node has
+  none). `runnable`/`code_ref` (T-3044 H3) are likewise optional AT THIS
+  GRAMMAR LAYER, in either order -- the kernel is what refuses a `test`/
+  `artifact` node missing the one its kind actually requires, once
+  `frob.gates._vmodel` builds the real graph; a fixed pair of clauses
+  rather than a general attr syntax is a deliberate choice, matching the
+  two concrete keys the schema needs right now (a general authoring
+  syntax for arbitrary record shapes is T-3049's canonical-schema scope,
+  not this ticket's). Only a same-file duplicate NAME is refused at parse
+  time.
+- `vmodel_edge kind "..." src NAME dst NAME [reason "..."];` declares one
+  edge. `src`/`dst` are deliberately NOT resolved against declared nodes
+  at parse time, unlike `architecture`'s `of ENTITY`/`binds MODULE` -- a
+  real V-model spans MANY files (a requirement in one, its verifying test
+  in another), so per-file existence checking would be actively wrong for
   any legitimate cross-file edge. The kernel's own `DanglingEndpoint`
   refusal is what catches a genuinely undeclared endpoint, once every
   file's declarations are aggregated into one graph (next section).
+  `reason` (T-3044 H3) is optional here for the same reason
+  `runnable`/`code_ref` are -- the kernel refuses a `supersedes` edge
+  missing it.
 
 ## Wired into `frob check`: VMOD001 (T-3042)
 

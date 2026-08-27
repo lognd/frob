@@ -428,6 +428,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3035: ticket-leases dispatch-table fixture missing --reason for mutate verbs (5 tests)
 - T-3042: V-model H1: vmodel_check has zero callers and no authoring format, so the epic can complete without ever checking anything
 - T-3043: V-model H2: the four closure rules check local edge degree, not path closure -- a mutual-satisfies pair with zero requirements passes all four
+- T-3044: V-model H3: graph nodes carry no payload -- test nodes bind to nothing runnable, artifacts bind to no code, supersedes cannot carry a reason
 - T-3046: V-model M6: evidence laundering -- T-3005 and T-3007 landed on parse-test evidence that never touches the graph code they added
 - T-3051: Land H4: the quarantine deadlock is UNFIXED -- _dispose_to_existing_duplicate_or_none handles DuplicateTicket but not DuplicateFinding
 - T-3052: Land H5: the rolling baseline is written before the outcome is decided, so an unfilable finding is silently certified green after one wake

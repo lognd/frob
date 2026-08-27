@@ -747,6 +747,26 @@ impl Parser {
             self.advance();
             level = Some(self.expect_string("vmodel_node level")?);
         }
+        // T-3044 H3: `runnable "..."` / `code_ref "..."` are the payload
+        // attrs `graph::vmodel` requires on `test`/`artifact` nodes
+        // respectively (`graph::vmodel::ATTR_RUNNABLE`/`ATTR_CODE_REF`).
+        // Both are optional HERE (this is only the surface grammar -- the
+        // KERNEL is what refuses a node missing the one its kind
+        // requires, at `frob.gates._vmodel` graph-assembly time); either
+        // may appear, in any order, same loop shape as the `level` clause
+        // above generalized to zero-or-more.
+        let mut attrs = serde_json::Map::new();
+        loop {
+            if self.at_keyword("runnable") {
+                self.advance();
+                attrs.insert("runnable".to_string(), json!(self.expect_string("vmodel_node runnable")?));
+            } else if self.at_keyword("code_ref") {
+                self.advance();
+                attrs.insert("code_ref".to_string(), json!(self.expect_string("vmodel_node code_ref")?));
+            } else {
+                break;
+            }
+        }
         if self.at_symbol(';') {
             self.advance();
         }
@@ -754,6 +774,7 @@ impl Parser {
             "name": name,
             "kind": kind,
             "level": level,
+            "attrs": attrs,
         }));
         Ok(())
     }
@@ -782,6 +803,16 @@ impl Parser {
         }
         self.advance(); // 'dst'
         let dst = self.expect_ident("vmodel_edge dst")?;
+        // T-3044 H3: `reason "..."` is the payload attr `graph::vmodel`
+        // requires on `supersedes` edges (`graph::vmodel::ATTR_REASON`) --
+        // the change justification T-3004 section 8 asks for. Optional
+        // here for the same reason `runnable`/`code_ref` are optional on
+        // `vmodel_node` above: the kernel is the enforcement point.
+        let mut attrs = serde_json::Map::new();
+        if self.at_keyword("reason") {
+            self.advance();
+            attrs.insert("reason".to_string(), json!(self.expect_string("vmodel_edge reason")?));
+        }
         if self.at_symbol(';') {
             self.advance();
         }
@@ -789,6 +820,7 @@ impl Parser {
             "kind": kind,
             "src": src,
             "dst": dst,
+            "attrs": attrs,
         }));
         Ok(())
     }

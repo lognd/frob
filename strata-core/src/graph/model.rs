@@ -44,7 +44,11 @@ pub enum GraphError {
     /// `add_edge` was given a kind the schema never declared.
     UnknownEdgeKind { kind: Kind },
     /// `add_edge` names a node id with no matching node in the graph.
-    DanglingEndpoint { edge_kind: Kind, role: EndpointRole, node: NodeId },
+    DanglingEndpoint {
+        edge_kind: Kind,
+        role: EndpointRole,
+        node: NodeId,
+    },
     /// `add_edge`'s endpoint node exists but is the wrong KIND for this edge
     /// kind's schema (e.g. a `verifies` edge whose src is not a test node).
     WrongEndpointKind {
@@ -61,15 +65,35 @@ pub enum GraphError {
         src_level: Option<Level>,
         dst_level: Option<Level>,
     },
+    /// `add_node`/`add_node_with_attrs` omitted an attribute key the
+    /// schema requires for this node kind (T-3044 H3: a node kind can
+    /// require a PAYLOAD, not just a kind/level, e.g. `test` requiring a
+    /// `runnable` attr and `artifact` requiring a `code_ref` attr).
+    MissingNodeAttr { kind: Kind, attr: String },
+    /// `add_edge`/`add_edge_with_attrs` omitted an attribute key the
+    /// schema requires for this edge kind (T-3044 H3: `supersedes` requires
+    /// a `reason` attr -- change justification is a typed, required field,
+    /// not optional prose).
+    MissingEdgeAttr { edge_kind: Kind, attr: String },
 }
 
-/// One typed node: an id, a kind drawn from the schema, and an optional
-/// level (levels participate in edge-kind level constraints).
+/// One typed node: an id, a kind drawn from the schema, an optional level
+/// (levels participate in edge-kind level constraints), and a caller-typed
+/// attribute payload (T-3044 H3: a node kind can DECLARE required attrs via
+/// `GraphSchema::declare_required_node_attrs`, checked at construction the
+/// same way kind/level already are -- this is what lets a `test` node bind
+/// to something runnable and an `artifact` node bind to real code, instead
+/// of being an id with nothing behind it). Attrs are free-form
+/// `String -> String` on purpose: the kernel stays domain-agnostic (it does
+/// not know what a "runnable" or a "code_ref" IS), only enforcing that
+/// whichever keys a schema requires are present -- the domain layer
+/// (`vmodel`) is what gives those keys meaning.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Node {
     pub id: NodeId,
     pub kind: Kind,
     pub level: Option<Level>,
+    pub attrs: BTreeMap<String, String>,
 }
 
 /// The level relationship an edge kind requires between its endpoints.
@@ -95,6 +119,10 @@ pub struct EdgeKindSchema {
     pub allowed_src_kinds: BTreeSet<Kind>,
     pub allowed_dst_kinds: BTreeSet<Kind>,
     pub level_relation: LevelRelation,
+    /// Attribute keys `add_edge_with_attrs` must see for this edge kind
+    /// (T-3044 H3), e.g. `supersedes` requiring `reason`. Empty means no
+    /// required payload -- most edge kinds carry none.
+    pub required_attrs: BTreeSet<String>,
 }
 
 impl EdgeKindSchema {
@@ -107,16 +135,29 @@ impl EdgeKindSchema {
             allowed_src_kinds: BTreeSet::new(),
             allowed_dst_kinds: BTreeSet::new(),
             level_relation: LevelRelation::Any,
+            required_attrs: BTreeSet::new(),
         }
+    }
+
+    /// Attach a required-attr set to an already-built schema (T-3044 H3):
+    /// `EdgeKindSchema::unconstrained().require_attrs(["reason"])` is the
+    /// `supersedes` case -- unconstrained on kind/level, but still typed
+    /// and validated on payload.
+    pub fn require_attrs(mut self, attrs: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        self.required_attrs = attrs.into_iter().map(Into::into).collect();
+        self
     }
 }
 
-/// One directed edge: a kind plus the src/dst node ids it connects.
+/// One directed edge: a kind, the src/dst node ids it connects, and a
+/// caller-typed attribute payload (T-3044 H3), e.g. a `supersedes` edge's
+/// required `reason` attr -- the change justification it must carry.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Edge {
     pub kind: Kind,
     pub src: NodeId,
     pub dst: NodeId,
+    pub attrs: BTreeMap<String, String>,
 }
 
 /// The caller-supplied vocabulary a `Graph` type-checks against: legal node
@@ -129,6 +170,10 @@ pub struct GraphSchema {
     pub node_kinds: BTreeSet<Kind>,
     pub levels: BTreeSet<Level>,
     pub edge_kinds: BTreeMap<Kind, EdgeKindSchema>,
+    /// Attribute keys `add_node_with_attrs` must see for a given node kind
+    /// (T-3044 H3), e.g. `test` requiring `runnable` and `artifact`
+    /// requiring `code_ref`. A kind absent from this map requires nothing.
+    pub required_node_attrs: BTreeMap<Kind, BTreeSet<String>>,
 }
 
 impl GraphSchema {
@@ -154,8 +199,25 @@ impl GraphSchema {
     }
 
     /// Add or replace an edge kind's construction-time contract.
-    pub fn declare_edge_kind(&mut self, kind: impl Into<Kind>, schema: EdgeKindSchema) -> &mut Self {
+    pub fn declare_edge_kind(
+        &mut self,
+        kind: impl Into<Kind>,
+        schema: EdgeKindSchema,
+    ) -> &mut Self {
         self.edge_kinds.insert(kind.into(), schema);
+        self
+    }
+
+    /// Require `attrs` to be present (via `add_node_with_attrs`) on every
+    /// node of `kind` (T-3044 H3). Replaces any previously declared
+    /// requirement for the same kind.
+    pub fn declare_required_node_attrs(
+        &mut self,
+        kind: impl Into<Kind>,
+        attrs: impl IntoIterator<Item = impl Into<String>>,
+    ) -> &mut Self {
+        self.required_node_attrs
+            .insert(kind.into(), attrs.into_iter().map(Into::into).collect());
         self
     }
 }
@@ -211,6 +273,23 @@ impl Graph {
         kind: impl Into<Kind>,
         level: Option<Level>,
     ) -> Result<(), GraphError> {
+        self.add_node_with_attrs(id, kind, level, BTreeMap::new())
+    }
+
+    /// Add a typed node carrying an attribute payload (T-3044 H3). Same
+    /// refusals as `add_node`, PLUS: refuses if the schema's
+    /// `required_node_attrs` for this kind names a key absent from `attrs`.
+    /// `add_node` is a thin wrapper over this with an empty payload -- a
+    /// kind with no required attrs behaves identically either way; a kind
+    /// that DOES require attrs (`test`, `artifact` in the V-model schema)
+    /// can only be constructed through this entry point.
+    pub fn add_node_with_attrs(
+        &mut self,
+        id: impl Into<NodeId>,
+        kind: impl Into<Kind>,
+        level: Option<Level>,
+        attrs: BTreeMap<String, String>,
+    ) -> Result<(), GraphError> {
         let id = id.into();
         let kind = kind.into();
         if !self.schema.node_kinds.contains(&kind) {
@@ -224,7 +303,25 @@ impl Graph {
         if self.nodes.contains_key(&id) {
             return Err(GraphError::DuplicateNodeId { id });
         }
-        self.nodes.insert(id.clone(), Node { id, kind, level });
+        if let Some(required) = self.schema.required_node_attrs.get(&kind) {
+            for attr in required {
+                if !attrs.contains_key(attr) {
+                    return Err(GraphError::MissingNodeAttr {
+                        kind,
+                        attr: attr.clone(),
+                    });
+                }
+            }
+        }
+        self.nodes.insert(
+            id.clone(),
+            Node {
+                id,
+                kind,
+                level,
+                attrs,
+            },
+        );
         Ok(())
     }
 
@@ -239,6 +336,21 @@ impl Graph {
         src: impl Into<NodeId>,
         dst: impl Into<NodeId>,
     ) -> Result<(), GraphError> {
+        self.add_edge_with_attrs(kind, src, dst, BTreeMap::new())
+    }
+
+    /// Add a typed edge carrying an attribute payload (T-3044 H3). Same
+    /// refusals as `add_edge`, PLUS: refuses if the edge kind's
+    /// `required_attrs` names a key absent from `attrs` -- this is what
+    /// makes `supersedes` unable to be constructed without a `reason`.
+    /// `add_edge` is a thin wrapper over this with an empty payload.
+    pub fn add_edge_with_attrs(
+        &mut self,
+        kind: impl Into<Kind>,
+        src: impl Into<NodeId>,
+        dst: impl Into<NodeId>,
+        attrs: BTreeMap<String, String>,
+    ) -> Result<(), GraphError> {
         let kind = kind.into();
         let src = src.into();
         let dst = dst.into();
@@ -250,16 +362,22 @@ impl Graph {
             .ok_or_else(|| GraphError::UnknownEdgeKind { kind: kind.clone() })?
             .clone();
 
-        let src_node = self.nodes.get(&src).ok_or_else(|| GraphError::DanglingEndpoint {
-            edge_kind: kind.clone(),
-            role: EndpointRole::Src,
-            node: src.clone(),
-        })?;
-        let dst_node = self.nodes.get(&dst).ok_or_else(|| GraphError::DanglingEndpoint {
-            edge_kind: kind.clone(),
-            role: EndpointRole::Dst,
-            node: dst.clone(),
-        })?;
+        let src_node = self
+            .nodes
+            .get(&src)
+            .ok_or_else(|| GraphError::DanglingEndpoint {
+                edge_kind: kind.clone(),
+                role: EndpointRole::Src,
+                node: src.clone(),
+            })?;
+        let dst_node = self
+            .nodes
+            .get(&dst)
+            .ok_or_else(|| GraphError::DanglingEndpoint {
+                edge_kind: kind.clone(),
+                role: EndpointRole::Dst,
+                node: dst.clone(),
+            })?;
 
         if !edge_schema.allowed_src_kinds.is_empty()
             && !edge_schema.allowed_src_kinds.contains(&src_node.kind)
@@ -309,7 +427,21 @@ impl Graph {
             }
         }
 
-        self.edges.push(Edge { kind, src, dst });
+        for attr in &edge_schema.required_attrs {
+            if !attrs.contains_key(attr) {
+                return Err(GraphError::MissingEdgeAttr {
+                    edge_kind: kind,
+                    attr: attr.clone(),
+                });
+            }
+        }
+
+        self.edges.push(Edge {
+            kind,
+            src,
+            dst,
+            attrs,
+        });
         Ok(())
     }
 }
@@ -336,6 +468,7 @@ mod tests {
                 allowed_src_kinds: BTreeSet::from(["test".to_string()]),
                 allowed_dst_kinds: BTreeSet::from(["requirement".to_string()]),
                 level_relation: LevelRelation::Paired(pairing),
+                required_attrs: BTreeSet::new(),
             },
         );
         s.declare_edge_kind(
@@ -344,6 +477,7 @@ mod tests {
                 allowed_src_kinds: BTreeSet::from(["design".to_string()]),
                 allowed_dst_kinds: BTreeSet::from(["requirement".to_string()]),
                 level_relation: LevelRelation::Any,
+                required_attrs: BTreeSet::new(),
             },
         );
         s.declare_edge_kind("blocked_by", EdgeKindSchema::unconstrained());
@@ -355,7 +489,12 @@ mod tests {
     fn add_node_rejects_undeclared_kind() {
         let mut g = Graph::new(v_model_schema());
         let err = g.add_node("r1", "gadget", None).unwrap_err();
-        assert_eq!(err, GraphError::UnknownNodeKind { kind: "gadget".into() });
+        assert_eq!(
+            err,
+            GraphError::UnknownNodeKind {
+                kind: "gadget".into()
+            }
+        );
     }
 
     #[test]
@@ -374,7 +513,12 @@ mod tests {
         let err = g
             .add_node("r1", "requirement", Some("orbital".into()))
             .unwrap_err();
-        assert_eq!(err, GraphError::UnknownLevel { level: "orbital".into() });
+        assert_eq!(
+            err,
+            GraphError::UnknownLevel {
+                level: "orbital".into()
+            }
+        );
     }
 
     #[test]
@@ -384,7 +528,12 @@ mod tests {
         g.add_node("r1", "requirement", None).unwrap();
         g.add_node("t1", "test", None).unwrap();
         let err = g.add_edge("decides", "t1", "r1").unwrap_err();
-        assert_eq!(err, GraphError::UnknownEdgeKind { kind: "decides".into() });
+        assert_eq!(
+            err,
+            GraphError::UnknownEdgeKind {
+                kind: "decides".into()
+            }
+        );
     }
 
     #[test]

@@ -90,8 +90,8 @@ def _strata_files(root: Path, design_dir: Path) -> list[Path]:
 def _collect_vmodel_graph(
     paths: list[Path],
 ) -> tuple[
-    list[tuple[str, str, str | None]],
-    list[tuple[str, str, str]],
+    list[tuple[str, str, str | None, dict[str, str]]],
+    list[tuple[str, str, str, dict[str, str]]],
     dict[str, str],
 ]:
     """Parse every file in `paths` and merge their `vmodel_node`/
@@ -105,11 +105,22 @@ def _collect_vmodel_graph(
     A file that fails to parse is logged and skipped -- `sys_gate`'s
     SYS004 already reports a malformed `.strata` file as its own finding;
     duplicating that here would double-report the same root cause under
-    two rule ids."""
+    two rule ids.
+
+    T-3044 H3: every node/edge now carries an `attrs` dict (the kernel's
+    typed payload -- `runnable` on a test node, `code_ref` on an
+    artifact, `reason` on a `supersedes` edge). The grammar's
+    `vmodel_node`/`vmodel_edge` statements carry a matching optional
+    `runnable`/`code_ref`/`reason` clause (docs/strata/vmodel.md); a
+    declaration that omits the one its kind requires parses fine (the
+    grammar does not enforce this -- the kernel does) but will correctly
+    surface here as a VMOD001 construction-error finding once
+    `vmodel_check` refuses it, exactly the H3 behavior this ticket exists
+    to guarantee."""
     import strata_core
 
-    nodes: list[tuple[str, str, str | None]] = []
-    edges: list[tuple[str, str, str]] = []
+    nodes: list[tuple[str, str, str | None, dict[str, str]]] = []
+    edges: list[tuple[str, str, str, dict[str, str]]] = []
     node_file: dict[str, str] = {}
     for path in paths:
         try:
@@ -125,10 +136,10 @@ def _collect_vmodel_graph(
             continue
         ast = payload["ok"]
         for n in ast.get("vmodel_nodes", []):
-            nodes.append((n["name"], n["kind"], n.get("level")))
+            nodes.append((n["name"], n["kind"], n.get("level"), n.get("attrs", {})))
             node_file[n["name"]] = str(path)
         for e in ast.get("vmodel_edges", []):
-            edges.append((e["kind"], e["src"], e["dst"]))
+            edges.append((e["kind"], e["src"], e["dst"], e.get("attrs", {})))
     return nodes, edges, node_file
 
 

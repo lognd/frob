@@ -19,7 +19,7 @@ pub mod query;
 pub mod vmodel;
 
 pub use model::{
-    Edge, EdgeKindSchema, EndpointRole, Graph, GraphError, GraphSchema, Kind, Level,
-    LevelRelation, Node, NodeId,
+    Edge, EdgeKindSchema, EndpointRole, Graph, GraphError, GraphSchema, Kind, Level, LevelRelation,
+    Node, NodeId,
 };
 pub use query::KindFilter;

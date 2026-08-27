@@ -36,9 +36,25 @@ meant to close).
   -- the kernel has no idea the pairing exists, it only enforces whatever
   map the caller declares.
 - `Graph` -- a schema plus the nodes/edges added against it.
-  `add_node`/`add_edge` are the ONLY way to mutate a graph, and both are
-  `Result<(), GraphError>`: every malformed edge is refused AT
-  CONSTRUCTION, never left for a later checker to discover.
+  `add_node`/`add_edge` (and their attrs-carrying twins
+  `add_node_with_attrs`/`add_edge_with_attrs`, T-3044) are the ONLY way to
+  mutate a graph, and all four are `Result<(), GraphError>`: every
+  malformed edge is refused AT CONSTRUCTION, never left for a later
+  checker to discover.
+- `Node.attrs` / `Edge.attrs` (T-3044) -- a caller-typed
+  `BTreeMap<String, String>` payload, free-form on purpose (the kernel
+  stays domain-agnostic -- it does not know what any given key MEANS).
+  `GraphSchema::declare_required_node_attrs`/`EdgeKindSchema::
+  require_attrs` name which keys a node/edge kind must carry;
+  `add_node_with_attrs`/`add_edge_with_attrs` refuse construction if one
+  is missing, the same refuse-or-commit discipline as kind/level. Plain
+  `add_node`/`add_edge` are thin wrappers passing an empty attrs map --
+  unaffected for any kind with no required attrs, and structurally unable
+  to construct one that DOES require attrs. This is what lets a consumer
+  schema (`graph::vmodel`) make a node kind unconstructible without a real
+  payload behind it -- see docs/strata/vmodel.md's "Node/edge payload"
+  section for the concrete V-model instance (`test` requires `runnable`,
+  `artifact` requires `code_ref`, `supersedes` requires `reason`).
 
 ### Construction-time refusals (`GraphError`)
 
@@ -51,6 +67,8 @@ meant to close).
 | `DanglingEndpoint` | edge names a node id with no such node |
 | `WrongEndpointKind` | endpoint node exists but its kind is not in the edge kind's allowed src/dst set |
 | `LevelConstraintViolation` | endpoints' levels do not satisfy the edge kind's `LevelRelation` |
+| `MissingNodeAttr` (T-3044) | node kind requires an attr key the caller's `attrs` map omitted |
+| `MissingEdgeAttr` (T-3044) | edge kind requires an attr key the caller's `attrs` map omitted |
 
 Every variant is named and carries the data needed to explain the refusal
 (`strata-core/src/graph/model.rs` tests exercise each one with both a

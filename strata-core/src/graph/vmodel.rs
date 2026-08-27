@@ -17,6 +17,27 @@ use super::model::{EdgeKindSchema, Graph, GraphSchema, Level, LevelRelation, Nod
 use super::query::KindFilter;
 use std::collections::BTreeMap;
 
+/// Required node-attr key on every `KIND_TEST` node (T-3044 H3): the
+/// runnable evidence this test node BINDS TO, in the same
+/// `path::Class.method` (or `path::function`) qualname form
+/// `frob:tests`/pytest collection already use -- a test node is no longer
+/// an id with nothing runnable behind it.
+// frob:doc docs/strata/vmodel.md#nodeedge-payload-t-3044-h3
+pub const ATTR_RUNNABLE: &str = "runnable";
+/// Required node-attr key on every `KIND_ARTIFACT` node (T-3044 H3): the
+/// code this artifact node BINDS TO -- a `path[:symbol]` reference into the
+/// repo (e.g. `strata-core/src/graph/model.rs:Graph::add_node`, or a bare
+/// path for an artifact that is a whole file/module rather than one
+/// symbol). An artifact node is no longer an id binding to no code.
+// frob:doc docs/strata/vmodel.md#nodeedge-payload-t-3044-h3
+pub const ATTR_CODE_REF: &str = "code_ref";
+/// Required edge-attr key on every `EDGE_SUPERSEDES` edge (T-3044 H3): the
+/// change justification, free-text but MANDATORY -- construction refuses a
+/// `supersedes` edge with no `reason`, same as T-3004 section 8 already
+/// requires for `decides`-adjacent change records.
+// frob:doc docs/strata/vmodel.md#nodeedge-payload-t-3044-h3
+pub const ATTR_REASON: &str = "reason";
+
 /// Node kind: a left-side artifact at some V-model level (requirement,
 /// spec, system design, component design, decision, ...).
 // frob:doc docs/strata/vmodel.md#node-kinds
@@ -63,10 +84,22 @@ pub const LEVEL_COMPONENT_UNIT_TEST: &str = "component-unit-test";
 pub fn v_pairing() -> Vec<(Level, Level)> {
     vec![
         (LEVEL_REQUIREMENTS.into(), LEVEL_CUSTOMER_TEST.into()),
-        (LEVEL_REQUIREMENT_SPEC.into(), LEVEL_CUSTOMER_TEST_PLAN.into()),
-        (LEVEL_SYSTEM_SPEC.into(), LEVEL_SYSTEM_INTEGRATION_TEST_PLAN.into()),
-        (LEVEL_SYSTEM_DESIGN.into(), LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN.into()),
-        (LEVEL_COMPONENT_DESIGN.into(), LEVEL_COMPONENT_UNIT_TEST.into()),
+        (
+            LEVEL_REQUIREMENT_SPEC.into(),
+            LEVEL_CUSTOMER_TEST_PLAN.into(),
+        ),
+        (
+            LEVEL_SYSTEM_SPEC.into(),
+            LEVEL_SYSTEM_INTEGRATION_TEST_PLAN.into(),
+        ),
+        (
+            LEVEL_SYSTEM_DESIGN.into(),
+            LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN.into(),
+        ),
+        (
+            LEVEL_COMPONENT_DESIGN.into(),
+            LEVEL_COMPONENT_UNIT_TEST.into(),
+        ),
     ]
 }
 
@@ -112,6 +145,15 @@ pub fn v_model_schema() -> GraphSchema {
     s.declare_node_kind(KIND_ARTIFACT)
         .declare_node_kind(KIND_TEST)
         .declare_node_kind(KIND_DECISION);
+    // T-3044 H3: a node kind is not fully typed until construction refuses
+    // one missing its payload -- `test` binds to something runnable,
+    // `artifact` binds to real code. `decision` carries no required attr
+    // here on purpose: T-3049 owns normalizing the decision/invariant/
+    // review-record SHAPE (title/rationale/status/etc) as one canonical
+    // schema, and a single ad hoc required key here would be exactly the
+    // per-author-prose duplication that ticket is meant to replace.
+    s.declare_required_node_attrs(KIND_TEST, [ATTR_RUNNABLE]);
+    s.declare_required_node_attrs(KIND_ARTIFACT, [ATTR_CODE_REF]);
 
     let mut pairing: BTreeMap<Level, Level> = BTreeMap::new();
     for (left, right) in v_pairing() {
@@ -126,6 +168,7 @@ pub fn v_model_schema() -> GraphSchema {
             allowed_src_kinds: [KIND_ARTIFACT.to_string()].into(),
             allowed_dst_kinds: [KIND_ARTIFACT.to_string()].into(),
             level_relation: LevelRelation::Any,
+            required_attrs: std::collections::BTreeSet::new(),
         },
     );
     s.declare_edge_kind(
@@ -134,6 +177,7 @@ pub fn v_model_schema() -> GraphSchema {
             allowed_src_kinds: [KIND_TEST.to_string()].into(),
             allowed_dst_kinds: [KIND_ARTIFACT.to_string()].into(),
             level_relation: LevelRelation::Paired(pairing),
+            required_attrs: std::collections::BTreeSet::new(),
         },
     );
     s.declare_edge_kind(
@@ -142,6 +186,7 @@ pub fn v_model_schema() -> GraphSchema {
             allowed_src_kinds: [KIND_ARTIFACT.to_string()].into(),
             allowed_dst_kinds: [KIND_ARTIFACT.to_string()].into(),
             level_relation: LevelRelation::Any,
+            required_attrs: std::collections::BTreeSet::new(),
         },
     );
     s.declare_edge_kind(
@@ -150,6 +195,7 @@ pub fn v_model_schema() -> GraphSchema {
             allowed_src_kinds: [KIND_ARTIFACT.to_string()].into(),
             allowed_dst_kinds: [KIND_ARTIFACT.to_string()].into(),
             level_relation: LevelRelation::Any,
+            required_attrs: std::collections::BTreeSet::new(),
         },
     );
     s.declare_edge_kind(
@@ -158,9 +204,13 @@ pub fn v_model_schema() -> GraphSchema {
             allowed_src_kinds: [KIND_DECISION.to_string()].into(),
             allowed_dst_kinds: [KIND_ARTIFACT.to_string()].into(),
             level_relation: LevelRelation::Any,
+            required_attrs: std::collections::BTreeSet::new(),
         },
     );
-    s.declare_edge_kind(EDGE_SUPERSEDES, EdgeKindSchema::unconstrained());
+    s.declare_edge_kind(
+        EDGE_SUPERSEDES,
+        EdgeKindSchema::unconstrained().require_attrs([ATTR_REASON]),
+    );
     s.declare_edge_kind(EDGE_BLOCKED_BY, EdgeKindSchema::unconstrained());
     s
 }
@@ -246,7 +296,11 @@ fn trace_kinds() -> std::collections::BTreeSet<String> {
 /// "does it actually contain the endpoint that makes the path meaningful"
 /// (T-3043 H2: a mutual-`satisfies` pair with no requirement anywhere in
 /// the graph has a non-empty closure but never reaches a requirement).
-fn closure_reaches_level(graph: &Graph, closure: &std::collections::BTreeSet<NodeId>, level: &str) -> bool {
+fn closure_reaches_level(
+    graph: &Graph,
+    closure: &std::collections::BTreeSet<NodeId>,
+    level: &str,
+) -> bool {
     closure.iter().any(|id| {
         graph
             .node(id)
@@ -368,6 +422,18 @@ pub fn check_closure(graph: &Graph) -> Vec<ClosureViolation> {
 mod tests {
     use super::*;
 
+    /// Test-only helper (T-3044 H3): every `artifact`/`test` node fixture
+    /// needs its required attr populated with SOMETHING to construct at
+    /// all; this derives a stand-in value from the node's own id so each
+    /// fixture stays readable without hand-typing a payload string per
+    /// call site. Real callers put a real `path[:symbol]`/pytest node id
+    /// here -- see `payload_construction_refuses_test_missing_runnable`
+    /// and `payload_construction_refuses_artifact_missing_code_ref` below
+    /// for the refusal behavior this helper's presence would otherwise mask.
+    fn attrs_with(key: &str, id: &str) -> BTreeMap<String, String> {
+        BTreeMap::from([(key.to_string(), format!("fixture::{id}"))])
+    }
+
     #[test]
     // frob:ticket T-3007
     // frob:tests strata-core/src/graph/vmodel.rs::v_pairing kind="unit"
@@ -376,8 +442,14 @@ mod tests {
         assert_eq!(
             pairs,
             vec![
-                (LEVEL_REQUIREMENTS.to_string(), LEVEL_CUSTOMER_TEST.to_string()),
-                (LEVEL_REQUIREMENT_SPEC.to_string(), LEVEL_CUSTOMER_TEST_PLAN.to_string()),
+                (
+                    LEVEL_REQUIREMENTS.to_string(),
+                    LEVEL_CUSTOMER_TEST.to_string()
+                ),
+                (
+                    LEVEL_REQUIREMENT_SPEC.to_string(),
+                    LEVEL_CUSTOMER_TEST_PLAN.to_string()
+                ),
                 (
                     LEVEL_SYSTEM_SPEC.to_string(),
                     LEVEL_SYSTEM_INTEGRATION_TEST_PLAN.to_string()
@@ -386,7 +458,10 @@ mod tests {
                     LEVEL_SYSTEM_DESIGN.to_string(),
                     LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN.to_string()
                 ),
-                (LEVEL_COMPONENT_DESIGN.to_string(), LEVEL_COMPONENT_UNIT_TEST.to_string()),
+                (
+                    LEVEL_COMPONENT_DESIGN.to_string(),
+                    LEVEL_COMPONENT_UNIT_TEST.to_string()
+                ),
             ]
         );
     }
@@ -435,11 +510,18 @@ mod tests {
     // level as needed for rules 3-4.
     fn base_graph() -> Graph {
         let mut g = Graph::new(v_model_schema());
-        g.add_node("req-1", KIND_ARTIFACT, Some(LEVEL_REQUIREMENTS.into())).unwrap();
-        g.add_node(
+        g.add_node_with_attrs(
+            "req-1",
+            KIND_ARTIFACT,
+            Some(LEVEL_REQUIREMENTS.into()),
+            attrs_with(ATTR_CODE_REF, "req-1"),
+        )
+        .unwrap();
+        g.add_node_with_attrs(
             "design-1",
             KIND_ARTIFACT,
             Some(LEVEL_COMPONENT_DESIGN.into()),
+            attrs_with(ATTR_CODE_REF, "design-1"),
         )
         .unwrap();
         g.add_edge(EDGE_SATISFIES, "design-1", "req-1").unwrap();
@@ -452,12 +534,19 @@ mod tests {
     fn rule1_must_fire_on_orphan_requirement() {
         let mut g = Graph::new(v_model_schema());
         // A requirement with nothing satisfying it.
-        g.add_node("lonely-req", KIND_ARTIFACT, Some(LEVEL_REQUIREMENTS.into()))
-            .unwrap();
+        g.add_node_with_attrs(
+            "lonely-req",
+            KIND_ARTIFACT,
+            Some(LEVEL_REQUIREMENTS.into()),
+            attrs_with(ATTR_CODE_REF, "lonely-req"),
+        )
+        .unwrap();
         let violations = check_no_orphan_requirements(&g);
         assert_eq!(
             violations,
-            vec![ClosureViolation::OrphanRequirement { node: "lonely-req".into() }]
+            vec![ClosureViolation::OrphanRequirement {
+                node: "lonely-req".into()
+            }]
         );
     }
 
@@ -475,16 +564,19 @@ mod tests {
     fn rule2_must_fire_on_unjustified_design() {
         let mut g = base_graph();
         // A design element tracing to nothing -- unjustified code.
-        g.add_node(
+        g.add_node_with_attrs(
             "dangling-design",
             KIND_ARTIFACT,
             Some(LEVEL_COMPONENT_DESIGN.into()),
+            attrs_with(ATTR_CODE_REF, "dangling-design"),
         )
         .unwrap();
         let violations = check_no_unjustified_design(&g);
         assert_eq!(
             violations,
-            vec![ClosureViolation::UnjustifiedDesign { node: "dangling-design".into() }]
+            vec![ClosureViolation::UnjustifiedDesign {
+                node: "dangling-design".into()
+            }]
         );
     }
 
@@ -506,9 +598,12 @@ mod tests {
         // req-1 and design-1 both exist; neither has any verifying test.
         let violations = check_no_untested_artifact(&g);
         assert_eq!(violations.len(), 2);
-        assert!(violations.contains(&ClosureViolation::UntestedArtifact { node: "req-1".into() }));
-        assert!(violations
-            .contains(&ClosureViolation::UntestedArtifact { node: "design-1".into() }));
+        assert!(violations.contains(&ClosureViolation::UntestedArtifact {
+            node: "req-1".into()
+        }));
+        assert!(violations.contains(&ClosureViolation::UntestedArtifact {
+            node: "design-1".into()
+        }));
     }
 
     #[test]
@@ -516,13 +611,19 @@ mod tests {
     // frob:tests strata-core/src/graph/vmodel.rs::check_no_untested_artifact kind="unit"
     fn rule3_must_stay_quiet_when_verified_at_paired_level() {
         let mut g = base_graph();
-        g.add_node("ctest-1", KIND_TEST, Some(LEVEL_CUSTOMER_TEST.into()))
-            .unwrap();
+        g.add_node_with_attrs(
+            "ctest-1",
+            KIND_TEST,
+            Some(LEVEL_CUSTOMER_TEST.into()),
+            attrs_with(ATTR_RUNNABLE, "ctest-1"),
+        )
+        .unwrap();
         g.add_edge(EDGE_VERIFIES, "ctest-1", "req-1").unwrap();
-        g.add_node(
+        g.add_node_with_attrs(
             "unittest-1",
             KIND_TEST,
             Some(LEVEL_COMPONENT_UNIT_TEST.into()),
+            attrs_with(ATTR_RUNNABLE, "unittest-1"),
         )
         .unwrap();
         g.add_edge(EDGE_VERIFIES, "unittest-1", "design-1").unwrap();
@@ -538,12 +639,24 @@ mod tests {
         // LevelConstraintViolation catches this before rule 3 ever runs,
         // so rule 3 still correctly reports design-1 untested.
         let mut g = base_graph();
-        g.add_node("ctest-1", KIND_TEST, Some(LEVEL_CUSTOMER_TEST.into()))
-            .unwrap();
-        let err = g.add_edge(EDGE_VERIFIES, "ctest-1", "design-1").unwrap_err();
-        assert!(matches!(err, super::super::model::GraphError::LevelConstraintViolation { .. }));
+        g.add_node_with_attrs(
+            "ctest-1",
+            KIND_TEST,
+            Some(LEVEL_CUSTOMER_TEST.into()),
+            attrs_with(ATTR_RUNNABLE, "ctest-1"),
+        )
+        .unwrap();
+        let err = g
+            .add_edge(EDGE_VERIFIES, "ctest-1", "design-1")
+            .unwrap_err();
+        assert!(matches!(
+            err,
+            super::super::model::GraphError::LevelConstraintViolation { .. }
+        ));
         let violations = check_no_untested_artifact(&g);
-        assert!(violations.contains(&ClosureViolation::UntestedArtifact { node: "design-1".into() }));
+        assert!(violations.contains(&ClosureViolation::UntestedArtifact {
+            node: "design-1".into()
+        }));
     }
 
     #[test]
@@ -551,12 +664,19 @@ mod tests {
     // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_test kind="unit"
     fn rule4_must_fire_on_orphan_test() {
         let mut g = base_graph();
-        g.add_node("stray-test", KIND_TEST, Some(LEVEL_CUSTOMER_TEST.into()))
-            .unwrap();
+        g.add_node_with_attrs(
+            "stray-test",
+            KIND_TEST,
+            Some(LEVEL_CUSTOMER_TEST.into()),
+            attrs_with(ATTR_RUNNABLE, "stray-test"),
+        )
+        .unwrap();
         let violations = check_no_orphan_test(&g);
         assert_eq!(
             violations,
-            vec![ClosureViolation::OrphanTest { node: "stray-test".into() }]
+            vec![ClosureViolation::OrphanTest {
+                node: "stray-test".into()
+            }]
         );
     }
 
@@ -565,8 +685,13 @@ mod tests {
     // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_test kind="unit"
     fn rule4_must_stay_quiet_when_verifying_something() {
         let mut g = base_graph();
-        g.add_node("ctest-1", KIND_TEST, Some(LEVEL_CUSTOMER_TEST.into()))
-            .unwrap();
+        g.add_node_with_attrs(
+            "ctest-1",
+            KIND_TEST,
+            Some(LEVEL_CUSTOMER_TEST.into()),
+            attrs_with(ATTR_RUNNABLE, "ctest-1"),
+        )
+        .unwrap();
         g.add_edge(EDGE_VERIFIES, "ctest-1", "req-1").unwrap();
         assert!(check_no_orphan_test(&g).is_empty());
     }
@@ -576,13 +701,19 @@ mod tests {
     // frob:tests strata-core/src/graph/vmodel.rs::check_closure kind="unit"
     fn check_closure_is_empty_on_a_fully_closed_two_level_graph() {
         let mut g = base_graph();
-        g.add_node("ctest-1", KIND_TEST, Some(LEVEL_CUSTOMER_TEST.into()))
-            .unwrap();
+        g.add_node_with_attrs(
+            "ctest-1",
+            KIND_TEST,
+            Some(LEVEL_CUSTOMER_TEST.into()),
+            attrs_with(ATTR_RUNNABLE, "ctest-1"),
+        )
+        .unwrap();
         g.add_edge(EDGE_VERIFIES, "ctest-1", "req-1").unwrap();
-        g.add_node(
+        g.add_node_with_attrs(
             "unittest-1",
             KIND_TEST,
             Some(LEVEL_COMPONENT_UNIT_TEST.into()),
+            attrs_with(ATTR_RUNNABLE, "unittest-1"),
         )
         .unwrap();
         g.add_edge(EDGE_VERIFIES, "unittest-1", "design-1").unwrap();
@@ -602,23 +733,35 @@ mod tests {
         // A nor B's satisfies-closure ever reaches a real requirement (or,
         // symmetrically, a real grounded design).
         let mut g = Graph::new(v_model_schema());
-        g.add_node("design-a", KIND_ARTIFACT, Some(LEVEL_SYSTEM_DESIGN.into()))
-            .unwrap();
-        g.add_node("design-b", KIND_ARTIFACT, Some(LEVEL_SYSTEM_DESIGN.into()))
-            .unwrap();
+        g.add_node_with_attrs(
+            "design-a",
+            KIND_ARTIFACT,
+            Some(LEVEL_SYSTEM_DESIGN.into()),
+            attrs_with(ATTR_CODE_REF, "design-a"),
+        )
+        .unwrap();
+        g.add_node_with_attrs(
+            "design-b",
+            KIND_ARTIFACT,
+            Some(LEVEL_SYSTEM_DESIGN.into()),
+            attrs_with(ATTR_CODE_REF, "design-b"),
+        )
+        .unwrap();
         g.add_edge(EDGE_SATISFIES, "design-a", "design-b").unwrap();
         g.add_edge(EDGE_SATISFIES, "design-b", "design-a").unwrap();
-        g.add_node(
+        g.add_node_with_attrs(
             "itest-a",
             KIND_TEST,
             Some(LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN.into()),
+            attrs_with(ATTR_RUNNABLE, "itest-a"),
         )
         .unwrap();
         g.add_edge(EDGE_VERIFIES, "itest-a", "design-a").unwrap();
-        g.add_node(
+        g.add_node_with_attrs(
             "itest-b",
             KIND_TEST,
             Some(LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN.into()),
+            attrs_with(ATTR_RUNNABLE, "itest-b"),
         )
         .unwrap();
         g.add_edge(EDGE_VERIFIES, "itest-b", "design-b").unwrap();
@@ -630,19 +773,39 @@ mod tests {
         assert!(check_no_orphan_test(&g).is_empty());
 
         let orphan_req = check_no_orphan_requirements(&g);
-        assert_eq!(orphan_req.len(), 2, "both design-a and design-b are unrooted: {orphan_req:?}");
-        assert!(orphan_req.contains(&ClosureViolation::OrphanRequirement { node: "design-a".into() }));
-        assert!(orphan_req.contains(&ClosureViolation::OrphanRequirement { node: "design-b".into() }));
+        assert_eq!(
+            orphan_req.len(),
+            2,
+            "both design-a and design-b are unrooted: {orphan_req:?}"
+        );
+        assert!(orphan_req.contains(&ClosureViolation::OrphanRequirement {
+            node: "design-a".into()
+        }));
+        assert!(orphan_req.contains(&ClosureViolation::OrphanRequirement {
+            node: "design-b".into()
+        }));
 
         let unjustified = check_no_unjustified_design(&g);
-        assert_eq!(unjustified.len(), 2, "neither traces to a real requirement: {unjustified:?}");
-        assert!(unjustified.contains(&ClosureViolation::UnjustifiedDesign { node: "design-a".into() }));
-        assert!(unjustified.contains(&ClosureViolation::UnjustifiedDesign { node: "design-b".into() }));
+        assert_eq!(
+            unjustified.len(),
+            2,
+            "neither traces to a real requirement: {unjustified:?}"
+        );
+        assert!(unjustified.contains(&ClosureViolation::UnjustifiedDesign {
+            node: "design-a".into()
+        }));
+        assert!(unjustified.contains(&ClosureViolation::UnjustifiedDesign {
+            node: "design-b".into()
+        }));
 
         // And the top-level entry point must see it too.
         let violations = check_closure(&g);
-        assert!(violations.contains(&ClosureViolation::OrphanRequirement { node: "design-a".into() }));
-        assert!(violations.contains(&ClosureViolation::UnjustifiedDesign { node: "design-a".into() }));
+        assert!(violations.contains(&ClosureViolation::OrphanRequirement {
+            node: "design-a".into()
+        }));
+        assert!(violations.contains(&ClosureViolation::UnjustifiedDesign {
+            node: "design-a".into()
+        }));
     }
 
     #[test]
@@ -655,31 +818,72 @@ mod tests {
         // EACH paired level, must still pass -- the fix must not overtighten
         // and start rejecting legitimate multi-hop traces.
         let mut g = Graph::new(v_model_schema());
-        g.add_node("req-1", KIND_ARTIFACT, Some(LEVEL_REQUIREMENTS.into())).unwrap();
-        g.add_node("spec-1", KIND_ARTIFACT, Some(LEVEL_REQUIREMENT_SPEC.into()))
-            .unwrap();
-        g.add_node("design-1", KIND_ARTIFACT, Some(LEVEL_SYSTEM_DESIGN.into()))
-            .unwrap();
-        g.add_node("component-1", KIND_ARTIFACT, Some(LEVEL_COMPONENT_DESIGN.into()))
-            .unwrap();
+        g.add_node_with_attrs(
+            "req-1",
+            KIND_ARTIFACT,
+            Some(LEVEL_REQUIREMENTS.into()),
+            attrs_with(ATTR_CODE_REF, "req-1"),
+        )
+        .unwrap();
+        g.add_node_with_attrs(
+            "spec-1",
+            KIND_ARTIFACT,
+            Some(LEVEL_REQUIREMENT_SPEC.into()),
+            attrs_with(ATTR_CODE_REF, "spec-1"),
+        )
+        .unwrap();
+        g.add_node_with_attrs(
+            "design-1",
+            KIND_ARTIFACT,
+            Some(LEVEL_SYSTEM_DESIGN.into()),
+            attrs_with(ATTR_CODE_REF, "design-1"),
+        )
+        .unwrap();
+        g.add_node_with_attrs(
+            "component-1",
+            KIND_ARTIFACT,
+            Some(LEVEL_COMPONENT_DESIGN.into()),
+            attrs_with(ATTR_CODE_REF, "component-1"),
+        )
+        .unwrap();
         g.add_edge(EDGE_SATISFIES, "spec-1", "req-1").unwrap();
         g.add_edge(EDGE_SATISFIES, "design-1", "spec-1").unwrap();
-        g.add_edge(EDGE_SATISFIES, "component-1", "design-1").unwrap();
+        g.add_edge(EDGE_SATISFIES, "component-1", "design-1")
+            .unwrap();
 
-        g.add_node("ctest-1", KIND_TEST, Some(LEVEL_CUSTOMER_TEST.into())).unwrap();
+        g.add_node_with_attrs(
+            "ctest-1",
+            KIND_TEST,
+            Some(LEVEL_CUSTOMER_TEST.into()),
+            attrs_with(ATTR_RUNNABLE, "ctest-1"),
+        )
+        .unwrap();
         g.add_edge(EDGE_VERIFIES, "ctest-1", "req-1").unwrap();
-        g.add_node("ctp-1", KIND_TEST, Some(LEVEL_CUSTOMER_TEST_PLAN.into())).unwrap();
+        g.add_node_with_attrs(
+            "ctp-1",
+            KIND_TEST,
+            Some(LEVEL_CUSTOMER_TEST_PLAN.into()),
+            attrs_with(ATTR_RUNNABLE, "ctp-1"),
+        )
+        .unwrap();
         g.add_edge(EDGE_VERIFIES, "ctp-1", "spec-1").unwrap();
-        g.add_node(
+        g.add_node_with_attrs(
             "sitp-1",
             KIND_TEST,
             Some(LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN.into()),
+            attrs_with(ATTR_RUNNABLE, "sitp-1"),
         )
         .unwrap();
         g.add_edge(EDGE_VERIFIES, "sitp-1", "design-1").unwrap();
-        g.add_node("unittest-1", KIND_TEST, Some(LEVEL_COMPONENT_UNIT_TEST.into()))
+        g.add_node_with_attrs(
+            "unittest-1",
+            KIND_TEST,
+            Some(LEVEL_COMPONENT_UNIT_TEST.into()),
+            attrs_with(ATTR_RUNNABLE, "unittest-1"),
+        )
+        .unwrap();
+        g.add_edge(EDGE_VERIFIES, "unittest-1", "component-1")
             .unwrap();
-        g.add_edge(EDGE_VERIFIES, "unittest-1", "component-1").unwrap();
 
         assert!(check_closure(&g).is_empty(), "{:?}", check_closure(&g));
     }
@@ -693,9 +897,27 @@ mod tests {
         // cycle in the trace subgraph and asserts it fires THROUGH
         // check_closure, not merely via a direct find_cycle call.
         let mut g = Graph::new(v_model_schema());
-        g.add_node("a", KIND_ARTIFACT, Some(LEVEL_SYSTEM_DESIGN.into())).unwrap();
-        g.add_node("b", KIND_ARTIFACT, Some(LEVEL_SYSTEM_DESIGN.into())).unwrap();
-        g.add_node("c", KIND_ARTIFACT, Some(LEVEL_SYSTEM_DESIGN.into())).unwrap();
+        g.add_node_with_attrs(
+            "a",
+            KIND_ARTIFACT,
+            Some(LEVEL_SYSTEM_DESIGN.into()),
+            attrs_with(ATTR_CODE_REF, "a"),
+        )
+        .unwrap();
+        g.add_node_with_attrs(
+            "b",
+            KIND_ARTIFACT,
+            Some(LEVEL_SYSTEM_DESIGN.into()),
+            attrs_with(ATTR_CODE_REF, "b"),
+        )
+        .unwrap();
+        g.add_node_with_attrs(
+            "c",
+            KIND_ARTIFACT,
+            Some(LEVEL_SYSTEM_DESIGN.into()),
+            attrs_with(ATTR_CODE_REF, "c"),
+        )
+        .unwrap();
         g.add_edge(EDGE_SATISFIES, "a", "b").unwrap();
         g.add_edge(EDGE_SATISFIES, "b", "c").unwrap();
         g.add_edge(EDGE_SATISFIES, "c", "a").unwrap();
@@ -728,22 +950,39 @@ mod tests {
     // frob:tests strata-core/src/graph/vmodel.rs::check_closure kind="unit"
     fn check_closure_reports_all_four_rules_on_a_maximally_broken_graph() {
         let mut g = Graph::new(v_model_schema());
-        g.add_node("lonely-req", KIND_ARTIFACT, Some(LEVEL_REQUIREMENTS.into()))
-            .unwrap();
-        g.add_node(
+        g.add_node_with_attrs(
+            "lonely-req",
+            KIND_ARTIFACT,
+            Some(LEVEL_REQUIREMENTS.into()),
+            attrs_with(ATTR_CODE_REF, "lonely-req"),
+        )
+        .unwrap();
+        g.add_node_with_attrs(
             "dangling-design",
             KIND_ARTIFACT,
             Some(LEVEL_COMPONENT_DESIGN.into()),
+            attrs_with(ATTR_CODE_REF, "dangling-design"),
         )
         .unwrap();
-        g.add_node("stray-test", KIND_TEST, Some(LEVEL_CUSTOMER_TEST.into()))
-            .unwrap();
+        g.add_node_with_attrs(
+            "stray-test",
+            KIND_TEST,
+            Some(LEVEL_CUSTOMER_TEST.into()),
+            attrs_with(ATTR_RUNNABLE, "stray-test"),
+        )
+        .unwrap();
         let violations = check_closure(&g);
-        assert!(violations.contains(&ClosureViolation::OrphanRequirement { node: "lonely-req".into() }));
-        assert!(violations
-            .contains(&ClosureViolation::UnjustifiedDesign { node: "dangling-design".into() }));
-        assert!(violations
-            .contains(&ClosureViolation::UntestedArtifact { node: "lonely-req".into() }));
-        assert!(violations.contains(&ClosureViolation::OrphanTest { node: "stray-test".into() }));
+        assert!(violations.contains(&ClosureViolation::OrphanRequirement {
+            node: "lonely-req".into()
+        }));
+        assert!(violations.contains(&ClosureViolation::UnjustifiedDesign {
+            node: "dangling-design".into()
+        }));
+        assert!(violations.contains(&ClosureViolation::UntestedArtifact {
+            node: "lonely-req".into()
+        }));
+        assert!(violations.contains(&ClosureViolation::OrphanTest {
+            node: "stray-test".into()
+        }));
     }
 }

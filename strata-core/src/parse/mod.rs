@@ -200,7 +200,10 @@ mod tests {
                 binds some_other_module;
             }
         "#);
-        assert!(e["message"].as_str().unwrap().contains("may only bind the module declared in its own file"));
+        assert!(e["message"]
+            .as_str()
+            .unwrap()
+            .contains("may only bind the module declared in its own file"));
     }
 
     #[test]
@@ -262,7 +265,10 @@ mod tests {
                 architecture a;
             }
         "#);
-        assert!(e["message"].as_str().unwrap().contains("pairs architecture"));
+        assert!(e["message"]
+            .as_str()
+            .unwrap()
+            .contains("pairs architecture"));
     }
 
     #[test]
@@ -336,6 +342,45 @@ mod tests {
     }
 
     #[test]
+    // frob:ticket T-3044
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+    fn vmodel_node_and_edge_attrs_round_trip() {
+        // T-3044 H3: the optional runnable/code_ref/reason clauses --
+        // must-fire twin for the round trip actually carrying the value.
+        let v = ok(r#"
+            module m
+            vmodel_node req_1 kind "artifact" level "requirements" code_ref "src/x.rs:Req1";
+            vmodel_node ctest_1 kind "test" level "customer-test" runnable "t.py::test_req1";
+            vmodel_edge kind "verifies" src ctest_1 dst req_1;
+            vmodel_node old_1 kind "decision";
+            vmodel_node new_1 kind "decision";
+            vmodel_edge kind "supersedes" src new_1 dst old_1 reason "stricter commitment";
+        "#);
+        assert_eq!(v["vmodel_nodes"][0]["attrs"]["code_ref"], "src/x.rs:Req1");
+        assert_eq!(v["vmodel_nodes"][1]["attrs"]["runnable"], "t.py::test_req1");
+        assert_eq!(
+            v["vmodel_edges"][1]["attrs"]["reason"],
+            "stricter commitment"
+        );
+    }
+
+    #[test]
+    // frob:ticket T-3044
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+    fn vmodel_node_and_edge_attrs_default_to_empty_when_omitted() {
+        // Must-stay-quiet twin: omitting the new clauses entirely still
+        // parses, with an empty attrs object (not null, not an error) --
+        // the existing round-trip fixture above never used them.
+        let v = ok(r#"
+            module m
+            vmodel_node req_1 kind "artifact" level "requirements";
+            vmodel_edge kind "satisfies" src req_1 dst req_1;
+        "#);
+        assert_eq!(v["vmodel_nodes"][0]["attrs"], json!({}));
+        assert_eq!(v["vmodel_edges"][0]["attrs"], json!({}));
+    }
+
+    #[test]
     // frob:ticket T-3042
     // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
     fn vmodel_node_duplicate_name_in_same_file_is_refused() {
@@ -344,7 +389,10 @@ mod tests {
             vmodel_node req_1 kind "artifact" level "requirements";
             vmodel_node req_1 kind "artifact" level "requirements";
         "#);
-        assert!(e["message"].as_str().unwrap().contains("duplicate vmodel_node"));
+        assert!(e["message"]
+            .as_str()
+            .unwrap()
+            .contains("duplicate vmodel_node"));
     }
 
     #[test]
@@ -1635,7 +1683,10 @@ mod tests {
     fn error_policy_unknown_scope_keyword() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
         let e = err("module m\npolicy P on bogus X { forbid call eval }");
-        assert_eq!(e["message"], "expected component, trust >=, or label >= scope");
+        assert_eq!(
+            e["message"],
+            "expected component, trust >=, or label >= scope"
+        );
     }
 
     #[test]

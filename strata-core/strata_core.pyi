@@ -27,7 +27,11 @@ def parse_source(text: str) -> str: ...
 
 # T-3042: was never stubbed here (a T-3007 gap only exposed once this
 # ticket added the first real Python caller, frob.gates._vmodel.vmodel_gate)
+#
+# T-3044 H3: node/edge tuples grew a trailing `attrs` dict -- a `test` node
+# requires `runnable`, an `artifact` node requires `code_ref`, a
+# `supersedes` edge requires `reason`; any other kind accepts `{}`.
 def vmodel_check(
-    nodes: list[tuple[str, str, str | None]],
-    edges: list[tuple[str, str, str]],
+    nodes: list[tuple[str, str, str | None, dict[str, str]]],
+    edges: list[tuple[str, str, str, dict[str, str]]],
 ) -> tuple[list[str], list[tuple[str, str]]]: ...

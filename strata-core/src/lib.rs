@@ -19,7 +19,7 @@
 // production kernel itself is oversized."
 
 use pyo3::prelude::*;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 
 mod parse;
 
@@ -202,7 +202,14 @@ fn strongconnect(
             let w = edge.2.as_str();
             if !indices.contains_key(w) {
                 strongconnect(
-                    w, outgoing, index_counter, stack, on_stack, indices, lowlink, scc_id,
+                    w,
+                    outgoing,
+                    index_counter,
+                    stack,
+                    on_stack,
+                    indices,
+                    lowlink,
+                    scc_id,
                     scc_counter,
                 );
                 let wl = lowlink[w];
@@ -559,8 +566,8 @@ fn compute_demand(
         sorted.sort_by(|a, b| a.0.cmp(&b.0));
         for (flow_id, src, fanout) in sorted {
             if let Some(pos) = active.iter().position(|n| n == &src) {
-                let cycle_reaches_source = active[pos..].iter().any(|n| reach.contains(n))
-                    || reach.contains(node);
+                let cycle_reaches_source =
+                    active[pos..].iter().any(|n| reach.contains(n)) || reach.contains(node);
                 if !cycle_reaches_source {
                     continue; // cycle with no rate feeding it: contributes 0
                 }
@@ -570,8 +577,14 @@ fn compute_demand(
                 active.pop();
                 return Err(witness);
             }
-            match compute_demand(&src, incoming_undeclared, incoming_declared, reach, memo, active)
-            {
+            match compute_demand(
+                &src,
+                incoming_undeclared,
+                incoming_declared,
+                reach,
+                memo,
+                active,
+            ) {
                 Ok(v) => total += v * fanout,
                 Err(w) => {
                     active.pop();
@@ -604,20 +617,25 @@ fn propagated_demand(edges: Vec<DemandEdge>, target: String) -> (f64, Vec<String
     let mut incoming_undeclared: HashMap<String, Vec<(String, String, f64)>> = HashMap::new();
     let mut incoming_declared: HashMap<String, Vec<(String, String, f64)>> = HashMap::new();
     for (flow_id, src, dst, rate, fanout) in &edges {
-        outgoing_all.entry(src.clone()).or_default().push(dst.clone());
+        outgoing_all
+            .entry(src.clone())
+            .or_default()
+            .push(dst.clone());
         match rate {
             Some(r) => {
                 rate_sources.insert(src.clone());
-                incoming_declared
-                    .entry(dst.clone())
-                    .or_default()
-                    .push((flow_id.clone(), src.clone(), r * fanout));
+                incoming_declared.entry(dst.clone()).or_default().push((
+                    flow_id.clone(),
+                    src.clone(),
+                    r * fanout,
+                ));
             }
             None => {
-                incoming_undeclared
-                    .entry(dst.clone())
-                    .or_default()
-                    .push((flow_id.clone(), src.clone(), *fanout));
+                incoming_undeclared.entry(dst.clone()).or_default().push((
+                    flow_id.clone(),
+                    src.clone(),
+                    *fanout,
+                ));
             }
         }
     }
@@ -670,11 +688,16 @@ fn propagated_demand(edges: Vec<DemandEdge>, target: String) -> (f64, Vec<String
 /// WHY: T-3007's only PyO3 need -- build a V-model graph from flattened
 /// node/edge tuples (data-in/data-out, matching this file's existing
 /// convention) and run the four structural closure rules over it. Nodes
-/// are `(id, kind, level)` with an optional level; edges are
-/// `(kind, src, dst)`. Construction refusals (`graph::GraphError`, e.g. a
-/// `verifies` edge at the wrong paired level) are collected as debug
-/// strings in the first return slot rather than raising, so Python can
-/// report every malformed input at once instead of stopping at the first;
+/// are `(id, kind, level, attrs)` with an optional level and a
+/// caller-typed `attrs` dict (T-3044 H3: a `test` node needs `runnable`,
+/// an `artifact` node needs `code_ref` -- the schema refuses either
+/// without it, same as any other construction-time refusal here); edges
+/// are `(kind, src, dst, attrs)` (T-3044 H3: `supersedes` needs `reason`).
+/// A node/edge kind with no required attrs accepts an empty dict.
+/// Construction refusals (`graph::GraphError`, e.g. a `verifies` edge at
+/// the wrong paired level, or a missing required attr) are collected as
+/// debug strings in the first return slot rather than raising, so Python
+/// can report every malformed input at once instead of stopping at the first;
 /// the second slot is `(rule_name, node_id)` for every closure violation
 /// found (T-3004 section 2's four rules) via `graph::vmodel::check_closure`.
 /// Only this one function is exported -- not the whole `graph` module's
@@ -684,8 +707,8 @@ fn propagated_demand(edges: Vec<DemandEdge>, target: String) -> (f64, Vec<String
 /// this crate's Rust API, not necessarily new PyO3 surface).
 #[pyfunction]
 fn vmodel_check(
-    nodes: Vec<(String, String, Option<String>)>,
-    edges: Vec<(String, String, String)>,
+    nodes: Vec<(String, String, Option<String>, BTreeMap<String, String>)>,
+    edges: Vec<(String, String, String, BTreeMap<String, String>)>,
 ) -> (Vec<String>, Vec<(String, String)>) {
     // frob:doc docs/strata/vmodel.md#pyo3-surface-vmodel_check
     use graph::vmodel::{check_closure, v_model_schema, ClosureViolation};
@@ -693,13 +716,13 @@ fn vmodel_check(
 
     let mut g = Graph::new(v_model_schema());
     let mut errors = Vec::new();
-    for (id, kind, level) in nodes {
-        if let Err(e) = g.add_node(id, kind, level) {
+    for (id, kind, level, attrs) in nodes {
+        if let Err(e) = g.add_node_with_attrs(id, kind, level, attrs) {
             errors.push(format!("{:?}", e));
         }
     }
-    for (kind, src, dst) in edges {
-        if let Err(e) = g.add_edge(kind, src, dst) {
+    for (kind, src, dst, attrs) in edges {
+        if let Err(e) = g.add_edge_with_attrs(kind, src, dst, attrs) {
             errors.push(format!("{:?}", e));
         }
     }
@@ -707,11 +730,17 @@ fn vmodel_check(
     let violations = check_closure(&g)
         .into_iter()
         .map(|v| match v {
-            ClosureViolation::OrphanRequirement { node } => ("orphan_requirement".to_string(), node),
-            ClosureViolation::UnjustifiedDesign { node } => ("unjustified_design".to_string(), node),
+            ClosureViolation::OrphanRequirement { node } => {
+                ("orphan_requirement".to_string(), node)
+            }
+            ClosureViolation::UnjustifiedDesign { node } => {
+                ("unjustified_design".to_string(), node)
+            }
             ClosureViolation::UntestedArtifact { node } => ("untested_artifact".to_string(), node),
             ClosureViolation::OrphanTest { node } => ("orphan_test".to_string(), node),
-            ClosureViolation::TraceCycle { cycle } => ("trace_cycle".to_string(), cycle.join(" -> ")),
+            ClosureViolation::TraceCycle { cycle } => {
+                ("trace_cycle".to_string(), cycle.join(" -> "))
+            }
         })
         .collect();
 
@@ -787,7 +816,10 @@ mod tests {
         // (the non-transitive edge is the LAST hop, which is allowed) but
         // nothing past c is, since c was never enqueued.
         let paths = reachable(
-            vec![edge("f1", "a", "b", false), nontransitive_edge("f2", "b", "c")],
+            vec![
+                edge("f1", "a", "b", false),
+                nontransitive_edge("f2", "b", "c"),
+            ],
             "a".to_string(),
             true,
         );
@@ -930,6 +962,13 @@ mod tests {
         assert_eq!(total, 102.0);
     }
 
+    /// T-3044 H3 test helper: a single-key attrs dict, the shape every
+    /// `artifact`/`test` node fixture below needs to satisfy the kernel's
+    /// required-attr check.
+    fn attr(key: &str, id: &str) -> BTreeMap<String, String> {
+        BTreeMap::from([(key.to_string(), format!("fixture::{id}"))])
+    }
+
     #[test]
     fn vmodel_check_reports_construction_errors_and_closure_violations_together() {
         // frob:tests strata-core/src/lib.rs::vmodel_check kind="unit"
@@ -940,15 +979,31 @@ mod tests {
         // rather than only the first one hit.
         let (errors, violations) = vmodel_check(
             vec![
-                ("req-1".to_string(), "artifact".to_string(), Some("requirements".to_string())),
+                (
+                    "req-1".to_string(),
+                    "artifact".to_string(),
+                    Some("requirements".to_string()),
+                    attr("code_ref", "req-1"),
+                ),
                 (
                     "design-1".to_string(),
                     "artifact".to_string(),
                     Some("component-design".to_string()),
+                    attr("code_ref", "design-1"),
                 ),
-                ("bogus-1".to_string(), "gadget".to_string(), None),
+                (
+                    "bogus-1".to_string(),
+                    "gadget".to_string(),
+                    None,
+                    BTreeMap::new(),
+                ),
             ],
-            vec![("satisfies".to_string(), "design-1".to_string(), "req-1".to_string())],
+            vec![(
+                "satisfies".to_string(),
+                "design-1".to_string(),
+                "req-1".to_string(),
+                BTreeMap::new(),
+            )],
         );
         assert_eq!(errors.len(), 1);
         assert!(errors[0].contains("UnknownNodeKind"));
@@ -961,26 +1016,72 @@ mod tests {
         // frob:tests strata-core/src/lib.rs::vmodel_check kind="unit"
         let (errors, violations) = vmodel_check(
             vec![
-                ("req-1".to_string(), "artifact".to_string(), Some("requirements".to_string())),
+                (
+                    "req-1".to_string(),
+                    "artifact".to_string(),
+                    Some("requirements".to_string()),
+                    attr("code_ref", "req-1"),
+                ),
                 (
                     "design-1".to_string(),
                     "artifact".to_string(),
                     Some("component-design".to_string()),
+                    attr("code_ref", "design-1"),
                 ),
-                ("ctest-1".to_string(), "test".to_string(), Some("customer-test".to_string())),
+                (
+                    "ctest-1".to_string(),
+                    "test".to_string(),
+                    Some("customer-test".to_string()),
+                    attr("runnable", "ctest-1"),
+                ),
                 (
                     "unittest-1".to_string(),
                     "test".to_string(),
                     Some("component-unit-test".to_string()),
+                    attr("runnable", "unittest-1"),
                 ),
             ],
             vec![
-                ("satisfies".to_string(), "design-1".to_string(), "req-1".to_string()),
-                ("verifies".to_string(), "ctest-1".to_string(), "req-1".to_string()),
-                ("verifies".to_string(), "unittest-1".to_string(), "design-1".to_string()),
+                (
+                    "satisfies".to_string(),
+                    "design-1".to_string(),
+                    "req-1".to_string(),
+                    BTreeMap::new(),
+                ),
+                (
+                    "verifies".to_string(),
+                    "ctest-1".to_string(),
+                    "req-1".to_string(),
+                    BTreeMap::new(),
+                ),
+                (
+                    "verifies".to_string(),
+                    "unittest-1".to_string(),
+                    "design-1".to_string(),
+                    BTreeMap::new(),
+                ),
             ],
         );
         assert!(errors.is_empty());
         assert!(violations.is_empty());
+    }
+
+    #[test]
+    fn vmodel_check_reports_missing_required_attr_as_a_construction_error() {
+        // frob:tests strata-core/src/lib.rs::vmodel_check kind="unit"
+        // T-3044 H3 must-fire fixture: an artifact node with NO code_ref
+        // attr must surface as a construction error, not silently accept
+        // an unfalsifiable node.
+        let (errors, _violations) = vmodel_check(
+            vec![(
+                "req-1".to_string(),
+                "artifact".to_string(),
+                Some("requirements".to_string()),
+                BTreeMap::new(),
+            )],
+            vec![],
+        );
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].contains("MissingNodeAttr"), "{errors:?}");
     }
 }

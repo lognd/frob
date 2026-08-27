@@ -52,7 +52,7 @@ class TestVmodelGate:
             design_dir,
             "m.strata",
             'module m\n'
-            'vmodel_node req_1 kind "artifact" level "requirements";\n'
+            'vmodel_node req_1 kind "artifact" level "requirements" code_ref "req_1.rs";\n'
             'vmodel_edge kind "satisfies" src ghost_node dst req_1;\n',
         )
         violations = vmodel_gate(tmp_path)
@@ -76,8 +76,8 @@ class TestVmodelGate:
             design_dir,
             "m.strata",
             'module m\n'
-            'vmodel_node design_a kind "artifact" level "system-design";\n'
-            'vmodel_node design_b kind "artifact" level "system-design";\n'
+            'vmodel_node design_a kind "artifact" level "system-design" code_ref "a.rs";\n'
+            'vmodel_node design_b kind "artifact" level "system-design" code_ref "b.rs";\n'
             'vmodel_edge kind "satisfies" src design_a dst design_b;\n'
             'vmodel_edge kind "satisfies" src design_b dst design_a;\n',
         )
@@ -98,12 +98,12 @@ class TestVmodelGate:
             design_dir,
             "m.strata",
             'module m\n'
-            'vmodel_node req_1 kind "artifact" level "requirements";\n'
-            'vmodel_node design_1 kind "artifact" level "component-design";\n'
+            'vmodel_node req_1 kind "artifact" level "requirements" code_ref "req_1.rs";\n'
+            'vmodel_node design_1 kind "artifact" level "component-design" code_ref "design_1.rs";\n'
             'vmodel_edge kind "satisfies" src design_1 dst req_1;\n'
-            'vmodel_node ctest_1 kind "test" level "customer-test";\n'
+            'vmodel_node ctest_1 kind "test" level "customer-test" runnable "t.py::ctest_1";\n'
             'vmodel_edge kind "verifies" src ctest_1 dst req_1;\n'
-            'vmodel_node unittest_1 kind "test" level "component-unit-test";\n'
+            'vmodel_node unittest_1 kind "test" level "component-unit-test" runnable "t.py::unittest_1";\n'
             'vmodel_edge kind "verifies" src unittest_1 dst design_1;\n',
         )
         assert vmodel_gate(tmp_path) == ()
@@ -118,13 +118,13 @@ class TestVmodelGate:
             design_dir,
             "requirement.strata",
             'module req_module\n'
-            'vmodel_node req_1 kind "artifact" level "requirements";\n',
+            'vmodel_node req_1 kind "artifact" level "requirements" code_ref "req_1.rs";\n',
         )
         _write(
             design_dir,
             "test.strata",
             'module test_module\n'
-            'vmodel_node ctest_1 kind "test" level "customer-test";\n'
+            'vmodel_node ctest_1 kind "test" level "customer-test" runnable "t.py::ctest_1";\n'
             'vmodel_edge kind "verifies" src ctest_1 dst req_1;\n',
         )
         violations = vmodel_gate(tmp_path)
@@ -134,3 +134,37 @@ class TestVmodelGate:
         assert all(v.rule == "VMOD001" for v in violations)
         assert not any("construction error" in v.message for v in violations)
         assert any("orphan_requirement" in v.message for v in violations)
+
+    # frob:ticket T-3044
+    def test_fires_vmod001_on_missing_payload_attr(self, tmp_path: Path) -> None:
+        """T-3044 H3: an artifact node with no code_ref clause is a
+        construction error, same as any other malformed vmodel_node."""
+        design_dir = tmp_path / "design"
+        _write(
+            design_dir,
+            "m.strata",
+            'module m\n'
+            'vmodel_node req_1 kind "artifact" level "requirements";\n',
+        )
+        violations = vmodel_gate(tmp_path)
+        assert all(v.rule == "VMOD001" for v in violations)
+        assert any(
+            "construction error" in v.message and "MissingNodeAttr" in v.message
+            for v in violations
+        )
+
+    # frob:ticket T-3044
+    def test_quiet_when_payload_attrs_are_present(self, tmp_path: Path) -> None:
+        """Must-stay-quiet twin: the SAME lone artifact node, this time
+        carrying its required code_ref -- construction succeeds (rule 1/2
+        still fire on it being unrooted/untested, but never as a
+        construction error)."""
+        design_dir = tmp_path / "design"
+        _write(
+            design_dir,
+            "m.strata",
+            'module m\n'
+            'vmodel_node req_1 kind "artifact" level "requirements" code_ref "req_1.rs";\n',
+        )
+        violations = vmodel_gate(tmp_path)
+        assert not any("construction error" in v.message for v in violations)
