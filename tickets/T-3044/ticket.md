@@ -27,6 +27,7 @@ scope:
 - tests/test_gates_vmodel.py
 - tests/unit/strata/test_vmodel_check.py
 - strata-core/src/parse/grammar_core.rs
+- strata-core/src/parse/mod.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -267,6 +268,19 @@ scope_changes:
     general attr syntax (that generalization is T-3049''s canonical-schema
 
     scope).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: strata-core/src/parse/mod.rs
+  reason: 'Same grammar-attrs change: parse/mod.rs owns the parser round-trip test
+
+    fixtures for vmodel_node/vmodel_edge (the must-fire/must-stay-quiet pair
+
+    for the new optional runnable/code_ref/reason clauses belongs beside the
+
+    existing vmodel_node_and_edge_round_trip fixtures it already has).
 
     '
   actor: logan
