@@ -16,6 +16,54 @@ original body, docstring, and `frob:ticket`/`frob:tests` directives
 verbatim; `frob.tickets._land_squash` (the squash-apply/close family,
 T-1334's other split-out module) imports what it still needs back from
 here.
+
+T-3095 (isolating the post-squash file-mutating stages so the shared
+working tree stays clean for the whole land transaction, following
+T-3088's out-of-tree compose primitive at `frob.tickets._land_compose`):
+adds `_apply_release_bump_out_of_tree`, an entry point that runs the
+EXISTING `_apply_release_bump` machinery, verbatim and unmodified,
+against a disposable `git worktree` rather than the shared root, then
+folds whatever it staged into a new out-of-tree commit object via plain
+`write-tree`/`commit-tree` -- never touching root's own checked-out
+files. This is the "release bump" third of T-3095's own three
+sub-stages (release bump / native rebuild / pre-commit sweep); the other
+two are deliberately NOT addressed here (see the T-3095 ticket body for
+the reasoning per stage) and `frob.tickets._land_squash` is not yet
+wired to call this new entry point -- that wiring is the next ticket in
+this ticket's own declared sequence, kept out of THIS module's scope.
+
+WHY THIS TREATMENT for the release bump specifically (argued per the
+T-3095 ticket body's request, not assumed): the bump is pure file
+rewriting -- `_apply_release_bump` already parameterizes cleanly on
+whatever `root: Path` it is given, with no hidden dependency on `root`
+being the primary checkout. A disposable `git worktree` gives it a REAL
+checkout (so a `bump_version` callback that reads/writes real on-disk
+content, e.g. prepending to `CHANGELOG.md`, keeps working unmodified)
+that is structurally a different directory from the caller's own, so
+nothing it does is visible to a `git status` run against the caller.
+
+The scratch worktree is checked out at `pre_land_tip`, NOT
+`composed_commit`: `_apply_release_bump`'s own unwind path
+(`_verified_reset_root`, T-0907) asserts the checkout it is handed is
+still sitting AT `pre_land_tip` when a failure needs unwinding --
+exactly the invariant the real (in-tree) squash-apply flow holds
+(pre_land_tip checked out, the squash staged on top but uncommitted).
+Checking the scratch worktree out at `composed_commit` instead violates
+that invariant and makes every failure path misreport a 'drift
+detected' refusal instead of a clean unwind (measured: this was
+`_apply_release_bump_out_of_tree`'s own first, wrong draft). So
+`composed_commit`'s changes are applied ON TOP of the `pre_land_tip`
+checkout via `git diff` + `git apply --index` -- deliberately NOT this
+module's sibling `_land_compose`'s scratch-`GIT_INDEX_FILE` technique,
+which never materializes real files and so cannot support a
+`bump_version` callback that needs them; `_apply_release_bump_out_of_
+tree` reuses that primitive's underlying idea (diff two commits, apply
+against a private target) at the one point it genuinely differs: a real
+worktree checkout in place of a bare index. The fold-back step (`write-
+tree`/`commit-tree`, parented on `pre_land_tip` -- matching the real
+squash-apply's own single-parent commit shape) is the same final step
+`_land_compose.compose_tree_out_of_tree` uses, so the caller ends up
+with one commit sha to carry forward to `publish_ref_cas` either way.
 """
 
 # frob:waive LARGE001 reason="T-1651-grade: this module is ITSELF the product of the \
@@ -33,6 +81,7 @@ from __future__ import annotations
 
 import json
 import re
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
@@ -912,3 +961,205 @@ def _maybe_rebuild_natives(
             root,
         )
     return rebuilt
+
+
+# frob:ticket T-3095
+# frob:tests \
+# tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree.test_worktree_untouched_by_out_of_tree_bump  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree.test_bump_folds_into_a_new_commit_on_composed_commit  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree.test_no_bump_returns_composed_commit_unchanged  # noqa: E501
+# frob:tests \
+# tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree.test_bump_failure_leaves_repo_working_tree_untouched  # noqa: E501
+def _apply_release_bump_out_of_tree(
+    repo: Path,
+    ticket: Ticket,
+    final_id: str,
+    bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None,
+    pre_land_tip: str,
+    composed_commit: str,
+) -> Result[str, LandError]:
+    """T-3095's release-bump treatment: run the EXISTING, unmodified
+    `_apply_release_bump` against a disposable `git worktree` checked out
+    at `pre_land_tip` (never `composed_commit` -- see the module
+    docstring's T-3095 section for why that distinction matters to
+    `_apply_release_bump`'s own unwind path), with `composed_commit`'s
+    diff applied on top via `git apply --index` first. `repo`'s own
+    checked-out files are never touched. Folds the result into a new
+    commit object via `write-tree`/`commit-tree`, parented on
+    `pre_land_tip`. Returns `Ok(composed_commit)` unchanged when nothing
+    was staged; `Ok(new_commit_sha)` otherwise; `Err(LandError)` on a
+    bump failure or any git-plumbing failure, mirroring `_apply_release_
+    bump`'s own fail-closed posture. The disposable worktree is always
+    removed, success or failure alike -- see the module docstring's
+    T-3095 section for the full rationale."""
+    with tempfile.TemporaryDirectory(prefix="frob-land-release-") as scratch_parent:
+        scratch = str(Path(scratch_parent) / "wt")
+        added = _add_scratch_worktree(repo, scratch, pre_land_tip, final_id)
+        if added.is_err:
+            return Err(added.danger_err)
+        try:
+            applied = _apply_composed_diff_onto_scratch(
+                repo, scratch, pre_land_tip, composed_commit, final_id
+            )
+            if applied.is_err:
+                return Err(applied.danger_err)
+            bumped = _apply_release_bump(
+                Path(scratch), ticket, final_id, bump_version, pre_land_tip
+            )
+            if bumped.is_err:
+                return Err(bumped.danger_err)
+            return _fold_scratch_worktree_into_commit(
+                scratch, pre_land_tip, composed_commit, final_id
+            )
+        finally:
+            _remove_scratch_worktree(repo, scratch, final_id)
+
+
+# frob:ticket T-3095
+def _add_scratch_worktree(
+    repo: Path, scratch: str, pre_land_tip: str, final_id: str
+) -> Result[None, LandError]:
+    """`git worktree add --detach scratch pre_land_tip` -- split out of
+    `_apply_release_bump_out_of_tree` purely to keep that function under
+    ARCH001's line threshold, no behavior change from inlining.
+    `Err(LandError.GitFailed)`, logged, on any plumbing failure."""
+    added = run_argv(
+        ("git", "-C", str(repo), "worktree", "add", "--detach", scratch, pre_land_tip)
+    )
+    if added.is_err or added.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s could not create a disposable worktree at %s for "
+            "the out-of-tree release bump -- refusing",
+            final_id,
+            pre_land_tip,
+        )
+        return Err(LandError.GitFailed)
+    return Ok(None)
+
+
+# frob:ticket T-3095
+def _apply_composed_diff_onto_scratch(
+    repo: Path, scratch: str, pre_land_tip: str, composed_commit: str, final_id: str
+) -> Result[None, LandError]:
+    """Materialize `composed_commit`'s changes (relative to `pre_land_tip`)
+    onto the disposable `scratch` worktree's real files AND index (`git
+    apply --index`, never `--cached`) -- split out of `_apply_release_
+    bump_out_of_tree` purely to keep that function under ARCH001's line
+    threshold, no behavior change from inlining. `Ok(None)` no-op when
+    `pre_land_tip == composed_commit` (nothing to apply, e.g. a land with
+    an empty diff)."""
+    if pre_land_tip == composed_commit:
+        return Ok(None)
+    diffed = run_argv(("git", "-C", str(repo), "diff", pre_land_tip, composed_commit))
+    if diffed.is_err:
+        _log.error(
+            "land: %s could not diff %s..%s for the out-of-tree release "
+            "bump",
+            final_id,
+            pre_land_tip,
+            composed_commit,
+        )
+        return Err(LandError.GitFailed)
+    diff_text = diffed.danger_ok.stdout
+    if not diff_text.strip():
+        return Ok(None)
+    patch_file = Path(scratch).parent / "composed.diff"
+    patch_file.write_text(diff_text)
+    applied = run_argv(("git", "-C", scratch, "apply", "--index", str(patch_file)))
+    if applied.is_err or applied.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s could not apply %s..%s onto the disposable "
+            "release-bump worktree",
+            final_id,
+            pre_land_tip,
+            composed_commit,
+        )
+        return Err(LandError.GitFailed)
+    return Ok(None)
+
+
+# frob:ticket T-3095
+def _remove_scratch_worktree(repo: Path, scratch: str, final_id: str) -> None:
+    """Best-effort `git worktree remove --force` for `scratch` (split out
+    of `_apply_release_bump_out_of_tree` purely so its own `finally`
+    block stays a one-liner) -- logged, never raised: a leaked disposable
+    worktree in a `TemporaryDirectory` that is about to be deleted out
+    from under git anyway is a stale `git worktree list` entry to prune
+    later, not a land-blocking failure."""
+    removed = run_argv(
+        ("git", "-C", str(repo), "worktree", "remove", "--force", scratch)
+    )
+    if removed.is_err or removed.danger_ok.returncode != 0:
+        _log.warning(
+            "land: %s could not remove the disposable release-bump "
+            "worktree at %s -- prune it later with `git worktree prune`",
+            final_id,
+            scratch,
+        )
+
+
+# frob:ticket T-3095
+def _fold_scratch_worktree_into_commit(
+    scratch: str, pre_land_tip: str, composed_commit: str, final_id: str
+) -> Result[str, LandError]:
+    """`write-tree` the disposable release-bump worktree's index (which by
+    now holds `composed_commit`'s changes PLUS whatever the bump staged
+    on top) and, iff that tree differs from `composed_commit`'s own tree,
+    `commit-tree` it as a new commit with `pre_land_tip` as sole parent
+    (matching the real squash-apply's own single-parent commit shape) --
+    split out of `_apply_release_bump_out_of_tree` purely to keep that
+    function under ARCH001's line threshold, no behavior change from
+    inlining. Returns `Ok(composed_commit)` unchanged (no new commit
+    created) when the bump staged nothing beyond what `composed_commit`
+    already held; `Ok(new_sha)` otherwise; `Err(LandError.GitFailed)` on
+    any git-plumbing failure."""
+    written = run_argv(("git", "-C", scratch, "write-tree"))
+    if written.is_err or written.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s write-tree failed for the out-of-tree release bump "
+            "against %s",
+            final_id,
+            composed_commit,
+        )
+        return Err(LandError.GitFailed)
+    new_tree = written.danger_ok.stdout.strip()
+
+    composed_tree = run_argv(
+        ("git", "-C", scratch, "rev-parse", f"{composed_commit}^{{tree}}")
+    )
+    if composed_tree.is_ok and composed_tree.danger_ok.returncode == 0:
+        if composed_tree.danger_ok.stdout.strip() == new_tree:
+            return Ok(composed_commit)
+
+    committed = run_argv(
+        (
+            "git",
+            "-C",
+            scratch,
+            "commit-tree",
+            new_tree,
+            "-p",
+            pre_land_tip,
+            "-m",
+            f"land_release: out-of-tree release bump onto {pre_land_tip}",
+        )
+    )
+    if committed.is_err or committed.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s commit-tree failed for the out-of-tree release bump "
+            "against %s",
+            final_id,
+            pre_land_tip,
+        )
+        return Err(LandError.GitFailed)
+    new_sha = committed.danger_ok.stdout.strip()
+    _log.info(
+        "land: %s out-of-tree release bump folded into %s (base=%s) "
+        "without touching the primary checkout's working tree",
+        final_id,
+        new_sha,
+        pre_land_tip,
+    )
+    return Ok(new_sha)

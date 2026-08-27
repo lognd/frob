@@ -2,7 +2,7 @@
 id: T-3095
 title: Isolate land's three post-squash file-mutating stages so the whole transaction
   is invisible in the shared tree
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -35,6 +35,11 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3936
+evidence:
+- tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree::test_worktree_untouched_by_out_of_tree_bump
+- tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree::test_bump_folds_into_a_new_commit_on_composed_commit
+- tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree::test_no_bump_returns_composed_commit_unchanged
+- tests/unit/test_land_release_out_of_tree.py::TestApplyReleaseBumpOutOfTree::test_bump_failure_leaves_repo_working_tree_untouched
 designated_repro_test: null
 threat: null
 component: null
