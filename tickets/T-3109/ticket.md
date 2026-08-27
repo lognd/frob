@@ -2,7 +2,7 @@
 id: T-3109
 title: 'refactor split/move: import-rewrite drops indentation on a nested (function-local/block)
   import'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
