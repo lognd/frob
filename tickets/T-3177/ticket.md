@@ -1,7 +1,7 @@
 ---
 id: T-3177
 title: Declare or waive SYS003 scripts_ops -> graphlang in branch_stranded_work_analysis.py
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
