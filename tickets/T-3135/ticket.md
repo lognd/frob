@@ -2,7 +2,7 @@
 id: T-3135
 title: A persistent warm sweep stage is the only shape that can make the T-1514 unscoped
   sweep stage-capable
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -34,6 +34,12 @@ scope_changes:
     in there to satisfy T-3135's own acceptance criteria
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/unit/test_land_stage_flip.py::TestDisposableStageFlip::test_pre_commit_sweep_engages_the_warm_stage_not_root
+- tests/unit/test_land_stage_flip.py::TestDisposableStageFlip::test_warm_stage_reused_across_lands
+- tests/unit/test_land_stage_flip.py::TestDisposableStageFlip::test_warm_stage_unavailable_falls_back_to_root
+- tests/unit/test_land_stage_flip.py::TestDisposableStageFlip::test_root_never_goes_dirty_during_the_squash_apply
+- tests/unit/test_land_stage_flip.py::TestDisposableStageFlip::test_worktree_setup_failure_refuses_without_touching_root
 designated_repro_test: null
 threat: null
 component: null
