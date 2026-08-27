@@ -27,7 +27,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 87ad21e8205b54a503038cf7c869f1fa1eb784ed
 ---
 T-3126 moved `_record_land_commit` off the shared root: it now composes
 its follow-up bookkeeping commit in a disposable worktree checked out at
