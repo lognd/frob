@@ -493,6 +493,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3143: refactor split leaves type-annotation-only import sites unrepointed
 - T-3145: new_ticket-calling test fixtures spuriously fail evidence reverification under an agent's own FROB_WORKTREE lease
 - T-3147: Audit closes landed 2026-08-10..2026-08-27 for D-02 self-cover false positives (T-1944/T-3141)
+- T-3148: _KNOWN_RULE_FIXABILITY literal missing SYS100 (T-3140 item 4)
 
 ## [0.530.0] - unreleased
 

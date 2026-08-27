@@ -1,7 +1,7 @@
 ---
 id: T-3148
 title: _KNOWN_RULE_FIXABILITY literal missing SYS100 (T-3140 item 4)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -97,6 +97,8 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/test_gates.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
 designated_repro_test: null
 threat: null
 component: null

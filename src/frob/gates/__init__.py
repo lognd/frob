@@ -318,6 +318,13 @@ _OPEN_STATES = frozenset(
 )
 
 # frob:ticket T-1264
+# frob:ticket T-3148
+# T-3148: SYS100 removed from this literal (2026-08-27) -- T-2922 deliberately
+# removed its Tier-A handler (auto-widening a `may` capability grant is a
+# ceiling that must never be automatic), so a fresh generated_fixability()
+# scan now correctly reports SYS100 as "manual"; this checked-in literal had
+# never been regenerated since, and was carrying a stale "auto" entry the
+# fresh scan no longer agrees with.
 # T-1264: the checked-in GENERATED artifact -- `frob.gates._fixability_scan.
 # generated_fixability(known_gate_rule_ids())`'s output, pasted here exactly
 # as `_KNOWN_GATE_RULES` (`frob.gates._waive`) already works for rule-id
@@ -338,7 +345,6 @@ _KNOWN_RULE_FIXABILITY: dict[str, str] = {
     "REG010": "auto",
     "REL002": "auto",
     "SUPPRESS001": "auto",
-    "SYS100": "auto",
     "SYS111": "auto",
     "TICK002": "auto",
     "TICK006": "auto",
