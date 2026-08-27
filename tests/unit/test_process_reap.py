@@ -114,26 +114,51 @@ class TestInstallSigtermReaper:
             signal.signal(signal.SIGTERM, prior)
 
 
+# frob:ticket T-3152
+#: Fixed `/proc/uptime`/clock-tick baseline every `_write_proc_entry` fake
+#: `stat` starttime is computed against, so `age_s` below (and any test
+#: reading `_process_start_age_s`/`reap_orphaned_forkservers` against this
+#: fixture) gets a deterministic, host-independent age regardless of when
+#: the test actually runs -- real `os.sysconf("SC_CLK_TCK")` is (almost)
+#: universally 100 on Linux, matched here exactly so a real host would
+#: reproduce the same numbers.
+_FAKE_UPTIME_S = 1_000_000.0
+_FAKE_CLK_TCK = 100
+
+
 def _write_proc_entry(
     proc: Path,
     pid: int,
     *,
     cmdline: bytes,
     ppid: int,
-    mtime_offset_s: float = 0.0,
+    age_s: float = 0.0,
 ) -> None:
-    """Build a fake `<proc>/<pid>/{cmdline,stat}` pair matching real
-    `/proc`'s own shape closely enough for `_is_orphaned_forkserver`/
-    `_process_start_age_s` to parse: `cmdline` is NUL-separated (real
-    kernel shape), `stat`'s ppid sits right after the parenthesized comm
-    field (real `/proc/<pid>/stat` shape, `man proc`)."""
+    """Build a fake `<proc>/<pid>/{cmdline,stat}` pair (plus a shared
+    `<proc>/uptime`) matching real `/proc`'s own shape closely enough for
+    `_is_orphaned_forkserver`/`_process_start_age_s` to parse: `cmdline`
+    is NUL-separated (real kernel shape), `stat`'s fields sit after the
+    parenthesized comm field exactly as `man proc` documents -- ppid at
+    index 1, `starttime` (clock ticks since boot) at index 19, both after
+    `_stat_fields_after_comm`'s split.
+
+    T-3152: `age_s` (renamed from `mtime_offset_s`) now controls the fake
+    `starttime` field, computed against the shared `_FAKE_UPTIME_S`/
+    `_FAKE_CLK_TCK` baseline (written to `<proc>/uptime` once, idempotent
+    across repeat calls for the same `proc`) -- `_process_start_age_s`
+    stopped reading the entry directory's own mtime."""
     entry = proc / str(pid)
     entry.mkdir(parents=True)
     (entry / "cmdline").write_bytes(cmdline)
-    (entry / "stat").write_text(f"{pid} (python3) S {ppid} {pid} 0 0 -1 0\n")
-    if mtime_offset_s:
-        now = time.time()
-        os.utime(entry, (now - mtime_offset_s, now - mtime_offset_s))
+    starttime_ticks = int((_FAKE_UPTIME_S - age_s) * _FAKE_CLK_TCK)
+    filler = " ".join(["0"] * 12)
+    stat_line = (
+        f"{pid} (python3) S {ppid} {pid} 0 0 -1 0 {filler} {starttime_ticks}\n"
+    )
+    (entry / "stat").write_text(stat_line)
+    uptime_path = proc / "uptime"
+    if not uptime_path.exists():
+        uptime_path.write_text(f"{_FAKE_UPTIME_S} 0.0\n")
 
 
 class TestIsOrphanedForkserver:
@@ -179,7 +204,7 @@ class TestReapOrphanedForkservers:
             4242,
             cmdline=b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00",
             ppid=1,
-            mtime_offset_s=600.0,
+            age_s=600.0,
         )
         killed: list[tuple[int, int]] = []
         monkeypatch.setattr(
@@ -197,7 +222,7 @@ class TestReapOrphanedForkservers:
             4242,
             cmdline=b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00",
             ppid=1,
-            mtime_offset_s=5.0,
+            age_s=5.0,
         )
         killed: list[tuple[int, int]] = []
         monkeypatch.setattr(
@@ -211,7 +236,7 @@ class TestReapOrphanedForkservers:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _write_proc_entry(
-            tmp_path, 4242, cmdline=b"sleep\x00600\x00", ppid=1, mtime_offset_s=600.0
+            tmp_path, 4242, cmdline=b"sleep\x00600\x00", ppid=1, age_s=600.0
         )
         killed: list[tuple[int, int]] = []
         monkeypatch.setattr(
@@ -238,14 +263,14 @@ class TestReapOrphanedForkservers:
             5000,
             cmdline=_FORKSERVER_CMDLINE,
             ppid=1,
-            mtime_offset_s=600.0,
+            age_s=600.0,
         )
         _write_proc_entry(
             tmp_path,
             4242,
             cmdline=_FORKSERVER_CMDLINE,
             ppid=5000,
-            mtime_offset_s=600.0,
+            age_s=600.0,
         )
         killed: list[tuple[int, int]] = []
         monkeypatch.setattr(
@@ -271,14 +296,14 @@ class TestReapOrphanedForkservers:
             5000,
             cmdline=_FORKSERVER_CMDLINE,
             ppid=6000,
-            mtime_offset_s=600.0,
+            age_s=600.0,
         )
         _write_proc_entry(
             tmp_path,
             4242,
             cmdline=_FORKSERVER_CMDLINE,
             ppid=5000,
-            mtime_offset_s=600.0,
+            age_s=600.0,
         )
         killed: list[tuple[int, int]] = []
         monkeypatch.setattr(
@@ -396,19 +421,83 @@ class TestForkserverRootIsLiveCheck:
 
 
 class TestProcessStartAge:
-    """`_process_start_age_s` approximates process age from the `/proc/<pid>`
-    directory's own mtime."""
+    """`_process_start_age_s` (T-3152): derives age from `/proc/<pid>/
+    stat`'s own `starttime` field plus `/proc/uptime`, not the `<proc>/
+    <pid>` directory's mtime any more."""
 
-    def test_reads_age_from_mtime(self, tmp_path: Path) -> None:
-        _write_proc_entry(
-            tmp_path, 4242, cmdline=b"x\x00", ppid=1, mtime_offset_s=120.0
-        )
-        age = _process_start_age_s(4242, tmp_path, time.time())
+    def test_reads_age_from_starttime(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAge::test_reads_age_from_starttime  # noqa: E501
+        _write_proc_entry(tmp_path, 4242, cmdline=b"x\x00", ppid=1, age_s=120.0)
+        age = _process_start_age_s(4242, tmp_path, _FAKE_UPTIME_S, _FAKE_CLK_TCK)
         assert age is not None
-        assert 110.0 < age < 130.0
+        assert 119.0 < age < 121.0
 
     def test_missing_entry_returns_none(self, tmp_path: Path) -> None:
-        assert _process_start_age_s(999999, tmp_path, time.time()) is None
+        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAge::test_missing_entry_returns_none  # noqa: E501
+        assert (
+            _process_start_age_s(999999, tmp_path, _FAKE_UPTIME_S, _FAKE_CLK_TCK)
+            is None
+        )
+
+    def test_unknown_uptime_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAge::test_unknown_uptime_returns_none  # noqa: E501
+        # Must-stay-quiet-in-reverse: an unmeasurable /proc/uptime must
+        # degrade to None (unmeasured), never a fabricated age.
+        _write_proc_entry(tmp_path, 4242, cmdline=b"x\x00", ppid=1, age_s=120.0)
+        assert _process_start_age_s(4242, tmp_path, None, _FAKE_CLK_TCK) is None
+
+    def test_zero_clk_tck_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAge::test_zero_clk_tck_returns_none  # noqa: E501
+        _write_proc_entry(tmp_path, 4242, cmdline=b"x\x00", ppid=1, age_s=120.0)
+        assert _process_start_age_s(4242, tmp_path, _FAKE_UPTIME_S, 0) is None
+
+
+# frob:ticket T-3152
+class TestProcessStartAgeMatchesFleetStatus:
+    """T-3152's own cross-check: `frob.process._reap._process_start_age_s`
+    and `scripts/fleet_status.py::_forkserver_age_s` must compute the
+    IDENTICAL age from the identical `stat`/`uptime`/`clk_tck` input --
+    unified on the same heuristic (`stat`'s `starttime` field), each in
+    its own textually-independent copy (`fleet_status.py`'s "no `frob`
+    import" contract, `_stat_fields_after_comm`'s own docstring), so
+    nothing else guarantees these two stay in sync except this test."""
+
+    def test_same_stat_line_and_uptime_yield_the_same_age(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAgeMatchesFleetStatus::test_same_stat_line_and_uptime_yield_the_same_age  # noqa: E501
+        from tests.unit.conftest import _load_script
+
+        fleet_status = _load_script("fleet_status")
+
+        _write_proc_entry(tmp_path, 4242, cmdline=b"x\x00", ppid=1, age_s=337.0)
+        reap_age = _process_start_age_s(4242, tmp_path, _FAKE_UPTIME_S, _FAKE_CLK_TCK)
+
+        stat_text = (tmp_path / "4242" / "stat").read_text(encoding="utf-8")
+        fields = fleet_status._stat_fields_after_comm(stat_text)
+        assert fields is not None
+        fleet_age = fleet_status._forkserver_age_s(
+            fields, _FAKE_UPTIME_S, _FAKE_CLK_TCK
+        )
+
+        assert reap_age is not None
+        assert fleet_age is not None
+        assert reap_age == pytest.approx(fleet_age, abs=1e-9)
+        assert reap_age == pytest.approx(337.0, abs=0.02)
+
+    def test_both_agree_none_on_unknown_uptime(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAgeMatchesFleetStatus::test_both_agree_none_on_unknown_uptime  # noqa: E501
+        from tests.unit.conftest import _load_script
+
+        fleet_status = _load_script("fleet_status")
+
+        _write_proc_entry(tmp_path, 4242, cmdline=b"x\x00", ppid=1, age_s=337.0)
+        stat_text = (tmp_path / "4242" / "stat").read_text(encoding="utf-8")
+        fields = fleet_status._stat_fields_after_comm(stat_text)
+        assert fields is not None
+
+        assert _process_start_age_s(4242, tmp_path, None, _FAKE_CLK_TCK) is None
+        assert fleet_status._forkserver_age_s(fields, None, _FAKE_CLK_TCK) is None
 
 
 # frob:ticket T-2473

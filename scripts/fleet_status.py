@@ -2420,6 +2420,7 @@ def _derive_forkserver_stale_after_s(root: Path = REPO) -> float:
 # frob:doc docs/guides/coordinator-scripts.md#_forkserver_snapshot
 # frob:ticket T-2443
 # frob:ticket T-2517
+# frob:ticket T-3152
 def _forkserver_age_s(
     fields: list[str], uptime_s: float | None, clk_tck: int
 ) -> float | None:
@@ -2428,7 +2429,22 @@ def _forkserver_age_s(
     clock ticks since boot). Returns `None` (never a fabricated age) if
     `uptime_s` is unknown, the field is missing, or the ticks value does
     not parse -- ARCH001 split of `_forkserver_snapshot` (T-2517), no
-    behavior change from inlining this at the call site."""
+    behavior change from inlining this at the call site.
+
+    T-3152: `frob.process._reap._process_start_age_s` used to derive its
+    OWN, independent, less precise approximation of this exact quantity
+    from `<proc>/<pid>`'s directory mtime instead of `stat`'s `starttime`
+    field -- unified onto this function's own algorithm (the more precise
+    of the two: `starttime` is the kernel-documented process-start
+    timestamp every standard tool already uses, at `1/clk_tck`
+    resolution; an mtime is a filesystem side effect of procfs entry
+    creation, not a documented interface for this purpose). That
+    function now duplicates this one's field-for-field arithmetic in
+    plain form (this script's own "no `frob` import" contract,
+    `_is_live_check_cmdline`'s own docstring covers the same posture for
+    T-3072/T-3093's analogous pair) -- `tests/unit/test_process_reap.py::
+    TestProcessStartAgeMatchesFleetStatus` cross-checks the two stay
+    identical on shared synthetic input."""
     if uptime_s is None or len(fields) < 20 or not clk_tck:
         return None
     try:

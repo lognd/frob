@@ -2,7 +2,7 @@
 id: T-3152
 title: fleet_status and frob.process._reap use different age heuristics for the same
   forkserver (mtime vs stat starttime)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -21,6 +21,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_process_reap.py::TestProcessStartAge::test_reads_age_from_starttime
+- tests/unit/test_process_reap.py::TestProcessStartAge::test_missing_entry_returns_none
+- tests/unit/test_process_reap.py::TestProcessStartAge::test_unknown_uptime_returns_none
+- tests/unit/test_process_reap.py::TestProcessStartAge::test_zero_clk_tck_returns_none
+- tests/unit/test_process_reap.py::TestProcessStartAgeMatchesFleetStatus::test_same_stat_line_and_uptime_yield_the_same_age
+- tests/unit/test_process_reap.py::TestProcessStartAgeMatchesFleetStatus::test_both_agree_none_on_unknown_uptime
+- tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_terminates_old_orphaned_forkservers
+- tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_leaves_young_orphaned_forkservers_alone
 designated_repro_test: null
 threat: null
 component: null

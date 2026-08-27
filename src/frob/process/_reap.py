@@ -63,7 +63,6 @@ import os
 import re
 import signal
 import sys
-import time
 import typing
 from pathlib import Path
 from types import FrameType
@@ -456,44 +455,102 @@ _FORKSERVER_CMDLINE_RE = re.compile(r"multiprocessing\.forkserver")
 DEFAULT_ORPHAN_AGE_FLOOR_S = 300.0
 
 
-# frob:ticket T-2443
-def _process_start_age_s(pid: int, proc: Path, now_s: float) -> float | None:
-    """Best-effort age (seconds) of `pid`, approximated from `<proc>/<pid>`'s
-    own mtime (the directory is created at process start and never touched
-    again) -- `None` if unreadable (already exited, permission denied, or a
-    non-Linux `/proc`). A heuristic, not exact accounting: precise enough to
-    apply `DEFAULT_ORPHAN_AGE_FLOOR_S`'s multi-minute floor, which is all
-    this reaper needs."""
-    try:
-        return max(now_s - (proc / str(pid)).stat().st_mtime, 0.0)
-    except OSError:
+# frob:ticket T-3152
+def _stat_fields_after_comm(stat_text: str) -> list[str] | None:
+    """`/proc/<pid>/stat`'s own fields AFTER the `") "` that closes the
+    `(comm)` field (a process name can itself contain spaces/parens, which
+    is why every reader here splits on the LAST `")"` rather than counting
+    space-separated tokens from the start) -- `fields[1]` is ppid,
+    `fields[19]` is starttime (field 22 overall). Mirrors `scripts/
+    fleet_status.py::_stat_fields_after_comm` exactly (T-3152: same field
+    layout, same split idiom, deliberately NOT imported across the
+    boundary -- that script carries its own standalone copy under its own
+    "no `frob` import" contract, `_is_live_check_cmdline`'s own docstring
+    covers the same posture for T-3072/T-3093). Returns `None` if
+    `stat_text` has no `")"` at all (unparseable/truncated read)."""
+    close_paren = stat_text.rfind(")")
+    if close_paren == -1:
         return None
+    return stat_text[close_paren + 2 :].split()
 
 
 # frob:ticket T-3072
+# frob:ticket T-3152
 def _read_ppid_from_stat(pid: int, proc: Path) -> int | None:
     """`<proc>/<pid>/stat`'s own ppid field, or `None` on any read/parse
     failure (already exited, permission denied, malformed entry) -- T-3072
     split this out of `_is_orphaned_forkserver` (DUP001) so `_all_process_
     ppids`'s multi-hop ancestry substrate can reuse the exact same
     parsing, never a second copy of the "locate fields after the LAST
-    `)`" idiom `man proc` documents (the 2nd field, `comm`, is
-    parenthesized and may itself contain spaces/parens)."""
+    `)`" idiom `man proc` documents. T-3152: now shares its field split
+    with `_process_start_age_s` via `_stat_fields_after_comm`, rather than
+    inlining its own copy of that split."""
     try:
         stat_text = (proc / str(pid) / "stat").read_text(encoding="utf-8")
     except OSError:
         return None
-    close_paren = stat_text.rfind(")")
-    if close_paren == -1:
-        return None
+    fields = _stat_fields_after_comm(stat_text)
     # Fields after ")": [state, ppid, pgrp, ...] -- state (field 3 overall)
     # is fields[0] here, ppid (field 4 overall) is fields[1].
-    fields = stat_text[close_paren + 2 :].split()
-    if len(fields) < 2:
+    if fields is None or len(fields) < 2:
         return None
     try:
         return int(fields[1])
     except ValueError:
+        return None
+
+
+# frob:ticket T-2443
+# frob:ticket T-3152
+def _process_start_age_s(
+    pid: int, proc: Path, uptime_s: float | None, clk_tck: int
+) -> float | None:
+    """Age (seconds) of `pid`, derived from `/proc/<pid>/stat`'s own
+    `starttime` field (clock ticks since boot -- `man proc`'s canonical,
+    kernel-documented process-start timestamp, field 22 overall /
+    `fields[19]` after `_stat_fields_after_comm`'s split) combined with
+    `/proc/uptime` -- `None` if `uptime_s`/`clk_tck` are unavailable, the
+    file is unreadable (already exited, permission denied, non-Linux
+    `/proc`), or the field does not parse.
+
+    T-3152: this used to derive age from the `<proc>/<pid>` DIRECTORY's
+    own mtime instead (the directory is created at process start and,
+    empirically, never touched again) -- a second, independent
+    approximation of the same quantity `scripts/fleet_status.py::
+    _forkserver_age_s` already computed via `stat`'s `starttime` field,
+    the exact class of duplication T-3072/T-3093/T-3139 already found
+    three other instances of in this file pair. `starttime` is the more
+    precise and more clearly-specified of the two: it is the field every
+    standard tool (`ps -o etimes`, `/proc/uptime`-relative age
+    calculations) already treats as the process's start time, at
+    `1/clk_tck` resolution (typically 10ms); an inode's mtime is a
+    filesystem side effect of procfs entry creation, not a documented
+    kernel contract for this purpose, and is not guaranteed identical to
+    process start time in every kernel/container scenario even though
+    the two agree in practice on a normal Linux host. Unified on
+    `starttime` here (matching `_forkserver_age_s`'s own algorithm
+    exactly, field-for-field) rather than the reverse, since `starttime`
+    is the more precise source and `fleet_status.py`'s own "no `frob`
+    import" contract means the two copies stay textually independent
+    (see `_stat_fields_after_comm`'s own docstring) -- verified to agree
+    on identical synthetic input by `tests/unit/test_process_reap.py::
+    TestProcessStartAgeMatchesFleetStatus`."""
+    if uptime_s is None or not clk_tck:
+        return None
+    try:
+        stat_text = (proc / str(pid) / "stat").read_text(encoding="utf-8")
+    except OSError:
+        return None
+    fields = _stat_fields_after_comm(stat_text)
+    if fields is None or len(fields) < 20:
+        return None
+    try:
+        starttime_ticks = int(fields[19])
+    except ValueError:
+        return None
+    try:
+        return uptime_s - (starttime_ticks / clk_tck)
+    except ZeroDivisionError:
         return None
 
 
@@ -721,7 +778,31 @@ def reap_orphaned_forkservers(
     )
 
 
+# frob:ticket T-3152
+def _read_uptime_and_clk_tck(proc: Path) -> tuple[float | None, int]:
+    """`(/proc/uptime's first field, os.sysconf("SC_CLK_TCK"))` -- read
+    ONCE per scan (mirrors `scripts/fleet_status.py`'s own `_forkserver_
+    snapshot` posture: both `uptime_s`/`clk_tck` are host-wide constants
+    for the duration of one scan, not per-pid values, so re-reading them
+    inside `_process_start_age_s`'s own per-pid loop would be wasted
+    syscalls for no precision gain). `uptime_s` is `None` (never a
+    fabricated value) if `/proc/uptime` is missing/unparseable (non-Linux
+    `/proc`); `clk_tck` falls back to the near-universal Linux default of
+    100 if `os.sysconf` itself fails, matching `_forkserver_age_s`'s own
+    fallback."""
+    try:
+        uptime_s = float((proc / "uptime").read_text(encoding="utf-8").split()[0])
+    except (OSError, ValueError, IndexError):
+        uptime_s = None
+    try:
+        clk_tck = os.sysconf("SC_CLK_TCK")
+    except (ValueError, OSError):
+        clk_tck = 100
+    return uptime_s, clk_tck
+
+
 # frob:ticket T-3072
+# frob:ticket T-3152
 def _reap_orphaned_pids(
     forkserver_pids: list[int],
     ppid_map: dict[int, int],
@@ -733,13 +814,16 @@ def _reap_orphaned_pids(
     per-pid orphan-check/age-check/SIGTERM loop, given an already-built
     `ppid_map`/`live_check_pids` snapshot (`reap_orphaned_forkservers`'s
     own docstring covers the full contract; this is purely the
-    mechanical second half)."""
-    now_s = time.time()
+    mechanical second half). T-3152: `uptime_s`/`clk_tck` (read once via
+    `_read_uptime_and_clk_tck`) replace the old per-pid `now_s = time.
+    time()` -- `_process_start_age_s` now derives age from `stat`'s
+    `starttime` field, not `<proc>/<pid>`'s own mtime."""
+    uptime_s, clk_tck = _read_uptime_and_clk_tck(proc)
     reaped: list[int] = []
     for pid in forkserver_pids:
         if _forkserver_root_is_live_check(pid, ppid_map, live_check_pids):
             continue
-        age_s = _process_start_age_s(pid, proc, now_s)
+        age_s = _process_start_age_s(pid, proc, uptime_s, clk_tck)
         if age_s is None or age_s < age_floor_s:
             continue
         try:
