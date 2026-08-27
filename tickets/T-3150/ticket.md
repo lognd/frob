@@ -2,7 +2,7 @@
 id: T-3150
 title: Coordinator lease fallback scan misses live worktree with removed lease file
   (T-3140 item 7)
-state: in-progress
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -60,3 +60,6 @@ Step through the fallback scan against this exact fixture shape (real
 git worktree + no lease file) to find why it no longer resolves the
 live worktree, and fix it with the existing test as repro (confirm it
 fails at this ticket's parent commit before fixing).
+
+## Drop reason
+- 2026-08-27: False premise: T-2665 (landed before T-3140's triage, commit a44f96e60) already added TestInProgressTicketScopeLeasesLiveGit and fixed the fallback-scan leak this ticket describes. Verified: both tests in that class pass at HEAD with exitstatus=0; T-2665 is an ancestor of T-3140's own land commit, so the regression this ticket cites never existed post-T-2665.
