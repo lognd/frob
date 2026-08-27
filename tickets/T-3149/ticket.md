@@ -2,7 +2,7 @@
 id: T-3149
 title: WIRE001 false positive for CLI dest present in _config_external.py (T-3140
   item 6)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -117,6 +117,9 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
+- tests/test_gates.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
 designated_repro_test: null
 threat: null
 component: null

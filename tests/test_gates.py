@@ -3938,6 +3938,7 @@ class TestWireGate:
         assert "ticket_accept_amend_index" in v.message
 
     # frob:ticket T-1428
+    # frob:ticket T-3149
     def test_new_cli_dest_present_in_config_external_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -3952,7 +3953,14 @@ class TestWireGate:
         _write(
             tmp_path,
             "src/frob/app/_config_external.py",
-            '    "ticket_accept_amend_index",\n',
+            # T-3149: must be a real module-level tuple ASSIGNMENT, not a
+            # bare orphan string fragment -- _config_external_forwarded_
+            # dest_names (T-2348) deliberately only collects literals
+            # that are actual elements of an ast.Assign to a
+            # tuple/list/set/frozenset(...), so a standalone fragment
+            # (this fixture's pre-T-2348 shape) is correctly NOT
+            # recognized as wired any more.
+            '_STRING_FIELDS = (\n    "ticket_accept_amend_index",\n)\n',
         )
         snap = _snapshot(tmp_path)
         diff = Diff(
