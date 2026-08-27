@@ -14,6 +14,7 @@ from frob.app.config import AppConfig
 from frob.logging import get_logger
 from frob.logging.color import BOLD, CYAN, DIM, paint, should_color
 from frob.render import Renderer
+from frob.tickets._worktree_guard import apply_agent_env, warn_if_xdist_bound_missing
 
 _log = get_logger(__name__)
 
@@ -42,6 +43,9 @@ def run(cfg: AppConfig) -> None:
 
 # frob:ticket T-0021
 # frob:ticket T-0562
+# frob:ticket T-3099
+# frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestPerfRunnerProfileWiring.test_must_fire_applies_and_warns_for_tests_path  # noqa: E501
+# frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestPerfRunnerProfileWiring.test_must_stay_quiet_raw_argv_path_does_not_wire  # noqa: E501
 # frob:waive ARCH103 reason="T-0977: `frob perf profile` CLI entrypoint -- resolves \
 # the profile root/argv and dispatches to `profile_command`; runner-shape \
 # orchestration, same as this module's other `_run_*`/`_*` CLI handlers"
@@ -53,6 +57,12 @@ def _profile(cfg: AppConfig) -> None:
 
     if cfg.perf_tests:
         argv = ["-m", "pytest", "-q"]
+        # T-3099: `--tests` spawns pytest via `profile_command` below --
+        # apply the T-3094 fleet-aware xdist bound in-process first so
+        # that spawn inherits it, and warn loudly if a fleet context
+        # exists but the bound did not make it into this process's env.
+        apply_agent_env(root)
+        warn_if_xdist_bound_missing(root)
     else:
         argv = list(cfg.perf_argv)
         if argv and argv[0] == "--":

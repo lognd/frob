@@ -193,6 +193,36 @@ both `git status --porcelain` AND `git ls-files` show nothing new at the
 repo root. See appendix sec 1d for the T-0627/T-0697/T-0735/T-0736/T-2524
 incidents this rule closes.
 
+## 1e. The fleet-aware xdist bound is now applied in-process, but only for frob-orchestrated pytest (T-3099)
+
+Section 1 item 0's fleet detection also feeds a per-agent
+`PYTEST_XDIST_AUTO_NUM_WORKERS` bound (T-2221): under a live multi-agent
+fleet, `-n auto` alone oversubscribes the box (every agent's suite tries
+to claim the full CPU count at once). `eval "$(uv run frob agent env
+<worktree-path>)"` still prints that bound as `export` lines, but treat
+it as covering ONE thing only now: **your own raw shell pytest
+invocation** (you typing `uv run pytest ...` directly). Do not rely on it
+for anything else -- T-3094 measured 0 of 40 live workers carrying the
+bound despite it being computed correctly, because the dispatch harness
+resets shell state between tool calls, so an `eval` in one command is
+gone before the next command (the one that actually runs pytest) starts.
+
+Every frob-orchestrated pytest spawn (`frob check`, `frob test`, `frob
+mutate`, `frob perf profile --tests`, ticket evidence verification) now
+applies the bound to its OWN process's `os.environ` in-process
+(`apply_agent_env`, T-3094/T-3099) before it spawns pytest, so the child
+inherits it with no `eval` hop at all -- you do not need to `eval`
+anything before running those commands. If a fleet context exists but
+the bound is somehow still missing when one of those commands spawns
+pytest, `warn_if_xdist_bound_missing` logs an ERROR naming the gap in
+that command's own output; treat that log line as a real defect report,
+not noise.
+
+Bottom line: still `eval` before a RAW `uv run pytest ...` you type
+yourself; never `eval` for a `frob` subcommand -- it already handles this
+for you, and doing so is redundant, not harmful, but signals a
+misunderstanding of which layer applies the bound.
+
 ## 2. Gate-affecting source only takes effect via
 
 - `uv run frob ...` (editable install picks up local source changes on

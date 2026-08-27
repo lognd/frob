@@ -2,7 +2,7 @@
 id: T-3099
 title: Wire T-3094 apply_agent_env/warn_if_xdist_bound_missing into pytest-spawn call
   sites
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -21,10 +21,19 @@ scope:
 - src/frob/app/mutate_runner.py
 - src/frob/app/perf_runner.py
 - docs/guides/agent-playbook.md
+evidence_scope:
+- tests/unit/test_pytest_spawn_env_wiring.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_pytest_spawn_env_wiring.py::TestVerifyRunPytestDirectlyWiring::test_must_fire_applies_and_warns_before_spawn
+- tests/unit/test_pytest_spawn_env_wiring.py::TestCollectPythonTestsWiring::test_must_fire_applies_and_warns_before_collection
+- tests/unit/test_pytest_spawn_env_wiring.py::TestNativeCoverageRefreshWiring::test_must_fire_applies_and_warns_before_pytest_pass
+- tests/unit/test_pytest_spawn_env_wiring.py::TestMutateRunnerWiring::test_must_fire_applies_and_warns_before_run_mutations
+- tests/unit/test_pytest_spawn_env_wiring.py::TestPerfRunnerProfileWiring::test_must_fire_applies_and_warns_for_tests_path
+- tests/unit/test_pytest_spawn_env_wiring.py::TestPerfRunnerProfileWiring::test_must_stay_quiet_raw_argv_path_does_not_wire
 designated_repro_test: null
 threat: null
 component: null
