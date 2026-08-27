@@ -57,7 +57,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8d44d3822db302b5664433c12ed3a27a0d4ddaa8
 ---
 FOUND 2026-08-27 by an agent that had already landed its ticket and then needed
 to record a failure for a SECOND ticket in the same series.
