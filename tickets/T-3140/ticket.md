@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ad33ce33862f998cef163068a44a157e0a27bc70
 ---
 ## Description
 T-3034 per-test triage: after fixing the 13 tests that were straightforward test-side staleness (see T-3034's own Done report for the list -- over_broad_literal_globs package-prefix resolution gap, frob ack --reason requirement, start's empty-scope refusal, an import-retarget monkeypatch trap, two handler-signature drifts, a DOCENUM001 fixture gap, and a stats commit-count fixture gap), 8 of the original 26 Linux-suite failures remain uncharacterized to a confident verdict and are filed here rather than guessed at, per this drive's own "do not batch-fix without reading each one individually" instruction.
