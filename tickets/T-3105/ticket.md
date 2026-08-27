@@ -24,7 +24,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: be833792c4ebc6ec77fc829c78adc1fe5b8d435a
 ---
 `frob refactor split` corrupts call sites where the source module's `from`
 import line mixes a moved symbol with an untouched one -- it repoints the
