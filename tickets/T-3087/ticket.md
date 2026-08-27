@@ -2,7 +2,7 @@
 id: T-3087
 title: A ticket can reach done with an unsatisfied blocked_by, and a falsely-closed
   ticket cannot be reopened
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
