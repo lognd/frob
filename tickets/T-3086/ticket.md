@@ -10,6 +10,7 @@ priority: medium
 blocked_by:
 - T-3105
 - T-3109
+- T-3122
 parent: null
 tier: ticket
 sprint: null
