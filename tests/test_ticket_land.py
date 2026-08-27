@@ -5669,6 +5669,50 @@ class TestRebuildNatives:
         assert result.danger_ok.natives_rebuilt is False
         assert calls == []
 
+    def test_rebuild_runs_after_the_landing_commit_is_durable(self, repo: Path) -> None:
+        """T-3111 must-fire: the callback must observe a root whose HEAD is
+        ALREADY the landing commit with a clean working tree -- before this
+        fix it ran while root held the whole squash staged and
+        uncommitted, so every second of a minutes-long native build was a
+        second every sibling agent saw DirtyMain."""
+        # frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_rebuild_runs_after_the_landing_commit_is_durable  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-native-order", str(wt)], repo)
+        created = new_ticket(
+            wt, _spec("Native change ordering", scope=("frob-core/src/lib.rs",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "frob-core" / "src").mkdir(parents=True)
+        (wt / "frob-core" / "src" / "lib.rs").write_text("// native change\n")
+        _commit_all(wt, "touch frob-core")
+
+        observed: list[tuple[str, str]] = []
+
+        def rebuild_natives(root: Path) -> bool:
+            observed.append(
+                (
+                    _run(["git", "status", "--porcelain"], root).stdout.strip(),
+                    _run(["git", "rev-parse", "HEAD"], root).stdout.strip(),
+                )
+            )
+            return True
+
+        result = land(repo, tid, wt, dry_run=False, rebuild_natives=rebuild_natives)
+        assert result.is_ok, result.err
+        assert len(observed) == 1
+        porcelain, head_at_rebuild = observed[0]
+        assert porcelain == "", (
+            "the rebuild ran while root still held staged, uncommitted "
+            f"land content: {porcelain!r}"
+        )
+        assert head_at_rebuild == result.danger_ok.commit_sha, (
+            "the rebuild ran before the landing commit existed; root's tip "
+            f"was {head_at_rebuild!r}, the landing commit is "
+            f"{result.danger_ok.commit_sha!r}"
+        )
+
     def test_rebuild_failure_does_not_block_land(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_rebuild_failure_does_not_block_land  # noqa: E501
         wt = repo.parent / "wt"
@@ -7411,7 +7455,9 @@ class TestCheckTddOrder:
         monkeypatch.setattr(
             _gitio_mod,
             "working_diff",
-            lambda *a, **k: Ok(Diff(base="deadbeef", hunks=(Hunk(file="m.py", span=(1, 10)),))),
+            lambda *a, **k: Ok(
+                Diff(base="deadbeef", hunks=(Hunk(file="m.py", span=(1, 10)),))
+            ),
         )
         monkeypatch.setattr(_graph_mod, "load_graph", lambda *a, **k: Ok(snapshot))
         monkeypatch.setattr(
@@ -7470,7 +7516,9 @@ class TestCheckTddOrder:
         monkeypatch.setattr(
             _gitio_mod,
             "working_diff",
-            lambda *a, **k: Ok(Diff(base="deadbeef", hunks=(Hunk(file="m.py", span=(1, 10)),))),
+            lambda *a, **k: Ok(
+                Diff(base="deadbeef", hunks=(Hunk(file="m.py", span=(1, 10)),))
+            ),
         )
         monkeypatch.setattr(_graph_mod, "load_graph", lambda *a, **k: Ok(snapshot))
         monkeypatch.setattr(

@@ -461,6 +461,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3099: Wire T-3094 apply_agent_env/warn_if_xdist_bound_missing into pytest-spawn call sites
 - T-3105: refactor split: import-rewrite drags unmoved names to destination module
 - T-3107: Out-of-tree three-way squash compose via a disposable worktree
+- T-3111: Move land's native rebuild after the landing commit, out of the dirty-root window
 
 ## [0.530.0] - unreleased
 
