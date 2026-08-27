@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
 - tickets/T-3155/ticket.md
+- docs/guides/coordinator-scripts.md
 findings:
 - - DOC006
   - tickets/T-3155/ticket.md
@@ -26,6 +27,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: worktrees_touching_ticket's DRIFT001 is real content drift (T-3128's third
+    dispatch branch undocumented), not just a digest bump; need to edit the doc
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
