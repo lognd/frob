@@ -2,7 +2,7 @@
 id: T-3116
 title: Land's ty gate refuses on pre-existing findings in touched files, manufacturing
   unrelated suppressions
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -15,11 +15,28 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/check/_typecheck.py
+- src/frob/app/ticket_runner/_land_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/check/_typecheck.py
+  reason: declared scope named a file (src/frob/check/_typecheck.py) that has never
+    existed in this repo's history; the actual touched-set ty/lint pre-land gates
+    measured in this ticket live in src/frob/app/ticket_runner/_land_cmd.py (_assert_touched_files_type_check_pre_land
+    et al)
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: declared scope named a file (src/frob/check/_typecheck.py) that has never
+    existed in this repo's history; the actual touched-set ty/lint pre-land gates
+    measured in this ticket live in src/frob/app/ticket_runner/_land_cmd.py (_assert_touched_files_type_check_pre_land
+    et al)
+  actor: logan
+  at: '2026-08-27'
 body_changes:
 - mode: set
   reason: Record the measured line-shift refusal and the suppression-factory dynamic
