@@ -336,6 +336,14 @@ scope_changes:
     excludes _land_cmd.py held by T-3061 live lease
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: 'T-3087 acceptance: disposition note for the falsely-closed ticket that
+    motivated the reopen verb'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 4459
+  new_length: 4945
 evidence:
 - tests/test_refactor.py::TestScanReferences::test_semicolon_joined_from_import_refuses_rewrite
 designated_repro_test: null
@@ -428,3 +436,7 @@ ACCEPTANCE
 - `frob cycle` SCC node count reported before and after.
 - No behaviour change: existing tests pass unchanged.
 - The next cut is filed as a sibling ticket, named from the re-measured cycle.
+
+## Reopen log
+
+- 2026-08-27: Left CLOSED (not reopened) per T-3087's disposition. T-3086 ("Break the 182-node import cycle (redo)") already exists, queued, and re-declares the same scope this ticket was meant to touch. Reopening this ticket now would create two active tickets racing the same scope/lease -- worse than leaving it closed with this note. See T-3086 for the real work; see T-3087 for the close-time blocked_by guard and `frob ticket reopen` verb this incident motivated.
