@@ -2,7 +2,7 @@
 id: T-3120
 title: 'TEST001 gap: Graph::has_cycle in strata-core/src/graph/query.rs has no unit
   test'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -20,6 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- strata-core/src/graph/query.rs::tests::has_cycle_true_on_a_planted_cycle
+- strata-core/src/graph/query.rs::tests::has_cycle_false_on_an_acyclic_graph
 designated_repro_test: null
 threat: null
 component: null

@@ -155,6 +155,9 @@ impl Graph {
     }
 
     /// True if any cycle exists among matching edges.
+    // frob:ticket T-3120
+    // frob:tests strata-core/src/graph/query.rs::tests.has_cycle_true_on_a_planted_cycle
+    // frob:tests strata-core/src/graph/query.rs::tests.has_cycle_false_on_an_acyclic_graph
     pub fn has_cycle(&self, filter: &KindFilter) -> bool {
         self.find_cycle(filter).is_some()
     }
@@ -304,5 +307,37 @@ mod tests {
         // ...but restricted to "refines" alone there is no cycle.
         let only_refines = BTreeSet::from(["refines".to_string()]);
         assert!(!g.has_cycle(&KindFilter::Only(&only_refines)));
+    }
+
+    // frob:ticket T-3120
+    // frob:tests strata-core/src/graph/query.rs::tests.has_cycle_true_on_a_planted_cycle
+    #[test]
+    fn has_cycle_true_on_a_planted_cycle() {
+        // T-3120: TEST001 gap -- `has_cycle` itself (not just `find_cycle`,
+        // which it delegates to) had no test directly bound to it by name
+        // or `frob:tests` directive. A genuine cycle must-fire true.
+        let mut g = Graph::new(chain_schema());
+        for id in ["a", "b", "c"] {
+            g.add_node(id, "thing", None).unwrap();
+        }
+        g.add_edge("refines", "a", "b").unwrap();
+        g.add_edge("refines", "b", "c").unwrap();
+        g.add_edge("refines", "c", "a").unwrap();
+        assert!(g.has_cycle(&KindFilter::Any));
+    }
+
+    // frob:ticket T-3120
+    // frob:tests strata-core/src/graph/query.rs::tests.has_cycle_false_on_an_acyclic_graph
+    #[test]
+    fn has_cycle_false_on_an_acyclic_graph() {
+        // T-3120: must-stay-quiet pair for the fixture above -- same node
+        // set and edge kind, minus the closing edge that makes it a cycle.
+        let mut g = Graph::new(chain_schema());
+        for id in ["a", "b", "c"] {
+            g.add_node(id, "thing", None).unwrap();
+        }
+        g.add_edge("refines", "a", "b").unwrap();
+        g.add_edge("refines", "b", "c").unwrap();
+        assert!(!g.has_cycle(&KindFilter::Any));
     }
 }
