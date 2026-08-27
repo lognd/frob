@@ -17,6 +17,7 @@ scope:
 - src/frob/_cli_parsers
 - src/frob/app
 - tests/unit/test_app_runners_process.py
+- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,12 @@ scope_changes:
 - op: add
   glob: tests/unit/test_app_runners_process.py
   reason: 'T-3106: new dedicated test file for the process reap CLI wiring'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'T-3106: process_runner.py''s frob:doc anchor cites app.md#runners, matching
+    ops_runner.py''s own existing convention'
   actor: logan
   at: '2026-08-27'
 designated_repro_test: null
