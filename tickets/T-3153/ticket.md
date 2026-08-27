@@ -1,7 +1,7 @@
 ---
 id: T-3153
 title: Corpus test's own tmp_path ticket fixture trips the worktree-lease guard
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -52,3 +52,6 @@ Fix direction (not investigated in depth): either (a) the corpus fixture's `new_
 
 ## Failure log
 - 2026-08-27 attempt 1: Does not reproduce: T-3145 (landed same day, commit 3886bd212, tests/conftest.py's _isolate_worktree_lease_env_before_test) already fixed exactly this class -- ambient FROB_WORKTREE/FROB_AGENT inherited from a spawning process (frob ticket evidence's individual-reverify subprocess) is now popped at test setup. Verified directly: uv run frob ticket evidence T-3153 tests/test_refactor_corpus.py::TestRefactorCorpus::test_split_moves_symbols_across_every_call_site_shape (the exact repro path this ticket names) passes clean, no WorktreeLeaseViolation. BUG002 test-first requires the repro to FAIL at the parent commit; it does not. Requeue if T-3145 is ever reverted.
+
+## Drop reason
+- 2026-08-27: Does not reproduce on main: T-3145 (landed 3886bd212, tests/conftest.py _isolate_worktree_lease_env_before_test) already pops ambient FROB_WORKTREE/FROB_AGENT at test setup. Verified: uv run frob ticket evidence T-3153 tests/test_refactor_corpus.py::TestRefactorCorpus::test_split_moves_symbols_across_every_call_site_shape passes clean, no WorktreeLeaseViolation. Ticket's own Failure log already records this; BUG002 test-first repro does not fail at parent commit.
