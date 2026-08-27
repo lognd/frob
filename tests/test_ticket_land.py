@@ -12146,3 +12146,105 @@ class TestRecordVerifyIntentForLandedCommit:
             tmp_path, "T-9000", self._report(commit_sha="c1"), "deadbeef"
         )
         assert queue_status(tmp_path).danger_ok == ()
+
+
+# frob:ticket T-3123
+class TestWorktreeLeaseEnvIsolation:
+    """T-3123: `tests/conftest.py`'s autouse `FROB_WORKTREE`/`FROB_AGENT`/
+    `PYTEST_XDIST_AUTO_NUM_WORKERS` snapshot/restore fixture must contain a
+    leak of any of those three, regardless of what set them.
+
+    Reproduces the exact leak measured for T-3123: `land()`'s post-merge
+    evidence re-verification path (`_verify.py`) calls
+    `frob.tickets._worktree_guard.apply_agent_env(worktree)`, which mutates
+    `os.environ` DIRECTLY with no restore (correct for its real,
+    short-lived-process production callers, wrong for a long-lived pytest
+    worker). `TestLedgerV2LandMergeStory.test_disjoint_v2_tickets_land_
+    with_no_custom_merge`'s own `land()` call is the ORIGINAL trigger this
+    ticket traced (`FROB_WORKTREE` left pointed at its `wt-v2-a` fixture
+    worktree), but the two tests below simulate the leak directly rather
+    than depend on that test's specific internals, so this regression
+    stays meaningful even if `apply_agent_env`'s own call sites change.
+
+    Simulates two tests run in order in the SAME worker process, mirroring
+    `tests/unit/test_conftest_parse_reset.py`'s established pattern for
+    testing an autouse conftest fixture's cross-test isolation.
+
+    Each assertion below compares against a fixed SENTINEL value, never
+    against "unset" -- a dispatched agent's own real shell legitimately
+    carries a real `FROB_WORKTREE` lease (`frob agent env`/`ticket
+    work`), so an assertion of the shape `"FROB_WORKTREE" not in
+    os.environ` would itself fail standalone under exactly that ordinary
+    dispatch environment, independent of any leak. Comparing against a
+    value no real lease will ever equal keeps this evidence node
+    id individually re-runnable (a `frob ticket evidence` requirement)
+    regardless of the ambient environment it runs in."""
+
+    #: A path no real `FROB_WORKTREE` lease will ever resolve to -- used
+    #: instead of "unset" so these assertions hold under a real dispatched
+    #: agent's own ambient lease too (see class docstring).
+    _LEAK_SENTINEL = "/nonexistent/T-3123-leak-sentinel/wt"
+
+    #: Set by `test_apply_agent_env_leak_is_contained_to_its_own_test`,
+    #: read by `test_must_stay_quiet_after_apply_agent_env_leak` -- a
+    #: class attribute (not per-instance) so it survives across the two
+    #: tests' separate `self` instances in the same worker process.
+    _last_apply_agent_env_leak: str | None = None
+
+    # frob:tests tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation.test_b_does_not_see_a_leaked_frob_worktree  # noqa: E501
+    def test_a_leaves_frob_worktree_set_like_apply_agent_env_does(self) -> None:
+        """First test: mutate `os.environ` DIRECTLY (bypassing
+        `monkeypatch`, exactly like `apply_agent_env` does) -- without
+        T-3123's autouse fixture this would leave `FROB_WORKTREE` set for
+        whichever test runs next in this worker."""
+        os.environ["FROB_WORKTREE"] = self._LEAK_SENTINEL
+        assert os.environ.get("FROB_WORKTREE") == self._LEAK_SENTINEL
+
+    def test_b_does_not_see_a_leaked_frob_worktree(self) -> None:
+        """Second test, run immediately after the one above in file-
+        declaration order: `FROB_WORKTREE` must not still be the leaked
+        sentinel at its own start, even though it never cleans up after
+        the prior test itself -- proving the autouse `tests/conftest.py`
+        fixture (not accidental ordering, and not a hand-added cleanup in
+        this test) is what isolates it. A `land()` call against a
+        DIFFERENT `tmp_path` repo right after this would otherwise refuse
+        with `TicketError.WorktreeLeaseViolation` -- the exact T-3123
+        failure shape."""
+        assert os.environ.get("FROB_WORKTREE") != self._LEAK_SENTINEL
+
+    def test_apply_agent_env_leak_is_contained_to_its_own_test(
+        self, tmp_path: Path
+    ) -> None:
+        """Direct proof against the REAL leaking call, not just a
+        simulation: `apply_agent_env` (the production function T-3123
+        traced) mutates this test's own `os.environ` to `tmp_path`'s
+        resolved path, but the next test must never see THIS test's own
+        `tmp_path` value -- checked immediately below."""
+        from frob.tickets._worktree_guard import apply_agent_env
+
+        _git_init(tmp_path)
+        result = apply_agent_env(tmp_path)
+        assert result.is_ok
+        assert os.environ.get("FROB_WORKTREE") == str(tmp_path.resolve())
+        # Recorded on the class (not an instance attribute) so the next
+        # test -- a fresh instance, same worker process -- can compare
+        # against exactly this test's own leaked value.
+        type(self)._last_apply_agent_env_leak = str(tmp_path.resolve())
+
+    def test_must_stay_quiet_after_apply_agent_env_leak(self) -> None:
+        """Runs immediately after the real `apply_agent_env` leak above:
+        must not still carry that test's own leaked `tmp_path` value,
+        proving containment for the ACTUAL production leak path, not
+        just the simulated one above.
+
+        `pytest.skip`s (never fails) when run standalone, out of file
+        order -- there is then no predecessor leak to have been contained
+        in the first place, and `frob ticket evidence` requires every
+        bound node id to also pass when re-run individually."""
+        leaked = type(self)._last_apply_agent_env_leak
+        if leaked is None:
+            pytest.skip(
+                "test_apply_agent_env_leak_is_contained_to_its_own_test did "
+                "not run first in this process -- nothing to check standalone"
+            )
+        assert os.environ.get("FROB_WORKTREE") != leaked

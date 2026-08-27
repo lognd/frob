@@ -1,4 +1,6 @@
+import os
 from pathlib import Path
+from typing import Iterator
 
 import pytest
 
@@ -8,6 +10,11 @@ from frob.mutate import restore_stale_journals
 from frob.testing._stackdump import STACKDUMP_ENV as _STACKDUMP_ENV  # noqa: F401
 from frob.testing._stackdump import (
     install_stackdump_handler as _install_stackdump_handler,
+)
+from frob.tickets._worktree_guard import (
+    FROB_AGENT_ENV,
+    FROB_WORKTREE_ENV,
+    PYTEST_XDIST_AUTO_NUM_WORKERS_ENV,
 )
 
 """T-1433/T-1466: the SIGUSR1 stack-dump handler itself now lives in
@@ -381,6 +388,50 @@ def _reset_parse_artifact_cache_env_before_test(
     monkeypatch.delenv(PARSE_ARTIFACT_CACHE_ENV, raising=False)
     lang_mod._artifact_conn = None
     lang_mod._artifact_conn_path = None
+
+
+# frob:ticket T-3123
+@pytest.fixture(autouse=True)
+def _isolate_worktree_lease_env_before_test() -> Iterator[None]:
+    """Snapshot and restore `FROB_WORKTREE`/`FROB_AGENT`/
+    `PYTEST_XDIST_AUTO_NUM_WORKERS` around EVERY test (T-3123).
+
+    `frob.tickets._worktree_guard.apply_agent_env` (T-3094) mutates
+    `os.environ` DIRECTLY (`os.environ.update(exports)`, no restore) --
+    correct for its real production callers (`_verify.py`,
+    `mutate_runner.py`, `perf_runner.py`, `_collect.py`,
+    `_coverage_refresh.py`), each a short-lived CLI process with no
+    "after" to restore to, same shape as T-1591's
+    `PARSE_ARTIFACT_CACHE_ENV` stamp above. In a long-lived pytest-xdist
+    worker that becomes a real cross-test leak: any test that drives
+    `frob.tickets._land.land`'s post-merge evidence re-verification path
+    in-process (most of `tests/test_ticket_land.py`) calls
+    `apply_agent_env` on the fixture's OWN throwaway `tmp_path` worktree
+    and leaves `FROB_WORKTREE` pointed at that now-torn-down directory
+    for the rest of the worker's lifetime -- `enforce_worktree_lease`
+    then refuses every LATER test's own mutating call against a
+    DIFFERENT `tmp_path` repo with `TicketError.WorktreeLeaseViolation`
+    (T-3123 measured 145-150 of 330 collected tests failing this way on
+    an otherwise-unmodified main).
+
+    Plain `os.environ` snapshot/restore (not `monkeypatch.setenv`/
+    `delenv`) because the leak this closes bypasses monkeypatch's own
+    tracking entirely -- `apply_agent_env` never goes through
+    `monkeypatch`, so `monkeypatch`'s teardown has nothing to undo.
+    Restoring by exact prior value (present -> re-set, absent -> pop)
+    handles a test that ALSO deliberately left one of these three set
+    via its own `monkeypatch.setenv` (still cleaned up independently by
+    `monkeypatch`'s own teardown) without this fixture fighting it."""
+    keys = (FROB_WORKTREE_ENV, FROB_AGENT_ENV, PYTEST_XDIST_AUTO_NUM_WORKERS_ENV)
+    prior = {key: os.environ.get(key) for key in keys}
+    try:
+        yield
+    finally:
+        for key, value in prior.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
 
 
 PY_SAMPLE = b"""\

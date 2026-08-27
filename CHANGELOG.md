@@ -476,6 +476,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3120: TEST001 gap: Graph::has_cycle in strata-core/src/graph/query.rs has no unit test
 - T-3121: Flip the squash-apply stage onto a disposable worktree and publish by CAS
 - T-3122: frob refactor split moves symbol bodies without carrying their own needed imports
+- T-3123: Stop FROB_WORKTREE leaking between tests in test_ticket_land.py
 - T-3124: frob ticket new warns on scope overlap but never on duplicate titles or bodies
 - T-3125: frob --help does not list refactor/narrative subcommands
 - T-3126: Land-commit record still dirties root and moves main without CAS after the publish

@@ -1,7 +1,7 @@
 ---
 id: T-3123
 title: Stop FROB_WORKTREE leaking between tests in test_ticket_land.py
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
