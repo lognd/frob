@@ -64,6 +64,13 @@ body_changes:
   at: '2026-08-27'
   old_length: 2743
   new_length: 3653
+- mode: append
+  reason: prior waiver line broke on backslash-continuation across newlines; restate
+    as one physical line matching the accepted directive shape
+  actor: logan
+  at: '2026-08-27'
+  old_length: 3652
+  new_length: 4547
 evidence:
 - tests/test_ticket_lifecycle.py::TestUnblock::test_unblock_removes_edge
 - tests/test_ticket_lifecycle.py::TestUnblock::test_unblock_refuses_when_not_present
@@ -142,3 +149,7 @@ documented limitation: a newly-added ticket's own history never \
 contains the test without its fix already applied once committed \
 together, so --designate-repro structurally cannot pass here even \
 though the defect and its reproduction are both real."
+
+## BUG002 waiver (corrected)
+
+frob:waive BUG002 reason="Test-first split into a separate pre-fix commit was not performed before this ticket's evidence-binding commit (rapid profile, single squashed feat commit). Manually verified the repro property instead: checked out src/frob/app/ticket_runner/_lifecycle.py at the pre-fix commit (cf3d8913a) with the new test file in place -- test_unblock_requires_reason fails with DID NOT RAISE SystemExit against the unfixed _unblock (no --reason validation existed), and passes against the fixed code. Restored the fixed file immediately after (git reset, verified git diff empty). This is the T-2025 documented limitation: a newly-added ticket's own history never contains the test without its fix already applied once committed together, so --designate-repro structurally cannot pass here even though the defect and its reproduction are both real."
