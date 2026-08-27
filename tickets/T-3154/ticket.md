@@ -1,7 +1,7 @@
 ---
 id: T-3154
 title: 'post-land sweep regression from T-3145: 1 new (rule, file) identit(ies) (SEC110)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-27'
@@ -22,6 +22,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): SEC110 fix is a lint waiver comment addition
+    only (frob:waive on an existing os.environ write) -- no runtime behavior changed,
+    same fixture logic before and after; nothing for BUG002 to reproduce'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 1423
+  new_length: 1653
+evidence:
+- tests/test_worktree_lease_env_ambient.py::TestAmbientFrobWorktreeDoesNotLeakIntoTests::test_new_ticket_against_unrelated_repo_is_unaffected_by_an_ambient_frob_worktree
+- tests/test_worktree_lease_env_ambient.py::TestAmbientFrobWorktreeDoesNotLeakIntoTests::test_opt_in_worktree_lease_guard_still_fires_when_deliberately_set
 designated_repro_test: null
 threat: null
 component: null
@@ -42,3 +54,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - SEC110  tests/test_worktree_lease_env_ambient.py  -> attributed to T-3145 (commit 3886bd21206d, already closed/dropped -- filed below) via tests/test_worktree_lease_env_ambient.py::TestAmbientFrobWorktreeDoesNotLeakIntoTests
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:no-behavior-change reason="SEC110 fix is a lint waiver comment addition only (frob:waive on an existing os.environ write) -- no runtime behavior changed, same fixture logic before and after; nothing for BUG002 to reproduce"

@@ -504,6 +504,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3149: WIRE001 false positive for CLI dest present in _config_external.py (T-3140 item 6)
 - T-3151: frob-exports gap: ci_report/ci_validity/doctor/ghio/repo_meta/coverage_wait (T-3140 item 5)
 - T-3152: fleet_status and frob.process._reap use different age heuristics for the same forkserver (mtime vs stat starttime)
+- T-3154: post-land sweep regression from T-3145: 1 new (rule, file) identit(ies) (SEC110)
 - T-3155: Extract evidence_covers_scope out of frob.gates to break the gates<->tickets edge
 - T-3156: D-02 has no legitimate evidence route for docs-only bug-kind or Rust-only tickets
 - T-3158: post-land sweep regression from T-3139: 2 new (rule, file) identit(ies), 1 finding(s) (DOC006, DRIFT001)

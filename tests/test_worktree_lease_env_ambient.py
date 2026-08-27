@@ -67,6 +67,10 @@ def _simulate_frob_worktree_ambient_before_any_test_in_this_module() -> None:
     surrounding session's OWN fixtures are responsible for containing it
     for every OTHER module; this module's own tests below prove exactly
     that containment for themselves."""
+    # frob:waive SEC110 reason="deliberate ambient-env simulation, not a secret \
+    # read/write -- FROB_WORKTREE is a worktree-lease path marker, never a secret; the \
+    # whole point of this fixture (see docstring above) is standing in for a value the \
+    # spawning process ambiently inherits"
     os.environ["FROB_WORKTREE"] = _AMBIENT_SENTINEL
 
 
