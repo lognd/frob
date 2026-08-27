@@ -2,7 +2,7 @@
 id: T-3145
 title: new_ticket-calling test fixtures spuriously fail evidence reverification under
   an agent's own FROB_WORKTREE lease
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -16,10 +16,33 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/conftest.py
+- tests/test_worktree_lease_env_ambient.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_worktree_lease_env_ambient.py
+  reason: 'Ticket''s own fixture idiom needs a NEW pytest-collected test file to prove
+
+    the ambient-FROB_WORKTREE-leak repro (conftest.py itself is not collected
+
+    by pytest -- python_files = test_*.py -- so a test proving the fixture''s
+
+    behavior cannot live only in conftest.py). T-3123, this ticket''s own
+
+    sibling/precedent, declared BOTH its fixture file (tests/conftest.py) and
+
+    a real test file (tests/test_ticket_land.py) in scope for exactly this
+
+    reason. Adding tests/test_worktree_lease_env_ambient.py to scope,
+
+    mirroring that precedent.
+
+    '
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
