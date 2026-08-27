@@ -1,7 +1,7 @@
 ---
 id: T-3138
 title: DUPLICATE TITLE PROBE ZZZ TEST
-state: queued
+state: dropped
 kind: docs
 origin: human
 created: '2026-08-27'
@@ -30,3 +30,6 @@ probe body one
 
 ## Failure log
 - 2026-08-27 attempt 1: probe ticket used to empirically verify T-1995's title-similarity refusal still fires; not real work
+
+## Drop reason
+- 2026-08-27: Confirmed leftover test artifact: probe ticket used to empirically verify T-1995's title-similarity refusal; not real work (own Failure log says so).
