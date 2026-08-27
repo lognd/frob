@@ -166,6 +166,16 @@ def _handle_from_import(
             f"rewrite `from {old_ref.module} import {old_ref.qualname}`"
             f" -> `from {destination.module} import {dest_leaf}`"
         )
+        others = [a for a in node.names if a.name != old_ref.qualname]
+        if others:
+            # This import line names the moved symbol ALONGSIDE at least
+            # one untouched name -- do NOT rewrite it at all. Repointing
+            # the whole statement at `destination.module` would drag the
+            # untouched names there too (they are not defined at the
+            # destination), and it is unnecessary: the split's own
+            # re-export shim keeps `old_ref.module` re-exporting the moved
+            # name, so this statement stays valid unmodified (T-3105).
+            continue
         collides = (
             bound_as == old_ref.qualname
             and new_name in bound_names
