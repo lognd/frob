@@ -17,7 +17,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from typani.result import Ok
+from typani.result import Err, Ok, Result
 
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import _work
@@ -36,10 +36,18 @@ from frob.app.ticket_runner._land_cmd import (
     land_parity_findings,
 )
 from frob.app.ticket_runner._lifecycle import _default_work_worktree
-from frob.tickets import Origin, TicketKind, TicketSpec, TicketState, new_ticket
+from frob.tickets import (
+    Origin,
+    TicketKind,
+    TicketSpec,
+    TicketState,
+    new_ticket,
+    set_no_scope_declared,
+)
 from frob.tickets._land import land
 from frob.tickets._land_squash import _assert_still_on_expected_branch
-from frob.tickets._models import LandError, LandReport
+from frob.tickets._leases import LeaseError
+from frob.tickets._models import LandError, LandReport, Ticket, TicketError
 from frob.tickets._store import atomic_write, ledger_path, load_all, write_ticket
 
 
@@ -72,8 +80,48 @@ def _commit_all(root: Path, message: str) -> None:
     _run(["git", "commit", "-q", "-m", message], root)
 
 
+def _commit_all_if_dirty(root: Path, message: str) -> None:
+    """`_commit_all`, but tolerant of "nothing to commit" (unlike every
+    other call site here, this one follows two prior `new_ticket` calls
+    that ALREADY auto-committed their own ledger writes, T-1758 -- so a
+    caller sitting on top of a cluster of tickets built entirely from
+    already-auto-committing primitives cannot assume there is still a
+    dirty `tickets.md` left to commit by the time it gets here)."""
+    _run(["git", "add", "-A"], root)
+    status = _run(["git", "diff", "--cached", "--name-only"], root).stdout
+    if not status.strip():
+        return
+    _run(["git", "commit", "-q", "-m", message], root)
+
+
 def _spec(title: str) -> TicketSpec:
     return TicketSpec(title=title, kind=TicketKind.FEATURE, origin=Origin.AGENT)
+
+
+def _new_ticket(repo: Path, title: str) -> Result[Ticket, TicketError | LeaseError]:
+    """Mint a fresh ticket for this module's tests AND declare its empty
+    scope intentional (T-2394: `frob ticket start` refuses an
+    empty-scope ticket unless it says so explicitly) since these tests
+    exercise `work`/`land` plumbing, not scope-coverage enforcement, and
+    a real scope glob would additionally trip the evidence-coverage
+    check `land()` runs against a non-empty scope.
+
+    NOTE: goes through `set_no_scope_declared` as a SEPARATE step after
+    `new_ticket`, not via `TicketSpec(no_scope_declared=True, ...)`
+    directly, because `_ticket_from_spec` currently drops those two
+    `TicketSpec` fields on the floor when building the `Ticket` (filed
+    as a follow-up bug, see this ticket's Done report)."""
+    created = new_ticket(repo, _spec(title))
+    if created.is_err:
+        return Err(created.danger_err)
+    result = set_no_scope_declared(
+        repo,
+        created.danger_ok.id,
+        reason="test fixture: work/land plumbing coverage only",
+    )
+    if result.is_err:
+        return result
+    return Ok(result.danger_ok)
 
 
 @pytest.fixture
@@ -87,7 +135,12 @@ def repo(tmp_path: Path) -> Path:
     # T-1175's own `.claude/worktrees/<id>` default must not itself show up
     # as an untracked change in `main`'s own working tree (real repos
     # gitignore `.claude/worktrees/`, matching this repo's own .gitignore).
-    (main_repo / ".gitignore").write_text(".claude/\n")
+    # `.frob/` is ALSO gitignored in every real checkout (this repo's own
+    # .gitignore included) -- omitting it here left `.frob/cache.db*`,
+    # `.frob/pytest-collect.json`, etc. as untracked files after a real
+    # `land()` call, which then blocks `git worktree remove` with
+    # "contains modified or untracked files" (T-3037).
+    (main_repo / ".gitignore").write_text(".claude/\n.frob/\n")
     _commit_all(main_repo, "init")
     return main_repo
 
@@ -110,7 +163,7 @@ class TestWork:
         # frob:tests \
         # tests/test_ticket_work_and_land_finish.py::TestWork.test_creates_worktree_mer\
         # ges_main_and_starts_ticket
-        created = new_ticket(repo, _spec("Work verb"))
+        created = _new_ticket(repo, "Work verb")
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "add ticket")
@@ -133,7 +186,7 @@ class TestWork:
         # frob:tests \
         # tests/test_ticket_work_and_land_finish.py::TestWork.test_reuses_an_existing_w\
         # orktree_and_merges_main_for_freshness
-        created = new_ticket(repo, _spec("Work verb reuse"))
+        created = _new_ticket(repo, "Work verb reuse")
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "add ticket")
@@ -165,7 +218,7 @@ class TestWork:
         # frob:tests \
         # tests/test_ticket_work_and_land_finish.py::TestWork.test_prints_the_agent_env\
         # _eval_line_naming_the_worktree
-        created = new_ticket(repo, _spec("Work verb env hint"))
+        created = _new_ticket(repo, "Work verb env hint")
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "add ticket")
@@ -188,7 +241,7 @@ class TestWork:
         # frob:tests \
         # tests/test_ticket_work_and_land_finish.py::TestWork.test_no_fleet_context_doe\
         # s_not_claim_an_xdist_bound
-        created = new_ticket(repo, _spec("Work verb solo"))
+        created = _new_ticket(repo, "Work verb solo")
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "add ticket")
@@ -212,7 +265,7 @@ class TestWork:
         # s_the_bound_agent_env_exports_computed
         from frob.tickets._leases import _LeaseRecord, leases_dir
 
-        created = new_ticket(repo, _spec("Work verb fleet"))
+        created = _new_ticket(repo, "Work verb fleet")
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "add ticket")
@@ -279,7 +332,7 @@ class TestRootIsItselfANestedWorktree:
 
     def test_work_refuses_from_a_nested_worktree(self, repo: Path) -> None:
         # frob:tests src/frob/app/ticket_runner/_lifecycle.py::_work kind="unit"
-        created = new_ticket(repo, _spec("Work verb nested refusal"))
+        created = _new_ticket(repo, "Work verb nested refusal")
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "add ticket")
@@ -310,7 +363,7 @@ class TestRootIsItselfANestedWorktree:
         )
         leaf = new_ticket(repo, leaf_spec)
         assert leaf.is_ok
-        _commit_all(repo, "add cluster tickets")
+        _commit_all_if_dirty(repo, "add cluster tickets")
 
         nested_root = repo / ".claude" / "worktrees" / "agent-outer"
         nested_root.mkdir(parents=True)
@@ -428,7 +481,7 @@ class TestResolveMergeTargetKnownIds:
 
     def test_measured_unions_active_and_archived_ids(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds.test_measured_unions_active_and_archived_ids  # noqa: E501
-        created = new_ticket(repo, _spec("active ticket on main"))
+        created = _new_ticket(repo, "active ticket on main")
         assert created.is_ok
         active_id = created.danger_ok.id
         _commit_all(repo, "file an active ticket")
@@ -731,7 +784,7 @@ class TestAssertTouchedFilesTypeCheckPreLand:
         # with `SystemExit(1)` before ever reaching the merge.
         from frob.app.config import AppConfig
 
-        created = new_ticket(repo, _spec("Land with a real ty error"))
+        created = _new_ticket(repo, "Land with a real ty error")
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "add ticket")
@@ -1033,7 +1086,7 @@ class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
         # only once the deferred post-land sweep eventually catches it
         # against an already-published commit. At this fix, it REFUSES
         # with `SystemExit(1)` before ever reaching the merge.
-        created = new_ticket(repo, _spec("Land with a new undocumented symbol"))
+        created = _new_ticket(repo, "Land with a new undocumented symbol")
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "add ticket")
@@ -1451,7 +1504,7 @@ class TestReverifyDoneReportClaimsDisclosesUnknownGateState:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestReverifyDoneReportClaimsDisclosesUnknownGateState.test_no_captured_claims_section_logs_unknown_not_clean  # noqa: E501
         from frob.tickets._land_verify import _reverify_done_report_claims_post_merge
 
-        created = new_ticket(repo, _spec("No captured claims"))
+        created = _new_ticket(repo, "No captured claims")
         assert created.is_ok
         tid = created.danger_ok.id
         loaded = load_all(repo)
@@ -1918,7 +1971,7 @@ class TestLandProofAndFinish:
         """Land a freshly created ticket end-to-end and return its id,
         worktree path, and the resulting LandReport for assertion reuse
         across this class's tests."""
-        created = new_ticket(repo, _spec("Land proof"))
+        created = _new_ticket(repo, "Land proof")
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "add ticket")
@@ -1965,7 +2018,7 @@ class TestLandProofAndFinish:
         # invocation.
         from frob.app.config import AppConfig
 
-        created = new_ticket(repo, _spec("CLI land root-equals-worktree"))
+        created = _new_ticket(repo, "CLI land root-equals-worktree")
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "add ticket")
@@ -2046,7 +2099,7 @@ class TestLandProofAndFinish:
         # verified=False (observed landing T-1820, 2026-08-08).
         from types import SimpleNamespace
 
-        created = new_ticket(repo, _spec("Anchor left queued"))
+        created = _new_ticket(repo, "Anchor left queued")
         assert created.is_ok
         tid = created.danger_ok.id
         loaded = load_all(repo)
@@ -2074,7 +2127,7 @@ class TestLandProofAndFinish:
         # unverified-land signal and must still read verified=False.
         from types import SimpleNamespace
 
-        created = new_ticket(repo, _spec("Ordinary ticket left queued"))
+        created = _new_ticket(repo, "Ordinary ticket left queued")
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "ordinary ticket, still queued")
@@ -2103,7 +2156,7 @@ class TestLandProofAndFinish:
         # False here even though the commit is a real ancestor of main).
         from types import SimpleNamespace
 
-        created = new_ticket(repo, _spec("Queued with failure log"))
+        created = _new_ticket(repo, "Queued with failure log")
         assert created.is_ok
         tid = created.danger_ok.id
         loaded = load_all(repo)
@@ -2443,7 +2496,7 @@ class TestBranchDriftGuard:
         # behavior (asserts `is_err`, which used to be `False`/`is_ok`)
         # and PASSES once `_assert_still_on_expected_branch` refuses
         # before the commit ever happens.
-        created = new_ticket(repo, _spec("Branch drift regression"))
+        created = _new_ticket(repo, "Branch drift regression")
         assert created.is_ok
         tid = created.danger_ok.id
         _commit_all(repo, "add ticket")

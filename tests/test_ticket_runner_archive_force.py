@@ -65,6 +65,7 @@ def _make_done_ticket(root: Path) -> None:
             ticket_path=root,
             ticket_title="archive me",
             ticket_kind="docs",
+            ticket_scope=["README.md"],
             ticket_body="## Done report\n\nDone.\n",
         )
     )

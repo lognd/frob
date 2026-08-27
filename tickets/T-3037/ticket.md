@@ -1,7 +1,7 @@
 ---
 id: T-3037
 title: stale ticket-minting test fixture trips T-2394 empty-scope guard (28 tests)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -20,6 +20,24 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestWork::test_creates_worktree_merges_main_and_starts_ticket
+- tests/test_ticket_work_and_land_finish.py::TestWork::test_reuses_an_existing_worktree_and_merges_main_for_freshness
+- tests/test_ticket_work_and_land_finish.py::TestWork::test_no_fleet_context_does_not_claim_an_xdist_bound
+- tests/test_ticket_work_and_land_finish.py::TestWork::test_prints_the_agent_env_eval_line_naming_the_worktree
+- tests/test_ticket_work_and_land_finish.py::TestWork::test_fleet_context_reports_the_bound_agent_env_exports_computed
+- tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand::test_cli_land_end_to_end_refuses_a_worktree_with_a_real_ty_error
+- tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_cli_land_end_to_end_refuses_a_worktree_with_a_new_undocumented_symbol
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_cli_land_invoked_with_root_equal_to_worktree_still_verifies
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_finish_removes_the_worktree
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_proof_verifies_a_real_land
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_retire_on_proof_removes_worktree_and_deletes_its_branch
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_unverified_land_exits_nonzero_even_without_finish
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_retire_on_proof_refuses_and_touches_nothing_when_unverified
+- tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard::test_branch_drift_before_final_commit_refuses_by_construction
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_with_no_live_leases_stays_quiet
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal
 designated_repro_test: null
 threat: null
 component: null
