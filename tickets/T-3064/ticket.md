@@ -14,10 +14,324 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_models.py
+- src/frob/findings.py
+- src/frob/app/ticket_runner/_waive_audit.py
+- src/frob/app/vet_runner.py
+- src/frob/dup/_rules.py
+- src/frob/fuzz/_models.py
+- src/frob/fuzz/_rules.py
+- src/frob/perf/_advisories.py
+- src/frob/perf/_dup_spawn.py
+- src/frob/perf/_hotpath_smells.py
+- src/frob/perf/_loop_effects.py
+- src/frob/perf/_ratchet.py
+- src/frob/perf/_recursion.py
+- src/frob/perf/_redundancy.py
+- src/frob/perf/_rules.py
+- src/frob/policy/__init__.py
+- src/frob/telemetry/__init__.py
+- src/frob/testing/_coverage_cache.py
+- src/frob/vet/_ecosystem.py
+- src/frob/vet/_models.py
+- src/frob/vet/_scan.py
+- src/frob/vet/_scan_violations.py
+- src/frob/vet/_supplychain.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_models.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/findings.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/ticket_runner/_waive_audit.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/vet_runner.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/dup/_rules.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/fuzz/_models.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/fuzz/_rules.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_advisories.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_dup_spawn.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_hotpath_smells.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_loop_effects.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_ratchet.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_recursion.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_redundancy.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_rules.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/policy/__init__.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/telemetry/__init__.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/testing/_coverage_cache.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_ecosystem.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_models.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_scan.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_scan_violations.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_supplychain.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: design/frob.strata
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_models.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/findings.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/ticket_runner/_waive_audit.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/vet_runner.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/dup/_rules.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/fuzz/_models.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/fuzz/_rules.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_advisories.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_dup_spawn.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_hotpath_smells.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_loop_effects.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_ratchet.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_recursion.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_redundancy.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_rules.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/policy/__init__.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/telemetry/__init__.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/testing/_coverage_cache.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_ecosystem.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_models.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_scan.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_scan_violations.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_supplychain.py
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: design/frob.strata
+  reason: T-3064 extract universal value types from gates._models into leaf module;
+    excludes _land_cmd.py held by T-3061 live lease
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
