@@ -20,7 +20,6 @@ scope:
 - src/frob/_cli_parsers/_verify.py
 - tests/unit/verify/test_quarantine.py
 - tests/unit/verify/test_verify_runner.py
-- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -65,6 +64,12 @@ scope_changes:
   glob: frob.lock
   reason: frob ack writes digest acknowledgements to frob.lock for the two symbols
     this ticket touches
+  actor: logan
+  at: '2026-08-27'
+- op: remove
+  glob: frob.lock
+  reason: PRE001 scope-digest instability with frob.lock in scope; frob.lock changes
+    from frob ack are not code-graph-tracked content anyway
   actor: logan
   at: '2026-08-27'
 body_changes:
