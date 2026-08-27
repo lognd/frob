@@ -84,7 +84,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 936677d9b01d0f5f462fbf78cc7b3cd1ad69e554
 ---
 ## Description
 T-3034 per-test triage: tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_close_fails_on_unrelated_evidence is failing and the failure looks like a real regression in D-02's evidence-scope-binding enforcement, not test staleness.
