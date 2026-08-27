@@ -2,7 +2,7 @@
 id: T-3119
 title: frob refactor verbs' Verify phase never checks import breakage outside the
   plan's own touched files
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-27'
@@ -17,10 +17,22 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/refactor/_commit.py
 - src/frob/refactor/_verify.py
+- src/frob/refactor/_split.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/refactor/_split.py
+  reason: 'ticket''s own Description+Plan explicitly names run_split''s Verify phase
+    as a target; discovered _split.py''s _run_chunk_verify duplicates _commit.py::run_verify_outcomes
+    instead of calling it, so the T-3119 fix in _commit.py/_verify.py alone never
+    reaches the split verb -- proven live: reverting T-3122''s fix and running the
+    strengthened corpus still showed chunk success=True with T-3119''s fix already
+    committed, because run_split never calls the code path that fix lives in'
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
