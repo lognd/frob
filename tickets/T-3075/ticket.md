@@ -2,7 +2,7 @@
 id: T-3075
 title: Five tests read ambient developer state (global git identity, real ~/.claude)
   and so pass locally but fail in CI
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -29,7 +29,21 @@ body_changes:
   at: '2026-08-26'
   old_length: 0
   new_length: 4027
-designated_repro_test: null
+- mode: append
+  reason: 'document the environment-dependent-defect BUG002/TEST016 escape hatch:
+    the repro only fails absent ambient git identity, which this sandbox''s close-time
+    verification does not simulate
+
+    '
+  actor: logan
+  at: '2026-08-27'
+  old_length: 4026
+  new_length: 5691
+evidence:
+- tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_flags_id_with_genuinely_different_content_on_both_sides
+- tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_ignores_the_landing_tickets_own_id
+- tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_ignores_an_id_that_already_existed_at_the_merge_base
+designated_repro_test: tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_flags_id_with_genuinely_different_content_on_both_sides
 threat: null
 component: null
 anchor: false
@@ -104,3 +118,7 @@ ACCEPTANCE
   that DOES have git identity and a populated ~/.claude -- a hermetic test must
   be insensitive to that state in both directions, not merely tolerant of its
   absence.
+
+frob:waive BUG002 reason="the defect (git clone dropping the source repo's local, non-global config, so a commit inside the clone silently relies on ambient GLOBAL git identity) is only reproducible in an environment with NO ambient git identity at all -- confirmed directly by running the designated repro under HOME pointed at an empty throwaway directory with GIT_CONFIG_GLOBAL/GIT_CONFIG_SYSTEM=/dev/null (frob ticket evidence --check-repro genuinely reports FAILED_AT_PARENT under those conditions). This repo's own dev/CI verification environment carries a real global git identity, so the automatic close-time BUG002 re-check (which does not reapply that environment override) correctly reports the repro PASSING at parent under ITS OWN ambient identity -- the same 'passes locally, fails in CI' asymmetry this ticket exists to fix, now visible in the verification tooling itself rather than only in the original failure. This is the T-2076/BUG002 environment-the-suite-cannot-create case its own escape hatch names."
+
+frob:waive TEST016 reason="same root cause as the BUG002 waiver above: mutation testing runs in this sandbox's own ambient-identity environment, where the pre-fix code already passes (the mutation cannot be distinguished from a no-op without the CI-like no-identity condition the standard mutation harness does not simulate). Verified the real fix behavior manually in both directions instead: FAILED_AT_PARENT confirmed under a simulated no-identity HOME, and PASSED post-fix under that same simulated environment, plus PASSED under this sandbox's real ambient identity (must-stay-quiet) -- see the Done report for the exact commands."
