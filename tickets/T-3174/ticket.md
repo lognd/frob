@@ -2,7 +2,7 @@
 id: T-3174
 title: T-2114 fork-based concurrent-writer sim spuriously skips lock contention once
   ledger_lock spans the fork point
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -22,6 +22,20 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'close-time and land-time BUG002/TEST016 both flag this test as confirmatory-only
+    because the xfail marker at the parent commit hides the real failure from a normal
+    pytest run; documented and manually verified the genuine repro via --runxfail
+    in the Done report
+
+    '
+  actor: logan
+  at: '2026-08-27'
+  old_length: 3171
+  new_length: 4042
+evidence:
+- tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
 designated_repro_test: null
 threat: null
 component: null
@@ -85,3 +99,5 @@ actually granted.
 blocked_by T-3144: this file's write lease is currently held by T-3144
 (same class of test-infra fix, different failing test); sequence after
 that ticket lands to avoid a scope collision on the same file." 
+
+frob:waive BUG002 reason="the designated evidence test (TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land) genuinely reproduced the fork-vs-lock-inheritance artifact at the parent commit -- verified manually with pytest --runxfail, which showed a real, non-xfail-masked FAILURE there and a genuine PASS at this fix. BUG002/TEST016's automated pass/fail measurement uses a normal pytest run, where the parent commit's xfail(strict=True) marker reports the run as passing (an expected failure, not a failure) -- so the standard before/after comparison cannot see the delta this fix makes, even though it is real. This is a test-infra fix to the evidence test itself (the fix IS the test change), not new production code the test verifies from the outside, so there is no separate non-test caller to bind evidence against either."
