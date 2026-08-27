@@ -103,4 +103,4 @@ ACCEPTANCE
   finding and stop -- do not work around it.
 
 ## Failure log
-- 2026-08-27 attempt 1: frob refactor split completed for gates._models->frob.findings but its call-site import rewriter (src/frob/refactor/_scan.py::_rebuild_from_import) drags every unmoved name on a shared import line to the destination module too, breaking ~130 files' imports (frob.gates unimportable); reverted the worktree clean, filed T-draft-ac6a1b2d to fix the rewriter before retrying this extraction
+- 2026-08-27 attempt 1: frob refactor split completed for gates._models->frob.findings but its call-site import rewriter (src/frob/refactor/_scan.py::_rebuild_from_import) drags every unmoved name on a shared import line to the destination module too, breaking ~130 files' imports (frob.gates unimportable); reverted the worktree clean, filed T-3105 to fix the rewriter before retrying this extraction

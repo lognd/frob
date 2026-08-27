@@ -1,5 +1,5 @@
 ---
-id: T-draft-ac6a1b2d
+id: T-3105
 title: 'refactor split: import-rewrite drags unmoved names to destination module'
 state: queued
 kind: bug
