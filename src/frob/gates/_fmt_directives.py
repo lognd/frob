@@ -173,7 +173,7 @@ def read_line_length(root: Path) -> int:
 # ticket, `format_paths`/`_fix_engine_text`/`_land_cmd`/`_todo_fmt` all
 # called `read_line_length(root)` exactly ONCE per run and passed that
 # single ruff-derived int to every file regardless of language -- correct
-# for Python (ruff owns Python's width, and `# noqa: E501` is what a
+# for Python (ruff owns Python's width, and a noqa suppression for E501 is what a
 # directive wrap is standing in for there) but wrong for every other
 # language `frob fmt` wraps (Rust/TS/JS/C-family), which each have their
 # OWN formatter and their own width knob. `resolve_line_length` below is

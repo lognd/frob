@@ -115,7 +115,9 @@ def _write_migration(
     )
 
 
-def _resolve_extent(file_path: Path, file_text: str, line: int) -> tuple[int, int] | None:
+def _resolve_extent(
+    file_path: Path, file_text: str, line: int
+) -> tuple[int, int] | None:
     """`block_at`/`paragraph_at` dispatch by file suffix (T-2995) -- split
     out of `run_narrative_command` to keep that function under ARCH001's
     threshold. A `.md` doc's T-id-citing narrative is a blank-line-
@@ -127,7 +129,12 @@ def _resolve_extent(file_path: Path, file_text: str, line: int) -> tuple[int, in
 
 
 def _resolve_migration(
-    *, file_path: Path, file_text: str, start: int, end: int, keep_lines: tuple[str, ...]
+    *,
+    file_path: Path,
+    file_text: str,
+    start: int,
+    end: int,
+    keep_lines: tuple[str, ...],
 ):  # noqa: ANN201
     """`migrate_block` plus the ticket-body text it implies -- split out of
     `run_narrative_command` to keep that function under ARCH001's
@@ -185,7 +192,11 @@ def run_narrative_command(args: argparse.Namespace) -> int:
     keep_lines = _read_keep_lines(args.keep_file)
 
     result = _resolve_migration(
-        file_path=file_path, file_text=file_text, start=start, end=end, keep_lines=keep_lines
+        file_path=file_path,
+        file_text=file_text,
+        start=start,
+        end=end,
+        keep_lines=keep_lines,
     )
     if result.is_err:
         err = result.danger_err
