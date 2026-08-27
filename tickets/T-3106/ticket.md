@@ -14,13 +14,30 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- scripts/fleet_status.py
 - src/frob/_cli_parsers
 - src/frob/app
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: scripts/fleet_status.py
+  reason: 'UPDATE 2026-08-27: the scripts/fleet_status.py half of this ticket is
+
+    DONE -- T-3093 fixed _FROB_CHECK_TOKEN_RE (replaced with
+
+    _is_live_check_cmdline, whole-token match) and confirmed live that the
+
+    ORPHANED FORKSERVERS line no longer false-positives on "python -m frob
+
+    check ..." launchers. Remaining scope: only the "frob process reap" CLI
+
+    command (parser + dispatch wiring), not the fleet_status.py fix.
+
+    '
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
