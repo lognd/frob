@@ -23,6 +23,10 @@ scope:
 - docs/strata/vmodel.md
 - docs/strata/graph.md
 - strata-core/src/graph/query.rs
+- src/frob/gates/_vmodel.py
+- tests/test_gates_vmodel.py
+- tests/unit/strata/test_vmodel_check.py
+- strata-core/src/parse/grammar_core.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -126,6 +130,143 @@ scope_changes:
     the required_attrs field to that struct (T-3044 H3) is a mechanical
 
     compile-fix in the same struct''s other construction site, not new scope.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_vmodel.py
+  reason: 'Extending the graph kernel''s node/edge attrs to construction-time
+
+    validation directly changes vmodel_check''s data-in shape (the only PyO3
+
+    consumer) -- its sole Python caller (frob.gates._vmodel) and both test
+
+    files bound to vmodel_check via frob:tests must move in the same change
+
+    or the gate breaks at runtime. The grammar/DSL surface for AUTHORING
+
+    attrs in .strata files is explicitly left to a follow-up ticket (filed
+
+    separately), not touched here.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_gates_vmodel.py
+  reason: 'Extending the graph kernel''s node/edge attrs to construction-time
+
+    validation directly changes vmodel_check''s data-in shape (the only PyO3
+
+    consumer) -- its sole Python caller (frob.gates._vmodel) and both test
+
+    files bound to vmodel_check via frob:tests must move in the same change
+
+    or the gate breaks at runtime. The grammar/DSL surface for AUTHORING
+
+    attrs in .strata files is explicitly left to a follow-up ticket (filed
+
+    separately), not touched here.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/strata/test_vmodel_check.py
+  reason: 'Extending the graph kernel''s node/edge attrs to construction-time
+
+    validation directly changes vmodel_check''s data-in shape (the only PyO3
+
+    consumer) -- its sole Python caller (frob.gates._vmodel) and both test
+
+    files bound to vmodel_check via frob:tests must move in the same change
+
+    or the gate breaks at runtime. The grammar/DSL surface for AUTHORING
+
+    attrs in .strata files is explicitly left to a follow-up ticket (filed
+
+    separately), not touched here.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_vmodel.py
+  reason: 'Extending the graph kernel''s node/edge attrs to construction-time
+
+    validation directly changes vmodel_check''s data-in shape (the only PyO3
+
+    consumer) -- its sole Python caller (frob.gates._vmodel) and both test
+
+    files bound to vmodel_check via frob:tests must move in the same change
+
+    or the gate breaks at runtime. The grammar/DSL surface for AUTHORING
+
+    attrs in .strata files is explicitly left to a follow-up ticket (filed
+
+    separately), not touched here.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_gates_vmodel.py
+  reason: 'Extending the graph kernel''s node/edge attrs to construction-time
+
+    validation directly changes vmodel_check''s data-in shape (the only PyO3
+
+    consumer) -- its sole Python caller (frob.gates._vmodel) and both test
+
+    files bound to vmodel_check via frob:tests must move in the same change
+
+    or the gate breaks at runtime. The grammar/DSL surface for AUTHORING
+
+    attrs in .strata files is explicitly left to a follow-up ticket (filed
+
+    separately), not touched here.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/strata/test_vmodel_check.py
+  reason: 'Extending the graph kernel''s node/edge attrs to construction-time
+
+    validation directly changes vmodel_check''s data-in shape (the only PyO3
+
+    consumer) -- its sole Python caller (frob.gates._vmodel) and both test
+
+    files bound to vmodel_check via frob:tests must move in the same change
+
+    or the gate breaks at runtime. The grammar/DSL surface for AUTHORING
+
+    attrs in .strata files is explicitly left to a follow-up ticket (filed
+
+    separately), not touched here.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: strata-core/src/parse/grammar_core.rs
+  reason: 'Fixing the existing gate/test regression from H3''s kernel change requires
+
+    letting a human actually AUTHOR the new required attrs in the .strata
+
+    surface grammar (optional runnable/code_ref/reason clauses on
+
+    vmodel_node/vmodel_edge) -- otherwise every real vmodel_node declaration
+
+    becomes permanently unconstructible and the existing gate tests (which
+
+    assert specific closure outcomes on real .strata text) cannot be fixed at
+
+    all without this. Kept minimal: three fixed optional clauses, not a
+
+    general attr syntax (that generalization is T-3049''s canonical-schema
+
+    scope).
 
     '
   actor: logan
