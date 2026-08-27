@@ -2,7 +2,7 @@
 id: T-3018
 title: os.kill(pid,0) liveness probe can actually TerminateProcess on Windows (land.py,
   leases.py)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -17,10 +17,27 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_leases.py
+- src/frob/process/_pid_liveness.py
+- src/frob/mutate/_journal.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/process/_pid_liveness.py
+  reason: extract shared frob.process._pid_liveness.pid_alive() so _land.py's identical
+    unsafe os.kill(pid,0) probe and _journal.py's existing safe one share one implementation,
+    per T-3018's own recommendation
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/mutate/_journal.py
+  reason: extract shared frob.process._pid_liveness.pid_alive() so _land.py's identical
+    unsafe os.kill(pid,0) probe and _journal.py's existing safe one share one implementation,
+    per T-3018's own recommendation
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: priority
   old_value: medium
