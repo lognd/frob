@@ -31,7 +31,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7fad6e96c0ee509b23e0e6bd5147f298fb72864b
 ---
 T-3101 asks for the native rebuild to move AFTER `publish_ref_cas`. That
 call site does not exist yet and is blocked behind T-3089's re-scoped
