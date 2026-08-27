@@ -2,7 +2,7 @@
 id: T-3119
 title: frob refactor verbs' Verify phase never checks import breakage outside the
   plan's own touched files
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-27'
@@ -18,6 +18,8 @@ scope:
 - src/frob/refactor/_commit.py
 - src/frob/refactor/_verify.py
 - src/frob/refactor/_split.py
+evidence_scope:
+- tests/test_refactor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +35,11 @@ scope_changes:
     committed, because run_split never calls the code path that fix lives in'
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/test_refactor.py::TestVerify::test_module_import_catches_missing_import
+- tests/test_refactor.py::TestVerify::test_module_import_passes_clean_module
+- tests/test_refactor.py::TestCommit::test_run_verify_outcomes_runs_requested_checks
+- tests/test_refactor.py::TestRunSplit::test_run_chunk_verify_scopes_pytest_collect_to_touched_files
 designated_repro_test: null
 threat: null
 component: null

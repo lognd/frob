@@ -225,7 +225,10 @@ prevent, so it is a hard gate, not a disclosed-only warning.
    it would otherwise mechanically rewrite is reported via `unresolved`
    instead of rewritten, since a whole-line-span replacement there would
    silently delete the sibling statement.
-4. **Verify** -- three post-conditions, each producing a `VerifyOutcome`:
+4. **Verify** -- post-conditions, each producing a `VerifyOutcome`. Two
+   run UNCONDITIONALLY (never skippable by any `--skip-*` flag);
+   `verify_pytest_collect`/`verify_check_delta` are the two optional
+   ones:
    - `verify_import_resolution` -- every touched `.py` file still parses
      (non-`.py` touched files, e.g. a `tickets/<id>/ticket.md` evidence
      citation or a `docs/design/registry/*.yaml` cross-ref, are recorded
@@ -244,6 +247,28 @@ prevent, so it is a hard gate, not a disclosed-only warning.
      always says which mode ran, and mentions the skipped count whenever
      it is nonzero -- a skip is disclosed, never silently folded into
      either a pass or a failure verdict.
+   - `verify_module_import` (T-3119, ALWAYS runs) -- a REAL interpreter
+     `import <module>` for every touched `.py` file's own dotted module,
+     each in its own fresh subprocess with this repo's own `src/` root
+     (or repo root, if there is no `src/`) on `PYTHONPATH`. PARSE IS NOT
+     IMPORT: `verify_import_resolution` above only proves a file parses
+     and that ITS OWN local imports statically resolve against a target
+     module's top-level names -- it cannot catch a module that parses
+     cleanly but raises at real import time, exactly T-3122's defect (a
+     moved class body referencing e.g. `StrEnum` as a base class with
+     neither the class's own module nor the destination importing it).
+     Scoped to the plan's own `touched_files`, same as
+     `verify_import_resolution` -- not a whole-repo sweep, since
+     importing an arbitrary file executes its top-level code, which is
+     unsafe/slow to do unconditionally outside the files a transaction
+     could actually have broken. `run_split`'s own chunk verify
+     (`_run_chunk_verify`) delegates to the SAME `_commit.
+     run_verify_outcomes` every other verb uses (T-3119: it used to be
+     an independent copy of the same three-check sequence, which meant a
+     fix landed in `run_verify_outcomes` alone silently never reached
+     `run_split` -- proven live by reverting T-3122's fix locally and
+     showing the strengthened T-3110 corpus still reported
+     `success=True` until this delegation was fixed too).
    - `verify_pytest_collect` -- `pytest --collect-only` succeeds with no
      new collection error.
    - `verify_check_delta` -- `frob check --delta` is diff-clean against
@@ -470,6 +495,15 @@ contains resolves against what that module currently defines. T-1889:
 the per-file parse/skip/syntax-error loop is factored into the private
 helper `_parse_touched_python_files` so this function stays under the
 long-function architecture threshold; behavior is unchanged.
+
+<a id="verify_module_import"></a>
+<!-- frob:describes src/frob/refactor/_verify.py::verify_module_import -->
+**`verify_module_import`**: Verify post-condition (T-3119, ALWAYS runs,
+never gated by a `--skip-*` flag) -- a REAL interpreter `import
+<module>` for every touched `.py` file's own dotted module, each in its
+own fresh subprocess; catches the defect class `verify_import_resolution`
+structurally cannot (PARSE IS NOT IMPORT). See "Transaction model" above
+for the full rationale and the T-3122 defect this closes.
 
 <a id="verify_pytest_collect"></a>
 <!-- frob:describes src/frob/refactor/_verify.py::verify_pytest_collect -->

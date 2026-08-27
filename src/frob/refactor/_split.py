@@ -24,6 +24,7 @@ from typani.result import Result
 
 from frob.logging import get_logger
 from frob.refactor._apply import apply_plan
+from frob.refactor._commit import run_verify_outcomes
 from frob.refactor._directives import carry_lock_acks
 from frob.refactor._gitops import current_sha, git, working_tree_clean
 from frob.refactor._models import (
@@ -38,11 +39,6 @@ from frob.refactor._models import (
 from frob.refactor._resolve import module_to_path
 from frob.refactor._scan import needed_import_ops_for_symbols
 from frob.refactor._transaction import build_plan
-from frob.refactor._verify import (
-    verify_check_delta,
-    verify_import_resolution,
-    verify_pytest_collect,
-)
 
 _log = get_logger(__name__)
 
@@ -264,19 +260,31 @@ def _run_chunk_verify(
     run_pytest_collect: bool,
     run_check_delta: bool,
 ) -> list[VerifyOutcome]:
-    """The same three Verify-phase post-conditions `run_refactor` runs per
+    """The same Verify-phase post-conditions `run_refactor` runs per
     single move, run once for a whole chunk's combined touched-file set;
     the pytest-collect and check-delta passes are individually skippable
     exactly as `run_refactor`'s own flags allow (fast local iteration /
-    test speed)."""
-    outcomes: list[VerifyOutcome] = [
-        verify_import_resolution(touched_files, repo_root=repo_root)
-    ]
-    if run_pytest_collect:
-        outcomes.append(verify_pytest_collect(repo_root, targets=touched_files))
-    if run_check_delta:
-        outcomes.append(verify_check_delta(repo_root))
-    return outcomes
+    test speed).
+
+    T-3119: delegates to `_commit.run_verify_outcomes` (always
+    `pytest_scope_touched_only=True` -- a chunk's own touched-file set
+    was always this function's only pytest-collect target, matching the
+    previous inline shape) instead of re-deriving the same outcome list
+    -- this used to be its own independent copy of `run_verify_outcomes`'s
+    sequence, which meant a fix landed in the shared helper (T-3119's own
+    unconditional `verify_module_import` check) silently never reached
+    `run_split` at all. Measured live: reverting T-3122's fix and running
+    the strengthened T-3110 corpus against the OLD duplicated body here
+    still reported `chunk success=True` with T-3119's fix already
+    committed elsewhere, because this function never called the code
+    path that fix lived in."""
+    return run_verify_outcomes(
+        repo_root,
+        touched_files,
+        run_pytest_collect,
+        run_check_delta,
+        pytest_scope_touched_only=True,
+    )
 
 
 def _chunk_failure(

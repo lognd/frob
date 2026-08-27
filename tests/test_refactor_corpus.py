@@ -64,7 +64,15 @@ def _assert_all_py_files_parse(root: Path) -> None:
     `verify_import_resolution` limits itself to) -- a corpus assertion
     that only re-checked touched files would not have caught T-3105's
     130 wrongly-rewritten-but-NOT-import-checked files any better than
-    the shipped code did."""
+    the shipped code did.
+
+    PARSE IS NOT IMPORT (T-3119/T-3122): this assertion alone does NOT
+    catch a module that parses fine but raises `NameError` at real
+    import time (a moved class body left with an undefined base class
+    name) -- `_assert_all_py_files_importable` below is the one that
+    does; both are kept, this one first, since a syntax break is a
+    cheaper and more specific signal to see before the more expensive
+    import sweep runs."""
     broken: list[str] = []
     for py_file in sorted(root.rglob("*.py")):
         if ".git" in py_file.parts:
@@ -73,6 +81,64 @@ def _assert_all_py_files_parse(root: Path) -> None:
             ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
         except SyntaxError as exc:
             broken.append(f"{py_file}: {exc}")
+    assert broken == [], broken
+
+
+def _assert_all_py_files_importable(root: Path) -> None:
+    """T-3119/T-3122: every tracked `.py` file under `root`'s own `src/`
+    tree actually IMPORTS in a real subprocess interpreter, not merely
+    parses -- `_assert_all_py_files_parse` above is a syntax-only check
+    and is PROVABLY insufficient on its own: T-3122's defect (a moved
+    class body referencing `StrEnum` with neither the class nor its
+    module importing it) parses cleanly and would pass
+    `_assert_all_py_files_parse` unchanged while raising `NameError` the
+    instant anything actually imports the module. This is the exact gap
+    T-3110's original corpus had (measured: it did NOT catch T-3122,
+    unlike T-3066/T-3105/T-3109, precisely because it only asserted
+    parseability) -- this function closes it by actually importing
+    every module, one per fresh subprocess, with `src/` on
+    `PYTHONPATH`."""
+    import os
+    import sys
+
+    src_root = root / "src"
+    base = src_root if src_root.is_dir() else root
+    env = os.environ.copy()
+    existing = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = str(base) + (os.pathsep + existing if existing else "")
+    # Never write a `__pycache__/*.pyc` into the fixture's own working
+    # tree -- this corpus test asserts a clean `git status --porcelain`
+    # after the split, and a real subprocess import's own bytecode
+    # cache is not something the split itself wrote.
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    # This repo's own test suite runs under coverage
+    # (COVERAGE_PROCESS_START), which would otherwise make each
+    # subprocess import write `.coverage.*` data files into the FIXTURE
+    # repo's own working tree -- same clean-git-status concern as
+    # PYTHONDONTWRITEBYTECODE above.
+    env.pop("COVERAGE_PROCESS_START", None)
+    env.pop("COVERAGE_FILE", None)
+
+    broken: list[str] = []
+    for py_file in sorted(base.rglob("*.py")):
+        if ".git" in py_file.parts:
+            continue
+        rel = py_file.relative_to(base).with_suffix("")
+        parts = rel.parts
+        if parts[-1] == "__init__":
+            parts = parts[:-1]
+            if not parts:
+                continue
+        module = ".".join(parts)
+        proc = subprocess.run(
+            [sys.executable, "-B", "-c", f"import {module}"],
+            cwd=root,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode != 0:
+            broken.append(f"{module}: {(proc.stdout + proc.stderr)[-1000:]}")
     assert broken == [], broken
 
 
@@ -97,11 +163,22 @@ def _corpus_repo(tmp_path: Path) -> Path:
     _write(
         root,
         "src/pkg/mod.py",
+        # T-3122 shape: `MovedEnum` is a top-level symbol whose OWN
+        # definition needs `pkg.mod`'s own `from enum import StrEnum`
+        # carried forward -- valid syntax and no LOCAL import for
+        # `verify_import_resolution` to statically flag wrong, so only a
+        # real `import` of the destination module (T-3119) catches it
+        # landing with `StrEnum` undefined.
+        "from enum import StrEnum\n"
+        "\n\n"
         "def moved_a():\n"
         "    return 'a'\n"
         "\n\n"
         "def moved_b():\n"
         "    return 'b'\n"
+        "\n\n"
+        "class MovedEnum(StrEnum):\n"
+        "    RED = 'red'\n"
         "\n\n"
         "def kept_c():\n"
         "    return 'c'\n",
@@ -207,7 +284,7 @@ class TestRefactorCorpus:
         result = run_split(
             root,
             source_module="pkg.mod",
-            symbols=["moved_a", "moved_b"],
+            symbols=["moved_a", "moved_b", "MovedEnum"],
             destination_module="pkg.newmod",
             chunk_size=5,
             run_pytest_collect=False,
@@ -217,17 +294,27 @@ class TestRefactorCorpus:
         report = result.danger_ok
         assert report.success is True, report
         assert all(c.rolled_back is False for c in report.chunks), report.chunks
-        assert report.moved_symbols == ("moved_a", "moved_b")
+        assert report.moved_symbols == ("moved_a", "moved_b", "MovedEnum")
 
         # The minimum bar T-3105 failed while reporting success=True:
         # the WHOLE tree must still parse, not just the files the plan
         # itself touched.
         _assert_all_py_files_parse(root)
 
+        # T-3119/T-3122: PARSE IS NOT IMPORT -- `MovedEnum` above is
+        # exactly the shape (a moved class needing its own module's
+        # import carried forward) that parses cleanly but raises
+        # `NameError` at real import time; only this assertion catches
+        # that, which is why T-3110's original corpus (parse-only) never
+        # caught T-3122 despite catching T-3066/T-3105/T-3109.
+        _assert_all_py_files_importable(root)
+
         # The destination module actually defines what moved.
         newmod_text = (root / "src/pkg/newmod.py").read_text(encoding="utf-8")
         assert "def moved_a" in newmod_text
         assert "def moved_b" in newmod_text
+        assert "class MovedEnum" in newmod_text
+        assert "from enum import StrEnum" in newmod_text
 
         # `kept_c` never moved -- neither definition nor any call site
         # was repointed at the destination.

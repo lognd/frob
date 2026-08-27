@@ -20,6 +20,7 @@ from frob.refactor._models import RefactorError, VerifyOutcome
 from frob.refactor._verify import (
     verify_check_delta,
     verify_import_resolution,
+    verify_module_import,
     verify_pytest_collect,
 )
 
@@ -58,13 +59,22 @@ def run_verify_outcomes(
     pytest_scope_touched_only: bool,
 ) -> list[VerifyOutcome]:
     """Run the Verify-phase post-conditions common to every `frob
-    refactor` transaction (import resolution, optionally pytest
-    collection and `frob check --delta`), each individually skippable --
-    the same three checks `_transaction.py`'s symbol pipeline runs,
-    factored here so `_module_transaction.py` calls this instead of
-    re-deriving the same three-line sequence."""
+    refactor` transaction: import resolution and a real-interpreter
+    module import (T-3119, both ALWAYS run, never skippable) plus
+    optionally pytest collection and `frob check --delta` -- the same
+    checks `_transaction.py`'s symbol pipeline runs, factored here so
+    `_module_transaction.py` calls this instead of re-deriving the same
+    sequence."""
+    # frob:ticket T-3119
     outcomes: list[VerifyOutcome] = [
-        verify_import_resolution(touched_files, repo_root=repo_root)
+        verify_import_resolution(touched_files, repo_root=repo_root),
+        # T-3119: unconditional, never gated by a --skip-* flag -- a
+        # verb that rewrites imports must not be able to report success
+        # without a real interpreter import actually confirming the
+        # result imports (verify_import_resolution's own parse+static
+        # check cannot catch this; see its docstring, "PARSE IS NOT
+        # IMPORT").
+        verify_module_import(repo_root, touched_files),
     ]
     if run_pytest_collect:
         targets = touched_files if pytest_scope_touched_only else None

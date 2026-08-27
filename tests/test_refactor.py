@@ -1116,6 +1116,48 @@ class TestVerify:
         outcome = verify_import_resolution([good])
         assert outcome.passed is True
 
+    # frob:ticket T-3119
+    def test_module_import_catches_missing_import(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestVerify.test_module_import_catches_missing_import
+        """T-3119: a file that parses fine (valid syntax, no local
+        import-resolution violation of ITS OWN imports) but references
+        an undefined name at module scope -- T-3122's exact defect shape
+        -- must be caught by a REAL interpreter import, which
+        `verify_import_resolution` structurally cannot do (PARSE IS NOT
+        IMPORT)."""
+        from frob.refactor._verify import verify_module_import
+
+        root = _repo(tmp_path)
+        bad = _write(
+            root,
+            "src/pkg/bad.py",
+            "class Color(StrEnum):\n    RED = 'red'\n",
+        )
+        # Sanity: this file parses cleanly and has no local (repo-owned)
+        # import to statically resolve, so verify_import_resolution alone
+        # would report it clean -- proving the gap this check closes.
+        from frob.refactor._verify import verify_import_resolution
+
+        assert verify_import_resolution([bad], repo_root=root).passed is True
+
+        outcome = verify_module_import(root, [bad])
+        assert outcome.passed is False
+        assert outcome.name == "module_import"
+        assert "StrEnum" in outcome.detail
+
+    # frob:ticket T-3119
+    def test_module_import_passes_clean_module(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestVerify.test_module_import_passes_clean_module
+        from frob.refactor._verify import verify_module_import
+
+        root = _repo(tmp_path)
+        good = _write(root, "src/pkg/good.py", "def f():\n    return 1\n")
+        outcome = verify_module_import(root, [good])
+        assert outcome.passed is True
+        assert outcome.name == "module_import"
+
     def test_pytest_collect_reports_failure(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestVerify.test_pytest_collect_reports_failure
@@ -2301,6 +2343,37 @@ class TestRunSplit:
         assert result.is_err
         assert result.danger_err == RefactorError.DirtyWorkingTree
 
+    # frob:ticket T-3119
+    def test_run_chunk_verify_scopes_pytest_collect_to_touched_files(
+        self, tmp_path, monkeypatch
+    ):
+        # frob:tests \
+        # tests/test_refactor.py::TestRunSplit.test_run_chunk_verify_scopes_pytest_coll\
+        # ect_to_touched_files
+        """T-3119: `_run_chunk_verify` delegates to `run_verify_outcomes`
+        with `pytest_scope_touched_only=True` ALWAYS -- a chunk's own
+        touched-file set was always this function's only pytest-collect
+        target (the previous inline shape had no whole-repo option
+        either). Confirms the delegation actually passes that argument
+        through, not just that SOME pytest_collect outcome comes back."""
+        from frob.refactor._models import VerifyOutcome
+        from frob.refactor._split import _run_chunk_verify
+
+        root = _repo(tmp_path)
+        good = _write(root, "src/pkg/good.py", "x = 1\n")
+        captured: dict[str, object] = {}
+
+        def fake_verify_pytest_collect(repo_root, targets=None, timeout=100):
+            captured["targets"] = targets
+            return VerifyOutcome(name="pytest_collect", passed=True, detail="stub")
+
+        monkeypatch.setattr(
+            "frob.refactor._commit.verify_pytest_collect",
+            fake_verify_pytest_collect,
+        )
+        _run_chunk_verify(root, [good], run_pytest_collect=True, run_check_delta=False)
+        assert captured["targets"] == [good]
+
 
 class TestOperands:
     def test_classifies_symbol_module_and_path(self):
@@ -2693,9 +2766,11 @@ class TestCommit:
             run_check_delta=False,
             pytest_scope_touched_only=True,
         )
-        assert len(outcomes) == 1
+        assert len(outcomes) == 2
         assert outcomes[0].name == "import_resolution"
         assert outcomes[0].passed is True
+        assert outcomes[1].name == "module_import"
+        assert outcomes[1].passed is True
 
 
 class TestBuildModulePlan:
