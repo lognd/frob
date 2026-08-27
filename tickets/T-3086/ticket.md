@@ -2,7 +2,7 @@
 id: T-3086
 title: 'Break the 182-node import cycle (redo): T-3064 closed done without performing
   the extraction'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
