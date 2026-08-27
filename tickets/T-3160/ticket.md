@@ -2,7 +2,7 @@
 id: T-3160
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3152):
   1 new (rule, file) identit(ies), 1 finding(s) (missing-argument)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-27'
