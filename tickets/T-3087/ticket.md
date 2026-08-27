@@ -101,7 +101,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 187ca0de89856844caf7b48962fbdc711552f6e7
 ---
 MEASURED 2026-08-27. T-3064 is recorded `[done]` while still carrying
 `blocked_by=['T-3066']`, and its own done-report opens:
