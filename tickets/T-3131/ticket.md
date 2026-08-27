@@ -1,7 +1,7 @@
 ---
 id: T-3131
 title: 'UNCONFIRMED-ONCE: close disclosure-guard false-fire on exempt Changed subsection'
-state: in-progress
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -100,3 +100,6 @@ overlapping timestamp) -- that would upgrade this from speculative to a
 demonstrated causal link. If it does not recur across a reasonable
 number of future closes, this can be dropped as noise once T-3130 is
 independently confirmed fixed and it still never recurs.
+
+## Drop reason
+- 2026-08-27: UNCONFIRMED-ONCE per its own title: re-ran the exact functions the CLI close path calls (disclosure_shaped_language against a Done report carrying only the exempt Changed/Evidence/Captured-claims subheadings) on current main and in this worktree -- both return None, no false-fire. The T-2718 fix that exempts 'Changed' already predates the single observed incident (commit 1466202a4), so the guard code was already correct at observation time, consistent with the ticket's own candidate mechanism: a transient cache read racing a concurrent write (T-3130's exact failure mode, same session, same host-load window). T-3130 (database is locked under concurrent frob check) is now independently confirmed DONE, and no further recurrence has been observed since (including this session's own T-3104 close, which produced a Done report with the identical Changed/Evidence/Captured-claims shape and closed clean). Per the ticket's own plan: drop as noise now that T-3130 is fixed and it has not recurred.
