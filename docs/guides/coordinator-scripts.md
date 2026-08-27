@@ -675,6 +675,25 @@ structurally started the ticket being queried, `_worktree_matches_
 ticket_by_dual_correlation` (the original T-2179/T-2181 logic described
 above, unchanged) for everything else.
 
+**T-3128 (third dispatch branch):** a worktree can also carry NO
+start-transition commit for `ticket_id` in `main..HEAD` while genuinely
+being its worktree -- its own `frob ticket start`/`work` commit already
+landed onto `main` through a sibling ticket's squash (dropping out of
+`main..HEAD` entirely), or the worktree predates that commit's
+introduction. Measured for real against T-3122: the strict
+dual-condition correlation then finds no single commit touching both
+`tickets/<id>/` and scope, and reports a live, in-use worktree as
+leaked. The dispatch now checks `_worktree_started_ticket_ids(path)`
+(T-2755) first: a worktree whose own history names NO start-transition
+commit for ANY ticket at all carries none of the T-2114/T-2181
+collision risk (that risk requires the worktree to have started SOME
+ticket), so it also gets the weaker scope-only check. Only a worktree
+that structurally started at least one OTHER ticket still gets the
+stricter dual-condition check -- `worktrees_touching_ticket` is
+therefore a three-way dispatch (started this ticket / started no
+ticket at all / started some other ticket), the last two of which both
+route to `_worktree_matches_ticket_by_scope_only`, not a two-way one.
+
 **T-2747 (correlation source replaced):** the dispatch condition
 originally read the worktree's directory NAME (`_worktree_ticket_id`,
 T-2599: `True` only for a literal `t-<id>` name). Measured wrong three

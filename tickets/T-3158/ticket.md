@@ -44,6 +44,8 @@ triage_changes:
     route post-T-3141 is the docs/ux --evidence-cmd channel (T-0215)
   actor: logan
   at: '2026-08-27'
+evidence:
+- cmd:python3 /tmp/verify_t3158.py exit=0 sha256=3f7069d4956b
 kind_history:
 - 2026-08-27 bug->docs evidence=0 done_report=yes
 designated_repro_test: null
