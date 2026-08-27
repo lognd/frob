@@ -15,8 +15,10 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: T-3034 is a per-test triage ticket over 26 failures scattered
+  across tests/; the real touched set is not knowable until each is individually triaged,
+  narrowing after the fact once known
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
