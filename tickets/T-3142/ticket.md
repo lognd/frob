@@ -65,7 +65,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 26aa3de93c90ace2bdfaf59e18b63ed182ecaf16
 ---
 T-3086 extracted frob.gates._models's universal value types (Severity,
 WaiverRef, DebtEntry, Violation) into a new leaf module frob.findings.
