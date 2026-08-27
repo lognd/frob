@@ -95,7 +95,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 613b1cd7e7b352cf95ad6790a61561566a2f80c4
 ---
 The deferred post-land unscoped sweep (T-1684) for T-3156 at commit 21055ca26f9b39b46b2f04c18961011be27934f5 found 2 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 
