@@ -937,6 +937,21 @@ change correctly and then crashed on the unhandled `KeyError` before
 the CLI could report success, discovered by running the new verb
 end-to-end rather than only through its own unit tests.
 
+T-3113 added a MANDATORY `--reason TEXT` to `unblock`, mirroring `frob
+ticket reopen`'s (T-3087) explicit-audited-escape-hatch shape for a
+correction to a load-bearing ledger field: `blocked_by` drives `doable`,
+the dispatch closure, epic rollups, and T-3087's own close guard, so a
+silent removal with no record of why would just relocate the "how did
+this change" question from `block` (which already required no reason
+either, unchanged here) to `unblock`. The reason is recorded as a dated
+line under a `## Unblock log` heading in the ticket's own body -- the
+same section-append shape `reopen_ticket`'s `## Reopen log` uses -- so a
+ticket whose last blocker was removed is distinguishable in its own
+record from a ticket that never had one. `LEDGER_VERB_STRATEGY`'s entry
+for `"unblock"` is unchanged by this (still `GENERIC_COMMIT_MIRRORED`):
+the body edit rides the same ledger write `_unblock` already made,
+adding no new commit shape.
+
 T-2840 reclassified `"requeue"` from `GENERIC_COMMIT_UNMIRRORED` to
 `GENERIC_COMMIT_MIRRORED`. MEASURED INCIDENT: an agent ran `frob ticket
 requeue T-2370` from inside a worktree; the command reported success,

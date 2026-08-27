@@ -76,11 +76,24 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
     )
 
     # frob:ticket T-2681
+    # frob:ticket T-3113
     ticket_unblock_p = ticket_sub.add_parser(
-        "unblock", help="remove a blocker (correcting a wrong/obsolete edge)"
+        "unblock",
+        help="remove a blocker (correcting a wrong/obsolete edge), with a "
+        "mandatory dated --reason (T-3113)",
     )
     ticket_unblock_p.add_argument("ticket_id", metavar="id")
     ticket_unblock_p.add_argument("--by", dest="ticket_by", required=True)
+    # frob:ticket T-3113
+    ticket_unblock_p.add_argument(
+        "--reason",
+        dest="ticket_reason",
+        required=True,
+        metavar="TEXT",
+        help="why this edge is being removed (T-3113); recorded as a "
+        "dated line in the ticket's own '## Unblock log' section, "
+        "mirroring `frob ticket reopen`'s --reason precedent",
+    )
     # frob:ticket T-1615
     ticket_unblock_p.add_argument(
         "--no-commit",

@@ -67,7 +67,10 @@ class TestUnblock:
         the whole `blocked_by` tuple."""
         _write(tmp_path, _ticket(blocked_by=("T-0002", "T-0003")))
         cfg = AppConfig(
-            ticket_command="unblock", ticket_id="T-0001", ticket_by="T-0002"
+            ticket_command="unblock",
+            ticket_id="T-0001",
+            ticket_by="T-0002",
+            ticket_reason="deferred, no longer blocking",
         )
         _unblock(tmp_path, cfg)
         queue = load_queue(tmp_path).danger_ok
@@ -82,7 +85,10 @@ class TestUnblock:
         byte untouched."""
         _write(tmp_path, _ticket(blocked_by=("T-0003",)))
         cfg = AppConfig(
-            ticket_command="unblock", ticket_id="T-0001", ticket_by="T-0002"
+            ticket_command="unblock",
+            ticket_id="T-0001",
+            ticket_by="T-0002",
+            ticket_reason="thought it was blocked, it was not",
         )
         with pytest.raises(SystemExit) as exc_info:
             _unblock(tmp_path, cfg)
@@ -98,13 +104,72 @@ class TestUnblock:
         `--by`, now applied symmetrically on the removal path."""
         _write(tmp_path, _ticket(blocked_by=("T-0002",)))
         cfg = AppConfig(
-            ticket_command="unblock", ticket_id="T-0001", ticket_by="not-a-ref"
+            ticket_command="unblock",
+            ticket_id="T-0001",
+            ticket_by="not-a-ref",
+            ticket_reason="typo in the ref",
         )
         with pytest.raises(SystemExit) as exc_info:
             _unblock(tmp_path, cfg)
         assert exc_info.value.code == 1
         queue = load_queue(tmp_path).danger_ok
         assert queue.tickets["T-0001"].blocked_by == ("T-0002",)
+
+    # frob:ticket T-3113
+    def test_unblock_requires_reason(self, tmp_path: Path) -> None:
+        """MUST-FAIL POSITIVE CONTROL (T-3113): a missing/blank `--reason`
+        refuses (SystemExit(1)) before the edge is ever touched -- the
+        same "explicit, reason-carrying, audited" shape `frob ticket
+        reopen` (T-3087) already set as precedent, extended to this load-
+        bearing field's own correction path."""
+        _write(tmp_path, _ticket(blocked_by=("T-0002",)))
+        cfg = AppConfig(
+            ticket_command="unblock",
+            ticket_id="T-0001",
+            ticket_by="T-0002",
+            ticket_reason=None,
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _unblock(tmp_path, cfg)
+        assert exc_info.value.code == 1
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].blocked_by == ("T-0002",)
+
+    # frob:ticket T-3113
+    def test_unblock_records_reason_in_unblock_log(self, tmp_path: Path) -> None:
+        """A successful unblock appends a dated `## Unblock log` line
+        naming the removed blocker and the caller's reason -- the record
+        that makes a corrected edge distinguishable from a ticket that
+        never had a blocker at all (T-3113's acceptance criterion)."""
+        _write(tmp_path, _ticket(blocked_by=("T-0002",)))
+        cfg = AppConfig(
+            ticket_command="unblock",
+            ticket_id="T-0001",
+            ticket_by="T-0002",
+            ticket_reason="blocked the wrong ticket by mistake",
+        )
+        _unblock(tmp_path, cfg)
+        queue = load_queue(tmp_path).danger_ok
+        body = queue.tickets["T-0001"].body
+        assert "## Unblock log" in body
+        assert "unblocked by T-0002" in body
+        assert "blocked the wrong ticket by mistake" in body
+
+    # frob:ticket T-3113
+    def test_unblock_leaves_other_blockers_intact(self, tmp_path: Path) -> None:
+        """MUST-STAY-QUIET: removing one of several blockers must not
+        touch the others' entries -- `_unblock` filters exactly one
+        occurrence, never the whole tuple."""
+        _write(tmp_path, _ticket(blocked_by=("T-0002", "T-0003", "T-0004")))
+        cfg = AppConfig(
+            ticket_command="unblock",
+            ticket_id="T-0001",
+            ticket_by="T-0003",
+            ticket_reason="only T-0003 was a mistake",
+        )
+        _unblock(tmp_path, cfg)
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].blocked_by == ("T-0002", "T-0004")
 
 
 # frob:ticket T-2681
@@ -124,7 +189,10 @@ class TestBlockThenUnblockRoundTrip:
         assert after_block.tickets["T-0001"].blocked_by == ("T-0002",)
 
         unblock_cfg = AppConfig(
-            ticket_command="unblock", ticket_id="T-0001", ticket_by="T-0002"
+            ticket_command="unblock",
+            ticket_id="T-0001",
+            ticket_by="T-0002",
+            ticket_reason="round-trip test",
         )
         _unblock(tmp_path, unblock_cfg)
         after_unblock = load_queue(tmp_path).danger_ok

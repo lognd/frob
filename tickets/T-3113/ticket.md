@@ -2,7 +2,7 @@
 id: T-3113
 title: 'frob ticket block is add-only: a mistaken blocked_by edge cannot be removed
   without hand-editing the ledger'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
