@@ -30,6 +30,7 @@ from frob.testing._models import (
     TestRunReport,
 )
 from frob.testing._select import ALL_SENTINEL
+from frob.tickets._worktree_guard import apply_agent_env, warn_if_xdist_bound_missing
 
 # T-0242: the `strata` language never needs a `[[test.runner]]` entry --
 # `_run_one_language_selection` invokes `frob sys audit` natively for it
@@ -395,10 +396,23 @@ def _env_overlay(overlay: Mapping[str, str]) -> Iterator[None]:
                 os.environ[key] = value
 
 
+# frob:ticket T-3133
+# frob:tests tests/test_testing.py::TestRunners.test_applies_fleet_xdist_bound_before_spawning  # noqa: E501
 def _run_one_runner(
     spec: RunnerSpec, items: tuple[str, ...], root: Path
 ) -> Result[RunnerOutcome, TestingError]:
-    """Render and spawn a single runner's argv, timed into a `RunnerOutcome`."""
+    """Render and spawn a single runner's argv, timed into a `RunnerOutcome`.
+
+    T-3133: applies the T-3094 fleet-aware xdist bound to THIS process's
+    own `os.environ` before spawning, the same fix `_run_pytest_directly`
+    (`frob.app.ticket_runner._verify`) already applies on its own,
+    separate spawn path -- closes the gap left when this declared-runner
+    path (the one `frob.toml`-configured repos, this one included, take
+    for `frob ticket evidence`'s individual-reverify) never called
+    `apply_agent_env`, so a spawned pytest's `-n auto` never saw a fleet
+    bound and instead auto-detected every host CPU."""
+    apply_agent_env(root)
+    warn_if_xdist_bound_missing(root)
     built = _build_runner_argv(spec, items)
     if built.is_err:
         return Err(built.danger_err)

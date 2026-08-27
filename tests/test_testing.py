@@ -398,6 +398,49 @@ class TestRunners:
         assert report.ok is False
         assert report.outcomes[0].exit_code == 1
 
+    def test_applies_fleet_xdist_bound_before_spawning(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-3133: `run_selected` (the declared-`[[test.runner]]` path
+        `frob ticket evidence`'s individual-reverify takes) must apply the
+        T-3094 fleet-aware xdist bound before spawning, the same as
+        `_run_pytest_directly`'s own (separate) spawn path already does --
+        this path never called `apply_agent_env` at all, so a spawned
+        pytest's `-n auto` silently auto-detected every host CPU instead
+        of the fleet-bounded worker count."""
+        # frob:tests src/frob/testing/_runners.py::_run_one_runner
+        import frob.testing._runners as runners_mod
+        from frob.testing._models import SelectionReport
+
+        calls: list[Path] = []
+
+        def _spy_apply(root: Path):
+            calls.append(root)
+            return Ok({})
+
+        monkeypatch.setattr(runners_mod, "apply_agent_env", _spy_apply)
+        monkeypatch.setattr(
+            runners_mod, "warn_if_xdist_bound_missing", lambda root: None
+        )
+
+        script = tmp_path / "ok.py"
+        script.write_text("import sys\nsys.exit(0)\n")
+        spec = RunnerSpec(
+            language="python",
+            command=(sys.executable, str(script), "{files}"),
+            all_command=(sys.executable, str(script)),
+        )
+        selection = SelectionReport(
+            touched=(),
+            selected={"python": ("dummy",)},
+            ripple=(),
+            unbound=(),
+            fallback="package",
+        )
+        result = run_selected(selection, (spec,), tmp_path)
+        assert result.is_ok
+        assert calls == [tmp_path]
+
     def test_pytest_exit_5_no_tests_collected_is_neutral_not_fail(
         self, tmp_path: Path
     ) -> None:

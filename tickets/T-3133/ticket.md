@@ -2,7 +2,7 @@
 id: T-3133
 title: 'frob ticket evidence individual-reverify: run_selected path never applies
   fleet xdist bound'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
