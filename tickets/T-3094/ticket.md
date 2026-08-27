@@ -2,7 +2,7 @@
 id: T-3094
 title: 'T-2221 fleet xdist bound never reaches pytest: 0 of 40 running workers carry
   PYTEST_XDIST_AUTO_NUM_WORKERS'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -16,10 +16,21 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_worktree_guard.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'T-3094 requires a frob:doc edge for the two new public symbols it adds
+    (apply_agent_env, warn_if_xdist_bound_missing) in the same file the existing agent_env_exports
+    doc lives in.
+
+    '
+  actor: logan
+  at: '2026-08-27'
 body_changes:
 - mode: set
   reason: Record the 0-of-40 measurement, the four candidate broken links, and the
