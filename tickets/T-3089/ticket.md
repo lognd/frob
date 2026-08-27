@@ -126,15 +126,62 @@ body_changes:
   at: '2026-08-27'
   old_length: 6513
   new_length: 10042
+evidence:
+- tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget::test_explicit_stage_leaves_root_completely_untouched
+- tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget::test_default_stage_runs_the_whole_transaction_in_root
 designated_repro_test: null
 acceptance:
 - text: Given a concurrent git status poll during a real land, when the squash-apply
     stage runs, then no intermediate dirty state is observable before the final atomic
     publish
-  evidence: []
-- text: Given two lands racing the same base tip, when the second reaches publish,
+  evidence:
+  - tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget::test_explicit_stage_leaves_root_completely_untouched
+acceptance_amendments:
+- op: remove
+  index: 1
+  old_text: Given two lands racing the same base tip, when the second reaches publish,
     then it gets the existing DirtyMain-class refusal, not a corrupted ref
-  evidence: []
+  new_text: null
+  reason: 'AC1 is about ref publication -- two lands racing the same base tip and
+    the
+
+    second getting the existing DirtyMain-class refusal at the CAS publish. This
+
+    ticket, as re-scoped twice (series BM''s RE-SCOPE NOTICE and series BQ''s
+
+    SETTLED resync answer), delivers the RETARGETING half only: the six
+
+    index-consuming stages of the squash-apply transaction now run against a
+
+    `stage: Path` parameter that still defaults to `root`. Nothing here
+
+    publishes a ref, so no evidence bound to this ticket can honestly resolve
+
+    AC1; claiming it would be a false green.
+
+
+    AC1 is carried verbatim by the sequenced sibling filed today (the flip
+
+    ticket: compose in a disposable worktree, fold_worktree_into_commit,
+
+    publish_ref_cas, resync_root_to_published_tip), which is the ticket that
+
+    actually introduces the CAS publish that criterion is about. Removing it
+
+    here rather than leaving it permanently unbound, per T-1422''s amendment
+
+    trail.
+
+
+    AC0 remains and IS bound: the must-fire fixture proves the whole
+
+    transaction runs off root -- root''s HEAD, index, working tree and file
+
+    contents all untouched while the landing commit appears on the stage.
+
+    '
+  actor: logan
+  at: '2026-08-27'
 threat: null
 component: null
 anchor: false
