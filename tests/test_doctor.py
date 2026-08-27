@@ -11,6 +11,24 @@ import pytest
 from frob import doctor
 from frob.process._lock import derived_state_lock
 
+# frob:ticket T-3033
+#: `run_diagnosis()` called with no `root` (e.g.
+#: `test_run_diagnosis_reports_frob_version`) defaults to the REAL
+#: checkout -- `_collect_doctor_scans` -> `scan_stale_ticket_leases`
+#: spawns one real `git` subprocess per branch, and this repo currently
+#: carries 900+ branches (the same "scan every branch" cost T-2629 tracks
+#: for `frob ticket doable`). Under sibling-agent CPU contention that
+#: per-branch cost multiplies past pytest-timeout's 120s budget and the
+#: xdist worker running it dies ("node down: Not properly terminated") --
+#: reliable in isolation (13/13 serial), reliably timing out only when
+#: scheduled onto a worker contending with other heavy processes. Groups
+#: this module's tests into their own `xdist_group` (`tests/conftest.py`'s
+#: `pytest_collection_modifyitems`) so they run serially on one worker
+#: instead of racing sibling workers for CPU, same convention
+#: `tests/test_ticket_land.py`/`tests/test_ticket_leases.py` already use
+#: for their own real-git-subprocess cost (T-2099).
+pytestmark = pytest.mark.heavy_subprocess
+
 
 def test_run_diagnosis_natives_present(monkeypatch, tmp_path: Path):
     # frob:tests src/frob/doctor.py::run_diagnosis
@@ -70,11 +88,17 @@ def test_run_diagnosis_partial_availability(monkeypatch, tmp_path: Path):
     assert by_name["strata_core"].available is False
 
 
-def test_run_diagnosis_reports_frob_version():
+# frob:ticket T-3033
+def test_run_diagnosis_reports_frob_version(tmp_path: Path):
     # frob:tests src/frob/doctor.py::run_diagnosis
     """`frob_version` is always a non-empty string, whether or not the
-    distribution is registered (falls back to 'unknown')."""
-    report = doctor.run_diagnosis()
+    distribution is registered (falls back to 'unknown'). T-3033: uses an
+    isolated `tmp_path` root (same posture every sibling test in this
+    file already takes) rather than `run_diagnosis()`'s bare no-root
+    default -- that default resolves to the REAL checkout, and this
+    assertion has nothing to do with `scan_stale_ticket_leases`'s
+    real-git, scan-every-branch cost the bare form drags in."""
+    report = doctor.run_diagnosis(root=tmp_path)
     assert isinstance(report.frob_version, str)
     assert report.frob_version != ""
 
@@ -258,4 +282,21 @@ def test_run_diagnosis_holds_exclusive_lock_blocking_a_shared_reader(
     reader_thread.join(timeout=5)
     assert reader_acquired.is_set(), (
         "the reader never acquired the lock after the writer released it"
+    )
+
+
+# frob:ticket T-3033
+def test_module_carries_heavy_subprocess_marker() -> None:
+    # frob:tests tests/test_doctor.py::test_module_carries_heavy_subprocess_marker kind="unit"  # noqa: E501
+    """T-3033: this module's own `pytestmark` must carry `heavy_subprocess`
+    -- `run_diagnosis()` called with no `root` (as `test_run_diagnosis_
+    reports_frob_version` does) scans the REAL checkout's branches
+    (`scan_stale_ticket_leases`), a real-git-subprocess cost that
+    reliably times out under xdist cross-worker CPU contention without
+    this module's tests pinned to one worker (`tests/conftest.py`'s
+    `pytest_collection_modifyitems`)."""
+    marks = pytestmark if isinstance(pytestmark, list) else [pytestmark]
+    assert any(
+        mark.name == "heavy_subprocess"  # ty: ignore[unresolved-attribute]
+        for mark in marks
     )

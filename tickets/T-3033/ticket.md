@@ -1,7 +1,7 @@
 ---
 id: T-3033
 title: test_doctor.py times out under xdist contention (branch-scan cost)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -20,6 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_doctor.py::test_module_carries_heavy_subprocess_marker
+- tests/test_doctor.py::test_run_diagnosis_reports_frob_version
 designated_repro_test: null
 threat: null
 component: null
