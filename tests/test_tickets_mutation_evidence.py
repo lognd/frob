@@ -519,3 +519,81 @@ class TestWarnBindTimeMutationSweepCost:
         with caplog.at_level("WARNING"):
             _warn_bind_time_mutation_sweep_cost(repo, ticket)
         assert not any("mutation-sweep cost" in r.message for r in caplog.records)
+
+
+# frob:ticket T-3038
+class TestMeasuredBindTimeEvidenceWallClockS:
+    """T-3038: `frob.tickets._evidence._measured_bind_time_evidence_
+    wall_clock_s`'s own timeout-floor branch, lost after T-3015 made
+    `guarded_subprocess_run` return `Err(ProcessGuardError.Timeout)`
+    instead of raising `subprocess.TimeoutExpired`."""
+
+    # frob:ticket T-3038
+    def test_timeout_err_returns_the_timeout_floor(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_tickets_mutation_evidence.py::TestMeasuredBindTimeEvidenceWallClockS.test_timeout_err_returns_the_timeout_floor  # noqa: E501
+        # T-3015 changed guarded_subprocess_run's real timeout behavior
+        # from "raise subprocess.TimeoutExpired" to "return Err(
+        # ProcessGuardError.Timeout)" -- the `except subprocess.
+        # TimeoutExpired:` branch below can no longer catch a real
+        # timeout, so it fell into the generic `if guarded.is_err: return
+        # None` branch instead, silently discarding the ">= _TIMEOUT_S"
+        # floor measurement this function exists to produce.
+        from typani.result import Err
+
+        from frob.process._guard import ProcessGuardError
+        from frob.tickets._evidence import _measured_bind_time_evidence_wall_clock_s
+        from frob.tickets._mutation_evidence import _TIMEOUT_S
+
+        monkeypatch.setattr(
+            "frob.tickets._evidence.guarded_subprocess_run",
+            lambda *a, **k: Err(ProcessGuardError.Timeout),
+        )
+        result = _measured_bind_time_evidence_wall_clock_s(
+            tmp_path, ("test_m.py::test_add",)
+        )
+        assert result == _TIMEOUT_S
+
+    # frob:ticket T-3038
+    def test_oserror_still_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_tickets_mutation_evidence.py::TestMeasuredBindTimeEvidenceWallClockS.test_oserror_still_returns_none  # noqa: E501
+        # Existing OSError-returns-None behavior must be unchanged by the
+        # T-3038 fix -- a spawn-level OSError (missing interpreter,
+        # permission) is still "cannot project right now", not a floor.
+        def _raise_oserror(*a, **k):  # noqa: ANN001, ANN202
+            raise OSError("no such interpreter")
+
+        monkeypatch.setattr(
+            "frob.tickets._evidence.guarded_subprocess_run", _raise_oserror
+        )
+        from frob.tickets._evidence import _measured_bind_time_evidence_wall_clock_s
+
+        result = _measured_bind_time_evidence_wall_clock_s(
+            tmp_path, ("test_m.py::test_add",)
+        )
+        assert result is None
+
+    # frob:ticket T-3038
+    def test_exec_disabled_still_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_tickets_mutation_evidence.py::TestMeasuredBindTimeEvidenceWallClockS.test_exec_disabled_still_returns_none  # noqa: E501
+        # Existing ExecDisabled-returns-None behavior must be unchanged
+        # by the T-3038 fix -- a kill-switch refusal is still "cannot
+        # project right now", not a floor.
+        from typani.result import Err
+
+        from frob.process._guard import ProcessGuardError
+        from frob.tickets._evidence import _measured_bind_time_evidence_wall_clock_s
+
+        monkeypatch.setattr(
+            "frob.tickets._evidence.guarded_subprocess_run",
+            lambda *a, **k: Err(ProcessGuardError.ExecDisabled),
+        )
+        result = _measured_bind_time_evidence_wall_clock_s(
+            tmp_path, ("test_m.py::test_add",)
+        )
+        assert result is None

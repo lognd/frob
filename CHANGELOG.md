@@ -427,6 +427,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3026: Post-land findings from the T-3006/T-2995/T-3014 batch: ARCH103, DOC001, E501, 2x LARGE001, REF001, REF002
 - T-3035: ticket-leases dispatch-table fixture missing --reason for mutate verbs (5 tests)
 - T-3037: stale ticket-minting test fixture trips T-2394 empty-scope guard (28 tests)
+- T-3038: evidence bind-time cost probe loses timeout floor after T-3015
 - T-3039: mutate scores timeout as run-abort not killed-mutant after T-3015
 - T-3040: frob cycle refuses on bare tmp_path, breaking 3 test_system.py tests
 - T-3042: V-model H1: vmodel_check has zero callers and no authoring format, so the epic can complete without ever checking anything

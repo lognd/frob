@@ -1,7 +1,7 @@
 ---
 id: T-3038
 title: evidence bind-time cost probe loses timeout floor after T-3015
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -27,7 +27,11 @@ scope_changes:
     the caller of the function being fixed
   actor: logan
   at: '2026-08-27'
-designated_repro_test: null
+evidence:
+- tests/test_tickets_mutation_evidence.py::TestMeasuredBindTimeEvidenceWallClockS::test_oserror_still_returns_none
+- tests/test_tickets_mutation_evidence.py::TestMeasuredBindTimeEvidenceWallClockS::test_exec_disabled_still_returns_none
+- tests/test_tickets_mutation_evidence.py::TestMeasuredBindTimeEvidenceWallClockS::test_timeout_err_returns_the_timeout_floor
+designated_repro_test: tests/test_tickets_mutation_evidence.py::TestMeasuredBindTimeEvidenceWallClockS::test_timeout_err_returns_the_timeout_floor
 threat: null
 component: null
 anchor: false

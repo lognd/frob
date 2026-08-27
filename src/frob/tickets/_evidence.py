@@ -1147,7 +1147,7 @@ def _measured_bind_time_evidence_wall_clock_s(
     cost` so that function's own length stays under ARCH001's threshold;
     the ONLY caller is that function, kept private rather than
     exported."""
-    from frob.process._guard import exec_enabled
+    from frob.process._guard import ProcessGuardError, exec_enabled
     from frob.tickets._mutation_evidence import _TIMEOUT_S
 
     if not exec_enabled():
@@ -1172,6 +1172,12 @@ def _measured_bind_time_evidence_wall_clock_s(
         # right now', never a reason to fail the evidence bind this runs strictly after"
         return None
     if guarded.is_err:
+        if guarded.danger_err is ProcessGuardError.Timeout:
+            # T-3038: T-3015 made guarded_subprocess_run return this as
+            # a Result instead of raising subprocess.TimeoutExpired --
+            # the real cost is >= _TIMEOUT_S, use it as the measured
+            # floor, matching the except branch above's own posture.
+            return _TIMEOUT_S
         return None
     return time.monotonic() - started
 
