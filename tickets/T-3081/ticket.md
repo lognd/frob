@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 882362d7a70193c244770e03c232d0eb751db56f
 ---
 Found while fixing T-3037's stale test fixture: `frob.tickets._new_
 renumber._ticket_from_spec` (the function `new_ticket` uses to build the
