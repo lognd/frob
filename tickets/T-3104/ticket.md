@@ -19,6 +19,9 @@ scope:
 - tests/test_gates_mutation_evidence.py
 - tests/gates/test_bug_repro_at_ref_public.py
 - tests/gates/test_env_absent_bug002_repro.py
+- docs/modules/gates.md
+- docs/modules/tickets.md
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +40,27 @@ scope_changes:
 - op: add
   glob: tests/gates/test_env_absent_bug002_repro.py
   reason: T-3104's own bound evidence lives in these three test files
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'AFFECT001: bug_repro_violations/_BugReproOutcome/bug_repro_outcome_at_ref/designated_repro_test/must_still_pass_violations
+    changed and their affects()-closure docs need the new frob:env-absent/frob:env-absent-unverifiable
+    directives documented'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'AFFECT001: bug_repro_violations/_BugReproOutcome/bug_repro_outcome_at_ref/designated_repro_test/must_still_pass_violations
+    changed and their affects()-closure docs need the new frob:env-absent/frob:env-absent-unverifiable
+    directives documented'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'AFFECT001: bug_repro_violations/_BugReproOutcome/bug_repro_outcome_at_ref/designated_repro_test/must_still_pass_violations
+    changed and their affects()-closure docs need the new frob:env-absent/frob:env-absent-unverifiable
+    directives documented'
   actor: logan
   at: '2026-08-27'
 body_changes:
