@@ -2,7 +2,7 @@
 id: T-3026
 title: 'Post-land findings from the T-3006/T-2995/T-3014 batch: ARCH103, DOC001, E501,
   2x LARGE001, REF001, REF002'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -21,6 +21,8 @@ scope:
 - src/frob/__main__.py
 - src/frob/stats/_agentic.py
 - tests/unit/strata/entity_arch/storage_cheap.strata
+- docs/strata/surface.md
+- docs/index.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +56,18 @@ scope_changes:
 - op: add
   glob: tests/unit/strata/entity_arch/storage_cheap.strata
   reason: 'T-3026: fix ARCH103/DOC001/E501/2xLARGE001/REF001/REF002 post-land findings'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/strata/surface.md
+  reason: 'T-3026: REF001/REF002/DOC001 fix for entity_architecture.md needs a second
+    real inbound doc reference'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/index.md
+  reason: 'T-3026: REF001/REF002/DOC001 fix for entity_architecture.md needs a second
+    real inbound doc reference'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
