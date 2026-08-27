@@ -2,7 +2,7 @@
 id: T-3126
 title: Land-commit record still dirties root and moves main without CAS after the
   publish
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
