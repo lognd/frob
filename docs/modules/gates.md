@@ -1042,6 +1042,42 @@ proves this end to end through the real `frob ticket close` entry point
 parent commit, permitted when it fails there), mirroring T-1410's own
 `TestCloseRefusesT1276ShapeEndToEnd` precedent shape.
 
+**Environment-absence defects: `frob:env-absent`/`frob:env-absent-
+unverifiable` (T-3104).** BUG002's repro subprocess inherits the calling
+process's environment wholesale (`_spawn_designated_test`'s `env =
+dict(os.environ)`), which is exactly right for a code-shaped defect but
+structurally wrong for a defect whose trigger is something MISSING from
+the environment -- a bare CI runner's absent git identity, an unset
+config variable. This repo's own verification sandbox always HAS the
+thing whose absence is the defect, so an unmodified repro can never
+observe the absent case and reports a spurious `PASSED_AT_PARENT`
+(T-3075's own five tests: BUG002 and TEST016 both had to be waived for
+exactly this reason). `frob:env-absent VAR1,VAR2,...` in the ticket body
+(`_env_absent_vars`) names environment variables to strip from the
+parent-commit subprocess before it runs (`_spawn_designated_test`);
+`HOME` is special-cased to a freshly created, genuinely empty directory
+(with `GIT_CONFIG_NOSYSTEM=1` alongside it) rather than deleted outright,
+since deleting `HOME` would break the subprocess's own ability to run,
+not just remove the identity it carries. A repro that depends on the
+variable being absent now gets a real `FAILED_AT_PARENT` verdict through
+the SAME classifier every other repro uses -- no new evidence format, no
+new `Ticket` field, mirroring T-3156's `scope_has_python_surface`
+precedent (one predicate wired into the existing checkpoint).
+
+For the residual of this class `frob:env-absent` cannot mechanise (a
+missing binary on PATH, an unsupported platform primitive -- no
+environment-variable strip can simulate either), `frob:env-absent-
+unverifiable reason="..."` (`_env_absent_unverifiable_reason`) reports a
+distinct, ledger-visible `UNVERIFIABLE-IN-SANDBOX` outcome instead of an
+ordinary `frob:waive BUG002`: T-1664's standing doctrine that UNRESOLVED
+is never silently counted as either pass or fail, applied to the one
+class of bug this repo's own gate is structurally unable to verify at
+all. Neither directive is a synonym for `frob:waive BUG002` -- a plain
+waiver carries no claim about WHY beyond its own reason text and reads,
+in the ledger, exactly like every other waived check; both new
+directives keep the check running far enough to distinguish "cannot
+verify" from "did not bother to try".
+
 ### TEST018 (T-1733): pricing the quiet way to weaken evidence
 
 `frob.tickets._evidence.replace_evidence` (`frob ticket evidence

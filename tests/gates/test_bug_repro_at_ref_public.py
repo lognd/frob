@@ -52,7 +52,11 @@ class TestBugReproOutcomeAtRefPublic:
                 tmp_path, "tests/test_x.py::test_x", "main"
             )
         mocked.assert_called_once_with(
-            tmp_path, "tests/test_x.py::test_x", "main", timeout_s=_BUG_REPRO_TIMEOUT_S
+            tmp_path,
+            "tests/test_x.py::test_x",
+            "main",
+            timeout_s=_BUG_REPRO_TIMEOUT_S,
+            env_absent=(),
         )
         assert outcome is _BugReproOutcome.FAILED_AT_PARENT
 
@@ -69,7 +73,11 @@ class TestBugReproOutcomeAtRefPublic:
         ) as mocked:
             bug_repro_outcome_at_ref(tmp_path, "tests/test_x.py::test_x")
         mocked.assert_called_once_with(
-            tmp_path, "tests/test_x.py::test_x", "main", timeout_s=_BUG_REPRO_TIMEOUT_S
+            tmp_path,
+            "tests/test_x.py::test_x",
+            "main",
+            timeout_s=_BUG_REPRO_TIMEOUT_S,
+            env_absent=(),
         )
 
 

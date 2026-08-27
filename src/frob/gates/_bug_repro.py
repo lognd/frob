@@ -47,6 +47,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Sequence
 from enum import Enum, auto
 from pathlib import Path
 
@@ -188,7 +189,57 @@ _NO_BEHAVIOR_CHANGE_RE = re.compile(r'frob:no-behavior-change\s+reason="([^"]*)"
 #: (matches nothing), same as a bare `frob:waive` with no `reason=`.
 _MUST_STILL_PASS_RE = re.compile(r"frob:must-still-pass\s+(\S+)")
 
+#: `frob:env-absent VAR1,VAR2,...` (T-3104): the honest evidence route for
+#: a bug whose trigger is something MISSING from the environment (a
+#: missing global git identity, an unset env var) rather than a function
+#: of the code -- the class T-3075's own five tests hit, where BUG002 and
+#: TEST016 both had to be waived because this repo's own verification
+#: sandbox always HAS the thing whose absence is the defect (developer
+#: git identity, `~/.claude`, ...), so the ordinary repro-at-parent
+#: subprocess (which inherits THIS process's environment wholesale, see
+#: `_spawn_designated_test`) can never actually observe the absent case.
+#: Declaring the variable names here makes the absence part of the
+#: REPRODUCTION itself: `_spawn_designated_test` strips every listed name
+#: from the subprocess env before running the designated test at the
+#: parent ref (and, for the one name that cannot be simply deleted
+#: without breaking the subprocess outright, `HOME`, redirects it to a
+#: fresh empty directory instead -- see `_spawn_designated_test`'s own
+#: comment). A test that only fails when the variable is genuinely gone
+#: (T-1321/T-3075's own shape: `_retry_commit_with_fallback_identity`
+#: falls back to a throwaway identity only when `git commit` reports
+#: "Author identity unknown") now gets a real `FAILED_AT_PARENT` verdict
+#: through the SAME classifier every other repro uses -- no new evidence
+#: format, no new ticket field, mirroring T-3156's
+#: `scope_has_python_surface` precedent of one predicate wired into the
+#: existing checkpoint rather than a parallel mechanism.
+#:
+#: Deliberately body-text (not a `Ticket` model field), same rationale as
+#: `_BUG002_WAIVER_RE`/`_MUST_STILL_PASS_RE` immediately above: this
+#: ticket's own scope is this file alone. Comma-separated, no spaces
+#: required around commas; a bare `frob:env-absent` with no names is
+#: ignored (matches nothing), same posture as a bare `frob:must-still-
+#: pass`.
+_ENV_ABSENT_RE = re.compile(
+    r"frob:env-absent\s+([A-Za-z_][A-Za-z0-9_]*(?:,[A-Za-z_][A-Za-z0-9_]*)*)"
+)  # noqa: E501
 
+#: `frob:env-absent-unverifiable reason="..."` (T-3104): the honest
+#: degrade for the residual of the environment-absence class that
+#: `frob:env-absent` cannot mechanise -- a missing BINARY on PATH, an
+#: unsupported POSIX primitive, a platform difference no env-var strip
+#: can simulate. Distinct from `frob:waive BUG002 reason="..."`: a plain
+#: waiver suppresses the check with no claim about WHY beyond its own
+#: reason text and reads, in the ledger, exactly like every other
+#: waived check; this directive keeps `bug_repro_violations` reporting a
+#: NAMED, distinct outcome (`ENV_ABSENCE_UNVERIFIABLE`, surfaced as
+#: `UNVERIFIABLE-IN-SANDBOX`) instead -- T-1664's standing doctrine that
+#: UNRESOLVED is never silently counted as either pass or fail, applied
+#: to the one class of bug this repo's own gate is structurally unable
+#: to verify. Same `reason="..."` requirement as `_BUG002_WAIVER_RE`; a
+#: bare directive with no parseable reason is treated as ABSENT.
+_ENV_ABSENT_UNVERIFIABLE_RE = re.compile(
+    r'frob:env-absent-unverifiable\s+reason="(?P<value>(?:[^"\\]|\\.)*)"'
+)
 
 
 class _BugReproOutcome(Enum):
@@ -279,6 +330,29 @@ class _BugReproOutcome(Enum):
     #: unconditionally true for `base_ref="main"` (the default) against
     #: any ticket that has already landed.
     TEST_ABSENT_AT_PARENT = auto()
+    #: T-3104: the ticket declares `frob:env-absent-unverifiable
+    #: reason="..."` -- the defect's trigger is an environment absence
+    #: (a missing binary on PATH, an unsupported platform primitive) that
+    #: `frob:env-absent VAR,...` cannot mechanise by simply stripping
+    #: environment variables (see that directive's own docstring on
+    #: `_env_absent_vars`), so no subprocess this checkpoint can spawn is
+    #: capable of reproducing the absence at all. Distinct from every
+    #: other outcome above for the SAME reason `TIMEOUT`/`SAME_AS_HEAD`/
+    #: `TEST_ABSENT_AT_PARENT` are each their own outcome rather than
+    #: folded into `NO_VERDICT`: a reader (and the ledger) needs to be
+    #: able to tell "this repro could not be run" apart from "this class
+    #: of defect cannot be run in this sandbox at all, and the author
+    #: said so explicitly" -- T-1664's own standing doctrine that
+    #: UNRESOLVED is never silently counted as either pass or fail.
+    #: `bug_repro_violations` reports this as `UNVERIFIABLE-IN-SANDBOX`,
+    #: a named, ledger-visible outcome distinct from a `frob:waive
+    #: BUG002` (which this directive is NOT a synonym for: a waiver
+    #: suppresses the check with no claim about WHY beyond the reason
+    #: text; this directive keeps the check running far enough to
+    #: DISTINGUISH "cannot verify" from "did not bother to try", which is
+    #: exactly what a growing `frob:waive BUG002` population cannot do
+    #: (T-3104's own measured count, see this ticket's Done report)).
+    ENV_ABSENCE_UNVERIFIABLE = auto()
 
 
 # frob:ticket T-1929
@@ -286,11 +360,16 @@ class _BugReproOutcome(Enum):
 #: Public alias for `_BugReproOutcome` (T-1929): an on-demand caller
 #: outside this module (`frob.app.ticket_runner._verify`'s validate-at-
 #: designate check, `frob ticket evidence --check-repro`) needs to inspect
-#: which of the seven outcomes `bug_repro_outcome_at_ref` returned --
+#: which of the outcomes `bug_repro_outcome_at_ref` returned --
 #: FAILED_AT_PARENT is the only acceptable one to treat as a genuine
 #: repro; PASSED_AT_PARENT, NO_VERDICT, (T-2480) TIMEOUT, SAME_AS_HEAD,
 #: and (T-2025) TEST_ABSENT_AT_PARENT must never be silently treated as
-#: a pass by any caller.
+#: a pass by any caller. (T-3104) ENV_ABSENCE_UNVERIFIABLE is never
+#: returned BY `bug_repro_outcome_at_ref` itself -- it is
+#: `bug_repro_violations`' own declared-and-recognized-early outcome for
+#: a `frob:env-absent-unverifiable` ticket, named here so its ledger-
+#: visible label (`.name`) has one canonical spelling, same reasoning as
+#: every other named member of this enum.
 BugReproOutcome = _BugReproOutcome
 
 
@@ -413,6 +492,58 @@ def _must_still_pass_controls(ticket: Ticket) -> tuple[str, ...]:
     )
 
 
+# frob:ticket T-3104
+# frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_single_directive_extracted  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_comma_separated_names_extracted_in_order  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_no_directive_is_empty  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_duplicate_names_deduplicated_first_wins  # noqa: E501
+def _env_absent_vars(ticket: Ticket) -> tuple[str, ...]:
+    """Every environment variable name declared across all `frob:env-
+    absent VAR1,VAR2,...` directives in `ticket.body` (T-3104), in first-
+    seen order, deduplicated. Empty tuple when no such directive is
+    present -- opt-in, same posture as `_must_still_pass_controls`
+    immediately above: never auto-derived from the evidence set, always
+    an explicit author declaration of which names the repro's own defect
+    depends on being ABSENT.
+
+    T-2218: same quoted-range skip as `_must_still_pass_controls` -- a
+    directive shown as a quoted example (fenced/indented code block,
+    blockquote, inline code span) is never treated as a declaration."""
+    from frob.gates._mutation_evidence import (  # noqa: PLC0415
+        _is_quoted,
+        _quoted_char_ranges,
+    )
+
+    quoted = _quoted_char_ranges(ticket.body)
+    seen: dict[str, None] = {}
+    for match in _ENV_ABSENT_RE.finditer(ticket.body):
+        if _is_quoted(match.start(), quoted):
+            continue
+        for name in match.group(1).split(","):
+            seen.setdefault(name, None)
+    return tuple(seen)
+
+
+# frob:ticket T-3104
+# frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsentUnverifiable.test_reason_present_recognized  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsentUnverifiable.test_bare_directive_without_reason_not_recognized  # noqa: E501
+def _env_absent_unverifiable_reason(ticket: Ticket) -> str | None:
+    """The `reason="..."` text of a `frob:env-absent-unverifiable
+    reason="..."` line found anywhere in `ticket.body` (T-3104), or
+    `None` if absent. Same body-text-scan and quoted-range-skip rationale
+    as `_no_behavior_change_reason`/`_bug002_waiver_reason` above."""
+    from frob.gates._mutation_evidence import (  # noqa: PLC0415
+        _is_quoted,
+        _quoted_char_ranges,
+    )
+
+    quoted = _quoted_char_ranges(ticket.body)
+    for match in _ENV_ABSENT_UNVERIFIABLE_RE.finditer(ticket.body):
+        if not _is_quoted(match.start(), quoted):
+            return match.group("value")
+    return None
+
+
 # frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_first_pytest_node_id_is_designated  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_no_pytest_evidence_is_none  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_explicit_designation_wins_over_bind_order  # noqa: E501
@@ -471,7 +602,12 @@ def _resolve_sha(root: Path, ref: str) -> str | None:
 # frob:tests \
 # tests/test_gates_mutation_evidence.py::TestBugReproAtRef.test_same_as_head_is_vacuous
 def _bug_repro_outcome_at_ref(
-    root: Path, test_id: str, base_ref: str, *, timeout_s: float = _BUG_REPRO_TIMEOUT_S
+    root: Path,
+    test_id: str,
+    base_ref: str,
+    *,
+    timeout_s: float = _BUG_REPRO_TIMEOUT_S,
+    env_absent: Sequence[str] = (),
 ) -> _BugReproOutcome:
     """Run `test_id` (a single pytest node id) against `base_ref`'s
     checked-out content, in isolation from `root`'s own working tree, and
@@ -490,6 +626,14 @@ def _bug_repro_outcome_at_ref(
     escape hatch exists for (see its docstring above), surfaced here as
     `NO_VERDICT` via a non-{0,1} pytest exit (a collection/import error),
     never mistaken for a real pass.
+
+    `env_absent` (T-3104, `_env_absent_vars`'s own values): variable
+    names to strip from the spawned subprocess's environment before
+    running -- see `_spawn_designated_test`'s own comment for exactly
+    what stripping means for the one name (`HOME`) that cannot simply be
+    deleted. Empty by default, in which case this call behaves exactly
+    as it always has: the subprocess inherits this process's environment
+    unmodified.
     """
     if not exec_enabled():
         _log.warning(
@@ -517,7 +661,7 @@ def _bug_repro_outcome_at_ref(
     try:
         if not _checkout_bug_repro_worktree(root, worktree, base_ref, test_id):
             return _BugReproOutcome.NO_VERDICT
-        return _run_designated_test(worktree, test_id, timeout_s)
+        return _run_designated_test(worktree, test_id, timeout_s, env_absent=env_absent)
     finally:
         _remove_bug_repro_worktree(root, worktree)
         shutil.rmtree(scratch, ignore_errors=True)
@@ -532,6 +676,7 @@ def bug_repro_outcome_at_ref(
     base_ref: str = "main",
     *,
     timeout_s: float | None = None,
+    env_absent: Sequence[str] = (),
 ) -> _BugReproOutcome:
     """Public entrypoint (T-1929) exposing `_bug_repro_outcome_at_ref`'s
     parent-commit repro classification to callers OUTSIDE this module --
@@ -562,10 +707,13 @@ def bug_repro_outcome_at_ref(
     anything about ticket kind, waivers, or severity -- callers get the
     raw `_BugReproOutcome` (its public alias `BugReproOutcome`, above)
     and decide what to do with FAILED_AT_PARENT / PASSED_AT_PARENT /
-    NO_VERDICT / TIMEOUT / SAME_AS_HEAD for their own purpose."""
+    NO_VERDICT / TIMEOUT / SAME_AS_HEAD for their own purpose.
+
+    `env_absent` (T-3104): forwarded to `_bug_repro_outcome_at_ref`
+    unchanged -- see that function's own docstring."""
     resolved_timeout = timeout_s if timeout_s is not None else _BUG_REPRO_TIMEOUT_S
     return _bug_repro_outcome_at_ref(
-        root, test_id, base_ref, timeout_s=resolved_timeout
+        root, test_id, base_ref, timeout_s=resolved_timeout, env_absent=env_absent
     )
 
 
@@ -616,7 +764,11 @@ def _checkout_bug_repro_worktree(
 # frob:ticket T-2480
 # frob:ticket T-2495
 def _spawn_designated_test(
-    worktree: Path, test_id: str, timeout_s: float
+    worktree: Path,
+    test_id: str,
+    timeout_s: float,
+    *,
+    env_absent: Sequence[str] = (),
 ) -> Result[subprocess.CompletedProcess[str], _BugReproOutcome]:
     """`_run_designated_test`'s spawn-only half (ARCH103 split, T-2480):
     launch `test_id` in `worktree` via the CURRENT interpreter,
@@ -639,8 +791,31 @@ def _spawn_designated_test(
     returns `Err(ProcessGuardError.Timeout)` rather than raising
     `subprocess.TimeoutExpired`), before it would be collapsed, is what
     makes `TIMEOUT` a real, distinct outcome instead of another shade of
-    `NO_VERDICT`."""
+    `NO_VERDICT`.
+
+    `env_absent` (T-3104): variable names to remove from the spawned
+    subprocess's inherited environment, so a repro whose defect is a
+    function of one of THESE being absent (missing git identity, an
+    unset config var) can genuinely observe that absence, instead of
+    inheriting this process's own environment -- which, being the
+    verification sandbox itself, always has the thing whose absence is
+    the defect (T-3104's own motivating incident, T-3075). `HOME` is
+    special-cased: deleting it outright would break the subprocess's own
+    ability to run at all (pytest, git, and the interpreter all read it
+    for cache/config paths), so instead it is redirected to a freshly
+    created, genuinely empty directory -- config-absence, not variable-
+    absence, which is what a missing global git identity actually is.
+    `GIT_CONFIG_NOSYSTEM=1` is set alongside it so a real `/etc/gitconfig`
+    on the machine running this check cannot leak identity back in
+    through the one channel an empty `HOME` does not close."""
     env = dict(os.environ)
+    for name in env_absent:
+        if name == "HOME":
+            isolated_home = Path(tempfile.mkdtemp(prefix="frob-bug002-home-"))
+            env["HOME"] = str(isolated_home)
+            env["GIT_CONFIG_NOSYSTEM"] = "1"
+        else:
+            env.pop(name, None)
     src = str(worktree / "src")
     env["PYTHONPATH"] = (
         src if not env.get("PYTHONPATH") else src + os.pathsep + env["PYTHONPATH"]
@@ -750,13 +925,22 @@ def _classify_designated_test_exit(
 
 
 def _run_designated_test(
-    worktree: Path, test_id: str, timeout_s: float
+    worktree: Path,
+    test_id: str,
+    timeout_s: float,
+    *,
+    env_absent: Sequence[str] = (),
 ) -> _BugReproOutcome:
     """`_bug_repro_outcome_at_ref`'s spawn-and-classify half (ARCH103
     split into `_spawn_designated_test` + `_classify_designated_test_exit`
     above, T-2480) -- this function is now just their composition, same
-    posture as `_try_check_delta_via_daemon`'s own split precedent."""
-    spawned = _spawn_designated_test(worktree, test_id, timeout_s)
+    posture as `_try_check_delta_via_daemon`'s own split precedent.
+
+    `env_absent` (T-3104): forwarded to `_spawn_designated_test`
+    unchanged -- see that function's own docstring."""
+    spawned = _spawn_designated_test(
+        worktree, test_id, timeout_s, env_absent=env_absent
+    )
     if spawned.is_err:
         return spawned.danger_err
     return _classify_designated_test_exit(spawned.danger_ok, test_id)
@@ -832,6 +1016,52 @@ def _no_behavior_change_message(ticket_id: str, test_id: str, base_ref: str) -> 
     )
 
 
+# frob:ticket T-3104
+def _env_absent_unverifiable_reported(ticket: Ticket) -> bool:
+    """`bug_repro_violations`' own ARCH103-style split (T-3104): reports
+    (at `WARNING`) a declared `frob:env-absent-unverifiable reason="..."`
+    as `ENV_ABSENCE_UNVERIFIABLE`/UNVERIFIABLE-IN-SANDBOX, never silently
+    as a pass and never collapsed into an ordinary `frob:waive BUG002` --
+    see `_ENV_ABSENT_UNVERIFIABLE_RE`'s own docstring for why this is a
+    distinct outcome. Returns whether the caller should short-circuit
+    (`True`) without running the repro subprocess at all."""
+    unverifiable_reason = _env_absent_unverifiable_reason(ticket)
+    if unverifiable_reason is None:
+        return False
+    unverifiable_outcome = _BugReproOutcome.ENV_ABSENCE_UNVERIFIABLE
+    _log.warning(
+        "BUG002: %s declared frob:env-absent-unverifiable reason=%r -- "
+        "reporting %s (UNVERIFIABLE-IN-SANDBOX), not a pass and not a "
+        "plain waiver: this repo's own verification sandbox cannot "
+        "reproduce the environment absence this defect depends on",
+        ticket.id,
+        unverifiable_reason,
+        unverifiable_outcome.name,
+    )
+    return True
+
+
+# frob:ticket T-3104
+def _env_absent_vars_logged(ticket: Ticket) -> tuple[str, ...]:
+    """`bug_repro_violations`' own ARCH103-style split (T-3104): resolves
+    `ticket`'s declared `frob:env-absent VAR,...` names (an
+    environment-conditioned repro's defect is triggered by something
+    ABSENT from the environment, not present in the code) and logs them
+    at `INFO` when present -- this sandbox always HAS the thing whose
+    absence is the defect (T-3075's own motivating case), so stripping
+    these names from the parent-commit repro subprocess is what makes the
+    repro able to observe the absence at all."""
+    env_absent = _env_absent_vars(ticket)
+    if env_absent:
+        _log.info(
+            "BUG002: %s declares frob:env-absent %s -- stripped from the "
+            "parent-commit repro subprocess's environment",
+            ticket.id,
+            ",".join(env_absent),
+        )
+    return env_absent
+
+
 # frob:enforces CHK-GATE-BUG002
 # frob:doc \
 # docs/modules/gates.md#bug002-t-1421-a-bug-ticket-must-prove-the-defect-no-longer-repr\
@@ -850,6 +1080,18 @@ def _no_behavior_change_message(ticket_id: str, test_id: str, base_ref: str) -> 
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_fix_committed_direct_to_main_is_unresolved_not_refused kind="integration"  # noqa: E501
 # frob:ticket T-1678
 # frob:ticket T-2883
+# frob:waive ARCH001 reason="T-3104: this function's own directive-check chain \
+# (frob:waive BUG002 -> frob:waive-malformed -> frob:env-absent-unverifiable -> \
+# frob:no-behavior-change) is a single, already-decomposed sequence of ticket-body \
+# escape hatches evaluated in a fixed, load-bearing order against the SAME (root, \
+# ticket, base_ref) triple -- the two directive-specific blocks this ticket added \
+# (env-absent-unverifiable short-circuit, env-absent stripping) are already split into \
+# _env_absent_unverifiable_reported/_env_absent_vars_logged (ARCH103-style, this \
+# module's own split precedent immediately above); the remaining length is the \
+# pre-existing T-1616/T-2870 escape-hatch chain this ticket did not introduce and did \
+# not grow. A further cut would separate one escape hatch's check from the outcome it \
+# gates, the same T-1651 bar this file's own module-level LARGE001 waiver already \
+# applies to keeping this pipeline as one cohesive unit."
 def bug_repro_violations(
     root: Path, ticket: Ticket, base_ref: str = "main"
 ) -> tuple[Violation, ...]:
@@ -902,11 +1144,13 @@ def bug_repro_violations(
         _log.warning(
             "BUG002: %s has a frob:waive BUG002 directive that does NOT "
             "parse and is therefore NOT applied (%s) -- BUG002 runs as "
-            "though no waiver were present; fix the reason=\"...\" "
+            'though no waiver were present; fix the reason="..." '
             "quoting to actually suppress this check",
             ticket.id,
             malformed,
         )
+    if _env_absent_unverifiable_reported(ticket):
+        return ()
     test_id = _designated_repro_test(ticket)
     if test_id is None:
         _log.debug(
@@ -914,7 +1158,8 @@ def bug_repro_violations(
             ticket.id,
         )
         return ()
-    outcome = _bug_repro_outcome_at_ref(root, test_id, base_ref)
+    env_absent = _env_absent_vars_logged(ticket)
+    outcome = _bug_repro_outcome_at_ref(root, test_id, base_ref, env_absent=env_absent)
 
     # T-1616: a `frob:no-behavior-change reason="..."` claim SWAPS the
     # obligation rather than skipping it -- refactor/deletion-shaped work

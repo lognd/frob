@@ -96,6 +96,15 @@ attachments:
 
 ## Public API
 
+T-3104: `frob.gates.bug_repro_outcome_at_ref`/`designated_repro_test`
+(re-exported from `frob.gates._bug_repro`) gained an `env_absent`
+keyword-only parameter on `bug_repro_outcome_at_ref` -- variable names to
+strip from the parent-commit repro subprocess's environment, forwarded
+unchanged to the private classifier, empty by default (existing callers
+are unaffected). See `docs/modules/gates.md`'s BUG002 section for the
+full mechanism and the `frob:env-absent`/`frob:env-absent-unverifiable`
+ticket-body directives that drive it.
+
 T-2771: `_models.OVER_BROAD_LITERAL_GLOBS` no longer hardcodes this repo's
 own `src/frob/**`/`src/frob/` package-prefix globs -- it holds only the
 repo-CONVENTION literals (`tests/**`/`docs/`). `large_glob_warnings` and

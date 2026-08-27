@@ -1048,6 +1048,16 @@ at the moment `--designate-repro` runs (before land squashes anything);
 it stops working the moment the ticket lands and the worktree is
 removed, for the same reason described above.
 
+**T-3104 note**: `ENV_ABSENCE_UNVERIFIABLE` is a SIXTH `_BugReproOutcome`
+member, but structurally different from the five above -- it is never
+returned BY `_bug_repro_outcome_at_ref` itself; `bug_repro_violations`
+sets it directly when a ticket declares `frob:env-absent-unverifiable
+reason="..."`, short-circuiting before the repro subprocess ever runs
+(see `docs/modules/gates.md`'s BUG002 section for the full mechanism,
+including the sibling `frob:env-absent VAR,...` directive that DOES run
+the repro, with named environment variables stripped from the
+subprocess first).
+
 ### `BUG003`: the positive-direction must-still-pass control (T-2193)
 
 <!-- frob:describes src/frob/gates/_bug_repro.py::must_still_pass_violations -->

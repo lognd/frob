@@ -2,7 +2,7 @@
 id: T-3104
 title: 'BUG002 cannot verify environment-absence bugs: the sandbox always has the
   thing whose absence is the defect'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'

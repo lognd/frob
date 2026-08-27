@@ -19,6 +19,8 @@ from frob.gates._bug_repro import (
     _bug_repro_outcome_at_ref,
     _BugReproOutcome,
     _designated_repro_test,
+    _env_absent_unverifiable_reason,
+    _env_absent_vars,
     _must_still_pass_controls,
     bug_repro_violations,
     must_still_pass_violations,
@@ -1087,9 +1089,7 @@ class TestMustStillPassViolations:
                 "frob.gates._bug_repro._run_designated_test",
                 return_value=_BugReproOutcome.FAILED_AT_PARENT,
             ),
-            patch(
-                "frob.gates._bug_repro._bug_repro_outcome_at_ref"
-            ) as parent_mock,
+            patch("frob.gates._bug_repro._bug_repro_outcome_at_ref") as parent_mock,
         ):
             violations = must_still_pass_violations(tmp_path, ticket, "main")
         parent_mock.assert_not_called()
@@ -1143,9 +1143,7 @@ class TestMustStillPassViolations:
                 "frob.gates._bug_repro._run_designated_test",
                 return_value=_BugReproOutcome.NO_VERDICT,
             ),
-            patch(
-                "frob.gates._bug_repro._bug_repro_outcome_at_ref"
-            ) as parent_mock,
+            patch("frob.gates._bug_repro._bug_repro_outcome_at_ref") as parent_mock,
         ):
             violations = must_still_pass_violations(tmp_path, ticket, "main")
         parent_mock.assert_not_called()
@@ -1164,9 +1162,7 @@ class TestMustStillPassViolations:
                 "frob.gates._bug_repro._run_designated_test",
                 return_value=_BugReproOutcome.FAILED_AT_PARENT,
             ) as fix_mock,
-            patch(
-                "frob.gates._bug_repro._bug_repro_outcome_at_ref"
-            ) as parent_mock,
+            patch("frob.gates._bug_repro._bug_repro_outcome_at_ref") as parent_mock,
         ):
             violations = must_still_pass_violations(tmp_path, ticket, "main")
         parent_mock.assert_not_called()
@@ -1229,3 +1225,76 @@ class TestMustStillPassIntegration:
         assert len(violations) == 1
         assert violations[0].rule == "BUG003"
         assert "FAILS at this ticket's own fix" in violations[0].message
+
+
+class TestEnvAbsent:
+    """`_env_absent_vars` (T-3104): extracting `frob:env-absent
+    VAR1,VAR2,...` directives from a ticket's body."""
+
+    def test_single_directive_extracted(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_single_directive_extracted  # noqa: E501
+        body = "## Description\nfrob:env-absent GIT_AUTHOR_NAME\n"
+        assert _env_absent_vars(_bug_ticket(body=body)) == ("GIT_AUTHOR_NAME",)
+
+    def test_comma_separated_names_extracted_in_order(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_comma_separated_names_extracted_in_order  # noqa: E501
+        body = "## Description\nfrob:env-absent HOME,GIT_AUTHOR_NAME,GIT_AUTHOR_EMAIL\n"
+        assert _env_absent_vars(_bug_ticket(body=body)) == (
+            "HOME",
+            "GIT_AUTHOR_NAME",
+            "GIT_AUTHOR_EMAIL",
+        )
+
+    def test_no_directive_is_empty(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_no_directive_is_empty  # noqa: E501
+        assert _env_absent_vars(_bug_ticket()) == ()
+
+    def test_duplicate_names_deduplicated_first_wins(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsent.test_duplicate_names_deduplicated_first_wins  # noqa: E501
+        body = (
+            "## Description\nfrob:env-absent HOME,GIT_AUTHOR_NAME\n"
+            "frob:env-absent GIT_AUTHOR_NAME,HOME\n"
+        )
+        assert _env_absent_vars(_bug_ticket(body=body)) == ("HOME", "GIT_AUTHOR_NAME")
+
+
+class TestEnvAbsentUnverifiable:
+    """`_env_absent_unverifiable_reason` (T-3104): the
+    `frob:env-absent-unverifiable reason="..."` degrade for the residual
+    of the environment-absence class no env-var strip can mechanise."""
+
+    def test_reason_present_recognized(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsentUnverifiable.test_reason_present_recognized  # noqa: E501
+        body = (
+            "## Description\nfrob:env-absent-unverifiable "
+            'reason="requires a machine with no cc on PATH"\n'
+        )
+        assert (
+            _env_absent_unverifiable_reason(_bug_ticket(body=body))
+            == "requires a machine with no cc on PATH"
+        )
+
+    def test_bare_directive_without_reason_not_recognized(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsentUnverifiable.test_bare_directive_without_reason_not_recognized  # noqa: E501
+        body = "## Description\nfrob:env-absent-unverifiable\n"
+        assert _env_absent_unverifiable_reason(_bug_ticket(body=body)) is None
+
+
+class TestEnvAbsentUnverifiableOutcome:
+    """`bug_repro_violations` (T-3104): a declared
+    `frob:env-absent-unverifiable` reports no violation and never runs
+    the ordinary repro-at-parent check at all."""
+
+    def test_unverifiable_directive_short_circuits_before_repro_run(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestEnvAbsentUnverifiableOutcome.test_unverifiable_directive_short_circuits_before_repro_run  # noqa: E501
+        body = (
+            "## Description\nsome defect\n"
+            'frob:env-absent-unverifiable reason="no way to remove cc from PATH here"\n'
+        )
+        ticket = _bug_ticket(body=body)
+        with patch("frob.gates._bug_repro._bug_repro_outcome_at_ref") as mocked:
+            violations = bug_repro_violations(tmp_path, ticket, "main")
+        mocked.assert_not_called()
+        assert violations == ()
