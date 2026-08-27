@@ -320,8 +320,8 @@ class TestScanReferences:
 
     def test_mixed_moved_and_untouched_names_leaves_import_alone(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_mixed_moved_and_untouched_name\
-        # s_leaves_import_alone
+        # tests/test_refactor.py::TestScanReferences.test_mixed_moved_and_untouched_nam\
+        # es_leaves_import_alone
         # T-3105: a call site importing the moved name ALONGSIDE an
         # untouched name must not have the whole statement repointed at
         # the destination module -- `farewell` is not defined there. The
@@ -351,8 +351,8 @@ class TestScanReferences:
 
     def test_reexport_line_with_many_names_leaves_import_alone(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_reexport_line_with_many_names_\
-        # leaves_import_alone
+        # tests/test_refactor.py::TestScanReferences.test_reexport_line_with_many_names\
+        # _leaves_import_alone
         # T-3105: the same mixed-names hazard, but with more names on one
         # line (the `gates/__init__.py`-shaped re-export case that broke
         # ~130 files in the first T-3086 attempt).
@@ -381,8 +381,8 @@ class TestScanReferences:
 
     def test_type_checking_guarded_mixed_import_not_rewritten(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_type_checking_guarded_mixed_im\
-        # port_not_rewritten
+        # tests/test_refactor.py::TestScanReferences.test_type_checking_guarded_mixed_i\
+        # mport_not_rewritten
         # T-3105: mixed moved/untouched names inside a `TYPE_CHECKING`
         # block must get the same treatment as module-scope -- left alone.
         root = _repo(tmp_path)
@@ -410,8 +410,8 @@ class TestScanReferences:
 
     def test_function_local_mixed_import_not_rewritten(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_function_local_mixed_import_no\
-        # t_rewritten
+        # tests/test_refactor.py::TestScanReferences.test_function_local_mixed_import_n\
+        # ot_rewritten
         # T-3105 + T-3066 combined shape: a function-local import naming
         # both a moved and an untouched name must neither false-refuse
         # (T-3066) nor get repointed as a whole (T-3105) -- left alone.
