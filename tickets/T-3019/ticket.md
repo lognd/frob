@@ -128,7 +128,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0c4b152f5187151e98b95108ee53405b5e5813e8
 ---
 `frob check` fires spurious REF001/PRE001/SCOPE001 errors on any trivial
 synthetic project fixture, unrelated to Windows -- surfaced while
