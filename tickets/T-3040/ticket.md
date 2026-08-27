@@ -1,7 +1,7 @@
 ---
 id: T-3040
 title: frob cycle refuses on bare tmp_path, breaking 3 test_system.py tests
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -20,6 +20,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/system/test_system.py::test_cycle_no_cycle_exits_zero
+- tests/system/test_system.py::test_cycle_detects_cycle
+- tests/system/test_system.py::test_cycle_suggest_flag
 designated_repro_test: null
 threat: null
 component: null

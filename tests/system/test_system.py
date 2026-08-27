@@ -178,24 +178,40 @@ def test_parse_unknown_tool():
 
 
 def test_cycle_no_cycle_exits_zero(tmp_path, py_sample):
+    # T-3040: `frob cycle` resolves `<path>` to its enclosing PROJECT
+    # root (T-2588) -- a bare `tmp_path` with neither a `pyproject.toml`
+    # nor a git repo in any parent directory cannot resolve at all and
+    # exits 2 ("could not resolve to a project root"), by design (T-2588's
+    # whole point: never silently measure the wrong root). A
+    # `pyproject.toml` marker is the minimal fixture that makes `tmp_path`
+    # itself the resolved root, matching how a real project is laid out.
+    (tmp_path / "pyproject.toml").touch()
     (tmp_path / "a.py").write_bytes(py_sample)
     r = run("cycle", str(tmp_path))
     assert r.returncode == 0
 
 
 def test_cycle_detects_cycle(tmp_path):
+    # T-3040: same `pyproject.toml` root-resolution fixture as above,
+    # PLUS the exit code itself was stale -- `frob cycle`'s own run()
+    # docstring is explicit that a real cycle now exits 1, not 0 ("exits
+    # 1 (not 0) when real cycles are found, so this is finally usable in
+    # a gate/hook/script").
+    (tmp_path / "pyproject.toml").touch()
     (tmp_path / "a.py").write_text("from b import something\n")
     (tmp_path / "b.py").write_text("from a import something\n")
     r = run("cycle", str(tmp_path))
-    assert r.returncode == 0
+    assert r.returncode == 1
     assert "cycle" in r.stdout.lower()
 
 
 def test_cycle_suggest_flag(tmp_path):
+    # T-3040: same two fixes as test_cycle_detects_cycle above.
+    (tmp_path / "pyproject.toml").touch()
     (tmp_path / "a.py").write_text("from b import something\n")
     (tmp_path / "b.py").write_text("from a import something\n")
     r = run("cycle", str(tmp_path), "--suggest")
-    assert r.returncode == 0
+    assert r.returncode == 1
     assert "suggest" in r.stdout.lower()
 
 
