@@ -97,11 +97,9 @@ Design:
 from __future__ import annotations
 
 import base64
-import ctypes
 import hashlib
 import json
 import os
-import sys
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -109,6 +107,22 @@ from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+
+# frob:ticket T-3003
+# frob:ticket T-3018
+# T-3003 fixed this module's own `os.kill(pid, 0)` liveness probe for
+# Windows (unsafe there -- see `frob.process._pid_liveness`'s module
+# docstring for the full TerminateProcess/PID-reuse hazard); T-3018 found
+# TWO more independent copies of the same unsafe pattern elsewhere in this
+# repo and extracted the fixed implementation here so a future fix never
+# again has to be applied to one copy while the others stay dangerous.
+# Imported by its BARE name (never `frob.process._pid_liveness.pid_alive`
+# dot-qualified, and never re-aliased) so `frob.gates._wire`'s WIRE001
+# reach-scan -- which, for a plain FUNCTION record, only recognizes an
+# unqualified `pid_alive(` call token, deliberately excluding a
+# dot-prefixed one as "someone else's same-named attribute" -- can see
+# this module as a real caller.
+from frob.process._pid_liveness import pid_alive
 
 _log = get_logger(__name__)
 
@@ -207,68 +221,6 @@ def _target_display(root: Path, target: Path) -> str:
         return str(target)
 
 
-# frob:ticket T-3003
-# T-3003: `os.kill(pid, 0)` is NOT a side-effect-free probe on Windows the
-# way it is on POSIX -- CPython's Windows `os.kill` opens the process with
-# PROCESS_ALL_ACCESS and calls `TerminateProcess(handle, sig)`, so a `sig`
-# of `0` still terminates whatever process currently holds that pid with
-# exit code 0. Combined with Windows' fast PID reuse, a genuinely-dead pid
-# probed shortly after exit can be silently reassigned to an unrelated
-# live process by the time this runs, and the POSIX-shaped probe below
-# would then actively kill it instead of merely observing it. `_pid_alive`
-# therefore never calls `os.kill` on `win32`: it uses a query-only Win32
-# handle (`PROCESS_QUERY_LIMITED_INFORMATION`, no kill rights at all) plus
-# `GetExitCodeProcess`/`STILL_ACTIVE`, which cannot terminate anything.
-def _pid_alive_windows(pid: int) -> bool:
-    """Windows-only liveness probe: open `pid` with query-only rights and
-    read its exit code -- never a `TerminateProcess`-capable handle, so
-    (unlike a POSIX-shaped `os.kill(pid, 0)`) this cannot kill a live
-    process even under PID-reuse races."""
-    kernel32 = ctypes.windll.kernel32  # ty: ignore[unresolved-attribute]
-    process_query_limited_information = 0x1000
-    still_active = 259
-    handle = kernel32.OpenProcess(process_query_limited_information, False, pid)
-    if not handle:
-        # ERROR_INVALID_PARAMETER (and similar) -- no such pid: dead.
-        return False
-    try:
-        exit_code = ctypes.c_ulong()
-        if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
-            # Could not query for some other reason -- conservatively alive.
-            return True
-        return exit_code.value == still_active
-    finally:
-        kernel32.CloseHandle(handle)
-
-
-# frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
-# ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
-# (the demoted case). T-1062: leaked Unknown traces to os.kill itself; every exception \
-# os.kill can raise is an OSError subclass, and ProcessLookupError/ \
-# PermissionError/OSError together already cover the full hierarchy"
-def _pid_alive(pid: int) -> bool:
-    """Whether `pid` names a currently-running process. On POSIX, a
-    signal-0 probe (`os.kill(pid, 0)`, which sends no actual signal): a
-    `ProcessLookupError` means the PID is gone (dead -- eligible for
-    crash-recovery restore); a `PermissionError` means the PID exists but
-    is owned by someone else (still alive, just not ours to signal) --
-    treated as alive, the conservative choice (never restore out from
-    under a process we merely lack permission to probe fully). On Windows
-    (T-3003), delegates to `_pid_alive_windows` instead -- see its
-    docstring for why the POSIX-shaped probe is unsafe there."""
-    if sys.platform == "win32":
-        return _pid_alive_windows(pid)
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    except OSError:
-        return False
-    return True
-
-
 def _pid_starttime(pid: int) -> str | None:
     """`pid`'s process-start timestamp (field 22 of `/proc/<pid>/stat`,
     clock ticks since boot -- stable for the lifetime of that PID number,
@@ -304,14 +256,14 @@ def _is_stale(entry: _MutationJournalEntry) -> bool:
     starttime) belongs to an in-progress run, not a crash -- treating it
     as stale and restoring it would corrupt that live run's mutation
     mid-flight."""
-    if not _pid_alive(entry.pid):
+    if not pid_alive(entry.pid):
         return True
     if entry.starttime is None:
         return False
     current = _pid_starttime(entry.pid)
     if current is None:
         # /proc unreadable right now (a narrow race: the process exited
-        # between _pid_alive's probe and this read) -- conservatively NOT
+        # between pid_alive's probe and this read) -- conservatively NOT
         # stale rather than risk restoring out from under a process that
         # may still be alive; the next call re-checks from scratch.
         return False

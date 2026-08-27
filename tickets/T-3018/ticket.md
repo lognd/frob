@@ -2,7 +2,7 @@
 id: T-3018
 title: os.kill(pid,0) liveness probe can actually TerminateProcess on Windows (land.py,
   leases.py)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -67,6 +67,20 @@ triage_changes:
     run, which is the give-up scenario frob status was built to prevent'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/test_process_pid_liveness.py::TestPidAlivePosix::test_current_process_is_alive
+- tests/unit/test_process_pid_liveness.py::TestPidAlivePosix::test_process_lookup_error_is_dead
+- tests/unit/test_process_pid_liveness.py::TestPidAlivePosix::test_permission_error_is_conservatively_alive
+- tests/unit/test_process_pid_liveness.py::TestPidAliveTristatePosix::test_process_lookup_error_is_confirmed_dead
+- tests/unit/test_process_pid_liveness.py::TestPidAliveTristatePosix::test_permission_error_is_ambiguous_not_alive
+- tests/unit/test_process_pid_liveness.py::TestPidAliveTristatePosix::test_live_pid_is_true
+- tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend::test_alive_pid_reports_true
+- tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend::test_exited_pid_reports_false
+- tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend::test_unknown_pid_open_process_fails_reports_false
+- tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend::test_never_requests_kill_capable_access_rights
+- tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend::test_tristate_never_returns_ambiguous_on_windows_backend
+- tests/test_ticket_land.py::TestProbeLandLockPidLivenessDelegatesToSharedModule::test_windows_backend_alive_pid_is_true
+- tests/test_ticket_land.py::TestProbeLandLockPidLivenessDelegatesToSharedModule::test_windows_backend_never_ambiguous
 designated_repro_test: null
 threat: null
 component: null

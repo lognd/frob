@@ -388,6 +388,33 @@ ancestry-walk oracle they build on
 unchanged and still the one place "is this forkserver orphaned" is
 decided.
 
+<!-- frob:doc docs/modules/process.md#pid-liveness-t-3018 -->
+## PID liveness (T-3018)
+
+`frob.process._pid_liveness.pid_alive(pid)` is the ONE safe cross-platform
+liveness probe for "is this pid still running", extracted from
+`frob.mutate._journal` (T-3003 fixed it there first) after `frob.tickets.
+_land`'s `_probe_land_lock_pid_liveness` was found still using the unsafe
+POSIX-shaped shape T-3003 had already fixed once (T-3018).
+
+On POSIX, `os.kill(pid, 0)` is genuinely side-effect-free (signal `0`
+sends nothing). On Windows it is NOT: CPython's `os.kill` opens the
+target with `PROCESS_ALL_ACCESS` and calls `TerminateProcess(handle,
+sig)`, so `sig=0` still terminates whatever process currently holds that
+pid. Combined with Windows' fast PID reuse, a probe run just after a
+process exits can find its pid already reassigned to an unrelated LIVE
+process and kill it. `pid_alive` therefore never calls `os.kill` when a
+Windows backend is available: it opens a query-only
+`PROCESS_QUERY_LIMITED_INFORMATION` handle and reads `GetExitCodeProcess`/
+`STILL_ACTIVE`, which cannot terminate anything.
+
+Callers own their own interpretation of "no such pid" vs. "cannot tell"
+-- `pid_alive` returns a plain `bool` (alive or not); a caller needing a
+three-state confirmed-dead/ambiguous/alive split (e.g. `_land.py`'s land-
+lock-holder reclaim logic, which must never auto-reclaim on an ambiguous
+probe) still draws that distinction itself around `pid_alive`'s POSIX-
+specific exception shape, the same way it always did.
+
 <!-- frob:doc docs/modules/process.md#concurrent-check-advisory-t-2473 -->
 ## Concurrent check advisory (T-2473)
 

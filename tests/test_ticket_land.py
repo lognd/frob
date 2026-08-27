@@ -11064,6 +11064,64 @@ class TestLandLockPlatformBackends:
         assert entered is True
 
 
+# frob:ticket T-3018
+class TestProbeLandLockPidLivenessDelegatesToSharedModule:
+    """T-3018: `_probe_land_lock_pid_liveness` used to run its own
+    POSIX-shaped `os.kill(pid, 0)` -- the same unsafe-on-Windows shape
+    T-3003 had already fixed once in `frob.mutate._journal`. It now
+    delegates to `frob.process._pid_liveness.pid_alive_tristate`; faking
+    that shared module's Windows backend here proves the delegation is
+    real, not just a same-behavior coincidence."""
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestProbeLandLockPidLivenessDelegatesToSharedModule.te\
+    # st_windows_backend_alive_pid_is_true
+    def test_windows_backend_alive_pid_is_true(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.process import _pid_liveness
+        from frob.tickets._land import _probe_land_lock_pid_liveness
+
+        class _FakeKernel32:
+            def OpenProcess(self, _access, _inherit, _pid):
+                return 1
+
+            def GetExitCodeProcess(self, _handle, exit_code_ptr):
+                exit_code_ptr._obj.value = _pid_liveness._STILL_ACTIVE
+                return 1
+
+            def CloseHandle(self, _handle):
+                return 1
+
+        monkeypatch.setattr(_pid_liveness, "_kernel32", _FakeKernel32())
+        assert _probe_land_lock_pid_liveness(4242) is True
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestProbeLandLockPidLivenessDelegatesToSharedModule.te\
+    # st_windows_backend_never_ambiguous
+    def test_windows_backend_never_ambiguous(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The Windows query-only probe is definitive by construction --
+        `_probe_land_lock_pid_liveness`'s three-state contract must never
+        report `None` on that backend."""
+        from frob.process import _pid_liveness
+        from frob.tickets._land import _probe_land_lock_pid_liveness
+
+        class _FakeKernel32:
+            def OpenProcess(self, _access, _inherit, _pid):
+                return 0  # unknown pid: OpenProcess fails
+
+            def GetExitCodeProcess(self, _handle, _exit_code_ptr):
+                raise AssertionError("must not be called for a failed OpenProcess")
+
+            def CloseHandle(self, _handle):
+                raise AssertionError("no handle to close")
+
+        monkeypatch.setattr(_pid_liveness, "_kernel32", _FakeKernel32())
+        assert _probe_land_lock_pid_liveness(999999) is False
+
+
 # frob:ticket T-2774
 class TestLandLockWaitBudgetFromDeclaredDeadline:
     """T-2774: `_resolve_land_lock_wait_budget_s` bounds the land.lock

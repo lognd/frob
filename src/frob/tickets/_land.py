@@ -73,6 +73,15 @@ if TYPE_CHECKING:
 
 from frob.gitio import current_branch, run_argv
 from frob.logging import get_logger
+
+# frob:ticket T-3018
+# Imported by its BARE name (never `frob.process._pid_liveness.
+# pid_alive_tristate` dot-qualified, and never re-aliased) so
+# `frob.gates._wire`'s WIRE001 reach-scan -- which, for a plain FUNCTION
+# record, only recognizes an unqualified `pid_alive_tristate(` call
+# token, deliberately excluding a dot-prefixed one as "someone else's
+# same-named attribute" -- can see this module as a real caller.
+from frob.process._pid_liveness import pid_alive_tristate
 from frob.tickets._journal import _clear_intent, _write_intent
 from frob.tickets._land_finalize import _land_finalize_and_close
 from frob.tickets._land_git_ops import (
@@ -585,6 +594,7 @@ def _read_land_lock_holder(path: Path) -> dict | None:
 
 
 # frob:ticket T-1634
+# frob:ticket T-3018
 # frob:tests \
 # tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_dead_holder_pid_is_re\
 # ported_dead_but_self_healing_and_healthy
@@ -599,24 +609,24 @@ def _read_land_lock_holder(path: Path) -> dict | None:
 # om_a_confirmed_dead_pid_is_reclaimed_and_logged
 def _probe_land_lock_pid_liveness(pid: int) -> bool | None:
     """Three-state liveness probe for a land.lock holder's pid (T-1634):
-    `True` (alive), `False` (CONFIRMED dead -- `os.kill(pid, 0)` raised
-    `ProcessLookupError`), or `None` (ambiguous -- `PermissionError`/other
-    `OSError`, e.g. no permission to signal a pid owned by another user, or
-    pid recycling noise). Mirrors the confirmed_absent/ambiguous split
-    `frob.tickets._leases._probe_worktree_liveness` already draws for
-    worktree leases (T-0782/T-0584): only a CONFIRMED-dead holder is ever
-    safe to reclaim automatically; an ambiguous probe must never be treated
-    as license to reclaim anything, exactly like that function's own
-    contract. Shared by `frob.doctor.scan_live_land_processes` and
-    `_land_lock`'s own post-acquire reclaim-logging below, so this repo has
-    exactly one pid-liveness notion for land.lock, not two."""
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except (PermissionError, OSError):
-        return None
-    return True
+    `True` (alive), `False` (CONFIRMED dead), or `None` (ambiguous, e.g.
+    no permission to signal a pid owned by another user, or pid recycling
+    noise). Mirrors the confirmed_absent/ambiguous split `frob.tickets.
+    _leases._probe_worktree_liveness` already draws for worktree leases
+    (T-0782/T-0584): only a CONFIRMED-dead holder is ever safe to reclaim
+    automatically; an ambiguous probe must never be treated as license to
+    reclaim anything, exactly like that function's own contract. Shared by
+    `frob.doctor.scan_live_land_processes` and `_land_lock`'s own
+    post-acquire reclaim-logging below, so this repo has exactly one
+    pid-liveness notion for land.lock, not two.
+
+    T-3018: delegates to `frob.process._pid_liveness.pid_alive_tristate`
+    (a bare POSIX-shaped `os.kill(pid, 0)` was NOT safe on Windows --
+    see that module's docstring) rather than probing `os.kill` directly;
+    this is the second of two independent copies of that unsafe pattern
+    T-3018 found and consolidated, `frob.mutate._journal`'s own copy
+    already fixed once by T-3003."""
+    return pid_alive_tristate(pid)
 
 
 @contextmanager
