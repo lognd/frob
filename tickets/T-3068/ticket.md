@@ -9,7 +9,7 @@ created: '2026-08-26'
 priority: high
 blocked_by:
 - T-3067
-parent: null
+parent: T-3004
 tier: ticket
 sprint: null
 runs_last: false
@@ -20,6 +20,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-3004
+  reason: TDD commit protocol is the mechanism behind T-3004 section 7 enforced test-first
+    development
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
