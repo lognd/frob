@@ -104,7 +104,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 55fbe60c2c2bfb2946d6d36828d9a185e989ce47
 ---
 ## Description
 tests/test_gates.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
