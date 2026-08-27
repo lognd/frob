@@ -1,7 +1,7 @@
 ---
 id: T-3081
 title: TicketSpec.no_scope_declared silently dropped by new_ticket
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -29,7 +29,10 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-27'
-designated_repro_test: null
+evidence:
+- tests/test_tickets_no_scope.py::TestTicketSpecFieldsSurviveNewTicket::test_no_scope_declared_round_trips_through_new_ticket
+- tests/test_tickets_no_scope.py::TestTicketSpecFieldsSurviveNewTicket::test_runs_last_parallel_safe_round_trips_through_new_ticket
+designated_repro_test: tests/test_tickets_no_scope.py::TestTicketSpecFieldsSurviveNewTicket::test_no_scope_declared_round_trips_through_new_ticket
 threat: null
 component: null
 anchor: false

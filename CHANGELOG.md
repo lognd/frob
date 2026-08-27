@@ -448,6 +448,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3065: Quarantine finding identities are keyed by literal string equality on a path whose shape varies by caller; normalize at write time
 - T-3066: frob refactor split/move-module false-refuses on any nested import of the source module
 - T-3069: Hook: nudge hand-performed renames toward frob refactor, without misfiring on ordinary import edits
+- T-3081: TicketSpec.no_scope_declared silently dropped by new_ticket
 - T-3087: A ticket can reach done with an unsatisfied blocked_by, and a falsely-closed ticket cannot be reopened
 
 ## [0.530.0] - unreleased

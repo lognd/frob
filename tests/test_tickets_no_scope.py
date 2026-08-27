@@ -60,6 +60,103 @@ class TestSetNoScopeDeclared:
         assert blank.danger_err is TicketError.NoScopeDeclaredReasonMissing
 
 
+# frob:ticket T-3081
+# frob:tests \
+# tests/test_tickets_no_scope.py::TestTicketSpecFieldsSurviveNewTicket.test_no_scope_de\
+# clared_round_trips_through_new_ticket
+# frob:tests \
+# tests/test_tickets_no_scope.py::TestTicketSpecFieldsSurviveNewTicket.test_runs_last_p\
+# arallel_safe_round_trips_through_new_ticket
+class TestTicketSpecFieldsSurviveNewTicket:
+    """T-3081: `_ticket_from_spec` (`new_ticket`'s `Ticket(...)` builder)
+    must copy EVERY bool+reason escape-hatch pair `TicketSpec` declares,
+    not just the ones some earlier ticket happened to wire through. This
+    is a ROUND-TRIP check by design -- filing via `TicketSpec(..., X=True,
+    ...)` then reloading the written ticket from disk -- because the bug
+    class here is a field silently dropped between the spec and the
+    `Ticket(...)` constructor call, which a check against the in-memory
+    `Ticket` `new_ticket` HAPPENS to return would not catch any more
+    reliably than the buggy code itself; only a real disk round-trip
+    proves the write actually carried the field."""
+
+    def test_no_scope_declared_round_trips_through_new_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """DESIGNATED REPRO for T-3081: at the parent commit, `_ticket_
+        from_spec` has no `no_scope_declared`/`no_scope_declared_reason`
+        lines at all, so this reloads as `no_scope_declared=False` even
+        though the caller declared it `True` at filing time -- the exact
+        shape `frob ticket start`'s T-2394 guard then wrongly refuses."""
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        spec = TicketSpec(
+            title="a pure decision record",
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            scope=(),
+            no_scope_declared=True,
+            no_scope_declared_reason="pure decision record, no files to scope",
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        assert created.danger_ok.no_scope_declared is True
+        assert (
+            created.danger_ok.no_scope_declared_reason
+            == "pure decision record, no files to scope"
+        )
+
+        reloaded = load_active(tmp_path)
+        assert reloaded.is_ok
+        ticket = reloaded.danger_ok.tickets[created.danger_ok.id]
+        assert ticket.no_scope_declared is True
+        assert (
+            ticket.no_scope_declared_reason
+            == "pure decision record, no files to scope"
+        )
+
+    def test_runs_last_parallel_safe_round_trips_through_new_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3081's OWN "check for other dropped fields" finding: `Ticket
+        Spec.runs_last_parallel_safe`/`runs_last_parallel_safe_reason`
+        (T-2579) is dropped by `_ticket_from_spec` the identical way
+        `no_scope_declared` was -- neither field appears in the `Ticket
+        (...)` construction, so both are silently lost on the filing-time
+        path even though `Ticket` itself carries them and the CLI mutate
+        path sets them correctly."""
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        spec = TicketSpec(
+            title="a runs-last-parallel-safe ticket",
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            scope=("src/m.py",),
+            runs_last=True,
+            runs_last_parallel_safe=True,
+            runs_last_parallel_safe_reason="read-only, cannot race any sibling",
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        assert created.danger_ok.runs_last_parallel_safe is True
+        assert (
+            created.danger_ok.runs_last_parallel_safe_reason
+            == "read-only, cannot race any sibling"
+        )
+
+        reloaded = load_active(tmp_path)
+        assert reloaded.is_ok
+        ticket = reloaded.danger_ok.tickets[created.danger_ok.id]
+        assert ticket.runs_last_parallel_safe is True
+        assert (
+            ticket.runs_last_parallel_safe_reason
+            == "read-only, cannot race any sibling"
+        )
+
+
 class TestRefuseEmptyScopeOnStart:
     """`_refuse_empty_scope_on_start`: the hard gate at `frob ticket
     start` -- the point a lease is actually needed (T-2394)."""

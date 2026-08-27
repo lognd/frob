@@ -354,7 +354,19 @@ def _ticket_from_spec(
     the same marker-lookalike-corruption class T-1536 defused for the
     Done-report `why` path -- so it is run through
     `sanitize_narrative_for_ledger` here too, before the incident-template
-    fallback (an empty/whitespace-only body is unaffected either way)."""
+    fallback (an empty/whitespace-only body is unaffected either way).
+
+    T-3081: every bool+reason escape-hatch pair `TicketSpec` declares
+    MUST be copied onto the `Ticket(...)` call below -- a field silently
+    missing here is worse than a rejected one, because the caller
+    believes it declared something it did not. `no_scope_declared`/
+    `no_scope_declared_reason` (T-2394) and `runs_last_parallel_safe`/
+    `runs_last_parallel_safe_reason` (T-2579) were BOTH found dropped
+    this way (measured directly: a round-trip through `new_ticket`
+    reloaded both as their default/`False` value regardless of what the
+    spec declared) -- `scope_breadth_ack`/`scope_breadth_ack_reason`
+    (T-2302) was already wired correctly and is the shape every new pair
+    must match."""
     body = sanitize_narrative_for_ledger(spec.body)
     if spec.kind == TicketKind.INCIDENT and not body.strip():
         body = _INCIDENT_TEMPLATE
@@ -386,6 +398,13 @@ def _ticket_from_spec(
         # frob:ticket T-2302
         scope_breadth_ack=spec.scope_breadth_ack,
         scope_breadth_ack_reason=spec.scope_breadth_ack_reason,
+        # frob:ticket T-2394
+        no_scope_declared=spec.no_scope_declared,
+        no_scope_declared_reason=spec.no_scope_declared_reason,
+        # frob:ticket T-2579
+        # frob:ticket T-3081
+        runs_last_parallel_safe=spec.runs_last_parallel_safe,
+        runs_last_parallel_safe_reason=spec.runs_last_parallel_safe_reason,
     )
 
 
