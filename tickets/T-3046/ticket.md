@@ -2,7 +2,7 @@
 id: T-3046
 title: 'V-model M6: evidence laundering -- T-3005 and T-3007 landed on parse-test
   evidence that never touches the graph code they added'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -19,6 +19,7 @@ scope:
 - tests/test_graph_reach.py
 - scripts/measure_evidence_reach.py
 - docs/modules/graph.md
+- tests/test_measure_evidence_reach.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,11 @@ scope_changes:
 - op: add
   glob: docs/modules/graph.md
   reason: document the new reach() classifier alongside affects()
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_measure_evidence_reach.py
+  reason: unit test for the measurement script main() (TEST001)
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
