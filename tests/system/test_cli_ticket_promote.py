@@ -55,6 +55,8 @@ class TestPromoteCLI:
             "Filed off-branch",
             "--kind",
             "bug",
+            "--scope",
+            "tickets.md",
             "--path",
             str(wt),
         )

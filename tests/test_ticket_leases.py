@@ -1449,6 +1449,7 @@ class TestCommitFullLedgerChange:
                 ticket_path=repo,
                 ticket_title="archive me",
                 ticket_kind="docs",
+                ticket_scope=["src/feature.py"],
                 ticket_body="## Done report\n\nDone.\n",
             )
         )

@@ -96,6 +96,8 @@ class TestTicketRoundTrip:
             "flow2",
             "--kind",
             "feature",
+            "--scope",
+            "pkg.py",
             "--path",
             str(tmp_path),
         )
@@ -122,6 +124,8 @@ class TestTicketRoundTrip:
             "closeable",
             "--kind",
             "feature",
+            "--scope",
+            "pkg.py",
             "--path",
             str(tmp_path),
         )
@@ -151,6 +155,8 @@ class TestTicketRoundTrip:
             "closeable2",
             "--kind",
             "feature",
+            "--scope",
+            "test_thing.py",
             "--path",
             str(tmp_path),
             "--body",

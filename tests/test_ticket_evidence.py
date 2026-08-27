@@ -173,21 +173,30 @@ class TestEvidenceCmdCwd:
     not the invoking process's cwd (T-0834)."""
 
     def test_relative_probe_only_succeeds_from_worktree(self, tmp_path: Path) -> None:
-        """A relative-path `test -f marker` only exits 0 when run with
+        """A relative-path `grep -c` probe only exits 0 when run with
         `cwd=tmp_path` -- proving `run_cmd_evidence`/`_run_evidence_command`
         actually honor the `cwd` argument rather than inheriting whatever
-        directory pytest happens to be running from."""
+        directory pytest happens to be running from.
+
+        T-3080: originally `test -f marker.txt` (silent on success, no
+        stdout/stderr at all) -- T-1892's later EvidenceCmdSilent guard
+        (an exit-0 command that emits nothing is refused, since the
+        recorded digest would carry zero information about what was
+        verified) turned the RIGHT-cwd half of this test into an
+        unrelated false failure. `grep -c` emits its own match count, so
+        it satisfies T-1892 while still exercising exactly the same cwd-
+        honoring behavior this test exists to prove."""
         # frob:tests tests/test_ticket_evidence.py::TestEvidenceCmdCwd.test_relative_probe_only_succeeds_from_worktree  # noqa: E501
         marker = tmp_path / "marker.txt"
         marker.write_text("present\n", encoding="utf-8")
 
         # From the wrong cwd (None -> inherits this process's cwd, which is
         # not tmp_path), the relative-path probe must fail.
-        wrong_cwd_result = run_cmd_evidence("test -f marker.txt")
+        wrong_cwd_result = run_cmd_evidence("grep -c present marker.txt")
         assert wrong_cwd_result.is_err
 
         # From the worktree itself, the same relative-path probe succeeds.
-        right_cwd_result = run_cmd_evidence("test -f marker.txt", cwd=tmp_path)
+        right_cwd_result = run_cmd_evidence("grep -c present marker.txt", cwd=tmp_path)
         assert right_cwd_result.is_ok
 
     def test_add_cmd_evidence_runs_against_ticket_path_worktree(

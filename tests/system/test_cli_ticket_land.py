@@ -75,7 +75,14 @@ class TestLandCLI:
         # `frob ticket evidence` command, so this test still proves what
         # it always meant to prove (a clean dry run for genuinely-covered,
         # passing, well-reported work), not the pre-D-05 shortcut.
+        # T-3080: T-2114's new-public-symbol doc/test-edge check (added
+        # after this fixture was written) now refuses a bare `new_thing`
+        # def with no frob:tests directive above it -- a real edge, not
+        # empty-scope drift, so this fixture file needs its own directive
+        # like any other genuinely-new public symbol would.
         (wt / "src" / "new_thing.py").write_text(
+            '# frob:tests tests/test_new_thing.py::test_new_thing kind="unit"\n'
+            '# frob:waive COV001 reason="throwaway fixture symbol, not a real API"\n'
             "def new_thing() -> int:\n    return 1\n"
         )
         (wt / "tests").mkdir(exist_ok=True)

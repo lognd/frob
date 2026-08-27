@@ -1,7 +1,7 @@
 ---
 id: T-3080
 title: Remaining T-2394 empty-scope fixture drift (10 tests, T-3037 residue)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -20,15 +20,15 @@ scope:
 - tests/system/test_cli_ticket_promote.py
 - tests/test_ticket_leases.py
 - tests/system/test_cli_ticket_land.py
-- tickets/T-draft-2ff07395/**
+- tickets/T-3098/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
 - op: add
-  glob: tickets/T-draft-2ff07395/**
-  reason: 'T-3080 filed a follow-up ticket (T-draft-2ff07395) for an unrelated pre-existing
+  glob: tickets/T-3098/**
+  reason: 'T-3080 filed a follow-up ticket (T-3098) for an unrelated pre-existing
     test-exhaustiveness regression found while re-verifying this ticket''s own touched-set
     tests; the filed ticket''s own directory is a byproduct of that filing, not code
     this ticket modifies.
@@ -37,8 +37,8 @@ scope_changes:
   actor: logan
   at: '2026-08-27'
 - op: add
-  glob: tickets/T-draft-2ff07395/**
-  reason: 'T-3080 filed a follow-up ticket (T-draft-2ff07395) for an unrelated pre-existing
+  glob: tickets/T-3098/**
+  reason: 'T-3080 filed a follow-up ticket (T-3098) for an unrelated pre-existing
     test-exhaustiveness regression found while re-verifying this ticket''s own touched-set
     tests; the filed ticket''s own directory is a byproduct of that filing, not code
     this ticket modifies.

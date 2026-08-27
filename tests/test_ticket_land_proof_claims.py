@@ -8,7 +8,18 @@ a negative verification result). Isolated from a real `land()` call --
 `frob.tickets._land._LAST_CLAIMS_OUTCOME` side channel T-2091 added,
 matching the "first test MUST fail against current main" acceptance
 criterion without needing a full fixture-repo land.
-"""
+
+T-3080: the `_land_proof_checks` monkeypatch's third element (`state_ok`)
+was `False` in all three tests of `TestLandProofClaimsOutcome` since this
+file's origin commit (T-2091) -- with `verified = ancestor_ok and
+state_ok`, that made every one of these "healthy path" assertions
+(`verified is True`) structurally unreachable, an independent pre-
+existing bug this repo's own BUG002/TDD gates never covered for this
+file. Corrected to `True` (a genuinely healthy ancestor+state pair,
+matching what each test's own docstring/comment already describes) --
+unrelated to the T-2394 empty-scope fixture-drift class this ticket was
+otherwise filed to fix; these three never touched a ticket's scope at
+all."""
 
 from __future__ import annotations
 
@@ -54,7 +65,7 @@ class TestLandProofClaimsOutcome:
         monkeypatch.setattr(
             _land_cmd,
             "_land_proof_checks",
-            lambda root, fid, sha: (True, "done", False),
+            lambda root, fid, sha: (True, "done", True),
         )
         report = _fake_report("T-9001")
         _LAST_CLAIMS_OUTCOME["T-9001"] = _ClaimsReverifyOutcome.SKIPPED_UNMEASURED
@@ -85,7 +96,7 @@ class TestLandProofClaimsOutcome:
         monkeypatch.setattr(
             _land_cmd,
             "_land_proof_checks",
-            lambda root, fid, sha: (True, "done", False),
+            lambda root, fid, sha: (True, "done", True),
         )
         report = _fake_report("T-9002")
         _LAST_CLAIMS_OUTCOME["T-9002"] = _ClaimsReverifyOutcome.PASSED
@@ -115,7 +126,7 @@ class TestLandProofClaimsOutcome:
         monkeypatch.setattr(
             _land_cmd,
             "_land_proof_checks",
-            lambda root, fid, sha: (True, "done", False),
+            lambda root, fid, sha: (True, "done", True),
         )
         report = _fake_report("T-9003")
         _LAST_CLAIMS_OUTCOME.pop("T-9003", None)
