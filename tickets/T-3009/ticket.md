@@ -2,7 +2,7 @@
 id: T-3009
 title: 'Enforce TDD from git history: a verification nodes introducing commit must
   precede its implementation node (T-3004 section 7)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -20,6 +20,7 @@ scope:
 - tests/gates/test_tdd_order.py
 - docs/modules/gates.md
 - docs/strata/vmodel.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +49,12 @@ scope_changes:
 - op: add
   glob: docs/strata/vmodel.md
   reason: 'T-3009: TDD-ordering gate module, its tests, and doc updates'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-3009: declare exec capability for new tests/gates/test_tdd_order.py subprocess
+    use (SELFAUDIT001)'
   actor: logan
   at: '2026-08-26'
 triage_changes:
