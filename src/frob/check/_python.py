@@ -63,14 +63,11 @@ def _run_ruff(
     failing ToolResult for each requested stage, never a raw
     FileNotFoundError.
 
-    T-2252: invoked via `uv run ruff` (the project-pinned version), never
-    a bare `ruff` off PATH -- playbook section 12's documented pinned-vs-
-    PATH ruff drift hazard ("a change that's clean under one and dirty
-    under the other is not actually clean") applies to this exact call
-    site: a bare `ruff` can silently disagree with the version this
-    repo's own `pyproject.toml` pins, so `frob quality check`'s own
-    ruff-check/ruff-format verdict could drift from what `uv run ruff`
-    reports by hand.
+    T-2252/T-3019: a bare `ruff` argv, not `uv run ruff` -- the latter
+    resolves its "project" from the subprocess cwd (the project BEING
+    CHECKED) and silently creates an untracked `uv.lock` there; frob's own
+    `bin/` is already on `PATH` for children, so the bare call still
+    resolves the identical pinned version.
 
     T-2320: `skip_check`/`skip_format` let a caller run just one of the
     two sub-invocations (the split `--skip-ruff-check`/`--skip-ruff-
@@ -85,7 +82,7 @@ def _run_ruff(
     if not skip_check:
         try:
             run_result = guarded_subprocess_run(
-                ["uv", "run", "ruff", "check", "--output-format", "json", str(root)],
+                ["ruff", "check", "--output-format", "json", str(root)],
                 capture_output=True,
                 text=True,
             )
@@ -113,12 +110,15 @@ def _ruff_format_result(root: Path) -> ToolResult:
     """The `ruff format --check` outcome as one ToolResult, or a typed
     failure (T-0142) if `ruff` is not on PATH.
 
-    T-2252: invoked via `uv run ruff` (pinned), matching `_run_ruff`'s own
-    reasoning above -- both ruff sub-invocations must agree on which
-    `ruff` they are running."""
+    T-2252/T-3019: invoked as a bare `ruff` binary (not `uv run ruff`),
+    matching `_run_ruff`'s own T-3019 reasoning above -- both
+    sub-invocations must agree on which `ruff` they are running, and
+    neither may route through `uv run` against the TARGET project's own
+    cwd (the untracked-`uv.lock`-creation hazard `_run_ruff`'s docstring
+    documents)."""
     try:
         run_result = guarded_subprocess_run(
-            ["uv", "run", "ruff", "format", "--check", str(root)],
+            ["ruff", "format", "--check", str(root)],
             capture_output=True,
             text=True,
         )
@@ -171,18 +171,19 @@ def _run_ruff_autofix(root: Path) -> list[ToolResult]:
     (`--check` mode, read-only), both sub-invocations here actually
     rewrite files on disk.
 
-    Same pinned-`uv run ruff`-not-bare-`ruff` reasoning as `_run_ruff`/
-    `_ruff_format_result` (T-2252) applies here too -- both stages route
-    through `uv run ruff` so the version doing the rewrite matches the one
-    `frob check` verifies against. A missing `ruff` binary (T-0142) is a
-    typed failing ToolResult for both stages, never a raw
-    FileNotFoundError; the second stage still runs even if the first
-    fails to invoke, so a caller sees the real state of both rather than
-    a short-circuited guess."""
+    T-2252/T-3019: invoked as a bare `ruff` binary (not `uv run ruff`),
+    same reasoning as `_run_ruff`/`_ruff_format_result` -- both stages
+    must agree on which `ruff` is doing the rewrite, and `uv run ruff`
+    against the target project's own cwd silently creates an untracked
+    `uv.lock` there as a resolution side effect (see `_run_ruff`'s T-3019
+    docstring). A missing `ruff` binary (T-0142) is a typed failing
+    ToolResult for both stages, never a raw FileNotFoundError; the second
+    stage still runs even if the first fails to invoke, so a caller sees
+    the real state of both rather than a short-circuited guess."""
     out: list[ToolResult] = []
     try:
         run_result = guarded_subprocess_run(
-            ["uv", "run", "ruff", "check", "--fix", str(root)],
+            ["ruff", "check", "--fix", str(root)],
             capture_output=True,
             text=True,
         )
@@ -203,7 +204,7 @@ def _run_ruff_autofix(root: Path) -> list[ToolResult]:
             )
     try:
         format_result = guarded_subprocess_run(
-            ["uv", "run", "ruff", "format", str(root)],
+            ["ruff", "format", str(root)],
             capture_output=True,
             text=True,
         )

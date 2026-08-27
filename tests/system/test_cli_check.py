@@ -30,6 +30,16 @@ def _make_project(tmp_path: Path, src: str, pkg: str = "mypkg") -> Path:
         "[gates.severity]\n"
         'COV001 = "warn"\nTEST001 = "warn"\nTEST002 = "warn"\n'
         'TEST003 = "warn"\nTEST005 = "warn"\nTEST006 = "warn"\n'
+        # T-3019: this fixture's own package is a single unconsumed
+        # __init__.py with no test/entry-point importing it -- a genuine
+        # REF001 orphan by that gate's own design (proven separately, and
+        # deliberately kept ERROR-severity there, by
+        # tests/test_refs_gate.py). It belongs in this same
+        # adoption-baseline warn list for the same reason the TEST/COV
+        # gates above are here: these system tests exercise the
+        # ruff/ty/cycle/dup tool paths, not REF001's orphan-file
+        # discipline, so REF001 must not block them.
+        'REF001 = "warn"\n'
     )
     src_dir = tmp_path / "src" / pkg
     src_dir.mkdir(parents=True)
@@ -337,6 +347,13 @@ class TestCheckGatesStage:
     def test_only_gates_passes_once_bound_and_tested(self, tmp_path):
         git_init_and_config(tmp_path)
         _write_pyproject(tmp_path)
+        # T-3019: `.frob/` and `coverage.xml` are gitignored in every real
+        # project (frob's own `.gitignore` does the same) -- without this,
+        # `git add -A` below tracks frob's own derived state
+        # (`.frob/derived.lock`) and the coverage report, and REF001 (with
+        # no consumer to point at either) reports both as spurious orphans
+        # on what is otherwise a clean, fully-bound fixture.
+        (tmp_path / ".gitignore").write_text(".frob/\ncoverage.xml\n")
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
         )

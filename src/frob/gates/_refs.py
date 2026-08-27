@@ -111,6 +111,23 @@ user, same posture as PERF/FUZZ, never a hard build failure):
 `reason`; a malformed entry (missing path/reason) is skipped, not treated
 as a wildcard mute.
 
+T-3019: the project's own ROOT `pyproject.toml` and `frob.toml` (exact
+literal paths, never a nested/workspace-member manifest -- see
+`_DEFAULT_ROOT_MANIFEST_EXEMPT`) are exempt from REF001/REF002 without
+needing an explicit `[[refs.entrypoint]]` declaration. Every Python
+project has exactly one root `pyproject.toml`, read by tooling
+(pip/uv/build backends) rather than referenced from other tracked source
+files, and every frob-enabled project has exactly one root `frob.toml`
+with the same property -- so this is not a per-project judgment call the
+way README.md/LICENSE are (frob's OWN `frob.toml` already had to declare
+`pyproject.toml` by hand, which is exactly the sign this belongs in code,
+not in every project's own config). Before this, a brand-new, fully clean,
+git-committed project -- including this repo's OWN
+`tests/system/test_cli_check.py::TestCheckCleanProject` fixture -- failed
+`frob check` on first run with REF001 on these two universal files,
+undermining the very "clean project passes cleanly" guarantee that gate
+exists to protect.
+
 A `.md` file's OWN text can also carry an inline `frob:waive REF001
 reason="..."` or `frob:waive REF002 reason="..."` directive, text-scanned
 directly the same way `_docblocks.py` honors `frob:waive DOC004` on a doc
@@ -214,6 +231,31 @@ def _is_collectible_test_filename(rel_path: str) -> bool:
         or ".test" in pure.name
         or "_test." in pure.name
     )
+
+
+# frob:ticket T-3019
+#: The project's own root manifest/tooling-lock files -- read by tooling,
+#: never referenced from other tracked source files, and universal to
+#: every project regardless of what it contains -- are exempt from
+#: REF001/REF002 by default (see `ref_gate`'s own T-3019 module-docstring
+#: note). Exact literal root paths ONLY: a nested `somepkg/pyproject.toml`
+#: (a workspace member, handled separately by `_native_stub_pairs` when it
+#: is a maturin crate manifest) stays fully subject to REF001/REF002,
+#: since a sub-package manifest is not automatically read by anything the
+#: way the project root's own manifest is. `frob-coverage.lock.json`
+#: (`frob.derived_state`'s `--stamp-coverage` output) is the one non-
+#: manifest member: unlike `.frob/`'s other derived state (gitignored,
+#: never tracked), this ONE file is deliberately meant to be committed
+#: (`frob.doctor`'s own docstring: "the committed frob-coverage.lock.json"
+#: -- it is how a CI leg without its own test run still gets a coverage
+#: verdict), so it needs the same default exemption for the same reason.
+#: `.gitignore` is the last member: read exclusively by `git` itself,
+#: universal to every real project, and -- like `pyproject.toml`/
+#: `frob.toml` -- never referenced from other tracked source files by
+#: design.
+_DEFAULT_ROOT_MANIFEST_EXEMPT = frozenset(
+    {"pyproject.toml", "frob.toml", "frob-coverage.lock.json", ".gitignore"}
+)
 
 
 def _load_allowlist(root: Path) -> dict[str, str]:
@@ -846,8 +888,10 @@ def _ref_gate_file_violations(
             )
         )
 
-    if _allowlist_covers(rel_path, allowlist) or _is_collectible_test_filename(
-        rel_path
+    if (
+        rel_path in _DEFAULT_ROOT_MANIFEST_EXEMPT
+        or _allowlist_covers(rel_path, allowlist)
+        or _is_collectible_test_filename(rel_path)
     ):
         return violations
 

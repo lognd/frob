@@ -1902,19 +1902,27 @@ class TestRunRuffRealPaths:
         assert not results[0].passed
         assert not results[1].passed
 
-    # frob:ticket T-2252
+    # frob:ticket T-3019
     def test_invokes_pinned_ruff_via_uv_run_not_bare_ruff(
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests \
         # tests/unit/test_check.py::TestRunRuffRealPaths.test_invokes_pinned_ruff_via_u\
         # v_run_not_bare_ruff
-        """T-2252 (MUST FAIL FIRST on main): playbook section 12's own
-        pinned-vs-PATH ruff drift hazard applies to `_run_ruff`'s call
-        site -- a bare `ruff` off PATH can silently disagree with the
-        version this repo's `pyproject.toml` pins. Both the ruff-check
-        and ruff-format subprocess invocations must go through `uv run
-        ruff`, never a bare `ruff` argv[0]."""
+        """T-3019 (MUST FAIL FIRST on the pre-fix `uv run ruff` shape):
+        `uv run ruff <target>` resolves `uv`'s "project" from the
+        subprocess's cwd -- the project BEING CHECKED, not frob's own
+        installation -- and silently creates an untracked `uv.lock`/
+        `*.egg-info/` there as a side effect when that project has none
+        yet, which PRE001/SCOPE001 then report as a spurious diff on an
+        otherwise clean project. `_run_ruff` must invoke a bare `ruff`
+        (matching `_run_ty`'s own convention), never `uv run ruff`, for
+        both the ruff-check and ruff-format subprocess invocations. T-2252
+        (superseded by this ticket's fix): the pinned-version guarantee
+        that originally motivated `uv run ruff` still holds under a bare
+        call, since `frob` itself always runs from within its own
+        resolved environment with that environment's `bin/` already on
+        `PATH`."""
         from typani import Ok
 
         import frob.check._python as python_mod
@@ -1932,8 +1940,8 @@ class TestRunRuffRealPaths:
         assert len(results) == 2
         assert len(seen_argvs) == 2, seen_argvs
         for argv in seen_argvs:
-            assert argv[:2] == ["uv", "run"], argv
-            assert argv[2] == "ruff", argv
+            assert argv[0] == "ruff", argv
+            assert argv[:2] != ["uv", "run"], argv
 
 
 # frob:ticket T-2320
@@ -2162,6 +2170,8 @@ class TestRunRuffAutofix:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests src/frob/check/_python.py::_run_ruff_autofix kind="unit"
+        # T-3019: bare `ruff` argv, never `uv run ruff` (see _run_ruff's
+        # T-3019 docstring for the untracked-uv.lock hazard this avoids).
         from typani import Ok
 
         import frob.check._python as python_mod
@@ -2177,8 +2187,8 @@ class TestRunRuffAutofix:
         assert [r.tool for r in results] == ["ruff-check-fix", "ruff-format-write"]
         assert all(r.exit_code == 0 for r in results)
         assert len(seen_argvs) == 2
-        assert seen_argvs[0] == ["uv", "run", "ruff", "check", "--fix", str(tmp_path)]
-        assert seen_argvs[1] == ["uv", "run", "ruff", "format", str(tmp_path)]
+        assert seen_argvs[0] == ["ruff", "check", "--fix", str(tmp_path)]
+        assert seen_argvs[1] == ["ruff", "format", str(tmp_path)]
 
     def test_missing_binary_yields_two_typed_results(
         self, tmp_path: Path, monkeypatch

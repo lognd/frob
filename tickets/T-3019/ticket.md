@@ -2,7 +2,7 @@
 id: T-3019
 title: frob check fires spurious REF001/PRE001/SCOPE001 on any clean project; frob
   check is not repo-clean on main
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -21,10 +21,10 @@ scope:
 - src/frob/check/_python.py
 - tests/unit/test_check.py
 - tests/system/test_cli_check.py
-- tickets/T-draft-9710ccb7/**
-- tickets/T-draft-e2994af6/**
-- tickets/T-draft-e8a72726/**
-- tickets/T-draft-f6954f52/**
+- tickets/T-3028/**
+- tickets/T-3029/**
+- tickets/T-3030/**
+- tickets/T-3031/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -71,25 +71,25 @@ scope_changes:
   actor: logan
   at: '2026-08-26'
 - op: add
-  glob: tickets/T-draft-9710ccb7/**
+  glob: tickets/T-3028/**
   reason: draft tickets filed as follow-ups while working T-3019; their own ticket.md
     files are otherwise flagged outside scope
   actor: logan
   at: '2026-08-26'
 - op: add
-  glob: tickets/T-draft-e2994af6/**
+  glob: tickets/T-3029/**
   reason: draft tickets filed as follow-ups while working T-3019; their own ticket.md
     files are otherwise flagged outside scope
   actor: logan
   at: '2026-08-26'
 - op: add
-  glob: tickets/T-draft-e8a72726/**
+  glob: tickets/T-3030/**
   reason: draft tickets filed as follow-ups while working T-3019; their own ticket.md
     files are otherwise flagged outside scope
   actor: logan
   at: '2026-08-26'
 - op: add
-  glob: tickets/T-draft-f6954f52/**
+  glob: tickets/T-3031/**
   reason: draft tickets filed as follow-ups while working T-3019; their own ticket.md
     files are otherwise flagged outside scope
   actor: logan
@@ -106,11 +106,24 @@ triage_changes:
 evidence:
 - tests/test_refs_gate.py::TestDefaultRootManifestExempt::test_root_pyproject_and_frob_toml_are_exempt_with_no_declaration
 - tests/test_refs_gate.py::TestDefaultRootManifestExempt::test_nested_pyproject_toml_still_subject_to_ref001
-- tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_bare_ruff_not_uv_run
-- tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_bare_ruff
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_pinned_ruff_via_uv_run_not_bare_ruff
+- tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_uv_run
 - tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
 - tests/system/test_cli_check.py::TestCheckGatesStage::test_only_gates_passes_once_bound_and_tested
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_bare_ruff_not_uv_run
+  new_node: tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_pinned_ruff_via_uv_run_not_bare_ruff
+  reason: test renamed back to its original name to preserve evidence resolution for
+    T-2252
+  actor: logan
+  at: '2026-08-26'
+- old_node: tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_bare_ruff
+  new_node: tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_uv_run
+  reason: test renamed back to its original name to preserve evidence resolution for
+    T-2320
+  actor: logan
+  at: '2026-08-26'
 threat: null
 component: null
 anchor: false

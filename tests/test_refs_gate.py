@@ -224,6 +224,45 @@ class TestEntrypointAllowlist:
         assert "REF001" in _rule_ids(violations, "also_orphan.txt")
 
 
+class TestDefaultRootManifestExempt:
+    """T-3019: the project's own root `pyproject.toml`/`frob.toml` are
+    exempt from REF001/REF002 by default, with no `[[refs.entrypoint]]`
+    declaration required -- a clean, git-committed project must not fail
+    `frob check` on these two universal, tooling-read-only files."""
+
+    def test_root_pyproject_and_frob_toml_are_exempt_with_no_declaration(
+        self, tmp_path: Path
+    ) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "pyproject.toml", "[project]\nname = \"x\"\n")
+        _write(tmp_path, "frob.toml", "[project]\nname = \"x\"\n")
+        _write(tmp_path, ".gitignore", ".frob/\ncoverage.xml\n")
+        _write(tmp_path, "frob-coverage.lock.json", "{}\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert _rule_ids(violations, "pyproject.toml") == []
+        assert _rule_ids(violations, "frob.toml") == []
+        assert _rule_ids(violations, ".gitignore") == []
+        assert _rule_ids(violations, "frob-coverage.lock.json") == []
+
+    def test_nested_pyproject_toml_still_subject_to_ref001(
+        self, tmp_path: Path
+    ) -> None:
+        # A workspace-member manifest is not automatically read the way
+        # the project ROOT's own manifest is -- only the exact literal
+        # root path is exempt.
+        _init_repo(tmp_path)
+        (tmp_path / "somecrate").mkdir()
+        _write(tmp_path, "somecrate/pyproject.toml", "[project]\nname = \"y\"\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert "REF001" in _rule_ids(violations, "somecrate/pyproject.toml")
+
+
 class TestNativeStubLinking:
     """T-0449: a `.pyi` sidecar beside a `pyproject.toml` whose
     `[tool.maturin] module-name` matches the stub's stem is a genuine
