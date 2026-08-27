@@ -371,11 +371,25 @@ def reverify_cmd_evidence(entry: str) -> Result[bool, TicketError]
     # unconditionally).
 def add_cmd_evidence(root: Path, ticket_id: str, command: str) -> Result[Ticket, TicketError]
     # T-0215: kind-gated non-pytest evidence channel for tickets with no
-    # pytest surface of their own -- only kind=docs/ux may use it (T-3045
+    # pytest surface of their own -- kind=docs/ux may always use it (T-3045
     # added ux alongside docs: a design review or accessibility pass is
-    # exactly as non-pytest-shaped as documentation)
-    # (Err(EvidenceKindNotAllowed) otherwise); records `run_cmd_evidence`'s
-    # entry via the same write path as add_evidence.
+    # exactly as non-pytest-shaped as documentation), and (T-3156) ANY
+    # OTHER kind may too when the ticket's entire declared scope has no
+    # Python file at all (scope_has_python_surface, below) -- a Rust-only
+    # crate or a docs/ledger-only bug investigation has no other
+    # legitimate D-02 route (Err(EvidenceKindNotAllowed) otherwise);
+    # records `run_cmd_evidence`'s entry via the same write path as
+    # add_evidence.
+def scope_has_python_surface(root: Path, scope: Sequence[str]) -> bool
+    # T-3156: real filesystem check (frob.excludes.iter_files, never
+    # inferred from ticket.kind or glob text alone) -- True if any file
+    # under `scope` is a `.py` file, or scope is empty/unmeasurable
+    # (conservative: an ambiguous scope never widens the cmd: evidence
+    # exemption above). The single shared predicate `add_cmd_evidence`'s
+    # record-time gate, `evidence_covers_scope`'s close-time D-02 check,
+    # and `_validate_evidence_kind_consistency`'s land-time re-check all
+    # consult, so a ticket's cmd: evidence is judged the same way at
+    # every checkpoint.
 def migrate(root: Path) -> Result[int, TicketError]
     # Collapses legacy tickets/*.md files into the single tickets.md ledger.
 def renumber(root: Path) -> Result[int, TicketError]

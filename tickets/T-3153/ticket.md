@@ -20,6 +20,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_refactor_corpus.py::TestRefactorCorpus::test_split_moves_symbols_across_every_call_site_shape
 designated_repro_test: null
 threat: null
 component: null
@@ -47,3 +49,6 @@ Fix direction (not investigated in depth): either (a) the corpus fixture's `new_
 ## Scope + leases
 - tests/test_refactor_corpus.py
 - src/frob/tickets/_worktree_guard.py
+
+## Failure log
+- 2026-08-27 attempt 1: Does not reproduce: T-3145 (landed same day, commit 3886bd212, tests/conftest.py's _isolate_worktree_lease_env_before_test) already fixed exactly this class -- ambient FROB_WORKTREE/FROB_AGENT inherited from a spawning process (frob ticket evidence's individual-reverify subprocess) is now popped at test setup. Verified directly: uv run frob ticket evidence T-3153 tests/test_refactor_corpus.py::TestRefactorCorpus::test_split_moves_symbols_across_every_call_site_shape (the exact repro path this ticket names) passes clean, no WorktreeLeaseViolation. BUG002 test-first requires the repro to FAIL at the parent commit; it does not. Requeue if T-3145 is ever reverted.

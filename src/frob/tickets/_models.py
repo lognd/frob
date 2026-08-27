@@ -200,6 +200,56 @@ class TicketTier(StrEnum):
 # `__init__.py`, so the reverse import is not available there.
 CMD_EVIDENCE_ALLOWED_KINDS = frozenset({TicketKind.DOCS, TicketKind.UX})
 
+
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests \
+# tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true\
+# _for_bug_kind_with_no_python_surface
+# frob:tests \
+# tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_fals\
+# e_for_bug_kind_with_real_python_surface
+def scope_has_python_surface(root: Path, scope: Sequence[str]) -> bool:
+    """T-3156: True if any file under `scope` (real, tracked, on-disk
+    matches via `frob.excludes.iter_files`, not a filesystem-blind glob
+    guess) is a `.py` file. `scope` empty, OR non-empty but resolving to
+    NO real tracked file at all (a typo, a fixture-only path, work not
+    yet committed) -> True (conservative: unmeasurable coverage never
+    widens an exemption). This is the SECOND, narrower
+    escape hatch alongside `CMD_EVIDENCE_ALLOWED_KINDS` for `cmd:`
+    evidence (T-0215): a ticket whose kind is code (not docs/ux) but whose
+    ENTIRE declared scope has no Python file at all structurally cannot
+    ever satisfy D-02 (`evidence_covers_scope`) via a real TESTS edge or a
+    scope-file match either -- frob's obligation graph only ever indexes
+    Python source, so a Rust-only crate (`strata-core/src/graph/**`,
+    T-3005/T-3007 precedent: real evidence is `cargo test`, disclosed only
+    in done-report prose, with no channel frob can bind or verify) or a
+    docs/ledger-only `bug`-kind investigation ticket (T-3147's own audit,
+    6 measured instances: T-2804/T-2893/T-2902/T-2946/T-2955/T-3060) has
+    NO legitimate route to close at all otherwise. Deliberately does NOT
+    widen based on ticket.kind alone (that would resurrect exactly the
+    kind-only carve-out already shown too narrow) nor infer from
+    directory-glob text alone (a bare `src/frob/gates/**` glob string
+    carries no extension info -- only a real filesystem check can tell it
+    apart from `strata-core/src/graph/**`)."""
+    if not scope:
+        return True
+    from frob.excludes import iter_files
+
+    globs = _scope_globs(_split_scope_entries(scope))
+    matched_any_file = False
+    for f in iter_files(root):
+        rel = str(f.relative_to(root))
+        if not any(fnmatch.fnmatch(rel, g) for g in globs):
+            continue
+        matched_any_file = True
+        if f.suffix == ".py":
+            return True
+    # A non-empty scope that resolves to NO real file on disk at all (a
+    # typo, a fixture-only path, or work not yet committed) is unmeasurable
+    # -- conservative True, same as the empty-scope case above, never an
+    # accidental exemption for a scope this check cannot actually observe.
+    return not matched_any_file
+
 # The exact shape `run_cmd_evidence` writes: `cmd:<command> exit=0
 # sha256=<12-hex>`. Single source of truth for "does this evidence string
 # look like a cmd: entry" -- `frob.gates`'s COV003 check and every

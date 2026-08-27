@@ -77,6 +77,7 @@ from frob.tickets._models import (
     has_substantive_done_report,
     is_cmd_evidence,
     matches_collected,
+    scope_has_python_surface,
     unbound_acceptance,
 )
 from frob.tickets._new_gate_rule_acceptance import (
@@ -431,6 +432,7 @@ def _open_descendant_ids(ticket: Ticket, queue: dict[str, Ticket]) -> tuple[str,
 # frob:ticket T-0976
 # frob:ticket T-1685
 def _done_transition_structural_guard(
+    root: Path,
     ticket: Ticket,
     queue: dict[str, Ticket],
     *,
@@ -468,12 +470,13 @@ def _done_transition_structural_guard(
             )
             return Err(TicketError.OpenDescendant)
     return _done_transition_evidence_kind_and_scope_guard(
-        ticket, covers_scope=covers_scope, rapid=rapid, debt_sink=debt_sink
+        root, ticket, covers_scope=covers_scope, rapid=rapid, debt_sink=debt_sink
     )
 
 
 # frob:ticket T-1685
 def _done_transition_evidence_kind_and_scope_guard(
+    root: Path,
     ticket: Ticket,
     *,
     covers_scope: bool | None,
@@ -486,12 +489,15 @@ def _done_transition_evidence_kind_and_scope_guard(
     threshold (T-1685), the same split-by-guard-boundary shape this
     module's other siblings (e.g. `_done_transition_gate_claim_guard`)
     already use."""
-    if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS and any(
-        is_cmd_evidence(e) for e in ticket.evidence
+    if (
+        ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS
+        and scope_has_python_surface(root, ticket.scope)
+        and any(is_cmd_evidence(e) for e in ticket.evidence)
     ):
         _log.warning(
-            "tickets: %s is kind=%s but carries cmd: evidence, only "
-            "allowed for kind in %s",
+            "tickets: %s is kind=%s with a Python-coverable scope but "
+            "carries cmd: evidence, only allowed for kind in %s (or a "
+            "scope with no Python file at all)",
             ticket.id,
             ticket.kind,
             sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
@@ -652,6 +658,7 @@ def _done_transition_guard(
     `_close_mutation_evidence_for_ticket` posture for the identical
     failure mode."""
     structural = _done_transition_structural_guard(
+        root,
         ticket,
         queue,
         covers_scope=covers_scope,
@@ -1834,19 +1841,27 @@ def _run_evidence_command(
 # pairing key), same false-positive class as the T-0861 DEBT001/DEPR001/TEST010 \
 # precedent"
 def _check_cmd_evidence_kind(
-    ticket_id: str, kind: TicketKind
+    root: Path, ticket_id: str, kind: TicketKind, scope: Sequence[str]
 ) -> Result[None, TicketError]:
     """`Err(EvidenceKindNotAllowed)` unless `kind` is in
-    `CMD_EVIDENCE_ALLOWED_KINDS`."""
-    if kind not in CMD_EVIDENCE_ALLOWED_KINDS:
-        _log.warning(
-            "tickets: %s is kind=%s, cmd evidence only allowed for kind in %s",
-            ticket_id,
-            kind,
-            sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
-        )
-        return Err(TicketError.EvidenceKindNotAllowed)
-    return Ok(None)
+    `CMD_EVIDENCE_ALLOWED_KINDS`, OR (T-3156) `scope` has no Python file
+    at all (`scope_has_python_surface`) -- a Rust-only or docs/ledger-
+    only ticket of ANY kind structurally has no other legitimate D-02
+    route, matching `frob.gates.evidence_covers_scope`'s own identical
+    widened check."""
+    if kind in CMD_EVIDENCE_ALLOWED_KINDS or not scope_has_python_surface(
+        root, scope
+    ):
+        return Ok(None)
+    _log.warning(
+        "tickets: %s is kind=%s with a Python-coverable scope, cmd "
+        "evidence only allowed for kind in %s (or a scope with no "
+        "Python file at all)",
+        ticket_id,
+        kind,
+        sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
+    )
+    return Err(TicketError.EvidenceKindNotAllowed)
 
 
 # frob:doc docs/modules/tickets.md#public-api
@@ -1887,7 +1902,7 @@ def add_cmd_evidence(
         return Err(loaded.danger_err)
     ticket = loaded.danger_ok
 
-    kind_check = _check_cmd_evidence_kind(ticket_id, ticket.kind)
+    kind_check = _check_cmd_evidence_kind(root, ticket_id, ticket.kind, ticket.scope)
     if kind_check.is_err:
         return Err(kind_check.danger_err)
 

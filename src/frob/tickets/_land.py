@@ -6089,6 +6089,7 @@ def _report_leaked_tickets(
 
 
 # frob:ticket T-1326
+# frob:ticket T-3156
 def _load_ticket_for_land(worktree: Path, ticket_id: str) -> Result[Ticket, LandError]:
     """Load `ticket_id` from `worktree`'s store, run `_validate_closeable`,
     and run the uncommitted-waive-deletion check (T-1323) against it --
@@ -6103,7 +6104,7 @@ def _load_ticket_for_land(worktree: Path, ticket_id: str) -> Result[Ticket, Land
         return Err(LandError.NotFound)
     ticket = loaded.danger_ok
 
-    validated = _validate_closeable(ticket)
+    validated = _validate_closeable(worktree, ticket)
     if validated.is_err:
         return Err(validated.danger_err)
 

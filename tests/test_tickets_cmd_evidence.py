@@ -130,6 +130,7 @@ class TestSilentCmdEvidenceRefused:
         assert result.danger_ok.startswith("cmd:grep -c run_cmd_evidence")
 
 
+# frob:ticket T-3156
 class TestKindGate:
     """Only docs-kind tickets may close on `--evidence-cmd` alone (T-0215).
 
@@ -215,6 +216,73 @@ class TestKindGate:
         assert ticket.state == TicketState.DONE
         assert len(ticket.evidence) == 1
         assert ticket.evidence[0].startswith("cmd:printf ok exit=0 sha256=")
+
+    # frob:ticket T-3156
+    def test_bug_kind_with_no_python_surface_scope_closes(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_evidence.py::_check_cmd_evidence_kind
+        # A `bug`-kind ticket whose ENTIRE declared scope is a real,
+        # existing non-Python file (docs/ledger-only investigation, the
+        # T-3147-audit shape) has no other legitimate D-02 route -- must
+        # now close on cmd: evidence exactly like a docs-kind ticket.
+        (tmp_path / "notes.md").write_text("investigation notes\n")
+        new_ticket(
+            tmp_path,
+            TicketSpec(
+                title="docs-only bug investigation",
+                kind=TicketKind.BUG,
+                origin=Origin.AGENT,
+                scope=("notes.md",),
+                body="## Description\nx\n\n## Done report\nAll good.\n",
+            ),
+        )
+        transition(tmp_path, "T-0001", TicketState.PLANNED)
+        transition(tmp_path, "T-0001", TicketState.IN_PROGRESS)
+        cfg = AppConfig(
+            ticket_command="close",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_evidence_cmd="printf ok",
+        )
+        _close(tmp_path, cfg)
+        queue = load_queue(tmp_path).danger_ok
+        ticket = queue.tickets["T-0001"]
+        assert ticket.state == TicketState.DONE
+        assert ticket.evidence[0].startswith("cmd:printf ok exit=0 sha256=")
+
+    # frob:ticket T-3156
+    def test_bug_kind_with_real_python_surface_scope_still_rejected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_evidence.py::_check_cmd_evidence_kind
+        # Must-stay-quiet: a `bug`-kind ticket scoped to a REAL, existing
+        # Python file must NOT get the new exemption.
+        pkg = tmp_path / "src"
+        pkg.mkdir()
+        (pkg / "x.py").write_text("def f():\n    pass\n")
+        new_ticket(
+            tmp_path,
+            TicketSpec(
+                title="real code bug",
+                kind=TicketKind.BUG,
+                origin=Origin.AGENT,
+                scope=("src/x.py",),
+                body="## Description\nx\n\n## Done report\nAll good.\n",
+            ),
+        )
+        transition(tmp_path, "T-0001", TicketState.PLANNED)
+        transition(tmp_path, "T-0001", TicketState.IN_PROGRESS)
+        cfg = AppConfig(
+            ticket_command="close",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_evidence_cmd="printf ok",
+        )
+        with pytest.raises(SystemExit):
+            _close(tmp_path, cfg)
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].evidence == ()
 
     def test_docs_kind_ticket_failing_cmd_blocks_close(self, tmp_path: Path) -> None:
         _seed_ticket(tmp_path, kind=TicketKind.DOCS)
@@ -389,8 +457,13 @@ def _snapshot(root: Path):
     return build_graph(root, cache).danger_ok
 
 
+# frob:ticket T-3156
 def _raw_ticket(
-    *, ticket_id: str = "T-0001", kind: TicketKind, evidence: tuple[str, ...]
+    *,
+    ticket_id: str = "T-0001",
+    kind: TicketKind,
+    evidence: tuple[str, ...],
+    scope: tuple[str, ...] = (),
 ) -> Ticket:
     """A DONE ticket built directly (bypassing `transition`/`add_cmd_evidence`
     entirely) so a hand-pasted or kind-flipped `cmd:` evidence entry can
@@ -404,6 +477,7 @@ def _raw_ticket(
         kind=kind,
         origin=Origin.HUMAN,
         created=date(2026, 1, 1),
+        scope=scope,
         evidence=evidence,
         body="## Description\nx\n\n## Done report\ndone\n",
     )
@@ -504,6 +578,7 @@ class TestCov003CmdEvidence:
         assert not any(v.rule == "COV003" for v in violations)
 
 
+# frob:ticket T-3156
 class TestKindConsistencyAtClose:
     """A non-docs ticket carrying a `cmd:` evidence entry must never reach
     DONE, whether the entry arrived via a kind hand-edit after recording or
@@ -536,28 +611,68 @@ class TestKindConsistencyAtClose:
         queue = load_queue(tmp_path).danger_ok
         assert queue.tickets["T-0001"].state == TicketState.IN_PROGRESS
 
-    def test_land_validate_closeable_refuses_hand_pasted_cmd_entry(self) -> None:
+    # frob:ticket T-3156
+    def test_land_validate_closeable_refuses_hand_pasted_cmd_entry(
+        self, tmp_path: Path
+    ) -> None:
         entry = "cmd:printf ok exit=0 sha256=aaaaaaaaaaaa"
         ticket = _raw_ticket(kind=TicketKind.SECURITY, evidence=(entry,))
-        result = _validate_closeable(ticket)
+        result = _validate_closeable(tmp_path, ticket)
         assert result.is_err
         assert result.danger_err.name == "NotCloseable"
 
-    def test_land_validate_closeable_accepts_docs_cmd_entry(self) -> None:
+    # frob:ticket T-3156
+    def test_land_validate_closeable_accepts_docs_cmd_entry(
+        self, tmp_path: Path
+    ) -> None:
         entry = "cmd:printf ok exit=0 sha256=aaaaaaaaaaaa"
         ticket = _raw_ticket(kind=TicketKind.DOCS, evidence=(entry,))
-        result = _validate_closeable(ticket)
+        result = _validate_closeable(tmp_path, ticket)
         assert result.is_ok
 
-    def test_land_validate_closeable_accepts_ux_cmd_entry(self) -> None:
+    # frob:ticket T-3156
+    def test_land_validate_closeable_accepts_ux_cmd_entry(
+        self, tmp_path: Path
+    ) -> None:
         # T-3045: must-stay-quiet twin at the land-time guard layer too --
         # a UX ticket's cmd: entry must survive the SAME check a docs
         # ticket's does, and a non-UX/non-docs kind (SECURITY, above)
         # must still be refused.
         entry = "cmd:printf ok exit=0 sha256=aaaaaaaaaaaa"
         ticket = _raw_ticket(kind=TicketKind.UX, evidence=(entry,))
-        result = _validate_closeable(ticket)
+        result = _validate_closeable(tmp_path, ticket)
         assert result.is_ok
+
+    # frob:ticket T-3156
+    def test_land_validate_closeable_accepts_bug_kind_no_python_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land_merge.py::_validate_evidence_kind_consistency  # noqa: E501
+        (tmp_path / "notes.md").write_text("investigation notes\n")
+        entry = "cmd:printf ok exit=0 sha256=aaaaaaaaaaaa"
+        ticket = _raw_ticket(
+            kind=TicketKind.BUG, evidence=(entry,), scope=("notes.md",)
+        )
+        result = _validate_closeable(tmp_path, ticket)
+        assert result.is_ok
+
+    # frob:ticket T-3156
+    def test_land_validate_closeable_refuses_bug_kind_real_python_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land_merge.py::_validate_evidence_kind_consistency  # noqa: E501
+        # Must-stay-quiet twin: a REAL Python file in scope must still
+        # refuse, exactly like the pre-existing SECURITY test above.
+        pkg = tmp_path / "src"
+        pkg.mkdir()
+        (pkg / "x.py").write_text("def f():\n    pass\n")
+        entry = "cmd:printf ok exit=0 sha256=aaaaaaaaaaaa"
+        ticket = _raw_ticket(
+            kind=TicketKind.BUG, evidence=(entry,), scope=("src/x.py",)
+        )
+        result = _validate_closeable(tmp_path, ticket)
+        assert result.is_err
+        assert result.danger_err.name == "NotCloseable"
 
 
 class TestRunCmdEvidenceLaunchFailure:

@@ -301,6 +301,7 @@ from frob.tickets._models import (
     _split_scope_entries,
     is_cmd_evidence,
     matches_collected,
+    scope_has_python_surface,
     scope_matches,
 )
 from frob.tickets._provisional import (  # noqa: F401 -- re-exported so tests/test_tickets_collision.py's monkeypatch("frob.gates.on_default_branch", ...) still resolves
@@ -691,13 +692,21 @@ def evidence_covers_scope(ticket: Ticket, snapshot: GraphSnapshot) -> bool:
     T-0215 already sanctions it closing on a `--evidence-cmd` exit status. So
     a ticket whose kind permits cmd evidence (`CMD_EVIDENCE_ALLOWED_KINDS`,
     today `docs`/`ux`) and which carries at least one real cmd: evidence entry
-    is considered covered. Code kinds cannot carry cmd evidence (enforced by
-    `_transition_guard`/`_validate_closeable` against the same frozenset), so
-    this can never loophole a bug/feature/security ticket into closing on an
-    unrelated command."""
-    if ticket.kind in CMD_EVIDENCE_ALLOWED_KINDS and any(
-        is_cmd_evidence(evidence) for evidence in ticket.evidence
-    ):
+    is considered covered.
+
+    T-3156: the SAME cmd: route also opens for any OTHER kind whose entire
+    declared scope has no Python file at all (`scope_has_python_surface`,
+    a real filesystem check, never inferred from ticket.kind or glob text
+    alone) -- frob's obligation graph only ever indexes Python source, so a
+    Rust-only crate or a docs/ledger-only `bug`-kind investigation ticket
+    has no OTHER legitimate D-02 route (T-3147's audit named both gaps).
+    A ticket with even one Python file in scope still requires kind in
+    `CMD_EVIDENCE_ALLOWED_KINDS`, unchanged -- this can never loophole a
+    real Python code change into closing on an unrelated command."""
+    if (
+        ticket.kind in CMD_EVIDENCE_ALLOWED_KINDS
+        or not scope_has_python_surface(Path(snapshot.root), ticket.scope)
+    ) and any(is_cmd_evidence(evidence) for evidence in ticket.evidence):
         return True
     # T-1944: `evidence_scope` covers a pre-existing test's file with NO
     # write-lease claim (see the field's own docstring) -- checked here

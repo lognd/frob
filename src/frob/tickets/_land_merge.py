@@ -30,6 +30,8 @@ verbatim throughout."""
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
@@ -43,6 +45,7 @@ from frob.tickets._models import (
     Ticket,
     TicketState,
     is_cmd_evidence,
+    scope_has_python_surface,
     unbound_acceptance,
 )
 
@@ -124,7 +127,7 @@ def _has_failure_log(body: str) -> bool:
 
 
 # frob:ticket T-1701
-def _validate_closeable(ticket: Ticket) -> Result[None, LandError]:
+def _validate_closeable(root: Path, ticket: Ticket) -> Result[None, LandError]:
     """The evidence + Done-report + acceptance-binding preconditions
     `transition(..., DONE)` will enforce anyway -- checked here FIRST,
     before any git mutation, so a landing never merges main (and commits a
@@ -206,7 +209,7 @@ def _validate_closeable(ticket: Ticket) -> Result[None, LandError]:
             ticket.id,
         )
         return Err(LandError.NotCloseable)
-    kind_check = _validate_evidence_kind_consistency(ticket)
+    kind_check = _validate_evidence_kind_consistency(root, ticket)
     if kind_check.is_err:
         return kind_check
     return _validate_acceptance_bound(ticket)
@@ -243,17 +246,22 @@ def _validate_acceptance_bound(ticket: Ticket) -> Result[None, LandError]:
 # closeability); this function moved verbatim from frob.tickets._land (pre-existing, \
 # unwaived there because the pre-move DUP scan never paired it against these \
 # particular unrelated files) as part of T-1186's _land.py split"
-def _validate_evidence_kind_consistency(ticket: Ticket) -> Result[None, LandError]:
+def _validate_evidence_kind_consistency(
+    root: Path, ticket: Ticket
+) -> Result[None, LandError]:
     """`Err(NotCloseable)` if `ticket`'s kind disallows cmd: evidence but it
     carries some anyway (see `_validate_closeable`'s T-0215 doc)."""
-    if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS and any(
-        is_cmd_evidence(e) for e in ticket.evidence
+    if (
+        ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS
+        and scope_has_python_surface(root, ticket.scope)
+        and any(is_cmd_evidence(e) for e in ticket.evidence)
     ):
         _log.error(
-            "land: %s cannot land -- kind=%s carries cmd: evidence, only "
-            "allowed for kind in %s; fix the ticket's kind or replace the "
-            "cmd: entry with real pytest --evidence node ids, then retry "
-            "`frob ticket land %s`",
+            "land: %s cannot land -- kind=%s with a Python-coverable "
+            "scope carries cmd: evidence, only allowed for kind in %s "
+            "(or a scope with no Python file at all); fix the ticket's "
+            "kind or replace the cmd: entry with real pytest --evidence "
+            "node ids, then retry `frob ticket land %s`",
             ticket.id,
             ticket.kind,
             sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),

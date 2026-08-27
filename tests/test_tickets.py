@@ -3288,6 +3288,7 @@ class TestV2StateTransitions:
 
 
 # frob:ticket T-1585
+# frob:ticket T-3156
 class TestDoneTransitionStructuralGuardRapidLeniency:
     """T-1585 items 1: `rapid` lets a close proceed without evidence/a
     Done report (T-1681), recording the skip as auditable debt rather
@@ -3296,8 +3297,9 @@ class TestDoneTransitionStructuralGuardRapidLeniency:
     regression test, since no existing test exercised this function's
     `rapid=True` branch end to end."""
 
+    # frob:ticket T-3156
     def test_rapid_missing_evidence_and_done_report_proceeds_with_debt_recorded(
-        self,
+        self, tmp_path: Path
     ) -> None:
         # frob:tests tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency.test_rapid_missing_evidence_and_done_report_proceeds_with_debt_recorded  # noqa: E501
         from frob.tickets._evidence import _done_transition_structural_guard
@@ -3305,6 +3307,7 @@ class TestDoneTransitionStructuralGuardRapidLeniency:
         ticket = _ticket(evidence=(), body="## Description\nno done report here\n")
         recorded: list[tuple[str, str]] = []
         result = _done_transition_structural_guard(
+            tmp_path,
             ticket,
             {ticket.id: ticket},
             covers_scope=None,
@@ -3314,13 +3317,17 @@ class TestDoneTransitionStructuralGuardRapidLeniency:
         assert result.is_ok
         assert recorded == [("T-0001", "missing-evidence-or-done-report")]
 
-    def test_non_rapid_missing_evidence_and_done_report_still_refuses(self) -> None:
+    # frob:ticket T-3156
+    def test_non_rapid_missing_evidence_and_done_report_still_refuses(
+        self, tmp_path: Path
+    ) -> None:
         # frob:tests tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency.test_non_rapid_missing_evidence_and_done_report_still_refuses  # noqa: E501
         from frob.tickets._evidence import _done_transition_structural_guard
 
         ticket = _ticket(evidence=(), body="## Description\nno done report here\n")
         recorded: list[tuple[str, str]] = []
         result = _done_transition_structural_guard(
+            tmp_path,
             ticket,
             {ticket.id: ticket},
             covers_scope=None,

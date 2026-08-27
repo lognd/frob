@@ -1,7 +1,7 @@
 ---
 id: T-3156
 title: D-02 has no legitimate evidence route for docs-only bug-kind or Rust-only tickets
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -19,6 +19,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_evidence_integrity.py::TestD02ScopeBinding::test_evidence_covers_scope_true_for_bug_kind_with_no_python_surface
+- tests/test_evidence_integrity.py::TestD02ScopeBinding::test_evidence_covers_scope_false_for_bug_kind_with_real_python_surface
+- tests/test_tickets_cmd_evidence.py::TestKindGate::test_bug_kind_with_no_python_surface_scope_closes
+- tests/test_tickets_cmd_evidence.py::TestKindGate::test_bug_kind_with_real_python_surface_scope_still_rejected
+- tests/test_tickets_cmd_evidence.py::TestKindConsistencyAtClose::test_land_validate_closeable_accepts_bug_kind_no_python_scope
+- tests/test_tickets_cmd_evidence.py::TestKindConsistencyAtClose::test_land_validate_closeable_refuses_bug_kind_real_python_scope
 designated_repro_test: null
 threat: null
 component: null

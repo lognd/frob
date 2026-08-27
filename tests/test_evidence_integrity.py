@@ -172,6 +172,7 @@ class TestD01PassVerification:
 # ---------------------------------------------------------------------------
 # D-02: evidence must bind to a touched/scope symbol
 # ---------------------------------------------------------------------------
+# frob:ticket T-3156
 class TestD02ScopeBinding:
     def test_transition_rejects_when_covers_scope_false(self, tmp_path: Path) -> None:
         # frob:tests \
@@ -272,6 +273,49 @@ class TestD02ScopeBinding:
             evidence=("cmd:grep -q foo src/x.py exit=0 sha256=0123456789ab",),
         )
         snapshot = GraphSnapshot(root=".", symbols={}, edges=())
+        assert evidence_covers_scope(ticket, snapshot) is False
+
+    # frob:ticket T-3156
+    def test_evidence_covers_scope_true_for_bug_kind_with_no_python_surface(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_sc\
+        # ope_true_for_bug_kind_with_no_python_surface
+        # T-3156: a `bug`-kind ticket whose ENTIRE declared scope is a real,
+        # existing non-Python file (a docs/ledger-only investigation, the
+        # T-3147-audit shape) has no OTHER legitimate D-02 route -- cmd:
+        # evidence now covers it, same as a docs/ux-kind ticket already
+        # could.
+        (tmp_path / "notes.md").write_text("investigation notes\n")
+        ticket = _ticket(
+            kind=TicketKind.BUG,
+            scope=("notes.md",),
+            evidence=("cmd:printf ok exit=0 sha256=0123456789ab",),
+        )
+        snapshot = GraphSnapshot(root=str(tmp_path), symbols={}, edges=())
+        assert evidence_covers_scope(ticket, snapshot) is True
+
+    # frob:ticket T-3156
+    def test_evidence_covers_scope_false_for_bug_kind_with_real_python_surface(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_sc\
+        # ope_false_for_bug_kind_with_real_python_surface
+        # Must-stay-quiet: a `bug`-kind ticket whose scope has a REAL,
+        # existing Python file must NOT get the new exemption -- cmd:
+        # evidence still cannot loophole an actual code change, exactly
+        # like the pre-existing sibling test above (fictional scope).
+        pkg = tmp_path / "src" / "pkg"
+        pkg.mkdir(parents=True)
+        (pkg / "x.py").write_text("def f():\n    pass\n")
+        ticket = _ticket(
+            kind=TicketKind.BUG,
+            scope=("src/pkg/",),
+            evidence=("cmd:printf ok exit=0 sha256=0123456789ab",),
+        )
+        snapshot = GraphSnapshot(root=str(tmp_path), symbols={}, edges=())
         assert evidence_covers_scope(ticket, snapshot) is False
 
 
