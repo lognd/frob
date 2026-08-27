@@ -171,6 +171,7 @@ from frob.tickets._reporting import (
     mutate_labels,
     record_failure,
     record_review,
+    reopen_ticket,
     set_done_report,
 )
 from frob.tickets._scope import demote_to_evidence_only, mutate_scope
@@ -750,6 +751,7 @@ __all__ = [
     "renumber_one",
     "record_failure",
     "record_review",
+    "reopen_ticket",
     "reconcile",
     "ReconcileReport",
     "parse_claims_from_done_report",

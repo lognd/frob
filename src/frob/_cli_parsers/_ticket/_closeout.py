@@ -520,6 +520,24 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "with `start`'s T-1054 auto-commit)",
     )
 
+    # frob:ticket T-3087
+    ticket_reopen_p = ticket_sub.add_parser(
+        "reopen",
+        help="transition a done ticket back to queued with a dated --reason "
+        "(T-3087): the audited escape hatch for a FALSELY-closed ticket",
+    )
+    ticket_reopen_p.add_argument("ticket_id", metavar="id")
+    ticket_reopen_p.add_argument(
+        "--reason", dest="ticket_reason", required=True, metavar="TEXT"
+    )
+    ticket_reopen_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1130's auto-commit of the reopen ledger change (parity "
+        "with `drop`/`fail`/`start`'s auto-commit)",
+    )
+
     ticket_archive_p = ticket_sub.add_parser(
         "archive", help="move done/dropped tickets into tickets-archive.md"
     )

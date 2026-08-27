@@ -676,8 +676,16 @@ _DONE_REPORT_HEADING = DONE_REPORT_HEADING
 FAILURE_LOG_HEADING = "## Failure log"
 # frob:doc docs/modules/tickets.md#public-api
 DROP_REASON_HEADING = "## Drop reason"
+# frob:ticket T-3087
+# T-3087: `frob ticket reopen` writes its dated reason line under this
+# heading, the same structural-sentinel pattern `FAILURE_LOG_HEADING`/
+# `DROP_REASON_HEADING` already set -- added to
+# `_STRUCTURAL_HEADINGS_AFTER_DONE_REPORT` below so a reopen entry can
+# never be misread as part of the Done-report narrative it follows.
+# frob:doc docs/modules/tickets.md#public-api
+REOPEN_LOG_HEADING = "## Reopen log"
 _STRUCTURAL_HEADINGS_AFTER_DONE_REPORT = frozenset(
-    {FAILURE_LOG_HEADING, DROP_REASON_HEADING}
+    {FAILURE_LOG_HEADING, DROP_REASON_HEADING, REOPEN_LOG_HEADING}
 )
 # D-03: a bare heading with nothing under it (or only blank lines)
 # previously satisfied close/land (`_has_done_report`'s old shape). The bar
@@ -2190,6 +2198,15 @@ class TicketError(ErrorSet):
     MissingEvidence = "done requires evidence and a Done report"
     MalformedEvidence = "evidence entry failed schema validation"
     BlockerOpen = "Cannot start: blocked_by contains open tickets"
+    # frob:ticket T-3087
+    # T-3087: measured incident -- T-3064 reached `done` while still
+    # carrying `blocked_by=['T-3066']` with T-3066 non-terminal (queued).
+    # `BlockerOpen` above is start-time only (`_transition_guard`'s
+    # IN_PROGRESS branch); nothing on the DONE path checked `blocked_by`
+    # at all. This is the close-time twin -- refused only when a named
+    # blocker is itself non-terminal (open); a blocker that has since
+    # reached done/dropped never refuses the close.
+    BlockerOpenAtClose = "Cannot close: blocked_by contains open tickets"
     # frob:ticket T-1613
     RunsLastBlocked = "Cannot start: runs-last ticket while other tickets are open"
     # frob:ticket T-2574
@@ -2287,6 +2304,19 @@ class TicketError(ErrorSet):
     # T-0579: `frob ticket drop <id> --reason TEXT` failure mode -- a drop
     # with no reason is indistinguishable from a silent discard later.
     DropReasonMissing = "drop requires a non-empty --reason"
+    # frob:ticket T-3087
+    # `frob ticket reopen <id> --reason TEXT` failure modes (T-3087): a
+    # reopen with no reason is as unaccountable as a drop with no reason
+    # (DropReasonMissing's own precedent), and reopen is deliberately
+    # narrower than drop -- it is the audited escape hatch for a
+    # FALSELY-closed ticket, not a general un-close, so it only ever
+    # accepts DONE as the starting state (a ticket that is queued/
+    # planned/in-progress/blocked/dropped was never "closed" in the
+    # sense this verb repairs).
+    ReopenReasonMissing = "reopen requires a non-empty --reason"
+    ReopenRequiresDone = (
+        "reopen requires state=done -- only a done ticket can be reopened"
+    )
     # T-0571: `frob ticket review` failure modes
     ReviewFindingsMissing = "review requires non-empty --findings-file content"
     # T-0571 review round 1: a --commit value (short SHA, ref name, etc.)

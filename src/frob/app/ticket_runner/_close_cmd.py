@@ -766,6 +766,42 @@ def _undisclosed_remainder_reason(root: Path, ticket) -> str | None:  # noqa: AN
     )
 
 
+# frob:ticket T-3087
+# frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose.test_open_blocker_names_the_open_ticket_not_the_terminal_one  # noqa: E501
+# frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose.test_no_blocked_by_returns_empty  # noqa: E501
+# frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose.test_unresolvable_blocker_id_is_ignored  # noqa: E501
+def _open_blockers_at_close(ticket, queue) -> tuple[str, ...]:  # noqa: ANN001
+    """T-3087: ids from `ticket.blocked_by` whose CURRENT state is still
+    open (not done/dropped) -- the close-time twin of `_transition_guard`'s
+    start-time `_start_blockers` check (`TicketError.BlockerOpen`), which
+    only ever fired for `IN_PROGRESS`, never for `DONE`.
+
+    MEASURED incident (T-3087): T-3064 reached `done` while still carrying
+    `blocked_by=['T-3066']` with T-3066 non-terminal (queued) -- its own
+    Done report opened "T-3064 is BLOCKED, not implemented." and its land
+    commit touched zero source files. Nothing on the close path looked at
+    `blocked_by` at all.
+
+    The check is on the blocker's STATE, not its mere presence: a blocker
+    that has itself reached done/dropped never appears here, so a ticket
+    whose blockers all resolved closes exactly as before (T-3087's own
+    must-stay-quiet requirement -- this must not become 'refuse every
+    blocked_by'). A `blocked_by` id that does not resolve to a real ticket
+    in `queue` is silently skipped here (not this guard's job to validate
+    referential integrity of `blocked_by` -- see TICK-shaped concerns
+    elsewhere); it is deliberately not treated as 'open'."""
+    from frob.tickets import TicketState
+
+    open_ids: list[str] = []
+    for blocker_id in ticket.blocked_by:
+        blocker = queue.tickets.get(blocker_id)
+        if blocker is None:
+            continue
+        if blocker.state not in (TicketState.DONE, TicketState.DROPPED):
+            open_ids.append(blocker_id)
+    return tuple(open_ids)
+
+
 # frob:ticket T-1387
 def _own_obligations_diff_findings(
     root: Path,
@@ -1360,6 +1396,33 @@ def _close(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
+    # frob:ticket T-3087
+    if fresh_ticket.blocked_by:
+        from frob.tickets import load_queue
+
+        blockers_queue = load_queue(root)
+        if blockers_queue.is_err:
+            _log.warning(
+                "close: %s could not load queue to verify blocked_by %s "
+                "(%s) -- refusing to close on an unverifiable blocker set",
+                cfg.ticket_id,
+                fresh_ticket.blocked_by,
+                blockers_queue.danger_err,
+            )
+            sys.exit(1)
+        open_blockers = _open_blockers_at_close(fresh_ticket, blockers_queue.danger_ok)
+        if open_blockers:
+            _log.error(
+                "close failed: BlockerOpenAtClose -- %s cannot close, "
+                "blocked_by names open (non-terminal) ticket(s) %s -- "
+                "close/drop the blocker(s) first, or `frob ticket unblock "
+                "%s --by <id>` if the dependency no longer holds",
+                cfg.ticket_id,
+                list(open_blockers),
+                cfg.ticket_id,
+            )
+            sys.exit(1)
+
     (
         covers_scope,
         reviewed,
@@ -1819,6 +1882,42 @@ def _drop(root: Path, cfg: AppConfig) -> None:
         root,
         cfg.ticket_id,
         f"chore(tickets): drop {cfg.ticket_id}",
+        no_commit=cfg.ticket_no_commit,
+    )
+    if committed.is_err:
+        sys.exit(1)
+
+
+# frob:ticket T-3087
+def _reopen(root: Path, cfg: AppConfig) -> None:
+    """CLI wiring for `frob ticket reopen <id> --reason TEXT` (T-3087):
+    the explicit, reason-carrying, audited escape hatch for a
+    FALSELY-closed ticket. Delegates entirely to `frob.tickets.
+    reopen_ticket` for the reason-line + DONE-only gate + state write;
+    this layer only validates required args and reports the Result --
+    the same shape `_drop` already uses for `drop_ticket`.
+
+    T-1130 parity: auto-commits the reopen's ledger change (reason line +
+    DONE -> QUEUED write) the same way `drop`/`fail`/`start` auto-commit
+    their own transitions -- `--no-commit` (`cfg.ticket_no_commit`) opts
+    out."""
+    from frob.tickets import reopen_ticket
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    if cfg.ticket_id is None or not cfg.ticket_reason:
+        _log.error("frob ticket reopen requires <id> and --reason")
+        sys.exit(1)
+
+    result = reopen_ticket(root, cfg.ticket_id, cfg.ticket_reason)
+    if result.is_err:
+        _log.error("reopen failed: %s", result.danger_err)
+        sys.exit(1)
+    _log.info("%s reopened (done -> queued)", cfg.ticket_id)
+
+    committed = commit_ticket_ledger_change(
+        root,
+        cfg.ticket_id,
+        f"chore(tickets): reopen {cfg.ticket_id}",
         no_commit=cfg.ticket_no_commit,
     )
     if committed.is_err:

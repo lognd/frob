@@ -68,6 +68,7 @@ from frob.tickets._models import (
     DONE_REPORT_HEADING,
     DROP_REASON_HEADING,
     FAILURE_LOG_HEADING,
+    REOPEN_LOG_HEADING,
     AcceptanceAmendmentEntry,
     DoneReportClaims,
     FailureEntry,
@@ -103,6 +104,8 @@ _log = get_logger(__name__)
 # the headings this module actually writes.
 _FAILURE_LOG_HEADING = FAILURE_LOG_HEADING
 _DROP_REASON_HEADING = DROP_REASON_HEADING
+# frob:ticket T-3087
+_REOPEN_LOG_HEADING = REOPEN_LOG_HEADING
 
 
 # frob:ticket T-0454
@@ -823,6 +826,83 @@ def drop_ticket(
         return Err(transitioned.danger_err)
     _log.info("tickets: %s dropped: %s", ticket_id, reason.strip())
     return transitioned
+
+
+# frob:ticket T-3087
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_reopen_ticket.py::TestReopenTicket.test_reopen_requires_done  # noqa: E501
+# frob:tests tests/unit/test_reopen_ticket.py::TestReopenTicket.test_reopen_requires_reason  # noqa: E501
+# frob:tests tests/unit/test_reopen_ticket.py::TestReopenTicket.test_reopen_appends_dated_entry_and_requeues  # noqa: E501
+def reopen_ticket(
+    root: Path, ticket_id: str, reason: str
+) -> Result[Ticket, TicketError]:
+    """`frob ticket reopen <id> --reason TEXT` (T-3087): the explicit,
+    reason-carrying, audited escape hatch for a FALSELY-closed ticket --
+    the `done`-side analogue of `drop_ticket`'s dated '## Drop reason'
+    entry, for the one incident class T-3087 measured directly: T-3064
+    reached `done` while its own Done report said "T-3064 is BLOCKED, not
+    implemented" and its land commit touched zero source files. Before
+    this verb existed the only recovery was refiling the work under a
+    brand new id (what T-3086 had to do), silently losing the original
+    ticket's history and inflating the done count.
+
+    DELIBERATELY NOT a general-purpose mutable state field (T-3087's own
+    hard constraint): this function does NOT add a `DONE -> QUEUED` edge
+    to `frob.tickets._TRANSITIONS` -- doing so would let ANY caller of
+    the generic `transition(root, id, TicketState.QUEUED)` un-close a done
+    ticket with no reason recorded at all, which is exactly the "one-way
+    door becomes a swinging door" failure this ticket was told to avoid.
+    Instead this is its own narrow gate (state must be DONE, full stop)
+    plus its own direct `write_ticket` call, mirroring how `record_failure`
+    writes its body change without going through `transition` either.
+    Every OTHER terminal-state consumer (archive's done/dropped sweep,
+    milestone rollups, `doable`'s closure) is unaffected: they read
+    `ticket.state` as it stands at the time they run, and after a reopen
+    that state is genuinely QUEUED again -- there is no split-brain
+    "done but also reopened" state for them to misread.
+
+    `Err(ReopenReasonMissing)` if `reason` is blank (mirrors
+    `DropReasonMissing`): a reopen with no reason is exactly as
+    unaccountable as a drop with no reason. `Err(ReopenRequiresDone)` if
+    `ticket.state is not TicketState.DONE` -- reopen repairs a false
+    close, it is not a second `requeue` for an in-progress ticket (that
+    verb already exists and refuses on purpose outside IN_PROGRESS)."""
+    from frob.tickets import _load_one
+
+    if not reason.strip():
+        return Err(TicketError.ReopenReasonMissing)
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    loaded = _load_one(root, ticket_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket = loaded.danger_ok
+
+    if ticket.state is not TicketState.DONE:
+        _log.warning(
+            "tickets: %s cannot reopen, state=%s (reopen only repairs a "
+            "done ticket -- for an in-progress ticket see `frob ticket "
+            "requeue`)",
+            ticket_id,
+            ticket.state,
+        )
+        return Err(TicketError.ReopenRequiresDone)
+
+    # T-1541: `reason` is caller-authored free text spliced directly into
+    # the body's '## Reopen log' section -- the same marker-lookalike-
+    # corruption class T-1536 defused for the Done-report `why` path and
+    # T-0579's drop-reason line.
+    line = (
+        f"- {date.today().isoformat()}: {sanitize_narrative_for_ledger(reason.strip())}"
+    )
+    new_body = _append_to_section(ticket.body, _REOPEN_LOG_HEADING, line)
+    reopened = ticket.model_copy(update={"body": new_body, "state": TicketState.QUEUED})
+    write_result = write_ticket(root, reopened)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+    _log.info("tickets: %s reopened (done -> queued): %s", ticket_id, reason.strip())
+    return Ok(reopened)
 
 
 # frob:ticket T-1648

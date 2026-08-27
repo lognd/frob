@@ -312,6 +312,26 @@ def drop_ticket(root: Path, ticket_id: str, reason: str, *,
     # destructively rewritten -- dropping its '## Done report' section --
     # before the transition refusal was ever seen, leaving the rewrite
     # sitting uncommitted in the working tree.
+def reopen_ticket(root: Path, ticket_id: str, reason: str) -> Result[Ticket, TicketError]
+    # T-3087: the explicit, reason-carrying, audited escape hatch for a
+    # FALSELY-closed ticket (measured incident: T-3064 reached `done`
+    # while `blocked_by=['T-3066']` was still open, its own Done report
+    # said "T-3064 is BLOCKED, not implemented", and its land commit
+    # touched zero source files). Appends a dated line under '## Reopen
+    # log' (same append-a-section shape as drop_ticket's '## Drop
+    # reason'), then writes state=QUEUED directly.
+    #
+    # DELIBERATELY does not add a DONE -> QUEUED edge to
+    # frob.tickets._TRANSITIONS: doing so would let the generic
+    # transition(root, id, TicketState.QUEUED) un-close ANY done ticket
+    # with no reason recorded, which is the "one-way door becomes a
+    # swinging door" outcome T-3087 was told to avoid. Its own gate
+    # (state must be DONE) and its own direct write_ticket call keep
+    # `transition()`'s state machine (and every other terminal-state
+    # consumer: archive, milestone rollups, doable's closure) unchanged.
+    # Err(ReopenReasonMissing) if `reason` is blank; Err(
+    # ReopenRequiresDone) for any non-DONE state -- use `frob ticket
+    # requeue` for an in-progress ticket instead.
 def attach(root: Path, ticket_id: str, source: AttachmentSource,
            caption: str) -> Result[Attachment, AttachError]
     # source is a file path or clipboard; stores under tickets/attachments/.

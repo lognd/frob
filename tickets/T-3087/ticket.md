@@ -2,7 +2,7 @@
 id: T-3087
 title: A ticket can reach done with an unsatisfied blocked_by, and a falsely-closed
   ticket cannot be reopened
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -22,6 +22,9 @@ scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/app/ticket_runner/__init__.py
 - src/frob/_cli_parsers/_ticket/_closeout.py
+evidence_scope:
+- tests/unit/test_close_blocked_by_guard.py
+- tests/unit/test_reopen_ticket.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -83,6 +86,16 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3990
+evidence:
+- tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_open_blocker_names_the_open_ticket_not_the_terminal_one
+- tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_terminal_blocker_never_refuses
+- tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_dropped_blocker_never_refuses
+- tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_no_blocked_by_returns_empty
+- tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_unresolvable_blocker_id_is_ignored
+- tests/unit/test_reopen_ticket.py::TestReopenTicket::test_reopen_requires_done
+- tests/unit/test_reopen_ticket.py::TestReopenTicket::test_reopen_requires_reason
+- tests/unit/test_reopen_ticket.py::TestReopenTicket::test_reopen_appends_dated_entry_and_requeues
+- tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_archived_terminal_blocker_resolves_via_load_queue
 designated_repro_test: null
 threat: null
 component: null

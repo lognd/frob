@@ -59,6 +59,7 @@ from ._close_cmd import (
     _current_commit,
     _drop,
     _fail,
+    _reopen,
     _reverify,
     _reverify_evidence_for_close,
     _review,
@@ -233,6 +234,7 @@ __all__ = [
     "_exclude_scoped_run_flaky",
     "_explicit_ticket_path",
     "_fail",
+    "_reopen",
     "_filter_by_state",
     "_find_landing_commit",
     "_frob_root_env",
@@ -387,6 +389,8 @@ def _ticket_dispatch_table() -> dict:
         # frob:ticket T-1005
         "reverify": _reverify,
         "fail": _fail,
+        # frob:ticket T-3087
+        "reopen": _reopen,
         "drop": _drop,
         "evidence": _evidence,
         "done-report": _done_report,

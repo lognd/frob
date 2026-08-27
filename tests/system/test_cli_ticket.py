@@ -75,6 +75,8 @@ class TestTicketRoundTrip:
             "flow",
             "--kind",
             "feature",
+            "--scope",
+            "pkg.py",
             "--path",
             str(tmp_path),
         )
