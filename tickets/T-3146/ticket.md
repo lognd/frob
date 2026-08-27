@@ -2,7 +2,7 @@
 id: T-3146
 title: Audit closes landed 2026-08-10..2026-08-27 for D-02 self-cover false positives
   (T-1944/T-3141)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -45,3 +45,6 @@ have failed D-02 under the corrected check) to determine whether any
 should not have closed -- cross-reference against T-3046's evidence-reach
 classifier (733 bindings, 95.5% reaching / 1.2% not reaching / 3.3%
 unknown) as an independent signal on the same population.
+
+## Drop reason
+- 2026-08-27: Duplicate of T-3147, which is DONE (landed 2b9985ecd) with identical title and identical Description/Plan; T-3147's Done report completes this exact audit and filed the forward-gap ticket T-3156.
