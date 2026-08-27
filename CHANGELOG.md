@@ -429,6 +429,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3051: Land H4: the quarantine deadlock is UNFIXED -- _dispose_to_existing_duplicate_or_none handles DuplicateTicket but not DuplicateFinding
 - T-3052: Land H5: the rolling baseline is written before the outcome is decided, so an unfilable finding is silently certified green after one wake
 - T-3061: Put the 2.9s lint gate back on the rapid land path without re-enabling TEST016 mutation testing
+- T-3064: Break the 182-node import cycle: extract universal value types out of gates._models into a leaf module
 
 ## [0.530.0] - unreleased
 

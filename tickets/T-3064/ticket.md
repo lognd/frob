@@ -2,13 +2,13 @@
 id: T-3064
 title: 'Break the 182-node import cycle: extract universal value types out of gates._models
   into a leaf module'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
 priority: high
 blocked_by:
-- T-draft-4e79f8b8
+- T-3066
 parent: null
 tier: ticket
 sprint: null
@@ -41,6 +41,8 @@ scope:
 - src/frob/vet/_scan_violations.py
 - src/frob/vet/_supplychain.py
 - design/frob.strata
+evidence_scope:
+- tests/test_refactor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -334,6 +336,8 @@ scope_changes:
     excludes _land_cmd.py held by T-3061 live lease
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_refactor.py::TestScanReferences::test_semicolon_joined_from_import_refuses_rewrite
 designated_repro_test: null
 threat: null
 component: null
