@@ -29,7 +29,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 41b57e335b2dba8442f43078323a695c26e16680
 ---
 Linux full-suite triage (T-2992): `frob cycle <dir>` refuses with exit 2
 ("could not resolve <dir> to a project root (no pyproject.toml and no git
