@@ -42,7 +42,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2b9985ecdb5a88969a1a73923e3befdf449defd0
 ---
 ## Description
 T-3141 fixed a D-02 (evidence_covers_scope) regression: from T-1944
