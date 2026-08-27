@@ -40,6 +40,13 @@ body_changes:
   at: '2026-08-27'
   old_length: 4298
   new_length: 6513
+- mode: append
+  reason: 'series BQ: settle the post-CAS root-resync mechanism and its failure semantics,
+    as the ticket body demands before any code'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 6513
+  new_length: 10042
 designated_repro_test: null
 acceptance:
 - text: Given a concurrent git status poll during a real land, when the squash-apply
@@ -172,3 +179,66 @@ and races the land's own commit. It did exactly that on the first attempt
 here and killed the land with `CommitFailed: Unable to create index.lock`.
 Also note a 0.5s poll in a live fleet cannot attribute a dirty sample to a
 particular land; only a quiet-fleet measurement is attributable.
+
+
+SETTLED: ROOT RESYNC AFTER THE CAS PUBLISH (2026-08-27, series BQ)
+
+The open design question above is now answered. Mechanism, rationale and
+failure semantics, all verified against this machine's git 2.34.1:
+
+MECHANISM -- `git -C <root> read-tree -m -u <pre_land_tip> <composed_commit>`
+(a two-tree "twoway_merge", the same plumbing `git checkout` uses), run
+immediately after a successful `publish_ref_cas`, still holding the land
+lock.
+
+Why that and not the alternatives:
+
+- Root's `HEAD` is a SYMREF to `refs/heads/main`, so the CAS publish moves
+  HEAD as a side effect. Only the INDEX and WORKING TREE are left at
+  `pre_land_tip`. The resync must therefore update index+worktree and must
+  NOT touch any ref. `read-tree -m -u` touches no ref at all; `reset --keep`
+  would re-point the branch ref it just published. Fewer moving parts on the
+  post-publish side of an unwindable boundary wins.
+- `reset --hard` is forbidden -- T-1740, already encoded in
+  `_commit_squash_apply`'s own fallback. It would silently destroy a sibling
+  agent's uncommitted work in root.
+
+VERIFIED PROPERTIES (measured, git 2.34.1, disposable repos):
+1. Resync applies the landed changeset to root's index and worktree: after
+   `update-ref` left `M a.txt` outstanding, `read-tree -m -u OLD NEW` exited
+   0 and `git status --porcelain` went clean for that path.
+2. A sibling's uncommitted edit to an UNRELATED path survives untouched --
+   `b.txt` kept its uncommitted line and stayed ` M` across the resync.
+3. A sibling's uncommitted edit to a path the land ALSO changed causes an
+   ATOMIC REFUSAL: `error: Entry 'a.txt' not uptodate. Cannot merge.`,
+   exit 128, and the sibling's content is left byte-for-byte intact. No
+   partial application. This is the property that makes the failure path
+   safe to merely report.
+
+FAILURE SEMANTICS -- post-publish, so it CANNOT unwind:
+- The commit is already public and already correct. A resync failure is NOT
+  a land failure. `land()` must still return `Ok(LandReport)`; the ticket is
+  legitimately done.
+- Posture is identical to T-3111's post-publish native rebuild: report
+  loudly, never revert. Log at ERROR naming the ticket, the published sha,
+  and the exact operator recovery command
+  (`git -C <root> read-tree -m -u <pre_land_tip> <sha>` after the sibling's
+  work is committed or stashed), and surface it as a non-fatal field on the
+  `LandReport` so a coordinator sees it rather than discovering it as a
+  mystery dirty root.
+- Exactly ONE attempt, no retry loop. A retry races the same sibling that
+  caused the refusal and only widens the window.
+- Because the refusal is atomic, the failure state is "root's index and
+  worktree still describe `pre_land_tip`" -- i.e. the ~1.5s dirty window
+  degrades to a visible-and-loudly-reported dirty root, never to a
+  half-applied tree. That is strictly better than the status quo, and it is
+  bounded: the very next land, or the operator's one-line command, clears it.
+
+CONSEQUENCE FOR THIS TICKET'S SEQUENCING. The resync is a primitive and it
+belongs next to the other compose primitives in `src/frob/tickets/
+_land_compose.py`, which is OUTSIDE this ticket's scope. It is therefore
+decomposed out (see the child filed today) and built first, with both a
+must-fire (conflicting dirty path -> refusal, sibling content intact) and a
+must-stay-quiet (unrelated dirty path -> resync succeeds, sibling edit
+preserved) fixture. T-3089 remains the WIRING of the six index-consuming
+stages and stays blocked until that primitive exists.
