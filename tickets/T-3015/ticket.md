@@ -2,7 +2,7 @@
 id: T-3015
 title: guarded_subprocess_run raises subprocess.TimeoutExpired uncaught instead of
   returning Err
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -16,10 +16,37 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_guard.py
+- src/frob/gates/_bug_repro.py
+evidence_scope:
+- tests/unit/test_process_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_bug_repro.py
+  reason: 'T-3015''s guarded_subprocess_run fix (Err(Timeout) instead of raising)
+
+    broke an EXISTING passing test:
+
+    tests/test_gates_mutation_evidence.py::TestBugReproTimeout::test_slow_test_exceeding_budget_is_timeout_not_no_verdict
+
+    -- _spawn_designated_test''s except subprocess.TimeoutExpired: branch
+
+    became dead code, so a real timeout now falls into the generic is_err
+
+    branch and returns NO_VERDICT instead of TIMEOUT. Fixing the caller to
+
+    check guarded.danger_err is ProcessGuardError.Timeout is required to
+
+    satisfy T-3015''s own acceptance criterion ("every existing caller
+
+    continues to work"), discovered via T-2992''s full-suite run.
+
+    '
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: priority
   old_value: medium
@@ -30,6 +57,11 @@ triage_changes:
     crashed the move-module transaction mid-run
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/test_process_guard.py::TestGuardedSubprocessRun::test_timeout_returns_err_never_raises
+- tests/unit/test_process_guard.py::TestGuardedSubprocessRun::test_healthy_path_unchanged_when_timeout_kwarg_given
+- tests/unit/test_process_guard.py::TestGuardedSubprocessRun::test_disabled_returns_err_without_spawning
+- tests/unit/test_process_guard.py::TestGuardedSubprocessRun::test_enabled_spawns_and_returns_ok
 designated_repro_test: null
 threat: null
 component: null
