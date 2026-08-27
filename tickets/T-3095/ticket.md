@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 34c68ec318eb0e64ed55f547deeadd4dc902b1ae
 ---
 FOUND 2026-08-27 while attempting T-3089 (wire the out-of-tree compose
 primitive into the squash stage). T-3089 was FAILED and requeued rather than
