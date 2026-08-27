@@ -2,7 +2,7 @@
 id: T-3056
 title: 'docs/strata/vmodel.md: update closure-rule prose for T-3043''s path-reachability
   fix and new rule 5'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-26'
@@ -16,10 +16,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/strata/vmodel.md
+- strata-core/src/graph/vmodel.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: strata-core/src/graph/vmodel.rs
+  reason: 'T-3043 renamed the heading; the frob:doc anchor comments in vmodel.rs point
+    at the old #the-four-closure-rules slug and must move with it or DOCANCHOR breaks
+    -- narrow, mechanical anchor-string update only, no logic change'
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
