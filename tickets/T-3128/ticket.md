@@ -27,6 +27,12 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3168
+- mode: append
+  reason: 'waive BUG002: fix already landed via sibling T-3139'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 3167
+  new_length: 3641
 evidence:
 - tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
 - tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_no_worktree_and_no_lease_is_still_leaked
@@ -96,3 +102,5 @@ ACCEPTANCE
 - State whether any cleanup path (sweep, prune, `--finish`) consumes this leak
   signal today. If one does, that is the blast radius and it must be said out
   loud.
+
+frob:waive BUG002 reason="fix already shipped to main via T-3139s land (shared worktree/branch, scripts/fleet_status.py touched by both tickets) -- the designated repro genuinely FAILED_AT_PARENT when originally designated (see Done report), but by the time this land runs separately the fix is already on main, so re-checking against current main necessarily reports PASSED_AT_PARENT; this is a land-ordering artifact of the shared branch, not a confirmatory-only defect"
