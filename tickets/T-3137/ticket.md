@@ -1,7 +1,7 @@
 ---
 id: T-3137
 title: frob ticket fail from a worktree never reaches main and does not say so
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
