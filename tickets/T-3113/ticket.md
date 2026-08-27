@@ -2,7 +2,7 @@
 id: T-3113
 title: 'frob ticket block is add-only: a mistaken blocked_by edge cannot be removed
   without hand-editing the ledger'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -16,10 +16,23 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/_ticket/_closeout.py
+- src/frob/app/ticket_runner/_lifecycle.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_lifecycle.py
+  reason: 'T-3113''s own ask (--reason TEXT mandatory + recorded on unblock, matching
+    reopen''s shape) is implemented in _unblock''s runner body, not the CLI parser
+    alone; _closeout.py can only add the --reason flag, the actual recording write
+    lives in _lifecycle.py::_unblock. T-2681 (landed 2026-08-19) already added unblock
+    itself with refuse-loudly-on-missing-edge semantics -- confirmed via git log/xref
+    before widening -- so the remaining real gap is narrower than the ticket text
+    describes: reason-recording only.'
+  actor: logan
+  at: '2026-08-27'
 body_changes:
 - mode: set
   reason: Record the measured dead end, why blocked_by is load-bearing, and the T-3087
