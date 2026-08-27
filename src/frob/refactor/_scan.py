@@ -62,6 +62,7 @@ def _enclosing_stmt_list(tree: ast.Module, node: ast.stmt) -> list[ast.stmt] | N
     from `tree` itself)."""
     for block in ast.walk(tree):
         for attr in ("body", "orelse", "finalbody"):
+            # frob:waive OPAQUE001 reason="attr is drawn from the fixed literal 3-tuple above (body/orelse/finalbody), never from outside input -- equivalent to three literal attribute accesses, just looped instead of unrolled"  # noqa: E501
             stmts = getattr(block, attr, None)
             if isinstance(stmts, list) and node in stmts:
                 return stmts
@@ -379,14 +380,21 @@ def _import_op(
     file_path: Path, node: ast.ImportFrom, new_stmt: str, reason: str
 ) -> RewriteOp:
     """Build the `RewriteOp` replacing one `ImportFrom` statement's exact
-    source span with `new_stmt`."""
+    source span with `new_stmt`, prefixed with the original statement's
+    leading whitespace (`node.col_offset`) so an indented call site --
+    a function-local or block-nested import -- keeps its indentation
+    instead of orphaning the following, still-indented sibling line at
+    the wrong depth (T-3109: `_rebuild_from_import` returns a bare,
+    unindented statement, and the replacement span must restore the
+    column offset the original line had)."""
     end = node.end_lineno if node.end_lineno is not None else node.lineno
+    indented_stmt = (" " * node.col_offset) + new_stmt
     return RewriteOp(
         file_path=str(file_path),
         start_line=node.lineno,
         end_line=end,
         old_text=f"<import at line {node.lineno}>",
-        new_text=new_stmt,
+        new_text=indented_stmt,
         reason=reason,
     )
 

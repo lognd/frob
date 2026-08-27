@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import subprocess
 from pathlib import Path
 
@@ -408,6 +409,32 @@ class TestScanReferences:
         assert aliases == []
         assert unresolved == []
 
+    # frob:ticket T-3109
+    def test_function_local_import_rewrite_preserves_indentation(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestScanReferences.test_function_local_import_rewrite\
+        # _preserves_indentation
+        # T-3109: `_rebuild_from_import` builds a bare, unindented
+        # replacement statement -- the op replacing an INDENTED call
+        # site's import must restore its leading whitespace, or the
+        # following, still-indented sibling line is orphaned at the
+        # wrong depth and the file fails to parse ("unexpected indent").
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "def use():\n    from pkg.mod import greet\n    return greet()\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        dest = SymbolRef(module="pkg.newmod", qualname="greet")
+        ops, aliases, unresolved = scan_references(root, resolved, dest)
+        assert unresolved == []
+        assert len(ops) == 1
+        assert ops[0].new_text == "    from pkg.newmod import greet"
+
     def test_function_local_mixed_import_not_rewritten(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestScanReferences.test_function_local_mixed_import_n\
@@ -493,6 +520,41 @@ class TestApplyPlan:
         restored = (root / "src/pkg/mod.py").read_text(encoding="utf-8")
         assert "def greet" in restored
         assert not new_module_path.exists()
+
+    # frob:ticket T-3109
+    def test_apply_indented_import_call_site_stays_parseable(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestApplyPlan.test_apply_indented_import_call_site_st\
+        # ays_parseable
+        # T-3109 end-to-end: a function-local import call site, rewritten
+        # through the full move pipeline, must leave a file that still
+        # parses -- the bug wrote an unindented replacement over an
+        # indented import's span, orphaning the following, still-indented
+        # `return greet()` line at "unexpected indent".
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "def use():\n    from pkg.mod import greet\n    return greet()\n",
+        )
+        _commit_all(root, "initial")
+
+        plan_result = build_plan(
+            root,
+            RefactorKind.MOVE,
+            SymbolRef(module="pkg.mod", qualname="greet"),
+            SymbolRef(module="pkg.newmod", qualname="greet"),
+        )
+        assert plan_result.is_ok
+        apply_result = apply_plan(root, plan_result.danger_ok)
+        assert apply_result.is_ok
+
+        caller_text = (root / "src/pkg/caller.py").read_text(encoding="utf-8")
+        assert "    from pkg.newmod import greet" in caller_text
+        # The whole file must still be valid Python -- this is exactly
+        # what the T-3109 corruption broke.
+        ast.parse(caller_text)
 
     def test_overlapping_ops_refuse_before_write(self, tmp_path):
         # frob:tests \
