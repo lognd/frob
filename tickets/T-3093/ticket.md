@@ -2,7 +2,7 @@
 id: T-3093
 title: 'fleet_status reports lock WAITERS as holders: label claims more than the /proc
   fd scan measures'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,12 +30,22 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3032
-designated_repro_test: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid::test_finds_the_true_holder
+- tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid::test_ignores_a_lock_on_a_different_inode
+- tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid::test_unreadable_proc_locks_is_indeterminate
+- tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid::test_missing_lock_file_is_true_none
+- tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_distinguishes_true_holder_from_waiters
+- tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_must_stay_quiet_single_holder_no_waiters_unchanged_meaning
+- tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_indeterminate_true_holder_says_so_not_a_confident_number
+- tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_counts_module_invoked_check
+- tests/unit/test_coordinator_scripts.py::TestIsLiveCheckCmdline::test_does_not_match_check_repro_subcommand
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid::test_finds_the_true_holder
 threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 11c99626b2c6ddc65dadfe5666dc07fa53745862
 ---
 MEASURED 2026-08-27. `scripts/fleet_status.py` reported:
 

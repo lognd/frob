@@ -1,7 +1,7 @@
 ---
 id: T-3103
 title: Recovered from T-3095's phantom TICK006 citation of T-3106
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-27'
@@ -31,3 +31,6 @@ Auto-filed by the TICK006 Tier-A fix (T-1544): T-3095's Done report claimed T-31
   about what happens after. Filed as T-3106.
 - Pre-commit sweep: NOT addressed here -- correctly the hard one (Tier-A
   auto-fix mutates content, so its output must land in the composed
+
+## Drop reason
+- 2026-08-27: False positive of the TICK006 auto-recovery (T-1544): it judged T-3095's citation of T-3106 phantom because T-3106 had not yet landed from its sibling worktree at snapshot time. T-3106 now exists and is queued ('Fix fleet_status.py orphan false-positive and add frob process reap command'), so this recovery ticket is a pure duplicate of it. Underlying race filed separately.

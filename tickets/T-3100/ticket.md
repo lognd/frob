@@ -1,7 +1,7 @@
 ---
 id: T-3100
 title: Recovered from T-3095's phantom TICK006 citation of T-3107
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-27'
@@ -31,3 +31,6 @@ Auto-filed by the TICK006 Tier-A fix (T-1544): T-3095's Done report claimed T-31
   tree, not a working tree nobody keeps). Filed as T-3107; it should
   reuse this ticket's disposable-worktree technique, chained after the
   release bump on the SAME worktree before one fold-and-publi
+
+## Drop reason
+- 2026-08-27: False positive of the TICK006 auto-recovery (T-1544): it judged T-3095's citation of T-3107 phantom because T-3107 had not yet landed from its sibling worktree at snapshot time. T-3107 now exists and is in-progress ('Out-of-tree three-way squash compose via a disposable worktree'), so this recovery ticket is a pure duplicate of it. Underlying race filed separately.
