@@ -27,6 +27,8 @@ scope_changes:
   reason: added a unit test covering _run_one_runner's new apply_agent_env call (SCOPE002)
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/test_testing.py::TestRunners::test_applies_fleet_xdist_bound_before_spawning
 designated_repro_test: null
 threat: null
 component: null
