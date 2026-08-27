@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: dac790e6e908644ebd2adbe57e3d426db1e54315
 ---
 MEASURED 2026-08-27, during a deliberate fleet quiesce.
 
