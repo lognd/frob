@@ -477,6 +477,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3122: frob refactor split moves symbol bodies without carrying their own needed imports
 - T-3125: frob --help does not list refactor/narrative subcommands
 - T-3126: Land-commit record still dirties root and moves main without CAS after the publish
+- T-3136: verify_pytest_collect passes non-Python touched files straight to pytest, false-refusing rc=4
 
 ## [0.530.0] - unreleased
 

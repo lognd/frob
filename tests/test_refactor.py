@@ -1168,6 +1168,42 @@ class TestVerify:
         assert outcome.passed is False
         assert outcome.name == "pytest_collect"
 
+    # frob:ticket T-3136
+    def test_pytest_collect_skips_non_python_touched_files(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestVerify.test_pytest_collect_skips_non_python_touch\
+        # ed_files
+        """T-3136: `touched_files` is the FULL set a `RefactorPlan.
+        reference_ops` entry rewrote, not just Python source -- a non-.py
+        carrier (e.g. a `docs/**` prose citation) reaching pytest's own
+        argv unconditionally makes pytest refuse outright with rc=4
+        (USAGE_ERROR: "not found: <path>"), a false refusal unrelated to
+        whether any real test collects cleanly. Mirrors
+        `_parse_touched_python_files`'s own `.py` filter (T-1885)."""
+        from frob.refactor._verify import verify_pytest_collect
+
+        good = _write(tmp_path, "test_ok.py", "def test_x():\n    assert True\n")
+        prose = _write(tmp_path, "docs/design/notes.md", "just some prose\n")
+        outcome = verify_pytest_collect(tmp_path, targets=[good, prose])
+        assert outcome.passed is True
+        assert outcome.name == "pytest_collect"
+        assert str(prose) in outcome.skipped
+
+    # frob:ticket T-3136
+    def test_pytest_collect_passes_when_all_touched_files_non_python(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestVerify.test_pytest_collect_passes_when_all_touche\
+        # d_files_non_python
+        """T-3136: if every touched file is non-Python, there is nothing
+        to collect -- this must pass-with-note, matching
+        `verify_import_resolution`'s own empty-`trees` shape, not refuse."""
+        from frob.refactor._verify import verify_pytest_collect
+
+        prose = _write(tmp_path, "docs/design/notes.md", "just some prose\n")
+        outcome = verify_pytest_collect(tmp_path, targets=[prose])
+        assert outcome.passed is True
+        assert str(prose) in outcome.skipped
+
     def test_check_delta_reports_command_failure(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestVerify.test_check_delta_reports_command_failure

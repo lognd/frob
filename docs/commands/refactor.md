@@ -270,7 +270,15 @@ prevent, so it is a hard gate, not a disclosed-only warning.
      showing the strengthened T-3110 corpus still reported
      `success=True` until this delegation was fixed too).
    - `verify_pytest_collect` -- `pytest --collect-only` succeeds with no
-     new collection error.
+     new collection error. Non-`.py` touched files (e.g. a
+     `docs/design/*.md` prose citation) are filtered out before ever
+     reaching pytest's own argv and recorded in `VerifyOutcome.skipped`
+     -- T-3136; previously any non-Python touched file made pytest
+     refuse outright with `rc=4` (USAGE_ERROR), a false refusal
+     unrelated to whether any real test collected cleanly, mirroring the
+     `.py` filter `verify_import_resolution` already had (T-1885). If
+     every touched file is non-Python, this check passes with a note
+     (nothing to collect) rather than refusing.
    - `verify_check_delta` -- `frob check --delta` is diff-clean against
      the pre-refactor baseline. Invoked as `sys.executable -m frob`, not
      a bare `frob` on PATH, so it stays version-consistent with whatever
@@ -508,7 +516,9 @@ for the full rationale and the T-3122 defect this closes.
 <a id="verify_pytest_collect"></a>
 <!-- frob:describes src/frob/refactor/_verify.py::verify_pytest_collect -->
 **`verify_pytest_collect`**: Verify post-condition 2 -- `pytest
---collect-only` succeeds with no new collection error.
+--collect-only` succeeds with no new collection error. Non-`.py`
+touched files are filtered out before reaching pytest's argv (T-3136)
+and disclosed via `VerifyOutcome.skipped`.
 
 <a id="verify_check_delta"></a>
 <!-- frob:describes src/frob/refactor/_verify.py::verify_check_delta -->

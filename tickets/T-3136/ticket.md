@@ -2,7 +2,7 @@
 id: T-3136
 title: verify_pytest_collect passes non-Python touched files straight to pytest, false-refusing
   rc=4
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
