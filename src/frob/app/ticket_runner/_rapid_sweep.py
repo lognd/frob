@@ -2090,7 +2090,10 @@ def _dispose_to_existing_duplicate_or_none(
     blocking on, and this must never widen to cover a filing failure that
     is not actually a duplicate of either kind."""
     from frob.tickets._models import TicketError
-    from frob.tickets._new_renumber import _find_exact_duplicate, _find_finding_duplicate
+    from frob.tickets._new_renumber import (
+        _find_exact_duplicate,
+        _find_finding_duplicate,
+    )
 
     if error is TicketError.DuplicateTicket:
         existing = _find_exact_duplicate(root, spec)
@@ -3390,8 +3393,7 @@ def _file_claim_divergence_ticket(
         return None
     filed_id = filed.danger_ok.id
     message = (
-        f"chore(tickets): file {filed_id} "
-        f"(post-land claim divergence from {final_id})"
+        f"chore(tickets): file {filed_id} (post-land claim divergence from {final_id})"
     )
     committed = _commit_or_discard_ledger_write(
         root,
