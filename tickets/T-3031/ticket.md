@@ -73,7 +73,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4726b7658a9afb113ebdb3ce2f22457734409e1e
 ---
 Found while root-causing T-3019 (spurious REF001/PRE001/SCOPE001 on a
 clean project) -- not in T-3019's own confirmed repro list, and a
