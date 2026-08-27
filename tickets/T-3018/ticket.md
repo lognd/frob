@@ -86,7 +86,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7b0f9162c0657ee29447c0cbab646be95d5f8d39
 ---
 `os.kill(pid, 0)` is used as a side-effect-free liveness probe in two more
 places that were NOT in T-3003's scope to fix:
