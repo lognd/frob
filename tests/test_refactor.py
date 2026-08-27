@@ -412,8 +412,8 @@ class TestScanReferences:
     # frob:ticket T-3109
     def test_function_local_import_rewrite_preserves_indentation(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestScanReferences.test_function_local_import_rewrit\
-        # e_preserves_indentation
+        # tests/test_refactor.py::TestScanReferences.test_function_local_import_rewrite\
+        # _preserves_indentation
         # T-3109: `_rebuild_from_import` builds a bare, unindented
         # replacement statement -- the op replacing an INDENTED call
         # site's import must restore its leading whitespace, or the
@@ -524,8 +524,8 @@ class TestApplyPlan:
     # frob:ticket T-3109
     def test_apply_indented_import_call_site_stays_parseable(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor.py::TestApplyPlan.test_apply_indented_import_call_site_s\
-        # tays_parseable
+        # tests/test_refactor.py::TestApplyPlan.test_apply_indented_import_call_site_st\
+        # ays_parseable
         # T-3109 end-to-end: a function-local import call site, rewritten
         # through the full move pipeline, must leave a file that still
         # parses -- the bug wrote an unindented replacement over an
