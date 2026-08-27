@@ -409,6 +409,7 @@ class TestScanReferences:
         assert aliases == []
         assert unresolved == []
 
+    # frob:ticket T-3109
     def test_function_local_import_rewrite_preserves_indentation(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestScanReferences.test_function_local_import_rewrit\
@@ -423,9 +424,7 @@ class TestScanReferences:
         _write(
             root,
             "src/pkg/caller.py",
-            "def use():\n"
-            "    from pkg.mod import greet\n"
-            "    return greet()\n",
+            "def use():\n    from pkg.mod import greet\n    return greet()\n",
         )
         resolved = resolve_symbol(
             root, SymbolRef(module="pkg.mod", qualname="greet")
@@ -522,6 +521,7 @@ class TestApplyPlan:
         assert "def greet" in restored
         assert not new_module_path.exists()
 
+    # frob:ticket T-3109
     def test_apply_indented_import_call_site_stays_parseable(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestApplyPlan.test_apply_indented_import_call_site_s\
@@ -536,9 +536,7 @@ class TestApplyPlan:
         _write(
             root,
             "src/pkg/caller.py",
-            "def use():\n"
-            "    from pkg.mod import greet\n"
-            "    return greet()\n",
+            "def use():\n    from pkg.mod import greet\n    return greet()\n",
         )
         _commit_all(root, "initial")
 

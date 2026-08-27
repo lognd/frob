@@ -62,6 +62,7 @@ def _enclosing_stmt_list(tree: ast.Module, node: ast.stmt) -> list[ast.stmt] | N
     from `tree` itself)."""
     for block in ast.walk(tree):
         for attr in ("body", "orelse", "finalbody"):
+            # frob:waive OPAQUE001 reason="attr is drawn from the fixed literal 3-tuple above (body/orelse/finalbody), never from outside input -- equivalent to three literal attribute accesses, just looped instead of unrolled"  # noqa: E501
             stmts = getattr(block, attr, None)
             if isinstance(stmts, list) and node in stmts:
                 return stmts
