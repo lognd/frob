@@ -3014,3 +3014,24 @@ uses the original full-wait, no-rollback behavior; narrowing any of
 those the same way is explicitly out of this fix's scope, since their
 writes are not safe to silently discard the way a not-yet-committed
 brand-new ticket is.
+
+## `frob.tickets._land_compose` -- out-of-tree compose + CAS publish primitive (T-3088)
+
+DECOMPOSITION CHILD 1 of T-3053. Pure git-plumbing helpers, wired to
+nothing yet:
+
+- `compose_tree_out_of_tree(repo, base_commit, patch_source)` builds a
+  commit object representing `base_commit` plus `patch_source`'s changes
+  against a scratch `GIT_INDEX_FILE` -- `git read-tree` + `git apply
+  --cached` + `git write-tree` + `git commit-tree`. Never invokes `git
+  checkout`/`git reset`, never touches `HEAD` or the checked-out working
+  tree.
+- `publish_ref_cas(repo, ref, expected_old_sha, new_sha)` is `git
+  update-ref <ref> <new_sha> <expected_old_sha>` -- git's own atomic
+  compare-and-swap. Returns `Err(LandComposeError.RefMoved)` (never a
+  silent no-op, never a corrupt ref) when `ref` no longer matches
+  `expected_old_sha`.
+
+T-3089 wires both into `_land_squash._squash_and_splice_ledger` /
+`_land_squash_apply`, mapping `RefMoved` onto the existing
+`LandError.DirtyMain` refusal.

@@ -1,7 +1,7 @@
 ---
 id: T-3088
 title: 'Land compose: out-of-tree tree/commit-object plumbing + CAS ref publish primitive'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -32,15 +32,26 @@ scope_changes:
   reason: scope this ticket's own test file and doc anchor added alongside the primitive
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/unit/test_land_compose.py::TestComposeTreeOutOfTree::test_worktree_untouched_by_compose
+- tests/unit/test_land_compose.py::TestComposeTreeOutOfTree::test_composed_commit_contains_the_patch
+- tests/unit/test_land_compose.py::TestComposeTreeOutOfTree::test_compose_failure_returns_err
+- tests/unit/test_land_compose.py::TestPublishRefCas::test_sequential_publishes_succeed
+- tests/unit/test_land_compose.py::TestPublishRefCas::test_racing_publish_second_gets_ref_moved
 designated_repro_test: null
 acceptance:
 - text: Given a scratch repo, when compose_tree_out_of_tree builds a commit, then
     the checked-out working tree is never touched
-  evidence: []
+  evidence:
+  - tests/unit/test_land_compose.py::TestComposeTreeOutOfTree::test_worktree_untouched_by_compose
+  - tests/unit/test_land_compose.py::TestComposeTreeOutOfTree::test_composed_commit_contains_the_patch
+  - tests/unit/test_land_compose.py::TestComposeTreeOutOfTree::test_compose_failure_returns_err
 - text: Given two racing publish_ref_cas calls with the same expected_old_sha, when
     the second runs after the first succeeds, then it returns Err(RefMoved) and the
     ref is not corrupted
-  evidence: []
+  evidence:
+  - tests/unit/test_land_compose.py::TestPublishRefCas::test_sequential_publishes_succeed
+  - tests/unit/test_land_compose.py::TestPublishRefCas::test_racing_publish_second_gets_ref_moved
 threat: null
 component: null
 anchor: false
