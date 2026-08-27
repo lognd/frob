@@ -22,8 +22,11 @@ from __future__ import annotations
 
 import os
 import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
+from pydantic import BaseModel
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
@@ -35,8 +38,8 @@ _log = get_logger(__name__)
 
 # frob:ticket T-3088
 # frob:doc \
-# docs/modules/tickets-landing.md#frobticketslandcompose----out-of-tree-compose--cas-pu\
-# blish-primitive-t-3088
+# docs/modules/tickets-landing.md#frobtickets_land_compose----out-of-tree-compose--cas-\
+# publish-primitive-t-3088
 # frob:tests tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_compose_failure_returns_err  # noqa: E501
 # frob:tests tests/unit/test_land_compose.py::TestPublishRefCas.test_racing_publish_second_gets_ref_moved  # noqa: E501
 class LandComposeError(ErrorSet):
@@ -48,9 +51,9 @@ class LandComposeError(ErrorSet):
 
     ComposeFailed = "building the out-of-tree commit object failed"
     RefMoved = (
-        "the target ref moved since expected_old_sha was captured "
-        "(CAS lost the race)"
+        "the target ref moved since expected_old_sha was captured (CAS lost the race)"
     )
+    WorktreeSetupFailed = "could not cut the disposable git worktree to compose in"
 
 
 def _apply_diff_to_scratch_index(
@@ -90,8 +93,8 @@ def _apply_diff_to_scratch_index(
 
 # frob:ticket T-3088
 # frob:doc \
-# docs/modules/tickets-landing.md#frobticketslandcompose----out-of-tree-compose--cas-pu\
-# blish-primitive-t-3088
+# docs/modules/tickets-landing.md#frobtickets_land_compose----out-of-tree-compose--cas-\
+# publish-primitive-t-3088
 # frob:tests tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_worktree_untouched_by_compose  # noqa: E501
 # frob:tests tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_composed_commit_contains_the_patch  # noqa: E501
 # frob:tests tests/unit/test_land_compose.py::TestComposeTreeOutOfTree.test_compose_failure_returns_err  # noqa: E501
@@ -182,8 +185,8 @@ def _write_and_commit_scratch_index(
 
 # frob:ticket T-3088
 # frob:doc \
-# docs/modules/tickets-landing.md#frobticketslandcompose----out-of-tree-compose--cas-pu\
-# blish-primitive-t-3088
+# docs/modules/tickets-landing.md#frobtickets_land_compose----out-of-tree-compose--cas-\
+# publish-primitive-t-3088
 # frob:tests \
 # tests/unit/test_land_compose.py::TestPublishRefCas.test_sequential_publishes_succeed
 # frob:tests tests/unit/test_land_compose.py::TestPublishRefCas.test_racing_publish_second_gets_ref_moved  # noqa: E501
@@ -219,3 +222,233 @@ def publish_ref_cas(
         expected_old_sha,
     )
     return Ok(None)
+
+
+# frob:ticket T-3107
+# frob:doc \
+# docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three\
+# -way-squash-compose-t-3107
+# frob:tests tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_clean_squash_reports_no_conflicts  # noqa: E501
+# frob:tests tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_conflicting_squash_reports_the_conflicted_paths  # noqa: E501
+class SquashStage(BaseModel):
+    """A prepared disposable worktree holding a squash-merge result plus
+    the paths git left unmerged in it -- the handle
+    `compose_squash_in_disposable_worktree` yields so a caller can run the
+    existing working-tree-based resolution/splice/bump/sweep stages against
+    somewhere that is not the shared root."""
+
+    model_config = {}
+
+    worktree: Path
+    conflicted: tuple[str, ...]
+
+
+def _conflicted_paths(worktree: Path) -> Result[tuple[str, ...], LandComposeError]:
+    """Paths git left unmerged in `worktree` after a merge
+    (`git diff --name-only --diff-filter=U`), sorted -- private helper of
+    `compose_squash_in_disposable_worktree`."""
+    listed = run_argv(
+        ("git", "-C", str(worktree), "diff", "--name-only", "--diff-filter=U")
+    )
+    if listed.is_err or listed.danger_ok.returncode != 0:
+        _log.warning("land_compose: could not list unmerged paths in %s", worktree)
+        return Err(LandComposeError.ComposeFailed)
+    return Ok(
+        tuple(
+            sorted(
+                line.strip()
+                for line in listed.danger_ok.stdout.splitlines()
+                if line.strip()
+            )
+        )
+    )
+
+
+def _squash_into_worktree(
+    worktree: Path, branch_name: str
+) -> Result[SquashStage, LandComposeError]:
+    """`git merge --squash --no-commit branch_name` inside `worktree` and
+    report what it left unmerged -- private helper of
+    `compose_squash_in_disposable_worktree`. A conflicted merge is NOT an
+    error here: it is the caller's data, exactly as it is when the same
+    merge runs against the root today."""
+    merged = run_argv(
+        ("git", "-C", str(worktree), "merge", "--squash", "--no-commit", branch_name)
+    )
+    if merged.is_err:
+        _log.warning("land_compose: squash-merge spawn failed in %s", worktree)
+        return Err(LandComposeError.ComposeFailed)
+    conflicted = _conflicted_paths(worktree)
+    if conflicted.is_err:
+        return Err(conflicted.danger_err)
+    paths = conflicted.danger_ok
+    if merged.danger_ok.returncode != 0 and not paths:
+        _log.warning(
+            "land_compose: squash-merge of %s failed in %s with no unmerged "
+            "path to explain it: %s",
+            branch_name,
+            worktree,
+            excerpt(merged.danger_ok.stderr),
+        )
+        return Err(LandComposeError.ComposeFailed)
+    _log.info(
+        "land_compose: squashed %s into disposable worktree %s (%d unmerged)",
+        branch_name,
+        worktree,
+        len(paths),
+    )
+    return Ok(SquashStage(worktree=worktree, conflicted=paths))
+
+
+# frob:ticket T-3107
+# frob:tests tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_clean_squash_reports_no_conflicts  # noqa: E501
+# frob:tests tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_conflicting_squash_reports_the_conflicted_paths  # noqa: E501
+# frob:tests tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_root_worktree_untouched_by_clean_squash  # noqa: E501
+# frob:tests tests/unit/test_land_compose.py::TestDisposableSquashWorktree.test_root_worktree_untouched_by_conflicted_squash  # noqa: E501
+# frob:doc \
+# docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three\
+# -way-squash-compose-t-3107
+# frob:waive WIRE001 follow_up="T-3089" reason="T-3107 is deliberately the PRIMITIVE \
+# half of T-3089's re-scope -- the same posture T-3088 shipped in: the caller is the \
+# squash-stage wiring, which is T-3089's own scope and is blocked on this ticket. \
+# Landing the primitive and its wiring in one ticket is exactly the \
+# large-unlanded-branch shape this decomposition exists to avoid"
+@contextmanager
+def compose_squash_in_disposable_worktree(
+    repo: Path, base_commit: str, branch_name: str
+) -> Iterator[Result[SquashStage, LandComposeError]]:
+    """Run a REAL three-way `git merge --squash --no-commit` of
+    `branch_name` onto `base_commit` inside a disposable `git worktree`,
+    yielding the prepared worktree and whatever git left unmerged; the
+    worktree is always removed on exit. `repo`'s own working tree, index
+    and HEAD are never touched.
+
+    WHY a worktree rather than the scratch-index plumbing
+    `compose_tree_out_of_tree` uses: that primitive is diff-and-apply, so
+    it has exactly two outcomes (applies / `ComposeFailed`) and cannot
+    classify a conflicted path or take one side per path. The land's
+    squash stage needs true three-way semantics, because
+    `_auto_resolve_out_of_scope_conflicts` resolves out-of-scope conflicts
+    by keeping `ours` (T-0479), union-merges registered zones (T-1002) and
+    elementwise-max-merges the coverage lock (T-1434) -- all per-path
+    decisions over an unmerged index. `git merge-tree --write-tree` would
+    give that out-of-tree, but it needs git 2.38+ and this repo's floor is
+    lower, so a disposable worktree is the only mechanism that keeps the
+    real merge semantics off the shared root (the same technique T-3095's
+    `_apply_release_bump_out_of_tree` already uses).
+
+    Check out at the land's `pre_land_tip`, never at an already-composed
+    commit: T-3095 established that checking out the composed commit
+    breaks `_apply_release_bump`'s own `_verified_reset_root` unwind
+    invariant.
+
+    A conflicted merge yields `Ok` with a non-empty
+    `SquashStage.conflicted`, not an `Err` -- resolution is the caller's
+    job and is deliberately unchanged by this primitive.
+    """
+    with tempfile.TemporaryDirectory(prefix="frob-land-squash-") as scratch:
+        worktree = Path(scratch) / "wt"
+        added = run_argv(
+            (
+                "git",
+                "-C",
+                str(repo),
+                "worktree",
+                "add",
+                "--detach",
+                "-q",
+                str(worktree),
+                base_commit,
+            )
+        )
+        if added.is_err or added.danger_ok.returncode != 0:
+            _log.warning(
+                "land_compose: could not cut a disposable worktree at %s: %s",
+                base_commit,
+                excerpt(added.danger_ok.stderr) if added.is_ok else added.danger_err,
+            )
+            yield Err(LandComposeError.WorktreeSetupFailed)
+            return
+        try:
+            yield _squash_into_worktree(worktree, branch_name)
+        finally:
+            run_argv(
+                ("git", "-C", str(repo), "worktree", "remove", "--force", str(worktree))
+            )
+            run_argv(("git", "-C", str(repo), "worktree", "prune"))
+
+
+# frob:ticket T-3107
+# frob:tests tests/unit/test_land_compose.py::TestFoldWorktreeIntoCommit.test_folded_commit_contains_both_sides  # noqa: E501
+# frob:tests tests/unit/test_land_compose.py::TestFoldWorktreeIntoCommit.test_fold_refuses_while_paths_are_unmerged  # noqa: E501
+# frob:doc \
+# docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three\
+# -way-squash-compose-t-3107
+# frob:waive WIRE001 follow_up="T-3089" reason="T-3107 is deliberately the PRIMITIVE \
+# half of T-3089's re-scope -- the same posture T-3088 shipped in: the caller is the \
+# squash-stage wiring, which is T-3089's own scope and is blocked on this ticket. \
+# Landing the primitive and its wiring in one ticket is exactly the \
+# large-unlanded-branch shape this decomposition exists to avoid"
+def fold_worktree_into_commit(
+    repo: Path, worktree: Path, base_commit: str, message: str
+) -> Result[str, LandComposeError]:
+    """Stage everything in `worktree` and fold it into a commit object with
+    `base_commit` as its sole parent, returning the new sha -- the second
+    half of the disposable-worktree compose, run once the caller has
+    finished every content-mutating stage (conflict resolution, ledger
+    splice, REL001 bump, Tier-A sweep) inside that worktree. Publishing the
+    result is `publish_ref_cas`'s job; this function moves no ref.
+
+    Returns `Err(ComposeFailed)` while any path is still unmerged, checked
+    BEFORE staging: `git add -A` would otherwise RESOLVE each unmerged
+    entry by staging the conflict-marker text verbatim, after which
+    `git write-tree` happily succeeds and the markers land in a real
+    commit. Refusing up front is the only thing standing between an
+    unresolved squash and a corrupted landing commit; do not reorder this
+    check after the `add`."""
+    unmerged = _conflicted_paths(worktree)
+    if unmerged.is_err:
+        return Err(unmerged.danger_err)
+    if unmerged.danger_ok:
+        _log.error(
+            "land_compose: refusing to fold %s -- %d path(s) still unmerged "
+            "(%s); staging them would commit conflict markers",
+            worktree,
+            len(unmerged.danger_ok),
+            ", ".join(unmerged.danger_ok),
+        )
+        return Err(LandComposeError.ComposeFailed)
+    staged = run_argv(("git", "-C", str(worktree), "add", "-A"))
+    if staged.is_err or staged.danger_ok.returncode != 0:
+        _log.warning("land_compose: staging %s before fold failed", worktree)
+        return Err(LandComposeError.ComposeFailed)
+    written = run_argv(("git", "-C", str(worktree), "write-tree"))
+    if written.is_err or written.danger_ok.returncode != 0:
+        _log.warning(
+            "land_compose: write-tree in %s failed (unmerged paths?): %s",
+            worktree,
+            excerpt(written.danger_ok.stderr) if written.is_ok else written.danger_err,
+        )
+        return Err(LandComposeError.ComposeFailed)
+    tree_sha = written.danger_ok.stdout.strip()
+    committed = run_argv(
+        (
+            "git",
+            "-C",
+            str(repo),
+            "commit-tree",
+            tree_sha,
+            "-p",
+            base_commit,
+            "-m",
+            message,
+        )
+    )
+    if committed.is_err or committed.danger_ok.returncode != 0:
+        _log.warning("land_compose: commit-tree failed for folded tree %s", tree_sha)
+        return Err(LandComposeError.ComposeFailed)
+    new_sha = committed.danger_ok.stdout.strip()
+    _log.info(
+        "land_compose: folded %s into %s (base=%s)", worktree, new_sha, base_commit
+    )
+    return Ok(new_sha)

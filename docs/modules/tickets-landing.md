@@ -3035,3 +3035,43 @@ nothing yet:
 T-3089 wires both into `_land_squash._squash_and_splice_ledger` /
 `_land_squash_apply`, mapping `RefMoved` onto the existing
 `LandError.DirtyMain` refusal.
+
+## `frob.tickets._land_compose` -- disposable-worktree three-way squash compose (T-3107)
+
+T-3089's re-scope child 1. The T-3088 primitives above are DIFF-AND-APPLY:
+`compose_tree_out_of_tree` has exactly two outcomes (applies /
+`ComposeFailed`), so it cannot classify a conflicted path or take one side
+per path. The land's squash stage needs true three-way semantics, because
+`_auto_resolve_out_of_scope_conflicts` makes per-path decisions over an
+unmerged index -- keep `ours` for out-of-scope conflicts (T-0479),
+union-merge registered zones (T-1002), elementwise-max-merge
+`frob-coverage.lock.json` (T-1434). `git merge-tree --write-tree` would
+give that out-of-tree but needs git 2.38+, above this repo's floor, so the
+only mechanism that keeps a REAL merge off the shared root is a disposable
+`git worktree` -- the same technique `_apply_release_bump_out_of_tree`
+(T-3095) already uses.
+
+- `compose_squash_in_disposable_worktree(repo, base_commit, branch_name)`
+  is a context manager. It cuts a detached `git worktree` at `base_commit`,
+  runs `git merge --squash --no-commit branch_name` inside it, and yields
+  `Ok(SquashStage(worktree, conflicted))`; the worktree is always removed
+  on exit. `repo`'s own working tree, index and HEAD are never touched --
+  in the CONFLICTED case as well as the clean one, which is the whole
+  point: today's in-root mechanism leaves conflict markers in shared files.
+  A conflicted merge is DATA (`SquashStage.conflicted`), never an `Err` --
+  resolution stays the caller's job, unchanged.
+- `SquashStage` is that handle: the prepared worktree path plus the sorted
+  paths git left unmerged in it.
+- `fold_worktree_into_commit(repo, worktree, base_commit, message)` stages
+  the worktree and folds it into a commit object parented on `base_commit`,
+  returning the sha. It moves no ref -- publishing is `publish_ref_cas`'s
+  job. It REFUSES while any path is still unmerged, and the order matters:
+  `git add -A` resolves an unmerged entry by staging the conflict-marker
+  text verbatim, after which `git write-tree` succeeds and the markers land
+  in a real commit. The unmerged check must stay BEFORE the `add`.
+
+Check out at the land's `pre_land_tip`, never at an already-composed
+commit: T-3095 established that checking out the composed commit breaks
+`_apply_release_bump`'s own `_verified_reset_root` unwind invariant.
+
+Still wired to nothing in the live land path; that is T-3089's scope.

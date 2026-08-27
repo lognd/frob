@@ -1,7 +1,7 @@
 ---
 id: T-3107
 title: Out-of-tree three-way squash compose via a disposable worktree
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -29,6 +29,13 @@ scope_changes:
     existing _land_compose section of this file
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/unit/test_land_compose.py::TestDisposableSquashWorktree::test_clean_squash_reports_no_conflicts
+- tests/unit/test_land_compose.py::TestDisposableSquashWorktree::test_conflicting_squash_reports_the_conflicted_paths
+- tests/unit/test_land_compose.py::TestDisposableSquashWorktree::test_root_worktree_untouched_by_clean_squash
+- tests/unit/test_land_compose.py::TestDisposableSquashWorktree::test_root_worktree_untouched_by_conflicted_squash
+- tests/unit/test_land_compose.py::TestFoldWorktreeIntoCommit::test_folded_commit_contains_both_sides
+- tests/unit/test_land_compose.py::TestFoldWorktreeIntoCommit::test_fold_refuses_while_paths_are_unmerged
 designated_repro_test: null
 threat: null
 component: null
