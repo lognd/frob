@@ -57,6 +57,21 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 2744
+- mode: append
+  reason: record the manual pre-fix/post-fix verification for BUG002, since --designate-repro
+    cannot succeed against a squashed test+fix commit (T-2025)
+  actor: logan
+  at: '2026-08-27'
+  old_length: 2743
+  new_length: 3653
+evidence:
+- tests/test_ticket_lifecycle.py::TestUnblock::test_unblock_removes_edge
+- tests/test_ticket_lifecycle.py::TestUnblock::test_unblock_refuses_when_not_present
+- tests/test_ticket_lifecycle.py::TestUnblock::test_unblock_refuses_invalid_ref
+- tests/test_ticket_lifecycle.py::TestUnblock::test_unblock_requires_reason
+- tests/test_ticket_lifecycle.py::TestUnblock::test_unblock_records_reason_in_unblock_log
+- tests/test_ticket_lifecycle.py::TestUnblock::test_unblock_leaves_other_blockers_intact
+- tests/test_ticket_lifecycle.py::TestBlockThenUnblockRoundTrip::test_block_then_unblock_round_trips
 designated_repro_test: null
 threat: null
 component: null
@@ -111,3 +126,19 @@ ACCEPTANCE
 - The T-3087 close guard and `frob ticket doable` both observe the removal
   immediately; state which invariants you checked.
 - The add-only audit of the verb surface is reported.
+
+## BUG002 waiver
+
+frob:waive BUG002 reason="Test-first split into a separate pre-fix commit \
+was not performed before this ticket's evidence-binding commit (rapid \
+profile, single squashed feat commit). Manually verified the repro \
+property instead: checked out src/frob/app/ticket_runner/_lifecycle.py \
+at the pre-fix commit (cf3d8913a) with the new test file in place -- \
+test_unblock_requires_reason fails with 'DID NOT RAISE SystemExit' \
+against the unfixed _unblock (no --reason validation existed), and \
+passes against the fixed code. Restored the fixed file immediately \
+after (git reset + verified git diff empty). This is the T-2025 \
+documented limitation: a newly-added ticket's own history never \
+contains the test without its fix already applied once committed \
+together, so --designate-repro structurally cannot pass here even \
+though the defect and its reproduction are both real."
