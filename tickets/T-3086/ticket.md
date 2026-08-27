@@ -2,7 +2,7 @@
 id: T-3086
 title: 'Break the 182-node import cycle (redo): T-3064 closed done without performing
   the extraction'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -22,10 +22,405 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_models.py
 - src/frob/findings.py
+- docs/design/check-fix-engine.md
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/app/vet_runner.py
+- src/frob/gates/_docblocks_refs.py
+- src/frob/gates/_fix_engine_tier_c.py
+- src/frob/gates/_fuzz.py
+- src/frob/gates/_gate_cache.py
+- src/frob/tickets/_land.py
+- src/frob/vet/_models.py
+- tests/gates/test_rule_id_scan_branches.py
+- tests/gates/test_tdd_order.py
+- tests/test_arch_gate.py
+- tests/test_docblocks_gate.py
+- tests/test_docptr_gate.py
+- tests/test_fuzz.py
+- tests/test_gates_suppress.py
+- tests/test_lang_conformance_gate.py
+- tests/test_pii_structural_gate.py
+- tests/test_refs_gate.py
+- tests/test_registry_exhaustiveness.py
+- tests/test_registry_staleness.py
+- tests/test_secrets_gate.py
+- tests/test_todo_fmt_gate.py
+- tests/test_vet.py
+- tests/unit/gates/test_doc011.py
+- tests/unit/gates/test_refs.py
+- tests/unit/gates/test_sys_selfaudit.py
+- tests/unit/security/test_redact.py
+- tests/unit/strata/test_cve_fingerprint_scan.py
+- tests/unit/test_arch_table_schema.py
+- tests/unit/test_check_gates_summary.py
+- tests/unit/test_docblocks_table_schema.py
+- tests/unit/test_dup_graph_table_schema.py
+- tests/unit/test_flag_coverage_gate.py
+- tests/unit/test_gates_table_schema.py
+- tests/unit/test_native_table_schema.py
+- tests/unit/test_profile_table_schema.py
+- tests/unit/test_refs_schema.py
+- tests/unit/test_test_table_schema.py
+- tests/unit/test_testing_table_schema.py
+- tests/unit/test_toplevel_scalar_schema.py
+- tests/unit/vet/test_taint.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/design/check-fix-engine.md
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/app/vet_runner.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/findings.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/gates/_docblocks_refs.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/gates/_fix_engine_tier_c.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/gates/_fuzz.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/gates/_gate_cache.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/gates/_models.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/vet/_models.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/gates/test_rule_id_scan_branches.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/gates/test_tdd_order.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_arch_gate.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_docblocks_gate.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_fuzz.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_gates_suppress.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_lang_conformance_gate.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_pii_structural_gate.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_refs_gate.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_registry_exhaustiveness.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_registry_staleness.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_secrets_gate.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_todo_fmt_gate.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_vet.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/gates/test_doc011.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/gates/test_refs.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/gates/test_sys_selfaudit.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/security/test_redact.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/strata/test_cve_fingerprint_scan.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_arch_table_schema.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_check_gates_summary.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_docblocks_table_schema.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_dup_graph_table_schema.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_flag_coverage_gate.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_gates_table_schema.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_native_table_schema.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_profile_table_schema.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_refs_schema.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_test_table_schema.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_testing_table_schema.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_toplevel_scalar_schema.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/vet/test_taint.py
+  reason: 'reason: pull in the actual touched-file set from the T-3086 extraction
+    (src, tests, and docs the split rewrote).
+
+    '
+  actor: logan
+  at: '2026-08-27'
 body_changes:
 - mode: set
   reason: Carry the real extraction work that T-3064 was closed done without performing;
