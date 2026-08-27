@@ -1,7 +1,7 @@
 ---
 id: T-1686
 title: 'Verification watermark: make landing independent of verifying in every profile'
-state: in-progress
+state: queued
 kind: feature
 origin: agent
 created: '2026-08-06'
