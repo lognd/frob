@@ -1,7 +1,7 @@
 ---
 id: T-3039
 title: mutate scores timeout as run-abort not killed-mutant after T-3015
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -15,11 +15,16 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/mutate/__init__.py
+evidence_scope:
+- tests/test_mutate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_mutate.py::test_run_mutants_scores_a_timeout_as_killed_and_continues
+- tests/test_mutate.py::test_run_mutations_kill_switch_refuses_without_spawning
+designated_repro_test: tests/test_mutate.py::test_run_mutants_scores_a_timeout_as_killed_and_continues
 threat: null
 component: null
 anchor: false

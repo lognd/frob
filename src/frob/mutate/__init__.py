@@ -540,10 +540,7 @@ def _run_mutants(
     ten consecutive silent 540s timeouts that gave no signal either way.
     """
     import os
-    import subprocess
     import time
-
-    from frob.process._guard import guarded_subprocess_run
 
     child_env = {**os.environ, MUTATION_RUN_ENV: "1"}
     killed = 0
@@ -575,31 +572,71 @@ def _run_mutants(
         # than trusting the writer-dead check alone -- see
         # frob.mutate._journal's stale-restore verification section).
         record_journal_progress(root, target, mutation.source.encode("utf-8"))
-        try:
-            guarded = guarded_subprocess_run(
-                list(test_argv),
-                cwd=root,
-                capture_output=True,
-                timeout=timeout_s,
-                env=child_env,
-            )
-        except subprocess.TimeoutExpired:
-            killed += 1  # a mutant that hangs the tests is caught
-            continue
-        if guarded.is_err:
-            _log.warning(
-                "mutate: test spawn refused (exec disabled) for mutant %s -- "
-                "aborting run, not scoring as killed",
-                mutation.mutant.description,
-            )
-            return Err(MutateError.ExecDisabled)
-        proc = guarded.danger_ok
-        if proc.returncode != 0:
+        outcome = _score_one_mutant(
+            mutation, list(test_argv), root, timeout_s, child_env
+        )
+        if outcome.is_err:
+            return Err(outcome.danger_err)
+        if outcome.danger_ok:
             killed += 1
         else:
-            _log.info("mutate: SURVIVOR %s", mutation.mutant.description)
             survivors.append(mutation.mutant)
     return Ok((killed, survivors))
+
+
+# frob:ticket T-3039
+def _score_one_mutant(
+    mutation: _Mutation,
+    test_argv: list[str],
+    root: Path,
+    timeout_s: float,
+    child_env: dict[str, str],
+) -> Result[bool, MutateError]:
+    """Spawn one mutant's test run and score it: `Ok(True)` = killed,
+    `Ok(False)` = survivor, `Err` = the whole sweep aborts (a kill-switch
+    refusal only, never a timeout -- T-3039). Split out of `_run_mutants`
+    to keep that function under ARCH001's line threshold."""
+    import subprocess
+
+    from frob.process._guard import ProcessGuardError, guarded_subprocess_run
+
+    try:
+        guarded = guarded_subprocess_run(
+            test_argv,
+            cwd=root,
+            capture_output=True,
+            timeout=timeout_s,
+            env=child_env,
+        )
+    except subprocess.TimeoutExpired:
+        # T-3015 made `guarded_subprocess_run` return `Err(
+        # ProcessGuardError.Timeout)` for a real subprocess timeout
+        # instead of raising -- this except branch is now unreachable
+        # for that call, but is left in place as a defense-in-depth
+        # backstop in case a future caller (or a differently-guarded
+        # spawn) still raises it directly.
+        return Ok(True)  # a mutant that hangs the tests is caught
+    if guarded.is_err:
+        if guarded.danger_err is ProcessGuardError.Timeout:
+            # T-3039: a real subprocess timeout (T-3015's `Err(
+            # ProcessGuardError.Timeout)`, not a kill-switch refusal) is
+            # legitimate mutation-kill evidence -- a mutant that hangs
+            # the test suite IS observed-killed behavior, same as the
+            # `except subprocess.TimeoutExpired` branch above scored it
+            # before T-3015 changed guarded_subprocess_run to return
+            # this as a Result instead of raising.
+            return Ok(True)
+        _log.warning(
+            "mutate: test spawn refused (exec disabled) for mutant %s -- "
+            "aborting run, not scoring as killed",
+            mutation.mutant.description,
+        )
+        return Err(MutateError.ExecDisabled)
+    proc = guarded.danger_ok
+    if proc.returncode != 0:
+        return Ok(True)
+    _log.info("mutate: SURVIVOR %s", mutation.mutant.description)
+    return Ok(False)
 
 
 __all__ = [

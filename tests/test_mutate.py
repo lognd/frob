@@ -8,17 +8,21 @@ import threading
 from pathlib import Path
 
 import pytest
-from typani.result import Result
+from typani.result import Err, Ok, Result
 
 from frob import mutate as mutate_module
 from frob.mutate import (
     MUTATION_RUN_ENV,
+    Mutant,
     MutateError,
     MutationResult,
+    _Mutation,
     _Mutator,
+    _run_mutants,
     generate_mutants,
     run_mutations,
 )
+from frob.process._guard import ProcessGuardError
 from frob.process._lock import derived_state_lock
 
 
@@ -370,3 +374,54 @@ def test_mutator_visit_constant():
     # frob:tests src/frob/mutate/__init__.py::_Mutator.visit_Constant kind="unit"
     mutated = _mutate_single("x = True\n", 0)
     assert "False" in mutated
+
+
+# frob:ticket T-3039
+def test_run_mutants_scores_a_timeout_as_killed_and_continues(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # frob:tests src/frob/mutate/__init__.py::_run_mutants
+    # T-3039: T-3015 made `guarded_subprocess_run` return `Err(
+    # ProcessGuardError.Timeout)` instead of raising `subprocess.
+    # TimeoutExpired` -- `_run_mutants`'s dead `except TimeoutExpired`
+    # branch (which used to score a hang as "killed", the correct
+    # behavior: a mutant that hangs the test suite IS observed-killed
+    # behavior) can no longer catch it, so the timeout fell through to
+    # the generic `if guarded.is_err:` branch instead, which ABORTS the
+    # entire run with `Err(MutateError.ExecDisabled)` -- a completely
+    # different, more severe outcome than intended. This proves the fix:
+    # a `Timeout` on the FIRST mutant is scored killed and the run
+    # continues to score the SECOND mutant too (never aborts).
+    (tmp_path / "m.py").write_text("x = 1\n", encoding="utf-8")
+    mutants = (
+        _Mutation(
+            source="x = 1  # mutant one\n",
+            mutant=Mutant(file="m.py", line=1, description="mutant one"),
+        ),
+        _Mutation(
+            source="x = 1  # mutant two\n",
+            mutant=Mutant(file="m.py", line=1, description="mutant two"),
+        ),
+    )
+
+    calls: list[str] = []
+
+    def _fake_guarded_run(args, **kwargs):  # noqa: ANN001, ANN202
+        if not calls:
+            calls.append("timeout")
+            return Err(ProcessGuardError.Timeout)
+        calls.append("ok")
+        return Ok(subprocess.CompletedProcess(args=args, returncode=0))
+
+    monkeypatch.setattr(
+        "frob.process._guard.guarded_subprocess_run", _fake_guarded_run
+    )
+
+    result = _run_mutants(
+        tmp_path / "m.py", mutants, ("python", "-c", "pass"), tmp_path, 5.0
+    )
+    assert result.is_ok
+    killed, survivors = result.danger_ok
+    assert calls == ["timeout", "ok"]
+    assert killed >= 1  # the timed-out mutant was scored killed, not aborted
+    assert len(survivors) + killed == len(mutants)
