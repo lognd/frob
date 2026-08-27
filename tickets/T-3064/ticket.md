@@ -343,7 +343,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9d78e63b561f6ba3e7c9b56b46ee1ed9bbf792ab
 ---
 MEASURED 2026-08-26 via `frob cycle`: a single strongly-connected component of
 **182 nodes** spanning `tickets/`, `gates/`, `strata/`, `app/`, `serve/`,
