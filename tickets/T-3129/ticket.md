@@ -73,7 +73,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 08778765db4a66eb011005b0e282ef0b75fbc579
 ---
 MEASURED 2026-08-27. The globally-installed `frob` on PATH and the project's
 own `uv run frob` REPORT THE SAME VERSION STRING but are different builds with
