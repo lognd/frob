@@ -3919,6 +3919,10 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
             "debt",
             "deprecated",
             "wave",
+            # T-2395: renders contention info from `load_queue`, no
+            # `write_ticket`/`_set_ticket_field` call anywhere in
+            # `_contention` (same read-only shape as `wave` above).
+            "contention",
         }
     )
 
@@ -3954,6 +3958,17 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
             "plan",
             "work",
             "review",
+            # T-2681/T-2762: `unblock` refuses loudly unless `--by` is
+            # already present in `blocked_by`, so exercising it needs a
+            # pre-existing block edge this class's plain single-ticket
+            # `repo` fixture does not set up -- own coverage lives in
+            # `tests/test_ticket_lifecycle.py::TestUnblock`.
+            "unblock",
+            # T-2604: `waive-audit` has its own dedicated fixture/mock
+            # surface (fake waiver registries, `_CATCHUP_BOUND` patching)
+            # in `tests/unit/test_waive_audit_runner.py` -- re-deriving
+            # that here would duplicate fixtures, not add coverage.
+            "waive-audit",
         }
     )
 
@@ -3966,8 +3981,16 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
             "ticket_scope_add": ["src/other.py"],
             "ticket_scope_reason": "widen for T-1615 coverage",
         },
-        "priority": {"ticket_id": "T-0001", "ticket_priority_level": "high"},
-        "kind": {"ticket_id": "T-0001", "ticket_kind_value": "feature"},
+        "priority": {
+            "ticket_id": "T-0001",
+            "ticket_priority_level": "high",
+            "ticket_triage_reason": "T-3035 dispatch-table coverage",
+        },
+        "kind": {
+            "ticket_id": "T-0001",
+            "ticket_kind_value": "feature",
+            "ticket_triage_reason": "T-3035 dispatch-table coverage",
+        },
         # T-2103: `anchor` (T-1867's CLI wiring for T-1856's set_anchor
         # primitive) forwards straight to a ticket write, the same shape
         # as `priority`/`kind` directly above -- it belongs in this dict,
@@ -3977,16 +4000,39 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
             "ticket_anchor_set": True,
             "ticket_anchor_reason": "T-2103 dispatch-table coverage",
         },
-        "component": {"ticket_id": "T-0001", "ticket_component": "mycomp"},
+        "component": {
+            "ticket_id": "T-0001",
+            "ticket_component": "mycomp",
+            "ticket_triage_reason": "T-3035 dispatch-table coverage",
+        },
         "label": {"ticket_id": "T-0001", "ticket_label_add": ["urgent"]},
         "accept": {
             "ticket_id": "T-0001",
             "ticket_accept_criterion": ["a real criterion"],
         },
-        "tier": {"ticket_id": "T-0001", "ticket_tier_value": "story"},
+        "tier": {
+            "ticket_id": "T-0001",
+            "ticket_tier_value": "story",
+            "ticket_triage_reason": "T-3035 dispatch-table coverage",
+        },
         "runs-last": {"ticket_id": "T-0001", "ticket_runs_last_value": "on"},
         "attach": {"ticket_id": "T-0001"},  # path filled in per-test
         "requeue": {"ticket_id": "T-0001"},  # ticket started first, per-test
+        "body": {
+            "ticket_id": "T-0001",
+            "ticket_body_append": "extra body text",
+            "ticket_body_reason": "T-3035 dispatch-table coverage",
+        },
+        "set-parent": {
+            "ticket_id": "T-0001",
+            "ticket_parent_id_value": "T-0002",
+            "ticket_triage_reason": "T-3035 dispatch-table coverage",
+        },
+        "runs-last-parallel-safe": {
+            "ticket_id": "T-0001",
+            "ticket_scope_reason": "T-3035 dispatch-table coverage",
+        },
+        "milestone": {"ticket_id": "T-0001", "ticket_milestone_value": "0.1.0"},
     }
 
     def test_dispatch_table_verbs_are_all_accounted_for(self) -> None:
@@ -4025,6 +4071,17 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
         if verb == "requeue":
             ticket_run(
                 AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+            )
+        if verb == "set-parent":
+            ticket_run(
+                AppConfig(
+                    ticket_command="new",
+                    ticket_path=repo,
+                    ticket_title="parent ticket",
+                    ticket_kind="docs",
+                    ticket_scope=["src/feature.py"],
+                    ticket_body="## Done report\n\nDone.\n",
+                )
             )
 
         ticket_run(AppConfig(ticket_command=verb, ticket_path=repo, **kwargs))
