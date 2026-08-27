@@ -11,6 +11,13 @@
 pub mod model;
 pub mod query;
 
+/// The V-model spec graph (T-3004 sections 1-2, T-3007): the FIRST
+/// consumer of this generic kernel -- node/edge kinds, the paired-level
+/// V-model schema, and the four structural closure rules. See
+/// `vmodel`'s module doc for why this lives beside, not inside, the
+/// generic model/query modules.
+pub mod vmodel;
+
 pub use model::{
     Edge, EdgeKindSchema, EndpointRole, Graph, GraphError, GraphSchema, Kind, Level,
     LevelRelation, Node, NodeId,

@@ -80,11 +80,12 @@ schema).
 
 ## Deferred (not this ticket)
 
-- No PyO3 surface yet -- `strata-core::graph` is Rust-internal until a
-  consumer ticket needs to cross the Python boundary; `lib.rs`'s existing
-  `#[pymodule]` wiring is untouched.
-- No instance schema (requirements/tests/decisions) lives here. T-3006/
-  T-3007 build those against this kernel's `GraphSchema`/`Graph` API.
+- No instance schema lives here by design -- this module stays generic.
+  T-3007 built the first instance (the V-model schema and its four
+  closure rules) as `strata-core::graph::vmodel`, on top of this kernel's
+  `GraphSchema`/`Graph` API, and added the one PyO3 function it needed
+  (`vmodel_check`, see docs/strata/vmodel.md) rather than exporting this
+  whole module across the Python boundary.
 - No waterfall GATE (blocking implementation on spec closure) -- T-3004
   section 9 defers that explicitly until the kernel and a real instance
   both exist.

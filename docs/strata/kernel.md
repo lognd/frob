@@ -729,7 +729,11 @@ validation and vocabulary stay in Python.
 - `propagated_demand` -- fanout-weighted demand SUMmed over converging
   paths (see "Capacity semantics" above); rate-fed cycles return +inf plus
   the cycle witness, mirroring `worst_age`'s deny-by-default shape.
-- `strata_core` -- the pymodule assembling the exported surface.
+- `strata_core` -- the pymodule assembling the exported surface. T-3007
+  added `vmodel_check` to this surface -- the one PyO3 function the
+  `graph::vmodel` V-model spec-graph instance needs; see
+  docs/strata/vmodel.md for the graph kernel this is built on and why only
+  this one function crossed the Python boundary.
 
 Build: `make core` (uvx maturin develop --release); ships a bundled
 `.pyi` stub so ty sees typed signatures. Cargo tests run in CI beside

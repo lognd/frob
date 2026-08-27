@@ -665,6 +665,58 @@ fn propagated_demand(edges: Vec<DemandEdge>, target: String) -> (f64, Vec<String
 /// WHY: the surface grammar parser is compute-heavy (charter D3, amended
 /// 2026-07-17) so it lives here; the JSON string is the narrowest
 /// possible boundary back to the Python validators in `frob.strata._ast`.
+/// BIND: vmodel_check
+///
+/// WHY: T-3007's only PyO3 need -- build a V-model graph from flattened
+/// node/edge tuples (data-in/data-out, matching this file's existing
+/// convention) and run the four structural closure rules over it. Nodes
+/// are `(id, kind, level)` with an optional level; edges are
+/// `(kind, src, dst)`. Construction refusals (`graph::GraphError`, e.g. a
+/// `verifies` edge at the wrong paired level) are collected as debug
+/// strings in the first return slot rather than raising, so Python can
+/// report every malformed input at once instead of stopping at the first;
+/// the second slot is `(rule_name, node_id)` for every closure violation
+/// found (T-3004 section 2's four rules) via `graph::vmodel::check_closure`.
+/// Only this one function is exported -- not the whole `graph` module's
+/// surface -- because this is the only operation a Python caller needs for
+/// T-3007; a broader binding is deferred to whichever future ticket
+/// actually needs it (T-3008/T-3009/T-3010 are graph SCHEMA consumers of
+/// this crate's Rust API, not necessarily new PyO3 surface).
+#[pyfunction]
+fn vmodel_check(
+    nodes: Vec<(String, String, Option<String>)>,
+    edges: Vec<(String, String, String)>,
+) -> (Vec<String>, Vec<(String, String)>) {
+    // frob:doc docs/strata/vmodel.md#pyo3-surface-vmodel_check
+    use graph::vmodel::{check_closure, v_model_schema, ClosureViolation};
+    use graph::Graph;
+
+    let mut g = Graph::new(v_model_schema());
+    let mut errors = Vec::new();
+    for (id, kind, level) in nodes {
+        if let Err(e) = g.add_node(id, kind, level) {
+            errors.push(format!("{:?}", e));
+        }
+    }
+    for (kind, src, dst) in edges {
+        if let Err(e) = g.add_edge(kind, src, dst) {
+            errors.push(format!("{:?}", e));
+        }
+    }
+
+    let violations = check_closure(&g)
+        .into_iter()
+        .map(|v| match v {
+            ClosureViolation::OrphanRequirement { node } => ("orphan_requirement".to_string(), node),
+            ClosureViolation::UnjustifiedDesign { node } => ("unjustified_design".to_string(), node),
+            ClosureViolation::UntestedArtifact { node } => ("untested_artifact".to_string(), node),
+            ClosureViolation::OrphanTest { node } => ("orphan_test".to_string(), node),
+        })
+        .collect();
+
+    (errors, violations)
+}
+
 #[pyfunction]
 fn parse_source(text: &str) -> String {
     // frob:doc docs/strata/surface.md#parser
@@ -679,6 +731,7 @@ fn strata_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(demand, m)?)?;
     m.add_function(wrap_pyfunction!(propagated_demand, m)?)?;
     m.add_function(wrap_pyfunction!(parse_source, m)?)?;
+    m.add_function(wrap_pyfunction!(vmodel_check, m)?)?;
     Ok(())
 }
 
@@ -874,5 +927,59 @@ mod tests {
             "api".to_string(),
         );
         assert_eq!(total, 102.0);
+    }
+
+    #[test]
+    fn vmodel_check_reports_construction_errors_and_closure_violations_together() {
+        // frob:tests strata-core/src/lib.rs::vmodel_check kind="unit"
+        // A well-formed pair (should produce zero errors, one closure
+        // violation each for the untested req/design) mixed with a node
+        // referencing an undeclared kind (a construction error) -- proves
+        // the PyO3 boundary surfaces BOTH failure classes in one call
+        // rather than only the first one hit.
+        let (errors, violations) = vmodel_check(
+            vec![
+                ("req-1".to_string(), "artifact".to_string(), Some("requirements".to_string())),
+                (
+                    "design-1".to_string(),
+                    "artifact".to_string(),
+                    Some("component-design".to_string()),
+                ),
+                ("bogus-1".to_string(), "gadget".to_string(), None),
+            ],
+            vec![("satisfies".to_string(), "design-1".to_string(), "req-1".to_string())],
+        );
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].contains("UnknownNodeKind"));
+        assert!(violations.contains(&("untested_artifact".to_string(), "req-1".to_string())));
+        assert!(violations.contains(&("untested_artifact".to_string(), "design-1".to_string())));
+    }
+
+    #[test]
+    fn vmodel_check_is_quiet_on_a_fully_closed_graph() {
+        // frob:tests strata-core/src/lib.rs::vmodel_check kind="unit"
+        let (errors, violations) = vmodel_check(
+            vec![
+                ("req-1".to_string(), "artifact".to_string(), Some("requirements".to_string())),
+                (
+                    "design-1".to_string(),
+                    "artifact".to_string(),
+                    Some("component-design".to_string()),
+                ),
+                ("ctest-1".to_string(), "test".to_string(), Some("customer-test".to_string())),
+                (
+                    "unittest-1".to_string(),
+                    "test".to_string(),
+                    Some("component-unit-test".to_string()),
+                ),
+            ],
+            vec![
+                ("satisfies".to_string(), "design-1".to_string(), "req-1".to_string()),
+                ("verifies".to_string(), "ctest-1".to_string(), "req-1".to_string()),
+                ("verifies".to_string(), "unittest-1".to_string(), "design-1".to_string()),
+            ],
+        );
+        assert!(errors.is_empty());
+        assert!(violations.is_empty());
     }
 }
