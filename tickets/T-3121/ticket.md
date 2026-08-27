@@ -70,7 +70,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 53d06fb169d561d0a2bff48e298389a100da32cf
 ---
 FOLLOW-ON to T-3089, which landed the RETARGETING half: `_land_squash_apply`
 now takes a `stage: Path` naming the checkout the whole six-stage
