@@ -1568,8 +1568,9 @@ class TestRecordLandCommit:
 
 
 def _t2114_concurrent_new_ticket(repo: Path, result_path: Path) -> None:
-    """Multiprocessing target (module-level so `fork` can spawn it, T-2114
-    -- mirrors `_t0907_child_land`'s own pattern below): calls `new_ticket`
+    """Multiprocessing target (module-level so the `spawn` context, T-3174,
+    can pickle/import it -- mirrors `_t0907_child_land`'s own pattern
+    below): calls `new_ticket`
     against `repo` from a genuinely SEPARATE process, not an in-process
     monkeypatch hook. This is the fix for a self-referential deadlock a
     prior version of this test had: calling `new_ticket` synchronously
@@ -1583,20 +1584,22 @@ def _t2114_concurrent_new_ticket(repo: Path, result_path: Path) -> None:
     concurrent writer would, and proceeds once `land()` actually finishes
     and releases it -- which is the real-world shape T-1036 exercises.
 
-    T-3144: `fork` gives this child a COPY-ON-WRITE snapshot of the
-    PARENT test process's `os.environ` taken the instant it is spawned --
-    and by then `land()`'s own in-process evidence re-verify
-    (`apply_agent_env`, T-3094, a real, deliberate, no-restore mutation
-    correct for its actual production callers, short-lived CLI processes)
-    has already set `FROB_WORKTREE` to `worktree` for the rest of the
-    parent process's lifetime. A genuinely independent concurrent writer
-    -- a real `frob ticket new` invocation in its own shell, the scenario
-    this test simulates -- would never inherit that: it gets a fresh env
-    from ITS OWN shell, not the land-running process's runtime-mutated
-    one. Popping both keys here (mirroring `tests/conftest.py`'s own
+    T-3144: this child inherits a snapshot of the PARENT test process's
+    `os.environ` taken at spawn time (still true under `spawn`, T-3174 --
+    a fresh interpreter still inherits the launching process's env
+    unless explicitly cleared) -- and by then `land()`'s own in-process
+    evidence re-verify (`apply_agent_env`, T-3094, a real, deliberate,
+    no-restore mutation correct for its actual production callers,
+    short-lived CLI processes) has already set `FROB_WORKTREE` to
+    `worktree` for the rest of the parent process's lifetime. A
+    genuinely independent concurrent writer -- a real `frob ticket new`
+    invocation in its own shell, the scenario this test simulates --
+    would never inherit that: it gets a fresh env from ITS OWN shell,
+    not the land-running process's runtime-mutated one. Popping both
+    keys here (mirroring `tests/conftest.py`'s own
     `_isolate_worktree_lease_env_before_test`, T-3123/T-3145) keeps this
-    fork-based simulation honest to the real-world case instead of
-    failing on an artifact of sharing memory with `land()`."""
+    simulation honest to the real-world case instead of failing on an
+    artifact of sharing state with `land()`."""
     import json
     import os
 
@@ -1625,21 +1628,27 @@ class TestSquashSpliceLedgerChurn:
     # `_land_squash`'s `run_argv`, but T-3121's disposable-stage flip
     # moved the actual `git merge --squash` call into `_land_compose`'s
     # own copy, called directly from `_land.py`) -- fixed below to target
-    # the real call site. With that fixed, this test now correctly
-    # reproduces a GENUINE regression (T-3163): `land()` succeeds, but
-    # the final ledger on `root` contains ONLY the concurrent sibling's
-    # own new ticket -- the just-landed ticket's own record is silently
-    # gone entirely, the inverse of (but the same class as) the T-1036
-    # symptom this test was written to catch. `xfail(strict=True)` so a
-    # T-3163 fix that makes this pass again is caught immediately (an
-    # unexpected pass errors), rather than this staying silently green
-    # again without anyone updating the marker.
-    @pytest.mark.xfail(
-        reason="T-3163: land()'s ledger splice under the T-3121 disposable-stage "
-        "flip can silently drop the just-landed ticket's own record when a "
-        "concurrent sibling write races the land window",
-        strict=True,
-    )
+    # the real call site.
+    #
+    # T-3163 fixed the real production regression this test targets
+    # (root's `ledger_lock` now spans the WHOLE disposable-worktree
+    # compose, so a concurrent sibling write during that window can no
+    # longer race the splice). That widening exposed a SEPARATE,
+    # pre-existing test-infra artifact (T-3174): `_t2114_concurrent_
+    # new_ticket` used to run in a `multiprocessing.get_context("fork")`
+    # child. Once `ledger_lock` is held by the PARENT at the fork point,
+    # the forked child inherits a COPY of `_lock_local`'s thread-local
+    # `held` dict (already containing the parent's (path -> (fd, depth))
+    # entry) AND the same open-file-description `fd` for the lock file
+    # (POSIX flock state belongs to the open file description, not the
+    # process) -- so the child's own `ledger_lock()` call finds the
+    # inherited entry and takes the "already held, bump depth" reentrancy
+    # branch without ever contending for the lock, even though it is a
+    # genuinely separate OS process with no legitimate claim to it. Using
+    # `spawn` instead (a genuinely independent process, no inherited fd
+    # or thread-local state -- verified standalone against T-3163's fixed
+    # production code before landing this) makes the simulation honest to
+    # the real-world concurrent-writer case again, and the test passes.
     def test_concurrent_write_between_squash_and_splice_survives_land(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1683,7 +1692,12 @@ class TestSquashSpliceLedgerChurn:
                 and result.danger_ok.returncode == 0
             ):
                 injected["done"] = True
-                ctx = multiprocessing.get_context("fork")
+                # T-3174: `spawn`, not `fork` -- see the class docstring
+                # above `test_concurrent_write_between_squash_and_splice_
+                # survives_land` for why a forked child spuriously skips
+                # real lock contention against a parent that already
+                # holds `ledger_lock` at the fork point.
+                ctx = multiprocessing.get_context("spawn")
                 proc = ctx.Process(
                     target=_t2114_concurrent_new_ticket, args=(repo, result_path)
                 )
