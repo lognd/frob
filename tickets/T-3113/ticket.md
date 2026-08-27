@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/_ticket/_closeout.py
 - src/frob/app/ticket_runner/_lifecycle.py
+- tests/test_ticket_lifecycle.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,14 @@ scope_changes:
     itself with refuse-loudly-on-missing-edge semantics -- confirmed via git log/xref
     before widening -- so the remaining real gap is narrower than the ticket text
     describes: reason-recording only.'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_ticket_lifecycle.py
+  reason: Existing _unblock tests construct AppConfig(ticket_command='unblock', ...)
+    without --reason; T-3113 makes --reason mandatory, so every existing call site
+    in this file needs updating plus new must-fire/must-stay-quiet fixtures for the
+    reason requirement and the Unblock log line.
   actor: logan
   at: '2026-08-27'
 body_changes:
