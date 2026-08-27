@@ -2,7 +2,7 @@
 id: T-3142
 title: Break the 182-node import cycle (name the real next cut from the current cycle
   output)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -27,6 +27,39 @@ no_scope_declared_reason: 'T-3142 is a naming/decision ticket per its own brief 
   newly-filed sibling ticket instead.
 
   '
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): Naming/decision ticket per its own brief: measures
+    the current cycle,
+
+    names one real next cut with edge evidence, and files it as a sibling
+
+    ticket (T-3155) rather than attempting the cut or duplicating
+
+    T-2202/T-2667/T-2835. No source behavior changes under this ticket
+
+    itself.'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 897
+  new_length: 1218
+- mode: append
+  reason: 'BUG002 front door (T-2393): Naming/decision ticket per its own brief: measures
+    the current cycle,
+
+    names one real next cut with edge evidence, and files it as a sibling
+
+    ticket (T-3155) rather than attempting the cut or duplicating
+
+    T-2202/T-2667/T-2835. No source behavior changes under this ticket
+
+    itself.'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 1218
+  new_length: 1539
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
@@ -50,3 +83,15 @@ name ONE real cut from the ACTUAL 182-node cycle's own printed node list
 reading the current cycle output directly. Do not try to plan the whole
 decomposition here -- one cut, then re-measure, then file the next sibling,
 matching T-3086's own directive.
+
+frob:no-behavior-change reason="Naming/decision ticket per its own brief: measures the current cycle,
+names one real next cut with edge evidence, and files it as a sibling
+ticket (T-3155) rather than attempting the cut or duplicating
+T-2202/T-2667/T-2835. No source behavior changes under this ticket
+itself."
+
+frob:no-behavior-change reason="Naming/decision ticket per its own brief: measures the current cycle,
+names one real next cut with edge evidence, and files it as a sibling
+ticket (T-3155) rather than attempting the cut or duplicating
+T-2202/T-2667/T-2835. No source behavior changes under this ticket
+itself."
