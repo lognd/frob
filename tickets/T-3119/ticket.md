@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a4d9bfe94878de283cdf21b8cd0d129823bff5fc
 ---
 MEASURED 2026-08-27 while building T-3110's corpus. `run_split`/
 `run_move_module`/`run_refactor`'s own `verify_import_resolution` step
