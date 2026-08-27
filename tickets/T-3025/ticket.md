@@ -14,10 +14,42 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/verify/_quarantine.py
+- tests/unit/verify/test_quarantine.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_rapid_sweep.py
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/verify/_quarantine.py
+  reason: 'T-3025: severity-proportional quarantine raise + supporting tests/docs'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/verify/test_quarantine.py
+  reason: 'T-3025: severity-proportional quarantine raise + supporting tests/docs'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: 'T-3025: severity-proportional quarantine raise + supporting tests/docs'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: 'T-3025: severity-proportional quarantine raise + supporting tests/docs'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'T-3025: severity-proportional quarantine raise + supporting tests/docs'
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
