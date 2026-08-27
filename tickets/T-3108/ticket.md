@@ -2,7 +2,7 @@
 id: T-3108
 title: TICK006 auto-recovery files duplicate tickets for citations of ids minted in
   sibling worktrees
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -57,6 +57,12 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3306
+evidence:
+- tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds::test_reads_an_active_id_from_another_worktree
+- tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds::test_excludes_root_itself
+- tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds::test_unreadable_worktree_is_skipped_not_fatal
+- tests/test_gates_tick006_sibling_worktree.py::TestFixTick006ResolvesSiblingWorktreeCitations::test_citation_to_sibling_worktree_active_id_does_not_refile
+- tests/test_gates_tick006_sibling_worktree.py::TestFixTick006ResolvesSiblingWorktreeCitations::test_genuinely_nonexistent_id_still_refiles
 designated_repro_test: null
 threat: null
 component: null

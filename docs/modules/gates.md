@@ -5631,6 +5631,23 @@ guess, never a waiver insertion):
   a `root` field (the merge target's own checkout path); the
   duplicate check now ALSO reads that root fresh, closing the race.
 
+  **T-3108: a THIRD, independent false-positive source from the same
+  92% class** -- T-2400's `merge_target_ids` widened resolution to
+  `main`'s own LANDED ledger, but an id minted inside a sibling
+  worktree is invisible on `main` until that worktree lands (T-2197);
+  a Done report in worktree A citing an id worktree B minted, while B
+  is still in flight, read as phantom to every prior view and got
+  auto-filed as a duplicate of B's own active, non-terminal work
+  (measured: T-3100/T-3103, duplicating T-3107/T-3106 respectively,
+  both real and non-terminal at the time). `_sibling_worktree_known_
+  ids` enumerates every OTHER live worktree via `git worktree list
+  --porcelain` and best-effort reads its own local ticket queue,
+  unioned into `known_ids` alongside the archive and merge-target
+  views -- a worktree that cannot be read (mid-removal, pruned, gone)
+  just contributes nothing, since this is a pure WIDENING source and
+  can only ever prevent a false phantom, never manufacture a false
+  "known".
+
 T-1261 adds a second batch of four Tier-A handlers, none of which invent
 new rewrite logic -- each rule already names its own remedy verbatim in
 its finding message, so the handler just calls that existing remedy:

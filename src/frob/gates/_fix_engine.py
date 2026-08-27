@@ -374,9 +374,77 @@ def _tick006_context_excerpt(done_report_text: str, tid: str) -> str:
     return done_report_text[start:end].strip()
 
 
+# frob:ticket T-3108
+# frob:tests \
+# tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.test_reads_\
+# an_active_id_from_another_worktree kind="unit"
+# frob:tests \
+# tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.test_exclud\
+# es_root_itself kind="unit"
+# frob:tests \
+# tests/test_gates_tick006_sibling_worktree.py::TestSiblingWorktreeKnownIds.test_unread\
+# able_worktree_is_skipped_not_fatal kind="unit"
+def _sibling_worktree_known_ids(root: Path) -> frozenset[str]:
+    """T-3108: ticket ids visible in every OTHER git worktree's own local
+    ledger -- widens `fix_tick006_phantom_refile`'s known-id resolution
+    past `merge_target_ids`' landed-on-`main` view to also cover the
+    mint-to-land window T-2197 describes: an id minted inside worktree B
+    is invisible on `main` until B lands, so a Done report written in
+    worktree A citing an id B minted (T-3106/T-3107's own measured
+    incident, both real, non-terminal tickets in SIBLING worktrees at
+    the moment the recovery ran) reads as phantom to every check that
+    only consults `root`'s own ledger and main's landed one.
+
+    Enumerates every OTHER worktree via `git worktree list --porcelain`
+    and best-effort reads its own active ticket queue (`load_all`) -- a
+    worktree that cannot be read (mid-removal, a stale/pruned entry, a
+    permission issue, or simply gone) contributes nothing rather than
+    aborting the whole scan. This is a pure WIDENING source layered on
+    top of `known_ids`, so a read failure here can only cost a missed
+    resolution, never manufacture a false "known" -- it does not need
+    `MergeTargetKnownIds`'s stricter measured=False-refuses-to-file
+    doctrine (T-2391): that doctrine exists because `merge_target_ids`
+    is the view TRUSTED to define "not found ANYWHERE", where this
+    function is only ever one MORE place to look before that conclusion
+    is reached, exactly like the archive lookup already unioned in
+    immediately above this function's own call site."""
+    from frob.tickets._store import load_all
+
+    listed = run_argv(
+        ["git", "worktree", "list", "--porcelain"], cwd=root, timeout_s=10.0
+    )
+    if listed.is_err or listed.danger_ok.returncode != 0:
+        return frozenset()
+    try:
+        root_resolved = root.resolve()
+    except OSError:
+        return frozenset()
+    ids: set[str] = set()
+    for line in listed.danger_ok.stdout.splitlines():
+        if not line.startswith("worktree "):
+            continue
+        wt_path = Path(line[len("worktree ") :].strip())
+        try:
+            # frob:waive PERF008 reason="wt_path is THIS iteration's own value (a \
+            # different worktree path every time the loop advances, parsed fresh from \
+            # the current line) -- there is no loop-invariant operand to hoist, the \
+            # same varies-per-iteration false-positive class T-2321/T-2303 already \
+            # established for _land_cmd.py's identical match.resolve()-in-a-loop shape"
+            wt_resolved = wt_path.resolve()
+        except OSError:
+            continue
+        if wt_resolved == root_resolved or not wt_resolved.is_dir():
+            continue
+        loaded = load_all(wt_resolved)
+        if loaded.is_ok:
+            ids.update(loaded.danger_ok)
+    return frozenset(ids)
+
+
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:ticket T-1544
 # frob:ticket T-2702
+# frob:ticket T-3108
 # frob:tests \
 # tests/test_gates.py::TestFixEngineTierA.test_tick006_refiles_and_rewrites_citation \
 # kind="unit"
@@ -478,7 +546,17 @@ def fix_tick006_phantom_refile(
        "refusing to file ... already has this exact title" noise a
        coordinator misdiagnosed as lock contention for 45 minutes,
        because retrying a duplicate-title refusal, unlike contention,
-       never clears on its own."""
+       never clears on its own.
+
+    T-3108: `known_ids` now ALSO includes `_sibling_worktree_known_ids`
+    -- a THIRD, independent false-positive source from the SAME 92%
+    class T-2690 measured (T-2690 closed the rename-based one; this one
+    is the mint-to-land race, T-2197's own doctrine that a worktree-
+    minted id is invisible on `main` until that worktree lands). A
+    citation to an id that is simply active in a SIBLING worktree that
+    has not landed yet -- the T-3106/T-3107 incident this ticket
+    measured, both real, non-terminal tickets -- is resolved from that
+    worktree's own ledger and never filed as phantom."""
     from frob.tickets._store import load_archive
 
     if merge_target_ids is not None and not merge_target_ids.measured:
@@ -495,6 +573,7 @@ def fix_tick006_phantom_refile(
     )
     if merge_target_ids is not None:
         known_ids |= merge_target_ids.ids
+    known_ids |= _sibling_worktree_known_ids(root)
     if ticket_id is not None:
         scoped_ticket = queue.tickets.get(ticket_id)
         tickets_to_scan = [scoped_ticket] if scoped_ticket is not None else []
