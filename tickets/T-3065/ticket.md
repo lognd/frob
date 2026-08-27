@@ -2,7 +2,7 @@
 id: T-3065
 title: Quarantine finding identities are keyed by literal string equality on a path
   whose shape varies by caller; normalize at write time
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -20,6 +20,7 @@ scope:
 - src/frob/_cli_parsers/_verify.py
 - tests/unit/verify/test_quarantine.py
 - tests/unit/verify/test_verify_runner.py
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -60,6 +61,12 @@ scope_changes:
   reason: doc anchor collapses whole shared module doc; out of scope for this bugfix
   actor: logan
   at: '2026-08-26'
+- op: add
+  glob: frob.lock
+  reason: frob ack writes digest acknowledgements to frob.lock for the two symbols
+    this ticket touches
+  actor: logan
+  at: '2026-08-27'
 body_changes:
 - mode: set
   reason: author plan + fresh field evidence widening scope
