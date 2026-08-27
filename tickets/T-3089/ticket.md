@@ -19,8 +19,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_squash.py
-- src/frob/tickets/_land_compose.py
 - tests/test_ticket_land.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +28,46 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/test_ticket_land.py
+  reason: 'T-3089''s fixtures live in tests/test_ticket_land.py because the v2-mode
+    land
+
+    fixtures they need (v2_repo, _seed_v2_ticket, _make_closeable, _commit_all)
+
+    are module-local there, and the existing _absorbed_land_report mutation-
+
+    coverage test in that file calls the helper positionally, so the new `stage`
+
+    parameter changes that one call site. src/frob/tickets/_land_compose.py is
+
+    dropped: the compose primitives it holds are already landed (T-3088/T-3107/
+
+    T-3114) and this ticket''s landed subset does not modify them.
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: remove
+  glob: src/frob/tickets/_land_compose.py
+  reason: 'T-3089''s fixtures live in tests/test_ticket_land.py because the v2-mode
+    land
+
+    fixtures they need (v2_repo, _seed_v2_ticket, _make_closeable, _commit_all)
+
+    are module-local there, and the existing _absorbed_land_report mutation-
+
+    coverage test in that file calls the helper positionally, so the new `stage`
+
+    parameter changes that one call site. src/frob/tickets/_land_compose.py is
+
+    dropped: the compose primitives it holds are already landed (T-3088/T-3107/
+
+    T-3114) and this ticket''s landed subset does not modify them.
+
+    '
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/tickets-landing.md
   reason: 'T-3089''s fixtures live in tests/test_ticket_land.py because the v2-mode
     land
 
