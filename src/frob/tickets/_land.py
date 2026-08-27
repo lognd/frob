@@ -125,6 +125,7 @@ from frob.tickets._models import (
     LandReport,
     Ticket,
     TicketError,
+    TicketState,
 )
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _TICKET_ID_RE, _parse_ticket_file, _store_mode, load_all
@@ -2705,6 +2706,11 @@ _ORPHANED_NEW_TICKET_DIR_RE = re.compile(rf"^tickets/({_TICKET_ID_RE})/$")
 # frob:ticket T-2026
 # frob:ticket T-2046
 # frob:ticket T-2075
+# frob:ticket T-3050
+# frob:waive ARCH001 reason="T-3050 H3 fix is one more early-return in an existing \
+# validate-only loop; splitting it into a second helper would spread one \
+# all-or-nothing decision across two functions for a threshold crossing of a handful \
+# of lines"
 def _orphaned_new_ticket_dir_candidates(
     root: Path, ticket_id: str
 ) -> tuple[list[str], list[str]] | None:
@@ -2762,6 +2768,28 @@ def _orphaned_new_ticket_dir_candidates(
             )
             return None
         if parsed.danger_ok.id != orphan_id:
+            return None
+        if parsed.danger_ok.state != TicketState.QUEUED:
+            # frob:ticket T-3050
+            # H3: a directory left behind by something other than the
+            # `new`-then-killed race this auto-heal exists for (e.g. a
+            # ticket that reached `done` or any other terminal/non-fresh
+            # state before its directory went untracked/orphaned for some
+            # OTHER reason) must never be silently swept into a commit as
+            # though it were fresh queued work -- that would publish a
+            # false ledger state straight to main. Refuse ALL candidates
+            # in this batch, same fail-closed posture as an unparsed
+            # ticket.md above.
+            _log.error(
+                "land: %s found an orphaned new-ticket directory %s whose "
+                "ticket.md parses to state=%s, not queued -- refusing to "
+                "auto-heal ANY of the %d orphaned dir(s) found, the "
+                "ordinary DirtyMain refusal stands (T-3050)",
+                ticket_id,
+                path,
+                parsed.danger_ok.state,
+                len(dirty_lines),
+            )
             return None
         orphan_paths.append(path)
         orphan_ids.append(orphan_id)

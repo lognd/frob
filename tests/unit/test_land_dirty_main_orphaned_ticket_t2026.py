@@ -82,6 +82,8 @@ def _write_orphaned_ticket_dir(root: Path, ticket_id: str, text: str) -> None:
 class TestCommitOrphanedNewTicketDirOnlyDrift:
     """Direct tests of the new narrow-match helper (T-2026)."""
 
+    # frob:ticket T-3050
+
     def test_well_formed_orphaned_dir_is_committed(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift.test_well_formed_orphaned_dir_is_committed  # noqa: E501
         root = tmp_path / "repo"
@@ -195,6 +197,52 @@ class TestCommitOrphanedNewTicketDirOnlyDrift:
 
         healed = _commit_orphaned_new_ticket_dir_only_drift(root, "T-9999")
         assert healed is False
+
+    # frob:ticket T-3050
+    def test_non_queued_orphan_is_never_auto_committed(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift.test_non_queued_orphan_is_never_auto_committed  # noqa: E501
+        """T-3050 (H3): FAILS FIRST at the parent commit -- an orphaned
+        directory whose `ticket.md` parses cleanly but carries a
+        NON-QUEUED state (here `done`) must never be swept into an
+        auto-heal commit. Before this fix, `_orphaned_new_ticket_dir_
+        candidates` only checked that the file parsed and the id
+        matched; it never inspected `state`, so a directory left behind
+        in `done` state (e.g. a stray copy of an already-closed ticket)
+        was auto-committed to main exactly like fresh queued work,
+        publishing a false `state=done` straight onto main."""
+        root = tmp_path / "repo"
+        _git_init(root)
+        done_ticket = _TICKET_MD.replace("state: queued", "state: done")
+        _write_orphaned_ticket_dir(root, "T-2050", done_ticket)
+
+        assert _status(root) == "?? tickets/T-2050/"
+        healed = _commit_orphaned_new_ticket_dir_only_drift(root, "T-9999")
+        assert healed is False
+        # Nothing was staged or committed; the orphan is left untouched
+        # for a human to inspect, not silently published to main.
+        assert _status(root) == "?? tickets/T-2050/"
+
+    # frob:ticket T-3050
+    def test_non_queued_orphan_among_several_blocks_the_whole_batch(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift.test_non_queued_orphan_among_several_blocks_the_whole_batch  # noqa: E501
+        """All-or-nothing (T-2046 precedent) applies to the T-3050 state
+        check too: one non-QUEUED orphan among otherwise-valid queued
+        orphans must block the ENTIRE batch, not just itself."""
+        root = tmp_path / "repo"
+        _git_init(root)
+        _write_orphaned_ticket_dir(root, "T-2050", _TICKET_MD)
+        done_ticket = _TICKET_MD.replace("id: T-2050", "id: T-2051").replace(
+            "state: queued", "state: done"
+        )
+        _write_orphaned_ticket_dir(root, "T-2051", done_ticket)
+
+        healed = _commit_orphaned_new_ticket_dir_only_drift(root, "T-9999")
+        assert healed is False
+        status = _status(root)
+        assert "?? tickets/T-2050/" in status
+        assert "?? tickets/T-2051/" in status
 
 
 class TestCommitOrphanedNewTicketDirOnlyDriftMultiple:

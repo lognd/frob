@@ -2,7 +2,7 @@
 id: T-3050
 title: 'Land H3: DirtyMain auto-heal will auto-commit a false state=done to main --
   it never checks the orphan ticket state'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -58,6 +58,9 @@ scope_changes:
   reason: new must-fire/must-stay-quiet fixtures for the state check
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift::test_non_queued_orphan_is_never_auto_committed
+- tests/unit/test_land_dirty_main_orphaned_ticket_t2026.py::TestCommitOrphanedNewTicketDirOnlyDrift::test_non_queued_orphan_among_several_blocks_the_whole_batch
 designated_repro_test: null
 threat: null
 component: null

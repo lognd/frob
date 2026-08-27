@@ -431,6 +431,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3043: V-model H2: the four closure rules check local edge degree, not path closure -- a mutual-satisfies pair with zero requirements passes all four
 - T-3044: V-model H3: graph nodes carry no payload -- test nodes bind to nothing runnable, artifacts bind to no code, supersedes cannot carry a reason
 - T-3046: V-model M6: evidence laundering -- T-3005 and T-3007 landed on parse-test evidence that never touches the graph code they added
+- T-3050: Land H3: DirtyMain auto-heal will auto-commit a false state=done to main -- it never checks the orphan ticket state
 - T-3051: Land H4: the quarantine deadlock is UNFIXED -- _dispose_to_existing_duplicate_or_none handles DuplicateTicket but not DuplicateFinding
 - T-3052: Land H5: the rolling baseline is written before the outcome is decided, so an unfilable finding is silently certified green after one wake
 - T-3057: Wire TDD001 ordering check into frob ticket land pre-land path
