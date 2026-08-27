@@ -26,9 +26,9 @@ from frob.tickets._models import Origin
 # frob:waive DUP001 reason="the git-init/config trio is the established \
 # test-repo-fixture shape shared by tests/test_refactor.py::_repo, \
 # tests/test_stats.py::_repo and several other test modules -- each test module owns \
-# its own tiny fixture builder by convention rather than importing a cross-file \
-# shared helper; extracting one would be a cross-file refactor out of T-3110's declared \
-# scope (tests/test_refactor_corpus.py only)"
+# its own tiny fixture builder by convention rather than importing a cross-file shared \
+# helper; extracting one would be a cross-file refactor out of T-3110's declared scope \
+# (tests/test_refactor_corpus.py only)"
 def _repo(tmp_path: Path) -> Path:
     """A git-initialized repo root -- same fixture shape as
     `test_refactor.py::_repo` (T-1197's established convention); not
@@ -200,8 +200,8 @@ def _corpus_repo(tmp_path: Path) -> Path:
 class TestRefactorCorpus:
     def test_split_moves_symbols_across_every_call_site_shape(self, tmp_path):
         # frob:tests \
-        # tests/test_refactor_corpus.py::TestRefactorCorpus.test_split_moves_symbols_a\
-        # cross_every_call_site_shape
+        # tests/test_refactor_corpus.py::TestRefactorCorpus.test_split_moves_symbols_ac\
+        # ross_every_call_site_shape
         root = _corpus_repo(tmp_path)
 
         result = run_split(
