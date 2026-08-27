@@ -351,7 +351,9 @@ def reverify_cmd_evidence(entry: str) -> Result[bool, TicketError]
     # unconditionally).
 def add_cmd_evidence(root: Path, ticket_id: str, command: str) -> Result[Ticket, TicketError]
     # T-0215: kind-gated non-pytest evidence channel for tickets with no
-    # pytest surface of their own -- only kind=docs may use it
+    # pytest surface of their own -- only kind=docs/ux may use it (T-3045
+    # added ux alongside docs: a design review or accessibility pass is
+    # exactly as non-pytest-shaped as documentation)
     # (Err(EvidenceKindNotAllowed) otherwise); records `run_cmd_evidence`'s
     # entry via the same write path as add_evidence.
 def migrate(root: Path) -> Result[int, TicketError]

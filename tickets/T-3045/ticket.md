@@ -2,7 +2,7 @@
 id: T-3045
 title: 'V-model H5: the UI/UX requirement has no design; CMD_EVIDENCE_ALLOWED_KINDS
   structurally forbids UX tickets from carrying non-pytest evidence'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -112,6 +112,11 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/test_tickets_cmd_evidence.py::TestKindGate::test_ux_kind_closes
+- tests/test_tickets_cmd_evidence.py::TestKindGate::test_ux_kind_ticket_failing_cmd_blocks_close
+- tests/test_tickets_cmd_evidence.py::TestCov003CmdEvidence::test_ux_ticket_closed_via_evidence_cmd_is_gate_clean
+- tests/test_tickets_cmd_evidence.py::TestKindConsistencyAtClose::test_land_validate_closeable_accepts_ux_cmd_entry
 designated_repro_test: null
 threat: null
 component: null

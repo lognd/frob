@@ -684,7 +684,7 @@ def evidence_covers_scope(ticket: Ticket, snapshot: GraphSnapshot) -> bool:
     its scope is documentation/data files with no coverable code symbols, and
     T-0215 already sanctions it closing on a `--evidence-cmd` exit status. So
     a ticket whose kind permits cmd evidence (`CMD_EVIDENCE_ALLOWED_KINDS`,
-    today just `docs`) and which carries at least one real cmd: evidence entry
+    today `docs`/`ux`) and which carries at least one real cmd: evidence entry
     is considered covered. Code kinds cannot carry cmd evidence (enforced by
     `_transition_guard`/`_validate_closeable` against the same frozenset), so
     this can never loophole a bug/feature/security ticket into closing on an

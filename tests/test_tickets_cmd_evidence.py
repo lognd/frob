@@ -231,6 +231,46 @@ class TestKindGate:
         assert ticket.state == TicketState.IN_PROGRESS
         assert ticket.evidence == ()
 
+    def test_ux_kind_closes(self, tmp_path: Path) -> None:
+        # T-3045 (V-model H5): must-stay-quiet twin for
+        # test_bug/feature/security_kind_ticket_rejected above -- a UX
+        # ticket has no pytest surface of its own (a design review, an
+        # accessibility pass), so it must close on cmd evidence exactly
+        # like a docs ticket does.
+        # frob:tests src/frob/tickets/_evidence.py::add_cmd_evidence
+        # frob:ticket T-3045
+        _seed_ticket(tmp_path, kind=TicketKind.UX)
+        cfg = AppConfig(
+            ticket_command="close",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_evidence_cmd="printf ok",
+        )
+        _close(tmp_path, cfg)
+
+        queue = load_queue(tmp_path).danger_ok
+        ticket = queue.tickets["T-0001"]
+        assert ticket.state == TicketState.DONE
+        assert len(ticket.evidence) == 1
+        assert ticket.evidence[0].startswith("cmd:printf ok exit=0 sha256=")
+
+    def test_ux_kind_ticket_failing_cmd_blocks_close(self, tmp_path: Path) -> None:
+        # Must-fire twin: kind permission alone does not bypass the
+        # exit-status check -- a failing command still blocks close.
+        _seed_ticket(tmp_path, kind=TicketKind.UX)
+        cfg = AppConfig(
+            ticket_command="close",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_evidence_cmd="false",
+        )
+        with pytest.raises(SystemExit):
+            _close(tmp_path, cfg)
+        queue = load_queue(tmp_path).danger_ok
+        ticket = queue.tickets["T-0001"]
+        assert ticket.state == TicketState.IN_PROGRESS
+        assert ticket.evidence == ()
+
 
 class TestEvidenceCmdViaEvidenceSubcommand:
     """`frob ticket evidence <id> --evidence-cmd '<command>'`."""
@@ -441,6 +481,28 @@ class TestCov003CmdEvidence:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert any(v.rule == "COV003" for v in violations)
 
+    def test_ux_ticket_closed_via_evidence_cmd_is_gate_clean(
+        self, tmp_path: Path
+    ) -> None:
+        # T-3045: must-stay-quiet twin for the docs case above, over the
+        # SAME real record -> close -> gate path.
+        _seed_ticket(tmp_path, kind=TicketKind.UX)
+        cfg = AppConfig(
+            ticket_command="close",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_evidence_cmd="printf ok",
+        )
+        _close(tmp_path, cfg)
+
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].state == TicketState.DONE
+        snap = _snapshot(tmp_path)
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
 
 class TestKindConsistencyAtClose:
     """A non-docs ticket carrying a `cmd:` evidence entry must never reach
@@ -484,6 +546,16 @@ class TestKindConsistencyAtClose:
     def test_land_validate_closeable_accepts_docs_cmd_entry(self) -> None:
         entry = "cmd:printf ok exit=0 sha256=aaaaaaaaaaaa"
         ticket = _raw_ticket(kind=TicketKind.DOCS, evidence=(entry,))
+        result = _validate_closeable(ticket)
+        assert result.is_ok
+
+    def test_land_validate_closeable_accepts_ux_cmd_entry(self) -> None:
+        # T-3045: must-stay-quiet twin at the land-time guard layer too --
+        # a UX ticket's cmd: entry must survive the SAME check a docs
+        # ticket's does, and a non-UX/non-docs kind (SECURITY, above)
+        # must still be refused.
+        entry = "cmd:printf ok exit=0 sha256=aaaaaaaaaaaa"
+        ticket = _raw_ticket(kind=TicketKind.UX, evidence=(entry,))
         result = _validate_closeable(ticket)
         assert result.is_ok
 

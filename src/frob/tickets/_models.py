@@ -187,12 +187,18 @@ class TicketTier(StrEnum):
 # T-0215: docs/design tickets (no pytest surface of their own) may close on
 # a vetted shell command's exit status + output digest instead of pytest
 # node ids. Code kinds (bug/feature/security/...) are excluded on purpose.
+# T-3045 (V-model H5): UX joins docs here for the identical reason -- a
+# design review, an accessibility pass, a visual-QA sign-off is genuinely
+# not pytest-shaped, and before this fix a UX-kind ticket had NO way to
+# ever close at all (CMD_EVIDENCE_ALLOWED_KINDS structurally forbade it,
+# same as every code kind, even though its work product has no pytest
+# surface by design, not by omission).
 # Lives in `_models.py` (not `__init__.py`, where the record-time
 # `add_cmd_evidence` primitive lives) so BOTH `frob.tickets.__init__`
 # (record + close-time guard) and `frob.tickets._land` (land-time guard)
 # can import it without a circular import -- `_land` is imported BY
 # `__init__.py`, so the reverse import is not available there.
-CMD_EVIDENCE_ALLOWED_KINDS = frozenset({TicketKind.DOCS})
+CMD_EVIDENCE_ALLOWED_KINDS = frozenset({TicketKind.DOCS, TicketKind.UX})
 
 # The exact shape `run_cmd_evidence` writes: `cmd:<command> exit=0
 # sha256=<12-hex>`. Single source of truth for "does this evidence string

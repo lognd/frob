@@ -1850,8 +1850,8 @@ def add_cmd_evidence(
     """Kind-gated non-pytest evidence channel (T-0215): runs `command` via
     `run_cmd_evidence` and appends the resulting entry to `ticket_id`'s
     structured evidence list. Only tickets whose `kind` is in
-    `CMD_EVIDENCE_ALLOWED_KINDS` (currently just `docs`) may use this --
-    code-kind tickets (bug/feature/security/ux/invariant/incident) always
+    `CMD_EVIDENCE_ALLOWED_KINDS` (currently `docs`/`ux`) may use this --
+    code-kind tickets (bug/feature/security/invariant/incident) always
     still require real pytest node ids via `add_evidence`, enforced here
     with Err(EvidenceKindNotAllowed) so a code change can never close on an
     unrelated shell command's exit status alone.
