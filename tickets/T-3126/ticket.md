@@ -16,10 +16,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_squash.py
+- tests/unit/test_land_record_commit.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_record_commit.py
+  reason: the out-of-tree record's own fixture module, kept out of tests/test_ticket_land.py
+    because that module leaks FROB_WORKTREE in-process (T-3123) and evidence behind
+    it cannot resolve
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
