@@ -71,6 +71,24 @@ struct ModuleAst {
     entities: Vec<serde_json::Value>,
     architectures: Vec<serde_json::Value>,
     configurations: Vec<serde_json::Value>,
+    // T-3042 (V-model H1 fix, docs/strata/vmodel.md): a minimal, additive
+    // authoring surface for the V-model spec graph strata-core::graph::vmodel
+    // already knows how to CHECK but that had no way for a human to WRITE
+    // (vmodel_check had zero callers -- the epic could complete without ever
+    // checking anything). `vmodel_node NAME kind "..." [level "..."];` and
+    // `vmodel_edge kind "..." src NAME dst NAME;` are new, independent
+    // top-level statement kinds -- no existing statement's grammar changes.
+    // Deliberately NOT validated against cross-file references at parse
+    // time (unlike entity/architecture's SYS300/301, which are legitimately
+    // single-file): a real V-model spans many files (a requirement in one,
+    // its verifying test in another), so `src`/`dst` existence is a GRAPH
+    // question the kernel already answers correctly via
+    // `Graph::add_node`/`add_edge`'s own `DanglingEndpoint` refusal once
+    // frob.gates._vmodel aggregates every file's nodes/edges into one
+    // graph -- duplicating that check per-file here would be actively
+    // wrong for any legitimate cross-file edge.
+    vmodel_nodes: Vec<serde_json::Value>,
+    vmodel_edges: Vec<serde_json::Value>,
 }
 
 impl Parser {
@@ -697,6 +715,80 @@ impl Parser {
             "name": name,
             "entity": entity_name,
             "architecture": arch_name,
+        }));
+        Ok(())
+    }
+
+    /// T-3042: `vmodel_node NAME kind "artifact" [level "requirements"];`
+    /// -- declares one node of the V-model spec graph
+    /// (strata-core::graph::vmodel, docs/strata/vmodel.md). `kind` is a
+    /// free-form string here (not validated against
+    /// `KIND_ARTIFACT`/`KIND_TEST`/`KIND_DECISION` at parse time -- that
+    /// validation is the KERNEL's job, at `Graph::add_node` time, once
+    /// `frob.gates._vmodel` builds the real graph; duplicating a schema
+    /// check here would drift from the schema's actual source of truth).
+    /// `level` is optional (a `decision` node has none). Only a same-file
+    /// duplicate NAME is refused here -- see the module-doc note on
+    /// `vmodel_nodes`/`vmodel_edges` for why cross-file identity is not
+    /// checked at this layer.
+    fn parse_vmodel_node(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'vmodel_node'
+        let name = self.expect_ident("vmodel_node name")?;
+        if ast.vmodel_nodes.iter().any(|n| n["name"] == json!(name)) {
+            return self.err(format!("duplicate vmodel_node {:?} in this file", name));
+        }
+        if !self.at_keyword("kind") {
+            return self.err("expected 'kind \"...\"' after vmodel_node name");
+        }
+        self.advance(); // 'kind'
+        let kind = self.expect_string("vmodel_node kind")?;
+        let mut level: Option<String> = None;
+        if self.at_keyword("level") {
+            self.advance();
+            level = Some(self.expect_string("vmodel_node level")?);
+        }
+        if self.at_symbol(';') {
+            self.advance();
+        }
+        ast.vmodel_nodes.push(json!({
+            "name": name,
+            "kind": kind,
+            "level": level,
+        }));
+        Ok(())
+    }
+
+    /// T-3042: `vmodel_edge kind "satisfies" src NAME dst NAME;` -- one
+    /// edge of the V-model spec graph. `src`/`dst` are plain identifiers,
+    /// deliberately NOT resolved against `ast.vmodel_nodes` here (a real
+    /// V-model spans many files; the kernel's own `DanglingEndpoint`
+    /// refusal is what catches a genuinely undeclared endpoint, once
+    /// `frob.gates._vmodel` has aggregated every file's declarations into
+    /// one graph -- see the `vmodel_nodes` field doc for the full reasoning).
+    fn parse_vmodel_edge(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'vmodel_edge'
+        if !self.at_keyword("kind") {
+            return self.err("expected 'kind \"...\"' after vmodel_edge");
+        }
+        self.advance(); // 'kind'
+        let kind = self.expect_string("vmodel_edge kind")?;
+        if !self.at_keyword("src") {
+            return self.err("expected 'src NAME' after vmodel_edge kind");
+        }
+        self.advance(); // 'src'
+        let src = self.expect_ident("vmodel_edge src")?;
+        if !self.at_keyword("dst") {
+            return self.err("expected 'dst NAME' after vmodel_edge src");
+        }
+        self.advance(); // 'dst'
+        let dst = self.expect_ident("vmodel_edge dst")?;
+        if self.at_symbol(';') {
+            self.advance();
+        }
+        ast.vmodel_edges.push(json!({
+            "kind": kind,
+            "src": src,
+            "dst": dst,
         }));
         Ok(())
     }

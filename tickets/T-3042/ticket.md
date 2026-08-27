@@ -2,7 +2,7 @@
 id: T-3042
 title: 'V-model H1: vmodel_check has zero callers and no authoring format, so the
   epic can complete without ever checking anything'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'

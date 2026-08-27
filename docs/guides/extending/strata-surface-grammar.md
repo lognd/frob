@@ -10,8 +10,10 @@ post-T-1006 split of the old monolithic parse.rs/mod.rs; compiled via
 PyO3 into `strata_core`, see `make core`). Top-level declaration keywords
 (`module`, `part` (of), `extend`, `node`, `flow`, `boundary`, `store`,
 `cache`, `queue`, `cdn`, `balancer`, `policy`, `operation`, `scenario`,
-`secret`, `resource`, `assert`, `assume`, `refine`) are dispatched in
-`Parser::parse_program` (`grammar_policy.rs`); keyword matching within a
+`secret`, `resource`, `assert`, `assume`, `refine`, `entity`,
+`architecture`, `configuration`, `vmodel_node`, `vmodel_edge`) are
+dispatched in `Parser::parse_program` (`grammar_policy.rs`); keyword
+matching within a
 construct goes through `Parser::expect_keyword`. T-2502 added `part`/
 `extend`: a file is EITHER a root (`module NAME`, the pre-existing
 shape) OR a fragment (`part of NAME`, may only contain `extend node ID
@@ -88,6 +90,23 @@ surface.md`'s `Module` AST bullet gained `resources`.
   drift-lock fire independently -- a keyword removed from the parser but
   left in the grammar fails just as loudly as the reverse, since stale
   highlighting for a construct that no longer parses is its own bug.
+
+## Worked example: two pure-declaration constructs, no implementation (T-3042)
+
+`vmodel_node NAME kind "..." [level "..."];` and `vmodel_edge kind "..."
+src NAME dst NAME;` (docs/strata/vmodel.md) landed the same way `entity`/
+`architecture`/`configuration` (T-3006) did: added to `parse_program`'s
+dispatch in `grammar_policy.rs`, plus their own `parse_vmodel_node`/
+`parse_vmodel_edge` productions in `grammar_core.rs`. Unlike `architecture`/
+`configuration`, `vmodel_edge`'s `src`/`dst` are deliberately NOT resolved
+against declared nodes at parse time -- a V-model spans many files, so
+that check belongs to the kernel (`Graph::add_node`/`add_edge`) once
+`frob.gates._vmodel` aggregates every file, not to this per-file parser
+(see docs/strata/vmodel.md's own "Authoring the graph" section for why).
+`vmodel_node`/`vmodel_edge` were added to
+`strata.tmLanguage.json`'s `declaration-keywords` pattern, and their
+`kind`/`level`/`src`/`dst` clause words to `clause-keywords`, per this
+guide's own recipe above.
 
 ## See also
 

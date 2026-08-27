@@ -383,6 +383,22 @@ impl Parser {
                     self.parse_architecture(&mut ast)?
                 }
                 "configuration" => self.parse_configuration(&mut ast)?,
+                // T-3042: `vmodel_node`/`vmodel_edge` are pure declarative
+                // statements (like `entity`) -- no implementation, valid
+                // anywhere a top-level statement is valid, including
+                // before `module`. A fragment file may not declare its
+                // own vmodel statements either, same reasoning as
+                // entity/architecture/configuration above.
+                "vmodel_node" | "vmodel_edge" if ast.part_of.is_some() => {
+                    return self.err(format!(
+                        "fragment file ('part of {}') may only contain 'extend' statements -- \
+                         found top-level '{}', which belongs to a root file",
+                        ast.part_of.as_deref().unwrap_or(""),
+                        kw
+                    ));
+                }
+                "vmodel_node" => self.parse_vmodel_node(&mut ast)?,
+                "vmodel_edge" => self.parse_vmodel_edge(&mut ast)?,
                 "node" | "flow" | "boundary" | "assert" | "assume" | "refine" | "store"
                 | "cache" | "queue" | "cdn" | "balancer" | "policy" | "operation"
                 | "scenario" | "secret" | "resource" => {

@@ -225,6 +225,7 @@ from frob.gates._tickets_gate import (  # noqa: F401 -- _tick004_queue_rot re-ex
 from frob.gates._todo_fmt import _todo001, _todo003_long_deferred, fmt_gate
 from frob.gates._toplevel_scalar_schema import toplevel_scalar_schema_gate
 from frob.gates._version_coupling import version_coupling_gate
+from frob.gates._vmodel import vmodel_gate
 from frob.gates._waive import (
     _KNOWN_GATE_RULES,
     _UNWAIVABLE_RULES,
@@ -5940,6 +5941,10 @@ _ALL_GATES = frozenset(
         # T-2576 M2: MILE003. T-2579 M4b: MILE004, added to the same
         # module/stage (frob.gates._milestone.milestone_gate).
         "milestone",
+        # T-3042: VMOD001, the V-model closure gate
+        # (frob.gates._vmodel.vmodel_gate) -- the reachability half of the
+        # V-model epic's H1 fix (vmodel_check previously had zero callers).
+        "vmodel",
         "archgate",
         # T-0665: OPAQUE001, fail-closed runtime-resolved capability-
         # indirection obligation (frob.gates._opaque.opaque_gate).
@@ -6388,6 +6393,9 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     # a fourth stage crowded onto "tickets". T-2579 M4b: MILE004 joined
     # the same module/stage.
     "milestone",
+    # T-3042: VMOD001, immediately after "milestone" -- same position as
+    # its _ALL_GATES entry above.
+    "vmodel",
     "archgate",
     "pii_structural",
     "refs",
@@ -6857,6 +6865,10 @@ def _build_thread_jobs(
         # T-2579 M4b: MILE004 (multiple unordered `runs_last` tickets in
         # one milestone) shares this same module/stage/call site.
         "milestone": lambda: milestone_gate(st.root, st.queue),
+        # T-3042: VMOD001, same `st.root` as "sys"/"milestone" above --
+        # vmodel_gate walks `.strata` files under the SAME design dir
+        # `sys_gate` resolves its own opt-in check against.
+        "vmodel": lambda: vmodel_gate(st.root),
         # T-0788: COMPLIANCE005, always against repo_root (never the
         # possibly-scoped st.root) -- docs/design/registry/compliance.yaml
         # is a repo-wide manifest, same reasoning as "registry" below.

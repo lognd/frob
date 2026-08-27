@@ -130,6 +130,74 @@ A broader PyO3 export (raw `Graph`/`GraphSchema` bindings, arbitrary
 T-3010 are Rust-API consumers of this crate, not necessarily new PyO3
 surface; add more only when a concrete caller needs it.
 
+## Authoring the graph: `vmodel_node`/`vmodel_edge` (T-3042)
+
+Before this ticket, `vmodel_check` had ZERO callers anywhere outside
+strata-core's own tests and there was no way for a human to write a
+requirement/spec/design/test graph at all -- the exact shipped-but-not-
+reachable failure class this repo has hit before at gate scale (H1 in the
+Fable design audit that opened this ticket). Two new, purely additive
+top-level strata statements close that gap, following the T-3006
+entity/architecture precedent (same additive-migration discipline: every
+existing `.strata` file, `design/frob.strata` included, keeps parsing to
+exactly empty `vmodel_nodes`/`vmodel_edges` arrays --
+`existing_bare_module_files_parse_unchanged_with_no_vmodel_statements`,
+`tests/unit/strata/test_vmodel_authoring.py::TestVmodelAuthoringFormat::test_designs_own_frob_strata_still_parses`):
+
+```
+vmodel_node req_1 kind "artifact" level "requirements";
+vmodel_node design_1 kind "artifact" level "component-design";
+vmodel_edge kind "satisfies" src design_1 dst req_1;
+```
+
+- `vmodel_node NAME kind "..." [level "..."];` declares one node. `kind`
+  and `level` are plain strings here, NOT validated against
+  `KIND_ARTIFACT`/`KIND_TEST`/`KIND_DECISION` or the ten V-model levels at
+  parse time -- that validation is the KERNEL's job (`Graph::add_node`),
+  so it can never drift from the schema's actual source of truth. `level`
+  is optional (a `decision` node has none). Only a same-file duplicate
+  NAME is refused at parse time.
+- `vmodel_edge kind "..." src NAME dst NAME;` declares one edge. `src`/
+  `dst` are deliberately NOT resolved against declared nodes at parse
+  time, unlike `architecture`'s `of ENTITY`/`binds MODULE` -- a real
+  V-model spans MANY files (a requirement in one, its verifying test in
+  another), so per-file existence checking would be actively wrong for
+  any legitimate cross-file edge. The kernel's own `DanglingEndpoint`
+  refusal is what catches a genuinely undeclared endpoint, once every
+  file's declarations are aggregated into one graph (next section).
+
+## Wired into `frob check`: VMOD001 (T-3042)
+
+`frob.gates._vmodel.vmodel_gate` is the missing wire: it walks every
+`.strata` file under the repo's design dir (same opt-in-on-design-dir-
+existing posture as `sys_gate`, T-0135), merges every file's
+`vmodel_node`/`vmodel_edge` statements into ONE graph (this is what makes
+the cross-file case above resolve correctly), and runs `vmodel_check`
+against it. Registered in `frob.gates._ALL_GATES` and `frob check`'s
+`gates-fast` stage group, so `frob check --only vmodel` (or `--only
+gates-fast`) genuinely runs it and reports a real count -- proven the
+T-3014 way: a gate present in code but absent from the stage-group table
+is worth nothing, the exact defect this repo has paid for before.
+
+Every VMOD001 finding is **WARN, not ERROR** -- a deliberate owner
+decision (T-3042's ticket body): frob has no V-model graph of its own yet,
+so an ERROR-severity closure rule would red the tree immediately and get
+waived away wholesale, the exact LARGE001-with-87-waivers failure this
+repo has already recorded. Promoting to ERROR is real follow-up work, once
+a genuine V-model graph exists somewhere and burn-down is plausible
+(the TICK011 burn-then-promote pattern).
+
+Doubly opt-in, both silent (not a finding of their own, same as `sys_gate`
+seeing no design dir): no design dir at all, or a design dir whose
+`.strata` files declare zero `vmodel_node`s. `strata_core` is imported
+only once at least one node is known to exist, so neither opt-out pays
+the native-extension import cost.
+
+A file that fails to parse is skipped by this gate (logged at DEBUG) --
+`sys_gate`'s SYS004 already reports a malformed `.strata` file as its own
+finding; `vmodel_gate` does not duplicate that report under a second rule
+id.
+
 ## Deferred (owner decision, T-3004 section 9)
 
 - The waterfall GATE (no implementation until spec closure) is explicitly

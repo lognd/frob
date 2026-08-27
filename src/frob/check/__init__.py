@@ -453,6 +453,12 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "capability_conformance",
             "scope",
             "prework",
+            # T-3042: VMOD001 (frob.gates._vmodel.vmodel_gate) -- thread-
+            # pool, opt-in, sub-second when no V-model graph exists yet
+            # (the common case today); reachable via `--only gates-fast`
+            # or `--only vmodel` directly, same T-1044/T-1340 registered-
+            # but-unreachable lesson this file's own comment above names.
+            "vmodel",
             # T-0851: FMT001, diff-scoped like coverage/todo above.
             "fmt",
             # T-0628: AFFECT001/AFFECT002, diff-scoped like coverage/fmt above.

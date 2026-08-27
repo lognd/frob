@@ -24,3 +24,10 @@ def propagated_demand(
     target: str,
 ) -> tuple[float, list[str]]: ...
 def parse_source(text: str) -> str: ...
+
+# T-3042: was never stubbed here (a T-3007 gap only exposed once this
+# ticket added the first real Python caller, frob.gates._vmodel.vmodel_gate)
+def vmodel_check(
+    nodes: list[tuple[str, str, str | None]],
+    edges: list[tuple[str, str, str]],
+) -> tuple[list[str], list[tuple[str, str]]]: ...

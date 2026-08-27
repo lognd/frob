@@ -302,6 +302,98 @@ mod tests {
         assert_eq!(v["configurations"].as_array().unwrap().len(), 0);
     }
 
+    // T-3042 (V-model H1 fix): `vmodel_node`/`vmodel_edge`, the additive
+    // authoring surface for strata-core::graph::vmodel's spec graph.
+
+    #[test]
+    // frob:ticket T-3042
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+    fn vmodel_node_and_edge_round_trip() {
+        let v = ok(r#"
+            module m
+            vmodel_node req_1 kind "artifact" level "requirements";
+            vmodel_node design_1 kind "artifact" level "component-design";
+            vmodel_edge kind "satisfies" src design_1 dst req_1;
+        "#);
+        assert_eq!(v["vmodel_nodes"].as_array().unwrap().len(), 2);
+        assert_eq!(v["vmodel_nodes"][0]["name"], "req_1");
+        assert_eq!(v["vmodel_nodes"][0]["kind"], "artifact");
+        assert_eq!(v["vmodel_nodes"][0]["level"], "requirements");
+        assert_eq!(v["vmodel_edges"].as_array().unwrap().len(), 1);
+        assert_eq!(v["vmodel_edges"][0]["kind"], "satisfies");
+        assert_eq!(v["vmodel_edges"][0]["src"], "design_1");
+        assert_eq!(v["vmodel_edges"][0]["dst"], "req_1");
+    }
+
+    #[test]
+    // frob:ticket T-3042
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+    fn vmodel_node_level_is_optional() {
+        // A decision node has no level -- omitting `level` must parse.
+        let v = ok(r#"module m
+            vmodel_node d1 kind "decision";"#);
+        assert_eq!(v["vmodel_nodes"][0]["level"], Value::Null);
+    }
+
+    #[test]
+    // frob:ticket T-3042
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+    fn vmodel_node_duplicate_name_in_same_file_is_refused() {
+        let e = err(r#"
+            module m
+            vmodel_node req_1 kind "artifact" level "requirements";
+            vmodel_node req_1 kind "artifact" level "requirements";
+        "#);
+        assert!(e["message"].as_str().unwrap().contains("duplicate vmodel_node"));
+    }
+
+    #[test]
+    // frob:ticket T-3042
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+    fn vmodel_edge_src_and_dst_are_not_resolved_at_parse_time() {
+        // Deliberate: a real V-model spans many files, so an edge naming a
+        // node declared in ANOTHER file must parse fine here -- the kernel
+        // (not this per-file parser) is what refuses a genuinely dangling
+        // endpoint, once frob.gates._vmodel aggregates every file.
+        let v = ok(r#"module m
+            vmodel_edge kind "verifies" src some_other_files_node dst also_elsewhere;"#);
+        assert_eq!(v["vmodel_edges"][0]["src"], "some_other_files_node");
+        assert_eq!(v["vmodel_edges"][0]["dst"], "also_elsewhere");
+    }
+
+    #[test]
+    // frob:ticket T-3042
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+    fn vmodel_node_is_legal_before_the_module_statement() {
+        // Like `entity`, a vmodel_node/vmodel_edge is pure declared spec --
+        // it may appear BEFORE the module statement in the same file (a
+        // full parse still needs a module statement somewhere, same as
+        // entity/architecture/configuration).
+        let v = ok(r#"
+            vmodel_node req_1 kind "artifact" level "requirements";
+            module m
+        "#);
+        assert_eq!(v["name"], "m");
+        assert_eq!(v["vmodel_nodes"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    // frob:ticket T-3042
+    // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
+    fn existing_bare_module_files_parse_unchanged_with_no_vmodel_statements() {
+        // T-3042's own additive-parse regression, same guarantee as
+        // T-3006's identically-named neighbor above but for THIS ticket's
+        // new fields: a file with zero vmodel_node/vmodel_edge statements
+        // (every one of the 8 existing .strata files, today) parses to
+        // exactly empty arrays for both new fields.
+        let v = ok(r#"
+            module legacy
+            node n : trusted { }
+        "#);
+        assert_eq!(v["vmodel_nodes"].as_array().unwrap().len(), 0);
+        assert_eq!(v["vmodel_edges"].as_array().unwrap().len(), 0);
+    }
+
     #[test]
     // frob:ticket T-0148
     fn parses_bare_module() {
