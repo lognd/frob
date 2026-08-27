@@ -2,7 +2,7 @@
 id: T-3150
 title: Coordinator lease fallback scan misses live worktree with removed lease file
   (T-3140 item 7)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
