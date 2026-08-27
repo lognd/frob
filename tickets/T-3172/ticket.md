@@ -18,6 +18,8 @@ scope:
 - src/frob/__init__.py
 - src/frob/tickets/_evidence.py
 - design/frob.strata
+- frob.lock
+- tickets/**
 findings:
 - - DRIFT001
   - src/frob/tickets/_evidence.py
@@ -32,6 +34,22 @@ scope_changes:
   glob: design/frob.strata
   reason: SYS003 fix requires declaring the Flow/node membership in the architecture
     model, not just the importing file
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: frob.lock
+  reason: frob ack rewrites frob.lock as a side effect; frob ticket new for the two
+    required follow-up tickets (docs drift, pre-existing SYS003 case) writes tickets/T-draft-*/ticket.md
+    before renumbering -- both are machinery side effects of doing this ticket's own
+    required work, not scope creep
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tickets/**
+  reason: frob ack rewrites frob.lock as a side effect; frob ticket new for the two
+    required follow-up tickets (docs drift, pre-existing SYS003 case) writes tickets/T-draft-*/ticket.md
+    before renumbering -- both are machinery side effects of doing this ticket's own
+    required work, not scope creep
   actor: logan
   at: '2026-08-27'
 designated_repro_test: null
