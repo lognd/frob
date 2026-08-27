@@ -54,7 +54,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c54b72e44cd475a7abba86bf418d15a2d6d3e500
 ---
 MEASURED 2026-08-27 under a live three-agent fleet with three live leases:
 
