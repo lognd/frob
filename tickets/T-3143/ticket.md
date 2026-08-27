@@ -1,7 +1,7 @@
 ---
 id: T-3143
 title: refactor split leaves type-annotation-only import sites unrepointed
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'

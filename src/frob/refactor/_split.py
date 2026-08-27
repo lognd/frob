@@ -217,11 +217,26 @@ def _plan_chunk(
     aliases: list[AliasRecord] = []
     unresolved: list[str] = []
     resolved_pairs = []
+    # T-3143: every OTHER symbol in this chunk is moving to the same
+    # `destination_module` alongside `name` -- pass the rest of the batch
+    # as `also_moving` so a shared `from source_module import A, B` call
+    # site (both A and B in this chunk) gets folded into one rewrite
+    # instead of being skipped as if the sibling were a genuinely
+    # untouched name (each per-symbol `scan_references` pass otherwise has
+    # no visibility into its siblings in the same chunk -- see
+    # `_dedupe_equivalent_import_ops`'s own docstring on this exact gap).
+    symbol_set = frozenset(symbols)
     for name in symbols:
         source = SymbolRef(module=source_module, qualname=name)
         destination = SymbolRef(module=destination_module, qualname=name)
+        also_moving = symbol_set - {name}
         plan_result = build_plan(
-            repo_root, RefactorKind.MOVE, source, destination, alias_conflict
+            repo_root,
+            RefactorKind.MOVE,
+            source,
+            destination,
+            alias_conflict,
+            also_moving,
         )
         if plan_result.is_err:
             return Err(plan_result.danger_err)

@@ -481,7 +481,13 @@ VCS/build/venv directories.
 <a id="scan_references"></a>
 <!-- frob:describes src/frob/refactor/_scan.py::scan_references -->
 **`scan_references`**: the Plan phase's Python import/call-site reference
-scan -- see "Scope: Python import/call sites only" above.
+scan -- see "Scope: Python import/call sites only" above. Takes an
+`also_moving` set (T-3143, default empty) naming every OTHER symbol
+moving to the same destination module in the same operation -- a shared
+`from source import A, B` import line where both `A` and `B` are in this
+set is folded into one rewrite pointed at the destination, instead of
+being left untouched as if `B` were a genuinely unrelated name (still the
+correct outcome, T-3105, for a co-imported name NOT in `also_moving`).
 
 <a id="build_move_ops"></a>
 <!-- frob:describes src/frob/refactor/_apply.py::build_move_ops -->
@@ -532,7 +538,11 @@ T-1199, also extends the move span for any attached directive/waiver
 comment block and folds `scan_directive_carriers`' repo-wide directive
 rewrites into `reference_ops`/`unresolved`. Since T-1200, also folds
 `scan_pii_allowlist_carrier`/`scan_registry_citations`/
-`scan_evidence_citations`'s own ops/unresolved in the same way.
+`scan_evidence_citations`'s own ops/unresolved in the same way. Since
+T-3143, takes an `also_moving` set (default empty) forwarded verbatim to
+`scan_references` -- see that anchor -- so a caller planning several
+symbols in one batch (`run_split`'s own chunking) can name each symbol's
+chunk siblings.
 
 <a id="run_refactor"></a>
 <!-- frob:describes src/frob/refactor/_transaction.py::run_refactor -->

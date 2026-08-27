@@ -380,6 +380,79 @@ class TestScanReferences:
         assert aliases == []
         assert unresolved == []
 
+    def test_also_moving_sibling_on_same_line_is_folded_into_rewrite(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestScanReferences.test_also_moving_sibling_on_same_l\
+        # ine_is_folded_into_rewrite
+        # T-3143: MEASURED against the real T-3086 split -- `greet` and
+        # `farewell` are BOTH being moved together in the same split
+        # batch (`also_moving` names `farewell`), so the shared import
+        # line must be rewritten to import BOTH from the destination
+        # module, not skipped as if `farewell` were a genuinely untouched
+        # name (T-3105's guard, which this must NOT regress -- see
+        # test_mixed_moved_and_untouched_names_leaves_import_alone).
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def greet():\n    return 'hi'\n\n\ndef farewell():\n    return 'bye'\n",
+        )
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "from pkg.mod import greet, farewell\n\n"
+            "def use():\n    return greet() + farewell()\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        dest = SymbolRef(module="pkg.newmod", qualname="greet")
+        ops, aliases, unresolved = scan_references(
+            root, resolved, dest, also_moving=frozenset({"farewell"})
+        )
+        assert len(ops) == 1
+        assert "pkg.newmod import" in ops[0].new_text
+        assert "greet" in ops[0].new_text
+        assert "farewell" in ops[0].new_text
+        assert "pkg.mod import" not in ops[0].new_text
+        assert aliases == []
+        assert unresolved == []
+
+    def test_also_moving_sibling_plus_genuinely_untouched_name_still_blocks(
+        self, tmp_path
+    ):
+        # frob:tests \
+        # tests/test_refactor.py::TestScanReferences.test_also_moving_sibling_plus_genu\
+        # inely_untouched_name_still_blocks
+        # T-3143: a line naming the current symbol, a co-moving sibling,
+        # AND a genuinely untouched third name must still be left alone
+        # entirely -- folding siblings in must never regress T-3105's
+        # guard against dragging an untouched name to the destination.
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def greet():\n    return 'hi'\n\n\n"
+            "def farewell():\n    return 'bye'\n\n\n"
+            "def other():\n    return 'x'\n",
+        )
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "from pkg.mod import greet, farewell, other\n\n"
+            "def use():\n    return greet() + farewell() + other()\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        dest = SymbolRef(module="pkg.newmod", qualname="greet")
+        ops, aliases, unresolved = scan_references(
+            root, resolved, dest, also_moving=frozenset({"farewell"})
+        )
+        assert ops == []
+        assert aliases == []
+        assert unresolved == []
+
     def test_type_checking_guarded_mixed_import_not_rewritten(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestScanReferences.test_type_checking_guarded_mixed_i\
@@ -2251,15 +2324,17 @@ class TestRunSplit:
         assert "alpha" in mod_text
         assert "beta" in mod_text
 
-        # T-3105: scan_references runs once per symbol with no visibility
-        # into its sibling moves in the same chunk, so a shared import
-        # line naming multiple symbols is left untouched rather than
-        # risking a partial/incorrect rewrite -- the re-export shim
-        # (`from pkg.newmod import (...)` added to pkg.mod above) keeps
-        # `from pkg.mod import alpha, beta` valid unmodified, so the
-        # repo-local caller needs no edit at all.
+        # T-3143: `_plan_chunk` now passes each symbol's chunk siblings as
+        # `also_moving`, so a shared import line naming SEVERAL symbols
+        # that are ALL moving together in this same chunk is folded into
+        # one rewrite pointed at the destination module, instead of being
+        # left untouched as if the sibling were a genuinely unrelated
+        # name (T-3105's guard, which still applies to an import line
+        # mixing a moved name with a real untouched one -- see
+        # test_mixed_moved_and_untouched_names_leaves_import_alone).
         caller_text = (root / "src/pkg/caller.py").read_text(encoding="utf-8")
-        assert "from pkg.mod import alpha, beta" in caller_text
+        assert "from pkg.newmod import alpha, beta" in caller_text
+        assert "from pkg.mod import" not in caller_text
 
         status = subprocess.run(
             ["git", "status", "--porcelain"],

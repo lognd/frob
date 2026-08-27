@@ -237,6 +237,35 @@ def _corpus_repo(tmp_path: Path) -> Path:
         "from pkg.mod import moved_a, kept_c\n\n"
         "def use():\n    return moved_a() + kept_c()\n",
     )
+    # From-import line naming TWO symbols BOTH moving in this same split
+    # batch, with no untouched name at all (T-3143 shape: this is the
+    # real T-3086 defect -- MEASURED 25 of ~28 non-gates import sites in
+    # the real repo were exactly this shape and were silently left
+    # pointed at the old module because `scan_references` ran once per
+    # symbol with no visibility into its sibling moves).
+    _write(
+        root,
+        "src/pkg/caller_both_moved.py",
+        "from pkg.mod import moved_a, moved_b\n\n"
+        "def use() -> tuple:\n"
+        "    return (moved_a(), moved_b())\n",
+    )
+    # Same shape as above, but the moved names are used ONLY as type
+    # annotations (parameter, return, and variable) -- the hypothesis
+    # T-3143 set out to verify (and which the real repo measurement
+    # falsified as the actual root cause: every one of the real
+    # unrepointed sites used the moved names in ordinary expression
+    # position, same as `caller_both_moved.py` above). Kept as its own
+    # shape so the corpus also proves the annotation-only path is not
+    # itself a second, independent gap.
+    _write(
+        root,
+        "src/pkg/caller_both_moved_annotation_only.py",
+        "from pkg.mod import moved_a, moved_b\n\n\n"
+        "def use(a: moved_a, b: moved_b) -> None:\n"
+        "    x: moved_a\n"
+        "    return None\n",
+    )
     # Relative import of the source module -- must keep working via the
     # split's re-export shim without any special-casing (a relative
     # `from .mod import ...` is not matched by `old_ref.module`'s
@@ -351,6 +380,28 @@ class TestRefactorCorpus:
         # (T-3105) -- `kept_c` is not defined at the destination.
         mixed_text = (root / "src/pkg/caller_mixed.py").read_text(encoding="utf-8")
         assert mixed_text.startswith("from pkg.mod import moved_a, kept_c")
+
+        # T-3143: an import line naming TWO symbols that are BOTH moving
+        # in this same split batch, with no untouched name mixed in --
+        # this is the real T-3086 defect shape and MUST be folded into
+        # one rewrite pointed at the destination, never left at the old
+        # module (unlike caller_mixed.py above, where `kept_c` stays
+        # behind).
+        both_moved_text = (root / "src/pkg/caller_both_moved.py").read_text(
+            encoding="utf-8"
+        )
+        assert "from pkg.newmod import moved_a, moved_b" in both_moved_text
+        assert "from pkg.mod import" not in both_moved_text
+
+        # Same shape, annotation-only usage -- the corpus's own proof
+        # that the annotation-usage hypothesis was NOT the (or at least
+        # not the whole) root cause: this site must repoint exactly like
+        # the expression-usage site above.
+        annotation_text = (
+            root / "src/pkg/caller_both_moved_annotation_only.py"
+        ).read_text(encoding="utf-8")
+        assert "from pkg.newmod import moved_a, moved_b" in annotation_text
+        assert "from pkg.mod import" not in annotation_text
 
         # Relative import: never touched by the scan (it matches on
         # `old_ref.module`'s absolute dotted path only), but stays valid

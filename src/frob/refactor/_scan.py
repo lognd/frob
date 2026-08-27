@@ -259,6 +259,42 @@ def _alias_collision_rewrite(
     return ops, record
 
 
+def _classify_co_imports(
+    node: ast.ImportFrom, old_ref: SymbolRef, also_moving: frozenset[str]
+) -> tuple[tuple[ast.alias, ...], list[ast.alias]]:
+    """Split every OTHER name on `node`'s import line (besides
+    `old_ref.qualname` itself) into `(sibling_aliases, real_others)` --
+    `sibling_aliases` are also in `also_moving` (T-3143: co-moving in this
+    same split batch, safe to fold into one rewrite) and `real_others` are
+    genuinely untouched (T-3105: must still block the rewrite). Split out
+    of `_handle_from_import` to keep it under the ARCH001 line budget."""
+    others = [a for a in node.names if a.name != old_ref.qualname]
+    sibling_aliases = tuple(a for a in others if a.name in also_moving)
+    real_others = [a for a in others if a.name not in also_moving]
+    return sibling_aliases, real_others
+
+
+def _rewrite_reason(
+    old_ref: SymbolRef, destination: SymbolRef, dest_leaf: str, sibling_aliases
+) -> str:
+    """The disclosed `RewriteOp.reason` text for one `_handle_from_import`
+    rewrite -- names every co-moving sibling folded in alongside
+    `old_ref.qualname` (T-3143), or just the single symbol when there are
+    none. Split out of `_handle_from_import` to keep it under the ARCH001
+    line budget."""
+    if not sibling_aliases:
+        return (
+            f"rewrite `from {old_ref.module} import {old_ref.qualname}`"
+            f" -> `from {destination.module} import {dest_leaf}`"
+        )
+    sibling_names = ", ".join(a.name for a in sibling_aliases)
+    return (
+        f"rewrite `from {old_ref.module} import "
+        f"{old_ref.qualname}, {sibling_names}` -> `from "
+        f"{destination.module} import ...` (same split batch, T-3143)"
+    )
+
+
 def _handle_from_import(
     file_path: Path,
     source: str,
@@ -269,10 +305,17 @@ def _handle_from_import(
     dest_leaf: str,
     bound_names: set[str],
     alias_conflict: str,
+    also_moving: frozenset[str] = frozenset(),
 ) -> tuple[list[RewriteOp], list[AliasRecord]]:
     """One `from <old module> import ...` node's rewrite: auto-alias on a
-    destination-name collision, else a plain repoint. Split out of
-    `scan_references` to keep it under the ARCH001 line budget."""
+    destination-name collision, else a plain repoint. `also_moving` names
+    every OTHER symbol moving to `destination.module` in the same split
+    batch (T-3143) -- a co-imported name in that set is folded into ONE
+    rewrite alongside the current symbol instead of blocking it, since it
+    is headed to the same destination anyway; a co-imported name NOT in
+    that set is still treated as genuinely untouched and blocks the
+    rewrite exactly as before (T-3105). Split out of `scan_references` to
+    keep it under the ARCH001 line budget."""
     ops: list[RewriteOp] = []
     aliases: list[AliasRecord] = []
     for alias in node.names:
@@ -280,20 +323,18 @@ def _handle_from_import(
             continue
         bound_as = alias.asname or alias.name
         new_name = dest_leaf
-        reason = (
-            f"rewrite `from {old_ref.module} import {old_ref.qualname}`"
-            f" -> `from {destination.module} import {dest_leaf}`"
-        )
-        others = [a for a in node.names if a.name != old_ref.qualname]
-        if others:
+        sibling_aliases, real_others = _classify_co_imports(node, old_ref, also_moving)
+        if real_others:
             # This import line names the moved symbol ALONGSIDE at least
-            # one untouched name -- do NOT rewrite it at all. Repointing
-            # the whole statement at `destination.module` would drag the
-            # untouched names there too (they are not defined at the
-            # destination), and it is unnecessary: the split's own
-            # re-export shim keeps `old_ref.module` re-exporting the moved
-            # name, so this statement stays valid unmodified (T-3105).
+            # one GENUINELY untouched name (not part of this same split
+            # batch) -- do NOT rewrite it at all. Repointing the whole
+            # statement at `destination.module` would drag the untouched
+            # names there too (they are not defined at the destination),
+            # and it is unnecessary: the split's own re-export shim keeps
+            # `old_ref.module` re-exporting the moved name, so this
+            # statement stays valid unmodified (T-3105).
             continue
+        reason = _rewrite_reason(old_ref, destination, dest_leaf, sibling_aliases)
         collides = (
             bound_as == old_ref.qualname
             and new_name in bound_names
@@ -310,7 +351,9 @@ def _handle_from_import(
             ops.extend(collision_ops)
             aliases.append(record)
             continue
-        new_stmt = _rebuild_from_import(node, old_ref, destination, dest_leaf)
+        new_stmt = _rebuild_from_import(
+            node, old_ref, destination, dest_leaf, sibling_aliases
+        )
         ops.append(_import_op(file_path, node, new_stmt, reason))
         if bound_as != new_name:
             ops.extend(
@@ -391,14 +434,21 @@ def scan_references(
     resolved: ResolvedSymbol,
     destination: SymbolRef,
     alias_conflict: str = "error",
+    also_moving: frozenset[str] = frozenset(),
 ) -> tuple[list[RewriteOp], list[AliasRecord], list[str]]:
     """Walk every `.py` file for a `from <old module> import <qualname>`
     (or `import <old module>` + attribute use) referencing the moving
     symbol, and build the exact `RewriteOp` that repoints it at
-    `destination`. Returns `(ops, aliases, unresolved)`; `unresolved`
-    names any call site this scan could not rewrite mechanically (a
-    dynamic `getattr`/`importlib` reference, out of v1's static-AST
-    scope) so the disclosed report never silently drops it.
+    `destination`. `also_moving` names every OTHER symbol moving to
+    `destination.module` in the same split batch as `resolved` (T-3143)
+    -- a shared `from <old module> import A, B` line where BOTH `A` and
+    `B` are in this batch gets folded into one rewrite instead of being
+    skipped as if `B` were untouched; a caller doing a single independent
+    move (the default, empty set) keeps the prior T-3105 behavior
+    unchanged. Returns `(ops, aliases, unresolved)`; `unresolved` names
+    any call site this scan could not rewrite mechanically (a dynamic
+    `getattr`/`importlib` reference, out of v1's static-AST scope) so the
+    disclosed report never silently drops it.
     """
     ops: list[RewriteOp] = []
     aliases: list[AliasRecord] = []
@@ -447,6 +497,7 @@ def scan_references(
                         dest_leaf,
                         bound_names,
                         alias_conflict,
+                        also_moving,
                     )
                     ops.extend(new_ops)
                     aliases.extend(new_aliases)
@@ -474,14 +525,23 @@ def scan_references(
 # shared behavior to extract -- the similarity is in the comprehension-then-join \
 # shape, not what it computes"
 def _rebuild_from_import(
-    node: ast.ImportFrom, old_ref: SymbolRef, destination: SymbolRef, dest_leaf: str
+    node: ast.ImportFrom,
+    old_ref: SymbolRef,
+    destination: SymbolRef,
+    dest_leaf: str,
+    also_moving_aliases: tuple[ast.alias, ...] = (),
 ) -> str:
     """The replacement `from <module> import <name>[, ...]` statement text
-    for a `from`-import that names the moving symbol among possibly other,
-    untouched names on the same line."""
-    others = [a for a in node.names if a.name != old_ref.qualname]
-    parts = [f"{a.name} as {a.asname}" if a.asname else a.name for a in others]
-    parts.append(dest_leaf)
+    for a `from`-import that names the moving symbol -- plus, when
+    `also_moving_aliases` is given, every SIBLING symbol from the same
+    split batch that was co-imported on this same line (T-3143), each
+    preserving its own `as`-alias if it had one. Caller guarantees no
+    genuinely untouched name remains on the line by this point
+    (`_handle_from_import` already refused the rewrite otherwise)."""
+    parts = [dest_leaf]
+    parts.extend(
+        f"{a.name} as {a.asname}" if a.asname else a.name for a in also_moving_aliases
+    )
     joined = ", ".join(parts)
     return f"from {destination.module} import {joined}"
 

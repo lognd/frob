@@ -137,12 +137,17 @@ def build_plan(
     source: SymbolRef,
     destination: SymbolRef,
     alias_conflict: str = "error",
+    also_moving: frozenset[str] = frozenset(),
 ) -> Result[RefactorPlan, RefactorError]:
     """Plan phase entry point: resolve `source`, refuse on a destination
     collision, then build every move-op and reference-op before any file
-    is written. Exposed standalone (not only via `run_refactor`) so a
-    sibling pass (T-1199/T-1200/T-1267) can extend `reference_ops`
-    against an already-built plan without re-running Resolve.
+    is written. `also_moving` names every OTHER symbol moving to
+    `destination.module` in the same batch as `source` (T-3143), forwarded
+    verbatim to `scan_references` so a shared import line naming several
+    co-moving symbols is folded into one rewrite instead of being skipped.
+    Exposed standalone (not only via `run_refactor`) so a sibling pass
+    (T-1199/T-1200/T-1267) can extend `reference_ops` against an
+    already-built plan without re-running Resolve.
     """
     resolved_result = resolve_symbol(repo_root, source)
     if resolved_result.is_err:
@@ -172,7 +177,11 @@ def build_plan(
         source.qualname.split(".")[-1],
     )
     reference_ops, aliases, unresolved = scan_references(
-        repo_root, resolved, destination, alias_conflict=alias_conflict
+        repo_root,
+        resolved,
+        destination,
+        alias_conflict=alias_conflict,
+        also_moving=also_moving,
     )
     # T-1199: repo-wide `frob:*` directive TARGET/SRC carrier -- a
     # directive elsewhere in the repo naming this symbol's old symref gets

@@ -489,6 +489,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3136: verify_pytest_collect passes non-Python touched files straight to pytest, false-refusing rc=4
 - T-3140: T-3034 residual: 10 test failures need deeper per-item investigation
 - T-3141: T-3034 residual: close may no longer refuse unrelated evidence (D-02 regression?)
+- T-3143: refactor split leaves type-annotation-only import sites unrepointed
 
 ## [0.530.0] - unreleased
 
