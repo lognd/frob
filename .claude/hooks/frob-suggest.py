@@ -254,6 +254,93 @@ _RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
 ]
 
 
+#: A `from <module> import ...` or `import <module>` line, module captured
+#: in whichever group matched -- used to tell an EDIT that REWRITES an
+#: existing import line (the rename signal) from one that merely adds a
+#: brand-new import (no such line in the OLD text at all, T-3069's own
+#: must-stay-quiet case).
+_IMPORT_LINE = re.compile(r"^\s*(?:from\s+([\w.]+)\s+import\b|import\s+([\w.]+))", re.M)
+
+#: Cross-call state for the Edit-based rename signal lives alongside the
+#: Bash marker state (T-3069) -- same TTL, same best-effort-never-fatal
+#: contract as the rest of this module.
+_RENAME_STATE_DIR = _STATE_DIR / "rename-scan"
+
+
+def _import_modules(text: str) -> set[str]:
+    """Every module dotted-path named by a `from`/`import` statement at the
+    START of a line in `text` -- used against an Edit's OLD string to ask
+    "was this edit rewriting an existing import of this module", never
+    against arbitrary prose (T-3069)."""
+    modules: set[str] = set()
+    for m in _IMPORT_LINE.finditer(text):
+        modules.add(m.group(1) or m.group(2))
+    return modules
+
+
+def _rename_state_path(module: str) -> Path:
+    """The state file recording which files have already had an existing
+    `module` import hand-rewritten in this window (T-3069) -- keyed by a
+    hash of the module name, same shape as `_marker_path`."""
+    digest = hashlib.sha256(module.encode("utf-8", "replace")).hexdigest()[:32]
+    return _RENAME_STATE_DIR / f"{digest}.json"
+
+
+def _edit_rename_hit(file_path: str, old_string: str) -> tuple[str, str, str] | None:
+    """`(key, name, suggestion)` when this Edit rewrites an existing import
+    of some module ALREADY rewritten in a DIFFERENT file within the TTL
+    window -- the "same module, multiple files" rename shape (T-3069's
+    high-precision signal #2). Records `file_path` against every module it
+    touches either way, so the FIRST file to touch a module never fires
+    (must-stay-quiet: editing imports in a single file) and only the
+    second-and-later DISTINCT file does.
+
+    Returns `None` (and records nothing) when `old_string` contains no
+    import line at all -- a brand-new import, or an edit to unrelated code
+    (a residue/prose fix), must never contribute to this signal."""
+    modules = _import_modules(old_string)
+    if not modules:
+        return None
+    now = time.time()
+    try:
+        _RENAME_STATE_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return None
+    hit: tuple[str, str, str] | None = None
+    for module in sorted(modules):
+        state_path = _rename_state_path(module)
+        files: set[str] = set()
+        try:
+            if state_path.exists() and now - state_path.stat().st_mtime < _MARKER_TTL_S:
+                payload = json.loads(state_path.read_text(encoding="utf-8"))
+                files = set(payload.get("files", []))
+        except (OSError, ValueError, TypeError):
+            files = set()
+        if hit is None and files and file_path not in files:
+            hit = (
+                f"edit-rename:{module}",
+                "hand-rename-edit-multifile",
+                f"This is the second file (after {sorted(files)[0]!r}) whose "
+                f"existing `{module}` import has been hand-rewritten in this "
+                "session -- that shape is a rename/move, not an ordinary "
+                "import edit. Prefer `uv run frob refactor rename`/`move`/"
+                "`split`/`move-module` instead of continuing by hand: a hand "
+                f"pass only rewrites Python import lines, and silently "
+                f"misses {module}'s non-Python reference surface -- `.strata` "
+                "`code=` globs, ticket `scope` globs, `frob:doc`/`frob:tests` "
+                "path citations, and `frob.toml` dotted `module:symbol` "
+                "config values.",
+            )
+        files.add(file_path)
+        try:
+            state_path.write_text(
+                json.dumps({"files": sorted(files)}), encoding="utf-8"
+            )
+        except OSError:
+            pass
+    return hit
+
+
 def _repo_root(cwd: str) -> Path | None:
     """Nearest ancestor of `cwd` containing `frob.toml`, or `None`.
 
@@ -403,6 +490,18 @@ def _record_attempt(command: str) -> int:
     return count
 
 
+#: A scripted in-place rewrite (`sed -i`, `perl -pi`, or similar) at
+#: command position -- checked against the STRIPPED command (like every
+#: other rule), because the tool name/flags themselves are never inside
+#: quotes even when their SCRIPT argument is.
+_SED_PERL_INPLACE = re.compile(_POS + r"(?:sed|perl)\s+-\w*i\w*\b", re.M)
+
+#: Already running `frob refactor` in the same command is the fix itself --
+#: never nudge that (T-3069 acceptance: "any call already running
+#: `frob refactor`").
+_FROB_REFACTOR = re.compile(r"frob\s+refactor")
+
+
 def _match(raw: str, root: Path) -> tuple[str, str] | None:
     """The first rule `raw` trips, as `(name, suggestion)` -- evaluated
     against the command with quoted/heredoc text removed."""
@@ -420,6 +519,30 @@ def _match(raw: str, root: Path) -> tuple[str, str] | None:
                 "wrong measurement. Use `uv run frob ...` here, or reconcile "
                 "the installs with `uv tool upgrade frob`.",
             )
+
+    # T-3069's `hand-rename-sed`: deliberately checked against RAW, not
+    # `command` -- the whole point is a `sed -i 's/from old import x/from
+    # new import x/'` -style script, and that script text is exactly what
+    # `_strip_quoted` removes for every other rule. `frob refactor` is
+    # checked against RAW too, so a combined `frob refactor ...; sed -i
+    # ...` command stays quiet regardless of where in the command the
+    # invocation sits.
+    if (
+        _SED_PERL_INPLACE.search(command)
+        and re.search(r"\bimport\b", raw)
+        and not _FROB_REFACTOR.search(raw)
+    ):
+        return (
+            "hand-rename-sed",
+            "This looks like a scripted in-place rewrite of an `import` "
+            "line. Prefer `uv run frob refactor rename`/`move`/`split`/"
+            "`move-module` instead: a hand pass only rewrites Python "
+            "import lines, and silently misses the non-Python reference "
+            "surface the verb also handles -- `.strata` `code=` globs, "
+            "ticket `scope` globs, `frob:doc`/`frob:tests` path citations, "
+            "and `frob.toml` dotted `module:symbol` config values.",
+        )
+
     for name, pattern, suggestion, raw_exempt in _RULES:
         if raw_exempt is not None and raw_exempt.search(raw):
             continue
@@ -446,16 +569,80 @@ def _deny(reason: str) -> None:
 
 
 # frob:doc docs/guides/claude-hooks.md#frob-suggestpy
-def main() -> None:
-    try:
-        payload = json.load(sys.stdin)
-    except Exception:  # noqa: BLE001 -- a malformed payload must never block
+def _escalate(key: str, name: str, suggestion: str, acked: bool, first_hint: str,
+              repeat_hint: str) -> None:
+    """Shared block-once-then-escalate flow (T-2164) for BOTH the Bash-
+    command rules and the Edit-based rename rule (T-3069) -- `key` is
+    whatever the caller wants counted as "the same thing recurring" (the
+    raw command text for a Bash rule, `edit-rename:<module>` for the Edit
+    rule); `first_hint`/`repeat_hint` are the escape-hatch wording, which
+    differs between the two (a Bash re-run vs. an ambient env var) even
+    though the counting logic underneath is identical."""
+    _prune(time.time())
+    attempt = _record_attempt(key)
+
+    if attempt == 1:
+        reason = (
+            f"BLOCKED ONCE by frob-suggest [{name}] -- this looks like work frob "
+            f"should account for.\n\n{suggestion}\n\n{first_hint}"
+        )
+        _deny(reason)
         return
+
+    if attempt < _ESCALATE_AT_ATTEMPT or acked:
+        return  # first exact-rerun (or an acknowledged later one): let it through
+
+    reason = (
+        f"BLOCKED (repeat #{attempt}) by frob-suggest [{name}] -- this exact "
+        "shape has now recurred several times in this session. The suggested "
+        f"tool likely already had the answer:\n\n{suggestion}\n\n{repeat_hint}"
+    )
+    _deny(reason)
+
+
+def _handle_edit(payload: dict) -> None:
+    """T-3069's Edit-tool branch: the cross-file same-module import-rewrite
+    signal (`_edit_rename_hit`) is the only Edit-based rule so far -- kept
+    separate from the Bash `_match` path because it needs the OLD string,
+    not a shell command, and its own cross-file (not cross-command) state."""
+    tool_input = payload.get("tool_input") or {}
+    file_path = tool_input.get("file_path") or ""
+    old_string = tool_input.get("old_string") or ""
+    if not file_path or not old_string:
+        return
+    hit = _edit_rename_hit(file_path, old_string)
+    if hit is None:
+        return
+    key, name, suggestion = hit
+    # No shell command carries the ack prefix here -- an ambient env var is
+    # the closest equivalent escape hatch for a non-Bash tool call, and it
+    # is the same variable name so "FROB_SUGGEST_ACK=1" means one thing
+    # across the whole hook (T-3069 acceptance: "consistent with the
+    # existing hook").
+    acked = os.environ.get("FROB_SUGGEST_ACK") == "1"
+    _escalate(
+        key,
+        name,
+        suggestion,
+        acked,
+        "If you are SURE the hand edit is right, make the same edit again "
+        "and it will be allowed; this hook blocks only the first attempt at "
+        "a given rename shape. Set `FROB_SUGGEST_ACK=1` in the environment "
+        "to bypass on a later repeat too.",
+        "If this genuinely is not a repeated habit and the hand edit is "
+        "still the right call, set `FROB_SUGGEST_ACK=1` in the environment "
+        "(consistent with the Bash-command escape) -- that acknowledgement "
+        "is checked every time, so later repeats need it again too, not "
+        "just once.",
+    )
+
+
+def _handle_bash(payload: dict, root: Path) -> None:
+    """The pre-existing Bash-command branch, unchanged in behaviour --
+    split out of `main` only so T-3069's Edit branch has a sibling
+    function at the same level rather than being wedged inline."""
     raw_command = (payload.get("tool_input") or {}).get("command") or ""
     if not raw_command.strip():
-        return
-    root = _repo_root(payload.get("cwd") or os.getcwd())
-    if root is None:
         return
 
     # T-2164: an explicit `FROB_SUGGEST_ACK=1 ` prefix is the escalation
@@ -469,36 +656,40 @@ def main() -> None:
     if hit is None:
         return
     name, suggestion = hit
-
-    _prune(time.time())
-    attempt = _record_attempt(command)
-
-    if attempt == 1:
-        reason = (
-            f"BLOCKED ONCE by frob-suggest [{name}] -- this looks like work frob "
-            f"should account for.\n\n{suggestion}\n\n"
-            "If you are SURE the raw command is right, re-run it EXACTLY as "
-            "written and it will be allowed; this hook blocks only the first "
-            "attempt at a given command. Do not paraphrase to get around the "
-            "block -- a reworded command is a new command and blocks again."
-        )
-        _deny(reason)
-        return
-
-    if attempt < _ESCALATE_AT_ATTEMPT or acked:
-        return  # first exact-rerun (or an acknowledged later one): let it through
-
-    reason = (
-        f"BLOCKED (repeat #{attempt}) by frob-suggest [{name}] -- this exact "
-        "command has now run several times in this session. The suggested "
-        f"tool likely already had the answer:\n\n{suggestion}\n\n"
+    _escalate(
+        command,
+        name,
+        suggestion,
+        acked,
+        "If you are SURE the raw command is right, re-run it EXACTLY as "
+        "written and it will be allowed; this hook blocks only the first "
+        "attempt at a given command. Do not paraphrase to get around the "
+        "block -- a reworded command is a new command and blocks again.",
         "If this genuinely is not a repeated habit and the raw command is "
         "still the right call, prefix it with `FROB_SUGGEST_ACK=1 ` (e.g. "
         f"`FROB_SUGGEST_ACK=1 {command}`) to run it anyway -- that "
         "acknowledgement is checked every time, so later repeats need it "
-        "again too, not just once."
+        "again too, not just once.",
     )
-    _deny(reason)
+
+
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except Exception:  # noqa: BLE001 -- a malformed payload must never block
+        return
+    root = _repo_root(payload.get("cwd") or os.getcwd())
+    if root is None:
+        return
+
+    # T-3069: this hook is now registered for both Bash and Edit
+    # (.claude/settings.json's "Bash|Edit" matcher) -- an absent
+    # `tool_name` means an older payload shape and is treated as Bash,
+    # matching this hook's behaviour before T-3069 introduced the branch.
+    if payload.get("tool_name") == "Edit":
+        _handle_edit(payload)
+        return
+    _handle_bash(payload, root)
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@
         ]
       },
       {
-        "matcher": "Bash",
+        "matcher": "Bash|Edit",
         "hooks": [
           {
             "type": "command",

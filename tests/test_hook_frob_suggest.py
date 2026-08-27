@@ -51,6 +51,33 @@ def _run_hook(command: str, *, home: Path, cwd: Path):
     )
 
 
+def _run_edit_hook(
+    file_path: str, old_string: str, new_string: str, *, home: Path, cwd: Path,
+    env: dict | None = None,
+):
+    """Invoke the hook's Edit-tool PreToolUse contract (T-3069): same
+    stdin/stdout shape as `_run_hook`, but a `tool_name: "Edit"` payload
+    carrying `file_path`/`old_string`/`new_string` instead of a Bash
+    `command`."""
+    payload = {
+        "tool_name": "Edit",
+        "tool_input": {
+            "file_path": file_path,
+            "old_string": old_string,
+            "new_string": new_string,
+        },
+        "cwd": str(cwd),
+    }
+    return subprocess.run(
+        [sys.executable, str(_HOOK)],
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**os.environ, "HOME": str(home), **(env or {})},
+    )
+
+
 def _denial_reason(result) -> str | None:
     """The `permissionDecisionReason` string when the hook denied, else
     `None`."""
@@ -622,3 +649,219 @@ def test_unscoped_symbol_search_stays_quiet_with_dash_dash_path(tmp_path: Path):
     _init_repo(root)
     result = _run_hook('git grep -n "foo" -- src/', home=home, cwd=root)
     assert result.stdout.strip() == ""
+
+
+# T-3069: `hand-rename-sed` fires on a scripted in-place import rewrite,
+# and stays quiet whenever the rewrite is not an import edit at all or is
+# already routed through `frob refactor`.
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-3069
+def test_hand_rename_sed_fires_on_scripted_import_rewrite(tmp_path: Path):
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        "sed -i 's/from pkg.old import thing/from pkg.new import thing/' "
+        "src/pkg/caller.py",
+        home=home,
+        cwd=root,
+    )
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "frob refactor" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-3069
+def test_hand_rename_perl_fires_on_scripted_import_rewrite(tmp_path: Path):
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        "perl -pi -e 's/import pkg.old/import pkg.new/' src/pkg/caller.py",
+        home=home,
+        cwd=root,
+    )
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "frob refactor" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-3069
+def test_hand_rename_sed_stays_quiet_without_import_mention(tmp_path: Path):
+    """An ordinary in-place edit that never mentions `import` (e.g.
+    bumping a version string) must never be mistaken for a hand-rename."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        "sed -i 's/version = \"1.0\"/version = \"1.1\"/' pyproject.toml",
+        home=home,
+        cwd=root,
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-3069
+def test_hand_rename_sed_stays_quiet_inside_frob_refactor_invocation(tmp_path: Path):
+    """T-3069 acceptance: any call already running `frob refactor` must
+    stay quiet, even if a sed/perl rewrite of an import line rides along
+    in the same command."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        "uv run frob refactor rename pkg.old:thing pkg.new:thing && "
+        "sed -i 's/import pkg.old/import pkg.new/' docs/notes.md",
+        home=home,
+        cwd=root,
+    )
+    assert result.stdout.strip() == ""
+
+
+class TestHandRenameEditMultifile:
+    """T-3069's second high-precision signal: the SECOND-and-later Edit in
+    a session that rewrites an existing import of the SAME module in a
+    DIFFERENT file. Each test isolates its own `home` (marker/state dir)
+    so cross-test state never leaks."""
+
+    # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+    # frob:ticket T-3069
+    def test_second_file_rewriting_same_module_import_fires(self, tmp_path: Path):
+        home = tmp_path / "home"
+        root = tmp_path / "repo"
+        _init_repo(root)
+        first = _run_edit_hook(
+            str(root / "src/pkg/a.py"),
+            "from pkg.old import thing\n",
+            "from pkg.new import thing\n",
+            home=home,
+            cwd=root,
+        )
+        assert first.stdout.strip() == ""
+
+        second = _run_edit_hook(
+            str(root / "src/pkg/b.py"),
+            "from pkg.old import thing\n",
+            "from pkg.new import thing\n",
+            home=home,
+            cwd=root,
+        )
+        reason = _denial_reason(second)
+        assert reason is not None
+        assert "frob refactor" in reason
+        assert "pkg.old" in reason
+
+    # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+    # frob:ticket T-3069
+    def test_brand_new_import_never_fires(self, tmp_path: Path):
+        """Must-stay-quiet: adding a brand-new import for newly written
+        code (no import line in the OLD string at all) is the common
+        case and must never nudge, however many files it touches."""
+        home = tmp_path / "home"
+        root = tmp_path / "repo"
+        _init_repo(root)
+        for name in ("a.py", "b.py", "c.py"):
+            result = _run_edit_hook(
+                str(root / "src/pkg" / name),
+                "def use():\n    pass\n",
+                "from pkg.new import thing\n\n\ndef use():\n    return thing()\n",
+                home=home,
+                cwd=root,
+            )
+            assert result.stdout.strip() == ""
+
+    # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+    # frob:ticket T-3069
+    def test_single_file_repeated_edits_never_fire(self, tmp_path: Path):
+        """Must-stay-quiet: editing imports in a SINGLE file, however many
+        times, is ordinary work."""
+        home = tmp_path / "home"
+        root = tmp_path / "repo"
+        _init_repo(root)
+        same_file = str(root / "src/pkg/a.py")
+        for _ in range(3):
+            result = _run_edit_hook(
+                same_file,
+                "from pkg.old import thing\n",
+                "from pkg.new import thing\n",
+                home=home,
+                cwd=root,
+            )
+            assert result.stdout.strip() == ""
+
+    # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+    # frob:ticket T-3069
+    def test_refactor_residue_prose_fix_never_fires(self, tmp_path: Path):
+        """Must-stay-quiet: fixing residue the refactor verb deliberately
+        does not rewrite (a docstring/anchor citation) is correct
+        behaviour, not a violation (T-2989's own hand-fixed-6-citations
+        case) -- the OLD string has no import line at all."""
+        home = tmp_path / "home"
+        root = tmp_path / "repo"
+        _init_repo(root)
+        first = _run_edit_hook(
+            str(root / "src/pkg/a.py"),
+            "from pkg.old import thing\n",
+            "from pkg.new import thing\n",
+            home=home,
+            cwd=root,
+        )
+        assert first.stdout.strip() == ""
+
+        prose_fix = _run_edit_hook(
+            str(root / "src/pkg/b.py"),
+            "# frob:tests tests/test_pkg.py::test_thing_via_pkg_old\n",
+            "# frob:tests tests/test_pkg.py::test_thing_via_pkg_new\n",
+            home=home,
+            cwd=root,
+        )
+        assert prose_fix.stdout.strip() == ""
+
+    # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+    # frob:ticket T-3069
+    def test_frob_suggest_ack_env_var_bypasses_it(self, tmp_path: Path):
+        """T-3069 acceptance: `FROB_SUGGEST_ACK=1` bypasses the Edit-based
+        rule too, consistent with the existing Bash-command escape --
+        which (T-2164) only requires the acknowledgement from the THIRD
+        occurrence of the SAME shape onward, not the first. File `a` never
+        fires (first file to touch the module); file `b` is the first
+        cross-file occurrence and denies once; file `c` is the allowed
+        exact-repeat; file `d` is the third occurrence and needs the ack."""
+        home = tmp_path / "home"
+        root = tmp_path / "repo"
+        _init_repo(root)
+        old_text = "from pkg.old import thing\n"
+        new_text = "from pkg.new import thing\n"
+
+        first = _run_edit_hook(
+            str(root / "src/pkg/a.py"), old_text, new_text, home=home, cwd=root
+        )
+        assert first.stdout.strip() == ""
+
+        second = _run_edit_hook(
+            str(root / "src/pkg/b.py"), old_text, new_text, home=home, cwd=root
+        )
+        assert _denial_reason(second) is not None
+
+        third = _run_edit_hook(
+            str(root / "src/pkg/c.py"), old_text, new_text, home=home, cwd=root
+        )
+        assert third.stdout.strip() == ""
+
+        fourth_unacked = _run_edit_hook(
+            str(root / "src/pkg/d.py"), old_text, new_text, home=home, cwd=root
+        )
+        assert _denial_reason(fourth_unacked) is not None
+
+        fourth_acked = _run_edit_hook(
+            str(root / "src/pkg/e.py"),
+            old_text,
+            new_text,
+            home=home,
+            cwd=root,
+            env={"FROB_SUGGEST_ACK": "1"},
+        )
+        assert fourth_acked.stdout.strip() == ""

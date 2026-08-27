@@ -2,7 +2,7 @@
 id: T-3069
 title: 'Hook: nudge hand-performed renames toward frob refactor, without misfiring
   on ordinary import edits'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -16,10 +16,42 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- .claude/hooks/frob-suggest.py
+- tests/test_hook_frob_suggest.py
+- .claude/settings.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .claude/hooks/frob-suggest.py
+  reason: extend the existing frob-suggest nudge hook with a rename-detection rule,
+    per T-3069 brief
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_hook_frob_suggest.py
+  reason: must-fire/must-stay-quiet fixtures for the new rename-detection rule
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: .claude/settings.json
+  reason: register frob-suggest for the Edit tool matcher, needed to detect the multi-file
+    same-module rename signal the brief specifies
+  actor: logan
+  at: '2026-08-27'
+evidence:
+- tests/test_hook_frob_suggest.py::test_hand_rename_sed_fires_on_scripted_import_rewrite
+- tests/test_hook_frob_suggest.py::test_hand_rename_perl_fires_on_scripted_import_rewrite
+- tests/test_hook_frob_suggest.py::test_hand_rename_sed_stays_quiet_without_import_mention
+- tests/test_hook_frob_suggest.py::test_hand_rename_sed_stays_quiet_inside_frob_refactor_invocation
+- tests/test_hook_frob_suggest.py::TestHandRenameEditMultifile::test_second_file_rewriting_same_module_import_fires
+- tests/test_hook_frob_suggest.py::TestHandRenameEditMultifile::test_brand_new_import_never_fires
+- tests/test_hook_frob_suggest.py::TestHandRenameEditMultifile::test_single_file_repeated_edits_never_fire
+- tests/test_hook_frob_suggest.py::TestHandRenameEditMultifile::test_refactor_residue_prose_fix_never_fires
+- tests/test_hook_frob_suggest.py::TestHandRenameEditMultifile::test_frob_suggest_ack_env_var_bypasses_it
 designated_repro_test: null
 threat: null
 component: null
