@@ -458,6 +458,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3093: fleet_status reports lock WAITERS as holders: label claims more than the /proc fd scan measures
 - T-3094: T-2221 fleet xdist bound never reaches pytest: 0 of 40 running workers carry PYTEST_XDIST_AUTO_NUM_WORKERS
 - T-3095: Isolate land's three post-squash file-mutating stages so the whole transaction is invisible in the shared tree
+- T-3105: refactor split: import-rewrite drags unmoved names to destination module
 
 ## [0.530.0] - unreleased
 
