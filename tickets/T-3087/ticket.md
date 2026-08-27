@@ -16,10 +16,65 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_setters.py
+- src/frob/tickets/_reporting.py
+- src/frob/tickets/_models.py
+- src/frob/tickets/__init__.py
+- src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/_cli_parsers/_ticket/_closeout.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_reporting.py
+  reason: blocked_by close-time refusal lives in _close_cmd (pre-transition guard,
+    _evidence.py is leased by T-3038); reopen verb needs a new reason-carrying setter
+    (_reporting.py, mirroring drop_ticket), a new TicketError/TicketState transition
+    edge (_models.py/__init__.py), and CLI wiring
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: blocked_by close-time refusal lives in _close_cmd (pre-transition guard,
+    _evidence.py is leased by T-3038); reopen verb needs a new reason-carrying setter
+    (_reporting.py, mirroring drop_ticket), a new TicketError/TicketState transition
+    edge (_models.py/__init__.py), and CLI wiring
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: blocked_by close-time refusal lives in _close_cmd (pre-transition guard,
+    _evidence.py is leased by T-3038); reopen verb needs a new reason-carrying setter
+    (_reporting.py, mirroring drop_ticket), a new TicketError/TicketState transition
+    edge (_models.py/__init__.py), and CLI wiring
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: blocked_by close-time refusal lives in _close_cmd (pre-transition guard,
+    _evidence.py is leased by T-3038); reopen verb needs a new reason-carrying setter
+    (_reporting.py, mirroring drop_ticket), a new TicketError/TicketState transition
+    edge (_models.py/__init__.py), and CLI wiring
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: blocked_by close-time refusal lives in _close_cmd (pre-transition guard,
+    _evidence.py is leased by T-3038); reopen verb needs a new reason-carrying setter
+    (_reporting.py, mirroring drop_ticket), a new TicketError/TicketState transition
+    edge (_models.py/__init__.py), and CLI wiring
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: blocked_by close-time refusal lives in _close_cmd (pre-transition guard,
+    _evidence.py is leased by T-3038); reopen verb needs a new reason-carrying setter
+    (_reporting.py, mirroring drop_ticket), a new TicketError/TicketState transition
+    edge (_models.py/__init__.py), and CLI wiring
+  actor: logan
+  at: '2026-08-27'
 body_changes:
 - mode: set
   reason: Record the measured close-time gap, the missing reopen path, and the constraint
