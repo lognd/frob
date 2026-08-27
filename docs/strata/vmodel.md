@@ -102,20 +102,29 @@ schema. `v_pairing()` is its building block: the five (left, right) level
 pairs in T-3004 section 1's order, reused both to declare every level and
 to build `verifies`'s `LevelRelation::Paired` map.
 
-## The four closure rules (T-3004 section 2)
+## The five closure rules (T-3004 section 2)
 
 Checked in BOTH directions, over a graph that has already passed the
 kernel's construction-time type checks. Each rule below is STRUCTURAL
 CLOSURE, never a quality judgment -- a bad-but-complete spec passes, a
 brilliant-but-dangling one fails, by design (T-3004 section 2).
 
-1. `check_no_orphan_requirements` -- every `artifact` node must have >=1
-   incoming `satisfies` edge (backward closure over `satisfies` is
-   non-empty). Catches an orphan requirement nobody's design traces to.
-2. `check_no_unjustified_design` -- every `artifact` node must have >=1
-   outgoing edge among `satisfies`/`refines`/`allocates` (forward closure
-   over that set is non-empty). Catches unjustified code: a design element
-   tracing to nothing.
+1. `check_no_orphan_requirements` -- every `artifact` node other than the
+   innermost level (`component-design`, which has nothing more detailed
+   to satisfy it) must have a backward closure over `satisfies` that
+   actually REACHES a real innermost-level node -- a non-empty closure is
+   not enough (T-3043): a set of peer nodes satisfying each other with
+   nothing grounded underneath them used to pass this rule and no longer
+   does. Catches an orphan requirement nobody's design traces to, and the
+   peers-with-nothing-underneath escape T-3043 closed.
+2. `check_no_unjustified_design` -- every `artifact` node other than the
+   outermost level (`requirements`, which has nothing above it to trace
+   to) must have a forward closure over `satisfies`/`refines`/`allocates`
+   that actually REACHES a real outermost-level (requirements) node --
+   again, a non-empty closure is not enough (T-3043): a mutual-satisfies
+   pair tracing only to each other, with zero real requirements behind
+   it, used to pass and no longer does. Catches unjustified code: a
+   design element tracing to nothing real.
 3. `check_no_untested_artifact` -- every `artifact` node must have >=1
    incoming `verifies` edge. Because the kernel already refuses a
    wrong-level `verifies` edge at construction, any surviving incoming
@@ -123,9 +132,19 @@ brilliant-but-dangling one fails, by design (T-3004 section 2).
    needs to confirm at least one exists. Catches an untested requirement.
 4. `check_no_orphan_test` -- every `test` node must have >=1 outgoing
    `verifies` edge. Catches an orphan test verifying nothing.
+5. `check_no_trace_cycle` -- the trace subgraph (`satisfies`/`refines`/
+   `allocates`) must be acyclic, checked via the kernel's existing
+   `find_cycle` (T-3043 wired it into `check_closure`; it previously
+   existed but nothing called it from here). A cycle produces one
+   `ClosureViolation::TraceCycle` carrying the witness path `find_cycle`
+   returned, rather than a bare pass/fail. Catches a trace loop -- e.g. a
+   satisfies/refines/allocates ring with no real requirements or design
+   grounding it, the same escape rules 1 and 2's closure-reachability fix
+   targets from the opposite direction.
 
-`check_closure(&graph)` runs all four in order and concatenates their
-`ClosureViolation`s; an empty result means the graph is structurally closed.
+`check_closure(&graph)` runs all five in order (1, 2, 3, 4, 5) and
+concatenates their `ClosureViolation`s; an empty result means the graph is
+structurally closed.
 
 Every rule in `strata-core/src/graph/vmodel.rs` has both a must-fire fixture
 (a graph genuinely violating it) and a must-stay-quiet fixture (a graph

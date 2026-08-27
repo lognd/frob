@@ -2,7 +2,7 @@
 id: T-3056
 title: 'docs/strata/vmodel.md: update closure-rule prose for T-3043''s path-reachability
   fix and new rule 5'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-26'
@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - docs/strata/vmodel.md
 - strata-core/src/graph/vmodel.rs
+evidence_scope:
+- tests/unit/strata/test_vmodel_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +31,8 @@ scope_changes:
     -- narrow, mechanical anchor-string update only, no logic change'
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckClosureSemantics::test_satisfies_cycle_fires_through_vmodel_check
 designated_repro_test: null
 threat: null
 component: null

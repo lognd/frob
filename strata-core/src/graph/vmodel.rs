@@ -218,7 +218,7 @@ pub fn v_model_schema() -> GraphSchema {
 /// One closure-rule violation, named so a caller (CLI or PyO3 boundary)
 /// can render it without re-deriving which rule fired.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
-// frob:doc docs/strata/vmodel.md#the-four-closure-rules-t-3004-section-2
+// frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
 pub enum ClosureViolation {
     /// Rule 1: this requirement/artifact node has no incoming `satisfies`
     /// edge from any design element -- an orphan requirement.
@@ -313,7 +313,7 @@ fn closure_reaches_level(
 /// (`component-design`, which has nothing more detailed to satisfy it)
 /// must have >=1 incoming `satisfies` edge. Returns one
 /// `OrphanRequirement` per violating node, empty if none.
-// frob:doc docs/strata/vmodel.md#the-four-closure-rules-t-3004-section-2
+// frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
 pub fn check_no_orphan_requirements(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_SATISFIES.to_string()].into();
     let filter = KindFilter::Only(&filter_set);
@@ -340,7 +340,7 @@ pub fn check_no_orphan_requirements(graph: &Graph) -> Vec<ClosureViolation> {
 /// outgoing edge among `satisfies`/`refines`/`allocates` -- some route
 /// tracing it back up to a requirement. Catches unjustified code: a design
 /// element (or intermediate spec) tracing to nothing.
-// frob:doc docs/strata/vmodel.md#the-four-closure-rules-t-3004-section-2
+// frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
 pub fn check_no_unjustified_design(graph: &Graph) -> Vec<ClosureViolation> {
     let kinds = trace_kinds();
     let filter = KindFilter::Only(&kinds);
@@ -368,7 +368,7 @@ pub fn check_no_unjustified_design(graph: &Graph) -> Vec<ClosureViolation> {
 /// endpoints are not at the schema's paired levels, so any surviving
 /// incoming `verifies` edge is necessarily at the paired level -- this
 /// rule only needs to check for the presence of at least one.
-// frob:doc docs/strata/vmodel.md#the-four-closure-rules-t-3004-section-2
+// frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
 pub fn check_no_untested_artifact(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_VERIFIES.to_string()].into();
     let filter = KindFilter::Only(&filter_set);
@@ -380,7 +380,7 @@ pub fn check_no_untested_artifact(graph: &Graph) -> Vec<ClosureViolation> {
 }
 
 /// Rule 4: every test node must have >=1 outgoing `verifies` edge.
-// frob:doc docs/strata/vmodel.md#the-four-closure-rules-t-3004-section-2
+// frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
 pub fn check_no_orphan_test(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_VERIFIES.to_string()].into();
     let filter = KindFilter::Only(&filter_set);
@@ -395,7 +395,7 @@ pub fn check_no_orphan_test(graph: &Graph) -> Vec<ClosureViolation> {
 /// acyclic. `find_cycle` already exists in the kernel and returns a
 /// witness path; T-3043 wires it in here since nothing previously called
 /// it from `check_closure`.
-// frob:doc docs/strata/vmodel.md#the-four-closure-rules-t-3004-section-2
+// frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
 pub fn check_no_trace_cycle(graph: &Graph) -> Vec<ClosureViolation> {
     let kinds = trace_kinds();
     let filter = KindFilter::Only(&kinds);
@@ -408,7 +408,7 @@ pub fn check_no_trace_cycle(graph: &Graph) -> Vec<ClosureViolation> {
 /// Run all five rules and concatenate their violations, in rule order
 /// (1, 2, 3, 4, 5). Empty means the graph is structurally closed --
 /// T-3004 section 2's "bad-but-complete passes" bar, nothing about quality.
-// frob:doc docs/strata/vmodel.md#the-four-closure-rules-t-3004-section-2
+// frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
 pub fn check_closure(graph: &Graph) -> Vec<ClosureViolation> {
     let mut out = check_no_orphan_requirements(graph);
     out.extend(check_no_unjustified_design(graph));
