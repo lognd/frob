@@ -483,6 +483,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3124: frob ticket new warns on scope overlap but never on duplicate titles or bodies
 - T-3125: frob --help does not list refactor/narrative subcommands
 - T-3126: Land-commit record still dirties root and moves main without CAS after the publish
+- T-3128: fleet_status reports a live registered worktree as a leaked lease
 - T-3130: frob check cache.db/parse-artifacts.db: database is locked under concurrent checks
 - T-3132: Pre-land lint gate (T-3061) attributes findings to the file, not the diff, same as T-1907's ty gate did
 - T-3134: T-3121 landing-doc section still describes the post-publish land_commit record as an in-root commit
