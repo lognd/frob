@@ -18,6 +18,7 @@ scope:
 - src/frob/_cli_parsers/_ticket/_closeout.py
 - src/frob/app/ticket_runner/_lifecycle.py
 - tests/test_ticket_lifecycle.py
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +41,12 @@ scope_changes:
     without --reason; T-3113 makes --reason mandatory, so every existing call site
     in this file needs updating plus new must-fire/must-stay-quiet fixtures for the
     reason requirement and the Unblock log line.
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: AFFECT001 doc-drift fix for _unblock's changed behavior (T-3113 --reason
+    requirement) needed to touch this file.
   actor: logan
   at: '2026-08-27'
 body_changes:
