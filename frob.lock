@@ -1646,6 +1646,60 @@
       "old_digest": null,
       "reason": "T-3026: wrapped a call to _resolve_migration to fix E501 (line too long) -- purely a line-wrap formatting change, no behavior change; docs/commands/narrative.md#usage stays accurate",
       "ref": "src/frob/narrative/_cli.py::run_narrative_command"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-26",
+      "facet": "body",
+      "new_digest": "acf60499519b7f56a8ea6ac9b525a4ec4f9c7f049611589d08315457de8af643",
+      "old_digest": null,
+      "reason": "T-3065: added write-time/lookup-time file-path normalization (normalize_finding_path) inside the dispose path; the RULE:FILE:LINE keying and clear_quarantine-delegation behavior this doc describes is unchanged and still accurate",
+      "ref": "src/frob/app/verify_runner.py::_run_dispose"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-26",
+      "facet": "sig",
+      "new_digest": "28c1d992ecd1f753625057e67192669abae6ffba978831436ed2f2a0ee9b7192",
+      "old_digest": null,
+      "reason": "T-3065: added write-time/lookup-time file-path normalization (normalize_finding_path) inside the dispose path; the RULE:FILE:LINE keying and clear_quarantine-delegation behavior this doc describes is unchanged and still accurate",
+      "ref": "src/frob/app/verify_runner.py::_run_dispose"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-26",
+      "facet": "body",
+      "new_digest": "b78f2b1ed934e4fbce1585719d7ff9c543f94bea08b6501d7d62403f36d5c45c",
+      "old_digest": "63ae6436f4b1657f22cc399afa95f56c55dbc43aa3434a7c06c6d5c67c1e672f",
+      "reason": "T-3065: raise_quarantine now normalizes each finding file to its canonical root-relative form before the existing identity-less/trivial filters run and before persisting; the raise/persist/logging behavior this doc describes is otherwise unchanged and still accurate",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-26",
+      "facet": "sig",
+      "new_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "old_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "reason": "T-3065: raise_quarantine now normalizes each finding file to its canonical root-relative form before the existing identity-less/trivial filters run and before persisting; the raise/persist/logging behavior this doc describes is otherwise unchanged and still accurate",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-27",
+      "facet": "body",
+      "new_digest": "ebd8f83db85015f1e637722287cd2a77210beed2390dc8fc48c726c01acf5be9",
+      "old_digest": "b78f2b1ed934e4fbce1585719d7ff9c543f94bea08b6501d7d62403f36d5c45c",
+      "reason": "T-3065: re-ack after adding an AFFECT001 waiver comment above this function; behavior unchanged from the prior ack",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-27",
+      "facet": "sig",
+      "new_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "old_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "reason": "T-3065: re-ack after adding an AFFECT001 waiver comment above this function; behavior unchanged from the prior ack",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
     }
   ],
   "entries": [
@@ -1808,6 +1862,16 @@
       "digest": "63174356c2c40bb45031875e99279302761e37b215097b8232bad61fbb5f8596",
       "facet": "sig",
       "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
+    },
+    {
+      "digest": "acf60499519b7f56a8ea6ac9b525a4ec4f9c7f049611589d08315457de8af643",
+      "facet": "body",
+      "ref": "src/frob/app/verify_runner.py::_run_dispose"
+    },
+    {
+      "digest": "28c1d992ecd1f753625057e67192669abae6ffba978831436ed2f2a0ee9b7192",
+      "facet": "sig",
+      "ref": "src/frob/app/verify_runner.py::_run_dispose"
     },
     {
       "digest": "1d4d5ebd103f5fcc6afee231277d41b1a336c25ce233f743bca60cea5cdb237f",
@@ -2840,7 +2904,7 @@
       "ref": "src/frob/verify/_quarantine.py::QuarantineError"
     },
     {
-      "digest": "63ae6436f4b1657f22cc399afa95f56c55dbc43aa3434a7c06c6d5c67c1e672f",
+      "digest": "ebd8f83db85015f1e637722287cd2a77210beed2390dc8fc48c726c01acf5be9",
       "facet": "body",
       "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
     },

@@ -157,6 +157,50 @@ def _is_trivial_unattributed(finding: QuarantinedFinding) -> bool:
     )
 
 
+# frob:ticket T-3065
+# frob:tests tests/unit/verify/test_quarantine.py::TestNormalizeFindingPath.test_absolute_and_relative_resolve_identical kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestNormalizeFindingPath.test_empty_file_passes_through kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestNormalizeFindingPath.test_unresolvable_path_falls_back_verbatim kind="unit"  # noqa: E501
+def _normalize_finding_path(root: Path, file: str) -> str:
+    """The single normalization every quarantine finding identity WRITE
+    (`raise_quarantine`) and LOOKUP (`frob.app.verify_runner`'s
+    `--file-ticket`/`--dismiss` key parsing) must pass through, so two
+    callers naming the SAME filesystem path in different shapes
+    (absolute vs. relative) land on the identical stored/matched
+    identity (T-3065) -- comparison becomes symbolic (a resolved
+    filesystem path), never a literal string match on whatever shape the
+    caller happened to use. Previously only diagnosed after the fact by
+    `_path_shape_hint` (T-2312); this is the write/lookup-time fix that
+    makes the mismatch never occur in the first place, for any NEW
+    finding going through either path.
+
+    Returns `file` unchanged when it is empty (the `_is_unidentifiable`
+    shape must stay exactly `""`, never a resolved cwd-relative string)
+    or when it cannot be resolved against `root` (e.g. a malformed path)
+    -- normalization must never turn an input it cannot handle into a
+    crash or a silently different string. Otherwise returns the POSIX
+    form of `file` resolved relative to `root` (absolute inputs are
+    resolved as-is; relative inputs are resolved against `root` first),
+    made relative to `root` itself -- i.e. the canonical repo-relative
+    form regardless of the shape given.
+
+    NOTE: this does not retroactively renormalize a finding already
+    persisted to `.frob/quarantine.json` before this fix landed --
+    `_path_shape_hint` stays in place as a diagnostic for exactly that
+    legacy-record case."""
+    if not file:
+        return file
+    try:
+        candidate = Path(file)
+        resolved = (
+            candidate if candidate.is_absolute() else root / candidate
+        ).resolve()
+        resolved_root = root.resolve()
+        return resolved.relative_to(resolved_root).as_posix()
+    except (OSError, ValueError):
+        return file
+
+
 def _is_unidentifiable(finding: QuarantinedFinding) -> bool:
     """`True` iff `finding` carries an identity-less shape (`rule_id` AND
     `file` both empty) -- T-2207's live incident shape: a finding naming
@@ -346,7 +390,10 @@ def is_quarantined(root: Path) -> Result[bool, QuarantineError]:
 # frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_an_attributed_trivial_finding_still_raises kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_an_unattributed_non_trivial_finding_still_raises kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_a_mixed_batch_drops_only_the_trivial_unattributed_finding kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_normalizes_an_absolute_file_to_root_relative_at_write_time kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_an_already_relative_file_is_left_as_is kind="unit"  # noqa: E501
 # frob:waive DUP001 reason="T-2207: the new identity-less filter block mirrors this function's OWN pre-existing _NATURALLY_UNATTRIBUTABLE_RULES filter shape on purpose (deliberate consistency, see this function's docstring) -- the resulting structural match against unrelated filter/log/drop bodies across the tree (native-stub pairs, compliance-catalog tests, etc) is the generic shape, not shared logic worth extracting"  # noqa: E501
+# frob:waive AFFECT001 reason="T-3065 adds a write-time path-normalization step (_normalize_finding_path) inside this function's existing filter pipeline -- an implementation-level bugfix to the identity-matching mechanism, not a change to the raise/persist/logging behavior docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693 describes; re-verified accurate via frob ack rather than an edit to that shared, many-symbol doc section"  # noqa: E501
 def raise_quarantine(
     root: Path,
     *,
@@ -388,6 +435,17 @@ def raise_quarantine(
     dropped before persisting. This is a SEVERITY cut, not an
     attribution one -- see that function's own docstring for why both
     halves are required and how narrow the resulting intersection is."""
+    # T-3065: normalize every finding's `file` to its canonical
+    # root-relative form BEFORE any filter runs or the record is
+    # persisted -- the single write-time choke point that makes the
+    # stored identity independent of whatever path shape the caller
+    # (land-time backpressure raise vs. rapid-sweep red-batch raise)
+    # happened to pass in.
+    findings = tuple(
+        f.model_copy(update={"file": _normalize_finding_path(root, f.file)})
+        for f in findings
+    )
+
     exempted = tuple(
         f for f in findings if f.rule_id in _NATURALLY_UNATTRIBUTABLE_RULES
     )

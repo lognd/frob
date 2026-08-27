@@ -2,7 +2,7 @@
 id: T-3065
 title: Quarantine finding identities are keyed by literal string equality on a path
   whose shape varies by caller; normalize at write time
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -85,6 +85,13 @@ body_changes:
   at: '2026-08-26'
   old_length: 0
   new_length: 4800
+evidence:
+- tests/unit/verify/test_verify_runner.py::TestDispose::test_dismiss_with_relative_path_matches_a_finding_stored_absolute
+- tests/unit/verify/test_quarantine.py::TestNormalizeFindingPath::test_absolute_and_relative_resolve_identical
+- tests/unit/verify/test_quarantine.py::TestNormalizeFindingPath::test_empty_file_passes_through
+- tests/unit/verify/test_quarantine.py::TestNormalizeFindingPath::test_unresolvable_path_falls_back_verbatim
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_normalizes_an_absolute_file_to_root_relative_at_write_time
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_an_already_relative_file_is_left_as_is
 designated_repro_test: null
 threat: null
 component: null

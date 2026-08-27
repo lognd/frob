@@ -176,6 +176,48 @@ class TestDispose:
         assert status is not None
         assert status.quarantine_raised is False
 
+    # frob:ticket T-3065
+    def test_dismiss_with_relative_path_matches_a_finding_stored_absolute(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3065 field evidence (a): a finding raised with an ABSOLUTE
+        `file` (whatever shape the raising caller happened to use) must
+        still be dispose-able through `frob verify dispose --dismiss`
+        written with the RELATIVE shape -- the two name the same
+        filesystem path and must resolve to the same stored identity,
+        never fail as a bare shape mismatch (previously: undisposed,
+        `FindingsNotDisposed`, quarantine stays raised)."""
+        # frob:tests src/frob/app/verify_runner.py::_run_dispose kind="unit"
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        absolute_file = str(tmp_path / "src" / "frob" / "narrative" / "_cli.py")
+        assert raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("c1",),
+            findings=(
+                QuarantinedFinding(
+                    rule_id="E501", file=absolute_file, line=None
+                ),
+            ),
+        ).is_ok
+
+        cfg = AppConfig(
+            verify_command="dispose",
+            verify_path=tmp_path,
+            verify_dispose_dismissed=[
+                "E501:src/frob/narrative/_cli.py=line too long, cosmetic"
+            ],
+            verify_dispose_reason="dismiss E501 noise",
+            verify_dispose_actor="T-3065 agent",
+        )
+        _run_dispose(cfg)  # returns normally -- no sys.exit on success
+
+        loaded = load_quarantine(tmp_path)
+        assert loaded.is_ok
+        record = loaded.danger_ok
+        assert record is not None
+        assert record.cleared_at is not None
+        assert record.findings[0].disposition == "dismissed"
+
     def test_retire_unidentifiable_flag_retires_and_clears(
         self, tmp_path: Path
     ) -> None:

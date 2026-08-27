@@ -13,9 +13,41 @@ from frob.verify._quarantine import (
     clear_quarantine,
     is_quarantined,
     load_quarantine,
+    _normalize_finding_path,
     raise_quarantine,
     retire_unidentifiable_findings,
 )
+
+
+# frob:ticket T-3065
+class TestNormalizeFindingPath:
+    """`_normalize_finding_path`: the write/lookup-time canonicalization
+    that makes an absolute and a relative caller-given path resolve to
+    the SAME stored/matched identity (T-3065's own field evidence)."""
+
+    def test_absolute_and_relative_resolve_identical(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::_normalize_finding_path kind="unit"  # noqa: E501
+        absolute = str(tmp_path / "src" / "x.py")
+        relative = "src/x.py"
+        assert _normalize_finding_path(tmp_path, absolute) == _normalize_finding_path(
+            tmp_path, relative
+        )
+        assert _normalize_finding_path(tmp_path, relative) == "src/x.py"
+
+    def test_empty_file_passes_through(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::_normalize_finding_path kind="unit"  # noqa: E501
+        # An identity-less finding's `file == ""` must stay exactly `""`
+        # -- `_is_unidentifiable` depends on that literal shape, not a
+        # resolved cwd-relative string.
+        assert _normalize_finding_path(tmp_path, "") == ""
+
+    def test_unresolvable_path_falls_back_verbatim(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::_normalize_finding_path kind="unit"  # noqa: E501
+        # A path outside `root` entirely cannot be made root-relative --
+        # normalization must return it unchanged rather than raise or
+        # silently produce a different string.
+        outside = "/definitely/not/under/root/file.py"
+        assert _normalize_finding_path(tmp_path, outside) == outside
 
 
 # frob:ticket T-2207
@@ -136,6 +168,38 @@ class TestRaiseQuarantine:
         assert record.batch_commit_shas == ("abc123",)
         assert len(record.findings) == 1
         assert record.cleared_at is None
+
+    # frob:ticket T-3065
+    def test_normalizes_an_absolute_file_to_root_relative_at_write_time(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3065: whatever path shape the raising caller passes,
+        `raise_quarantine` persists the canonical root-relative form --
+        the write-time half of the fix (must-fire: an absolute input is
+        actually rewritten, not merely tolerated)."""
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        absolute_file = str(tmp_path / "src" / "frob" / "narrative" / "_cli.py")
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(QuarantinedFinding(rule_id="E501", file=absolute_file),),
+        )
+        assert result.is_ok
+        assert result.danger_ok.findings[0].file == "src/frob/narrative/_cli.py"
+
+    # frob:ticket T-3065
+    def test_an_already_relative_file_is_left_as_is(self, tmp_path: Path) -> None:
+        """Must-stay-quiet sibling of the above: a finding already
+        stored in the canonical relative shape is unchanged by the new
+        normalization step."""
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1),),
+        )
+        assert result.is_ok
+        assert result.danger_ok.findings[0].file == "src/x.py"
 
     # frob:ticket T-1693
     def test_empty_findings_refused(self, tmp_path: Path) -> None:

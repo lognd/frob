@@ -527,37 +527,50 @@ def _run_explain(cfg: AppConfig) -> None:
     _print_attribution_human(r, attribution)
 
 
-def _parse_dispose_entry(raw: str) -> tuple[tuple[str, str, int | None], str] | None:
+def _parse_dispose_entry(
+    raw: str, *, root: Path
+) -> tuple[tuple[str, str, int | None], str] | None:
     """Parse one `--file-ticket`/`--dismiss` argument
     (`RULE:FILE:LINE=VALUE`) into `((rule_id, file, line), value)`, or
-    `None` on a malformed argument."""
+    `None` on a malformed argument. T-3065: the parsed `file` component
+    is run through `frob.verify._quarantine._normalize_finding_path`
+    against `root` before it becomes part of the key -- the same
+    normalization `raise_quarantine` applies at write time, so a caller
+    naming the same file in a different shape (absolute vs. relative)
+    than the finding was originally stored with still resolves to the
+    identical dict key here, rather than failing a literal string
+    match."""
     if "=" not in raw:
         return None
     key_part, value = raw.split("=", 1)
     parsed = _parse_finding_arg(key_part)
     if parsed is None or not value:
         return None
-    return parsed, value
+    rule_id, file, line = parsed
+    from frob.verify._quarantine import _normalize_finding_path
+
+    return (rule_id, _normalize_finding_path(root, file), line), value
 
 
 def _collect_dispositions(
-    cfg: AppConfig,
+    cfg: AppConfig, *, root: Path
 ) -> dict[tuple[str, str, int | None], tuple[str, str]] | None:
     """Parse `cfg.verify_dispose_filed`/`verify_dispose_dismissed` into
     `clear_quarantine`'s own `dispositions` mapping, or `None` (having
     already logged and exited) on a malformed entry -- split out of
     `_run_dispose` (ARCH001) so that function's own body stays the
-    validate-then-call sequence."""
+    validate-then-call sequence. `root` is threaded through to
+    `_parse_dispose_entry` for T-3065's path normalization."""
     dispositions: dict[tuple[str, str, int | None], tuple[str, str]] = {}
     for raw in cfg.verify_dispose_filed:
-        parsed = _parse_dispose_entry(raw)
+        parsed = _parse_dispose_entry(raw, root=root)
         if parsed is None:
             _log.error("verify dispose: malformed --file-ticket %r", raw)
             return None
         key, ticket_id = parsed
         dispositions[key] = ("filed", ticket_id)
     for raw in cfg.verify_dispose_dismissed:
-        parsed = _parse_dispose_entry(raw)
+        parsed = _parse_dispose_entry(raw, root=root)
         if parsed is None:
             _log.error("verify dispose: malformed --dismiss %r", raw)
             return None
@@ -606,6 +619,8 @@ def _retire_unidentifiable_dispose(cfg: AppConfig, root: Path, reason: str, acto
 # frob:tests \
 # tests/unit/verify/test_verify_runner.py::TestDispose.test_retire_unidentifiable_flag_\
 # still_blocks_on_a_well_formed_sibling
+# frob:tests tests/unit/verify/test_verify_runner.py::TestDispose.test_dismiss_with_relative_path_matches_a_finding_stored_absolute kind="unit"  # noqa: E501
+# frob:waive AFFECT001 reason="T-3065 threads root through to _collect_dispositions/_parse_dispose_entry so a --file-ticket/--dismiss key is normalized (_normalize_finding_path) before lookup -- an implementation-level identity-matching fix, not a change to the RULE:FILE:LINE addressing/clear_quarantine-delegation behavior docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697 describes; re-verified accurate via frob ack rather than an edit to that shared, many-symbol doc section"  # noqa: E501
 def _run_dispose(cfg: AppConfig) -> None:
     """`frob verify dispose`: apply every `--file-ticket`/`--dismiss`
     disposition given and, once every currently-quarantined finding is
@@ -633,7 +648,7 @@ def _run_dispose(cfg: AppConfig) -> None:
     if cfg.verify_dispose_retire_unidentifiable:
         result = _retire_unidentifiable_dispose(cfg, root, reason, actor)
     else:
-        dispositions = _collect_dispositions(cfg)
+        dispositions = _collect_dispositions(cfg, root=root)
         if dispositions is None:
             sys.exit(1)
         if not dispositions:
