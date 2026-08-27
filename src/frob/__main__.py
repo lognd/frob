@@ -62,6 +62,8 @@ from frob.app import App, AppConfig
 from frob.app.config import stale_binary_warning, stale_install_warning
 from frob.doctor import native_degrade_warning
 from frob.logging import get_logger
+from frob.narrative._cli import add_narrative_parser
+from frob.refactor._cli import add_refactor_parser
 
 _log = get_logger(__name__)
 
@@ -387,8 +389,17 @@ def _build_parser() -> argparse.ArgumentParser:
 # frob:ticket T-1567
 # frob:ticket T-1568
 # frob:ticket T-1569
+# frob:ticket T-3125
+# frob:tests tests/unit/test_main_entry.py::TestHelpListsDirectDispatchVerbs.test_help_lists_refactor_and_narrative  # noqa: E501
 def _add_analysis_subparsers(sub) -> None:
-    """Register the code-analysis subcommand group: scaffold through bind."""
+    """Register the code-analysis subcommand group: scaffold through bind.
+
+    T-3125: `refactor`/`narrative` are also registered here purely for
+    `--help`/discoverability -- `_dispatch` still routes both by a raw
+    argv[0] scan BEFORE this tree is ever parsed (see `_dispatch` and
+    `_dispatch_refactor`/`_dispatch_narrative`), so this addition is
+    additive only and does not change actual execution routing.
+    """
     _add_scaffold_parser(sub)
     _add_cycle_parser(sub)
     _add_explore_parser(sub)
@@ -406,6 +417,13 @@ def _add_analysis_subparsers(sub) -> None:
     _add_bind_parser(sub)
     _add_agent_parser(sub)
     _add_worktree_parser(sub)
+    # T-3125: registered here for `--help`/discoverability only, mirroring
+    # `agent`/`worktree` above -- `_dispatch` still routes `refactor`/
+    # `narrative` by a raw argv[0] scan BEFORE this tree is ever parsed
+    # (see `_dispatch`, `_dispatch_refactor`, `_dispatch_narrative`), so
+    # this call is additive and does not change actual execution routing.
+    add_refactor_parser(sub)
+    add_narrative_parser(sub)
 
 
 # frob:ticket T-0441

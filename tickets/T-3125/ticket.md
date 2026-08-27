@@ -1,7 +1,7 @@
 ---
 id: T-3125
 title: frob --help does not list refactor/narrative subcommands
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -26,6 +26,8 @@ scope_changes:
   reason: 'T-3125: help-listing regression test lives here'
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/unit/test_main_entry.py::TestHelpListsDirectDispatchVerbs::test_help_lists_refactor_and_narrative
 designated_repro_test: null
 threat: null
 component: null

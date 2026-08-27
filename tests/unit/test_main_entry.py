@@ -164,6 +164,32 @@ class TestRefactorDispatch:
         assert exc_info.value.code == 1
 
 
+# frob:ticket T-3125
+class TestHelpListsDirectDispatchVerbs:
+    """`refactor`/`narrative` are dispatched by a raw argv[0] scan before
+    `_build_parser()` ever runs (see `_dispatch`), so they used to work but
+    never show up in `frob --help`'s own subcommand list -- T-3125 fixes
+    that by also registering them on the real parser tree, additively,
+    purely for discoverability."""
+
+    def test_help_lists_refactor_and_narrative(self, capsys) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestHelpListsDirectDispatchVerbs.test_help_lists_refactor_and_narrative  # noqa: E501
+        parser = main_module._build_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["refactor", "--help"])
+        assert "move" in capsys.readouterr().out
+
+        with pytest.raises(SystemExit):
+            parser.parse_args(["narrative", "--help"])
+        assert capsys.readouterr().out
+
+        with pytest.raises(SystemExit):
+            parser.parse_args(["--help"])
+        out = capsys.readouterr().out
+        assert "refactor" in out
+        assert "narrative" in out
+
+
 # frob:ticket T-0578
 class TestDidYouMean:
     """`_build_parser`'s `_SuggestingArgumentParser` appends a "did you
