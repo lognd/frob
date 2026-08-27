@@ -38,7 +38,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6f04de4c8990f9e7e1131b420ba5c722cb95fb84
 ---
 MEASURED 2026-08-27, by running both tools against the same live host state.
 
