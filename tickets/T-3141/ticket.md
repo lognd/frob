@@ -15,12 +15,53 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_cli_evidence_enforcement.py
-- src/frob/tickets/
-- src/frob/app/ticket_runner/
+- src/frob/tickets/_evidence.py
+- tests/unit/test_tickets_evidence_only_scope.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/
+  reason: T-3141 investigation shows the regression + fix is confined to add_evidence's
+    auto-widen of evidence_scope in _evidence.py, plus the T-1944 test suite it broke;
+    the whole tickets/ and ticket_runner/ dirs are not needed and collide with concurrent
+    leases
+  actor: logan
+  at: '2026-08-27'
+- op: remove
+  glob: src/frob/app/ticket_runner/
+  reason: T-3141 investigation shows the regression + fix is confined to add_evidence's
+    auto-widen of evidence_scope in _evidence.py, plus the T-1944 test suite it broke;
+    the whole tickets/ and ticket_runner/ dirs are not needed and collide with concurrent
+    leases
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: T-3141 investigation shows the regression + fix is confined to add_evidence's
+    auto-widen of evidence_scope in _evidence.py, plus the T-1944 test suite it broke;
+    the whole tickets/ and ticket_runner/ dirs are not needed and collide with concurrent
+    leases
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_tickets_evidence_only_scope.py
+  reason: T-3141 investigation shows the regression + fix is confined to add_evidence's
+    auto-widen of evidence_scope in _evidence.py, plus the T-1944 test suite it broke;
+    the whole tickets/ and ticket_runner/ dirs are not needed and collide with concurrent
+    leases
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/system/test_cli_evidence_enforcement.py
+  reason: T-3141 investigation shows the regression + fix is confined to add_evidence's
+    auto-widen of evidence_scope in _evidence.py, plus the T-1944 test suite it broke;
+    the whole tickets/ and ticket_runner/ dirs are not needed and collide with concurrent
+    leases
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
