@@ -28,7 +28,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2067a6f4af07154bc19b1bc4ed9c603377913b2d
 ---
 Linux full-suite triage (T-2992): tests/test_doctor.py (13 tests) is
 reliable in isolation, serial (`pytest tests/test_doctor.py -p no:xdist`:
