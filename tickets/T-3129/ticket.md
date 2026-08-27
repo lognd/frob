@@ -2,7 +2,7 @@
 id: T-3129
 title: Stale global frob reports the same version as the project build but has a different
   CLI surface
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -16,10 +16,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/_version_guard.py
+- src/frob/__main__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/__main__.py
+  reason: acceptance requires the loud warning to actually fire on invocation; wiring
+    one call into the existing _print_startup_warnings chain (alongside stale_install_warning/stale_binary_warning)
+    is the only place this can be surfaced
+  actor: logan
+  at: '2026-08-27'
 body_changes:
 - mode: set
   reason: Record the measured surface divergence under an identical version string
