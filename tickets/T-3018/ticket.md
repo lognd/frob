@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_leases.py
 - src/frob/process/_pid_liveness.py
 - src/frob/mutate/_journal.py
+- docs/modules/process.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
   reason: extract shared frob.process._pid_liveness.pid_alive() so _land.py's identical
     unsafe os.kill(pid,0) probe and _journal.py's existing safe one share one implementation,
     per T-3018's own recommendation
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/process.md
+  reason: frob:doc anchor for the new pid_alive() extraction
   actor: logan
   at: '2026-08-26'
 triage_changes:
