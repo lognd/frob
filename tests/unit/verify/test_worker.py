@@ -174,6 +174,62 @@ class TestRunCoalescedVerification:
         assert watermark.is_ok
         assert watermark.danger_ok is None
 
+    # frob:ticket T-3052
+    def test_unfilable_finding_still_pins_the_watermark_on_the_next_wake(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
+        """T-3052 (H5) acceptance (must-fire fixture): an unfilable
+        finding must NOT become silently green on the SECOND wake. Before
+        this fix, `_resolve_verification_outcome` wrote the rolling
+        baseline unconditionally, BEFORE deciding the outcome -- so wake
+        1's unfiled-red result had already recorded `fresh` (the
+        unfilable finding included) as the new baseline, and wake 2's
+        `fresh - baseline` came back empty, taking the green path and
+        advancing the watermark past the very commit wake 1 refused to
+        certify. This re-runs `run_coalesced_verification` twice against
+        an UNCHANGED tree (same findings both times, `_file_regression_
+        ticket` always refusing) and asserts wake 2 is STILL red and
+        STILL does not advance -- the unfiled finding must keep
+        reappearing as new every wake until something durable owns it."""
+        from frob.app.ticket_runner import _rapid_sweep
+
+        _enqueue_n(tmp_path, 1)
+        _rapid_sweep._write_baseline(tmp_path, frozenset({("RULE1", "a.py")}), "c0")
+        monkeypatch.setattr(
+            _rapid_sweep, "_file_regression_ticket", lambda *a, **k: None
+        )
+        verify_fn = lambda root, sha: frozenset(  # noqa: E731
+            {("RULE1", "a.py"), ("RULE2", "b.py")}
+        )
+
+        wake1 = run_coalesced_verification(tmp_path, verify_fn=verify_fn)
+        assert wake1.is_ok
+        assert wake1.danger_ok.status == "red"
+        assert wake1.danger_ok.advanced_watermark is False
+
+        # T-2694-style re-queue: the same commit is still the tip on the
+        # next wake (nothing new landed), reproducing the "same red batch
+        # measured again" shape this fix targets.
+        _enqueue_n(tmp_path, 1)
+        wake2 = run_coalesced_verification(tmp_path, verify_fn=verify_fn)
+
+        assert wake2.is_ok
+        assert wake2.danger_ok.status == "red", (
+            "the unfilable finding must still read as NEW on wake 2, "
+            "never silently absorbed into the baseline as if wake 1 had "
+            "certified it clean"
+        )
+        assert wake2.danger_ok.filed_ticket is None
+        assert wake2.danger_ok.advanced_watermark is False, (
+            "an unfilable finding must never be silently certified green "
+            "-- this is T-2324's own hard constraint, and it must hold "
+            "for MORE than the one round T-3052 found it broken at"
+        )
+        watermark = load_watermark(tmp_path)
+        assert watermark.is_ok
+        assert watermark.danger_ok is None
+
     def test_clean_run_advances_watermark_and_compacts_queue(
         self, tmp_path: Path
     ) -> None:

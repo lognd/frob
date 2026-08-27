@@ -643,7 +643,25 @@ def _resolve_verification_outcome(
     nothing durable records it, so nothing may certify this commit as
     verified. This is the hard constraint T-2324's own acceptance
     criteria require -- see `_advance_watermark_and_compact` for where
-    both the green and the red-but-owned paths converge."""
+    both the green and the red-but-owned paths converge.
+
+    T-3052 (H5): the baseline write is OUTCOME-AWARE, not unconditional.
+    It used to run once, eagerly, before any branch below was even
+    reached -- so the unfiled-finding branch (the one case above that
+    must never silently certify) had ALREADY recorded `fresh` (including
+    the unfilable finding) into the rolling baseline by the time it
+    returned. The very next wake then computed `new_findings = fresh -
+    baseline` as EMPTY (the finding is now baked into what "no new
+    findings" is measured against) and took the green path, advancing
+    the watermark past the exact commit this function had just refused
+    to certify -- silently defeating the hard constraint for one round
+    later. Each branch below now writes the baseline itself, with content
+    matching what that branch actually decided: `baseline-established`
+    and the green/owned-red paths write `fresh` (this commit's findings
+    are now the comparison point, correctly); the unfiled branch does
+    NOT write at all, leaving the prior baseline untouched so the
+    unfilable finding still shows up as NEW on the next wake, and keeps
+    doing so every wake until something durable owns it."""
     from frob.app.ticket_runner._rapid_sweep import (
         _file_regression_ticket,
         _read_baseline,
@@ -651,14 +669,15 @@ def _resolve_verification_outcome(
     )
 
     baseline = _read_baseline(root)
-    _write_baseline(root, fresh, tip.commit_sha)
 
     if baseline is None:
         # A real, measured result -- but with nothing to compare it
         # against, "no new findings" cannot be asserted, only "we have
         # never checked before now". NOT a green claim; the watermark
         # stays untouched, same posture _rapid_sweep._read_baseline's own
-        # docstring already establishes for this exact case.
+        # docstring already establishes for this exact case. This IS a
+        # legitimate comparison point going forward, so it is recorded.
+        _write_baseline(root, fresh, tip.commit_sha)
         _log.warning(
             "verify worker: no prior rolling baseline -- recorded %d "
             "error(s) at %s as the baseline; watermark NOT advanced (this "
@@ -681,16 +700,22 @@ def _resolve_verification_outcome(
             root, tip.ticket_id, tip.commit_sha, new_findings
         )
         if filed is None:
-            # T-2324: the ONE case that must still pin the watermark --
-            # a finding with no durable owner at all (filing itself
-            # failed) cannot be "accounted for" by anything, so this
-            # commit must not be silently certified as verified. Unlike
-            # every other red-but-owned case below, there is nothing here
-            # a later reader could consult to learn what went wrong.
+            # T-2324/T-3052: the ONE case that must still pin the
+            # watermark -- a finding with no durable owner at all
+            # (filing itself failed) cannot be "accounted for" by
+            # anything, so this commit must not be silently certified as
+            # verified. The baseline is deliberately NOT written here:
+            # the prior baseline (already read above) is left in place,
+            # so the unfiled finding(s) remain present in `fresh -
+            # baseline` on every subsequent wake until they are actually
+            # accounted for -- never silently absorbed into "known state"
+            # by a write this branch never asked for.
             _log.error(
                 "verify worker: %d new finding(s) at %s could NOT be "
                 "filed -- watermark NOT advanced (ownerless, T-2324's own "
-                "hard constraint: never silently certify this)",
+                "hard constraint: never silently certify this); baseline "
+                "left UNCHANGED (T-3052) so these finding(s) reappear as "
+                "NEW on the next wake instead of being silently absorbed",
                 len(new_findings),
                 tip.commit_sha[:12],
             )
@@ -702,6 +727,7 @@ def _resolve_verification_outcome(
                     findings_count=len(new_findings),
                 )
             )
+        _write_baseline(root, fresh, tip.commit_sha)
         # T-2324: a red result WITH a durable owner (freshly filed, or
         # disposed to an existing duplicate -- T-2312's own fix) is
         # ACCOUNTED FOR -- the ticket system, not the watermark, is now
@@ -733,6 +759,10 @@ def _resolve_verification_outcome(
             findings_count=len(new_findings),
         )
 
+    # T-3052: the genuinely-clean path also writes `fresh` as the new
+    # comparison point (unchanged behavior from before this fix -- only
+    # the unfiled branch above stopped writing).
+    _write_baseline(root, fresh, tip.commit_sha)
     return _advance_watermark_and_compact(
         root, tip, fresh, status="green", filed_ticket=None, findings_count=len(fresh)
     )

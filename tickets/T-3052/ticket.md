@@ -2,7 +2,7 @@
 id: T-3052
 title: 'Land H5: the rolling baseline is written before the outcome is decided, so
   an unfilable finding is silently certified green after one wake'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -38,6 +38,10 @@ scope_changes:
   reason: evidence tests for the H5 fix
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_unfilable_finding_still_pins_the_watermark_on_the_next_wake
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_that_cannot_be_filed_still_do_not_advance
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_filed_to_a_real_ticket_still_advance
 designated_repro_test: null
 threat: null
 component: null

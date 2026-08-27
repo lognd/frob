@@ -427,6 +427,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3026: Post-land findings from the T-3006/T-2995/T-3014 batch: ARCH103, DOC001, E501, 2x LARGE001, REF001, REF002
 - T-3043: V-model H2: the four closure rules check local edge degree, not path closure -- a mutual-satisfies pair with zero requirements passes all four
 - T-3051: Land H4: the quarantine deadlock is UNFIXED -- _dispose_to_existing_duplicate_or_none handles DuplicateTicket but not DuplicateFinding
+- T-3052: Land H5: the rolling baseline is written before the outcome is decided, so an unfilable finding is silently certified green after one wake
 
 ## [0.530.0] - unreleased
 
