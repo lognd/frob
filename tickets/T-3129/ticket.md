@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/_version_guard.py
 - src/frob/__main__.py
+- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,12 @@ scope_changes:
   reason: acceptance requires the loud warning to actually fire on invocation; wiring
     one call into the existing _print_startup_warnings chain (alongside stale_install_warning/stale_binary_warning)
     is the only place this can be surfaced
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/app.md
+  reason: frob:doc directive on binary_fingerprint_warning cites this file; T-1218's
+    own precedent doc-lives-here pattern
   actor: logan
   at: '2026-08-27'
 body_changes:
