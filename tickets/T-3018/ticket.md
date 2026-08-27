@@ -20,6 +20,8 @@ scope:
 - src/frob/process/_pid_liveness.py
 - src/frob/mutate/_journal.py
 - docs/modules/process.md
+- tests/unit/test_process_pid_liveness.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +44,18 @@ scope_changes:
 - op: add
   glob: docs/modules/process.md
   reason: frob:doc anchor for the new pid_alive() extraction
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_process_pid_liveness.py
+  reason: new unit tests for the extracted pid_liveness module, and land-side delegation
+    test
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: new unit tests for the extracted pid_liveness module, and land-side delegation
+    test
   actor: logan
   at: '2026-08-26'
 triage_changes:
