@@ -2,7 +2,7 @@
 id: T-3151
 title: 'frob-exports gap: ci_report/ci_validity/doctor/ghio/repo_meta/coverage_wait
   (T-3140 item 5)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_exports.py
+- src/frob/__init__.py
+- src/frob/testing/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +35,18 @@ scope_changes:
   reason: 'narrowed: this is a survey/investigation ticket over frob-exports gaps
     across several packages'' __init__.py files, not a whole-repo change; the actual
     __init__.py edits are follow-on work the investigation will scope precisely'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/__init__.py
+  reason: Fix requires adding re-exports to production __init__.py files named in
+    the ticket's own Plan; scope originally covered only the failing test.
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/testing/__init__.py
+  reason: Fix requires adding re-exports to production __init__.py files named in
+    the ticket's own Plan; scope originally covered only the failing test.
   actor: logan
   at: '2026-08-27'
 designated_repro_test: null
