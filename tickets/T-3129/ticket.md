@@ -18,6 +18,7 @@ scope:
 - src/frob/app/_version_guard.py
 - src/frob/__main__.py
 - docs/modules/app.md
+- tests/unit/test_version_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,16 @@ scope_changes:
   glob: docs/modules/app.md
   reason: frob:doc directive on binary_fingerprint_warning cites this file; T-1218's
     own precedent doc-lives-here pattern
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_version_guard.py
+  reason: new test file for the module this ticket adds
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_version_guard.py
+  reason: new test file for the module this ticket adds
   actor: logan
   at: '2026-08-27'
 body_changes:
