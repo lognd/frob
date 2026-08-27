@@ -2,7 +2,7 @@
 id: T-3151
 title: 'frob-exports gap: ci_report/ci_validity/doctor/ghio/repo_meta/coverage_wait
   (T-3140 item 5)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -49,6 +49,10 @@ scope_changes:
     the ticket's own Plan; scope originally covered only the failing test.
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
+- tests/unit/test_exports.py::TestExportsPackage::test_basic_public_symbols
+- tests/unit/test_exports.py::TestExportsConsumers::test_finds_import_consumer
 designated_repro_test: null
 threat: null
 component: null

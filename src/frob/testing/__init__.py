@@ -31,6 +31,7 @@ from frob.testing._coverage_refresh import (
     pytest_load_initial_conftests,
 )
 from frob.testing._coverage_wait import (
+    CoverageLockUnavailable,
     CoverageWaitError,
     CoverageWaitOutcome,
     SharedCoverageResult,
@@ -82,6 +83,7 @@ from frob.testing._stackdump import (
 
 __all__ = [
     "CollectedTests",
+    "CoverageLockUnavailable",
     "CoverageRefreshError",
     "CoverageWaitError",
     "CoverageWaitOutcome",

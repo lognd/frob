@@ -498,6 +498,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3147: Audit closes landed 2026-08-10..2026-08-27 for D-02 self-cover false positives (T-1944/T-3141)
 - T-3148: _KNOWN_RULE_FIXABILITY literal missing SYS100 (T-3140 item 4)
 - T-3149: WIRE001 false positive for CLI dest present in _config_external.py (T-3140 item 6)
+- T-3151: frob-exports gap: ci_report/ci_validity/doctor/ghio/repo_meta/coverage_wait (T-3140 item 5)
 - T-3152: fleet_status and frob.process._reap use different age heuristics for the same forkserver (mtime vs stat starttime)
 
 ## [0.530.0] - unreleased
