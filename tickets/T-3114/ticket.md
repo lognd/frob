@@ -53,7 +53,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 926e97e8bff1fed502a3596b5a5ae7045eb45976
 ---
 DECOMPOSITION CHILD of T-3089 (series BQ). T-3089's body carries the settled
 answer to its own blocking design question; this ticket builds the primitive
