@@ -1,7 +1,7 @@
 ---
 id: T-3121
 title: Flip the squash-apply stage onto a disposable worktree and publish by CAS
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -18,10 +18,25 @@ scope:
 - src/frob/tickets/_land_squash.py
 - src/frob/tickets/_land_compose.py
 - docs/modules/tickets-landing.md
+- src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'T-3121''s hazard list requires a non-fatal resync field on LandReport (the
+
+    post-CAS resync can fail without failing the land, and the caller must be
+
+    able to see that). LandReport is defined in src/frob/tickets/_models.py, so
+
+    the field addition cannot be made inside the declared scope.
+
+    '
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 acceptance:
 - text: Given a real land, when the squash-apply stage runs, then a concurrent `git
