@@ -18,6 +18,7 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/check/_python.py
 - src/frob/process/parsers/ruff.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
 - op: add
   glob: src/frob/process/parsers/ruff.py
   reason: add lint gate to rapid land path (T-3061)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: doc target for new pre-land lint gate function
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
