@@ -2,11 +2,13 @@
 id: T-3064
 title: 'Break the 182-node import cycle: extract universal value types out of gates._models
   into a leaf module'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-26'
 priority: high
+blocked_by:
+- T-draft-4e79f8b8
 parent: null
 tier: ticket
 sprint: null
