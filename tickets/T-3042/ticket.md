@@ -26,6 +26,7 @@ scope:
 - docs/strata/vmodel.md
 - editors/vscode-strata/syntaxes/strata.tmLanguage.json
 - docs/guides/extending/strata-surface-grammar.md
+- strata-core/strata_core.pyi
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -104,6 +105,24 @@ scope_changes:
     update the affects-closure doc for parse_program (AFFECT001)'
   actor: logan
   at: '2026-08-26'
+- op: add
+  glob: strata-core/strata_core.pyi
+  reason: 'T-3042: vmodel_check has no type stub at all (a pre-existing T-3007 gap,
+    exposed only now that this ticket adds its first real Python caller) -- ty check
+    refuses the new caller without it'
+  actor: logan
+  at: '2026-08-26'
+evidence:
+- tests/test_gates_vmodel.py::TestVmodelGate::test_noop_no_design_dir
+- tests/test_gates_vmodel.py::TestVmodelGate::test_noop_no_vmodel_declarations
+- tests/test_gates_vmodel.py::TestVmodelGate::test_fires_vmod001_on_construction_error
+- tests/test_gates_vmodel.py::TestVmodelGate::test_fires_vmod001_on_closure_violation
+- tests/test_gates_vmodel.py::TestVmodelGate::test_quiet_on_a_genuinely_closed_graph
+- tests/test_gates_vmodel.py::TestVmodelGate::test_spans_multiple_files
+- tests/unit/strata/test_vmodel_authoring.py::TestVmodelAuthoringFormat::test_vmodel_node_and_edge_round_trip_through_python
+- tests/unit/strata/test_vmodel_authoring.py::TestVmodelAuthoringFormat::test_duplicate_vmodel_node_name_is_a_parse_error
+- tests/unit/strata/test_vmodel_authoring.py::TestVmodelAuthoringFormat::test_existing_bare_module_files_parse_unchanged
+- tests/unit/strata/test_vmodel_authoring.py::TestVmodelAuthoringFormat::test_designs_own_frob_strata_still_parses
 designated_repro_test: null
 threat: null
 component: null
