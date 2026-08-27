@@ -71,7 +71,7 @@ if TYPE_CHECKING:
     # frob:ticket T-1979
     from frob.testing._models import CollectedTests
 
-from frob.gitio import current_branch, run_argv
+from frob.gitio import current_branch, excerpt, run_argv
 from frob.logging import get_logger
 
 # frob:ticket T-3018
@@ -2165,10 +2165,141 @@ def _land_plan_finish(
     )
 
 
+# frob:ticket T-3135
+#: Fixed, persistent location for the T-1514 pre-commit sweep's warm
+#: stage (T-3135) -- a `git worktree` kept across lands, inside the
+#: already-gitignored `.frob/` directory, so its `.venv`, built natives
+#: and `.frob` gate cache stay warm instead of paying the from-scratch
+#: provisioning cost T-3127's failure log measured against a freshly cut
+#: disposable stage (bare stage: 371.2s spawn timeout, unmeasurable;
+#: symlinked-venv stage: native-staleness abort, also unmeasurable). One
+#: warm stage per checkout -- matches how `frob ticket work` already
+#: keys its own worktrees off `root`, and lives outside any tracked
+#: pathspec so it can never appear in `git status` on `root`.
+_WARM_SWEEP_STAGE_RELPATH = Path(".frob") / "warm-sweep-stage"
+
+
+def _warm_sweep_stage_path(root: Path) -> Path:
+    """The fixed worktree path `_ensure_warm_sweep_stage` creates or
+    reuses as `root`'s own persistent T-1514 sweep stage (T-3135)."""
+    return root / _WARM_SWEEP_STAGE_RELPATH
+
+
+def _teardown_warm_sweep_stage(root: Path, stage: Path) -> None:
+    """Force-remove a warm sweep stage worktree that failed to reset
+    cleanly (T-3135), so the next `_ensure_warm_sweep_stage` call re-cuts
+    it from scratch rather than silently reusing a possibly-corrupt one.
+    Best-effort: a failure here just leaves a stale `git worktree list`
+    entry, which the next `worktree add` at the same path surfaces
+    loudly (a real git error) rather than silently reusing corrupt state."""
+    run_argv(("git", "-C", str(root), "worktree", "remove", "--force", str(stage)))
+    run_argv(("git", "-C", str(root), "worktree", "prune"))
+
+
+def _reset_warm_sweep_stage(stage: Path, pre_land_tip: str) -> bool:
+    """Hard-reset an existing warm sweep stage to `pre_land_tip` and
+    clean everything EXCEPT `.venv`/`.frob` (T-3135's whole point -- a
+    fresh disposable stage never has those, which is exactly what T-3127
+    measured as unmeasurable). `False` on any git failure, signaling the
+    caller to tear the stage down and re-cut it rather than reuse a
+    possibly corrupt one."""
+    reset = run_argv(("git", "-C", str(stage), "reset", "--hard", pre_land_tip))
+    if reset.is_err or reset.danger_ok.returncode != 0:
+        _log.warning(
+            "land: warm sweep stage at %s could not reset to %s -- will "
+            "re-cut it from scratch",
+            stage,
+            pre_land_tip,
+        )
+        return False
+    cleaned = run_argv(
+        ("git", "-C", str(stage), "clean", "-fdx", "-e", ".venv", "-e", ".frob")
+    )
+    if cleaned.is_err or cleaned.danger_ok.returncode != 0:
+        _log.warning(
+            "land: warm sweep stage at %s could not clean -- will re-cut "
+            "it from scratch",
+            stage,
+        )
+        return False
+    return True
+
+
+def _ensure_warm_sweep_stage(root: Path, pre_land_tip: str) -> Path | None:
+    """`root`'s persistent T-1514 sweep-stage worktree (T-3135), reset to
+    `pre_land_tip` -- created on first use, re-cut if a reset ever fails.
+    `None` if neither reuse nor a fresh cut worked, signaling the caller
+    to fall back to the pre-T-3135 in-root sweep rather than treat a
+    missing stage as clean."""
+    stage = _warm_sweep_stage_path(root)
+    if (stage / ".git").exists():
+        if _reset_warm_sweep_stage(stage, pre_land_tip):
+            return stage
+        _teardown_warm_sweep_stage(root, stage)
+    stage.parent.mkdir(parents=True, exist_ok=True)
+    added = run_argv(
+        (
+            "git",
+            "-C",
+            str(root),
+            "worktree",
+            "add",
+            "--detach",
+            "-q",
+            str(stage),
+            pre_land_tip,
+        )
+    )
+    if added.is_err or added.danger_ok.returncode != 0:
+        _log.warning(
+            "land: could not cut the warm sweep stage at %s (%s) -- "
+            "falling back to the in-root T-1514 sweep",
+            stage,
+            excerpt(added.danger_ok.stderr) if added.is_ok else added.danger_err,
+        )
+        return None
+    return stage
+
+
+def _squash_into_warm_stage(stage: Path, branch_name: str) -> bool:
+    """`git merge --squash --no-commit branch_name` inside `stage`
+    (T-3135) -- the same real three-way squash `compose_squash_in_
+    disposable_worktree`'s `_squash_into_worktree` performs for the
+    per-land disposable stage, reused here via direct import rather than
+    duplicated: a warm stage needs the identical git-level compose, just
+    against a worktree that persists instead of one cut fresh per land.
+    `False` (never raises) on a conflicted or failed merge -- T-3135's
+    stage exists for the ALREADY-clean T-1514 sweep read, not per-path
+    conflict resolution, so a warm-stage compose failure just falls back
+    to the in-root sweep rather than attempting resolution here."""
+    from frob.tickets._land_compose import _squash_into_worktree
+
+    squashed = _squash_into_worktree(stage, branch_name)
+    if squashed.is_err:
+        return False
+    return not squashed.danger_ok.conflicted
+
+
 # frob:ticket T-3121
+# frob:ticket T-3135
 # frob:doc docs/modules/tickets-landing.md#the-disposable-stage-flip-t-3121
 # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_root_never_goes_dirty_during_the_squash_apply  # noqa: E501
 # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_worktree_setup_failure_refuses_without_touching_root  # noqa: E501
+# frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_pre_commit_sweep_engages_the_warm_stage_not_root  # noqa: E501
+# frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_warm_stage_reused_across_lands  # noqa: E501
+# frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_warm_stage_unavailable_falls_back_to_root  # noqa: E501
+# frob:waive AFFECT001 reason="T-3135 extended this function's warm-stage carve-out; \
+# its affects()-closure doc docs/modules/tickets-landing.md \
+# #the-disposable-stage-flip-t-3121 is a real, needed update but that file is under \
+# another agent's live T-3163 scope lease for the whole of this ticket's work -- filed \
+# as this ticket's own known residue rather than forcing a cross-lease edit" \
+# follow_up="T-3176"
+# frob:waive ARCH001 reason="147 lines is the warm-stage try/fallback branch (ensure \
+# stage, squash-compose, fall back to in-root on either failure) plus the pre-existing \
+# disposable-stage compose this function already had at this length before T-3135; \
+# splitting the new branch out is real follow-up work, not attempted here to avoid \
+# reshaping a function three concurrent sibling tickets (T-3121/T-3127) also reference \
+# by exact line/symbol identity mid-drive" follow_up="T-3176"
 def _squash_apply_on_disposable_stage(
     root: Path,
     worktree: Path,
@@ -2209,25 +2340,77 @@ def _squash_apply_on_disposable_stage(
     Failing to cut the worktree at all is refused as `GitFailed` with
     `root` untouched.
 
-    DELIBERATE CARVE-OUT: a supplied `pre_commit_sweep` (T-1514, wired
-    only when the land profile does NOT set `override_ratchet` -- i.e.
-    every profile except `rapid`) keeps the old in-root path. That sweep
-    spawns an unscoped `frob check` in whatever directory it is handed,
-    and a freshly-cut disposable worktree has no `.venv`, no built
-    natives and no `.frob` cache, so the spawn would either report
-    `unmeasurable` (silently disabling a guard) or report mass phantom
-    findings (falsely refusing every land). Handing it `root` instead
-    would be worse still: under the flip `root` does not hold the staged
-    changeset, so the sweep would measure the wrong tree and return a
-    clean answer about nothing. Preserving the guard exactly is worth
-    more than widening the flip's reach; making the sweep stage-capable
-    is its own unit of work (see this ticket's Done report for the
-    residue filed)."""
+    T-3135: a supplied `pre_commit_sweep` (T-1514, wired only when the
+    land profile does NOT set `override_ratchet` -- i.e. every profile
+    except `rapid`) used to keep the old in-root path unconditionally
+    (T-3121's carve-out): that sweep spawns an unscoped `frob check` in
+    whatever directory it is handed, and a freshly-cut DISPOSABLE
+    worktree has no `.venv`, no built natives and no `.frob` cache, so
+    the spawn would either report `unmeasurable` (silently disabling a
+    guard) or report mass phantom findings (falsely refusing every
+    land) -- T-3127 measured exactly that across four provisioning
+    levels and found no cheap fix, because the failures are structural
+    to a tree the sweep has never seen, not budgetary. Handing it `root`
+    instead would be worse still: under the flip `root` does not hold
+    the staged changeset, so the sweep would measure the wrong tree and
+    return a clean answer about nothing.
+
+    Now `_ensure_warm_sweep_stage` gives the sweep a PERSISTENT worktree
+    instead: kept across lands, its `.venv`/built natives/`.frob` cache
+    stay warm, so it is a tree the sweep (and `frob check`'s own
+    `_maybe_autorebuild_natives`) has already measured/built by the time
+    a second land ever uses it -- the structural blockers T-3127 found
+    (cold chunk-timing model, native staleness from a symlinked venv)
+    both go away because the stage owns its OWN real venv/natives built
+    against its OWN tree, never symlinked from `root`. If the warm stage
+    cannot be prepared or squash-composed for any reason, this falls
+    back to the pre-T-3135 in-root path unchanged -- a degraded-but-
+    correct sweep, never a silently skipped one."""
     if pre_commit_sweep is not None:
+        branch = current_branch(worktree)
+        warm_stage: Path | None = None
+        if branch.is_ok:
+            warm_stage = _ensure_warm_sweep_stage(root, pre_land_tip)
+            if warm_stage is not None and not _squash_into_warm_stage(
+                warm_stage, branch.danger_ok
+            ):
+                _log.warning(
+                    "land: %s warm sweep stage at %s could not compose the "
+                    "squash cleanly -- falling back to the in-root T-1514 "
+                    "sweep",
+                    final_id,
+                    warm_stage,
+                )
+                warm_stage = None
+        if warm_stage is not None:
+            _log.info(
+                "land: %s running the T-1514 pre-commit sweep against the "
+                "persistent warm stage %s (T-3135), not %s",
+                final_id,
+                warm_stage,
+                root,
+            )
+            return _land_squash_apply(
+                root,
+                worktree,
+                ticket,
+                ticket_id,
+                final_id,
+                wip_committed,
+                did_merge,
+                main_branch_name,
+                pre_land_tip=pre_land_tip,
+                bump_version=bump_version,
+                rebuild_natives=rebuild_natives,
+                sync_gate_rules=sync_gate_rules,
+                pre_commit_sweep=pre_commit_sweep,
+                stage=warm_stage,
+                squash_precomposed=True,
+            )
         _log.info(
-            "land: %s running the squash-apply in %s rather than a "
-            "disposable stage -- the T-1514 pre-commit unscoped sweep is "
-            "wired for this profile and is not yet stage-capable (T-3121)",
+            "land: %s running the squash-apply in %s rather than the warm "
+            "sweep stage -- the T-1514 pre-commit unscoped sweep is wired "
+            "for this profile and the warm stage was unavailable this run",
             final_id,
             root,
         )

@@ -488,6 +488,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3130: frob check cache.db/parse-artifacts.db: database is locked under concurrent checks
 - T-3132: Pre-land lint gate (T-3061) attributes findings to the file, not the diff, same as T-1907's ty gate did
 - T-3134: T-3121 landing-doc section still describes the post-publish land_commit record as an in-root commit
+- T-3135: A persistent warm sweep stage is the only shape that can make the T-1514 unscoped sweep stage-capable
 - T-3136: verify_pytest_collect passes non-Python touched files straight to pytest, false-refusing rc=4
 - T-3137: frob ticket fail from a worktree never reaches main and does not say so
 - T-3139: frob ops process reap and fleet_status disagree about orphaned forkservers; the reap verb is right

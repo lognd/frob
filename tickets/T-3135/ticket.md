@@ -2,7 +2,7 @@
 id: T-3135
 title: A persistent warm sweep stage is the only shape that can make the T-1514 unscoped
   sweep stage-capable
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'

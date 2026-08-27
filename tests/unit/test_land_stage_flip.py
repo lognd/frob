@@ -141,6 +141,7 @@ def _flip(v2_main: Path, prepared: tuple[Path, Ticket, str, str], **kwargs):  # 
 
 
 # frob:ticket T-3121
+# frob:ticket T-3135
 class TestDisposableStageFlip:
     """The flip's must-fire / must-stay-quiet pair plus its refusal path.
 
@@ -201,15 +202,16 @@ class TestDisposableStageFlip:
         assert (v2_main / "src" / "staged.py").exists()
         assert _porcelain(v2_main) == ""
 
-    def test_pre_commit_sweep_keeps_the_in_root_path(self, v2_main: Path) -> None:
-        # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_pre_commit_sweep_keeps_the_in_root_path  # noqa: E501
-        """MUST STAY QUIET: with a `pre_commit_sweep` supplied, the flip
-        deliberately does NOT engage -- the sweep spawns an unscoped `frob
-        check` in whatever directory it is handed, and a bare disposable
-        worktree has no venv, no natives and no cache, so it would either
-        silently report unmeasurable or falsely refuse. The sweep must
-        therefore still be handed root, with root holding the real staged
-        changeset."""
+    # frob:ticket T-3135
+    def test_pre_commit_sweep_engages_the_warm_stage_not_root(
+        self, v2_main: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_pre_commit_sweep_engages_the_warm_stage_not_root  # noqa: E501
+        """MUST FIRE (T-3135): with a `pre_commit_sweep` supplied, the
+        flip now hands it the PERSISTENT warm stage -- not `root` (T-3121's
+        old carve-out) and not a bare disposable worktree (unmeasurable
+        per T-3127's own measurement) -- holding the real staged
+        changeset, with `root` itself untouched by the squash-apply."""
         prepared = _prepare(v2_main, "11")
         seen: list[Path] = []
 
@@ -220,6 +222,55 @@ class TestDisposableStageFlip:
                 "the sweep was handed a checkout that does not hold the "
                 "staged changeset -- it would measure the wrong tree"
             )
+            return True
+
+        result = _flip(v2_main, prepared, pre_commit_sweep=sweep)
+
+        assert result.is_ok, result.err
+        assert len(seen) == 1
+        assert seen[0] != v2_main
+        assert seen[0] == v2_main / ".frob" / "warm-sweep-stage"
+
+    # frob:ticket T-3135
+    def test_warm_stage_reused_across_lands(self, v2_main: Path) -> None:
+        # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_warm_stage_reused_across_lands  # noqa: E501
+        """MUST FIRE (T-3135): a SECOND land reuses the exact same warm
+        stage path a first land created -- the whole point of a
+        PERSISTENT stage rather than a fresh disposable one per land."""
+        seen: list[Path] = []
+
+        def sweep(path: Path, final_id: str) -> bool:
+            del final_id
+            seen.append(path)
+            return True
+
+        first = _prepare(v2_main, "13")
+        result_1 = _flip(v2_main, first, pre_commit_sweep=sweep)
+        assert result_1.is_ok, result_1.err
+
+        second = _prepare(v2_main, "14")
+        result_2 = _flip(v2_main, second, pre_commit_sweep=sweep)
+        assert result_2.is_ok, result_2.err
+
+        assert len(seen) == 2
+        assert seen[0] == seen[1]
+
+    # frob:ticket T-3135
+    def test_warm_stage_unavailable_falls_back_to_root(
+        self, v2_main: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_warm_stage_unavailable_falls_back_to_root  # noqa: E501
+        """MUST STAY QUIET (T-3135's own fallback): when the warm stage
+        cannot be prepared at all, the sweep degrades to the pre-T-3135
+        in-root path -- never a silently skipped sweep."""
+        monkeypatch.setattr(_land_mod, "_ensure_warm_sweep_stage", lambda root, tip: None)
+        prepared = _prepare(v2_main, "15")
+        seen: list[Path] = []
+
+        def sweep(path: Path, final_id: str) -> bool:
+            del final_id
+            seen.append(path)
+            assert (path / "src" / "staged.py").exists()
             return True
 
         result = _flip(v2_main, prepared, pre_commit_sweep=sweep)
