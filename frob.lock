@@ -1628,6 +1628,24 @@
       "old_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
       "reason": "T-3025: added a severity filter (drop trivial-and-unattributed findings before persisting) inside raise_quarantine's existing body; docs/modules/tickets-verify-sweep.md's Quarantine circuit breaker section updated in the same change with a new 'Proportional to the trigger' paragraph describing it",
       "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-26",
+      "facet": "body",
+      "new_digest": "0fa0525a0f9735337ac49a23ce42a27f3cb925849d6975b5795cd91606fb12aa",
+      "old_digest": null,
+      "reason": "T-3026: wrapped a call to _resolve_migration to fix E501 (line too long) -- purely a line-wrap formatting change, no behavior change; docs/commands/narrative.md#usage stays accurate",
+      "ref": "src/frob/narrative/_cli.py::run_narrative_command"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-26",
+      "facet": "sig",
+      "new_digest": "ea60db054ceb9407b71c1820a4cd1e66f0945d9de2b0c7a174b1fb1632e244d2",
+      "old_digest": null,
+      "reason": "T-3026: wrapped a call to _resolve_migration to fix E501 (line too long) -- purely a line-wrap formatting change, no behavior change; docs/commands/narrative.md#usage stays accurate",
+      "ref": "src/frob/narrative/_cli.py::run_narrative_command"
     }
   ],
   "entries": [
@@ -2290,6 +2308,16 @@
       "digest": "0541800c6cfd32143bce30a9b0d590ef5888c7b7e8a6fc2c5b4230af777e0a86",
       "facet": "sig",
       "ref": "src/frob/mutate/__init__.py::run_mutations"
+    },
+    {
+      "digest": "0fa0525a0f9735337ac49a23ce42a27f3cb925849d6975b5795cd91606fb12aa",
+      "facet": "body",
+      "ref": "src/frob/narrative/_cli.py::run_narrative_command"
+    },
+    {
+      "digest": "ea60db054ceb9407b71c1820a4cd1e66f0945d9de2b0c7a174b1fb1632e244d2",
+      "facet": "sig",
+      "ref": "src/frob/narrative/_cli.py::run_narrative_command"
     },
     {
       "digest": "ecbc6a0ef3fb98159ccc05131ceee6e8801ab1da607c5c472dcd4df080e8347b",

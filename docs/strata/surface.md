@@ -485,6 +485,11 @@ docstring).
   rollback latency budget; upstream endorsement chain per `std.deploy`.
 - **scenario**: named rewrite + nested claims; crash contracts desugar to
   auto-generated scenarios.
+- **entity / architecture / configuration**: obligations independent of
+  build (`entity`), one concrete realization bound to a module
+  (`architecture`), one deployment's choice of architecture per entity
+  (`configuration`) -- see `entity_architecture.md` for the full split,
+  the `may` ceiling rule, and the additive-migration guarantee.
 
 <a id="std-secrets"></a>
 ## std.secrets: credentials as cache-of-authority (T-0082)

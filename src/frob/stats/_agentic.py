@@ -7,6 +7,9 @@ stream and turns it into a breakdown a human can use to decide what to
 speed up next.
 """
 
+# frob:ticket T-3026
+# frob:debt LARGE001 reason="pre-existing debt, not introduced by the T-3006/T-2995/T-3014 batch this ticket cleans up after: verified via git history the file was already 802 lines (over the 800 threshold) BEFORE that batch landed. A real split of this report-aggregation module is a separate follow-up." ticket="T-3059"  # noqa: E501
+
 from __future__ import annotations
 
 import json

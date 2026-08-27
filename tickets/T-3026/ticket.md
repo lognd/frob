@@ -2,7 +2,7 @@
 id: T-3026
 title: 'Post-land findings from the T-3006/T-2995/T-3014 batch: ARCH103, DOC001, E501,
   2x LARGE001, REF001, REF002'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'

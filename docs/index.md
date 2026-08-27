@@ -187,6 +187,11 @@ obligation graph. Charter and component designs:
 - `docs/strata/selfconform.md` -- self-conformance: SYS100-106, the check
   that our own `src/frob/` capability surface actually matches what
   `design/frob.strata` declares (T-0150).
+- `docs/strata/entity_architecture.md` -- the `entity`/`architecture`/
+  `configuration` split (T-3006, T-3004 section 5): obligations
+  independent of build (`entity`), one concrete realization bound to a
+  module (`architecture`), and one deployment's choice of architecture
+  per entity (`configuration`).
 
 ## Per-command references
 

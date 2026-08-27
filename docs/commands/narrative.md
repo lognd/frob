@@ -30,8 +30,10 @@ frob narrative move FILE LINE [--keep-file PATH] --reason TEXT [--dry-run]
   `--reason` requirement for the ticket-body append.
 - `--dry-run`: print what would change without writing anything.
 
-The moved text is appended to the named ticket's body via `frob.tickets.set_body`, prefixed with an idempotency marker, so running the same move twice is a no-op rather than a duplicate append.
-See T-2678 for the history behind this.
+The moved text is appended to the named ticket's body via
+`frob.tickets.set_body`, prefixed with an idempotency marker, so running
+the same move twice is a no-op rather than a duplicate append. See
+T-2678 for the history behind this.
 
 ## NARR001 (the detector)
 

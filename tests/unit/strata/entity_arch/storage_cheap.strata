@@ -1,3 +1,11 @@
+// frob:ticket T-3026
+// frob:waive REF002 reason="T-3006 worked-example fixture pair: storage_fast.strata \
+// is this file's own sibling and only other real consumer besides \
+// tests/unit/test_lang_strata_entity_arch.py -- both exist solely to be parsed by \
+// that one test file's TestEntityArchitectureFixtures class \
+// (docs/strata/entity_architecture.md#migration mentions the pair by name but is \
+// prose, not a second executable consumer). A fabricated second test/import would not \
+// add real coverage, only satisfy the count."
 // T-3006 worked example: same entity as storage_fast.strata, a SECOND
 // architecture realizing it with a narrower implementation (no network
 // capability granted at all -- still within the entity's ceiling, since

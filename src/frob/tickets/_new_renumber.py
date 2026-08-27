@@ -290,6 +290,8 @@ def _next_ticket_id_shared(root: Path, existing: dict[str, Ticket]) -> str:
     return f"T-{new_max:04d}"
 
 
+# frob:ticket T-3026
+# frob:waive ARCH103 reason="T-2952's cross-platform (fcntl/msvcrt) exclusive-lock acquire: the platform branch, the retry loop, and the fd-create-if-needed I/O are all part of ONE atomic acquire-or-raise operation on a single fd -- splitting the platform branches into separate helpers would hand each an fd/windows_backend pair to thread back together, adding indirection without removing any of the actual decision points this gate counts, and splitting the raise-if-neither-backend guard out would separate it from the very fd it guards. Matches the identical mixed-concern-lock-acquire shape already waived at src/frob/app/ticket_runner/_rapid_sweep.py:2722"  # noqa: E501
 def _open_and_lock_counter_file(path: Path) -> tuple[int, bool]:
     """Open (creating if needed) and take an exclusive, blocking lock on
     the shared counter file at `path` (T-2952): a real `msvcrt.locking`
