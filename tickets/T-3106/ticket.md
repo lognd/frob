@@ -17,7 +17,6 @@ scope:
 - src/frob/_cli_parsers
 - src/frob/app
 - tests/unit/test_app_runners_process.py
-- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +48,14 @@ scope_changes:
   glob: docs/modules/app.md
   reason: 'T-3106: process_runner.py''s frob:doc anchor cites app.md#runners, matching
     ops_runner.py''s own existing convention'
+  actor: logan
+  at: '2026-08-27'
+- op: remove
+  glob: docs/modules/app.md
+  reason: 'revert: adding a large doc file to write-scope for a single frob:doc read-citation
+    exploded SCOPE002 to every symbol that doc describes; reverted the app.md edit,
+    frob:doc anchor kept as a plain citation matching ops_runner.py''s own existing
+    pattern (no write needed)'
   actor: logan
   at: '2026-08-27'
 designated_repro_test: null
