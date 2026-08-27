@@ -2,7 +2,7 @@
 id: T-3132
 title: Pre-land lint gate (T-3061) attributes findings to the file, not the diff,
   same as T-1907's ty gate did
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -20,6 +20,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ticket_land_lint_diff_attribution.py::TestRuffDiagnosticIdentity::test_ignores_line_and_col
+- tests/test_ticket_land_lint_diff_attribution.py::TestRuffDiagnosticIdentity::test_relative_to_base_not_absolute
+- tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_pre_existing_violation_that_merely_shifted_lines_does_not_refuse
+- tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_genuinely_new_violation_still_refuses
+- tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_second_new_violation_sharing_identity_with_pre_existing_one_still_refuses
+- tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand::test_baseline_unmeasurable_falls_back_to_file_scoped_refusal
 designated_repro_test: null
 threat: null
 component: null

@@ -650,13 +650,16 @@ pre-existing" -- an unmeasurable baseline is not license to waive
 everything in the file.
 
 Audited whether the pre-land lint gate (T-3061, immediately below) has
-the same file-vs-diff attribution gap: it does. T-3116 did not fix it
-(out of this ticket's declared scope) -- filed as a follow-up.
+the same file-vs-diff attribution gap: it did. T-3116 did not fix it
+(out of this ticket's declared scope) -- filed as a follow-up, T-3132,
+fixed below.
 
 ## Pre-land lint gate (T-3061)
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_assert_touched_files_lint_clean_pre_land -->
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_ruff_check_files -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_ruff_diagnostic_identity -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_ruff_baseline_diagnostic_identities -->
 
 `[profile] override_ratchet = true` (T-1681) disables the T-1514
 pre-commit sweep on the land path entirely (also TEST016, the baseline
@@ -676,12 +679,54 @@ alone vs. a multi-minute mutation run). It runs `ruff check` scoped to
 just this ticket's own touched `.py` files (`_ruff_check_files`,
 `_touched_py_files`), UNCONDITIONALLY for every profile including
 `rapid` -- the same "not relaxed by rapid" posture the type-check gate
-already established. A violation refuses the land (`sys.exit(1)`) with
-the rule code, file, and line named directly in the error, so an agent
-never has to guess which of several possible refusal causes fired. An
-empty touched-`.py` set or a spawn that could not run degrades to a
-no-op, never a refusal -- matching every other touched-set guard's
-fail-open-on-unmeasurable posture in this module.
+already established. An empty touched-`.py` set or a spawn that could
+not run degrades to a no-op, never a refusal -- matching every other
+touched-set guard's fail-open-on-unmeasurable posture in this module.
+
+T-3132 ports T-3116's diff-attribution fix here (identical shape to the
+`ty` gate above, same measured incident class): before T-3132, ANY
+`ruff` violation in a touched file refused the land, including one
+whose surrounding code the diff merely shifted. When `ruff` finds at
+least one violation (the pre-T-3132 fast path is unchanged -- most
+lands have zero and pay nothing extra), a second `ruff` pass runs
+against the SAME touched files at this ticket's merge-base with `main`
+(`_ruff_baseline_diagnostic_identities`, the same detached-snapshot-
+worktree primitive as the `ty` gate) and only a violation whose `(file,
+code, message)` identity (`_ruff_diagnostic_identity`) EXCEEDS its
+baseline occurrence count refuses the land -- multiset comparison, not
+set membership, for the same reason T-3116 documents above.
+
+One divergence from the `ty` version, load-bearing rather than
+cosmetic: `_ty_diagnostic_identity` reuses the `file` argument its
+caller already has (the shared, identical `py_files` relative-path
+list passed to both the current and baseline `ty` invocations).
+`_ruff_diagnostic_identity` cannot do the same -- measured directly,
+`ruff check --output-format json` reports `"filename"` as the ABSOLUTE
+path resolved against the spawning process's `cwd`, and the baseline
+pass spawns from a DIFFERENT directory (the detached snapshot
+worktree) than the live pass, so two textually-identical findings
+would carry two different absolute `diag.file` values and never match.
+`_ruff_diagnostic_identity` instead re-derives the relative path via
+`os.path.relpath(diag.file, base)`, anchoring identity to the file's
+path WITHIN whichever tree produced it.
+
+MEASURED (T-3132): whether the ~2117 `frob:waive` directives already in
+this repo carry this pressure's signature (an agent silencing an
+unrelated `frob` gate finding, or adding a `# noqa`, specifically to
+route around this lint gate refusing on a pre-existing/relocated `ruff`
+violation) -- same method T-3116 used for `# ty: ignore`. `frob:waive`
+targets frob's OWN gate rule ids (`DUP001`, `ARCH001`, ...), never a raw
+`ruff` code, so it cannot itself be the escape hatch for a `ruff`
+finding; searched anyway for a waiver whose REASON references this
+gate (T-3061, "pre-land", "touched file lint") -- zero hits. Also
+searched the ~6336 `# noqa` suppressions (the actual `ruff`-facing
+escape hatch) for a reason mentioning being forced by a land refusal --
+every hit sampled was unrelated boilerplate (`E501`/`E402` on lines
+that happen to contain the word "land" as part of "ticket land", not a
+suppression added under this gate's pressure). Same negative result as
+T-3116's ty-ignore measurement: the "suppression factory" hypothesis is
+NOT confirmed for this gate either, though the underlying diff-
+attribution bug this ticket fixes was real regardless.
 
 ## Mutation-evidence obligation (TEST016, T-0755)
 

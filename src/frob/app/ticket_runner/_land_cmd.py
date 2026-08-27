@@ -3999,11 +3999,117 @@ def _ruff_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
     return parse_ruff_json(proc.stdout, exit_code=proc.returncode)
 
 
+# frob:ticket T-3132
+def _ruff_diagnostic_identity(  # noqa: ANN001
+    base: Path, diag
+) -> tuple[str | None, str | None, str]:
+    """`(relative_file, code, message)` for one `ruff` `Diagnostic`,
+    mirroring `_ty_diagnostic_identity` (T-3116) -- line/col deliberately
+    excluded so a finding whose surrounding code merely shifted lines
+    still compares equal to itself.
+
+    Diverges from `_ty_diagnostic_identity` in ONE way, deliberately:
+    that function uses the `file` argument its caller already has (the
+    shared `py_files` relative path, identical across both the current
+    and baseline `ty` invocations) rather than `diag.file`, and its own
+    docstring says this is "just" for purity -- but for `ruff` it is
+    load-bearing, not cosmetic. Measured directly: `ruff check --output-
+    format json <relative-path>` reports `"filename"` as the ABSOLUTE
+    path resolved against the spawning process's `cwd`, not the relative
+    path passed on argv (confirmed against a scratch fixture, T-3132).
+    `_ruff_baseline_diagnostic_identities` spawns its baseline pass in a
+    DIFFERENT directory (the detached snapshot worktree, not `worktree`
+    itself), so two textually-identical diagnostics for the same
+    relative file would carry two different absolute `diag.file` values
+    and never compare equal under the ty function's pass-through-caller-
+    file shortcut. This function instead re-derives the relative path
+    from `diag.file` via `os.path.relpath(diag.file, base)`, so identity
+    is anchored to the file's path WITHIN whichever tree produced it,
+    not to that tree's own absolute location."""
+    import os
+
+    if diag.file is None:
+        return (None, diag.code, diag.message)
+    return (os.path.relpath(diag.file, base), diag.code, diag.message)
+
+
+# frob:ticket T-3132
+def _ruff_baseline_diagnostic_identities(
+    worktree: Path, merge_base: str, py_files: list[str]
+) -> Counter[tuple[str | None, str | None, str]] | None:
+    """The `_ruff_diagnostic_identity` MULTISET `ruff check` reports for
+    `py_files` AT `merge_base` -- ports `_ty_baseline_diagnostic_
+    identities` (T-3116) to the lint gate (T-3132) so
+    `_assert_touched_files_lint_clean_pre_land` can tell a PRE-EXISTING
+    violation (present at the parent, regardless of its current line
+    number) from a genuinely NEW one this ticket's diff introduced. See
+    that function's own docstring for why this must be a `Counter`
+    (multiset), not a `frozenset`: two textually-identical violations in
+    two different functions share one `(file, code, message)` identity,
+    and a plain set-difference would let a genuinely new SECOND
+    occurrence hide behind one pre-existing occurrence of the same
+    shape -- the exact bug T-3116 hit during its own implementation.
+
+    Same detached `git worktree add --detach` snapshot primitive
+    (`_spawn_baseline_snapshot_worktree`) as the `ty` version, for the
+    same reason: `worktree` stays untouched for the whole comparison.
+    Returns `None` (never raises) if the snapshot worktree cannot be
+    created, or if `ruff` cannot be run there -- the caller degrades to
+    the pre-T-3132 file-scoped behavior in that case."""
+    existing_files = []
+    for f in py_files:
+        exists = run_argv(
+            ["git", "-C", str(worktree), "cat-file", "-e", f"{merge_base}:{f}"]
+        )
+        if exists.is_ok and exists.danger_ok.returncode == 0:
+            existing_files.append(f)
+    if not existing_files:
+        return Counter()
+    snapshot = _spawn_baseline_snapshot_worktree(worktree, merge_base)
+    if snapshot is None:
+        return None
+    try:
+        baseline = _ruff_check_files(snapshot, existing_files)
+    finally:
+        _remove_baseline_snapshot_worktree(worktree, snapshot)
+    if baseline is None:
+        return None
+    return Counter(_ruff_diagnostic_identity(snapshot, d) for d in baseline.diagnostics)
+
+
+# frob:ticket T-3132
+def _ruff_new_violations(
+    worktree: Path,
+    diagnostics: list,
+    baseline_counts: Counter[tuple[str | None, str | None, str]],
+) -> list:  # noqa: ANN201
+    """The subset of `diagnostics` (current-pass `ruff` findings) that
+    EXCEEDS `baseline_counts`'s per-identity occurrence count -- ports
+    `_ty_new_errors` (T-3116) to the lint gate (T-3132); see that
+    function's docstring for why this must be a multiset comparison, not
+    set membership."""
+    remaining = Counter(baseline_counts)
+    new_violations = []
+    for d in diagnostics:
+        identity = _ruff_diagnostic_identity(worktree, d)
+        if remaining[identity] > 0:
+            remaining[identity] -= 1
+        else:
+            new_violations.append(d)
+    return new_violations
+
+
 # frob:ticket T-3061
+# frob:ticket T-3132
 # frob:doc docs/modules/tickets-landing.md#pre-land-lint-gate-t-3061
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_a_lint_error_in_a_touched_file_refuses_the_land  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_a_clean_touched_file_does_not_refuse  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesLintCleanPreLand.test_empty_touched_set_is_a_no_op  # noqa: E501
+# frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestRuffDiagnosticIdentity.test_ignores_line_and_col  # noqa: E501
+# frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_pre_existing_violation_that_merely_shifted_lines_does_not_refuse  # noqa: E501
+# frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_genuinely_new_violation_still_refuses  # noqa: E501
+# frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_second_new_violation_sharing_identity_with_pre_existing_one_still_refuses  # noqa: E501
+# frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_baseline_unmeasurable_falls_back_to_file_scoped_refusal  # noqa: E501
 def _assert_touched_files_lint_clean_pre_land(
     worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
 ) -> None:
@@ -4028,7 +4134,28 @@ def _assert_touched_files_lint_clean_pre_land(
     Degrades to a no-op (never a refusal) on an empty touched `.py`
     subset or a spawn that could not run at all, matching every other
     touched-set guard's fail-open-on-unmeasurable posture in this
-    module."""
+    module.
+
+    T-3132: attributes findings to the DIFF, not the FILE, porting
+    T-3116's fix for the sibling `ty` gate one function up (identical
+    shape: touched-file scoping, no merge-base comparison, so a
+    violation that existed before this ticket's diff -- including one
+    whose line merely shifted -- used to refuse the land exactly like
+    the T-3116 incident did for `ty`). When `ruff` reports at least one
+    violation here (the pre-T-3132 fast path -- most lands have zero,
+    and pay nothing extra), a second `ruff` pass runs against the SAME
+    files at this ticket's merge-base with `main`
+    (`_ruff_baseline_diagnostic_identities`) and only a violation whose
+    `(file, code, message)` identity EXCEEDS that baseline's per-identity
+    count (`_ruff_new_violations`, multiset comparison -- T-3116 hit the
+    plain-set-membership bug during its own implementation, so a second
+    genuinely-new violation sharing an identity with a pre-existing one
+    still refuses) -- genuinely new, never a relocation -- refuses the
+    land. A pre-existing violation still counts in the repo-wide total;
+    it is simply not charged to this land. If the baseline itself cannot
+    be measured (no merge-base, snapshot worktree failed, `ruff` could
+    not run there), this degrades to the pre-T-3132 file-scoped behavior
+    rather than silently waiving everything."""
     py_files = _touched_py_files(worktree, touched_paths)
     if not py_files:
         return
@@ -4042,17 +4169,40 @@ def _assert_touched_files_lint_clean_pre_land(
         return
     if not parsed.diagnostics:
         return
+    diff_result = working_diff(worktree, "main")
+    baseline_counts: Counter[tuple[str | None, str | None, str]] | None = None
+    if diff_result.is_ok:
+        baseline_counts = _ruff_baseline_diagnostic_identities(
+            worktree, diff_result.danger_ok.base, py_files
+        )
+    if baseline_counts is not None:
+        new_violations = _ruff_new_violations(
+            worktree, parsed.diagnostics, baseline_counts
+        )
+    else:
+        # Baseline unmeasurable (no merge-base, snapshot/spawn failure) --
+        # degrade to the pre-T-3132 file-scoped posture rather than treat
+        # an unmeasurable baseline as "everything is pre-existing".
+        new_violations = parsed.diagnostics
+    if not new_violations:
+        _log.warning(
+            "ticket land: %s touched-file lint check found %d violation(s) "
+            "but all are pre-existing at merge-base (T-3132: attributed "
+            "to the diff, not the file) -- not refusing",
+            ticket_id,
+            len(parsed.diagnostics),
+        )
+        return
     _log.error(
-        "ticket land: %s refused -- `ruff check` found %d violation(s) in "
-        "this ticket's own touched file(s): %s; a scoped `ruff check "
+        "ticket land: %s refused -- `ruff check` found %d NEW violation(s) "
+        "in this ticket's own touched file(s): %s; a scoped `ruff check "
         "%s` re-run before retrying `frob ticket land %s` names the exact "
         "line(s) (T-3061: this family is not relaxed by the rapid "
-        "profile)",
+        "profile; T-3132: pre-existing violations that did not worsen "
+        "are excluded)",
         ticket_id,
-        len(parsed.diagnostics),
-        "; ".join(
-            f"{d.file}:{d.line}: {d.code} {d.message}" for d in parsed.diagnostics
-        ),
+        len(new_violations),
+        "; ".join(f"{d.file}:{d.line}: {d.code} {d.message}" for d in new_violations),
         " ".join(py_files),
         ticket_id,
     )
