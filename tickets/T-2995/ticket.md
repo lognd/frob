@@ -2,7 +2,7 @@
 id: T-2995
 title: 'Docs narrative: 44% of doc lines sit in paragraphs citing a ticket id; keep
   the change info, move the story'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-26'
@@ -88,6 +88,10 @@ triage_changes:
     narrative'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_narrative_migrate.py::TestParagraphAt::test_finds_blank_line_delimited_paragraph
+- tests/test_narrative_migrate.py::TestParagraphAt::test_blank_line_returns_none
+- tests/test_narrative_migrate.py::TestMigrateBlockSplit::test_markdown_paragraph_reference_line_is_plain_prose
 designated_repro_test: null
 threat: null
 component: null

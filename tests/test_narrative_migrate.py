@@ -10,6 +10,7 @@ from frob.narrative._migrate import (
     block_at,
     migrate_block,
     moved_text_for_ticket,
+    paragraph_at,
     split_ticket_id,
 )
 
@@ -49,6 +50,32 @@ class TestBlockAt:
     def test_non_comment_line_returns_none(self) -> None:
         """A line that isn't a comment at all is refused, not guessed at."""
         assert block_at(_SOCKETD_LIKE_FILE, 1) is None
+
+
+_MD_LIKE_FILE = """\
+# Heading
+
+Some intro text.
+
+This paragraph cites T-2678's archived-ticket-safe front door, which is
+why the move goes through frob.tickets.set_body.
+
+Next paragraph, unrelated.
+"""
+
+
+class TestParagraphAt:
+    """`paragraph_at` (T-2995) is `block_at`'s markdown-prose counterpart:
+    a blank-line-delimited span instead of a `#`-comment run."""
+
+    def test_finds_blank_line_delimited_paragraph(self) -> None:
+        """The whole paragraph is captured, stopping at the blank line."""
+        extent = paragraph_at(_MD_LIKE_FILE, 5)
+        assert extent == (5, 6)
+
+    def test_blank_line_returns_none(self) -> None:
+        """A blank line itself has no paragraph to find."""
+        assert paragraph_at(_MD_LIKE_FILE, 2) is None
 
 
 class TestMigrateBlockSplit:
@@ -99,6 +126,21 @@ class TestMigrateBlockSplit:
         # the historical cross-reference is gone from the file
         assert "T-2918" not in migration.new_file_text
         assert "# see T-2961 for the history behind this" in migration.new_file_text
+
+    def test_markdown_paragraph_reference_line_is_plain_prose(self) -> None:
+        """T-2995: a `.md` paragraph's reference line is a plain sentence,
+        never a `#`-comment (which would render as a heading)."""
+        result = migrate_block(
+            rel_path="docs/commands/narrative.md",
+            file_text=_MD_LIKE_FILE,
+            start_line=5,
+            end_line=6,
+        )
+        assert result.is_ok
+        migration = result.danger_ok
+        assert migration.ticket_id == "T-2678"
+        assert "See T-2678 for the history behind this." in migration.new_file_text
+        assert "# see" not in migration.new_file_text
 
     def test_no_ticket_id_refuses(self) -> None:
         """A block that names no ticket cannot be routed anywhere."""

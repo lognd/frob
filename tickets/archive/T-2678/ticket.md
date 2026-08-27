@@ -76,6 +76,14 @@ body_changes:
   at: '2026-08-19'
   old_length: 2169
   new_length: 4280
+- mode: append
+  reason: 'T-2995: move the DuplicateId-hazard history behind frob.tickets.set_body''s
+    archived-ticket route into the ticket that fixed it, keeping the current-behavior
+    fact in the doc'
+  actor: logan
+  at: '2026-08-26'
+  old_length: 4279
+  new_length: 4494
 evidence:
 - tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting::test_append_on_archived_ticket_writes_archive_path_only
 - tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting::test_append_on_active_ticket_still_writes_active_path
@@ -165,3 +173,6 @@ never keep the active directory wholesale.
   NON-archived (active) ticket must continue writing to
   `tickets/<id>/` exactly as today -- do not overcorrect into routing
   every ticket through the archive path.
+
+<!-- narrative-moved:docs/commands/narrative.md:33:T-2678 -->
+T-2678: most cited tickets are archived, and this route is what avoids the DuplicateId hazard a raw `tickets/<id>/ticket.md` write previously produced.

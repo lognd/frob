@@ -30,12 +30,8 @@ frob narrative move FILE LINE [--keep-file PATH] --reason TEXT [--dry-run]
   `--reason` requirement for the ticket-body append.
 - `--dry-run`: print what would change without writing anything.
 
-The moved text is appended to the named ticket's body (via
-`frob.tickets.set_body`, T-2678's archived-ticket-safe front door -- most
-cited tickets are archived, and this route is what avoids the DuplicateId
-hazard a raw `tickets/<id>/ticket.md` write previously produced) prefixed
-with an idempotency marker, so running the same move twice is a no-op
-rather than a duplicate append.
+The moved text is appended to the named ticket's body via `frob.tickets.set_body`, prefixed with an idempotency marker, so running the same move twice is a no-op rather than a duplicate append.
+See T-2678 for the history behind this.
 
 ## NARR001 (the detector)
 
@@ -54,8 +50,5 @@ Ships at WARN (T-2993 acceptance: the existing ~1,728 blocks are a
 burn-down, not a day-one failure); promote to ERROR only after that
 burn-down, mirroring the TICK011/T-2372 precedent.
 
-**Wiring status**: `narrative_blocks_gate` is implemented and unit-tested
-but NOT YET wired into `frob check`'s live gate set -- `src/frob/gates/
-__init__.py` was held by another ticket's in-progress lease for the whole
-of T-2993's work window. See the `frob:waive WIRE001` directive on
-`narrative_blocks_gate` for the tracking ticket.
+`narrative_blocks_gate` is wired into `frob check`'s live gate set as
+`NARR001` (`--only narrative_blocks`), T-3014.

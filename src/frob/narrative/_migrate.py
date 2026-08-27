@@ -36,6 +36,7 @@ __all__ = [
     "block_at",
     "migrate_block",
     "moved_text_for_ticket",
+    "paragraph_at",
     "split_ticket_id",
 ]
 
@@ -115,10 +116,15 @@ def _validate_block(
     if not (1 <= start_line <= n and start_line <= end_line <= n):
         return Err(MigrateError.BlockNotFound)
     block = lines[start_line - 1 : end_line]
-    if not block or not block[0].lstrip().startswith("#"):
+    if not block or not block[0].strip():
         return Err(MigrateError.BlockNotFound)
 
-    ticket_id = split_ticket_id(block[0])
+    # T-2995: a `# T-####:` code comment always names its ticket on the
+    # lead line (split_ticket_id's single-line search), but a markdown
+    # paragraph migrated via `paragraph_at` may cite it anywhere in the
+    # prose -- fall back to a whole-block search so the doc case works
+    # through the same validation path rather than a second one.
+    ticket_id = split_ticket_id(block[0]) or split_ticket_id("\n".join(block))
     if ticket_id is None:
         return Err(MigrateError.NoTicketId)
 
@@ -155,6 +161,9 @@ def _validate_block(
 # frob:tests \
 # tests/test_narrative_migrate.py::TestIdempotency.test_marker_already_present_refuses_\
 # as_already_migrated
+# frob:tests \
+# tests/test_narrative_migrate.py::TestMigrateBlockSplit.test_markdown_paragraph_refere\
+# nce_line_is_plain_prose
 def migrate_block(
     *,
     rel_path: str,
@@ -193,14 +202,19 @@ def migrate_block(
     block, ticket_id = validated.danger_ok
 
     moved = [ln for ln in block if ln not in keep_lines]
-    kept_indent = "#"
-    for ln in block:
-        stripped = ln.lstrip()
-        if stripped.startswith("#"):
-            kept_indent = ln[: len(ln) - len(stripped)] + "#"
-            break
-
-    reference_line = f"{kept_indent} see {ticket_id} for the history behind this"
+    # T-2995: a markdown paragraph's reference line is plain prose (a "#"
+    # prefix would render as a heading), never the "#"-comment shape a
+    # code block's reference line uses.
+    if rel_path.endswith(".md"):
+        reference_line = f"See {ticket_id} for the history behind this."
+    else:
+        kept_indent = "#"
+        for ln in block:
+            stripped = ln.lstrip()
+            if stripped.startswith("#"):
+                kept_indent = ln[: len(ln) - len(stripped)] + "#"
+                break
+        reference_line = f"{kept_indent} see {ticket_id} for the history behind this"
     replacement = list(keep_lines) + [reference_line]
 
     new_lines = lines[: start_line - 1] + replacement + lines[end_line:]
@@ -252,5 +266,30 @@ def block_at(file_text: str, start_line: int) -> tuple[int, int] | None:
         return None
     end = start_line
     while end < n and lines[end].lstrip().startswith("#"):
+        end += 1
+    return (start_line, end)
+
+
+# frob:ticket T-2995
+# frob:doc docs/commands/narrative.md#usage
+# frob:tests \
+# tests/test_narrative_migrate.py::TestParagraphAt.test_finds_blank_line_delimited_para\
+# graph
+# frob:tests \
+# tests/test_narrative_migrate.py::TestParagraphAt.test_blank_line_returns_none
+def paragraph_at(file_text: str, start_line: int) -> tuple[int, int] | None:
+    """The markdown-prose counterpart to `block_at` (T-2995): the `(start,
+    end)` 1-indexed inclusive range of the contiguous non-blank paragraph
+    beginning at `start_line`, or `None` if `start_line` is itself blank or
+    out of range. Reuses `migrate_block`'s own comment-block engine below
+    (no leading `#` required) rather than a second detector/migration
+    path -- T-2994's doctrine applies identically to a doc paragraph
+    citing a ticket id as it does to a `# T-####:` code comment."""
+    lines = file_text.splitlines()
+    n = len(lines)
+    if not (1 <= start_line <= n) or not lines[start_line - 1].strip():
+        return None
+    end = start_line
+    while end < n and lines[end].strip():
         end += 1
     return (start_line, end)

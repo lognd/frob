@@ -12,12 +12,15 @@ import argparse
 import sys
 from pathlib import Path
 
+from typani.result import Ok
+
 from frob.logging import get_logger
 from frob.narrative._migrate import (
     MigrateError,
     block_at,
     migrate_block,
     moved_text_for_ticket,
+    paragraph_at,
 )
 from frob.render import Renderer
 
@@ -112,6 +115,46 @@ def _write_migration(
     )
 
 
+def _resolve_extent(file_path: Path, file_text: str, line: int) -> tuple[int, int] | None:
+    """`block_at`/`paragraph_at` dispatch by file suffix (T-2995) -- split
+    out of `run_narrative_command` to keep that function under ARCH001's
+    threshold. A `.md` doc's T-id-citing narrative is a blank-line-
+    delimited PARAGRAPH, not a `#`-comment block; same migrate_block/
+    set_body engine either way, only the extent-finder differs."""
+    if file_path.suffix == ".md":
+        return paragraph_at(file_text, line)
+    return block_at(file_text, line)
+
+
+def _resolve_migration(
+    *, file_path: Path, file_text: str, start: int, end: int, keep_lines: tuple[str, ...]
+):  # noqa: ANN201
+    """`migrate_block` plus the ticket-body text it implies -- split out of
+    `run_narrative_command` to keep that function under ARCH001's
+    threshold. Returns the `Result[(MigrationResult, str), MigrateError]`
+    pair (migration, ticket_body_text)."""
+    result = migrate_block(
+        rel_path=str(file_path),
+        file_text=file_text,
+        start_line=start,
+        end_line=end,
+        keep_lines=keep_lines,
+        existing_ticket_body="",
+    )
+    if result.is_err:
+        return result
+    migration = result.danger_ok
+    lines = file_text.splitlines()
+    moved_lines = tuple(ln for ln in lines[start - 1 : end] if ln not in keep_lines)
+    ticket_body_text = moved_text_for_ticket(
+        rel_path=str(file_path),
+        start_line=start,
+        moved_lines=moved_lines,
+        ticket_id=migration.ticket_id,
+    )
+    return Ok((migration, ticket_body_text))
+
+
 # frob:doc docs/commands/narrative.md#usage
 # frob:tests \
 # tests/test_narrative_migrate.py::TestNarrativeCli.test_dry_run_reports_without_writing
@@ -134,20 +177,15 @@ def run_narrative_command(args: argparse.Namespace) -> int:
         renderer.line(f"could not read {file_path}: {exc}")
         return 1
 
-    extent = block_at(file_text, args.line)
+    extent = _resolve_extent(file_path, file_text, args.line)
     if extent is None:
-        renderer.line(f"{file_path}:{args.line} is not a comment line")
+        renderer.line(f"{file_path}:{args.line} is not a comment line or paragraph")
         return 1
     start, end = extent
     keep_lines = _read_keep_lines(args.keep_file)
 
-    result = migrate_block(
-        rel_path=str(file_path),
-        file_text=file_text,
-        start_line=start,
-        end_line=end,
-        keep_lines=keep_lines,
-        existing_ticket_body="",
+    result = _resolve_migration(
+        file_path=file_path, file_text=file_text, start=start, end=end, keep_lines=keep_lines
     )
     if result.is_err:
         err = result.danger_err
@@ -157,16 +195,7 @@ def run_narrative_command(args: argparse.Namespace) -> int:
         renderer.line(f"narrative move refused: {err}")
         return 1
 
-    migration = result.danger_ok
-    lines = file_text.splitlines()
-    moved_lines = tuple(ln for ln in lines[start - 1 : end] if ln not in keep_lines)
-    ticket_body_text = moved_text_for_ticket(
-        rel_path=str(file_path),
-        start_line=start,
-        moved_lines=moved_lines,
-        ticket_id=migration.ticket_id,
-    )
-
+    migration, ticket_body_text = result.danger_ok
     root = Path.cwd()
     marker_line = ticket_body_text.splitlines()[0]
     if _already_migrated_in_ticket(migration.ticket_id, marker_line, root):

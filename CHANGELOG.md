@@ -411,6 +411,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2990: frob refactor has no module/file move verb: symbol-scoped only, so a module rename falls back to hand-editing imports
 - T-2991: frob subprocess children spawned by system tests can be orphaned when their pytest worker is killed
 - T-2993: Ticket-narrative comment blocks: 1728 blocks / 11116 lines of T-id archaeology in code, still being written
+- T-2995: Docs narrative: 44% of doc lines sit in paragraphs citing a ticket id; keep the change info, move the story
 - T-3001: Verification debt can never drain under fleet load: the budgeted verify run truncates, reports Unmeasurable, and retries forever
 - T-3003: Windows now reaches the Test stage: 19 failures across 7 files, clustered in test_cli_check and test_rule_id_scan_branches
 - T-3005: strata-core graph kernel: generic typed nodes, typed edges, closure, level constraints, cycle detection (see T-3004 section 4)
