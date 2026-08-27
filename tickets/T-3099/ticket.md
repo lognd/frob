@@ -39,7 +39,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8d7e660af3a20cf1b351e47531e3bf904ba83088
 ---
 T-3094 added apply_agent_env(root) and warn_if_xdist_bound_missing(root) to
 src/frob/tickets/_worktree_guard.py: the first mutates the CURRENT process's
