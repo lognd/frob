@@ -2,7 +2,7 @@
 id: T-3110
 title: 'frob refactor verbs have no realistic corpus test: three independent defects
   shipped and were found by one real extraction'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
