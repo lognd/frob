@@ -2,7 +2,7 @@
 id: T-3145
 title: new_ticket-calling test fixtures spuriously fail evidence reverification under
   an agent's own FROB_WORKTREE lease
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -43,6 +43,9 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/test_worktree_lease_env_ambient.py::TestAmbientFrobWorktreeDoesNotLeakIntoTests::test_new_ticket_against_unrelated_repo_is_unaffected_by_an_ambient_frob_worktree
+- tests/test_worktree_lease_env_ambient.py::TestAmbientFrobWorktreeDoesNotLeakIntoTests::test_opt_in_worktree_lease_guard_still_fires_when_deliberately_set
 designated_repro_test: null
 threat: null
 component: null

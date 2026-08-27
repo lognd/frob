@@ -391,10 +391,13 @@ def _reset_parse_artifact_cache_env_before_test(
 
 
 # frob:ticket T-3123
+# frob:ticket T-3145
 @pytest.fixture(autouse=True)
 def _isolate_worktree_lease_env_before_test() -> Iterator[None]:
-    """Snapshot and restore `FROB_WORKTREE`/`FROB_AGENT`/
-    `PYTEST_XDIST_AUTO_NUM_WORKERS` around EVERY test (T-3123).
+    """Snapshot, CLEAR, and restore `FROB_WORKTREE`/`FROB_AGENT` around
+    EVERY test (T-3123, extended by T-3145); `PYTEST_XDIST_AUTO_NUM_
+    WORKERS` is snapshotted and restored but deliberately NOT cleared --
+    see below.
 
     `frob.tickets._worktree_guard.apply_agent_env` (T-3094) mutates
     `os.environ` DIRECTLY (`os.environ.update(exports)`, no restore) --
@@ -414,16 +417,52 @@ def _isolate_worktree_lease_env_before_test() -> Iterator[None]:
     (T-3123 measured 145-150 of 330 collected tests failing this way on
     an otherwise-unmodified main).
 
-    Plain `os.environ` snapshot/restore (not `monkeypatch.setenv`/
-    `delenv`) because the leak this closes bypasses monkeypatch's own
-    tracking entirely -- `apply_agent_env` never goes through
-    `monkeypatch`, so `monkeypatch`'s teardown has nothing to undo.
-    Restoring by exact prior value (present -> re-set, absent -> pop)
-    handles a test that ALSO deliberately left one of these three set
-    via its own `monkeypatch.setenv` (still cleaned up independently by
-    `monkeypatch`'s own teardown) without this fixture fighting it."""
+    T-3145: a SEPARATE root cause from the between-test leak T-3123
+    closed above -- `FROB_WORKTREE`/`FROB_AGENT` set in the pytest
+    WORKER's own `os.environ` from OUTSIDE the test session entirely
+    (e.g. inherited from `frob ticket evidence`'s individual-reverify
+    subprocess spawn, when the agent recording evidence is itself
+    working inside a leased worktree -- `_run_pytest_directly`/
+    `run_selected`'s spawn does not always strip these two vars from the
+    child's environment, unlike the fully-audited no-`[[test.runner]]`
+    fallback path). Snapshot-and-restore ALONE (the pre-T-3145 version
+    of this fixture) does not touch this case at all: it captures
+    whatever value is present at ITS OWN setup and restores exactly that
+    value afterward, so a value already present when the very first
+    test's setup runs -- this scenario -- survives untouched through
+    EVERY test the fixture wraps, restore or no restore. Popping both
+    keys during setup (not just capturing them) is what actually closes
+    this: any test whose OWN body needs the real `enforce_worktree_
+    lease` guard to fire (matching `tests/test_gates.py`'s
+    `test_write_coverage_lock_refuses_under_lease_violation` opt-in
+    idiom) sets one of these two itself via `monkeypatch.setenv`, from
+    inside its own body, AFTER this fixture's setup already popped
+    them -- `monkeypatch`'s own teardown then independently undoes that,
+    so this fixture's `finally` below never fights it.
+
+    `PYTEST_XDIST_AUTO_NUM_WORKERS` is NOT popped at setup, only
+    snapshotted/restored (the T-3123 posture, unchanged): unlike the two
+    lease vars, an ambient value here is not a correctness bug for any
+    test -- it is playbook section 1e's own intentional fleet-aware
+    xdist bound, legitimately present for the whole session, and
+    clearing it here would just make `frob check`/`frob test`'s own
+    in-process spawns (`apply_agent_env`, T-3094/T-3099) recompute a
+    value they would have applied anyway.
+
+    Plain `os.environ` mutation (not `monkeypatch.setenv`/`delenv`) for
+    both the initial pop and the final restore, because the leak this
+    closes bypasses `monkeypatch`'s own tracking entirely -- neither
+    `apply_agent_env` nor an inherited-from-the-spawning-process value
+    ever goes through `monkeypatch`, so `monkeypatch`'s teardown has
+    nothing to undo either way. Restoring by exact prior value (present
+    -> re-set, absent -> pop) handles a test that ALSO deliberately sets
+    one of these three via its own `monkeypatch.setenv` (still cleaned
+    up independently by `monkeypatch`'s own teardown, which runs before
+    this fixture's `finally`) without this fixture fighting it."""
     keys = (FROB_WORKTREE_ENV, FROB_AGENT_ENV, PYTEST_XDIST_AUTO_NUM_WORKERS_ENV)
     prior = {key: os.environ.get(key) for key in keys}
+    for key in (FROB_WORKTREE_ENV, FROB_AGENT_ENV):
+        os.environ.pop(key, None)
     try:
         yield
     finally:
