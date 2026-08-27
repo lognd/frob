@@ -157,7 +157,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b1d4a4690672a9c19b3a983aee9ef5007b9c36fb
 ---
 MEASURED during T-3086 (frob refactor split frob.gates._models --symbols
 Severity,WaiverRef,DebtEntry,Violation --into frob.findings): the split
