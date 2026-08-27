@@ -1,7 +1,7 @@
 ---
 id: T-3175
 title: Declare component Flows for the re-exports T-3151 added to frob/__init__.py
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -37,3 +37,6 @@ That finding raised quarantine on 2026-08-27 and, together with a DRIFT001 from 
 FIX: declare the Flow in that direction for each import, or determine that the re-export itself is wrong and remove it. Do NOT waive SYS003 to silence it -- the re-exports were real gaps worth closing, so the architecture declaration is the honest resolution.
 
 NOTE scripts/branch_stranded_work_analysis.py:287-289 carries the same rule (scripts_ops -> graphlang) but is a separate pre-existing case; file it separately if it needs fixing, do not fold it in.
+
+## Drop reason
+- 2026-08-27: duplicate of T-3172, same two sweep-filed findings. See T-3173's drop reason.
