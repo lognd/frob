@@ -711,6 +711,7 @@ fn vmodel_check(
             ClosureViolation::UnjustifiedDesign { node } => ("unjustified_design".to_string(), node),
             ClosureViolation::UntestedArtifact { node } => ("untested_artifact".to_string(), node),
             ClosureViolation::OrphanTest { node } => ("orphan_test".to_string(), node),
+            ClosureViolation::TraceCycle { cycle } => ("trace_cycle".to_string(), cycle.join(" -> ")),
         })
         .collect();
 

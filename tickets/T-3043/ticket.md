@@ -2,7 +2,7 @@
 id: T-3043
 title: 'V-model H2: the four closure rules check local edge degree, not path closure
   -- a mutual-satisfies pair with zero requirements passes all four'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -46,6 +46,10 @@ scope_changes:
     bind evidence that does not touch the changed code)'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckClosureSemantics::test_mutual_satisfies_pair_with_zero_requirements_now_fires
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckClosureSemantics::test_genuine_four_level_chain_is_quiet
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckClosureSemantics::test_satisfies_cycle_fires_through_vmodel_check
 designated_repro_test: null
 threat: null
 component: null

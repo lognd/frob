@@ -186,6 +186,13 @@ pub enum ClosureViolation {
     /// Rule 4: this test node has no outgoing `verifies` edge to anything
     /// -- an orphan test.
     OrphanTest { node: NodeId },
+    /// Rule 5: a cycle exists among `satisfies`/`refines`/`allocates`
+    /// edges -- the trace subgraph must be a DAG, since "traces up to a
+    /// requirement" is meaningless if the trace can loop back on itself.
+    /// `cycle` is the witness path `find_cycle` returned (T-3043: a bare
+    /// bool cycle checker has shipped blind to a real planted cycle in
+    /// this repo before; keep the witness).
+    TraceCycle { cycle: Vec<NodeId> },
 }
 
 /// Every node of `kind` in `graph`, in id order -- shared by all four rules
@@ -220,6 +227,34 @@ fn is_innermost_level(level: &Option<Level>) -> bool {
     matches!(level, Some(l) if left_levels_outermost_first().last() == Some(l))
 }
 
+/// The three edge kinds that make up the "traces up toward a requirement"
+/// relation -- shared by rule 2 (forward: does this design reach a real
+/// requirement) and rule 5 (is that relation even acyclic). T-3043: this
+/// set previously backed only an emptiness check; it now backs a real
+/// reachability-to-an-endpoint check for rules 1/2 as well.
+fn trace_kinds() -> std::collections::BTreeSet<String> {
+    [
+        EDGE_SATISFIES.to_string(),
+        EDGE_REFINES.to_string(),
+        EDGE_ALLOCATES.to_string(),
+    ]
+    .into()
+}
+
+/// True if any node in `closure` is a `KIND_ARTIFACT` node at exactly
+/// `level`. Used to turn a closure-set from "is it non-empty" into
+/// "does it actually contain the endpoint that makes the path meaningful"
+/// (T-3043 H2: a mutual-`satisfies` pair with no requirement anywhere in
+/// the graph has a non-empty closure but never reaches a requirement).
+fn closure_reaches_level(graph: &Graph, closure: &std::collections::BTreeSet<NodeId>, level: &str) -> bool {
+    closure.iter().any(|id| {
+        graph
+            .node(id)
+            .map(|n| n.kind == KIND_ARTIFACT && n.level.as_deref() == Some(level))
+            .unwrap_or(false)
+    })
+}
+
 /// Rule 1: every artifact node OTHER THAN the innermost level
 /// (`component-design`, which has nothing more detailed to satisfy it)
 /// must have >=1 incoming `satisfies` edge. Returns one
@@ -228,10 +263,20 @@ fn is_innermost_level(level: &Option<Level>) -> bool {
 pub fn check_no_orphan_requirements(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_SATISFIES.to_string()].into();
     let filter = KindFilter::Only(&filter_set);
+    let innermost = left_levels_outermost_first().last().cloned();
     nodes_of_kind(graph, KIND_ARTIFACT)
         .into_iter()
         .filter(|id| !is_innermost_level(&graph.node(id).and_then(|n| n.level.clone())))
-        .filter(|id| graph.backward_closure(id, &filter).is_empty())
+        .filter(|id| {
+            // T-3043: a non-empty backward closure is not enough -- it must
+            // actually reach a real, grounded design (the innermost level)
+            // rather than looping among peers with nothing underneath them.
+            let closure = graph.backward_closure(id, &filter);
+            match &innermost {
+                Some(lvl) => !closure_reaches_level(graph, &closure, lvl),
+                None => closure.is_empty(),
+            }
+        })
         .map(|id| ClosureViolation::OrphanRequirement { node: id.clone() })
         .collect()
 }
@@ -243,17 +288,23 @@ pub fn check_no_orphan_requirements(graph: &Graph) -> Vec<ClosureViolation> {
 /// element (or intermediate spec) tracing to nothing.
 // frob:doc docs/strata/vmodel.md#the-four-closure-rules-t-3004-section-2
 pub fn check_no_unjustified_design(graph: &Graph) -> Vec<ClosureViolation> {
-    let trace_kinds = [
-        EDGE_SATISFIES.to_string(),
-        EDGE_REFINES.to_string(),
-        EDGE_ALLOCATES.to_string(),
-    ]
-    .into();
-    let filter = KindFilter::Only(&trace_kinds);
+    let kinds = trace_kinds();
+    let filter = KindFilter::Only(&kinds);
+    let outermost = left_levels_outermost_first().first().cloned();
     nodes_of_kind(graph, KIND_ARTIFACT)
         .into_iter()
         .filter(|id| !is_outermost_level(&graph.node(id).and_then(|n| n.level.clone())))
-        .filter(|id| graph.forward_closure(id, &filter).is_empty())
+        .filter(|id| {
+            // T-3043 H2: a non-empty forward closure is not enough -- it
+            // must actually reach a real requirements-level node, not just
+            // some other design element that itself traces to nothing (the
+            // mutual-satisfies-pair-with-zero-requirements escape).
+            let closure = graph.forward_closure(id, &filter);
+            match &outermost {
+                Some(lvl) => !closure_reaches_level(graph, &closure, lvl),
+                None => closure.is_empty(),
+            }
+        })
         .map(|id| ClosureViolation::UnjustifiedDesign { node: id.clone() })
         .collect()
 }
@@ -286,8 +337,22 @@ pub fn check_no_orphan_test(graph: &Graph) -> Vec<ClosureViolation> {
         .collect()
 }
 
-/// Run all four closure rules and concatenate their violations, in rule
-/// order (1, 2, 3, 4). Empty means the graph is structurally closed --
+/// Rule 5: the trace subgraph (`satisfies`/`refines`/`allocates`) must be
+/// acyclic. `find_cycle` already exists in the kernel and returns a
+/// witness path; T-3043 wires it in here since nothing previously called
+/// it from `check_closure`.
+// frob:doc docs/strata/vmodel.md#the-four-closure-rules-t-3004-section-2
+pub fn check_no_trace_cycle(graph: &Graph) -> Vec<ClosureViolation> {
+    let kinds = trace_kinds();
+    let filter = KindFilter::Only(&kinds);
+    match graph.find_cycle(&filter) {
+        Some(cycle) => vec![ClosureViolation::TraceCycle { cycle }],
+        None => Vec::new(),
+    }
+}
+
+/// Run all five rules and concatenate their violations, in rule order
+/// (1, 2, 3, 4, 5). Empty means the graph is structurally closed --
 /// T-3004 section 2's "bad-but-complete passes" bar, nothing about quality.
 // frob:doc docs/strata/vmodel.md#the-four-closure-rules-t-3004-section-2
 pub fn check_closure(graph: &Graph) -> Vec<ClosureViolation> {
@@ -295,6 +360,7 @@ pub fn check_closure(graph: &Graph) -> Vec<ClosureViolation> {
     out.extend(check_no_unjustified_design(graph));
     out.extend(check_no_untested_artifact(graph));
     out.extend(check_no_orphan_test(graph));
+    out.extend(check_no_trace_cycle(graph));
     out
 }
 
@@ -521,6 +587,140 @@ mod tests {
         .unwrap();
         g.add_edge(EDGE_VERIFIES, "unittest-1", "design-1").unwrap();
         assert!(check_closure(&g).is_empty());
+    }
+
+    #[test]
+    // frob:ticket T-3043
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design kind="unit"
+    fn h2_mutual_satisfies_pair_with_zero_requirements_now_fires() {
+        // T-3043 H2's exact escape: two system-design artifacts pointing
+        // at each other via `satisfies`, each verified by a test at its
+        // own paired level, and NO requirements-level node anywhere in
+        // the graph. Under the OLD "non-empty closure" check this passed
+        // all four rules; it must now fire rules 1 and 2, because neither
+        // A nor B's satisfies-closure ever reaches a real requirement (or,
+        // symmetrically, a real grounded design).
+        let mut g = Graph::new(v_model_schema());
+        g.add_node("design-a", KIND_ARTIFACT, Some(LEVEL_SYSTEM_DESIGN.into()))
+            .unwrap();
+        g.add_node("design-b", KIND_ARTIFACT, Some(LEVEL_SYSTEM_DESIGN.into()))
+            .unwrap();
+        g.add_edge(EDGE_SATISFIES, "design-a", "design-b").unwrap();
+        g.add_edge(EDGE_SATISFIES, "design-b", "design-a").unwrap();
+        g.add_node(
+            "itest-a",
+            KIND_TEST,
+            Some(LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN.into()),
+        )
+        .unwrap();
+        g.add_edge(EDGE_VERIFIES, "itest-a", "design-a").unwrap();
+        g.add_node(
+            "itest-b",
+            KIND_TEST,
+            Some(LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN.into()),
+        )
+        .unwrap();
+        g.add_edge(EDGE_VERIFIES, "itest-b", "design-b").unwrap();
+
+        // Rules 3/4 (verifies-based) are satisfied by construction here --
+        // this fixture isolates rules 1/2's path-closure hole, not the
+        // verifies-pairing behavior those two rules already got right.
+        assert!(check_no_untested_artifact(&g).is_empty());
+        assert!(check_no_orphan_test(&g).is_empty());
+
+        let orphan_req = check_no_orphan_requirements(&g);
+        assert_eq!(orphan_req.len(), 2, "both design-a and design-b are unrooted: {orphan_req:?}");
+        assert!(orphan_req.contains(&ClosureViolation::OrphanRequirement { node: "design-a".into() }));
+        assert!(orphan_req.contains(&ClosureViolation::OrphanRequirement { node: "design-b".into() }));
+
+        let unjustified = check_no_unjustified_design(&g);
+        assert_eq!(unjustified.len(), 2, "neither traces to a real requirement: {unjustified:?}");
+        assert!(unjustified.contains(&ClosureViolation::UnjustifiedDesign { node: "design-a".into() }));
+        assert!(unjustified.contains(&ClosureViolation::UnjustifiedDesign { node: "design-b".into() }));
+
+        // And the top-level entry point must see it too.
+        let violations = check_closure(&g);
+        assert!(violations.contains(&ClosureViolation::OrphanRequirement { node: "design-a".into() }));
+        assert!(violations.contains(&ClosureViolation::UnjustifiedDesign { node: "design-a".into() }));
+    }
+
+    #[test]
+    // frob:ticket T-3043
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design kind="unit"
+    fn h2_genuine_four_level_chain_stays_quiet() {
+        // The positive control for the H2 fix: a real chain from a
+        // requirement all the way down to a component design, verified at
+        // EACH paired level, must still pass -- the fix must not overtighten
+        // and start rejecting legitimate multi-hop traces.
+        let mut g = Graph::new(v_model_schema());
+        g.add_node("req-1", KIND_ARTIFACT, Some(LEVEL_REQUIREMENTS.into())).unwrap();
+        g.add_node("spec-1", KIND_ARTIFACT, Some(LEVEL_REQUIREMENT_SPEC.into()))
+            .unwrap();
+        g.add_node("design-1", KIND_ARTIFACT, Some(LEVEL_SYSTEM_DESIGN.into()))
+            .unwrap();
+        g.add_node("component-1", KIND_ARTIFACT, Some(LEVEL_COMPONENT_DESIGN.into()))
+            .unwrap();
+        g.add_edge(EDGE_SATISFIES, "spec-1", "req-1").unwrap();
+        g.add_edge(EDGE_SATISFIES, "design-1", "spec-1").unwrap();
+        g.add_edge(EDGE_SATISFIES, "component-1", "design-1").unwrap();
+
+        g.add_node("ctest-1", KIND_TEST, Some(LEVEL_CUSTOMER_TEST.into())).unwrap();
+        g.add_edge(EDGE_VERIFIES, "ctest-1", "req-1").unwrap();
+        g.add_node("ctp-1", KIND_TEST, Some(LEVEL_CUSTOMER_TEST_PLAN.into())).unwrap();
+        g.add_edge(EDGE_VERIFIES, "ctp-1", "spec-1").unwrap();
+        g.add_node(
+            "sitp-1",
+            KIND_TEST,
+            Some(LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN.into()),
+        )
+        .unwrap();
+        g.add_edge(EDGE_VERIFIES, "sitp-1", "design-1").unwrap();
+        g.add_node("unittest-1", KIND_TEST, Some(LEVEL_COMPONENT_UNIT_TEST.into()))
+            .unwrap();
+        g.add_edge(EDGE_VERIFIES, "unittest-1", "component-1").unwrap();
+
+        assert!(check_closure(&g).is_empty(), "{:?}", check_closure(&g));
+    }
+
+    #[test]
+    // frob:ticket T-3043
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_trace_cycle kind="unit"
+    fn rule5_must_fire_on_a_satisfies_cycle_via_check_closure() {
+        // T-3043 H2's second finding: find_cycle existed in the kernel but
+        // nothing in check_closure ever called it. This plants a genuine
+        // cycle in the trace subgraph and asserts it fires THROUGH
+        // check_closure, not merely via a direct find_cycle call.
+        let mut g = Graph::new(v_model_schema());
+        g.add_node("a", KIND_ARTIFACT, Some(LEVEL_SYSTEM_DESIGN.into())).unwrap();
+        g.add_node("b", KIND_ARTIFACT, Some(LEVEL_SYSTEM_DESIGN.into())).unwrap();
+        g.add_node("c", KIND_ARTIFACT, Some(LEVEL_SYSTEM_DESIGN.into())).unwrap();
+        g.add_edge(EDGE_SATISFIES, "a", "b").unwrap();
+        g.add_edge(EDGE_SATISFIES, "b", "c").unwrap();
+        g.add_edge(EDGE_SATISFIES, "c", "a").unwrap();
+
+        let direct = check_no_trace_cycle(&g);
+        assert_eq!(direct.len(), 1);
+        assert!(matches!(&direct[0], ClosureViolation::TraceCycle { cycle } if !cycle.is_empty()));
+
+        let violations = check_closure(&g);
+        assert!(
+            violations
+                .iter()
+                .any(|v| matches!(v, ClosureViolation::TraceCycle { .. })),
+            "check_closure must surface the cycle, not just check_no_trace_cycle directly: {violations:?}"
+        );
+    }
+
+    #[test]
+    // frob:ticket T-3043
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_trace_cycle kind="unit"
+    fn rule5_stays_quiet_on_the_genuine_chain() {
+        // Must-quiet twin over the SAME node layout as the fire case above
+        // minus the closing edge, per the positive-control lesson.
+        let g = base_graph();
+        assert!(check_no_trace_cycle(&g).is_empty());
     }
 
     #[test]
