@@ -156,6 +156,91 @@ def affects(snapshot: GraphSnapshot, ref: str, *,
   silent; a truncated closure is checked against whatever it did visit
   (under-reports, never false-positives).
 
+## Evidence reach (T-3046)
+
+<!-- frob:describes src/frob/graph/reach.py::EvidenceReach -->
+<!-- frob:describes src/frob/graph/reach.py::ReachResult -->
+<!-- frob:describes src/frob/graph/reach.py::classify_evidence_reach -->
+
+"Does this bound pytest evidence actually EXERCISE the code it certifies"
+-- the check `frob.ci_validity` (T-2985) answers for a CI run's staleness,
+applied here to the ticket-evidence question the M6 design-audit finding
+named: T-3005 and T-3007 both landed with evidence bound to
+`tests/unit/strata/test_parse.py` node ids -- parser tests that never
+touch the Rust graph code either ticket added. Both passed
+`frob.gates.evidence_covers_scope` (D-02) because that check has a
+self-declaration route with no verification: an evidence id whose OWN
+file is directly named in `ticket.evidence_scope` (T-1944, a bare pointer
+with no write-lease claim) counts as covering, regardless of whether
+anything in that file's tests exercises the ticket's real work.
+
+```python
+# frob/graph/reach.py
+class EvidenceReach:
+    REACHES = "reaches"
+    DOES_NOT_REACH = "does_not_reach"
+    UNKNOWN = "unknown"
+
+class ReachResult(BaseModel):
+    evidence: str
+    status: str   # one of EvidenceReach's three values
+    reason: str
+
+def classify_evidence_reach(root: Path, snapshot: GraphSnapshot,
+                             scope: Sequence[str], evidence: str, *,
+                             evidence_scope: Sequence[str] = ()) -> ReachResult
+```
+
+- **Three-way rule**: `REACHES` when the test's own call TOKENS
+  (`RawSymbol.body_tokens`, public or private -- the direct-call case,
+  the dominant real pattern) name a scoped symbol's short name, OR the
+  test's private-callee `frob.graph.callgraph.build_call_graph`/`closure`
+  reaches one transitively, OR the test's own file is directly in
+  `scope` (a real write-lease claim, the one case D-02's existing
+  co-located-test trust is sound). `DOES_NOT_REACH` when none of those
+  hold and reachability WAS computable. `UNKNOWN` when it could not be
+  computed at all: the test symbol does not resolve in the graph, or
+  `scope` names a non-Python source file (`.rs`/`.c`/`.cc`/`.cpp`/`.h`/
+  `.hpp`/`.ts`/`.tsx`/`.go`/`.java`/`.rb`) the call graph cannot represent
+  -- exactly T-3005/T-3007's shape.
+- **`scope` vs `evidence_scope` are NOT interchangeable here**: only
+  `scope` (a real lease) grants the co-located-file shortcut.
+  `evidence_scope` files still widen the file set resolved/parsed (a
+  test needs its own file to resolve `test_ref` and compute its call
+  tokens/closure at all) but never count as a scope MEMBER to reach
+  into -- an evidence-id whose file is named ONLY in `evidence_scope`
+  must prove reach like anything else, with its own file's symbols
+  excluded from "reached" so it cannot pass by calling its own
+  neighbors. This is the exact hole M6 found; a test proving the
+  fix intentionally reproduces it (`test_evidence_scope_alone_does_not_
+  launder_reach`).
+- **Rust/native-only decision**: a scope with no representable Python
+  file is `UNKNOWN`, always, no matter which pytest id is cited. "There
+  is no Python test that reaches this" (T-3007's own Done report: the
+  crate's own `cargo test` is the real evidence) is a legitimate answer,
+  but it must be an explicit, recorded `UNKNOWN` -- never silently
+  accepted as a pass because an unrelated pytest id happened to be
+  green.
+- **Measured (2026-08-26, this repo's own ledger, `scripts/
+  measure_evidence_reach.py`)**: of 495 non-cmd evidence ids bound across
+  every DONE ticket with a declared scope, 467 (94.3%) REACHES, 7 (1.4%)
+  DOES_NOT_REACH, 21 (4.2%) UNKNOWN (native-only scopes, T-3005/T-3007
+  among them). Reported honestly rather than tuned quiet -- see
+  `scripts/measure_evidence_reach.py`'s own docstring for why this ships
+  as a standalone measurement tool rather than a wired `frob check` gate
+  stage yet (the job-table file, `src/frob/gates/__init__.py`, and
+  `docs/modules/gates.md` were both leased by T-3009 while T-3046 was
+  worked); wiring `evidence_reach_gate` at WARN severity into the live
+  pipeline is a follow-up ticket, filed blocked on T-3009 landing.
+- **Not wired into `evidence_covers_scope`/D-02 itself yet, deliberately**:
+  today D-02 still accepts the `evidence_scope` self-declaration route
+  unchanged (closing it outright would need a decision about EVERY
+  existing binding that route quietly accepts, not just the two this
+  audit named) -- this module is the classifier and the measurement,
+  landed first so the repo-wide count is known before any gate is
+  tightened. See the follow-up ticket for wiring it in as an enforcement
+  point.
+
 ## Scope closure (T-0998)
 
 <!-- frob:describes src/frob/graph/affects.py::ScopeClosureGap -->
