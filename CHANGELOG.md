@@ -470,6 +470,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3114: Add resync_root_to_published_tip primitive for the post-CAS root resync
 - T-3115: WIRE003 reports the working 'frob refactor' verb as unresolvable; the verb is also missing from frob --help
 - T-3121: Flip the squash-apply stage onto a disposable worktree and publish by CAS
+- T-3122: frob refactor split moves symbol bodies without carrying their own needed imports
 
 ## [0.530.0] - unreleased
 

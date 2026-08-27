@@ -36,6 +36,7 @@ from frob.refactor._models import (
     VerifyOutcome,
 )
 from frob.refactor._resolve import module_to_path
+from frob.refactor._scan import needed_import_ops_for_symbols
 from frob.refactor._transaction import build_plan
 from frob.refactor._verify import (
     verify_check_delta,
@@ -233,6 +234,22 @@ def _plan_chunk(
         aliases.extend(plan.aliases)
         unresolved.extend(plan.unresolved)
         resolved_pairs.append((plan.source, destination))
+
+    # T-3122: `build_plan` (via `build_move_ops`) relocates each symbol's
+    # own source TEXT but never the subset of the source module's
+    # top-level imports that text references -- prepend the needed-import
+    # carry-forward op(s) BEFORE every symbol's own body-append op so they
+    # land first in `destination_module`, in this chunk's declared append
+    # order (`_apply_ops_to_file` appends in list order).
+    if resolved_pairs:
+        source_file = Path(resolved_pairs[0][0].file_path)
+        dest_file = module_to_path(repo_root, destination_module)
+        spans = [
+            (resolved.start_line, resolved.end_line) for resolved, _ in resolved_pairs
+        ]
+        import_ops = needed_import_ops_for_symbols(source_file, dest_file, spans)
+        all_ops = import_ops + all_ops
+
     all_ops = _dedupe_equivalent_import_ops(all_ops)
     shim_op = build_reexport_shim_op(
         repo_root, source_module, destination_module, symbols

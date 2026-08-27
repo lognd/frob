@@ -55,6 +55,20 @@ recognizes the two rewrites as equivalent (same resulting name set, just
 possibly reordered) and collapses them to one op rather than tripping
 `apply_plan`'s overlapping-rewrite refusal.
 
+T-3122: `build_move_ops` relocates a moved symbol's own source TEXT only
+-- it never copies forward `SOURCE_MODULE`'s own top-level imports that
+text needs to run (a moved class body naming e.g. `StrEnum`/`BaseModel`
+as a base class), so a naive split produces a `DEST_MODULE` that PARSES
+fine but raises `NameError` at real import time. Each chunk's own plan
+now calls `needed_import_ops_for_symbols` (`_scan.py`) once per chunk:
+it collects every `Name` referenced anywhere in the chunk's moved
+symbols' own subtrees (base classes, decorators, annotations, nested
+bodies), matches that against `SOURCE_MODULE`'s top-level import
+statements, and prepends one carry-forward append op -- copied verbatim,
+not reconstructed -- to `DEST_MODULE` BEFORE the symbols' own body-append
+ops in the chunk's op list, so the destination file's needed imports land
+above the moved definitions that need them.
+
 ## Module-move verb (T-2990)
 
 ```

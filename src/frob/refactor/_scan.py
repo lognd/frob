@@ -21,7 +21,7 @@ from frob.refactor._models import AliasRecord, ResolvedSymbol, RewriteOp, Symbol
 
 _log = get_logger(__name__)
 
-__all__ = ["find_python_files", "scan_references"]
+__all__ = ["find_python_files", "needed_import_ops_for_symbols", "scan_references"]
 
 
 # frob:doc docs/commands/refactor.md#find_python_files
@@ -52,6 +52,123 @@ def _existing_bound_names(tree: ast.Module) -> set[str]:
             for alias in node.names:
                 names.add(alias.asname or alias.name)
     return names
+
+
+def _top_level_import_map(tree: ast.Module, source_lines: list[str]) -> dict[str, str]:
+    """Every name bound at module scope by one of `tree`'s own top-level
+    `import`/`from ... import` statements, mapped to that statement's
+    EXACT source text (via `source_lines`' `lineno`/`end_lineno` slice) --
+    the lookup `needed_import_ops_for_symbols` uses to copy an import
+    forward verbatim rather than reconstructing it (which could silently
+    drop a multi-line parenthesized form or an alias)."""
+    bound: dict[str, str] = {}
+    for node in tree.body:
+        if not isinstance(node, (ast.Import, ast.ImportFrom)):
+            continue
+        text = "\n".join(source_lines[node.lineno - 1 : node.end_lineno])
+        for alias in node.names:
+            name = alias.asname or alias.name.split(".")[0]
+            bound[name] = text
+    return bound
+
+
+def _names_referenced(node: ast.AST) -> set[str]:
+    """Every `Name` id anywhere in `node`'s subtree -- base classes,
+    decorators, annotations, and nested method/function bodies all
+    included, since any of them can be the reason a moved symbol needs an
+    import its own header line does not show."""
+    return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)}
+
+
+def _names_needed_by_spans(tree: ast.Module, spans: list[tuple[int, int]]) -> set[str]:
+    """Every `Name` id referenced anywhere inside the top-level statements
+    of `tree` that fall within one of `spans` (a moved symbol's own
+    1-indexed line range) -- the set `needed_import_ops_for_symbols`
+    matches against `source_file`'s own top-level imports. Split out of
+    `needed_import_ops_for_symbols` to keep it under the ARCH001 line
+    budget."""
+    needed: set[str] = set()
+    for node in tree.body:
+        node_start = getattr(node, "lineno", None)
+        node_end = getattr(node, "end_lineno", None)
+        if node_start is None or node_end is None:
+            continue
+        for start, end in spans:
+            if node_start >= start and node_end <= end:
+                needed |= _names_referenced(node)
+                break
+    return needed
+
+
+def _import_texts_for_names(
+    import_map: dict[str, str], needed_names: set[str]
+) -> list[str]:
+    """The deduplicated, declaration-ordered list of import statement
+    texts in `import_map` (as built by `_top_level_import_map`) that bind
+    at least one name in `needed_names` -- `import_map`'s own dict
+    iteration order already matches `tree.body`'s declaration order since
+    Python dicts preserve insertion order. Split out of
+    `needed_import_ops_for_symbols` to keep it under the ARCH001 line
+    budget."""
+    seen_text: set[str] = set()
+    texts: list[str] = []
+    for name, text in import_map.items():
+        if name not in needed_names or text in seen_text:
+            continue
+        seen_text.add(text)
+        texts.append(text)
+    return texts
+
+
+# frob:doc docs/commands/refactor.md#split-verb-t-1201
+# frob:ticket T-3122
+# frob:tests \
+# tests/test_refactor.py::TestRunSplit.test_split_carries_forward_imports_moved_body_needs  # noqa: E501
+def needed_import_ops_for_symbols(
+    source_file: Path, dest_file: Path, spans: list[tuple[int, int]]
+) -> list[RewriteOp]:
+    """T-3122's fix: `build_move_ops` relocates a symbol's own source
+    TEXT, but never the subset of `source_file`'s top-level imports that
+    text actually references -- a moved class body naming e.g. `StrEnum`/
+    `BaseModel` as a base class then lands in `dest_file` with those names
+    undefined, parsing fine but raising `NameError` at real import time
+    (`ast.parse` cannot see this; only a real import can).
+
+    `spans` is one `(start_line, end_line)` 1-indexed pair per symbol
+    being moved out of `source_file` in this chunk (a `ResolvedSymbol`'s
+    own span). Returns at most one append `RewriteOp` (`start_line=-1`)
+    targeting `dest_file`, holding every needed import's exact source
+    text, in the source module's own declaration order, deduplicated --
+    empty if none of the moved symbols reference any of `source_file`'s
+    top-level imports."""
+    source_lines = source_file.read_text(encoding="utf-8").splitlines()
+    tree = ast.parse("\n".join(source_lines), filename=str(source_file))
+    import_map = _top_level_import_map(tree, source_lines)
+    if not import_map:
+        return []
+
+    needed_names = _names_needed_by_spans(tree, spans)
+    needed_texts = _import_texts_for_names(import_map, needed_names)
+    if not needed_texts:
+        return []
+
+    _log.info(
+        "refactor.split: carrying forward %d import statement(s) into %s",
+        len(needed_texts),
+        dest_file,
+    )
+    combined = "\n".join(needed_texts) + "\n\n"
+    return [
+        RewriteOp(
+            file_path=str(dest_file),
+            start_line=-1,
+            end_line=-1,
+            old_text="",
+            new_text=combined,
+            reason=f"carry forward import(s) needed by symbol(s) moved into "
+            f"{dest_file}",
+        )
+    ]
 
 
 def _enclosing_stmt_list(tree: ast.Module, node: ast.stmt) -> list[ast.stmt] | None:

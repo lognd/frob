@@ -2192,6 +2192,60 @@ class TestRunSplit:
         ).stdout
         assert status.strip() == ""
 
+    # frob:ticket T-3122
+    def test_split_carries_forward_imports_moved_body_needs(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRunSplit.test_split_carries_forward_imports_moved\
+        # _body_needs
+        """T-3122: `run_split` must copy forward every top-level import a
+        moved symbol's own body/base-classes/annotations reference --
+        `import_resolution`'s own check only covers call-site imports and
+        local-name resolution, so a moved class body left with an
+        undefined base class name (`StrEnum` here) parses fine but raises
+        `NameError` at real import time, exactly the defect T-3122
+        found."""
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "from enum import StrEnum\n"
+            "\n"
+            "\n"
+            "class Color(StrEnum):\n"
+            "    RED = 'red'\n"
+            "    BLUE = 'blue'\n",
+        )
+        _commit_all(root, "initial")
+
+        result = run_split(
+            root,
+            source_module="pkg.mod",
+            symbols=["Color"],
+            destination_module="pkg.newmod",
+            chunk_size=5,
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.success is True
+
+        newmod_text = (root / "src/pkg/newmod.py").read_text(encoding="utf-8")
+        assert "from enum import StrEnum" in newmod_text
+        assert "class Color(StrEnum):" in newmod_text
+
+        import_result = subprocess.run(
+            [
+                "python",
+                "-c",
+                "import sys; sys.path.insert(0, 'src'); import pkg.newmod",
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        assert import_result.returncode == 0, import_result.stderr
+
     def test_split_chunk_failure_does_not_touch_later_chunks(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestRunSplit.test_split_chunk_failure_does_not_touch_\
