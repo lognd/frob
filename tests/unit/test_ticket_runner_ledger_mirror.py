@@ -521,3 +521,119 @@ class TestPromoteMirror:
 
         assert mirrored is False
         assert _git("rev-parse", "HEAD", cwd=primary).stdout.strip() == before
+
+
+@pytest.fixture
+def _fail_fixture(tmp_path: Path) -> tuple[Path, Path]:
+    """A primary checkout plus linked worktree, both carrying a
+    schema-VALID v2 ticket -- `fail`'s own `_load_ticket_for_fail`/
+    `record_failure` need a real `Ticket`, unlike `_setup`'s minimal
+    `MIRRORED_LEDGER_VERBS`-only frontmatter."""
+    from frob.tickets._models import Origin, TicketKind, TicketSpec
+    from frob.tickets._new_renumber import _ticket_from_spec
+    from frob.tickets._store import _serialize_ticket
+
+    ticket_id = "T-0001"
+    primary = tmp_path / "primary"
+    primary.mkdir()
+    _git("init", "-q", "-b", "main", cwd=primary)
+    _git("config", "user.email", "t@example.com", cwd=primary)
+    _git("config", "user.name", "T", cwd=primary)
+    (primary / ".gitignore").write_text(".frob/\n")
+    ticket = _ticket_from_spec(
+        ticket_id,
+        TicketSpec(
+            title="Fail visibility warning fixture",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("src/seed.py",),
+        ),
+        (),
+    )
+    ticket_dir = primary / "tickets" / ticket_id
+    ticket_dir.mkdir(parents=True)
+    (ticket_dir / "ticket.md").write_text(_serialize_ticket(ticket))
+    _git("add", "-A", cwd=primary)
+    _git("commit", "-q", "-m", "init", cwd=primary)
+
+    worktree = tmp_path / "wt"
+    added = _git(
+        "worktree", "add", "-q", "-b", "t-branch", str(worktree), "main", cwd=primary
+    )
+    assert added.returncode == 0, added.stdout + added.stderr
+    return primary, worktree
+
+
+# frob:ticket T-3137
+class TestFailNotVisibleOnPrimaryWarning:
+    """`frob ticket fail` (unlike `promote`) commits its failure-log entry
+    to a worktree's OWN branch only -- `LEDGER_VERB_STRATEGY["fail"]` is
+    GENERIC_COMMIT_UNMIRRORED (T-2603), on the assumption a future land
+    for THIS ticket always carries it. That assumption breaks once the
+    ticket's own series has already landed: nothing ever carries the
+    fail-log to main again. `_warn_if_fail_not_visible_on_primary` cannot
+    fix the reachability gap itself (mirroring `fail` is real, separate
+    work tracked as this ticket's own residue), but it must make the gap
+    LOUD rather than let a caller believe a successful-looking `fail`
+    reached the fleet."""
+
+    def test_fail_from_worktree_warns_when_not_visible_on_primary(
+        self,
+        _fail_fixture: tuple[Path, Path],
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestFailNotVisibleOnPrimaryWarning.test_fail_from_worktree_warns_when_not_visible_on_primary  # noqa: E501
+        """MUST FIRE: `fail` run from a worktree logs a loud, greppable
+        warning naming the primary checkout and the follow-up needed --
+        the failure log is real (committed) but NOT yet visible to the
+        fleet."""
+        import logging
+
+        from frob.app.config import AppConfig
+        from frob.app.ticket_runner._close_cmd import _fail
+
+        primary, worktree = _fail_fixture
+        with caplog.at_level(logging.ERROR):
+            cfg = AppConfig(
+                ticket_command="fail",
+                ticket_id="T-0001",
+                ticket_path=worktree,
+                ticket_summary="dead end, see T-9999",
+            )
+            _fail(worktree, cfg)
+
+        assert any(
+            "NOT yet visible" in r.message and str(primary) in r.message
+            for r in caplog.records
+        ), [r.message for r in caplog.records]
+        # The failure log itself really did commit -- this is a visibility
+        # warning, not a report of a failed write.
+        shown = _git("log", "-1", "--format=%s", cwd=worktree)
+        assert "fail-logged" in shown.stdout
+
+    def test_fail_from_primary_is_quiet(
+        self,
+        _fail_fixture: tuple[Path, Path],
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestFailNotVisibleOnPrimaryWarning.test_fail_from_primary_is_quiet  # noqa: E501
+        """MUST STAY QUIET: `fail` run directly in the primary checkout
+        (root IS primary, nothing invisible) never emits the warning."""
+        import logging
+
+        from frob.app.config import AppConfig
+        from frob.app.ticket_runner._close_cmd import _fail
+
+        primary, _worktree = _fail_fixture
+        with caplog.at_level(logging.ERROR):
+            cfg = AppConfig(
+                ticket_command="fail",
+                ticket_id="T-0001",
+                ticket_path=primary,
+                ticket_summary="dead end, see T-9999",
+            )
+            _fail(primary, cfg)
+
+        assert not any("NOT yet visible" in r.message for r in caplog.records), [
+            r.message for r in caplog.records
+        ]

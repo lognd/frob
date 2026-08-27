@@ -1,7 +1,7 @@
 ---
 id: T-3137
 title: frob ticket fail from a worktree never reaches main and does not say so
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -15,10 +15,32 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_lifecycle.py
+- src/frob/app/ticket_runner/_close_cmd.py
+- tests/unit/test_ticket_runner_ledger_mirror.py
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: actual _fail handler lives in _close_cmd.py; ticket's declared scope named
+    the wrong file (_lifecycle.py never defined _fail)
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_ticket_runner_ledger_mirror.py
+  reason: actual _fail handler lives in _close_cmd.py; ticket's declared scope named
+    the wrong file (_lifecycle.py never defined _fail)
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: actual _fail handler lives in _close_cmd.py; ticket's declared scope named
+    the wrong file (_lifecycle.py never defined _fail)
+  actor: logan
+  at: '2026-08-27'
 body_changes:
 - mode: set
   reason: Record the measured mirror asymmetry between fail and promote, and that
@@ -27,6 +49,9 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3180
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestFailNotVisibleOnPrimaryWarning::test_fail_from_worktree_warns_when_not_visible_on_primary
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestFailNotVisibleOnPrimaryWarning::test_fail_from_primary_is_quiet
 designated_repro_test: null
 threat: null
 component: null

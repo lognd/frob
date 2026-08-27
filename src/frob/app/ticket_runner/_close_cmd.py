@@ -1800,6 +1800,48 @@ def _requeue_if_in_progress(root: Path, ticket_id: str, ticket) -> None:
     _log.info("%s: requeued (in-progress -> queued), lease released", ticket_id)
 
 
+# frob:ticket T-3137
+# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestFailNotVisibleOnPrimaryWarning.test_fail_from_worktree_warns_when_not_visible_on_primary  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestFailNotVisibleOnPrimaryWarning.test_fail_from_primary_is_quiet  # noqa: E501
+def _warn_if_fail_not_visible_on_primary(root: Path, ticket_id: str) -> None:
+    """T-3137: `fail` (unlike `scope`/`block`/`attach`/... T-2563's
+    `MIRRORED_LEDGER_VERBS`) commits its failure-log entry to `root`'s
+    own branch ONLY -- `LEDGER_VERB_STRATEGY["fail"]` is deliberately
+    GENERIC_COMMIT_UNMIRRORED (T-2603), on the assumption that a future
+    `frob ticket land` for THIS ticket will always carry it. That
+    assumption breaks exactly when an agent fail-logs a SECOND ticket
+    after its own series' landing ticket is already done: no further
+    land ever touches this worktree branch again, so the failure log
+    -- the SANCTIONED way this repo records a dead end -- silently never
+    reaches main. `frob ticket promote` has the identical worktree-only-
+    commit shape and already warns loudly
+    (`_draft_finalize._warn_if_promote_not_visible_on_primary`); this is
+    the same warning for `fail`, reusing the same `_resolve_primary_
+    checkout` primary-detection rather than duplicating it.
+
+    A no-op when `root` IS the resolved primary checkout (the common,
+    already-visible case) or when the primary cannot be resolved at all
+    (best-effort disclosure, never a hard failure of `fail` itself)."""
+    from frob.tickets._land import _resolve_primary_checkout
+
+    primary = _resolve_primary_checkout(root)
+    if primary is None or primary.resolve() == root.resolve():
+        return
+    _log.error(
+        "ticket fail: %s recorded ONLY on this worktree's own branch (%s) "
+        "-- NOT yet visible on %s, and no future land is guaranteed to "
+        "carry it (the exact trap if this ticket's series already landed). "
+        "Run `frob ticket fail --path %s ...` (or the equivalent) from %s "
+        "now, or land this ticket's own branch, to make the failure log "
+        "visible to the fleet.",
+        ticket_id,
+        root,
+        primary,
+        primary,
+        primary,
+    )
+
+
 # frob:ticket T-1131
 # frob:ticket T-1130
 # frob:ticket T-1162
@@ -1848,6 +1890,7 @@ def _fail(root: Path, cfg: AppConfig) -> None:
     )
     if committed.is_err:
         sys.exit(1)
+    _warn_if_fail_not_visible_on_primary(root, cfg.ticket_id)
 
 
 # frob:ticket T-0579
