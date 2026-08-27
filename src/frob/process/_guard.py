@@ -54,10 +54,14 @@ _TRUTHY = frozenset({"1", "true", "yes", "on"})
 
 # frob:doc docs/modules/process.md#public-api
 class ProcessGuardError(ErrorSet):
-    """Kill-switch-triggered refusals `guarded_subprocess_run` returns
-    instead of ever spawning a process while the switch is flipped."""
+    """Recoverable `guarded_subprocess_run` failures: a kill-switch
+    refusal before ever spawning (`ExecDisabled`), or a spawned process
+    that outlived its caller-supplied `timeout=` budget (`Timeout`,
+    T-3015) -- both handed back as `Result` values, never a raised
+    exception."""
 
     ExecDisabled = "exec capability disabled via kill switch"
+    Timeout = "subprocess exceeded its timeout= budget"
 
 
 def _env_flag_set(name: str) -> bool:
@@ -92,18 +96,29 @@ def net_enabled() -> bool:
 # frob:doc docs/modules/process.md#public-api
 # frob:invariant INV-019
 # invariant spec: [INV-019](invariants/INV-019.md)
+# frob:ticket T-3015
+# frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_disabled_returns_err_without_spawning  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_enabled_spawns_and_returns_ok  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_timeout_returns_err_never_raises  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_healthy_path_unchanged_when_timeout_kwarg_given  # noqa: E501
 def guarded_subprocess_run(
     args: Sequence[str], **kwargs: object
 ) -> Result[subprocess.CompletedProcess[str], ProcessGuardError]:
     """`subprocess.run(args, **kwargs)`, gated by `exec_enabled()`.
 
     Returns `Err(ProcessGuardError.ExecDisabled)` without ever spawning a
-    process when the kill switch is flipped; otherwise `Ok(subprocess.run(
-    ...))`. Every `frob.check` tool runner (`_python.py`/`_native.py`/
-    `_ts.py`) calls this instead of `subprocess.run` directly so
-    `FROB_DISABLE_EXEC=1` is a real, live, no-redeploy kill switch for the
-    `checker` component's `may "exec"` capability (T-0200), not an
-    aspirational `design/frob.strata` claim."""
+    process when the kill switch is flipped; `Err(ProcessGuardError.
+    Timeout)` (T-3015) when a caller-supplied `timeout=` kwarg actually
+    expires -- a subprocess timeout is a recoverable condition a caller
+    should get to handle via `Result`, per this repo's house error-
+    handling rule, never a raised `subprocess.TimeoutExpired` escaping
+    this function uncaught (T-3015: this crashed `move-module`'s own
+    Verify phase mid-transaction, discovered via T-2989/T-2990). Otherwise
+    `Ok(subprocess.run(...))`. Every `frob.check` tool runner (`_python.
+    py`/`_native.py`/`_ts.py`) calls this instead of `subprocess.run`
+    directly so `FROB_DISABLE_EXEC=1` is a real, live, no-redeploy kill
+    switch for the `checker` component's `may "exec"` capability
+    (T-0200), not an aspirational `design/frob.strata` claim."""
     if not exec_enabled():
         _log.warning(
             "process: exec disabled via %s, refusing to spawn %r",
@@ -113,7 +128,15 @@ def guarded_subprocess_run(
         return Err(ProcessGuardError.ExecDisabled)
     _log.debug("process: spawning %r", list(args))
     kwargs = _default_text_encoding(kwargs)
-    proc = subprocess.run(args, **kwargs)  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
+    try:
+        proc = subprocess.run(args, **kwargs)  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
+    except subprocess.TimeoutExpired:
+        _log.warning(
+            "process: spawn of %r exceeded its timeout=%r budget",
+            list(args),
+            kwargs.get("timeout"),
+        )
+        return Err(ProcessGuardError.Timeout)
     return Ok(proc)
 
 

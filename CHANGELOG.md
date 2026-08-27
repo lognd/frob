@@ -419,6 +419,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3007: V-model spec graph as strata instances: requirement/spec/design/component nodes with paired verification levels (T-3004 sections 1-2)
 - T-3011: Epic: publish frob-core and strata-core wheels to PyPI -- build now, publish only on explicit owner consent
 - T-3014: Wire NARR001 (T-2993's narrative-block detector) into gates/__init__.py
+- T-3015: guarded_subprocess_run raises subprocess.TimeoutExpired uncaught instead of returning Err
 - T-3019: frob check fires spurious REF001/PRE001/SCOPE001 on any clean project; frob check is not repo-clean on main
 
 ## [0.530.0] - unreleased

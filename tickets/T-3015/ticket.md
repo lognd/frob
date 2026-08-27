@@ -2,7 +2,7 @@
 id: T-3015
 title: guarded_subprocess_run raises subprocess.TimeoutExpired uncaught instead of
   returning Err
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -19,6 +19,7 @@ scope:
 - src/frob/gates/_bug_repro.py
 evidence_scope:
 - tests/unit/test_process_guard.py
+- tests/test_gates_mutation_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -62,6 +63,9 @@ evidence:
 - tests/unit/test_process_guard.py::TestGuardedSubprocessRun::test_healthy_path_unchanged_when_timeout_kwarg_given
 - tests/unit/test_process_guard.py::TestGuardedSubprocessRun::test_disabled_returns_err_without_spawning
 - tests/unit/test_process_guard.py::TestGuardedSubprocessRun::test_enabled_spawns_and_returns_ok
+- tests/test_gates_mutation_evidence.py::TestBugReproTimeout::test_slow_test_exceeding_budget_is_timeout_not_no_verdict
+- tests/test_gates_mutation_evidence.py::TestBugReproTimeout::test_fast_genuinely_failing_test_still_refused
+- tests/test_gates_mutation_evidence.py::TestBugReproTimeout::test_fast_genuinely_reproducing_test_completes_normally
 designated_repro_test: null
 threat: null
 component: null

@@ -89,6 +89,45 @@ class TestGuardedSubprocessRun:
         assert result.is_ok
         assert result.danger_ok.stdout.strip() == "hi"
 
+    # frob:ticket T-3015
+    def test_timeout_returns_err_never_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3015: a command that outlives its `timeout=` budget must come
+        back as `Err(ProcessGuardError.Timeout)`, never a raised
+        `subprocess.TimeoutExpired` escaping this function -- the exact
+        crash that took down `move-module`'s own Verify phase mid-
+        transaction (T-2990/T-2989)."""
+        # frob:tests src/frob/process/_guard.py::guarded_subprocess_run kind="unit"
+        monkeypatch.delenv(EXEC_KILL_SWITCH_ENV, raising=False)
+        result = guarded_subprocess_run(
+            ["python3", "-c", "import time; time.sleep(5)"],
+            capture_output=True,
+            text=True,
+            timeout=0.1,
+        )
+        assert result.is_err
+        assert result.danger_err is ProcessGuardError.Timeout
+
+    # frob:ticket T-3015
+    def test_healthy_path_unchanged_when_timeout_kwarg_given(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3015 must-still-work fixture: a `timeout=` kwarg that the
+        command comfortably beats behaves exactly as before -- `Ok` with
+        the real `CompletedProcess`, not a new code path introduced by the
+        try/except wrapping."""
+        # frob:tests src/frob/process/_guard.py::guarded_subprocess_run kind="unit"
+        monkeypatch.delenv(EXEC_KILL_SWITCH_ENV, raising=False)
+        result = guarded_subprocess_run(
+            ["python3", "-c", "print('hi')"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert result.is_ok
+        assert result.danger_ok.stdout.strip() == "hi"
+
 
 # frob:ticket T-2953
 class TestDefaultTextEncoding:

@@ -630,43 +630,49 @@ def _spawn_designated_test(
 
     Called DIRECTLY via `guarded_subprocess_run` (still kill-switch-
     gated, `frob.gitio.run_argv`'s own underlying primitive) rather than
-    through `run_argv` itself -- `run_argv` catches `subprocess.
-    TimeoutExpired` internally and collapses it into the SAME `Err(
-    GitError.GitFailed)` a spawn refusal or an `OSError` produces, so a
-    caller downstream of `run_argv` cannot tell "hit the time budget"
-    apart from "could not spawn at all" -- exactly the ambiguity T-2480
-    exists to close. Catching the timeout HERE, before it would be
-    collapsed, is what makes `TIMEOUT` a real, distinct outcome instead
-    of another shade of `NO_VERDICT`."""
+    through `run_argv` itself -- `run_argv` collapses a timeout into the
+    SAME `Err(GitError.GitFailed)` a spawn refusal or an `OSError`
+    produces, so a caller downstream of `run_argv` cannot tell "hit the
+    time budget" apart from "could not spawn at all" -- exactly the
+    ambiguity T-2480 exists to close. Checking `guarded.danger_err is
+    ProcessGuardError.Timeout` HERE (T-3015: `guarded_subprocess_run`
+    returns `Err(ProcessGuardError.Timeout)` rather than raising
+    `subprocess.TimeoutExpired`), before it would be collapsed, is what
+    makes `TIMEOUT` a real, distinct outcome instead of another shade of
+    `NO_VERDICT`."""
     env = dict(os.environ)
     src = str(worktree / "src")
     env["PYTHONPATH"] = (
         src if not env.get("PYTHONPATH") else src + os.pathsep + env["PYTHONPATH"]
     )
     argv = (sys.executable, "-m", "pytest", test_id, "-q", "-p", "no:cacheprovider")
-    try:
-        guarded = guarded_subprocess_run(
-            list(argv),
-            cwd=str(worktree),
-            capture_output=True,
-            timeout=timeout_s,
-            text=True,
-            check=False,
-            env=env,
-        )
-    except subprocess.TimeoutExpired:
-        _log.warning(
-            "BUG002: repro run of %s exceeded its %gs budget -- TIMEOUT, "
-            "not NO_VERDICT: this test may well genuinely reproduce the "
-            "defect, it simply could not be MEASURED in time. Re-run with "
-            "a larger --repro-timeout-s, or use --designate-repro-force "
-            "with the timeout noted as the reason if the fail-at-parent/"
-            "pass-at-fix shape has already been verified by hand",
-            test_id,
-            timeout_s,
-        )
-        return Err(_BugReproOutcome.TIMEOUT)
+    guarded = guarded_subprocess_run(
+        list(argv),
+        cwd=str(worktree),
+        capture_output=True,
+        timeout=timeout_s,
+        text=True,
+        check=False,
+        env=env,
+    )
     if guarded.is_err:
+        if guarded.danger_err is ProcessGuardError.Timeout:
+            # T-3015: guarded_subprocess_run now returns Err(Timeout)
+            # instead of raising subprocess.TimeoutExpired -- this branch
+            # replaces the old except-block, preserving TIMEOUT as a
+            # distinct outcome from NO_VERDICT (T-2480's own reason for
+            # catching the timeout here rather than letting it collapse).
+            _log.warning(
+                "BUG002: repro run of %s exceeded its %gs budget -- TIMEOUT, "
+                "not NO_VERDICT: this test may well genuinely reproduce the "
+                "defect, it simply could not be MEASURED in time. Re-run with "
+                "a larger --repro-timeout-s, or use --designate-repro-force "
+                "with the timeout noted as the reason if the fail-at-parent/"
+                "pass-at-fix shape has already been verified by hand",
+                test_id,
+                timeout_s,
+            )
+            return Err(_BugReproOutcome.TIMEOUT)
         if guarded.danger_err is ProcessGuardError.ExecDisabled:
             _log.warning(
                 "BUG002: exec disabled via kill switch, no repro-at-parent "
