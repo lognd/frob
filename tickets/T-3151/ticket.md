@@ -58,7 +58,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5ced56304dad699530965804e275ce55e010e9fb
 ---
 ## Description
 tests/unit/test_exports.py::TestFrobExportsPolicyResidue::
