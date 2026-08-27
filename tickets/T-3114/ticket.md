@@ -1,7 +1,7 @@
 ---
 id: T-3114
 title: Add resync_root_to_published_tip primitive for the post-CAS root resync
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -15,10 +15,36 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_compose.py
+- tests/unit/test_land_compose.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_compose.py
+  reason: the two required fixtures for resync_root_to_published_tip live in this
+    file; SCOPE001 requires the ticket to declare it
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_land_compose.py
+  reason: the two required fixtures for resync_root_to_published_tip live in this
+    file; SCOPE001 requires the ticket to declare it
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_land_compose.py
+  reason: the two required fixtures for resync_root_to_published_tip live in this
+    file; SCOPE001 requires the ticket to declare it
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_land_compose.py
+  reason: the two required fixtures for resync_root_to_published_tip live in this
+    file; SCOPE001 requires the ticket to declare it
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
