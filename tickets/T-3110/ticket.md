@@ -28,6 +28,8 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 4237
+evidence:
+- tests/test_refactor_corpus.py::TestRefactorCorpus::test_split_moves_symbols_across_every_call_site_shape
 designated_repro_test: null
 threat: null
 component: null
