@@ -43,7 +43,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0fe5f273fb6fc764233dc3a125d19d4af5f2dd8b
 ---
 Linux full-suite triage (T-2992): a cluster of 28 ticket-lifecycle CLI
 round-trip tests fail, all sharing the shape "create a fresh ticket via
