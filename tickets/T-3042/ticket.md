@@ -24,6 +24,8 @@ scope:
 - strata-core/src/parse/mod.rs
 - src/frob/gates/__init__.py
 - docs/strata/vmodel.md
+- editors/vscode-strata/syntaxes/strata.tmLanguage.json
+- docs/guides/extending/strata-surface-grammar.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -86,6 +88,20 @@ scope_changes:
     job table (gates/__init__.py) so VMOD001 is reachable via frob check --only vmodel,
     plus a new docs section for the authoring format and gate wiring (T-3009 released
     its lease on both files)'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: editors/vscode-strata/syntaxes/strata.tmLanguage.json
+  reason: 'T-3042: register vmodel_node/vmodel_edge (and their kind/level/src/dst
+    clause keywords) in the syntax-highlighting grammar per this guides recipe, and
+    update the affects-closure doc for parse_program (AFFECT001)'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/guides/extending/strata-surface-grammar.md
+  reason: 'T-3042: register vmodel_node/vmodel_edge (and their kind/level/src/dst
+    clause keywords) in the syntax-highlighting grammar per this guides recipe, and
+    update the affects-closure doc for parse_program (AFFECT001)'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
