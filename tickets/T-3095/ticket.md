@@ -2,7 +2,7 @@
 id: T-3095
 title: Isolate land's three post-squash file-mutating stages so the whole transaction
   is invisible in the shared tree
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_release.py
+- tests/unit/test_land_release_out_of_tree.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_release_out_of_tree.py
+  reason: T-3095's own new regression tests for _apply_release_bump_out_of_tree
+  actor: logan
+  at: '2026-08-27'
 body_changes:
 - mode: set
   reason: Re-record on main the T-3089 residue that existed only as an unlanded worktree
