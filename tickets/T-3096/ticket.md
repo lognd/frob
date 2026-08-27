@@ -3,7 +3,7 @@ id: T-3096
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3033):
   15 new (rule, file) identit(ies), 23 finding(s) (SUPPRESS001, invalid-argument-type,
   invalid-assignment, unresolved-attribute)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-27'
@@ -80,3 +80,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - unresolved-attribute  tests/unit/test_main_entry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-27: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (SUPPRESS001 src/frob/app/ticket_runner/_new.py, SUPPRESS001 tests/test_ci_report.py, SUPPRESS001 tests/test_tickets.py, SUPPRESS001 tests/test_tickets_acceptance.py, SUPPRESS001 tests/test_tickets_brief.py, SUPPRESS001 tests/test_tickets_velocity.py, SUPPRESS001 tests/unit/verify/test_backpressure.py, invalid-argument-type src/frob/__main__.py, invalid-argument-type src/frob/app/_config_external.py, invalid-argument-type tests/unit/test_app_runners_batch6.py, invalid-assignment tests/test_ci_report.py, invalid-assignment tests/test_tickets_velocity.py, invalid-assignment tests/test_vet.py, invalid-assignment tests/unit/verify/test_backpressure.py, unresolved-attribute tests/unit/test_main_entry.py) is absent from a full unscoped `frob check --json` run that completed with no budget deferral and no failed/silent tool stage at T-3080's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
