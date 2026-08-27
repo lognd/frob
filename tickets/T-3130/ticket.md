@@ -2,7 +2,7 @@
 id: T-3130
 title: 'frob check cache.db/parse-artifacts.db: database is locked under concurrent
   checks'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/cache.py
 - docs/modules/graph.md
+evidence_scope:
+- tests/test_graph_lock.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +48,8 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 4388
+evidence:
+- tests/test_graph_lock.py::TestCacheLockRetry::test_connect_retries_a_transient_lock_during_fingerprint_check
 designated_repro_test: null
 threat: null
 component: null

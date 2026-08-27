@@ -1411,6 +1411,14 @@ contended lock via the shared `_with_lock_retry` helper (same
 poll/backoff shape and `_LOCK_TOTAL_TIMEOUT_SECONDS` budget as the
 schema-application retry) instead of letting the raw exception escape.
 
+T-3130: `connect`'s own `_check_fingerprint` call was a fifth, later-
+discovered gap -- its fingerprint-mismatch invalidation (DELETE the
+derived tables, upsert the new fingerprint) is a real write, but it ran
+directly, outside `_with_lock_retry`, so a lock hit there still crashed
+`connect` (and everything above it, unhandled) under ordinary concurrent
+`frob check` load. Now routed through `_with_lock_retry` like every other
+write path here.
+
 If the budget is exhausted, `cache.CacheLocked` (a narrow
 `sqlite3.OperationalError` subclass) is raised instead of the bare sqlite
 exception, so a caller can catch exactly this recoverable-contention case.

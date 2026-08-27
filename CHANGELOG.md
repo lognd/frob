@@ -481,6 +481,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3124: frob ticket new warns on scope overlap but never on duplicate titles or bodies
 - T-3125: frob --help does not list refactor/narrative subcommands
 - T-3126: Land-commit record still dirties root and moves main without CAS after the publish
+- T-3130: frob check cache.db/parse-artifacts.db: database is locked under concurrent checks
 - T-3136: verify_pytest_collect passes non-Python touched files straight to pytest, false-refusing rc=4
 
 ## [0.530.0] - unreleased

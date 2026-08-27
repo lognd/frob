@@ -436,3 +436,39 @@ class TestCacheLockRetry:
         result = build_graph(root, cache)
         assert result.is_err
         assert result.danger_err == GraphError.CacheLocked
+
+    # frob:tests src/frob/graph/cache.py::connect
+    def test_connect_retries_a_transient_lock_during_fingerprint_check(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-3130: `connect`'s `_check_fingerprint` call (its fingerprint-
+        mismatch invalidation is a real write: DELETE + upsert) is the one
+        write step in `connect` NOT routed through `_with_lock_retry` --
+        every OTHER cache write path already retries a transient
+        `sqlite3.OperationalError: database is locked` (T-1423), but a
+        lock hit here propagates straight out of `connect` unhandled,
+        exactly the crash T-3130 measured under ordinary concurrent
+        `frob check` load ("main: unhandled exception during dispatch:
+        database is locked").
+
+        `_check_fingerprint` itself is monkeypatched to raise a transient
+        lock error twice before succeeding for real -- mirroring
+        `test_retries_then_succeeds_past_a_transient_lock`'s own pattern
+        one level up the call stack, at `connect` (the actual public
+        surface `frob check` calls), not `_with_lock_retry` directly."""
+        cache = tmp_path / "cache.db"
+        calls = {"n": 0}
+        real_check_fingerprint = graph_cache._check_fingerprint
+
+        def _flaky_check_fingerprint(conn, path):  # noqa: ANN001
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise sqlite3.OperationalError("database is locked")
+            return real_check_fingerprint(conn, path)
+
+        monkeypatch.setattr(graph_cache, "_check_fingerprint", _flaky_check_fingerprint)
+        monkeypatch.setattr(graph_cache, "_LOCK_POLL_SECONDS", 0.01)
+
+        conn = graph_cache.connect(cache)
+        conn.close()
+        assert calls["n"] == 3

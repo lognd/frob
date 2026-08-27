@@ -513,12 +513,24 @@ def connect(path: Path) -> sqlite3.Connection:
     same DatabaseError. The cache is derived state, so the honest recovery
     is delete-and-recreate the file (T-0019 / INV-003), applied at both the
     connect-probe stage and, per T-0141, the later DDL stage too.
+
+    T-3130: `_check_fingerprint`'s own writes (DELETE + upsert on a
+    fingerprint mismatch) were the one write step here NOT routed through
+    `_with_lock_retry` -- every other cache write path already retries a
+    transient `sqlite3.OperationalError: database is locked` (T-1423), but
+    a lock hit during `_check_fingerprint` propagated straight out of
+    `connect` as an unhandled exception instead, measured under ordinary
+    concurrent `frob check` load (fleet_status regularly shows several
+    concurrent checks on one host -- not a rare spike). `_check_fingerprint`
+    is idempotent under retry: its first statement is a plain `SELECT`, and
+    a lock error on any later write means the transaction has not
+    committed, so re-running the whole function from scratch is safe.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = _open(path)
     conn, existing = _read_schema_version(conn, path)
     conn = _apply_schema_with_recovery(conn, existing, path)
-    _check_fingerprint(conn, path)
+    _with_lock_retry(lambda: _check_fingerprint(conn, path), what="fingerprint check")
     return conn
 
 
