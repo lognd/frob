@@ -38,7 +38,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cd51fcd127dac73d31205310bb503b99051619fc
 ---
 V-model docs/strata/vmodel.md's closure-rule prose ("every artifact node
 must have >=1 incoming/outgoing edge of kind X") is stale relative to
