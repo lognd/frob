@@ -31,7 +31,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 21055ca26f9b39b46b2f04c18961011be27934f5
 ---
 ## Description
 Found while auditing T-3147 (D-02 self-cover tautology blast radius,
