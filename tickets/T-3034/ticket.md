@@ -157,7 +157,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f3286496031e05e199561c4dfa229a00370db3af
 ---
 Linux full-suite triage (T-2992): 26 residual failures with no shared
 root cause identified yet (each was spot-checked or grouped by name
