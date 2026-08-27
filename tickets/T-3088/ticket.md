@@ -1,7 +1,7 @@
 ---
 id: T-3088
 title: 'Land compose: out-of-tree tree/commit-object plumbing + CAS ref publish primitive'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -15,10 +15,23 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_compose.py
+- tests/unit/test_land_compose.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_compose.py
+  reason: scope this ticket's own test file and doc anchor added alongside the primitive
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: scope this ticket's own test file and doc anchor added alongside the primitive
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 acceptance:
 - text: Given a scratch repo, when compose_tree_out_of_tree builds a commit, then
