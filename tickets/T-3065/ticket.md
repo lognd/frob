@@ -20,6 +20,7 @@ scope:
 - src/frob/_cli_parsers/_verify.py
 - tests/unit/verify/test_quarantine.py
 - tests/unit/verify/test_verify_runner.py
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +49,11 @@ scope_changes:
 - op: add
   glob: tests/unit/verify/test_verify_runner.py
   reason: normalize quarantine finding path identity at write/dispose time (T-3065)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: doc closure for touched public symbols
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
