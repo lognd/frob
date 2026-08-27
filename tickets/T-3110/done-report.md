@@ -44,7 +44,7 @@ this is exactly the gap T-3105 exploited.
 Evidence:
 - tests/test_refactor_corpus.py::TestRefactorCorpus::test_split_moves_symbols_across_every_call_site_shape
 
-Filed: T-draft-561192d7 (auto-renumbered on land), titled "frob refactor
+Filed: T-3119 (auto-renumbered on land), titled "frob refactor
 verbs' Verify phase never checks import breakage outside the plan's own
 touched files" -- the unconditional whole-tree post-apply import check
 this ticket's brief asked to "consider", scoped to
@@ -61,7 +61,7 @@ git-fixture helper shape; 1 FMT001 line-length warning fixed via
  tests/test_refactor_corpus.py      | 304 +++++++++++++++++++++++++++++++++++++
  tickets/T-3110/done-report.md      |  73 +++++++++
  tickets/T-3110/ticket.md           |   4 +-
- tickets/T-draft-561192d7/ticket.md |  54 +++++++
+ tickets/T-3119/ticket.md |  54 +++++++
  4 files changed, 434 insertions(+), 1 deletion(-)
 ```
 
