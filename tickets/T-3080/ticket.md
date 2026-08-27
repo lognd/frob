@@ -63,7 +63,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2e4614483870ce73b61bef9cf633c08489ee0375
 ---
 Split off from T-3037 (whose own scope covered only tests/test_ticket_
 work_and_land_finish.py and tests/test_ticket_runner_archive_force.py):
