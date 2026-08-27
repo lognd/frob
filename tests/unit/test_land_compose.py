@@ -17,6 +17,7 @@ from frob.tickets._land_compose import (
     compose_tree_out_of_tree,
     fold_worktree_into_commit,
     publish_ref_cas,
+    resync_root_to_published_tip,
 )
 
 
@@ -300,3 +301,59 @@ class TestFoldWorktreeIntoCommit:
             )
             assert folded.is_err
             assert folded.danger_err is LandComposeError.ComposeFailed
+
+
+# frob:ticket T-3114
+class TestResyncRootToPublishedTip:
+    """T-3114: after a CAS publish moves the branch ref underneath a
+    checked-out root, `resync_root_to_published_tip` advances root's index
+    and working tree to the published tip -- preserving a sibling's
+    uncommitted work, and refusing atomically rather than clobbering it."""
+
+    # frob:ticket T-3114
+    @staticmethod
+    def _publish_feature_onto_main(repo: Path) -> tuple[str, str]:
+        """Move `refs/heads/main` to `feature`'s tip by CAS, exactly as a
+        land's publish does, leaving root's index/worktree at the old tip;
+        returns `(old_tip, new_tip)` -- test-only helper."""
+        old_tip = _git_out(repo, "rev-parse", "main").strip()
+        new_tip = _git_out(repo, "rev-parse", "feature").strip()
+        assert publish_ref_cas(repo, "refs/heads/main", old_tip, new_tip).is_ok
+        return old_tip, new_tip
+
+    # frob:ticket T-3114
+    def test_unrelated_dirty_path_resyncs_and_is_preserved(
+        self, scratch_repo: Path
+    ) -> None:
+        """MUST-STAY-QUIET: given a sibling's uncommitted edit to a path
+        the published changeset does NOT touch, when the resync runs, then
+        it succeeds, the landed content lands in the working tree, and the
+        sibling's edit survives unstaged."""
+        sibling = scratch_repo / "a.txt"
+        old_tip, new_tip = self._publish_feature_onto_main(scratch_repo)
+        sibling.write_text("base\nsibling work in progress\n")
+
+        result = resync_root_to_published_tip(scratch_repo, old_tip, new_tip)
+
+        assert result.is_ok
+        assert (scratch_repo / "b.txt").read_text() == "feature content\n"
+        assert sibling.read_text() == "base\nsibling work in progress\n"
+        assert _git_out(scratch_repo, "status", "--porcelain").strip() == "M a.txt"
+
+    # frob:ticket T-3114
+    def test_dirty_path_the_land_also_changed_blocks_atomically(
+        self, scratch_repo: Path
+    ) -> None:
+        """MUST-FIRE: given a sibling's uncommitted edit to a path the
+        published changeset ALSO changes, when the resync runs, then it
+        returns Err(ResyncBlocked) and the sibling's content is left
+        byte-for-byte intact -- git refuses without applying anything."""
+        contested = scratch_repo / "b.txt"
+        contested.write_text("sibling wrote this first\n")
+        old_tip, new_tip = self._publish_feature_onto_main(scratch_repo)
+
+        result = resync_root_to_published_tip(scratch_repo, old_tip, new_tip)
+
+        assert result.is_err
+        assert result.danger_err is LandComposeError.ResyncBlocked
+        assert contested.read_text() == "sibling wrote this first\n"

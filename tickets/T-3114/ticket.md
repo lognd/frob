@@ -1,7 +1,7 @@
 ---
 id: T-3114
 title: Add resync_root_to_published_tip primitive for the post-CAS root resync
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -45,12 +45,15 @@ scope_changes:
     file; SCOPE001 requires the ticket to declare it
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/unit/test_land_compose.py::TestResyncRootToPublishedTip::test_unrelated_dirty_path_resyncs_and_is_preserved
+- tests/unit/test_land_compose.py::TestResyncRootToPublishedTip::test_dirty_path_the_land_also_changed_blocks_atomically
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 926e97e8bff1fed502a3596b5a5ae7045eb45976
 ---
 DECOMPOSITION CHILD of T-3089 (series BQ). T-3089's body carries the settled
 answer to its own blocking design question; this ticket builds the primitive

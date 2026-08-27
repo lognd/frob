@@ -54,6 +54,10 @@ class LandComposeError(ErrorSet):
         "the target ref moved since expected_old_sha was captured (CAS lost the race)"
     )
     WorktreeSetupFailed = "could not cut the disposable git worktree to compose in"
+    ResyncBlocked = (
+        "root's index/worktree could not be advanced to the published tip -- a "
+        "concurrent uncommitted edit touches a path the changeset also changed"
+    )
 
 
 def _apply_diff_to_scratch_index(
@@ -452,3 +456,82 @@ def fold_worktree_into_commit(
         "land_compose: folded %s into %s (base=%s)", worktree, new_sha, base_commit
     )
     return Ok(new_sha)
+
+
+# frob:ticket T-3114
+# frob:doc \
+# docs/modules/tickets-landing.md#frobtickets_land_compose----post-cas-root-resync-t-31\
+# 14
+# frob:tests tests/unit/test_land_compose.py::TestResyncRootToPublishedTip.test_unrelated_dirty_path_resyncs_and_is_preserved  # noqa: E501
+# frob:tests tests/unit/test_land_compose.py::TestResyncRootToPublishedTip.test_dirty_path_the_land_also_changed_blocks_atomically  # noqa: E501
+# frob:waive WIRE001 follow_up="T-3089" reason="T-3114 is deliberately the PRIMITIVE \
+# half of the post-CAS resync -- the same posture T-3088 and T-3107 shipped in: the \
+# only caller is the squash-stage wiring, which is T-3089's own scope and is blocked \
+# on this ticket. Landing the primitive and its wiring in one ticket is exactly the \
+# large-unlanded-branch shape this decomposition exists to avoid"
+def resync_root_to_published_tip(
+    root: Path, old_tip: str, new_tip: str
+) -> Result[None, LandComposeError]:
+    """Bring `root`'s INDEX and WORKING TREE from `old_tip` up to the
+    `new_tip` a preceding `publish_ref_cas` just made public, without
+    touching any ref and without clobbering a sibling agent's uncommitted
+    work (T-3114; the mechanism settled in T-3089's body).
+
+    Root's `HEAD` is a symref to the published branch, so the CAS publish
+    ALREADY moved `HEAD` as a side effect -- only the index and working
+    tree are left describing `old_tip`, which is why `git status` in root
+    reports the whole landed changeset as reverted local modifications
+    until this runs. `git read-tree -m -u` is a two-tree twoway_merge (the
+    same plumbing `git checkout` uses): it updates index+worktree, touches
+    no ref (unlike `reset --keep`, which would redundantly re-point the ref
+    just published), and is forbidden from being `reset --hard` by T-1740,
+    already encoded in `_commit_squash_apply`'s own fallback, because that
+    would destroy a sibling's uncommitted work in `root`.
+
+    A sibling holding an uncommitted edit to a path this changeset also
+    touches yields `Err(ResyncBlocked)` -- a member distinct from
+    `ComposeFailed` because the caller owes the operator different advice
+    -- and git refuses ATOMICALLY (`Entry '<p>' not uptodate. Cannot
+    merge.`), leaving every file byte-for-byte intact rather than
+    half-applied.
+
+    CALLER CONTRACT (post-publish, therefore unwindable by nobody): the
+    commit is already public and already correct, so an `Err` here is NOT a
+    land failure. Report it loudly with the published sha and the operator
+    recovery command, never revert, and attempt this exactly once -- a
+    retry only races the same sibling that blocked it."""
+    result = run_argv(
+        ("git", "-C", str(root), "read-tree", "-m", "-u", old_tip, new_tip)
+    )
+    if result.is_err:
+        _log.error(
+            "land_compose: resync spawn failed for %s (%s -> %s); root's index "
+            "and working tree still describe the OLD tip",
+            root,
+            old_tip,
+            new_tip,
+        )
+        return Err(LandComposeError.ComposeFailed)
+    if result.danger_ok.returncode != 0:
+        _log.error(
+            "land_compose: resync of %s BLOCKED (%s -> %s) -- a concurrent "
+            "uncommitted edit touches a path this changeset also changed, so "
+            "git refused atomically and nothing was applied: %s. The commit is "
+            "already public; commit or stash that work, then run: "
+            "git -C %s read-tree -m -u %s %s",
+            root,
+            old_tip,
+            new_tip,
+            excerpt(result.danger_ok.stderr),
+            root,
+            old_tip,
+            new_tip,
+        )
+        return Err(LandComposeError.ResyncBlocked)
+    _log.info(
+        "land_compose: resynced %s from %s to the published tip %s",
+        root,
+        old_tip,
+        new_tip,
+    )
+    return Ok(None)

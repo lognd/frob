@@ -3075,3 +3075,42 @@ commit: T-3095 established that checking out the composed commit breaks
 `_apply_release_bump`'s own `_verified_reset_root` unwind invariant.
 
 Still wired to nothing in the live land path; that is T-3089's scope.
+
+## `frob.tickets._land_compose` -- post-CAS root resync (T-3114)
+
+`publish_ref_cas` moves `refs/heads/main` while the primary checkout is
+still sitting on that branch. Because root's `HEAD` is a *symref*, the
+publish already moves `HEAD` as a side effect -- but root's **index and
+working tree** are left describing the old tip, so `git status` in root
+reports the entire landed changeset as reverted local modifications. That
+is a strictly worse dirty root than the ~1.5s staged window the out-of-tree
+compose epic exists to remove, so the transaction does not end at the
+publish.
+
+`resync_root_to_published_tip(root, old_tip, new_tip)` closes it with
+`git read-tree -m -u <old_tip> <new_tip>` -- a two-tree twoway_merge, the
+same plumbing `git checkout` uses. It is chosen over the alternatives
+deliberately:
+
+- it touches **no ref**, where `reset --keep` would redundantly re-point the
+  ref the publish just moved;
+- `reset --hard` is forbidden by T-1740 (already encoded in
+  `_commit_squash_apply`'s own fallback) because it destroys a sibling
+  agent's uncommitted work in root.
+
+A sibling's uncommitted edit to an *unrelated* path survives the resync
+untouched. A sibling's uncommitted edit to a path the changeset *also*
+changes makes git refuse **atomically** (`Entry '<p>' not uptodate. Cannot
+merge.`, exit 128, nothing applied), surfaced as the distinct
+`LandComposeError.ResyncBlocked` rather than the generic `ComposeFailed`,
+because the operator is owed different advice in that case.
+
+**Failure semantics.** This runs *after* the commit is public, so it cannot
+unwind, and it takes the same posture as T-3111's post-publish native
+rebuild: the commit is already correct, so an `Err` here is **not** a land
+failure. The caller reports it loudly -- ticket, published sha, and the
+one-line operator recovery command -- never reverts, and attempts it
+**exactly once**; a retry only races the sibling that blocked it. Because
+the refusal is atomic, the degraded state is a visible, loudly reported
+stale root, never a half-applied tree, and the next land or the operator's
+one-line command clears it.
