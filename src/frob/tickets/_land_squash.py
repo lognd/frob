@@ -1207,6 +1207,45 @@ def _assert_still_on_expected_branch(
     return Ok(None)
 
 
+# frob:ticket T-3111
+# frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_rebuild_runs_after_the_landing_commit_is_durable  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_invoked_when_native_source_touched  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_skipped_when_no_native_source_touched  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_rebuild_failure_does_not_block_land  # noqa: E501
+def _post_publish_native_rebuild(
+    root: Path,
+    final_id: str,
+    worktree_changeset: frozenset[str],
+    rebuild_natives: Callable[[Path], bool] | None,
+) -> bool:
+    """The stale-native warning plus the optional native rebuild, run only
+    AFTER the landing commit is durable (T-3111).
+
+    WHY the position matters: `_maybe_rebuild_natives` shells out to a
+    cargo/maturin build that takes minutes. It used to run between
+    `_assert_land_complete` and `_commit_squash_apply`, i.e. while `root`
+    held the entire squashed changeset staged with nothing committed --
+    every second of that build was a second a sibling `frob ticket land`
+    saw `DirtyMain`, `frob ticket new` refused with `LandInProgress`, and
+    an unrelated agent could not start work at all. One land serialized the
+    whole fleet for the length of a native build. Nothing the rebuild
+    produces is commit content (it writes gitignored build artifacts), so
+    the landing commit is byte-identical either way; only the contention
+    window changes.
+
+    A failure here deliberately does NOT unwind, and must not be
+    "hardened" into one later: the commit is already public and a sibling
+    may already have stacked on it, so hard-resetting it is the T-1456/
+    T-1740 "reset --hard a real commit" hazard, traded for a strictly
+    smaller problem -- a stale local `.so`, which `_warn_if_native_stale`
+    and NATIVE001 already surface and a local `frob natives build` already
+    fixes. `_maybe_rebuild_natives` already logs the failure loudly and
+    returns `False`, which flows into `LandReport.natives_rebuilt`; this
+    function only relocates that behavior, it does not change it."""
+    _warn_if_native_stale(root, final_id)
+    return _maybe_rebuild_natives(root, final_id, worktree_changeset, rebuild_natives)
+
+
 # frob:ticket T-0907
 def _land_squash_apply_finish(
     root: Path,
@@ -1253,17 +1292,15 @@ def _land_squash_apply_finish(
         return Err(completeness.danger_err)
     worktree_changeset = completeness.danger_ok
 
-    _warn_if_native_stale(root, final_id)
-    natives_rebuilt = _maybe_rebuild_natives(
-        root, final_id, worktree_changeset, rebuild_natives
-    )
-
     # T-1001 (churn item 2): stacked-sibling absorption -- see
     # `_absorbed_land_report`'s own docstring.
     absorbed = _absorbed_land_report(
         root, worktree, ticket, ticket_id, final_id, wip_committed, did_merge
     )
     if absorbed is not None:
+        _post_publish_native_rebuild(
+            root, final_id, worktree_changeset, rebuild_natives
+        )
         return Ok(absorbed)
 
     swept = _apply_pre_commit_sweep_or_unwind(
@@ -1281,6 +1318,11 @@ def _land_squash_apply_finish(
     committed = _commit_squash_apply(root, ticket, final_id, pre_land_tip=pre_land_tip)
     if committed.is_err:
         return Err(committed.danger_err)
+
+    # frob:ticket T-3111
+    natives_rebuilt = _post_publish_native_rebuild(
+        root, final_id, worktree_changeset, rebuild_natives
+    )
 
     return _finish_real_land_report(
         root,

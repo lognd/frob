@@ -249,6 +249,12 @@ class AppConfig(BaseModel):
     # dests its standalone counterparts use.
     ops_command: str | None = None
 
+    # ops process (T-3106): `frob ops process <reap>` -- no standalone
+    # top-level counterpart, dispatched entirely within ops_runner/
+    # process_runner.
+    process_command: str | None = None
+    process_reap_json: bool = False
+
     # outline
     outline_file: Path | None = None
     outline_json: bool = False

@@ -83,6 +83,7 @@ from typani.unit import Unit
 from frob.logging import get_logger
 from frob.process._guard import exec_enabled
 from frob.testing._incremental_coverage import python_coverage_targets
+from frob.tickets._worktree_guard import apply_agent_env, warn_if_xdist_bound_missing
 
 if TYPE_CHECKING:
     import pytest
@@ -1332,11 +1333,13 @@ def _write_abort_provenance(root: Path, error: CoverageRefreshError) -> None:
 
 
 # frob:ticket T-1516
+# frob:ticket T-3099
 # frob:doc docs/modules/testing.md#public-api
 # frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_full_run_when_no_stamp_exists  # noqa: E501
 # frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_incremental_run_uses_touched_set_targets  # noqa: E501
 # frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_nothing_touched_only_restamps  # noqa: E501
 # frob:tests tests/test_coverage.py::TestNativeCoverageRefresh.test_red_suite_keeps_coverage_data  # noqa: E501
+# frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestNativeCoverageRefreshWiring.test_must_fire_applies_and_warns_before_pytest_pass  # noqa: E501
 def native_coverage_refresh(
     root: Path,
     snapshot: GraphSnapshot,
@@ -1369,6 +1372,13 @@ def native_coverage_refresh(
     around) -- a caller never has to remember the separate stamp step.
     """
     from frob.gates._coverage import load_stamp, stamp_coverage
+
+    # T-3099: apply the T-3094 fleet-aware xdist bound in-process before
+    # `_run_pytest_pass` below spawns pytest (the `frob check`/`frob test`
+    # coverage recipe) so its worker(s) inherit the bound directly; warn
+    # loudly if a fleet context exists but the bound did not make it in.
+    apply_agent_env(root)
+    warn_if_xdist_bound_missing(root)
 
     cold_start = load_stamp(root) is None
     xml_path = root / "coverage.xml"

@@ -111,6 +111,7 @@ from frob.testing._runners import (
     load_natives,
     load_runners,
 )
+from frob.tickets._worktree_guard import apply_agent_env, warn_if_xdist_bound_missing
 
 _log = get_logger(__name__)
 
@@ -520,6 +521,8 @@ def _collect_nested_python(
 
 
 # frob:doc docs/modules/testing.md#public-api
+# frob:ticket T-3099
+# frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestCollectPythonTestsWiring.test_must_fire_applies_and_warns_before_collection  # noqa: E501
 def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
     """`uv run pytest --collect-only -q` node ids for the outer tree, UNIONED
     with the same collection run inside every nested `language = "python"`
@@ -533,6 +536,13 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
     stale set must not survive the build). A nested-cwd collection failure
     degrades to a warning plus that project's tests being absent from the
     result, rather than failing the whole call."""
+    # T-3099: apply the T-3094 fleet-aware xdist bound in-process before
+    # this function's own `uv run pytest --collect-only ...` spawns (below,
+    # via `_run_collect_only`/`_collect_nested_python`) so those children
+    # inherit it with no shell `eval` hop; warn loudly if a fleet context
+    # exists but the bound still did not make it into this process's env.
+    apply_agent_env(root)
+    warn_if_xdist_bound_missing(root)
     natives = _load_natives_or_empty(root)
     missing = _missing_natives(natives)
     if missing:

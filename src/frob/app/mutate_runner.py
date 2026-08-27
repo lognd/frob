@@ -9,6 +9,7 @@ from frob.app.config import AppConfig
 from frob.logging import get_logger
 from frob.logging.quiet import quiet_query_stdout
 from frob.render import Renderer
+from frob.tickets._worktree_guard import apply_agent_env, warn_if_xdist_bound_missing
 
 _log = get_logger(__name__)
 
@@ -17,8 +18,10 @@ _log = get_logger(__name__)
 # frob:ticket T-0562
 # frob:ticket T-0815
 # frob:ticket T-0588
+# frob:ticket T-3099
 # frob:doc docs/modules/app.md#runners
 # frob:tests tests/unit/test_app_runners.py::TestMutateRunner.test_success_no_survivors_text_mode  # noqa: E501
+# frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestMutateRunnerWiring.test_must_fire_applies_and_warns_before_run_mutations  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Mutate a file and report which mutants survived the test command.
 
@@ -37,6 +40,13 @@ def run(cfg: AppConfig) -> None:
     # Everything after `--` is the test command; default to the file's
     # touched-set tests via `frob test`.
     argv = tuple(cfg.mutate_argv) or ("uv", "run", "pytest", "-q")
+
+    # T-3099: apply the T-3094 fleet-aware xdist bound in-process before
+    # `run_mutations` below spawns the mutant test command, so a default
+    # `pytest -q` mutant run inherits it directly; warn loudly if a fleet
+    # context exists but the bound did not make it into this process's env.
+    apply_agent_env(root)
+    warn_if_xdist_bound_missing(root)
 
     with quiet_query_stdout():
         result = run_mutations(root, cfg.mutate_file, argv)

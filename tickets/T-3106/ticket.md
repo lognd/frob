@@ -1,7 +1,7 @@
 ---
 id: T-3106
 title: Fix fleet_status.py orphan false-positive and add frob process reap command
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers
 - src/frob/app
+- tests/unit/test_app_runners_process.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,12 +39,40 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_app_runners_process.py
+  reason: 'T-3106: new dedicated test file for the process reap CLI wiring'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'T-3106: process_runner.py''s frob:doc anchor cites app.md#runners, matching
+    ops_runner.py''s own existing convention'
+  actor: logan
+  at: '2026-08-27'
+- op: remove
+  glob: docs/modules/app.md
+  reason: 'revert: adding a large doc file to write-scope for a single frob:doc read-citation
+    exploded SCOPE002 to every symbol that doc describes; reverted the app.md edit,
+    frob:doc anchor kept as a plain citation matching ops_runner.py''s own existing
+    pattern (no write needed)'
+  actor: logan
+  at: '2026-08-27'
+evidence:
+- tests/unit/test_app_runners_process.py::TestProcessReapParser::test_process_reap_parses_and_dispatches
+- tests/unit/test_app_runners_process.py::TestProcessReapParser::test_process_reap_json_flag_parses
+- tests/unit/test_app_runners_process.py::TestProcessReapParser::test_process_reap_json_flag_reaches_appconfig
+- tests/unit/test_app_runners_process.py::TestOpsRunnerProcessDelegation::test_process_subcommand_delegates_to_process_runner
+- tests/unit/test_app_runners_process.py::TestProcessRunnerReap::test_reap_reports_reaped_pids
+- tests/unit/test_app_runners_process.py::TestProcessRunnerReap::test_reap_reports_nothing_reaped
+- tests/unit/test_app_runners_process.py::TestProcessRunnerReap::test_reap_json_mode_emits_json
+- tests/unit/test_app_runners_process.py::TestProcessRunnerReap::test_unknown_process_subcommand_exits_1
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9f25e27c6664bae4385c1ba3c008fc224234700a
 ---
 T-3072 diagnosed the "still-leaking forkservers" report as substantially a
 MEASUREMENT ARTIFACT: scripts/fleet_status.py's own ancestry classifier

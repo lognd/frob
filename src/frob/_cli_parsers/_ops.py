@@ -32,16 +32,20 @@ from frob._cli_parsers._reporting import (
 
 
 # frob:ticket T-1569
+# frob:ticket T-3106
+# frob:tests tests/unit/test_app_runners_process.py::TestProcessReapParser.test_process_reap_parses_and_dispatches  # noqa: E501
 # frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
 # argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
 # does not trace this cross-package private import -- same class of gap as this repo's \
 # other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_ops_parser(sub) -> None:
-    """Register the `frob ops` subcommand group and its nine subcommands
+    """Register the `frob ops` subcommand group and its ten subcommands
     (`release`, `natives`, `doctor`, `clean`, `fleet`, `deploy`,
-    `scaffold`, `gitlog`, `stats`), each reusing the same `AppConfig`
-    dests as its standalone top-level counterpart so `ops_runner.run` can
-    delegate straight into the existing runner logic."""
+    `scaffold`, `gitlog`, `stats`, `process`), each reusing the same
+    `AppConfig` dests as its standalone top-level counterpart (where one
+    exists) so `ops_runner.run` can delegate straight into the existing
+    runner logic. `process` (T-3106) is the one member with no standalone
+    top-level command -- `frob ops process reap` is its only form."""
     ops_p = sub.add_parser(
         "ops",
         # T-2385: kept short and word-break-safe -- the grouped-subparser
@@ -112,3 +116,22 @@ def _add_ops_parser(sub) -> None:
         "stats", help="delivery measurement: queue health + commit cadence"
     )
     _populate_stats_args(stats_p)
+
+    process_p = ops_sub.add_parser(
+        "process",
+        help="process/forkserver maintenance (T-3106): reap orphaned "
+        "forkservers on demand",
+    )
+    process_sub = process_p.add_subparsers(dest="process_command")
+    reap_p = process_sub.add_parser(
+        "reap",
+        help="SIGTERM orphaned multiprocessing.forkserver helpers on demand "
+        "(T-3072's ancestry check -- never touches one parented, at any "
+        "depth, to a live `frob check`; a structural no-op on Windows/macOS)",
+    )
+    reap_p.add_argument(
+        "--json",
+        dest="process_reap_json",
+        action="store_true",
+        help="emit {\"reaped_pids\": [...]} instead of a human-readable line",
+    )

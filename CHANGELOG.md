@@ -458,8 +458,11 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3093: fleet_status reports lock WAITERS as holders: label claims more than the /proc fd scan measures
 - T-3094: T-2221 fleet xdist bound never reaches pytest: 0 of 40 running workers carry PYTEST_XDIST_AUTO_NUM_WORKERS
 - T-3095: Isolate land's three post-squash file-mutating stages so the whole transaction is invisible in the shared tree
+- T-3099: Wire T-3094 apply_agent_env/warn_if_xdist_bound_missing into pytest-spawn call sites
 - T-3105: refactor split: import-rewrite drags unmoved names to destination module
+- T-3106: Fix fleet_status.py orphan false-positive and add frob process reap command
 - T-3107: Out-of-tree three-way squash compose via a disposable worktree
+- T-3111: Move land's native rebuild after the landing commit, out of the dirty-root window
 
 ## [0.530.0] - unreleased
 

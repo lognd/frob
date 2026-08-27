@@ -54,6 +54,8 @@ _STRING_FIELDS = (
     "design_command",
     # frob:ticket T-1569
     "ops_command",
+    # frob:ticket T-3106
+    "process_command",
     # frob:ticket T-1808
     "claude_command",
     "scaffold_command",
@@ -386,6 +388,8 @@ _LIST_FIELDS = (
 # frob:tests tests/unit/test_app_config_flag_coverage.py::TestT2320RuffFlagsReachAppConfig.test_absent_ruff_flags_default_false  # noqa: E501
 # frob:tests tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags.test_current_tree_has_zero_dropped_flags  # noqa: E501
 _BOOL_FLAGS = (
+    # frob:ticket T-3106
+    "process_reap_json",
     # frob:ticket T-2485
     "waive_audit_partial",
     # frob:ticket T-2496
@@ -779,7 +783,7 @@ def _all_parser_dests(parser: argparse.ArgumentParser) -> frozenset[str]:
         for action in p._actions:  # noqa: SLF001 -- argparse's own public introspection surface, no other API exposes this
             if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
                 for sub in action.choices.values():
-                    _walk(sub)
+                    _walk(sub)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             elif action.dest != argparse.SUPPRESS:
                 dests.add(action.dest)
 

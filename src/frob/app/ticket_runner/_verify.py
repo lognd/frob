@@ -35,6 +35,7 @@ from pydantic import BaseModel
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 from frob.process._guard import ProcessGuardError
+from frob.tickets._worktree_guard import apply_agent_env, warn_if_xdist_bound_missing
 
 _log = get_logger("frob.app.ticket_runner")
 
@@ -2132,8 +2133,10 @@ section 1/3) that must never leak into a spawned verification pytest process
 
 
 # frob:ticket T-0884
+# frob:ticket T-3099
 # frob:tests tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv.test_strips_worktree_and_agent_env  # noqa: E501
 # frob:tests tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv.test_missing_lease_env_is_fine  # noqa: E501
+# frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestVerifyRunPytestDirectlyWiring.test_must_fire_applies_and_warns_before_spawn  # noqa: E501
 def _run_pytest_directly(root: Path, node_ids) -> bool:  # noqa: ANN001
     """`uv run pytest <node_ids> -q -o addopts=` in `root`, exit 0 == pass
     -- the no-`[[test.runner]]`-declared fallback `_verify_ids_passing`
@@ -2152,6 +2155,13 @@ def _run_pytest_directly(root: Path, node_ids) -> bool:  # noqa: ANN001
     `frob.tickets._worktree_guard.enforce_worktree_lease`, which sees the
     recorder's lease pointing at an unrelated path and blocks the test's
     own, legitimate mutation."""
+    # T-3099: apply the T-3094 fleet-aware xdist bound to THIS process's
+    # own os.environ before building `env` below (a plain dict snapshot
+    # of os.environ, so it must be mutated first) -- closes the gap the
+    # eval-only export left (T-3094's own diagnosis: nothing applied the
+    # printed export, so 0 of 40 live workers ever saw the bound).
+    apply_agent_env(root)
+    warn_if_xdist_bound_missing(root)
     argv = ("uv", "run", "pytest", *node_ids, "-q", "-o", "addopts=")
     env = {
         key: value
