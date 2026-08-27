@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_fix_engine.py
 - tests/test_gates_tick006_sibling_worktree.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,12 @@ scope_changes:
 - op: add
   glob: tests/test_gates_tick006_sibling_worktree.py
   reason: T-3108's own new fixtures module
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/gates.md
+  reason: fix_tick006_phantom_refile's own frob:doc target; documenting the new sibling-worktree
+    resolution source alongside it
   actor: logan
   at: '2026-08-27'
 body_changes:
