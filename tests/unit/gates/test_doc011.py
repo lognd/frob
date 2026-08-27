@@ -12,8 +12,8 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+from frob.findings import Severity
 from frob.gates import docstatus_gate
-from frob.gates._models import Severity
 from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
 from frob.tickets._store import write_ticket
 

@@ -3820,7 +3820,7 @@ def _check_tdd_order(
     ARCH001 split (T-3057): the diff/graph/scoping resolution lives in
     `_tdd_order_scoped_edges` below; this function is purely the run-and-
     log half."""
-    from frob.gates._models import Severity
+    from frob.findings import Severity
     from frob.gates._tdd_order import tdd_order_violations
 
     scoped_edges = _tdd_order_scoped_edges(worktree, ticket, base_ref)

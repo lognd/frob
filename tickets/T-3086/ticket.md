@@ -2,7 +2,7 @@
 id: T-3086
 title: 'Break the 182-node import cycle (redo): T-3064 closed done without performing
   the extraction'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -429,6 +429,9 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 3464
+evidence:
+- tests/test_vet.py::TestLockfileParsers::test_find_lockfile_uv
+- tests/test_arch_gate.py::TestArchComplexityAware::test_flat_long_function_not_flagged
 designated_repro_test: null
 threat: null
 component: null

@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from frob.gates._models import Severity
+from frob.findings import Severity
 from frob.gates._pii_structural import (
     FIELD_SIGNATURES,
     _is_data_structure,

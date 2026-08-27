@@ -4709,7 +4709,7 @@ def _violation_identity(v: Violation) -> str:
     `Violation`: uses `v.symref` when the checker set one (the precise
     case), otherwise strips the embedded `:LINE` token from `v.message`
     (every gate message in this repo follows the `RULE: file:line ...`
-    convention -- `frob.gates._models.Violation`'s own docstring), so a
+    convention -- `frob.findings.Violation`'s own docstring), so a
     violation that merely SHIFTED lines within the same file (an
     unrelated edit earlier in the file) compares equal to its
     old-content counterpart instead of registering as a false-positive

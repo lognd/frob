@@ -22,7 +22,7 @@ from __future__ import annotations
 import tomllib
 from pathlib import Path
 
-from frob.gates._models import Violation
+from frob.findings import Violation
 from frob.graph import GraphSnapshot
 from frob.logging import get_logger
 

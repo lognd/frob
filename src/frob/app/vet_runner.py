@@ -16,7 +16,7 @@ from pathlib import Path
 from frob.app._json_guard import _guard_json_stdout_writes
 from frob.app._style import style_fail, style_ok, style_rule
 from frob.app.config import AppConfig
-from frob.gates._models import Severity
+from frob.findings import Severity
 from frob.logging import get_logger
 from frob.render import Renderer
 from frob.vet import (

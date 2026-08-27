@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from frob.gates._models import Severity
+from frob.findings import Severity
 from frob.gates._todo_fmt import (
     _fmt001_marker_entries,
     _fmt001_violations_for_runs,

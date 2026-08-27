@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
-from frob.gates._models import Severity
+from frob.findings import Severity
 from frob.gates._registry_exhaustiveness import registry_gate
 from frob.graph._models import Edge, EdgeKind, GraphSnapshot
 from frob.tickets._models import Origin, Ticket, TicketKind, TicketQueue, TicketState

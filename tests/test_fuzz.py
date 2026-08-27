@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel, ConfigDict
 
+from frob.findings import Severity
 from frob.fuzz import (
     FUZZ001,
     FUZZ002,
@@ -26,7 +27,6 @@ from frob.fuzz import (
     stamp_fuzz,
 )
 from frob.fuzz._models import FuzzError
-from frob.gates._models import Severity
 from frob.graph import build_graph
 from frob.graph._models import (
     Digests,

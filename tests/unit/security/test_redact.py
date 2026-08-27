@@ -95,7 +95,7 @@ class TestGatesSecretsStillWorksViaTheExtractedModule:
 
     def test_severity_round_trips_through_the_plain_string_boundary(self) -> None:
         # frob:tests tests/unit/security/test_redact.py::TestGatesSecretsStillWorksViaTheExtractedModule.test_severity_round_trips_through_the_plain_string_boundary  # noqa: E501
-        from frob.gates._models import Severity
+        from frob.findings import Severity
         from frob.security._redact import _PATTERNS
 
         for pattern in _PATTERNS:

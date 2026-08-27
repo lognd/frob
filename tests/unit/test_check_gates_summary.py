@@ -18,7 +18,7 @@ def _violation(rule: str, severity: Severity, file: str = "x.py") -> Violation:
 
 class TestSeverityUnresolved:
     def test_unresolved_is_a_distinct_severity_value(self) -> None:
-        # frob:tests src/frob/gates/_models.py::Severity
+        # frob:tests src/frob/findings.py::Severity
         assert Severity.UNRESOLVED != Severity.ERROR
         assert Severity.UNRESOLVED != Severity.WARN
         assert Severity.UNRESOLVED.value == "unresolved"

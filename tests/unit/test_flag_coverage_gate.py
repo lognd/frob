@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pytest
 
+from frob.findings import Severity
 from frob.gates._flag_coverage import flag_coverage_gate
-from frob.gates._models import Severity
 
 
 def _write_fixture_project(

@@ -18,13 +18,13 @@ import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
+from frob.findings import Violation
 from frob.gates._docblocks_shared import (
     _doc004_violation,
     _ProjectNamespaces,
     _read_toml,
     resolve_dotted_symbol,
 )
-from frob.gates._models import Violation
 from frob.gitio import run_argv
 from frob.graph._models import GraphSnapshot
 from frob.logging import get_logger

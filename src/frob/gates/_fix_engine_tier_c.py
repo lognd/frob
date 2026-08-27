@@ -30,7 +30,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from frob.gates._models import Violation
+from frob.findings import Violation
 from frob.graph import GraphSnapshot
 
 _log = logging.getLogger(__name__)

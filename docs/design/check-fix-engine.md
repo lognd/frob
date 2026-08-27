@@ -45,7 +45,7 @@ threshold.
   precedent: idempotent, sorted, single-batch-bump YAML synthesis
   (REG010's own remedy), directly reusable as the Tier-A handler body for
   "generated-registry regeneration."
-- `frob.gates._models.Violation` (the finding object every gate emits)
+- `frob.findings.Violation` (the finding object every gate emits)
   already carries `rule`, `severity`, `file`, `line`, `message`, optional
   `symref` (T-0148, exact-symbol waiver precision) and `metric` (T-0289,
   ratchet-aware waiver ceiling). This is enough structure to key a fix

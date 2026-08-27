@@ -455,6 +455,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3078: TEST001 gap: T-3044's new graph::model attrs API has no bound unit test
 - T-3080: Remaining T-2394 empty-scope fixture drift (10 tests, T-3037 residue)
 - T-3081: TicketSpec.no_scope_declared silently dropped by new_ticket
+- T-3086: Break the 182-node import cycle (redo): T-3064 closed done without performing the extraction
 - T-3087: A ticket can reach done with an unsatisfied blocked_by, and a falsely-closed ticket cannot be reopened
 - T-3088: Land compose: out-of-tree tree/commit-object plumbing + CAS ref publish primitive
 - T-3089: Wire out-of-tree compose+CAS publish into the squash-apply land stage

@@ -11,7 +11,7 @@ import sys
 import textwrap
 from pathlib import Path
 
-from frob.gates._models import Severity
+from frob.findings import Severity
 from frob.gates._testing_schema import testing_known_keys as _testing_known_keys
 from frob.gates._testing_schema import testing_schema_gate as _testing_schema_gate
 

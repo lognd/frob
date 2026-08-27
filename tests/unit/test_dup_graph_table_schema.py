@@ -12,8 +12,8 @@ import sys
 import textwrap
 from pathlib import Path
 
+from frob.findings import Severity
 from frob.gates._dup_graph_schema import dup_schema_gate, graph_schema_gate
-from frob.gates._models import Severity
 
 
 class TestDupGraphSchemaGate:

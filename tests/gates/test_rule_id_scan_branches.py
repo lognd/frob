@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from frob.gates._models import Severity
+from frob.findings import Severity
 from frob.gates._rule_id_scan import (
     RETIRED_RULE_IDS,
     find_unregistered_rule_ids,

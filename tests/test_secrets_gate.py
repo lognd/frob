@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from frob.gates._models import Severity
+from frob.findings import Severity
 from frob.gates._secrets import (
     _PATTERNS,
     ALL_PROVIDERS,

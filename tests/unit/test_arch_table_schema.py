@@ -11,13 +11,13 @@ import sys
 import textwrap
 from pathlib import Path
 
+from frob.findings import Severity
 from frob.gates._arch_schema import (
     arch_known_keys as _arch_known_keys,
 )
 from frob.gates._arch_schema import (
     arch_schema_gate as _arch_schema_gate,
 )
-from frob.gates._models import Severity
 
 
 class TestArchSchemaGate:

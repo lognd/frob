@@ -17,7 +17,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict
 from typani.error_set import ErrorSet
 
-from frob.gates._models import Violation
+from frob.findings import Violation
 
 __all__ = [
     "ClosedWorldAccounting",

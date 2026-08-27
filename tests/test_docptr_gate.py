@@ -15,8 +15,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from frob.findings import Severity
 from frob.gates._docptr import doc006_gate
-from frob.gates._models import Severity
 from frob.graph import build_graph
 
 

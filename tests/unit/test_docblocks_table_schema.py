@@ -11,8 +11,8 @@ import sys
 import textwrap
 from pathlib import Path
 
+from frob.findings import Severity
 from frob.gates._docblocks_schema import docblocks_schema_gate
-from frob.gates._models import Severity
 
 
 class TestDocblocksSchemaGate:

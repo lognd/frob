@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from frob.gates._models import Severity
+from frob.findings import Severity
 from frob.gates._registry_exhaustiveness import registry_gate
 from frob.registry._corpus import CorpusError
 from frob.registry._staleness import missing_gate_rule_ids, sync_gate_rule_entries

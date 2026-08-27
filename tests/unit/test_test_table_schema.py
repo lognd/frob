@@ -11,7 +11,7 @@ import sys
 import textwrap
 from pathlib import Path
 
-from frob.gates._models import Severity
+from frob.findings import Severity
 from frob.gates._test_runner_schema import (
     test_runner_schema_gate as _test_runner_schema_gate,
 )

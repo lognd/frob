@@ -16,8 +16,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from frob.findings import Severity
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
-from frob.gates._models import Severity
 from frob.strata._cve_fingerprint import CveFingerprint, scan_text_for_fingerprints
 
 _SMELLY_PYTHON = "subprocess.run(cmd, shell=True)\n"

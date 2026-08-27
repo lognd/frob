@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from frob.findings import Severity
 from frob.gates._lang_conformance import (
     _BEHAVIORALLY_CHECKED_CAPABILITIES,
     _behavioral_capability_check,
@@ -15,7 +16,6 @@ from frob.gates._lang_conformance import (
     lang_conformance_gate,
     project_lang_conformance_gate,
 )
-from frob.gates._models import Severity
 from frob.lang import supported_languages
 from frob.lang._support import FacetState, derive_capability_registry
 

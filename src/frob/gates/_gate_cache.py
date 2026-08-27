@@ -106,7 +106,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
 
-from frob.gates._models import Violation
+from frob.findings import Violation
 from frob.gates._tracked_files import tracked_files
 from frob.gitio import run_argv
 from frob.graph._models import GraphSnapshot

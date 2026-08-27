@@ -142,8 +142,8 @@ class TestArchGateCppThrow:
         """A noexcept function calling a same-file throwing function with
         no catch fires CPPTHROW001 at Severity.ERROR, naming the site."""
         from frob.arch import _cpp_mayraise  # noqa: F401
+        from frob.findings import Severity
         from frob.gates._arch import arch_gate
-        from frob.gates._models import Severity
 
         _write(
             tmp_path,
@@ -246,8 +246,8 @@ class TestArchGateLargeFile:
     def test_large_file_fires_large001_error(self, tmp_path: Path) -> None:
         """A production python file over max_file_lines fires LARGE001 at
         Severity.ERROR (T-2831 promotion, post T-2375 epic burn-down)."""
+        from frob.findings import Severity
         from frob.gates._arch import arch_gate
-        from frob.gates._models import Severity
 
         _write(tmp_path, "big.py", _big_python_source(900))
         violations = arch_gate(tmp_path)

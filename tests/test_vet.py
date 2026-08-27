@@ -5234,7 +5234,7 @@ class TestCapabilityDiff:
 class TestEcosystemRules:
     def test_python_setup_py_cmdclass_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_ecosystem.py::_python_rules kind="unit"
-        from frob.gates._models import Severity
+        from frob.findings import Severity
         from frob.vet import _ecosystem
 
         (tmp_path / "setup.py").write_text(
@@ -5467,7 +5467,7 @@ class TestScanTreeSourceUnavailableFailClosed:
 
     def test_missing_source_surfaces_error_violation(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_scan.py::_scan_located_source kind="unit"
-        from frob.gates._models import Severity
+        from frob.findings import Severity
         from frob.vet._scan import scan_tree
 
         (tmp_path / "uv.lock").write_text(
@@ -5497,7 +5497,7 @@ class TestScanTreeSourceUnavailableFailClosed:
         # ERROR-severity VET-SOURCE-UNAVAILABLE must make the report
         # non-passing via the same enforce/ERROR contract every other
         # vet rule uses.
-        from frob.gates._models import Severity
+        from frob.findings import Severity
         from frob.vet._scan import scan_tree
 
         (tmp_path / "uv.lock").write_text(
@@ -6494,7 +6494,7 @@ class TestOpaqueIndirectionGate:
         # frob:tests src/frob/gates/_opaque.py::opaque_gate kind="unit"
         import subprocess as sp
 
-        from frob.gates._models import Severity
+        from frob.findings import Severity
         from frob.gates._opaque import opaque_gate
 
         sp.run(["git", "init"], cwd=tmp_path, capture_output=True, check=True)
