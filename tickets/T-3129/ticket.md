@@ -2,7 +2,7 @@
 id: T-3129
 title: Stale global frob reports the same version as the project build but has a different
   CLI surface
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -61,6 +61,13 @@ body_changes:
   at: '2026-08-27'
   old_length: 3595
   new_length: 3595
+evidence:
+- tests/unit/test_version_guard.py::test_non_frob_repo_is_quiet
+- tests/unit/test_version_guard.py::test_editable_in_tree_run_is_quiet
+- tests/unit/test_version_guard.py::test_matching_sha_is_quiet
+- tests/unit/test_version_guard.py::test_mismatched_sha_warns_loudly
+- tests/unit/test_version_guard.py::test_unresolvable_running_sha_warns
+- tests/unit/test_version_guard.py::test_no_frob_spec_is_quiet
 designated_repro_test: null
 threat: null
 component: null

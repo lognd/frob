@@ -55,9 +55,9 @@ dispose`, docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697) to
 uniform `run(AppConfig)` runner -- no special-casing in `App.__call__`
 itself, same as any other subcommand that is not `bind`.
 
-T-1218: `_dispatch` (the argv-to-`App` step inside `main`) prints TWO
-independent stale-binary warnings to stderr before building `AppConfig`,
-both string-or-`None` probes from `frob.repo_meta`:
+T-1218/T-3129: `_dispatch` (the argv-to-`App` step inside `main`) prints
+THREE independent stale-binary warnings to stderr before building
+`AppConfig`, all string-or-`None` probes:
 
 - `stale_install_warning` (T-0358): exact-version mismatch between the
   RUNNING `frob` package and THIS repo's own declared `pyproject.toml`
@@ -76,6 +76,25 @@ both string-or-`None` probes from `frob.repo_meta`:
   `docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319`)
   reports the same check as a finding that makes `healthy` False, same
   class as `venv_shims`/`stale_ticket_leases`.
+- `binary_fingerprint_warning` (T-3129, `frob.app._version_guard.binary_
+  fingerprint_warning`): content-identity check, distinct from both checks above -- neither
+  compares GIT HEAD sha, only version strings, so a stale global binary
+  whose declared version was never bumped past its last release is
+  invisible to `stale_install_warning`'s exact-match check (the
+  precipitating incident: the globally installed `frob` and this repo's
+  own `uv run frob` both reported the SAME version string while exposing DIFFERENT
+  CLI surfaces -- `refactor`, `narrative`, `status`, `-v/--verbose`,
+  `ticket unblock`, and `refactor move-module` all present in one, absent
+  in the other). Only fires inside frob's own source checkout (same
+  `is_frob_own_repo` guard as `stale_install_warning`). Resolves the
+  running package's own git HEAD sha (walking up from its `__init__.py`
+  for a `.git` ancestor, same shape as `frob.app._daemon_proxy._client_
+  source_sha`'s T-2884 precedent) and compares it against `repo_root`'s
+  own `git rev-parse HEAD` -- quiet only when both resolve AND match, or
+  when the running package IS repo_root's own src/frob/__init__.py exactly.
+  Fail-safe-to-stale (T-2884's direction, reapplied): an unresolvable sha
+  on EITHER side (e.g. a packaged wheel install with no `.git` ancestor
+  at all) warns rather than silently trusting an indeterminate match.
 
 T-1216: `App.__call__` resolves and imports ONLY the one `*_runner`
 module the invoked subcommand needs (`_resolve_runner`), and

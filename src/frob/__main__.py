@@ -59,6 +59,7 @@ from frob._cli_parsers import (
     _add_xref_parser,
 )
 from frob.app import App, AppConfig
+from frob.app._version_guard import binary_fingerprint_warning
 from frob.app.config import stale_binary_warning, stale_install_warning
 from frob.doctor import native_degrade_warning
 from frob.logging import get_logger
@@ -853,6 +854,12 @@ def _print_startup_warnings(repo_root: Path) -> None:
     floor_warning = stale_binary_warning(repo_root)
     if floor_warning is not None:
         print(floor_warning, file=_sys.stderr)
+    # T-3129: version-string equality (both checks above) cannot detect a
+    # stale build whose declared version never moved past its last bump --
+    # a git-content fingerprint check, distinct from both.
+    fingerprint_warning = binary_fingerprint_warning(repo_root)
+    if fingerprint_warning is not None:
+        print(fingerprint_warning, file=_sys.stderr)
     # T-1808: surfaced automatically on every invocation, where an
     # operator already looks -- detection only, never a write (the write
     # stays the explicit `frob claude sync` call).
