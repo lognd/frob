@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,12 @@ scope_changes:
     existed in this repo's history; the actual touched-set ty/lint pre-land gates
     measured in this ticket live in src/frob/app/ticket_runner/_land_cmd.py (_assert_touched_files_type_check_pre_land
     et al)
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: T-1907/T-3061's own doc target for this module; will document the new diff-attribution
+    behavior alongside the existing pre-land gate docs
   actor: logan
   at: '2026-08-27'
 body_changes:
