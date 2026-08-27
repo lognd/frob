@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_fix_engine.py
+- tests/test_gates_tick006_sibling_worktree.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,11 @@ scope_changes:
   reason: declared scope named src/frob/gates/_fix_engine_text.py, which has no TICK006
     handling at all (it holds FMT001/SUPPRESS001/E501 text-patch helpers); the real
     TICK006 phantom-citation auto-recovery lives in src/frob/gates/_fix_engine.py
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_gates_tick006_sibling_worktree.py
+  reason: T-3108's own new fixtures module
   actor: logan
   at: '2026-08-27'
 body_changes:
