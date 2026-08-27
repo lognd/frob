@@ -2,7 +2,7 @@
 id: T-3066
 title: frob refactor split/move-module false-refuses on any nested import of the source
   module
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -27,6 +27,12 @@ scope_changes:
   reason: regression fixtures for the ast.walk sibling-scan fix
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_refactor.py::TestScanReferences::test_function_local_import_does_not_false_refuse
+- tests/test_refactor.py::TestScanReferences::test_if_block_import_does_not_false_refuse
+- tests/test_refactor.py::TestScanReferences::test_try_block_import_does_not_false_refuse
+- tests/test_refactor.py::TestScanReferences::test_untouched_symbol_nested_import_does_not_gate_move
+- tests/test_refactor.py::TestScanReferences::test_semicolon_joined_from_import_refuses_rewrite
 designated_repro_test: null
 threat: null
 component: null

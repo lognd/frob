@@ -192,6 +192,107 @@ class TestScanReferences:
         assert len(unresolved) == 1
         assert "semicolon-joined" in unresolved[0]
 
+    def test_function_local_import_does_not_false_refuse(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestScanReferences.test_function_local_import_does_no\
+        # t_false_refuse
+        # T-3066: a function-local `from` import has no true sibling
+        # statement on its line -- `ast.walk` previously matched the
+        # import's OWN enclosing `FunctionDef` (whose span always
+        # overlaps its body) as a false "semicolon-joined" sibling.
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "def use():\n    from pkg.mod import greet\n    return greet()\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        dest = SymbolRef(module="pkg.newmod", qualname="greet")
+        ops, aliases, unresolved = scan_references(root, resolved, dest)
+        assert unresolved == []
+        assert len(ops) == 1
+        assert "pkg.newmod import greet" in ops[0].new_text
+
+    def test_if_block_import_does_not_false_refuse(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestScanReferences.test_if_block_import_does_not_fals\
+        # e_refuse
+        # T-3066: an `if`-block-nested import has no true sibling either --
+        # the enclosing `If` node's span overlaps its own body.
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "import typing\n\n"
+            "if typing.TYPE_CHECKING:\n"
+            "    from pkg.mod import greet\n\n"
+            "def use():\n    return greet()\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        dest = SymbolRef(module="pkg.newmod", qualname="greet")
+        ops, aliases, unresolved = scan_references(root, resolved, dest)
+        assert unresolved == []
+        assert len(ops) == 1
+        assert "pkg.newmod import greet" in ops[0].new_text
+
+    def test_try_block_import_does_not_false_refuse(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestScanReferences.test_try_block_import_does_not_fal\
+        # se_refuse
+        # T-3066: a `try`-block-nested import has no true sibling either --
+        # the enclosing `Try` node's span overlaps its own body.
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "try:\n"
+            "    from pkg.mod import greet\n"
+            "except ImportError:\n"
+            "    greet = None\n\n"
+            "def use():\n    return greet()\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        dest = SymbolRef(module="pkg.newmod", qualname="greet")
+        ops, aliases, unresolved = scan_references(root, resolved, dest)
+        assert unresolved == []
+        assert len(ops) == 1
+        assert "pkg.newmod import greet" in ops[0].new_text
+
+    def test_untouched_symbol_nested_import_does_not_gate_move(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestScanReferences.test_untouched_symbol_nested_impor\
+        # t_does_not_gate_move
+        # T-3066 defect 2: a nested import of a DIFFERENT, non-moved
+        # symbol from the same source module must never gate the move of
+        # an unrelated symbol.
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def greet():\n    return 'hi'\n\n\ndef farewell():\n    return 'bye'\n",
+        )
+        _write(
+            root,
+            "src/pkg/caller.py",
+            "def use():\n    from pkg.mod import farewell\n    return farewell()\n",
+        )
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        dest = SymbolRef(module="pkg.newmod", qualname="greet")
+        ops, aliases, unresolved = scan_references(root, resolved, dest)
+        assert unresolved == []
+        assert ops == []
+
     def test_unresolved_attribute_style_reference_surfaces(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestScanReferences.test_unresolved_attribute_style_re\

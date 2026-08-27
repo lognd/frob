@@ -54,20 +54,46 @@ def _existing_bound_names(tree: ast.Module) -> set[str]:
     return names
 
 
+def _enclosing_stmt_list(tree: ast.Module, node: ast.stmt) -> list[ast.stmt] | None:
+    """The one `list[ast.stmt]` (a `body`/`orelse`/`finalbody` block) that
+    directly contains `node` -- i.e. `node`'s TRUE siblings, as opposed to
+    the ancestor compound statements `ast.walk` also yields. Returns
+    `None` if `node` is not found (should not happen for a node drawn
+    from `tree` itself)."""
+    for block in ast.walk(tree):
+        for attr in ("body", "orelse", "finalbody"):
+            stmts = getattr(block, attr, None)
+            if isinstance(stmts, list) and node in stmts:
+                return stmts
+    return None
+
+
 def _shares_line_with_sibling_statement(tree: ast.Module, node: ast.stmt) -> bool:
-    """`True` iff some OTHER top-level statement in `tree` occupies the
-    same physical source line as `node` (a semicolon-joined statement,
-    `import old.module as x; x.y()`, being the concrete case) -- detected
-    by walking every statement node and checking for a distinct node
-    whose own `lineno` falls inside `node`'s `[lineno, end_lineno]` span.
-    `_import_op` replaces the WHOLE `[node.lineno, node.end_lineno]`
-    span verbatim; if another statement shares that physical line, that
-    replacement would silently delete the sibling statement's own code
-    along with the import. Callers use this to refuse the mechanical
-    rewrite and fall back to `unresolved` instead."""
+    """`True` iff some OTHER statement DIRECTLY SIBLING to `node` (sharing
+    the same enclosing `body`/`orelse`/`finalbody` block -- never an
+    ancestor compound statement) occupies the same physical source line
+    as `node` (a semicolon-joined statement, `import old.module as x;
+    x.y()`, being the concrete case) -- detected by checking for a
+    distinct sibling node whose own `lineno` falls inside `node`'s
+    `[lineno, end_lineno]` span. `_import_op` replaces the WHOLE
+    `[node.lineno, node.end_lineno]` span verbatim; if a true sibling
+    shares that physical line, that replacement would silently delete
+    the sibling statement's own code along with the import. Callers use
+    this to refuse the mechanical rewrite and fall back to `unresolved`
+    instead.
+
+    Deliberately does NOT use `ast.walk(tree)` over the whole tree: that
+    yields every ancestor compound statement (`FunctionDef`, `If`,
+    `Try`, ...) containing `node`, and an enclosing block's own line span
+    always overlaps its body's first/last statement -- misclassifying
+    every function-local or block-nested import as "semicolon-joined"
+    (T-3066)."""
+    siblings = _enclosing_stmt_list(tree, node)
+    if siblings is None:
+        return False
     end = node.end_lineno if node.end_lineno is not None else node.lineno
-    for other in ast.walk(tree):
-        if other is node or not isinstance(other, ast.stmt):
+    for other in siblings:
+        if other is node:
             continue
         other_end = other.end_lineno if other.end_lineno is not None else other.lineno
         if other.lineno <= end and node.lineno <= other_end:
@@ -265,7 +291,12 @@ def scan_references(
             bound_names = _existing_bound_names(tree)
             for node in ast.walk(tree):
                 if isinstance(node, ast.ImportFrom) and node.module == old_ref.module:
-                    if _shares_line_with_sibling_statement(tree, node):
+                    imports_moved_symbol = any(
+                        alias.name == old_ref.qualname for alias in node.names
+                    )
+                    if imports_moved_symbol and _shares_line_with_sibling_statement(
+                        tree, node
+                    ):
                         # A whole-span rewrite here (`_import_op`) would
                         # silently delete a semicolon-joined sibling
                         # statement on the same physical line -- refuse the

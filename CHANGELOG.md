@@ -436,6 +436,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3061: Put the 2.9s lint gate back on the rapid land path without re-enabling TEST016 mutation testing
 - T-3062: Lint for waive-vs-debt misuse: flag a frob:waive whose reason is temporary (cites a ticket, until, pending, once X lands)
 - T-3064: Break the 182-node import cycle: extract universal value types out of gates._models into a leaf module
+- T-3066: frob refactor split/move-module false-refuses on any nested import of the source module
 
 ## [0.530.0] - unreleased
 
