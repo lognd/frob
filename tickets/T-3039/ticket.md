@@ -29,7 +29,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b99c0a9fa9be410b2439fec8ade5fd2bc9da6732
 ---
 Found while auditing T-3015's callers: `frob.mutate.__init__`'s mutant-test
 spawn wraps `guarded_subprocess_run(...)` in `except subprocess.TimeoutExpired:`
