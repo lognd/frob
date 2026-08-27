@@ -2,7 +2,7 @@
 id: T-3134
 title: T-3121 landing-doc section still describes the post-publish land_commit record
   as an in-root commit
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-27'
@@ -20,6 +20,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:grep -n 'compare-and-swap' docs/modules/tickets-landing.md exit=0 sha256=ce35b16324b1
 designated_repro_test: null
 threat: null
 component: null

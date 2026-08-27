@@ -484,6 +484,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3125: frob --help does not list refactor/narrative subcommands
 - T-3126: Land-commit record still dirties root and moves main without CAS after the publish
 - T-3130: frob check cache.db/parse-artifacts.db: database is locked under concurrent checks
+- T-3134: T-3121 landing-doc section still describes the post-publish land_commit record as an in-root commit
 - T-3136: verify_pytest_collect passes non-Python touched files straight to pytest, false-refusing rc=4
 - T-3141: T-3034 residual: close may no longer refuse unrelated evidence (D-02 regression?)
 

@@ -482,14 +482,22 @@ Order of operations, and why it is this order:
 10.5. **Record `land_commit`** (T-2220, best-effort, immediately after step
     10's commit sha is known): `_record_land_commit`
     (`frob.tickets._land_squash`) loads `final_id` fresh from `root` (now
-    holding step 10's committed content), sets its `land_commit` field to
-    step 10's own sha, and commits THAT write as a small follow-up commit
-    (`chore(tickets): record land commit for <final-id>`) under
-    `FROB_LAND_INTERNAL=1` -- structurally the earliest point this can
+    holding step 10's committed content), and sets its `land_commit`
+    field to step 10's own sha -- structurally the earliest point this can
     happen, since a commit cannot embed its own hash in its own tree (see
-    `Ticket.land_commit`'s own docstring). A failure here (ticket not
-    found post-squash, a write/add/commit git failure) is logged loudly
-    and swallowed, never turned into a `LandError` -- step 10's land is
+    `Ticket.land_commit`'s own docstring). T-3126 moved HOW that write
+    reaches `root`'s history out of tree: it composes the write in a
+    DISPOSABLE worktree checked out at step 10's own sha, folds it into a
+    follow-up commit there (`chore(tickets): record land commit for
+    <final-id>`), and publishes that commit onto `root`'s branch by
+    compare-and-swap (`publish_ref_cas`) rather than a plain fast-forward
+    `git commit` in `root` under `FROB_LAND_INTERNAL=1` -- `root`'s
+    working tree is never written to for this step, only the one atomic
+    `update-ref` moves its branch, then `resync_root_to_published_tip`
+    brings `root`'s index/working tree up to the new tip. A failure here
+    (ticket not found post-squash, disposable-worktree/plumbing failure, a
+    lost CAS because a sibling published first) is logged loudly and
+    swallowed, never turned into a `LandError` -- step 10's land is
     already sealed on `root` by this point, and an already-sealed land is
     never failed over a missing convenience field. `root`'s tip after a
     successful `land()` call is therefore this record commit, one ahead
@@ -3303,11 +3311,28 @@ ticket land` refused with `DirtyMain`, and `frob ticket new` refused with
   disposable worktree; under the flip the stage already IS one, so
   `_apply_release_bump(stage, ...)` reaches the same place without a
   second compose.
-- **`_land_commit_details` / `_record_land_commit` /
-  `_post_publish_native_rebuild`** still run against `root`, after the
-  publish and resync. `_record_land_commit` makes its own follow-up
-  commit in root, so a small post-publish dirty window in root remains;
-  it is out of this ticket's scope and pre-dates it.
+- **`_land_commit_details` / `_post_publish_native_rebuild`** still run
+  against `root`, after the publish and resync.
+- **`_record_land_commit` (T-2220) moved out-of-tree in T-3126** and no
+  longer belongs on this list: it now composes its follow-up commit (the
+  ticket's own `land_commit` field, pointing at the squash-apply sha that
+  just landed it) in a DISPOSABLE worktree checked out at `land_sha`,
+  same shape as the squash-apply transaction itself, and publishes it
+  onto `root`'s current branch by compare-and-swap
+  (`_compose_and_publish_land_commit_record` -> `publish_ref_cas`) rather
+  than a plain fast-forward `git commit` in `root`. `root`'s working tree
+  is never written to during this step; only the one atomic `update-ref`
+  moves its branch, then `root`'s index/working tree are resynced to the
+  new tip. Measured (untorn-porcelain sampling): 8/22 samples dirty
+  before T-3126, 0/61 after.
+
+  Post-publish failure semantics mirror the landing commit's own: a lost
+  CAS (a sibling published first) leaves that sibling's tip untouched and
+  simply skips the record -- `land_commit` stays absent on `final_id`'s
+  ticket, logged and swallowed, never turned into a `LandError`, since
+  `land_sha` is already durably public by the time this runs and a
+  missing convenience field must never make an already-sealed land report
+  as failed. A blocked resync afterward is likewise not a land failure.
 
 ### The T-1036 tradeoff, measured
 
