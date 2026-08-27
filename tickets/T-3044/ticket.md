@@ -19,7 +19,6 @@ scope:
 - strata-core/src/graph/vmodel.rs
 - strata-core/src/graph/mod.rs
 - strata-core/src/lib.rs
-- strata_core.pyi
 - docs/strata/vmodel.md
 - docs/strata/graph.md
 - strata-core/src/graph/query.rs
@@ -283,6 +282,11 @@ scope_changes:
     existing vmodel_node_and_edge_round_trip fixtures it already has).
 
     '
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: strata_core.pyi
+  reason: wrong path -- file is at strata-core/strata_core.pyi, corrected below
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
