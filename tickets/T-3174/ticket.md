@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 443aca823cdc853166a24d4cdb4ec4dada82e6ae
 ---
 T-3163's production fix widens root's ledger_lock to span
 compose_squash_in_disposable_worktree's entire lifetime (from before the
