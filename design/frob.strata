@@ -803,6 +803,8 @@ node core : trusted {
         "src/frob/gitlog/**" "src/frob/gitio.py" "src/frob/xref/**"
         "src/frob/excludes.py" "src/frob/yamlio.py" "src/frob/tomlio.py"
         "src/frob/repo_meta.py" "src/frob/derived_state.py"
+        "src/frob/ci_report.py" "src/frob/ci_validity.py"
+        "src/frob/ghio.py" "src/frob/findings.py"
         "src/frob/outline/**" "src/frob/map/**" "src/frob/exports/**"
         "src/frob/perf/**" "src/frob/policy/**"
         "src/frob/release/**" "src/frob/scaffold/**"

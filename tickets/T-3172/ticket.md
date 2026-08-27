@@ -2,7 +2,7 @@
 id: T-3172
 title: 'post-land sweep regression from T-3156: 2 new (rule, file) identit(ies), 7
   finding(s) (DRIFT001, SYS003)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-27'
@@ -19,8 +19,8 @@ scope:
 - src/frob/tickets/_evidence.py
 - design/frob.strata
 - frob.lock
-- tickets/T-draft-5c2f8937/**
-- tickets/T-draft-5853e0e6/**
+- tickets/T-3178/**
+- tickets/T-3177/**
 findings:
 - - DRIFT001
   - src/frob/tickets/_evidence.py
@@ -60,17 +60,36 @@ scope_changes:
   actor: logan
   at: '2026-08-27'
 - op: add
-  glob: tickets/T-draft-5c2f8937/**
+  glob: tickets/T-3178/**
   reason: narrow the over-broad tickets/** grant to just the two draft ticket files
     this ticket's own frob ticket new calls created
   actor: logan
   at: '2026-08-27'
 - op: add
-  glob: tickets/T-draft-5853e0e6/**
+  glob: tickets/T-3177/**
   reason: narrow the over-broad tickets/** grant to just the two draft ticket files
     this ticket's own frob ticket new calls created
   actor: logan
   at: '2026-08-27'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): Both findings are architecture/metadata bookkeeping,
+    not runtime defects: DRIFT001 is a stale doc-ack (add_cmd_evidence''s own body/behavior
+    was already correct, verified against its docstring and both tagged tests, only
+    the ack digest was stale from T-3156); SYS003 is a strata architecture-model gap
+    (ci_report/ci_validity/ghio/findings were never bound to any node''s code= glob)
+    closed by adding them to the existing ''core'' node, which changes zero runtime
+    import paths or behavior -- only which node design/frob.strata says owns those
+    files.'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 1372
+  new_length: 1951
+evidence:
+- tests/test_tickets_cmd_evidence.py::TestKindGate::test_docs_kind_closes
+- tests/test_tickets_cmd_evidence.py::TestKindGate::test_bug_kind_rejected
+- tests/test_ci_report.py::TestParsePytestLog::test_parses_named_failures
+- tests/test_ghio.py::TestPreflight::test_success
 designated_repro_test: null
 threat: null
 component: null
@@ -93,3 +112,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - SYS003  src/frob/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:no-behavior-change reason="Both findings are architecture/metadata bookkeeping, not runtime defects: DRIFT001 is a stale doc-ack (add_cmd_evidence's own body/behavior was already correct, verified against its docstring and both tagged tests, only the ack digest was stale from T-3156); SYS003 is a strata architecture-model gap (ci_report/ci_validity/ghio/findings were never bound to any node's code= glob) closed by adding them to the existing 'core' node, which changes zero runtime import paths or behavior -- only which node design/frob.strata says owns those files."

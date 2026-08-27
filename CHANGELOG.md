@@ -508,6 +508,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3156: D-02 has no legitimate evidence route for docs-only bug-kind or Rust-only tickets
 - T-3162: frob ticket reopen crashes mirroring to primary checkout (missing LEDGER_VERB_STRATEGY entry)
 - T-3163: T-1036 ledger-splice regression under T-3121 disposable-stage: concurrent sibling write can silently drop the just-landed ticket's own record
+- T-3172: post-land sweep regression from T-3156: 2 new (rule, file) identit(ies), 7 finding(s) (DRIFT001, SYS003)
 
 ## [0.530.0] - unreleased
 

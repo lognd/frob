@@ -1745,6 +1745,24 @@
       "old_digest": null,
       "reason": "T-3089 renamed these two v2-mode helpers' mutation-target parameter from\n`root` to `stage` and threaded that target through their callers. Re-read\nledger-v2.md section 5 against both bodies: every claim it makes is about\nWHAT the v2 merge does -- disjoint tickets/T-####/ directories merge with\nno custom driver (AC2), and a genuine same-ticket conflict surfaces as an\nordinary git conflict rather than a silent splice (AC3). Both still hold\nverbatim: the merge is still `git merge --squash --no-commit`, the conflict\nresolution is still `_auto_resolve_out_of_scope_conflicts` over the widened\n`tickets/<id>/*` scope, and nothing is auto-resolved that was not before.\nOnly WHICH checkout the merge is performed in changed, and it still\ndefaults to `root`. Section 5 says nothing about the checkout, so it is\nunaffected.\n",
       "ref": "src/frob/tickets/_land_squash.py::_squash_and_splice_ledger_v2"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-27",
+      "facet": "body",
+      "new_digest": "382d20066b23c51c785db02b6baaa5ffa950faa232900124d78ddac910868390",
+      "old_digest": "3c120238016cf05200cd68ffc499514e99152520a5a2fabbf6865b1b4ab697c4",
+      "reason": "T-3156 widened add_cmd_evidence's kind gate (any kind may use cmd evidence when scope_has_python_surface is False, not just docs/ux); verified the function docstring and both tagged tests (test_docs_kind_closes, test_bug_kind_rejected) already describe/exercise the new body correctly. Found one stale prose mention in docs/modules/tickets-data-storage.md (not a tracked frob:doc anchor on this symbol) still saying add_cmd_evidence refuses every kind except docs -- filing a separate doc ticket for that, out of this ticket's scope.",
+      "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-27",
+      "facet": "sig",
+      "new_digest": "d7d0746681d4742c2c8b552aa42938bea617b3a017baaff1c5bc46379da70e41",
+      "old_digest": "d7d0746681d4742c2c8b552aa42938bea617b3a017baaff1c5bc46379da70e41",
+      "reason": "T-3156 widened add_cmd_evidence's kind gate (any kind may use cmd evidence when scope_has_python_surface is False, not just docs/ux); verified the function docstring and both tagged tests (test_docs_kind_closes, test_bug_kind_rejected) already describe/exercise the new body correctly. Found one stale prose mention in docs/modules/tickets-data-storage.md (not a tracked frob:doc anchor on this symbol) still saying add_cmd_evidence refuses every kind except docs -- filing a separate doc ticket for that, out of this ticket's scope.",
+      "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
     }
   ],
   "entries": [
@@ -2814,7 +2832,7 @@
       "ref": "src/frob/tickets/__init__.py::transition"
     },
     {
-      "digest": "3c120238016cf05200cd68ffc499514e99152520a5a2fabbf6865b1b4ab697c4",
+      "digest": "382d20066b23c51c785db02b6baaa5ffa950faa232900124d78ddac910868390",
       "facet": "body",
       "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
     },
