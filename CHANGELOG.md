@@ -449,6 +449,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3065: Quarantine finding identities are keyed by literal string equality on a path whose shape varies by caller; normalize at write time
 - T-3066: frob refactor split/move-module false-refuses on any nested import of the source module
 - T-3069: Hook: nudge hand-performed renames toward frob refactor, without misfiring on ordinary import edits
+- T-3072: Forkserver orphans persist after T-2880: 23 detected with no live check ancestry, and no command reaps them
 - T-3075: Five tests read ambient developer state (global git identity, real ~/.claude) and so pass locally but fail in CI
 - T-3080: Remaining T-2394 empty-scope fixture drift (10 tests, T-3037 residue)
 - T-3081: TicketSpec.no_scope_declared silently dropped by new_ticket

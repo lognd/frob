@@ -16,7 +16,10 @@ import pytest
 from frob.process import _reap
 from frob.process._reap import (
     FORKSERVER_ARM_PDEATHSIG_ENV,
+    _all_process_ppids,
     _arm_forkserver_helper_pdeathsig_if_requested,
+    _forkserver_root_is_live_check,
+    _is_live_check_process,
     _is_orphaned_forkserver,
     _process_start_age_s,
     arm_parent_death_signal,
@@ -220,6 +223,176 @@ class TestReapOrphanedForkservers:
 
     def test_missing_proc_returns_empty(self, tmp_path: Path) -> None:
         assert reap_orphaned_forkservers(proc=tmp_path / "does-not-exist") == []
+
+    def test_forkserver_of_orphaned_forkserver_is_reaped(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_forkserver_of_orphaned_forkserver_is_reaped  # noqa: E501
+        """T-3072 must-fire: a forkserver (4242) whose parent is ANOTHER
+        forkserver (5000) whose own originating check already died
+        (reparented to init) -- the one-hop check this replaced read 4242
+        as 'live-parented' because 5000 is alive; the multi-hop ancestry
+        walk must reap BOTH."""
+        _write_proc_entry(
+            tmp_path,
+            5000,
+            cmdline=_FORKSERVER_CMDLINE,
+            ppid=1,
+            mtime_offset_s=600.0,
+        )
+        _write_proc_entry(
+            tmp_path,
+            4242,
+            cmdline=_FORKSERVER_CMDLINE,
+            ppid=5000,
+            mtime_offset_s=600.0,
+        )
+        killed: list[tuple[int, int]] = []
+        monkeypatch.setattr(
+            _reap.os, "kill", lambda pid, sig: killed.append((pid, sig))
+        )
+        reaped = reap_orphaned_forkservers(age_floor_s=300.0, proc=tmp_path)
+        assert set(reaped) == {5000, 4242}
+
+    def test_forkserver_under_a_live_check_is_never_reaped(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_forkserver_under_a_live_check_is_never_reaped  # noqa: E501
+        """T-3072 MUST-STAY-QUIET, the one that matters most: a forkserver
+        several hops below a genuinely running `frob check` -- invoked the
+        fleet's own dominant way, `python -m frob check ...` (T-3072's
+        live-fleet evidence: this exact shape is what `scripts/fleet_
+        status.py`'s buggy classifier falsely reported orphaned) -- must
+        never be reaped, at any depth, even though it is old enough and
+        every intermediate hop is itself a forkserver."""
+        _write_live_check_entry(tmp_path, 6000, cmdline=_MODULE_INVOKED_CHECK_CMDLINE)
+        _write_proc_entry(
+            tmp_path,
+            5000,
+            cmdline=_FORKSERVER_CMDLINE,
+            ppid=6000,
+            mtime_offset_s=600.0,
+        )
+        _write_proc_entry(
+            tmp_path,
+            4242,
+            cmdline=_FORKSERVER_CMDLINE,
+            ppid=5000,
+            mtime_offset_s=600.0,
+        )
+        killed: list[tuple[int, int]] = []
+        monkeypatch.setattr(
+            _reap.os, "kill", lambda pid, sig: killed.append((pid, sig))
+        )
+        reaped = reap_orphaned_forkservers(age_floor_s=300.0, proc=tmp_path)
+        assert reaped == []
+        assert killed == []
+
+
+_FORKSERVER_CMDLINE = (
+    b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00"
+)
+#: T-3072: the fleet's own dominant invocation shape -- `python -m frob
+#: check ...` -- where the literal `frob` argv token is neither the first
+#: token nor preceded by a `/`. `scripts/fleet_status.py`'s pre-T-3072
+#: classifier (`re.compile(rb"(?:^|/)frob\x00")`) never matched this;
+#: `_is_live_check_process`'s whole-token comparison does.
+_MODULE_INVOKED_CHECK_CMDLINE = (
+    b"/x/.venv/bin/python\x00-m\x00frob\x00check\x00--json\x00--budget\x00300\x00"
+)
+
+
+def _write_live_check_entry(
+    proc: Path, pid: int, *, cmdline: bytes, ppid: int = 1
+) -> None:
+    """`_write_proc_entry` twin for a LIVE `frob check` ancestor (T-3072)
+    -- same fake `/proc/<pid>/{cmdline,stat}` shape, distinct helper name
+    only so a test reads as "this pid is the live-check root", matching
+    `tests/unit/test_coordinator_scripts.py`'s own `_write_live_check`
+    naming convention."""
+    _write_proc_entry(proc, pid, cmdline=cmdline, ppid=ppid)
+
+
+class TestIsLiveCheckProcess:
+    """`_is_live_check_process` (T-3072): the whole-token classifier that
+    replaced this file's own THIRD copy of `scripts/fleet_status.py`'s
+    anchor-bugged `(?:^|/)frob\\x00` regex (`_is_frob_check_process` used
+    to carry it directly)."""
+
+    def test_matches_module_invoked_check(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess::test_matches_module_invoked_check  # noqa: E501
+        """The regression case: `python -m frob check ...` -- the
+        anchor-bugged regex this replaced never matched a bare `frob`
+        token not preceded by `/` and not at cmdline start."""
+        _write_proc_entry(
+            tmp_path, 4242, cmdline=_MODULE_INVOKED_CHECK_CMDLINE, ppid=1
+        )
+        assert _is_live_check_process(4242, tmp_path) is True
+
+    def test_matches_executable_path_invoked_check(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess::test_matches_executable_path_invoked_check  # noqa: E501
+        _write_proc_entry(
+            tmp_path,
+            4242,
+            cmdline=b"/x/.venv/bin/frob\x00check\x00--only\x00gates\x00",
+            ppid=1,
+        )
+        assert _is_live_check_process(4242, tmp_path) is True
+
+    def test_does_not_match_unrelated_process(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess::test_does_not_match_unrelated_process  # noqa: E501
+        _write_proc_entry(tmp_path, 4242, cmdline=b"sleep\x0030\x00", ppid=1)
+        assert _is_live_check_process(4242, tmp_path) is False
+
+    def test_does_not_match_check_repro_subcommand(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess::test_does_not_match_check_repro_subcommand  # noqa: E501
+        """Must not fire on a DIFFERENT ticket subcommand that merely
+        contains the substring 'check' -- token equality, never a
+        substring match."""
+        _write_proc_entry(
+            tmp_path,
+            4242,
+            cmdline=b"frob\x00ticket\x00check-repro\x00T-1\x00",
+            ppid=1,
+        )
+        assert _is_live_check_process(4242, tmp_path) is False
+
+
+class TestForkserverRootIsLiveCheck:
+    """`_forkserver_root_is_live_check` (T-3072): the multi-hop ancestry
+    walk `reap_orphaned_forkservers` now uses instead of a one-hop
+    `ppid == 1` test."""
+
+    def test_direct_child_of_live_check_is_not_orphaned(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck::test_direct_child_of_live_check_is_not_orphaned  # noqa: E501
+        _write_live_check_entry(tmp_path, 999, cmdline=_MODULE_INVOKED_CHECK_CMDLINE)
+        _write_proc_entry(tmp_path, 4242, cmdline=_FORKSERVER_CMDLINE, ppid=999)
+        ppid_map = _all_process_ppids(tmp_path)
+        live = {p for p in ppid_map if _is_live_check_process(p, tmp_path)}
+        assert _forkserver_root_is_live_check(4242, ppid_map, live) is True
+
+    def test_orphaned_forkserver_of_forkserver_is_orphaned(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck::test_orphaned_forkserver_of_forkserver_is_orphaned  # noqa: E501
+        _write_proc_entry(tmp_path, 5000, cmdline=_FORKSERVER_CMDLINE, ppid=1)
+        _write_proc_entry(tmp_path, 4242, cmdline=_FORKSERVER_CMDLINE, ppid=5000)
+        ppid_map = _all_process_ppids(tmp_path)
+        live = {p for p in ppid_map if _is_live_check_process(p, tmp_path)}
+        assert _forkserver_root_is_live_check(4242, ppid_map, live) is False
+
+    def test_deep_chain_under_a_live_check_is_not_orphaned(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck::test_deep_chain_under_a_live_check_is_not_orphaned  # noqa: E501
+        _write_live_check_entry(tmp_path, 6000, cmdline=_MODULE_INVOKED_CHECK_CMDLINE)
+        _write_proc_entry(tmp_path, 5000, cmdline=_FORKSERVER_CMDLINE, ppid=6000)
+        _write_proc_entry(tmp_path, 4242, cmdline=_FORKSERVER_CMDLINE, ppid=5000)
+        ppid_map = _all_process_ppids(tmp_path)
+        live = {p for p in ppid_map if _is_live_check_process(p, tmp_path)}
+        assert _forkserver_root_is_live_check(4242, ppid_map, live) is True
 
 
 class TestProcessStartAge:

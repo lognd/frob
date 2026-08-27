@@ -2,7 +2,7 @@
 id: T-3072
 title: 'Forkserver orphans persist after T-2880: 23 detected with no live check ancestry,
   and no command reaps them'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_reap.py
+evidence_scope:
+- tests/unit/test_process_reap.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,7 +30,22 @@ body_changes:
   at: '2026-08-26'
   old_length: 0
   new_length: 3526
-designated_repro_test: null
+evidence:
+- tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_forkserver_of_orphaned_forkserver_is_reaped
+- tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_forkserver_under_a_live_check_is_never_reaped
+- tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_terminates_old_orphaned_forkservers
+- tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_leaves_young_orphaned_forkservers_alone
+- tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_leaves_non_forkserver_processes_alone
+- tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_missing_proc_returns_empty
+- tests/unit/test_process_reap.py::TestIsLiveCheckProcess::test_matches_module_invoked_check
+- tests/unit/test_process_reap.py::TestIsLiveCheckProcess::test_matches_executable_path_invoked_check
+- tests/unit/test_process_reap.py::TestIsLiveCheckProcess::test_does_not_match_unrelated_process
+- tests/unit/test_process_reap.py::TestIsLiveCheckProcess::test_does_not_match_check_repro_subcommand
+- tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck::test_direct_child_of_live_check_is_not_orphaned
+- tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck::test_orphaned_forkserver_of_forkserver_is_orphaned
+- tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck::test_deep_chain_under_a_live_check_is_not_orphaned
+- tests/unit/test_process_reap.py::TestCountRunningChecks::test_counts_other_check_processes
+designated_repro_test: tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck::test_orphaned_forkserver_of_forkserver_is_orphaned
 threat: null
 component: null
 anchor: false
