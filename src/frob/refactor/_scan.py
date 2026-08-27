@@ -379,14 +379,21 @@ def _import_op(
     file_path: Path, node: ast.ImportFrom, new_stmt: str, reason: str
 ) -> RewriteOp:
     """Build the `RewriteOp` replacing one `ImportFrom` statement's exact
-    source span with `new_stmt`."""
+    source span with `new_stmt`, prefixed with the original statement's
+    leading whitespace (`node.col_offset`) so an indented call site --
+    a function-local or block-nested import -- keeps its indentation
+    instead of orphaning the following, still-indented sibling line at
+    the wrong depth (T-3109: `_rebuild_from_import` returns a bare,
+    unindented statement, and the replacement span must restore the
+    column offset the original line had)."""
     end = node.end_lineno if node.end_lineno is not None else node.lineno
+    indented_stmt = (" " * node.col_offset) + new_stmt
     return RewriteOp(
         file_path=str(file_path),
         start_line=node.lineno,
         end_line=end,
         old_text=f"<import at line {node.lineno}>",
-        new_text=new_stmt,
+        new_text=indented_stmt,
         reason=reason,
     )
 
