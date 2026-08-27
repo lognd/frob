@@ -2,7 +2,7 @@
 id: T-3043
 title: 'V-model H2: the four closure rules check local edge degree, not path closure
   -- a mutual-satisfies pair with zero requirements passes all four'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - strata-core/src/graph/vmodel.rs
 - strata-core/src/lib.rs
+- tests/unit/strata/test_vmodel_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,13 @@ scope_changes:
     endpoint instead of local edge degree, and wire find_cycle into check_closure;
     lib.rs needs the new ClosureViolation variant mapped in vmodel_check (docs/strata/vmodel.md
     excluded: leased by in-progress T-3009)'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/strata/test_vmodel_check.py
+  reason: 'new pytest evidence that actually exercises vmodel_check end-to-end via
+    the Python binding (T-3043: T-3005/T-3007 evidence-laundering lesson -- do not
+    bind evidence that does not touch the changed code)'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
