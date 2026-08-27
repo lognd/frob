@@ -94,7 +94,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cd497eba882d718d5551ce8aac0304c9054bd721
 ---
 FOUND 2026-08-27 while landing T-3075 (five tests that read ambient developer
 state and so passed locally but failed in CI). The fix was hermetic and
