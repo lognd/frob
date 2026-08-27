@@ -34,7 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3a76e12252d34771bf508476c947a7bb046b5a71
 ---
 UNCONFIRMED (reproducible via one specific code path, not via any manual
 reconstruction): `frob ticket evidence`'s individual-reverify path
