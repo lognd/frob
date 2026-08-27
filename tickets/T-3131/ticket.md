@@ -25,7 +25,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6817e7e33f1b7593d8e2fa5012a7290381c0ab22
 ---
 UNCONFIRMED-ONCE: `frob ticket close` disclosure-shaped-language guard
 (`_undisclosed_remainder_reason` in
