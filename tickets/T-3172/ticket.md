@@ -19,7 +19,8 @@ scope:
 - src/frob/tickets/_evidence.py
 - design/frob.strata
 - frob.lock
-- tickets/**
+- tickets/T-draft-5c2f8937/**
+- tickets/T-draft-5853e0e6/**
 findings:
 - - DRIFT001
   - src/frob/tickets/_evidence.py
@@ -50,6 +51,24 @@ scope_changes:
     required follow-up tickets (docs drift, pre-existing SYS003 case) writes tickets/T-draft-*/ticket.md
     before renumbering -- both are machinery side effects of doing this ticket's own
     required work, not scope creep
+  actor: logan
+  at: '2026-08-27'
+- op: remove
+  glob: tickets/**
+  reason: narrow the over-broad tickets/** grant to just the two draft ticket files
+    this ticket's own frob ticket new calls created
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tickets/T-draft-5c2f8937/**
+  reason: narrow the over-broad tickets/** grant to just the two draft ticket files
+    this ticket's own frob ticket new calls created
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tickets/T-draft-5853e0e6/**
+  reason: narrow the over-broad tickets/** grant to just the two draft ticket files
+    this ticket's own frob ticket new calls created
   actor: logan
   at: '2026-08-27'
 designated_repro_test: null
