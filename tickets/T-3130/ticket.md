@@ -55,7 +55,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: dc793bf5a34cb24325db9956c3a5471a6a24a176
 ---
 ## 4. Separate, likely more important finding: sqlite cache lock errors under concurrent `frob check`
 
