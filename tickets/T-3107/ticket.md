@@ -1,7 +1,7 @@
 ---
 id: T-3107
 title: Out-of-tree three-way squash compose via a disposable worktree
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
