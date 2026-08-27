@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ef95d259946e90a84797f488b915ea8eb607d001
 ---
 tests/test_ticket_land.py cannot host evidence that must RESOLVE, because
 tests running after its `land()`-driven cases in the same worker refuse with
