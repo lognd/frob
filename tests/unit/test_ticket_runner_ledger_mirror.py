@@ -150,6 +150,38 @@ class TestLedgerMirrorReachesMain:
         assert _visible_on_primary(primary, "state: queued")
         assert not _visible_on_primary(primary, "in-progress")
 
+    # frob:ticket T-3162
+    def test_reopen_edit_from_worktree_is_visible_on_primary(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3162: `frob ticket reopen`'s DONE -> QUEUED write is real and
+        committed in the worktree, but with no `LEDGER_VERB_STRATEGY`
+        entry `ledger_write_strategy_for("reopen")` raised `KeyError`
+        instead of mirroring -- crashing the command outright rather
+        than the requeue-shaped silent-invisibility bug T-2840 fixed.
+        Same fixture shape as requeue's own test just above: a unique
+        marker distinguishes "mirror actually ran" from "the field
+        already happened to read right"."""
+        assert "reopen" in MIRRORED_LEDGER_VERBS
+        primary, worktree = _setup(tmp_path)
+        for root in (primary, worktree):
+            path = root / "tickets" / "T-0001" / "ticket.md"
+            path.write_text(path.read_text().replace("queued", "done"))
+        _git("commit", "-q", "-am", "close", cwd=primary)
+        _git("commit", "-q", "-am", "close", cwd=worktree)
+
+        path = worktree / "tickets" / "T-0001" / "ticket.md"
+        path.write_text(
+            path.read_text().replace("done", "queued") + "reopen-marker-t3162\n"
+        )
+        _git("commit", "-q", "-am", "reopen edit", cwd=worktree)
+
+        mirror_ledger_change_to_primary(worktree, "T-0001", "reopen")
+
+        assert _visible_on_primary(primary, "reopen-marker-t3162")
+        assert _visible_on_primary(primary, "state: queued")
+        assert not _visible_on_primary(primary, "state: done")
+
     # frob:ticket T-2563
     def test_attachment_file_reaches_primary(self, tmp_path: Path) -> None:
         """`attach` writes a NEW file inside the ticket directory, so the

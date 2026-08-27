@@ -189,6 +189,15 @@ LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
     # requeued ticket's state across, so this write must reach main the
     # same way scope/block do, not wait on a land that will never come.
     "requeue": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    # T-3162: added post-T-2603 and never classified, so `frob ticket
+    # reopen` crashed on the `ledger_write_strategy_for` KeyError instead
+    # of mirroring -- `reopen`'s DONE -> QUEUED transition (T-3087) is
+    # the same fleet-visibility shape as `requeue`'s IN_PROGRESS ->
+    # QUEUED just above: it releases the ticket back to the doable pool,
+    # and no future `land` ever carries a reopened ticket's state across
+    # (the ticket is queued again, not in flight), so this write must
+    # reach main immediately, the same way requeue's does.
+    "reopen": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     # GENERIC_COMMIT_UNMIRRORED -- state-machine progress `land` already
     # carries atomically; never mirrored ahead of the work it describes.
     "new": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,

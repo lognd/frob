@@ -2,7 +2,7 @@
 id: T-3162
 title: frob ticket reopen crashes mirroring to primary checkout (missing LEDGER_VERB_STRATEGY
   entry)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -27,6 +27,9 @@ scope_changes:
   reason: Adding a repro test proving reopen's ledger mirror was crashing (BUG002)
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain::test_reopen_edit_from_worktree_is_visible_on_primary
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_all_classified
 designated_repro_test: null
 threat: null
 component: null
