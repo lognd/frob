@@ -13,7 +13,6 @@ from frob.narrative._migrate import (
     split_ticket_id,
 )
 
-
 _SOCKETD_LIKE_FILE = """\
 x = 1
 
