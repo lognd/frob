@@ -1,7 +1,7 @@
 ---
 id: T-3173
 title: Ack the add_cmd_evidence anchor drift left by T-3156
-state: queued
+state: dropped
 kind: docs
 origin: human
 created: '2026-08-27'
@@ -31,3 +31,6 @@ T-3156 legitimately changed src/frob/tickets/_evidence.py::add_cmd_evidence (wir
 I dismissed it as coordinator to unblock deferred landing fleet-wide, with the reason recorded. The ack itself is still OWED -- this ticket exists so that obligation is enforced rather than living only as prose in a dismissal reason.
 
 FIX: run 'uv run frob ack src/frob/tickets/_evidence.py::add_cmd_evidence' after confirming the 10 dependents are still accurate for the new body. Do not blanket-ack; verify the dependents first.
+
+## Drop reason
+- 2026-08-27: duplicate of T-3172, which the deferred post-land sweep filed automatically for the same two findings (DRIFT001 src/frob/tickets/_evidence.py, SYS003 src/frob/__init__.py) before I filed this. The ticket-new overlap warning named T-3172 and I did not check it.
