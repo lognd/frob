@@ -50,7 +50,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 24af22ac289487cf6b9678e7df18376ea4aa9176
 ---
 MEASURED 2026-08-26 via `uv run python scripts/fleet_status.py`:
 
