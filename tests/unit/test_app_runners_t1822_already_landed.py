@@ -36,7 +36,21 @@ class TestRenderAlreadyLandedMarkers:
         with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
             ids = ticket_runner._render_already_landed_markers(tmp_path, queue)
         assert ids == frozenset()
-        assert caplog.records == []
+        # T-3140: `caplog.records` is unscoped -- it captures every record
+        # that propagates to the root handler, not just this function's OWN
+        # `frob.app.ticket_runner` logger the `at_level` above actually
+        # scoped intent to. `over_broad_literal_globs` (frob.tickets._models,
+        # a package-prefix scope resolver invoked incidentally while
+        # loading the queue) unconditionally WARNs when it cannot resolve
+        # `tmp_path`'s own source prefix from a (deliberately absent, in
+        # this fixture) `pyproject.toml` -- an unrelated resolver's noise,
+        # not this function's own render output, which is what "prints
+        # nothing" asserts. Scope the assertion to this function's own
+        # logger, matching the sibling test below
+        # (`test_flagged_ticket_prints_one_summary_line_and_is_returned`),
+        # which already filters by message content for the same reason.
+        own_records = [r for r in caplog.records if r.name == "frob.app.ticket_runner"]
+        assert own_records == []
 
     # frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestRenderAlreadyLandedMarkers.test_flagged_ticket_prints_one_summary_line_and_is_returned  # noqa: E501
     def test_flagged_ticket_prints_one_summary_line_and_is_returned(

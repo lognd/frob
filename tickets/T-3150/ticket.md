@@ -1,5 +1,5 @@
 ---
-id: T-draft-bad8412b
+id: T-3150
 title: Coordinator lease fallback scan misses live worktree with removed lease file
   (T-3140 item 7)
 state: queued

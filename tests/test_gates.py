@@ -17943,6 +17943,13 @@ class TestDoc004ConsoleCommandDrift:
         assert all(v.severity != Severity.ERROR for v in _by_rule(violations, "DOC004"))
 
     def test_real_subcommand_unanchored_warns_unbound(self, tmp_path: Path) -> None:
+        # T-3140: T-2374 (the v1.0.0 severity freeze, src/frob/gates/
+        # _docblocks_shared.py::_doc004_violation) deliberately promoted
+        # BOTH DOC004 tiers ("stale" and "unbound") to ERROR -- "unbound"
+        # shipped at WARN and was burned to zero alongside DOC006 before
+        # promotion. An unanchored-but-real console command example is
+        # therefore ERROR now, not WARN; this test's name/expectation
+        # predates that freeze and never got updated to match it.
         _git_init(tmp_path)
         _write(tmp_path, "frob.toml", self._CONFIG)
         _write(
@@ -17955,9 +17962,9 @@ class TestDoc004ConsoleCommandDrift:
         snapshot = _snapshot(tmp_path)
         violations = doc004_gate(tmp_path, snapshot)
 
-        warned = _by_rule(violations, "DOC004")
-        assert warned
-        assert all(v.severity == Severity.WARN for v in warned)
+        unbound = _by_rule(violations, "DOC004")
+        assert unbound
+        assert all(v.severity == Severity.ERROR for v in unbound)
 
     def test_waive_suppresses_console_stale(self, tmp_path: Path) -> None:
         _git_init(tmp_path)

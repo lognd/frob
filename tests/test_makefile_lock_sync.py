@@ -6,54 +6,49 @@ Without this, a version bump lands with `pyproject.toml` changed but
 reconcile the two, leaving a silent working-tree `uv.lock` diff no agent
 hand-edited -- SCOPE001 fires on it unless someone remembers to
 `git checkout -- uv.lock` first (the recurring coordinator-land friction
-this ticket exists to remove). This is a static assertion over the
-`Makefile` recipe text, not a live `uv lock` invocation: the fix is about
-what the recipe DOES, and running the real command here would need
-network/registry access pytest should not depend on.
+this ticket exists to remove).
+
+T-3140: the `upload:` Makefile recipe was rewritten to a single
+`uv run frob release publish` call (T-2242) -- no more `bump_version.py`/
+`frob release sync`/hand-rolled `git add` text in the recipe itself for
+these tests to statically parse. MEASURED (src/frob/release/_publish.py,
+T-3140 triage): the T-0789 property is still true, just fully inlined --
+`publish()` runs `bump_patch_version` -> `stamp` -> `_sync_derived_
+artifacts` (which runs `uv lock` after rewriting the version) -> `git add
+<_COMMIT_FILES>` (which includes both `pyproject.toml` and `uv.lock`) ->
+`git commit`, in that order. These tests now assert that shape directly
+against `_publish.py`'s own module rather than parsing Makefile text that
+no longer contains it.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
+import inspect
 
-_ROOT = Path(__file__).resolve().parent.parent
-
-
-def _upload_recipe() -> str:
-    """The `upload:` target's recipe lines from the repo's real Makefile,
-    verbatim -- used to statically assert the T-0789 lock-sync fix stays
-    in place rather than re-parsing a copy that could drift from it."""
-    text = (_ROOT / "Makefile").read_text(encoding="utf-8")
-    lines = text.splitlines()
-    start = next(i for i, line in enumerate(lines) if line.startswith("upload:"))
-    end = start + 1
-    while end < len(lines) and (lines[end].startswith("\t") or not lines[end].strip()):
-        end += 1
-    return "\n".join(lines[start:end])
+from frob.release import _publish
 
 
 def test_upload_relocks_after_version_bump():
     # frob:tests tests/test_makefile_lock_sync.py::test_upload_relocks_after_version_bump kind="unit"  # noqa: E501
-    # T-1006: the recipe no longer runs a literal `uv lock` step -- T-1009
-    # (`.frob-release.json` as the one version authority) replaced it with
-    # `frob release sync`, whose `_sync` (src/frob/app/release_runner.py)
-    # itself runs `uv lock` internally after rewriting pyproject.toml's
-    # version, superseding this recipe's own bare invocation. Assert the
-    # superseding step is present and still ordered after the bump.
-    recipe = _upload_recipe()
-    bump_idx = recipe.index("bump_version.py")
-    lock_idx = recipe.index("frob release sync")
-    assert bump_idx < lock_idx, (
-        "frob release sync (which relocks uv.lock) must run AFTER the "
-        "version bump, not before"
+    # T-3140: `frob release publish` (src/frob/release/_publish.py)
+    # supersedes the old recipe's bare `uv lock` step -- assert its own
+    # `_sync_derived_artifacts` (the step that runs `uv lock`) is composed
+    # AFTER the version bump in `publish`'s own source order.
+    source = inspect.getsource(_publish.publish)
+    bump_idx = source.index("bump_patch_version")
+    sync_idx = source.index("_sync_derived_artifacts")
+    assert bump_idx < sync_idx, (
+        "_sync_derived_artifacts (which relocks uv.lock via `uv lock`) must "
+        "be called AFTER bump_patch_version, not before"
+    )
+    sync_source = inspect.getsource(_publish._sync_derived_artifacts)
+    assert '"uv", "lock"' in sync_source, (
+        "_sync_derived_artifacts no longer re-locks uv.lock -- the T-0789 "
+        "property this ticket exists to hold has regressed"
     )
 
 
 def test_upload_commits_uv_lock_with_pyproject():
     # frob:tests tests/test_makefile_lock_sync.py::test_upload_commits_uv_lock_with_pyproject kind="unit"  # noqa: E501
-    recipe = _upload_recipe()
-    add_line = next(
-        line for line in recipe.splitlines() if line.strip().startswith("git add")
-    )
-    assert "pyproject.toml" in add_line
-    assert "uv.lock" in add_line
+    assert "pyproject.toml" in _publish._COMMIT_FILES
+    assert "uv.lock" in _publish._COMMIT_FILES

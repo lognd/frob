@@ -212,27 +212,50 @@ def test_safe_tier_clean_preserves_frob_junitxml_forensics(repo: Path) -> None:
 
 
 # frob:ticket T-1237
+# frob:ticket T-3140
 # frob:tests \
 # tests/test_clean.py::test_makefile_coverage_recipe_never_escalates_clean_tier
 def test_makefile_coverage_recipe_never_escalates_clean_tier() -> None:
     """T-1237's acceptance criterion 0 (recipe-side half): the `coverage:`
-    Makefile recipe must invoke `frob clean` at its default (SAFE/tier-1)
-    severity, never `--all`/`--deep` -- either of those tiers would remove
-    `.frob/` itself (tier 3, `test_clean_deep_removes_frob_state`),
-    destroying the very junitxml forensics this ticket's other test
-    proves tier 1 preserves. Reads the real Makefile text so a future edit
-    that escalates the tier is caught here, not discovered as missing
-    forensics after the fact."""
+    Makefile recipe -- and the `frob coverage --full` verb it now calls
+    into (T-3140: the recipe was rewritten to `frob ticket reconcile &&
+    frob doctor && frob coverage --full`, no longer a direct `uv run frob
+    clean` shell-out at all) -- must never remove `.frob/` itself (tier 3,
+    `test_clean_deep_removes_frob_state`), destroying the junitxml
+    forensics this ticket's other test proves tier 1 preserves.
+
+    MEASURED (not assumed): the safety property this test guards did NOT
+    move into `frob coverage --full`'s own internals as a bounded-tier
+    `clean` call -- `frob.app.coverage_runner.run` and
+    `frob.testing._coverage_refresh.native_coverage_refresh` never call
+    `frob.clean.clean`/`frob.clean.run` at all (confirmed via a targeted
+    read of both modules, T-3140 triage), so the property now holds
+    vacuously: there is no clean invocation left in the recipe's own
+    reachable code to ever escalate. If either the Makefile recipe OR the
+    coverage verb's implementation ever grows a `clean` call again, this
+    guards that it stays at the SAFE tier (never `--all`/`--deep`) rather
+    than silently allowing an escalation the original test would have
+    caught."""
     repo_root = Path(__file__).resolve().parent.parent
     makefile_text = (repo_root / "Makefile").read_text(encoding="utf-8")
     coverage_recipe = re.search(
-        r"^coverage: \$\(STAMP\)\n(?:\t.*\n)*", makefile_text, re.MULTILINE
+        r"^coverage: .*\n(?:\t.*\n)*", makefile_text, re.MULTILINE
     )
     assert coverage_recipe is not None, "coverage: recipe not found in Makefile"
     clean_invocations = re.findall(
         r"uv run frob clean\b[^\n\\]*", coverage_recipe.group(0)
     )
-    assert clean_invocations, "coverage: recipe never calls frob clean"
     for invocation in clean_invocations:
         assert "--all" not in invocation, invocation
         assert "--deep" not in invocation, invocation
+
+    import frob.app.coverage_runner as coverage_runner_module
+    import frob.testing._coverage_refresh as coverage_refresh_module
+
+    for module in (coverage_runner_module, coverage_refresh_module):
+        source = Path(module.__file__).read_text(encoding="utf-8")
+        assert "clean(" not in source and "frob.clean" not in source, (
+            f"{module.__name__} now calls into frob.clean -- re-apply this "
+            "test's tier-escalation check against that call site, it can no "
+            "longer rely on the property holding vacuously"
+        )

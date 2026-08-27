@@ -774,10 +774,28 @@ def _normalize_gate_timing(payload_text: str) -> str:
     -- real elapsed-time measurements that legitimately differ between two
     independent process runs (T-1147's differential-parity test is the one
     caller of this; every other field in the payload stays a strict,
-    unnormalized byte comparison)."""
+    unnormalized byte comparison).
+
+    T-3140: also strips the daemon-only `[REPLAY age=Ns, unchanged tree]`
+    label `frob.check._python._label_replay` (T-2585) prepends to the
+    summary line when a daemon serves a cached verdict instead of
+    recomputing -- a genuine, INTENTIONAL feature (so a replayed result is
+    never visually indistinguishable from a freshly computed one), not a
+    product leak: the in-process path has no daemon cache to replay from
+    and can never emit it, so two independent daemon-served calls in the
+    same test (this one included) can legitimately hit the replay path on
+    the second call while the in-process comparison run never does. Like
+    the `[gate=Ns]` timing blob, this is non-reproducible request-serving
+    metadata the differential-parity check should not be strict about --
+    every OTHER field still stays a byte-for-byte comparison."""
     import re
 
-    return re.sub(r"\[[a-z_]+=[0-9.]+s(?:, [a-z_]+=[0-9.]+s)*\]", "[...]", payload_text)
+    normalized = re.sub(
+        r"\[[a-z_]+=[0-9.]+s(?:, [a-z_]+=[0-9.]+s)*\]", "[...]", payload_text
+    )
+    return re.sub(
+        r"\[REPLAY age=[0-9.]+s, unchanged tree\]  ", "", normalized
+    )
 
 
 def _json_tail(stdout: str) -> str:

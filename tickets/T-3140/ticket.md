@@ -1,7 +1,7 @@
 ---
 id: T-3140
 title: 'T-3034 residual: 10 test failures need deeper per-item investigation'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -25,6 +25,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_clean.py::test_makefile_coverage_recipe_never_escalates_clean_tier
+- tests/test_makefile_lock_sync.py::test_upload_relocks_after_version_bump
+- tests/test_makefile_lock_sync.py::test_upload_commits_uv_lock_with_pyproject
+- tests/test_app_daemon_proxy.py::TestDifferentialParity::test_check_delta_gates_only_json_daemon_matches_in_process
+- tests/unit/test_app_runners_t1822_already_landed.py::TestRenderAlreadyLandedMarkers::test_no_markers_prints_nothing_and_returns_empty
+- tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_unanchored_warns_unbound
 designated_repro_test: null
 threat: null
 component: null
