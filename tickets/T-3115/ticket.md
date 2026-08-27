@@ -40,7 +40,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ca00201f88939e6cc3e7a5cb4c7e03b89ac661cb
 ---
 MEASURED 2026-08-27 on a full `frob check` of main. WIRE003 fires seven times:
 
