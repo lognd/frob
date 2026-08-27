@@ -3114,3 +3114,59 @@ one-line operator recovery command -- never reverts, and attempts it
 the refusal is atomic, the degraded state is a visible, loudly reported
 stale root, never a half-applied tree, and the next land or the operator's
 one-line command clears it.
+
+## `frob.tickets._land_squash` -- the squash-apply `stage` target (T-3089)
+
+The land's squash-apply is not one step but a **transaction of six
+index- and working-tree-consuming stages**, all of which must run against
+the *same* checkout:
+
+1. the `git merge --squash --no-commit` itself, and the per-path conflict
+   resolution over the unmerged index it leaves
+   (`_check_squash_conflicted[_v2]` ->
+   `_auto_resolve_out_of_scope_conflicts`: T-0479 out-of-scope
+   ours-resolution, T-1002 union zones, T-1434's elementwise-max merge of
+   `frob-coverage.lock.json`, T-1637's sibling carry-forward);
+2. the ledger splice and `git add` (`_splice_and_stage`,
+   `_splice_and_stage_archive`);
+3. the REL001 release bump (`_apply_release_bump`);
+4. the gate-rule registry sync (`_apply_gate_rule_sync`);
+5. the T-0463 completeness assertion, which reads `git diff --cached`
+   (`_assert_land_complete` / `_staged_files`);
+6. the T-1514 Tier-A pre-commit sweep and the landing commit
+   (`_apply_pre_commit_sweep_or_unwind`, `_commit_squash_apply`).
+
+`_land_squash_apply` therefore takes a `stage: Path` naming that checkout.
+It **defaults to `root`**, which is the historical behavior byte for byte:
+the whole transaction happens in the shared primary checkout and every
+sibling agent's `git status` can observe the staged-but-uncommitted window
+while it runs. Passing a disposable worktree detached at `pre_land_tip`
+(`compose_squash_in_disposable_worktree`) moves the entire window off the
+shared tree instead, to be published by `fold_worktree_into_commit` +
+`publish_ref_cas` and reconciled by `resync_root_to_published_tip`.
+
+**All six move together or none do.** Composing only some of them leaves
+the rest reading an index nothing populated -- a land that commits nothing
+while still writing `state: done`. That failure has been observed in this
+repo, so the parameter is deliberately a single switch over the whole
+sequence rather than a per-stage option.
+
+`root` keeps only the roles that are about the *repository* rather than the
+tree being built, and those deliberately do **not** follow `stage`:
+
+- `ledger_lock(root)` and the live ledger/archive base texts re-read under
+  it. T-1036's lost-update fix is about capturing whichever concurrent
+  `frob ticket new`/`evidence` writer got to root's working-tree
+  `tickets.md` first, and such a writer never touches a disposable stage.
+- the stacked-sibling absorption *evidence* (`_absorption_verified`,
+  `_report_stacked_sibling_absorption`) -- "a prior land already did this"
+  is a claim about root's landed history. Only the emptiness check that
+  triggers it reads `stage`'s index.
+- `_assert_still_on_expected_branch`, the T-1920 branch-drift guard: a
+  disposable stage is detached by construction, so the guard has to keep
+  watching the branch root actually has checked out.
+
+Every unwind path follows `stage`, not `root`: `_verified_reset_root`
+against a disposable worktree detached at `pre_land_tip` resets exactly the
+throwaway tree, which is the correct and cheapest unwind once the
+transaction no longer lives in the shared checkout.

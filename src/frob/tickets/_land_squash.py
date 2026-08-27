@@ -103,32 +103,32 @@ _log = get_logger(__name__)
 # near a pre-existing sibling, rather than the T-1186-established, deliberate \
 # mirror-image pair it already was -- neither function's body changed"
 def _check_squash_conflicted(
-    root: Path, worktree: Path, ticket: Ticket, branch_name: str, pre_land_tip: str
+    stage: Path, worktree: Path, ticket: Ticket, branch_name: str, pre_land_tip: str
 ) -> Result[None, LandError]:
     """`Err(SquashConflict)` (unwinding the squash) if any IN-SCOPE file
     besides tickets.md/tickets-archive.md is still conflicted after the
     squash merge; any OUT-OF-SCOPE conflict is auto-resolved by taking
     main's side first
-    (T-0479) -- main is `ours` here (root's checked-out branch, with the
+    (T-0479) -- main is `ours` here (stage's checked-out branch, with the
     worktree's finalized branch squash-merged in as `theirs`). `pre_land_tip`
-    (T-0907) is this run's verified pre-mutation root tip, threaded through
+    (T-0907) is this run's verified pre-mutation stage tip, threaded through
     to `_verified_reset_root` so every unwind here resets to an explicit sha
     rather than a bare (HEAD-at-reset-time) `git reset --hard`."""
-    resolved = _auto_resolve_out_of_scope_conflicts(root, ticket, keep="ours")
+    resolved = _auto_resolve_out_of_scope_conflicts(stage, ticket, keep="ours")
     if resolved.is_err:
-        unwound = _verified_reset_root(root, pre_land_tip, ticket.id)
+        unwound = _verified_reset_root(stage, pre_land_tip, ticket.id)
         return Err(unwound.danger_err if unwound.is_err else resolved.danger_err)
     remaining = resolved.danger_ok
     if remaining:
-        unwound = _verified_reset_root(root, pre_land_tip, ticket.id)
+        unwound = _verified_reset_root(stage, pre_land_tip, ticket.id)
         _log.error(
             "land: %s squash-apply onto %s conflicts in scoped file(s): %s "
             "-- resolve manually (cd %s && git merge --squash %s), commit, "
             "then retry `frob ticket land %s --worktree %s`",
             ticket.id,
-            root,
+            stage,
             sorted(remaining),
-            root,
+            stage,
             branch_name,
             ticket.id,
             worktree,
@@ -171,34 +171,34 @@ def _v2_effective_scope(ticket: Ticket) -> Ticket:
 # other COV007 waiver in this repo already carries, not accidental drift onto a \
 # private helper"
 def _check_squash_conflicted_v2(
-    root: Path, worktree: Path, ticket: Ticket, branch_name: str, pre_land_tip: str
+    stage: Path, worktree: Path, ticket: Ticket, branch_name: str, pre_land_tip: str
 ) -> Result[None, LandError]:
     """v2-mode counterpart to `_check_squash_conflicted`: no tickets.md/
     tickets-archive.md carve-out is needed here (those files do not exist
     in v2 mode) -- any conflict OUTSIDE the ticket's own `tickets/<id>/`
-    directory is auto-resolved by taking root's side (`keep="ours"`, same
+    directory is auto-resolved by taking stage's side (`keep="ours"`, same
     convention `_check_squash_conflicted` uses); anything left conflicted
     is a genuine same-ticket-file conflict and is surfaced loudly as an
     ORDINARY git conflict, per design section 5's explicit "no
     `splice_ledger`-class resolution needed" contract (AC3) -- never
     silently resolved by picking a side."""
     widened = _v2_effective_scope(ticket)
-    resolved = _auto_resolve_out_of_scope_conflicts(root, widened, keep="ours")
+    resolved = _auto_resolve_out_of_scope_conflicts(stage, widened, keep="ours")
     if resolved.is_err:
-        unwound = _verified_reset_root(root, pre_land_tip, ticket.id)
+        unwound = _verified_reset_root(stage, pre_land_tip, ticket.id)
         return Err(unwound.danger_err if unwound.is_err else resolved.danger_err)
     remaining = resolved.danger_ok
     if remaining:
-        unwound = _verified_reset_root(root, pre_land_tip, ticket.id)
+        unwound = _verified_reset_root(stage, pre_land_tip, ticket.id)
         _log.error(
             "land: %s squash-apply onto %s conflicts in scoped file(s) "
             "(v2 mode, no ledger splice applies): %s -- resolve manually "
             "(cd %s && git merge --squash %s), commit, then retry "
             "`frob ticket land %s --worktree %s`",
             ticket.id,
-            root,
+            stage,
             sorted(remaining),
-            root,
+            stage,
             branch_name,
             ticket.id,
             worktree,
@@ -216,7 +216,7 @@ def _check_squash_conflicted_v2(
 # per-function architecture-doc precedent every other COV007 waiver in this repo \
 # already carries, not accidental drift onto a private helper"
 def _squash_and_splice_ledger_v2(
-    root: Path,
+    stage: Path,
     worktree: Path,
     ticket: Ticket,
     final_id: str,
@@ -225,7 +225,7 @@ def _squash_and_splice_ledger_v2(
 ) -> Result[None, LandError]:
     """v2-mode counterpart to `_squash_and_splice_ledger` (design section
     5): `git merge --squash --no-commit` the worktree's finalized branch
-    onto `root`, exactly like v1, but performs NO ledger splice at all --
+    onto `stage`, exactly like v1, but performs NO ledger splice at all --
     disjoint `tickets/T-####/` directories are ordinary git objects the
     squash-merge already stages correctly on its own, so there is nothing
     left to splice, no `ledger_lock` critical section is needed, and the
@@ -234,15 +234,20 @@ def _squash_and_splice_ledger_v2(
     see its Done report for the follow-up filed). `final_id` is accepted
     only for call-shape parity with `_squash_and_splice_ledger` (a v2-mode
     draft finalization renumbers the directory itself, upstream of this
-    call, so there is no id-scoped splice left to perform here)."""
+    call, so there is no id-scoped splice left to perform here).
+
+    T-3089: `stage` is the checkout the squash-merge is performed IN and
+    the one every downstream index-consuming stage reads -- `root` itself
+    today, a disposable worktree detached at `pre_land_tip` once the
+    compose moves out of tree."""
     del final_id
     squash = run_argv(
-        ["git", "-C", str(root), "merge", "--squash", "--no-commit", branch_name]
+        ["git", "-C", str(stage), "merge", "--squash", "--no-commit", branch_name]
     )
     if squash.is_err:
         return Err(LandError.GitFailed)
     return _check_squash_conflicted_v2(
-        root, worktree, ticket, branch_name, pre_land_tip
+        stage, worktree, ticket, branch_name, pre_land_tip
     )
 
 
@@ -251,6 +256,7 @@ def _squash_and_splice_ledger_v2(
 # frob:tests tests/test_ticket_land.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
 def _squash_and_splice_ledger(
     root: Path,
+    stage: Path,
     worktree: Path,
     ticket: Ticket,
     final_id: str,
@@ -300,15 +306,27 @@ def _squash_and_splice_ledger(
     under `ledger_lock` -- see `_land_lock`'s own module comment for why
     a worktree's committed lock-file artifact once made reusing that
     exact path across a squash-merge unsafe; only the narrow
-    read-splice-write critical section needs the lock, not the merge."""
+    read-splice-write critical section needs the lock, not the merge.
+
+    T-3089: `root` and `stage` are two DIFFERENT roles that happen to be
+    the same directory today. `stage` is the checkout the squash-merge
+    runs in, the conflicts are resolved in, and the spliced ledger is
+    written and staged into -- a disposable worktree detached at
+    `pre_land_tip` once the compose moves out of tree. `root` stays the
+    repository whose LIVE ledger is authoritative: `ledger_lock(root)`
+    and the base texts re-read under it are deliberately still root's,
+    because T-1036's lost-update fix is about capturing whichever
+    concurrent `frob ticket new`/`evidence` writer got to root's
+    working-tree tickets.md first, and that writer never touches a
+    disposable stage."""
     squash = run_argv(
-        ["git", "-C", str(root), "merge", "--squash", "--no-commit", branch_name]
+        ["git", "-C", str(stage), "merge", "--squash", "--no-commit", branch_name]
     )
     if squash.is_err:
         return Err(LandError.GitFailed)
 
     conflict_check = _check_squash_conflicted(
-        root, worktree, ticket, branch_name, pre_land_tip
+        stage, worktree, ticket, branch_name, pre_land_tip
     )
     # (ticket-scoped; final_id is used only for the ledger splice below)
     if conflict_check.is_err:
@@ -343,7 +361,7 @@ def _squash_and_splice_ledger(
         # is silently and permanently lost.
         archived_ids = _archived_ids(root)
         spliced = _splice_and_stage(
-            root,
+            stage,
             root_pre_text,
             worktree_final_text,
             archived_ids=archived_ids,
@@ -352,7 +370,7 @@ def _squash_and_splice_ledger(
         )
         if spliced.is_err:
             return _unwind_squash_apply(
-                root, pre_land_tip, final_id, spliced.danger_err
+                stage, pre_land_tip, final_id, spliced.danger_err
             )
 
         # frob:ticket T-0959
@@ -365,35 +383,40 @@ def _squash_and_splice_ledger(
         # root's CURRENT tip) is authoritative; the worktree's finalized
         # archive copy is the other side.
         archive_spliced = _splice_and_stage_archive(
-            root, root_pre_archive_text, worktree_final_archive_text
+            stage, root_pre_archive_text, worktree_final_archive_text
         )
         if archive_spliced.is_err:
             return _unwind_squash_apply(
-                root, pre_land_tip, final_id, archive_spliced.danger_err
+                stage, pre_land_tip, final_id, archive_spliced.danger_err
             )
 
         return _refuse_if_land_regresses_terminal_state(
-            root, pre_land_tip, final_id, root_pre_text, spliced.danger_ok, archived_ids
+            stage,
+            pre_land_tip,
+            final_id,
+            root_pre_text,
+            spliced.danger_ok,
+            archived_ids,
         )
 
 
 # frob:ticket T-0976
 def _unwind_squash_apply(
-    root: Path, pre_land_tip: str, final_id: str, err: LandError
+    stage: Path, pre_land_tip: str, final_id: str, err: LandError
 ) -> Result[None, LandError]:
-    """Reset `root`'s squash-apply back to `pre_land_tip` and propagate
+    """Reset `stage`'s squash-apply back to `pre_land_tip` and propagate
     `err` -- `_squash_and_splice_ledger`'s shared unwind-on-failure step,
     used by every one of its own failure paths. `_verified_reset_root`'s
     own error (if the reset itself fails) takes priority over `err` since
-    a failed unwind leaves `root` in a worse, unresolved state that must
+    a failed unwind leaves `stage` in a worse, unresolved state that must
     be surfaced first."""
-    unwound = _verified_reset_root(root, pre_land_tip, final_id)
+    unwound = _verified_reset_root(stage, pre_land_tip, final_id)
     return Err(unwound.danger_err if unwound.is_err else err)
 
 
 # frob:ticket T-0976
 def _refuse_if_land_regresses_terminal_state(
-    root: Path,
+    stage: Path,
     pre_land_tip: str,
     final_id: str,
     root_pre_text: str,
@@ -415,9 +438,9 @@ def _refuse_if_land_regresses_terminal_state(
         "state) before retrying",
         final_id,
         ", ".join(regressions),
-        root,
+        stage,
     )
-    unwound = _verified_reset_root(root, pre_land_tip, final_id)
+    unwound = _verified_reset_root(stage, pre_land_tip, final_id)
     if unwound.is_err:
         return Err(unwound.danger_err)
     return Err(LandError.TerminalStateRegression)
@@ -553,13 +576,13 @@ def _worktree_full_changeset(
 
 
 # frob:ticket T-0463
-def _staged_files(root: Path) -> Result[frozenset[str], LandError]:
-    """The paths currently staged in `root`'s index relative to `HEAD`
+def _staged_files(stage: Path) -> Result[frozenset[str], LandError]:
+    """The paths currently staged in `stage`'s index relative to `HEAD`
     (`git diff --cached --name-only`) -- used to assert the squash-apply
     actually staged everything the worktree changed BEFORE the landing
     commit is made, so an incomplete land aborts loudly instead of
     committing a silently-partial changeset."""
-    diff = run_argv(["git", "-C", str(root), "diff", "--cached", "--name-only"])
+    diff = run_argv(["git", "-C", str(stage), "diff", "--cached", "--name-only"])
     if diff.is_err or diff.danger_ok.returncode != 0:
         return Err(LandError.GitFailed)
     return Ok(
@@ -572,14 +595,14 @@ def _staged_files(root: Path) -> Result[frozenset[str], LandError]:
 # frob:ticket T-0463
 # frob:ticket T-0907
 def _assert_land_complete(
-    root: Path,
+    stage: Path,
     worktree: Path,
     ticket_id: str,
     main_branch_name: str,
     pre_land_tip: str,
 ) -> Result[frozenset[str], LandError]:
     """Post-squash, pre-commit completeness assertion (T-0463): the set of
-    paths staged in `root`'s index must be a SUPERSET of everything the
+    paths staged in `stage`'s index must be a SUPERSET of everything the
     worktree changed relative to `main_branch_name` (tracked edits,
     untracked new files, deletions). If any worktree-changed file is
     missing from staging, the squash is unwound (`_verified_reset_root`,
@@ -589,12 +612,12 @@ def _assert_land_complete(
     worktree's full changeset on success (for the report)."""
     expected = _worktree_full_changeset(worktree, main_branch_name)
     if expected.is_err:
-        unwound = _verified_reset_root(root, pre_land_tip, ticket_id)
+        unwound = _verified_reset_root(stage, pre_land_tip, ticket_id)
         return Err(unwound.danger_err if unwound.is_err else expected.danger_err)
 
-    staged = _staged_files(root)
+    staged = _staged_files(stage)
     if staged.is_err:
-        unwound = _verified_reset_root(root, pre_land_tip, ticket_id)
+        unwound = _verified_reset_root(stage, pre_land_tip, ticket_id)
         return Err(unwound.danger_err if unwound.is_err else staged.danger_err)
 
     # frob:ticket T-1769
@@ -610,7 +633,7 @@ def _assert_land_complete(
 
     missing = (expected.danger_ok - staged.danger_ok) - set(_LAND_OWNED_RELEASE_FILES)
     if missing:
-        unwound = _verified_reset_root(root, pre_land_tip, ticket_id)
+        unwound = _verified_reset_root(stage, pre_land_tip, ticket_id)
         if unwound.is_err:
             return Err(unwound.danger_err)
         _log.error(
@@ -621,7 +644,7 @@ def _assert_land_complete(
             "`git -C %s diff --name-only %s...HEAD`, then retry "
             "`frob ticket land %s --worktree %s`",
             ticket_id,
-            root,
+            stage,
             sorted(missing),
             worktree,
             worktree,
@@ -898,7 +921,7 @@ def _report_stacked_sibling_absorption(
 
 # frob:ticket T-1740
 def _commit_squash_apply(
-    root: Path, ticket: Ticket, final_id: str, *, pre_land_tip: str
+    stage: Path, ticket: Ticket, final_id: str, *, pre_land_tip: str
 ) -> Result[None, LandError]:
     """Commit the staged squash-apply with a conventional-commit message,
     under `FROB_LAND_INTERNAL=1` (T-0828) -- this commit legitimately
@@ -909,11 +932,11 @@ def _commit_squash_apply(
     T-1740: THE gap this ticket's audit found -- every OTHER failure path
     in the squash-apply pipeline already unwinds via `_verified_reset_
     root`, but this, the LAST step, used to just tell the operator to
-    clean up by hand, leaving the fully-staged squash sitting in `root`'s
+    clean up by hand, leaving the fully-staged squash sitting in `stage`'s
     index on any commit failure (a hook rejection, an identity/config
     issue, disk pressure). Now attempts `_verified_reset_root` first (the
     normal, safe full unwind back to `pre_land_tip` -- nothing else can
-    have moved `root`'s tip between the successful stage and this commit
+    have moved `stage`'s tip between the successful stage and this commit
     attempt in the ordinary case) and falls back to `_unstage_index_only`
     if THAT itself reports drift, so the index is never left holding
     land's own staged content for an unrelated `git commit` to sweep up,
@@ -921,7 +944,7 @@ def _commit_squash_apply(
     commit_argv = [
         "git",
         "-C",
-        str(root),
+        str(stage),
         "commit",
         "-m",
         _commit_message(ticket, final_id),
@@ -929,22 +952,22 @@ def _commit_squash_apply(
     with _land_internal_git_env():
         commit = run_argv(commit_argv)
     if commit.is_err or commit.danger_ok.returncode != 0:
-        unwound = _verified_reset_root(root, pre_land_tip, final_id)
+        unwound = _verified_reset_root(stage, pre_land_tip, final_id)
         if unwound.is_err:
-            _unstage_index_only(root)
+            _unstage_index_only(stage)
         _log.error(
             "land: %s squash-apply staged onto %s but the final commit "
             "failed (%s) -- %s. Fix the underlying commit failure (a "
             "pre-commit hook, git identity/config, disk pressure) and "
             "retry `frob ticket land %s --worktree ...`",
             final_id,
-            root,
+            stage,
             _describe_git_failure(commit_argv, commit),
             "the staged squash was unwound"
             if unwound.is_ok
             else (
                 "the squash could not be safely unwound (tip drift); the "
-                f"index was unstaged instead (T-1740): {root} is unchanged "
+                f"index was unstaged instead (T-1740): {stage} is unchanged "
                 "except for whatever a concurrent write already committed"
             ),
             final_id,
@@ -956,6 +979,7 @@ def _commit_squash_apply(
 # frob:ticket T-1001
 def _absorbed_land_report(
     root: Path,
+    stage: Path,
     worktree: Path,
     ticket: Ticket,
     ticket_id: str,
@@ -973,8 +997,14 @@ def _absorbed_land_report(
     genuine absorption (`_absorption_verified`) -- `None` otherwise, telling
     the caller to fall through to the ordinary `_commit_squash_apply`
     attempt and its honest error. An empty stage for some OTHER,
-    unexplained reason is never silently reported as success."""
-    staged_now = _staged_files(root)
+    unexplained reason is never silently reported as success.
+
+    T-3089: emptiness is read from `stage`'s index (the checkout the
+    squash was applied into), while the absorption EVIDENCE -- `final_id`
+    already `done`, scoped content already matching -- is read from
+    `root`, the repository whose landed history is what "a prior land
+    already did this" is a claim about."""
+    staged_now = _staged_files(stage)
     if staged_now.is_err or staged_now.danger_ok:
         return None
     if not _absorption_verified(root, worktree, ticket, final_id):
@@ -986,6 +1016,12 @@ def _absorbed_land_report(
 
 # frob:ticket T-0907
 # frob:ticket T-1721
+# frob:ticket T-3089
+# frob:tests tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget.test_default_stage_runs_the_whole_transaction_in_root  # noqa: E501
+# frob:tests tests/unit/test_land_squash_stage.py::TestSquashApplyStageTarget.test_explicit_stage_leaves_root_completely_untouched  # noqa: E501
+# frob:doc \
+# docs/modules/tickets-landing.md#frobtickets_land_squash----the-squash-apply-stage-tar\
+# get-t-3089
 def _land_squash_apply(
     root: Path,
     worktree: Path,
@@ -1003,6 +1039,7 @@ def _land_squash_apply(
     sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]]
     | None = None,
     pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
+    stage: Path | None = None,
 ) -> Result[LandReport, LandError]:
     """Squash-apply the worktree's finalized branch onto `root`, splice
     tickets.md, apply an optional REL001 version bump (T-0338), assert
@@ -1033,7 +1070,26 @@ def _land_squash_apply(
     `git reset --hard` a REAL commit that may already have foreign work
     stacked on top of it). Returns `True` (sweep passed, possibly after a
     Tier-A auto-fix), `False` (refuse and unwind), or `None` (skip,
-    matching every other opt-in land callable's default posture)."""
+    matching every other opt-in land callable's default posture).
+
+    T-3089: `stage` is the checkout every index- and working-tree-consuming
+    step of this transaction runs against -- the squash-merge itself, the
+    conflict resolution, the ledger splice, the REL001 bump, the gate-rule
+    sync, the completeness assertion, the Tier-A pre-commit sweep and the
+    landing commit. It defaults to `root`, which is the historical
+    behavior byte for byte: the whole transaction happens in the shared
+    checkout and is visible to every sibling agent's `git status` while it
+    runs. Passing a DISPOSABLE worktree detached at `pre_land_tip`
+    (`compose_squash_in_disposable_worktree`) moves that entire window off
+    the shared tree instead. All six stages must move TOGETHER: composing
+    only some of them leaves the rest reading an index nothing populated,
+    which commits nothing while still writing `state: done`.
+
+    `root` keeps the roles that are genuinely about the repository rather
+    than about the tree being built: `ledger_lock` and the live ledger
+    base texts (T-1036), the absorption evidence, and the branch-drift
+    guard."""
+    stage = root if stage is None else stage
     branch = current_branch(worktree)
     if branch.is_err:
         return Err(LandError.GitFailed)
@@ -1046,11 +1102,12 @@ def _land_squash_apply(
     v2_mode = _store_mode(root) == "v2"
     squashed = (
         _squash_and_splice_ledger_v2(
-            root, worktree, ticket, final_id, branch_name, pre_land_tip
+            stage, worktree, ticket, final_id, branch_name, pre_land_tip
         )
         if v2_mode
         else _squash_and_splice_ledger(
             root,
+            stage,
             worktree,
             ticket,
             final_id,
@@ -1072,6 +1129,7 @@ def _land_squash_apply(
         did_merge,
         main_branch_name,
         v2_mode,
+        stage,
         pre_land_tip=pre_land_tip,
         bump_version=bump_version,
         rebuild_natives=rebuild_natives,
@@ -1082,7 +1140,7 @@ def _land_squash_apply(
 
 # frob:ticket T-1514
 def _apply_pre_commit_sweep_or_unwind(
-    root: Path,
+    stage: Path,
     ticket_id: str,
     final_id: str,
     pre_land_tip: str,
@@ -1090,7 +1148,7 @@ def _apply_pre_commit_sweep_or_unwind(
 ) -> Result[None, LandError]:
     """`_land_squash_apply_finish`'s LAST pre-commit checkpoint (T-1514,
     split out to keep that function under ARCH001's line threshold):
-    `root`'s working tree already holds the complete, staged merge-preview
+    `stage`'s working tree already holds the complete, staged merge-preview
     changeset with nothing committed yet, so a `pre_commit_sweep` refusal
     here is unwound cheaply via `_verified_reset_root` and touches no
     foreign commit, unlike the T-1456 post-land sweep's `git reset --hard`
@@ -1098,10 +1156,10 @@ def _apply_pre_commit_sweep_or_unwind(
     or a `None`/`True` verdict is a no-op `Ok(None)`."""
     if pre_commit_sweep is None:
         return Ok(None)
-    swept = pre_commit_sweep(root, final_id)
+    swept = pre_commit_sweep(stage, final_id)
     if swept is not False:
         return Ok(None)
-    unwound = _verified_reset_root(root, pre_land_tip, ticket_id)
+    unwound = _verified_reset_root(stage, pre_land_tip, ticket_id)
     if unwound.is_err:
         return Err(unwound.danger_err)
     _log.error(
@@ -1109,7 +1167,7 @@ def _apply_pre_commit_sweep_or_unwind(
         "found new error(s) no Tier-A auto-fix could resolve; the staged "
         "squash was unwound, %s is unchanged, nothing was committed",
         ticket_id,
-        root,
+        stage,
     )
     return Err(LandError.PreLandUnscopedSweepFailed)
 
@@ -1257,6 +1315,7 @@ def _land_squash_apply_finish(
     did_merge: bool,
     main_branch_name: str,
     v2_mode: bool,
+    stage: Path,
     *,
     pre_land_tip: str,
     bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None,
@@ -1273,20 +1332,26 @@ def _land_squash_apply_finish(
     succeeded. Same unwind-on-failure behavior as before the split: every
     failure path here still resets `root` back to `pre_land_tip` via the
     helpers it calls, exactly as when this was still inline in
-    `_land_squash_apply`."""
-    bumped = _apply_release_bump(root, ticket, final_id, bump_version, pre_land_tip)
+    `_land_squash_apply`.
+
+    T-3089: every index- and working-tree-consuming stage below runs
+    against `stage` (see `_land_squash_apply`'s own docstring for the two
+    roles and why they must move together); `root` is kept only for the
+    branch-drift guard, the absorption evidence and the post-commit
+    report, none of which read the staged tree."""
+    bumped = _apply_release_bump(stage, ticket, final_id, bump_version, pre_land_tip)
     if bumped.is_err:
         return Err(bumped.danger_err)
     release_bumped_to = bumped.danger_ok
 
     gate_rules_synced = _apply_gate_rule_sync(
-        root, final_id, sync_gate_rules, pre_land_tip
+        stage, final_id, sync_gate_rules, pre_land_tip
     )
     if gate_rules_synced.is_err:
         return Err(gate_rules_synced.danger_err)
 
     completeness = _assert_land_complete(
-        root, worktree, ticket_id, main_branch_name, pre_land_tip
+        stage, worktree, ticket_id, main_branch_name, pre_land_tip
     )
     if completeness.is_err:
         return Err(completeness.danger_err)
@@ -1295,7 +1360,7 @@ def _land_squash_apply_finish(
     # T-1001 (churn item 2): stacked-sibling absorption -- see
     # `_absorbed_land_report`'s own docstring.
     absorbed = _absorbed_land_report(
-        root, worktree, ticket, ticket_id, final_id, wip_committed, did_merge
+        root, stage, worktree, ticket, ticket_id, final_id, wip_committed, did_merge
     )
     if absorbed is not None:
         _post_publish_native_rebuild(
@@ -1304,7 +1369,7 @@ def _land_squash_apply_finish(
         return Ok(absorbed)
 
     swept = _apply_pre_commit_sweep_or_unwind(
-        root, ticket_id, final_id, pre_land_tip, pre_commit_sweep
+        stage, ticket_id, final_id, pre_land_tip, pre_commit_sweep
     )
     if swept.is_err:
         return Err(swept.danger_err)
@@ -1315,7 +1380,9 @@ def _land_squash_apply_finish(
     if still_on_branch.is_err:
         return Err(still_on_branch.danger_err)
 
-    committed = _commit_squash_apply(root, ticket, final_id, pre_land_tip=pre_land_tip)
+    committed = _commit_squash_apply(
+        stage, ticket, final_id, pre_land_tip=pre_land_tip
+    )
     if committed.is_err:
         return Err(committed.danger_err)
 

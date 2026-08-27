@@ -10476,7 +10476,7 @@ class TestLandSquashHelpersMutationCoverage:
         # returning `None` -- assert it never does.
         monkeypatch.setattr(_land_squash_mod, "_absorption_verified", lambda *a: True)
         result = _land_squash_mod._absorbed_land_report(
-            tmp_path, tmp_path, ticket, "T-0001", "T-0001", True, True
+            tmp_path, tmp_path, tmp_path, ticket, "T-0001", "T-0001", True, True
         )
         assert result is None
 

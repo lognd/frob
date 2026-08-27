@@ -312,11 +312,11 @@ def _squash_into_worktree(
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three\
 # -way-squash-compose-t-3107
-# frob:waive WIRE001 follow_up="T-3089" reason="T-3107 is deliberately the PRIMITIVE \
+# frob:waive WIRE001 follow_up="T-3121" reason="T-3107 is deliberately the PRIMITIVE \
 # half of T-3089's re-scope -- the same posture T-3088 shipped in: the caller is the \
-# squash-stage wiring, which is T-3089's own scope and is blocked on this ticket. \
-# Landing the primitive and its wiring in one ticket is exactly the \
-# large-unlanded-branch shape this decomposition exists to avoid"
+# squash-stage flip, which is T-3121's own scope (T-3089 landed the retargeting half \
+# only, leaving the compose caller-side). Landing the primitive and its wiring in one \
+# ticket is exactly the large-unlanded-branch shape this decomposition exists to avoid"
 @contextmanager
 def compose_squash_in_disposable_worktree(
     repo: Path, base_commit: str, branch_name: str
@@ -388,11 +388,11 @@ def compose_squash_in_disposable_worktree(
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three\
 # -way-squash-compose-t-3107
-# frob:waive WIRE001 follow_up="T-3089" reason="T-3107 is deliberately the PRIMITIVE \
+# frob:waive WIRE001 follow_up="T-3121" reason="T-3107 is deliberately the PRIMITIVE \
 # half of T-3089's re-scope -- the same posture T-3088 shipped in: the caller is the \
-# squash-stage wiring, which is T-3089's own scope and is blocked on this ticket. \
-# Landing the primitive and its wiring in one ticket is exactly the \
-# large-unlanded-branch shape this decomposition exists to avoid"
+# squash-stage flip, which is T-3121's own scope (T-3089 landed the retargeting half \
+# only, leaving the compose caller-side). Landing the primitive and its wiring in one \
+# ticket is exactly the large-unlanded-branch shape this decomposition exists to avoid"
 def fold_worktree_into_commit(
     repo: Path, worktree: Path, base_commit: str, message: str
 ) -> Result[str, LandComposeError]:
@@ -464,11 +464,12 @@ def fold_worktree_into_commit(
 # 14
 # frob:tests tests/unit/test_land_compose.py::TestResyncRootToPublishedTip.test_unrelated_dirty_path_resyncs_and_is_preserved  # noqa: E501
 # frob:tests tests/unit/test_land_compose.py::TestResyncRootToPublishedTip.test_dirty_path_the_land_also_changed_blocks_atomically  # noqa: E501
-# frob:waive WIRE001 follow_up="T-3089" reason="T-3114 is deliberately the PRIMITIVE \
+# frob:waive WIRE001 follow_up="T-3121" reason="T-3114 is deliberately the PRIMITIVE \
 # half of the post-CAS resync -- the same posture T-3088 and T-3107 shipped in: the \
-# only caller is the squash-stage wiring, which is T-3089's own scope and is blocked \
-# on this ticket. Landing the primitive and its wiring in one ticket is exactly the \
-# large-unlanded-branch shape this decomposition exists to avoid"
+# only caller is the squash-stage flip, which is T-3121's own scope (T-3089 landed the \
+# retargeting half only, leaving the compose caller-side). Landing the primitive and \
+# its wiring in one ticket is exactly the large-unlanded-branch shape this \
+# decomposition exists to avoid"
 def resync_root_to_published_tip(
     root: Path, old_tip: str, new_tip: str
 ) -> Result[None, LandComposeError]:

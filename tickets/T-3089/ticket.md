@@ -1,7 +1,7 @@
 ---
 id: T-3089
 title: Wire out-of-tree compose+CAS publish into the squash-apply land stage
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
