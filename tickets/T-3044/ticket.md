@@ -27,6 +27,7 @@ scope:
 - tests/unit/strata/test_vmodel_check.py
 - strata-core/src/parse/grammar_core.rs
 - strata-core/src/parse/mod.rs
+- strata-core/strata_core.pyi
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -287,6 +288,11 @@ scope_changes:
 - op: remove
   glob: strata_core.pyi
   reason: wrong path -- file is at strata-core/strata_core.pyi, corrected below
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: strata-core/strata_core.pyi
+  reason: correct path for the .pyi stub (was wrongly declared at repo root)
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
