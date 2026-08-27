@@ -48,6 +48,24 @@ dependencies = [
 # Install with: uv pip install "frob[serve]"
 [project.optional-dependencies]
 serve = ["mcp>=1.28.1"]
+# T-3011: the native acceleration extra -- `frob-core` (frob.dup R3+
+# clone-detection kernels) and `strata-core` (frob.strata closure/
+# staleness/demand kernels), both PyO3/abi3-py311 extensions built by
+# maturin. Pinned EXACT (`==`), not `>=`/`~=`, and to frob's OWN version
+# number: three separately published artifacts is three chances to skew,
+# and this repo already paid for that lesson once (T-2884 needed a
+# git-SHA check on the daemon BECAUSE VERSION STRINGS ALONE WERE NOT
+# ENOUGH to detect skew). All three are cut together at release time; a
+# loose pin on an ABI-coupled native extension produces bug reports
+# nobody can reproduce. Enforced by frob.gates._version_coupling
+# (VERSION001), not left to convention -- see
+# docs/guides/release.md#version-coupling-t-3011 for the full reasoning.
+# Without this extra (a bare `pip install frob`, or any platform with no
+# matching wheel), frob still installs and runs in pure-Python mode and
+# says so loudly at startup: see
+# docs/guides/release.md#native-acceleration-degrade-doctrine-t-3011.
+# Install with: uv pip install "frob[native]"
+native = ["frob-core==0.530.0", "strata-core==0.530.0"]
 # R7 (docs/modules/dup.md's bounded-SMT rung): translates tiny pure int/bool
 # functions to Z3 and checks equivalence formally. Optional -- z3-solver
 # ships native binaries and is only needed for `probe_smt_equivalence`;
@@ -119,6 +137,18 @@ dev = [
     # never gate `frob check` directly.
     "mypy>=1.10",
 ]
+
+# T-3011: `frob-core`/`strata-core` are not published to PyPI yet -- this
+# repo's own `uv sync`/`uv lock` must keep working against the LOCAL
+# crate checkouts (dev builds them in-place via `make core`/maturin,
+# never installs a PyPI wheel of its own natives), so the `native` extra
+# above resolves against these paths instead of querying the PyPI index
+# for a package that does not exist there. Drop this section (and the
+# extra keeps working unchanged) once both crates have a first real PyPI
+# release -- see docs/guides/release.md.
+[tool.uv.sources]
+frob-core = { path = "frob-core" }
+strata-core = { path = "strata-core" }
 
 [tool.setuptools]
 packages = { find = { where = ["src"] } }

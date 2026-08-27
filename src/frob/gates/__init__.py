@@ -217,6 +217,7 @@ from frob.gates._tickets_gate import (  # noqa: F401 -- _tick004_queue_rot re-ex
 )
 from frob.gates._todo_fmt import _todo001, _todo003_long_deferred, fmt_gate
 from frob.gates._toplevel_scalar_schema import toplevel_scalar_schema_gate
+from frob.gates._version_coupling import version_coupling_gate
 from frob.gates._waive import (
     _KNOWN_GATE_RULES,
     _UNWAIVABLE_RULES,
@@ -6832,6 +6833,13 @@ def _build_thread_jobs(
         "release": lambda: release_gate(
             st.root, st.snapshot, st.ticket.id if st.ticket is not None else None
         ),
+        # T-3011: VERSION001 -- three tiny `pyproject.toml` reads
+        # (frob's own, frob-core's, strata-core's), always against
+        # repo_root (never the possibly-scoped st.root): the release
+        # version-coupling policy is a repo-wide invariant, same
+        # reasoning as "compliance"/"registry" below, not a subdir-
+        # scoped one.
+        "version_coupling": lambda: version_coupling_gate(st.repo_root),
         "decisions": lambda: decisions_gate(st.root, st.snapshot),
         "tickets": lambda: tickets_gate(st.root, st.queue),
         # T-2576 M2: MILE003 -- same `st.root` as "tickets" above

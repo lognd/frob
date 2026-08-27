@@ -4,7 +4,11 @@ build-backend = "maturin"
 
 [project]
 name = "strata-core"
-version = "0.1.0"
+# T-3011: pinned to frob's own version -- see docs/guides/release.md's
+# version-coupling section for why an ABI-coupled native extension is
+# cut in lockstep with the pure-Python package, enforced by
+# frob.gates._version_coupling (VERSION001), not left to convention.
+version = "0.530.0"
 description = "Compute-only kernels for frob.strata (closure, staleness, demand); PyO3/abi3 extension"
 requires-python = ">=3.11"
 license = { text = "MIT" }

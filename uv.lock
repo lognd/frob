@@ -398,6 +398,10 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+native = [
+    { name = "frob-core" },
+    { name = "strata-core" },
+]
 serve = [
     { name = "mcp" },
 ]
@@ -422,12 +426,14 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "frob-core", marker = "extra == 'native'", directory = "frob-core" },
     { name = "jinja2", specifier = ">=3.1" },
     { name = "mcp", marker = "extra == 'serve'", specifier = ">=1.28.1" },
     { name = "packaging", specifier = ">=24" },
     { name = "pydantic", specifier = ">=2.12.0" },
     { name = "pyyaml", specifier = ">=6" },
     { name = "ruff", specifier = ">=0.8" },
+    { name = "strata-core", marker = "extra == 'native'", directory = "strata-core" },
     { name = "tree-sitter", specifier = ">=0.25.2" },
     { name = "tree-sitter-cpp", specifier = ">=0.23.4" },
     { name = "tree-sitter-language-pack", specifier = ">=0.13" },
@@ -436,7 +442,7 @@ requires-dist = [
     { name = "typani", specifier = ">=0.0.3" },
     { name = "z3-solver", marker = "extra == 'smt'", specifier = ">=4.13,<4.15.5" },
 ]
-provides-extras = ["serve", "smt"]
+provides-extras = ["serve", "native", "smt"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -452,6 +458,11 @@ dev = [
     { name = "ruff", specifier = ">=0.8" },
     { name = "ty", specifier = ">=0.0.1a8" },
 ]
+
+[[package]]
+name = "frob-core"
+version = "0.530.0"
+source = { directory = "frob-core" }
 
 [[package]]
 name = "h11"
@@ -1401,6 +1412,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/eb/e3/7c1dc7381d9f8ab7d
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/bb/2799cc2ede3ed41131f8975621e7213dfc7ef4acbbaadfa440f32500c370/starlette-1.3.1-py3-none-any.whl", hash = "sha256:c7372aae11c3c3f26a42df7bd626cec2f47d03483d261d369516a615a53714c6", size = 73632, upload-time = "2026-06-12T09:23:10.017Z" },
 ]
+
+[[package]]
+name = "strata-core"
+version = "0.530.0"
+source = { directory = "strata-core" }
 
 [[package]]
 name = "tomli"

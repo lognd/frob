@@ -1,0 +1,173 @@
+name: release
+
+# T-3011: manual dispatch ONLY. No push/pull_request/tag/schedule/release
+# trigger exists here -- see docs/guides/release.md's "Proof: a normal
+# push does not upload" section, and tests/unit/test_release_workflow_gate.py
+# for the mechanical check that this stays true.
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  # Builds wheels for the full target matrix plus an sdist per crate, and
+  # retains everything as CI artifacts. Runs on every manual dispatch, no
+  # approval required -- building and retaining evidence is never
+  # consent-gated, only the upload step below is.
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: manylinux-x86_64
+            os: ubuntu-latest
+            maturin_target: x86_64-unknown-linux-gnu
+            manylinux: auto
+          - target: manylinux-aarch64
+            os: ubuntu-latest
+            maturin_target: aarch64-unknown-linux-gnu
+            manylinux: auto
+          - target: macos-x86_64
+            os: macos-13
+            maturin_target: x86_64-apple-darwin
+            manylinux: "off"
+          - target: macos-arm64
+            os: macos-latest
+            maturin_target: aarch64-apple-darwin
+            manylinux: "off"
+          - target: windows-x86_64
+            os: windows-latest
+            maturin_target: x86_64-pc-windows-msvc
+            manylinux: "off"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Build frob-core wheel (abi3-py311)
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: frob-core
+          target: ${{ matrix.maturin_target }}
+          manylinux: ${{ matrix.manylinux }}
+          args: --release --out dist
+      - name: Build strata-core wheel (abi3-py311)
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: strata-core
+          target: ${{ matrix.maturin_target }}
+          manylinux: ${{ matrix.manylinux }}
+          args: --release --out dist
+      # Acceptance: "a built wheel installs into a clean venv on each
+      # target platform and the natives import successfully" -- verified
+      # HERE, on the real runner that just built it, not asserted.
+      - name: Install the just-built wheels into a clean venv and import them
+        shell: bash
+        run: |
+          set -e
+          uv venv /tmp/native-check-venv
+          uv pip install --python /tmp/native-check-venv/bin/python \
+            frob-core/dist/*.whl strata-core/dist/*.whl
+          /tmp/native-check-venv/bin/python -c "import frob_core, strata_core; print(frob_core.__name__, strata_core.__name__)"
+      - name: Upload frob-core wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: frob-core-${{ matrix.target }}
+          path: frob-core/dist/*.whl
+          retention-days: 90
+      - name: Upload strata-core wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: strata-core-${{ matrix.target }}
+          path: strata-core/dist/*.whl
+          retention-days: 90
+
+  build-sdists:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: frob-core sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: frob-core
+          command: sdist
+          args: --out dist
+      - name: strata-core sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: strata-core
+          command: sdist
+          args: --out dist
+      - name: frob sdist + wheel (pure Python)
+        run: uv build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frob-core-sdist
+          path: frob-core/dist/*.tar.gz
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        with:
+          name: strata-core-sdist
+          path: strata-core/dist/*.tar.gz
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frob-dist
+          path: dist/*
+          retention-days: 90
+
+  # T-3011: the ONLY job that can reach PyPI. Gated three separate ways:
+  #   1. needs: [build, build-sdists] -- cannot start before real wheels exist.
+  #   2. environment: pypi -- a GitHub Environment with a required reviewer
+  #      configured in this repo's Settings > Environments; GitHub blocks
+  #      this job until a human approves THIS SPECIFIC RUN, and records
+  #      that approval on the run itself.
+  #   3. `on: workflow_dispatch` above -- there is no automatic event that
+  #      can even start the workflow this job lives in.
+  # Trusted publishing (OIDC, `id-token: write`) is used instead of a
+  # stored PyPI API token -- see docs/guides/release.md's "Decision 3".
+  upload:
+    needs: [build, build-sdists]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      # Merge every frob-core-* artifact (5 platform wheels + sdist) into
+      # one flat dir, and likewise for strata-core-*; frob-dist already
+      # holds frob's own wheel + sdist as a single artifact.
+      - name: Download frob-core artifacts (wheels + sdist)
+        uses: actions/download-artifact@v4
+        with:
+          pattern: frob-core-*
+          path: dist-staging/frob-core
+          merge-multiple: true
+      - name: Download strata-core artifacts (wheels + sdist)
+        uses: actions/download-artifact@v4
+        with:
+          pattern: strata-core-*
+          path: dist-staging/strata-core
+          merge-multiple: true
+      - name: Download frob artifact (wheel + sdist)
+        uses: actions/download-artifact@v4
+        with:
+          name: frob-dist
+          path: dist-staging/frob
+      - name: Publish frob-core to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist-staging/frob-core
+      - name: Publish strata-core to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist-staging/strata-core
+      - name: Publish frob to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist-staging/frob

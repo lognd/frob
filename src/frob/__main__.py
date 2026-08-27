@@ -58,6 +58,7 @@ from frob._cli_parsers import (
 )
 from frob.app import App, AppConfig
 from frob.app.config import stale_binary_warning, stale_install_warning
+from frob.doctor import native_degrade_warning
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -812,6 +813,7 @@ def _report_concurrent_check_advisory_best_effort(
 
 
 # frob:ticket T-1808
+# frob:ticket T-3011
 def _print_startup_warnings(repo_root: Path) -> None:
     """Every loud, best-effort, read-only stderr warning `_dispatch` prints
     ahead of a real subcommand run -- stale global/floor binary skew
@@ -839,6 +841,11 @@ def _print_startup_warnings(repo_root: Path) -> None:
     claude_warning = drift_warning(repo_root)
     if claude_warning is not None:
         print(claude_warning, file=_sys.stderr)
+    # T-3011: PLATFORM001 applied to distribution -- degrade LOUDLY and BY
+    # NAME, never silently; see native_degrade_warning's own docstring.
+    native_warning = native_degrade_warning(repo_root)
+    if native_warning is not None:
+        print(native_warning, file=_sys.stderr)
 
 
 if __name__ == "__main__":

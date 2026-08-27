@@ -811,6 +811,50 @@ def _extension_status(name: str) -> NativeExtensionStatus:
     return NativeExtensionStatus(name=name, available=True, version=mod_version)
 
 
+# frob:doc docs/guides/release.md#native-acceleration-degrade-doctrine-t-3011
+# frob:ticket T-3011
+# frob:tests tests/unit/test_doctor.py::TestNativeDegradeWarning.test_missing_extensions_named_loudly  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestNativeDegradeWarning.test_fully_accelerated_produces_no_warning  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestNativeDegradeWarning.test_partial_availability_still_names_the_missing_one  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestNativeDegradeWarning.test_source_checkout_gets_make_core_hint  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestNativeDegradeWarning.test_installed_package_gets_pip_extra_hint  # noqa: E501
+def native_degrade_warning(repo_root: Path | None = None) -> str | None:
+    """PLATFORM001 applied to distribution (T-3011): a loud, one-line, by-
+    name stderr warning when any of `NATIVE_EXTENSIONS` is not importable,
+    printed automatically ahead of every subcommand
+    (`__main__._print_startup_warnings`) rather than only surfaced on an
+    explicit `frob doctor` run -- the boundary between accelerated and
+    pure-Python operation must be declared, never crossed silently (the
+    sdist-fallback alternative this replaces would instead attempt a
+    silent Rust build, a miserable first run for exactly the adopter this
+    exists to serve). Returns None the instant every declared extension
+    imports cleanly -- the common, fully-accelerated case, and the only
+    case this must NEVER fire for. The remediation half distinguishes a
+    source checkout (`repo_root/frob-core/Cargo.toml` present: `make
+    core` applies) from an installed package (no such checkout: the PyPI
+    `frob[native]` extra applies) -- never raises, matching
+    `_extension_status`'s fail-soft discipline."""
+    missing = [
+        name for name in NATIVE_EXTENSIONS if not _extension_status(name).available
+    ]
+    if not missing:
+        return None
+    names = ", ".join(missing)
+    if repo_root is not None and (repo_root / "frob-core" / "Cargo.toml").exists():
+        fix = REMEDIATION_HINT
+    else:
+        fix = (
+            "install with: pip install 'frob[native]' "
+            "(or: uv pip install 'frob[native]')"
+        )
+    message = (
+        f"frob: native acceleration unavailable ({names} not importable) -- "
+        f"running in pure-Python mode; {fix}"
+    )
+    _log.warning("native_degrade_warning: %s", message)
+    return message
+
+
 def _frob_version() -> str:
     """Resolve the installed `frob` distribution version, or 'unknown' when
     run from a source checkout with no registered distribution metadata."""

@@ -417,6 +417,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3005: strata-core graph kernel: generic typed nodes, typed edges, closure, level constraints, cycle detection (see T-3004 section 4)
 - T-3006: Multi-modal strata redesign: behaviour/implementation/configuration split, VHDL entity-architecture model (T-3004 section 5)
 - T-3007: V-model spec graph as strata instances: requirement/spec/design/component nodes with paired verification levels (T-3004 sections 1-2)
+- T-3011: Epic: publish frob-core and strata-core wheels to PyPI -- build now, publish only on explicit owner consent
 - T-3014: Wire NARR001 (T-2993's narrative-block detector) into gates/__init__.py
 
 ## [0.530.0] - unreleased

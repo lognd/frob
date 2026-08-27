@@ -2,7 +2,7 @@
 id: T-3011
 title: 'Epic: publish frob-core and strata-core wheels to PyPI -- build now, publish
   only on explicit owner consent'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -128,6 +128,23 @@ triage_changes:
     on a green platform matrix and explicit owner consent'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/test_doctor.py::TestNativeDegradeWarning::test_missing_extensions_named_loudly
+- tests/unit/test_doctor.py::TestNativeDegradeWarning::test_fully_accelerated_produces_no_warning
+- tests/unit/test_doctor.py::TestNativeDegradeWarning::test_partial_availability_still_names_the_missing_one
+- tests/unit/test_doctor.py::TestNativeDegradeWarning::test_source_checkout_gets_make_core_hint
+- tests/unit/test_doctor.py::TestNativeDegradeWarning::test_installed_package_gets_pip_extra_hint
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_matched_versions_clean
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_skewed_core_version_fires
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_loose_pin_fires
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_missing_extra_fires
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_mismatched_extra_pin_fires
+- tests/unit/test_release_workflow_gate.py::TestReleaseWorkflowNoAutomaticTrigger::test_only_workflow_dispatch_trigger
+- tests/unit/test_release_workflow_gate.py::TestReleaseWorkflowNoAutomaticTrigger::test_ci_workflow_never_references_release_or_pypi
+- tests/unit/test_release_workflow_gate.py::TestUploadJobConsentGate::test_upload_job_requires_pypi_environment
+- tests/unit/test_release_workflow_gate.py::TestUploadJobConsentGate::test_upload_job_needs_build
+- tests/unit/test_release_workflow_gate.py::TestUploadJobConsentGate::test_upload_job_uses_oidc_not_a_stored_token
+- tests/unit/test_release_workflow_gate.py::TestUploadJobConsentGate::test_build_job_has_no_environment_gate
 designated_repro_test: null
 threat: null
 component: null
