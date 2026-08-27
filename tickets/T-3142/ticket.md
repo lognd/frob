@@ -2,7 +2,7 @@
 id: T-3142
 title: Break the 182-node import cycle (name the real next cut from the current cycle
   output)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -17,8 +17,16 @@ runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
-no_scope_declared_reason: next-cut name is discovered from fresh frob cycle output,
-  not known yet
+no_scope_declared_reason: 'T-3142 is a naming/decision ticket per its own brief (name
+  one real next
+
+  cut, do not attempt it, do not plan the whole decomposition) -- no code
+
+  change belongs to this ticket itself; the actual cut lands under the
+
+  newly-filed sibling ticket instead.
+
+  '
 designated_repro_test: null
 threat: null
 component: null
