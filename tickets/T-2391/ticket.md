@@ -19,6 +19,7 @@ scope:
 - src/frob/check/__init__.py
 - tests/unit/test_process.py
 - tests/unit/test_check_measurement.py
+- docs/commands/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -58,6 +59,12 @@ scope_changes:
     migration needed) plus CheckResult roster/JSON exposure; src/frob/check/_python.py
     and tests/unit/test_check.py excluded (leased by in-progress T-3191); new dedicated
     test file avoids that conflict; remainder filed as follow-up tickets'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/commands/check.md
+  reason: 'doc-closure: adding a new public ToolResult/CheckResult field requires
+    updating this anchor doc'
   actor: logan
   at: '2026-08-27'
 designated_repro_test: null
