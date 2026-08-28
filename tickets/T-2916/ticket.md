@@ -24,7 +24,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 92f082db029e22d9b7a8b140bc9274702994cf29
 ---
 ## Failure log
 - 2026-08-28 attempt 1: stale premise: PLATFORM001 gate (T-2919/2934/2944/2951) already makes locks refuse loudly (msvcrt Windows backend + DerivedStateLockUnavailable) and orphan-reaping disable announces itself via _log.warning (T-2944, process/_reap.py:arm_parent_death_signal); gate:WALK is clean of PLATFORM001 findings on current main and runs inside CI's frob check (ci.yml self-gate), closing the silent-degrade detection gap this ticket describes. Remaining cross-platform work is already covered by in-flight T-3191 (multi-platform typecheck) and T-3192 (CI hang timeout).
