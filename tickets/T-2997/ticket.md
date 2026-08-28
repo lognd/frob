@@ -14,10 +14,73 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- rapid-debt.jsonl
+- .frob/rapid-debt.jsonl
+- .gitattributes
+- src/frob/tickets/_evidence.py
+- tests/unit/test_rapid_debt.py
+- CHANGELOG.md
+- changelog.d/*
+- docs/modules/tickets-verify-sweep.md
+- docs/modules/tickets-merge-driver.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: rapid-debt.jsonl
+  reason: 'T-2997: move rapid-debt.jsonl from tracked git root to gitignored .frob/,
+    per owner decision recorded on this ticket'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: .frob/rapid-debt.jsonl
+  reason: 'T-2997: move rapid-debt.jsonl from tracked git root to gitignored .frob/,
+    per owner decision recorded on this ticket'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: .gitattributes
+  reason: 'T-2997: move rapid-debt.jsonl from tracked git root to gitignored .frob/,
+    per owner decision recorded on this ticket'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: 'T-2997: move rapid-debt.jsonl from tracked git root to gitignored .frob/,
+    per owner decision recorded on this ticket'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_rapid_debt.py
+  reason: 'T-2997: move rapid-debt.jsonl from tracked git root to gitignored .frob/,
+    per owner decision recorded on this ticket'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: CHANGELOG.md
+  reason: 'T-2997: move rapid-debt.jsonl from tracked git root to gitignored .frob/,
+    per owner decision recorded on this ticket'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: changelog.d/*
+  reason: 'T-2997: move rapid-debt.jsonl from tracked git root to gitignored .frob/,
+    per owner decision recorded on this ticket'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: doc targets for record_rapid_debt docstring update
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/tickets-merge-driver.md
+  reason: doc targets for record_rapid_debt docstring update
+  actor: logan
+  at: '2026-08-28'
 body_changes:
 - mode: set
   reason: 'owner decided the destination: move it under .frob/ rather than rotating
