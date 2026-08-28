@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4ba98f3b606604531ae6098bde97532938fa7aee
 ---
 T-3095 (isolate land's post-squash file-mutating stages so the whole
 transaction is invisible in the shared tree) chose NOT to fold the
