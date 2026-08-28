@@ -2,7 +2,7 @@
 id: T-3079
 title: 'post-land sweep regression from T-3044: 2 new (rule, file) identit(ies), 2
   finding(s) (LARGE001)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-27'
@@ -38,6 +38,19 @@ scope_changes:
     of doing this ticket's work, not unrelated scope creep
   actor: logan
   at: '2026-08-28'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): Post-land sweep regression re-measured live
+    against current main: frob check --only arch confirmed both LARGE001 identities
+    are genuinely live (vmodel.rs 597->988 lines, grammar_core.rs 795->827 lines,
+    both grown by T-3044, threshold 800). Bound frob:debt LARGE001 (not frob:waive)
+    to follow-up split ticket T-draft-703f9e02 rather than fixing inline. This is
+    a comment-directive-only change with no runtime behavior delta -- it changes gate
+    bookkeeping, not code.'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 1524
+  new_length: 2023
 designated_repro_test: null
 threat: null
 component: null
@@ -65,3 +78,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - LARGE001  strata-core/src/parse/grammar_core.rs  -> attributed to T-3044 (commit 51bc8c6ddb49, already closed/dropped -- filed below) via strata-core/src/parse/grammar_core.rs::Parser.parse_vmodel_edge -> strata-core/src/parse/grammar_core.rs::Parser.at_keyword
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:no-behavior-change reason="Post-land sweep regression re-measured live against current main: frob check --only arch confirmed both LARGE001 identities are genuinely live (vmodel.rs 597->988 lines, grammar_core.rs 795->827 lines, both grown by T-3044, threshold 800). Bound frob:debt LARGE001 (not frob:waive) to follow-up split ticket T-draft-703f9e02 rather than fixing inline. This is a comment-directive-only change with no runtime behavior delta -- it changes gate bookkeeping, not code."
