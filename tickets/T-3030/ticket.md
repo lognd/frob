@@ -2,7 +2,7 @@
 id: T-3030
 title: _STAGE_GROUPS missing milestone/env_var_docs/root_asset_dirs/profile_boundary
   gates
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -28,7 +28,9 @@ scope_changes:
     -- must touch it to verify the fix
   actor: logan
   at: '2026-08-28'
-designated_repro_test: null
+evidence:
+- tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
+designated_repro_test: tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
 threat: null
 component: null
 anchor: false

@@ -510,6 +510,25 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             # thread-pool, sub-second gate, so it belongs in gates-fast;
             # without this it is unreachable via `--only <group>`.
             "suppress",
+            # T-3030: milestone (MILE003/MILE004), env_var_docs (ENVDOC001),
+            # root_asset_dirs (ROOTASSET001), and profile_boundary
+            # (PROFBOUND001) were registered in frob.gates._ALL_GATES but
+            # never added to a _STAGE_GROUPS member -- same omission shape
+            # as ffi_boundary/suppress above. All four are thread-pool,
+            # sub-second gates (not in frob.gates._PROCESS_POOL_GATES), so
+            # they belong in gates-fast; without this an agent looping
+            # every `--only <group>` (the documented FROB_AGENT foreground-
+            # budget pattern) silently never runs them at all.
+            "milestone",
+            "env_var_docs",
+            "root_asset_dirs",
+            "profile_boundary",
+            # T-3030: narrative_blocks (NARR001) has the identical omission
+            # shape, found while root-causing the same
+            # test_available_stages_cover_every_gate_and_tool failure --
+            # out of the ticket's four NAMED gates but the same fix, same
+            # symbol, same commit; not a separate scope.
+            "narrative_blocks",
         }
     ),
     # frob:ticket T-0688
