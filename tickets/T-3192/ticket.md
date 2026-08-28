@@ -53,7 +53,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 392123b732bbd94f405ebfe11522dad06e7bdeb7
 ---
 STRUCTURAL. The ubuntu-latest job hangs and produces NO failure signal. The
 owner cancelled run 33135896391 by hand after 54 minutes. This is at least the
