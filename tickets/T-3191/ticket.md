@@ -17,14 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_reap.py
 - src/frob/process/_pid_liveness.py
-- src/frob/check/_python.py
-- frob.toml
-- tests/unit/test_check.py
-- docs/modules/process.md
-- docs/commands/check.md
-- tests/unit/test_process_reap.py
-- tests/unit/test_process_pid_liveness.py
-- tests/unit/test_check_tool_unavailable.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,61 +34,6 @@ scope_changes:
     by the implementer once the policy is chosen
   actor: logan
   at: '2026-08-27'
-- op: add
-  glob: src/frob/check/_python.py
-  reason: 'T-3191: fixing the platform-inverted ty:ignore pair requires wiring multi-platform
-    ty into frob check''s _run_ty and declaring the target set in frob.toml'
-  actor: logan
-  at: '2026-08-27'
-- op: add
-  glob: frob.toml
-  reason: 'T-3191: fixing the platform-inverted ty:ignore pair requires wiring multi-platform
-    ty into frob check''s _run_ty and declaring the target set in frob.toml'
-  actor: logan
-  at: '2026-08-27'
-- op: add
-  glob: tests/unit/test_check.py
-  reason: 'T-3191: fixing the platform-inverted ty:ignore pair requires wiring multi-platform
-    ty into frob check''s _run_ty and declaring the target set in frob.toml'
-  actor: logan
-  at: '2026-08-27'
-- op: add
-  glob: docs/modules/process.md
-  reason: 'T-3191: doc-edge closure for touched public symbols in _reap.py/_pid_liveness.py/_python.py'
-  actor: logan
-  at: '2026-08-27'
-- op: add
-  glob: docs/modules/check.md
-  reason: 'T-3191: doc-edge closure for touched public symbols in _reap.py/_pid_liveness.py/_python.py'
-  actor: logan
-  at: '2026-08-27'
-- op: remove
-  glob: docs/modules/check.md
-  reason: 'T-3191: correct doc path -- check gate docs live at docs/commands/check.md,
-    not docs/modules/check.md'
-  actor: logan
-  at: '2026-08-27'
-- op: add
-  glob: docs/commands/check.md
-  reason: 'T-3191: correct doc path -- check gate docs live at docs/commands/check.md,
-    not docs/modules/check.md'
-  actor: logan
-  at: '2026-08-27'
-- op: add
-  glob: tests/unit/test_process_reap.py
-  reason: 'T-3191: new must-fire/must-stay-quiet unit tests for the sys.platform guards'
-  actor: logan
-  at: '2026-08-27'
-- op: add
-  glob: tests/unit/test_process_pid_liveness.py
-  reason: 'T-3191: new must-fire/must-stay-quiet unit tests for the sys.platform guards'
-  actor: logan
-  at: '2026-08-27'
-- op: add
-  glob: tests/unit/test_check_tool_unavailable.py
-  reason: 'T-3191: SCOPE002 -- _run_ty''s frob:tests target lives here'
-  actor: logan
-  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
