@@ -15,8 +15,7 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/tickets/_land_guards.py
-- src/frob/tickets/_land.py
+- src/frob/tickets/_land_git_ops.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +29,24 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_land.py
   reason: the DirtyMain precondition check and its refusal message
+  actor: logan
+  at: '2026-08-28'
+- op: remove
+  glob: src/frob/tickets/_land_guards.py
+  reason: 'corrected: the "git status unavailable" text and the DirtyMain status read
+    live in _land_git_ops.py; my first two globs were a guess'
+  actor: logan
+  at: '2026-08-28'
+- op: remove
+  glob: src/frob/tickets/_land.py
+  reason: 'corrected: the "git status unavailable" text and the DirtyMain status read
+    live in _land_git_ops.py; my first two globs were a guess'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: 'corrected: the "git status unavailable" text and the DirtyMain status read
+    live in _land_git_ops.py; my first two globs were a guess'
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
