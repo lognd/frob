@@ -530,6 +530,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3178: Refresh add_cmd_evidence kind-gate description in tickets-data-storage.md
 - T-3179: Attribution engine records UNATTRIBUTED for findings with a directly findable cause (2 measured)
 - T-3180: Scope-lease overlap check refuses provably-disjoint globs (literal accepted, wildcard refused)
+- T-3181: Tracked agent scratch file emits a permanent REF001 ERROR in the repo error floor
 - T-3191: Local gate typechecks only the host platform: Windows/macOS ty diagnostics are unreachable before CI
 - T-3195: A done-report recording zero evidence and zero changed files reached main while the work sat unlanded
 
