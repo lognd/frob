@@ -2,7 +2,7 @@
 id: T-3179
 title: Attribution engine records UNATTRIBUTED for findings with a directly findable
   cause (2 measured)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
