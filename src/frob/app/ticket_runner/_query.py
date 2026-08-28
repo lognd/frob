@@ -1538,12 +1538,25 @@ def _render_doable_show_blocked(
 
 
 # frob:ticket T-1492
-def _migrate(root: Path, to: str | None = None) -> None:
+# frob:ticket T-2728
+# frob:tests \
+# tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_flag_calls_migrate_missing_v2  # noqa: E501
+# frob:tests \
+# tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_omitted_keeps_original_behavior  # noqa: E501
+# frob:tests \
+# tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_combines_with_to_v2  # noqa: E501
+def _migrate(root: Path, to: str | None = None, *, fill_gaps: bool = False) -> None:
     """Run `frob ticket migrate`: with `to="v2"`, delegate to
     `migrate_v1_to_v2` (T-1259) to migrate a monofile-mode ledger to
-    per-ticket v2 layout; otherwise keep the original collapse-dir-into-
-    monofile behavior (T-1492 wires the `--to v2` flag onto this
-    dispatch)."""
+    per-ticket v2 layout; with `fill_gaps=True`, delegate to
+    `migrate_missing_v2` (T-2355/T-2728) to write a per-ticket file for
+    any id that exists ONLY in the monofile ledger/archive -- the
+    partial-migration gap `--to v2` leaves open once a repo is already
+    v2-mode (that migrator no-ops the instant ANY v2 ticket file exists,
+    per its own docstring). `to` and `fill_gaps` are independent and may
+    both be requested in the same invocation (v2-migrate first, then fill
+    any remaining gap); passing neither keeps the original collapse-dir-
+    into-monofile behavior (T-1492 wired `--to v2` onto this dispatch)."""
     if to == "v2":
         from frob.tickets._store import migrate_v1_to_v2
 
@@ -1556,6 +1569,21 @@ def _migrate(root: Path, to: str | None = None) -> None:
             _log.info("tickets: already v2-mode (or nothing to migrate)")
         else:
             _log.info("migrated %d ticket(s) to v2 layout", v2_n)
+    if fill_gaps:
+        from frob.tickets._store_migrate import migrate_missing_v2
+
+        gaps_result = migrate_missing_v2(root)
+        if gaps_result.is_err:
+            _log.error(
+                "ticket migrate --fill-gaps failed: %s", gaps_result.danger_err
+            )
+            sys.exit(1)
+        gaps_n = gaps_result.danger_ok
+        if gaps_n == 0:
+            _log.info("tickets: no v2 migration gaps found")
+        else:
+            _log.info("migrated %d ticket(s) to fill v2 migration gap(s)", gaps_n)
+    if to == "v2" or fill_gaps:
         return
     from frob.tickets import migrate
 

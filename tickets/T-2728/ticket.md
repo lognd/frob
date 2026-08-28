@@ -1,7 +1,7 @@
 ---
 id: T-2728
 title: Wire migrate_missing_v2 into the CLI, or delete it
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-20'
@@ -29,6 +29,10 @@ scope_changes:
     existing --to v2 CLI test class'
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag::test_fill_gaps_flag_calls_migrate_missing_v2
+- tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag::test_fill_gaps_omitted_keeps_original_behavior
+- tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag::test_fill_gaps_combines_with_to_v2
 designated_repro_test: null
 threat: null
 component: null

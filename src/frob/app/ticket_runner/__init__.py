@@ -374,7 +374,9 @@ def _ticket_dispatch_table() -> dict:
         # frob:ticket T-1684
         "sweep-async": _sweep_async,
         "reconcile": _reconcile_cmd,
-        "migrate": lambda root, cfg: _migrate(root, to=cfg.ticket_migrate_to),
+        "migrate": lambda root, cfg: _migrate(
+            root, to=cfg.ticket_migrate_to, fill_gaps=cfg.ticket_migrate_fill_gaps
+        ),
         "renumber": _renumber,
         # frob:ticket T-1637
         "promote": _promote,

@@ -163,6 +163,16 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "(migrate_v1_to_v2, T-1259); omit to keep today's "
         "collapse-dir-into-monofile behavior",
     )
+    ticket_migrate_p.add_argument(
+        "--fill-gaps",
+        dest="ticket_migrate_fill_gaps",
+        action="store_true",
+        help="write a per-ticket tickets/T-####/ticket.md for any id that "
+        "exists ONLY in the monofile ledger/archive, closing the "
+        "partial-migration gap --to v2 leaves open once a repo is "
+        "already v2-mode (migrate_missing_v2, T-2355/T-2728); may be "
+        "combined with --to v2 or used on its own",
+    )
     ticket_renumber_p = _add_ticket_renumber_parser(ticket_sub)
     ticket_promote_p = _add_ticket_promote_parser(ticket_sub)
     ticket_land_p = _add_ticket_land_parser(ticket_sub)

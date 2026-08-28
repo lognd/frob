@@ -792,6 +792,14 @@ class AppConfig(BaseModel):
     # the existing `frob ticket migrate` subcommand; None (the default)
     # keeps today's collapse-dir-into-monofile behavior unchanged.
     ticket_migrate_to: str | None = None
+    # frob:ticket T-2728
+    # `frob ticket migrate --fill-gaps` -- wires migrate_missing_v2
+    # (T-2355) onto the existing `frob ticket migrate` subcommand: fills
+    # the partial-migration gap `migrate_v1_to_v2`/`--to v2` leaves open
+    # (a repo already in v2 mode that still carries legacy ids that exist
+    # ONLY in the monofile ledger/archive, never individually migrated).
+    # Independent of `--to`: both may be passed together or separately.
+    ticket_migrate_fill_gaps: bool = False
     # frob:ticket T-0755
     # `frob ticket land <id> --skip-mutation-evidence` -- documented escape
     # hatch: a TEST016 confirmatory-only-evidence finding is logged but does

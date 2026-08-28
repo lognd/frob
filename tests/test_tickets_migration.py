@@ -357,6 +357,109 @@ class TestMigrateCliToV2Flag:
         assert _store_mode(tmp_path) == "single"
 
 
+class TestMigrateCliFillGapsFlag:
+    """T-2728: `frob ticket migrate --fill-gaps` wires onto
+    `migrate_missing_v2` (T-2355) via
+    `AppConfig.ticket_migrate_fill_gaps`/`ticket_runner._migrate` --
+    previously reachable only from tests, never from any CLI surface."""
+
+    def test_fill_gaps_flag_calls_migrate_missing_v2(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_fl\
+        # ag_calls_migrate_missing_v2 kind="unit"
+        import logging
+
+        from frob.app import ticket_runner
+        from frob.app.config import AppConfig
+        from frob.tickets._store import v2_ticket_dir
+
+        _git_init(tmp_path)
+        _seed_v1_fixture(tmp_path)
+        # Cut the repo over to v2-mode for ONE ticket only (T-0001) the
+        # normal way, so the repo already satisfies
+        # `_store_mode(root) == "v2"` and `--to v2` alone would no-op --
+        # the exact partial-migration gap this flag exists to close.
+        already = _done_ticket()
+        assert _migrate_one_v2(
+            tmp_path, already, v2_ticket_dir(tmp_path, "T-0001")
+        ).is_ok
+        assert _store_mode(tmp_path) == "v2"
+
+        cfg = AppConfig(
+            ticket_command="migrate",
+            ticket_path=tmp_path,
+            ticket_migrate_fill_gaps=True,
+        )
+        with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
+            ticket_runner.run(cfg)
+
+        # T-0002 (and the other monofile-only ids) now have a real v2
+        # file; T-0001's own already-migrated file is untouched.
+        assert (v2_ticket_dir(tmp_path, "T-0002") / "ticket.md").is_file()
+        assert "migrated" in "\n".join(
+            r.getMessage() for r in caplog.records if r.name == "frob.app.ticket_runner"
+        )
+
+    def test_fill_gaps_omitted_keeps_original_behavior(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_om\
+        # itted_keeps_original_behavior kind="unit"
+        """Must-NOT-regress control: omitting `--fill-gaps` (the default,
+        `False`) never calls `migrate_missing_v2` -- a v2-mode repo with a
+        monofile-only ticket keeps that ticket UNMIGRATED, exactly as
+        before this flag existed."""
+        import logging
+
+        from frob.app import ticket_runner
+        from frob.app.config import AppConfig
+        from frob.tickets._store import v2_ticket_dir
+
+        _git_init(tmp_path)
+        _seed_v1_fixture(tmp_path)
+        already = _done_ticket()
+        assert _migrate_one_v2(
+            tmp_path, already, v2_ticket_dir(tmp_path, "T-0001")
+        ).is_ok
+        assert _store_mode(tmp_path) == "v2"
+
+        cfg = AppConfig(ticket_command="migrate", ticket_path=tmp_path)
+        with caplog.at_level(logging.INFO, logger="frob.app.ticket_runner"):
+            ticket_runner.run(cfg)
+
+        assert not (v2_ticket_dir(tmp_path, "T-0002") / "ticket.md").is_file()
+
+    def test_fill_gaps_combines_with_to_v2(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_co\
+        # mbines_with_to_v2 kind="unit"
+        """`--to v2 --fill-gaps` together on a still-v1-mode repo: `--to
+        v2` migrates everything in one pass, so `--fill-gaps` then finds
+        nothing left to do (0) -- both flags are safe to pass at once."""
+        from frob.app import ticket_runner
+        from frob.app.config import AppConfig
+        from frob.tickets._store import v2_ticket_dir
+
+        _git_init(tmp_path)
+        _seed_v1_fixture(tmp_path)
+        assert _store_mode(tmp_path) == "single"
+
+        cfg = AppConfig(
+            ticket_command="migrate",
+            ticket_path=tmp_path,
+            ticket_migrate_to="v2",
+            ticket_migrate_fill_gaps=True,
+        )
+        ticket_runner.run(cfg)
+
+        assert _store_mode(tmp_path) == "v2"
+        assert (v2_ticket_dir(tmp_path, "T-0001") / "ticket.md").is_file()
+        assert (v2_ticket_dir(tmp_path, "T-0002") / "ticket.md").is_file()
+
+
 class TestLedgerV1DeprecationGate:
     """LEDGERV1001 (ledger v2 design section 7, deliverable 3): the
     escalation-after-expiry warning naming `frob ticket migrate --to v2`."""

@@ -267,11 +267,12 @@ def migrate_v1_to_v2(root: Path) -> Result[int, TicketError]:
 # function affects is unchanged, only the source file path moved; the doc itself \
 # (docs/modules/tickets-data-storage.md) is under another ticket's LIVE lease (T-2718) \
 # at the time of this extraction, so it cannot be edited here"
-# frob:waive WIRE001 follow_up="T-2728" reason="pre-existing (T-2355): no CLI wiring \
-# for this function anywhere in src/frob/_cli_parsers or src/frob/app -- confirmed by \
-# direct search, only reachable from tests today. T-2695's own extraction (LARGE001 \
-# remainder batch 2) surfaced this as a fresh finding (diff-based novelty heuristic), \
-# not new debt from the move itself"
+# frob:tests \
+# tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_flag_calls_migrate_missing_v2  # noqa: E501
+# frob:tests \
+# tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_omitted_keeps_original_behavior  # noqa: E501
+# frob:tests \
+# tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_combines_with_to_v2  # noqa: E501
 def migrate_missing_v2(root: Path) -> Result[int, TicketError]:
     """Partial-migration gap `migrate_v1_to_v2` cannot close (T-2355):
     that migrator no-ops entirely (`Ok(0)`) the instant `_store_mode`
