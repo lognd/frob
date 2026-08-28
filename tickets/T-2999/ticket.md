@@ -2,7 +2,7 @@
 id: T-2999
 title: 'Baseline lock files: staleness warning, and a LOUD failure when the producer
   that stamps them stops running'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
