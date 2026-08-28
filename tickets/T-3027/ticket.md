@@ -2,7 +2,7 @@
 id: T-3027
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3011):
   1 new (rule, file) identit(ies), 3 finding(s) (E501)'
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-08-26'
@@ -39,6 +39,18 @@ body_changes:
   at: '2026-08-28'
   old_length: 1244
   new_length: 1553
+- mode: append
+  reason: 'BUG002 front door (T-2393): E501 identity on src/frob/narrative/_cli.py
+    does not reproduce on current main; ruff lint reports no E501 findings and a manual
+    line-length scan confirms every line is within limit. Pre-existing residue, no
+    fix required.'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 1553
+  new_length: 1808
+evidence:
+- cmd:awk '{if(length($0)>88) c++} END{print "long_lines="c+0; exit (c>0)}' src/frob/narrative/_cli.py
+  exit=0 sha256=c6821fa9620d
 designated_repro_test: null
 threat: null
 component: null
@@ -61,3 +73,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
 
 Re-verified on current main (2026-08-28): ran 'frob check --only lint' (ruff) against src/frob/narrative/_cli.py -- no E501 findings. Manual line-length scan confirms every line is <=88 chars (max observed well under the limit). Pre-existing residue the rolling baseline had not recorded; not a live defect.
+
+frob:no-behavior-change reason="E501 identity on src/frob/narrative/_cli.py does not reproduce on current main; ruff lint reports no E501 findings and a manual line-length scan confirms every line is within limit. Pre-existing residue, no fix required."
