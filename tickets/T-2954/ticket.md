@@ -137,7 +137,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 06313333aa7d3c1de5b7c61558221c13238ccbb1
 ---
 T-2946 triage of TICK004 found T-0450 living under tickets/archive/T-0450/
 (state: queued, priority: medium, created 2026-07-20 -- 37 days old) with no
