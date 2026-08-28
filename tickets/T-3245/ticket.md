@@ -20,6 +20,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: record the existing-but-ineffective dedup guard found while filing; redirects
+    the investigation from build-a-guard to why-the-guard-missed
+  actor: logan
+  at: '2026-08-28'
+  old_length: 3318
+  new_length: 4342
 designated_repro_test: null
 threat: null
 component: null
@@ -89,3 +97,24 @@ ACCEPTANCE
   suppressing them would be a regression.
 - A stated count of how often the T-3222 re-verify goes unmeasurable in recent
   sweeps, filed separately rather than fixed here.
+
+
+STRONG LEAD, found while filing this ticket -- start here.
+
+A duplicate-disposal guard ALREADY EXISTS and did not stop this:
+
+    src/frob/app/ticket_runner/_rapid_sweep.py:2056
+        def _dispose_to_existing_duplicate_or_none(...)
+    src/frob/app/ticket_runner/_rapid_sweep.py:2463
+        return _dispose_to_existing_duplicate_or_none(...)
+
+So this is NOT a missing guard, it is an INEFFECTIVE one. That changes the
+question from "what should we build" to "why did the existing check not see the
+sibling ticket". Read that function and its call site before anything else, and
+determine what it compares and against which view of the ledger. A 2-second gap
+between the two filings is consistent with the guard reading a ledger snapshot
+taken before the sibling's write became visible.
+
+Do not add a second deduplication layer on top of a first one that does not
+work -- two guards for one rule is the desync bug this repo already knows well.
+Fix the existing one, or state with evidence why it cannot cover this case.
