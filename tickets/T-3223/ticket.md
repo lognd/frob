@@ -1,7 +1,7 @@
 ---
 id: T-3223
 title: 'DOC006: dead path pointers in tickets/T-2962/ticket.md'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -19,6 +19,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:pytest tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
+  exit=0 sha256=9a0e857fdeb7
 designated_repro_test: null
 threat: null
 component: null

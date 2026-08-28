@@ -47,10 +47,12 @@ _scan_platform_guards, _is_platform_string_read,
 _is_platform_string_guard_test, _is_degrade_body,
 _scan_platform_string_guards, _scan_bare_restricted_imports, and the
 three _platform001_*_violation builders) into their own module
+<!-- frob:waive DOC006 reason="illustrative target path for the split this ticket describes -- the file does not exist until this ticket lands" -->
 (e.g. `src/frob/gates/_platform_guards.py`), imported by
 `_walk_lint.py::walk_lint_gate` the same way `walk_lint_gate` is
 imported by `frob/gates/__init__.py` today. Re-home the corresponding
 tests out of `tests/test_walk_lint_gate.py` into a new
+<!-- frob:waive DOC006 reason="illustrative target path for the split this ticket describes -- the file does not exist until this ticket lands" -->
 `tests/test_platform_guards_gate.py`. Update every `frob:doc`/
 `frob:tests` directive that currently points at `_walk_lint.py` for a
 PLATFORM001 symbol.
