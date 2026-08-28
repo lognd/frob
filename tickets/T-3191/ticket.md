@@ -14,10 +14,26 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/process/_reap.py
+- src/frob/process/_pid_liveness.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/process/_reap.py
+  reason: the two platform-inverted sites; the multi-platform runner scope is added
+    by the implementer once the policy is chosen
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/process/_pid_liveness.py
+  reason: the two platform-inverted sites; the multi-platform runner scope is added
+    by the implementer once the policy is chosen
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
