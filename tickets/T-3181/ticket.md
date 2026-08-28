@@ -2,7 +2,7 @@
 id: T-3181
 title: Tracked agent scratch file emits a permanent REF001 ERROR in the repo error
   floor
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
