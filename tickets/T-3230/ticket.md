@@ -75,7 +75,11 @@ scope_changes:
     variant'
   actor: logan
   at: '2026-08-28'
-designated_repro_test: null
+evidence:
+- tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure::test_unmeasurable_worktree_signal_is_never_requeued
+- tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure::test_measured_signal_still_requeues_normally
+- tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees::test_unmeasurable_worktree_list_refuses_not_allows
+designated_repro_test: tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure::test_unmeasurable_worktree_signal_is_never_requeued
 threat: null
 component: null
 anchor: false
