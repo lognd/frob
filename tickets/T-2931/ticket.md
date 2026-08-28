@@ -19,6 +19,7 @@ scope:
 - src/frob/gates/_wire.py
 - tests/unit/test_wire001_atexit_register.py
 - tickets/T-draft-56527a0d/ticket.md
+- src/frob/tickets/_unlanded.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,16 @@ scope_changes:
     own ledger file
   actor: logan
   at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_unlanded.py
+  reason: must re-point the frob:waive WIRE001 follow_up citation off T-2931 onto
+    its successor before close (LiveTrackerCited)
+  actor: logan
+  at: '2026-08-28'
+evidence:
+- tests/unit/test_wire001_atexit_register.py::TestWire001AtexitRegister::test_function_registered_via_atexit_is_not_flagged
+- tests/unit/test_wire001_atexit_register.py::TestWire001AtexitRegister::test_function_with_no_caller_anywhere_still_flagged_positive_control
+- tests/unit/test_wire001_atexit_register.py::TestWire001AtexitRegister::test_class_registered_via_atexit_still_flagged_anchor_control
 designated_repro_test: null
 threat: null
 component: null
