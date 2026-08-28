@@ -21,6 +21,7 @@ scope:
 - tests/unit/gates/test_deprecated_baseline.py
 - tests/unit/gates/test_waive.py
 - docs/design/registry/check-coverage.yaml
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +65,11 @@ scope_changes:
     lock; WAIVE011 wired into the existing WAIVE family for the ratchet lock (no other
     existing gate owns either mechanism cleanly) -- both reuse T-2999 _lock_producer.producer_status,
     matching TEST012s precedent
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/gates.md
+  reason: DEPR006/WAIVE011 doc anchors
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
