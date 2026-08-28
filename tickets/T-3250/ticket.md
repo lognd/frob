@@ -44,7 +44,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 52522bafde91b5d920aba5bb3dc2fcc89a190c5a
 ---
 MEASURED from CI run 33169097371, job build (macos-latest) 98841565692,
 2026-08-28. This falsifies a premise T-3192 wrote down and relied on.
