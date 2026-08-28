@@ -269,8 +269,9 @@ def _scan_file_for_rule_literals(
 # frob:waive AFFECT001 reason="T-3003: internal-only Windows portability fix \
 # (relative_to().as_posix() instead of str(relative_to())) -- the doc describes \
 # scan_emitted_rule_ids's contract/purpose, not its path-separator formatting; \
-# docs/modules/gates.md#gaterule001-t-2448 is unaffected and its own lease is held by \
-# T-2993 (a concurrent, unrelated ticket)"
+# docs/modules/gates.md#gaterule001-t-2448 is unaffected by this change. Permanent \
+# exemption: nothing about that doc anchor's own content ever depended on the lease \
+# T-2993 (now done) briefly held over it"
 # frob:doc docs/modules/gates.md#gaterule001-t-2448
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_missing_scanned_base_directory_is_skipped_not_an_error  # noqa: E501
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_unresolved_const_ref_is_left_out  # noqa: E501

@@ -1,7 +1,7 @@
 ---
 id: T-3225
 title: 'WAIVE006: AFFECT001 waiver on _rule_id_scan.py bound to closed ticket T-2993'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_errors_on_real_repo
 designated_repro_test: null
 threat: null
 component: null

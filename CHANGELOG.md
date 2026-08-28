@@ -558,6 +558,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3222: Post-land sweep files findings that are 90% stale: 27 of 30 identities across two samples no longer reproduce
 - T-3223: DOC006: dead path pointers in tickets/T-2962/ticket.md
 - T-3224: REG005/REG008 findings on docs/design/registry/check-coverage.yaml
+- T-3225: WAIVE006: AFFECT001 waiver on _rule_id_scan.py bound to closed ticket T-2993
 
 ## [0.530.0] - unreleased
 
