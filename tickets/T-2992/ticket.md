@@ -1,7 +1,7 @@
 ---
 id: T-2992
 title: capture and triage the real test failures the ubuntu CI hang was hiding
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-08-26'
