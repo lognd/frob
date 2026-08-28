@@ -23,6 +23,19 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 waiver: macOS-only defect cannot reproduce on this Linux host'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 2849
+  new_length: 3363
+evidence:
+- tests/unit/test_ticket_new_body_file_pipe_t2021.py::TestBodyFileFifoSurvivesFullNew::test_pipe_body_is_not_silently_emptied
+- tests/unit/test_ticket_new_body_file_pipe_t2021.py::TestDoubleReadDrainsAPipe::test_second_read_of_a_drained_pipe_is_empty
+- tests/unit/test_ticket_new_body_file_pipe_t2021.py::TestEmptyBodyFileRefusedLoudly::test_empty_regular_file_refused
+- tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_without_serial_pools_worker_is_unattributed
+- tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_with_serial_pools_worker_is_majority_attributed
 designated_repro_test: null
 threat: null
 component: null
@@ -75,3 +88,5 @@ a portability defect) are noted here for completeness but are lowest
 priority: CI-environment artifacts, not macOS-platform defects, and
 should be triaged first for "does this fail on Linux CI too" before
 assuming otherwise.
+
+frob:waive BUG002 reason="the designated repro test passes on Linux both before and after this fix because /proc/self/fd exists on Linux -- the defect (macOS lacks /proc entirely) is platform-specific and this Linux CI/dev host cannot construct a failing-then-passing repro for it; the fix (switch to the portable /dev/fd path) is verified by direct reasoning about macOS filesystem layout plus the fact the test still exercises the identical non-seekable-fd double-read shape on Linux via the same /dev/fd path"
