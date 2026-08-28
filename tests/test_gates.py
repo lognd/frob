@@ -7809,6 +7809,7 @@ class TestInvariantLoad:
 # frob:ticket T-0549
 # frob:ticket T-1763
 # frob:ticket T-2438
+# frob:ticket T-2999
 class TestTestGate:
     def test_test001_public_symbol_no_unit_edge(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::test_gate
@@ -9544,6 +9545,83 @@ class TestTestGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
         assert not any(v.rule == "TEST012" for v in violations)
+
+    # frob:ticket T-2999
+    def test_test012_abandoned_producer_fires_error(
+        self, tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    ) -> None:
+        """MUST-FIRE: a coverage lock stamped once, then real git commits
+        touch its own code_glob with no re-stamp and no pin -- the exact
+        shape T-2999 measured on this repo's own frob-coverage.lock.json
+        (816 real commits since last stamp, at time of writing)."""
+        # frob:tests src/frob/gates/__init__.py::_test012_producer_abandoned
+        import subprocess
+
+        from frob.gates import _test012_producer_abandoned
+
+        monkeypatch.setattr(
+            "frob.gates._lock_producer.ABANDONED_CODE_COMMIT_THRESHOLD", 2
+        )
+
+        def git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-C", str(tmp_path), *args], check=True, capture_output=True
+            )
+
+        git("init", "-q")
+        git("config", "user.email", "t@t")
+        git("config", "user.name", "t")
+        (tmp_path / "frob-coverage.lock.json").write_text('{"v": 1}')
+        (tmp_path / "src" / "frob" / "pkg").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "pkg" / "a.py").write_text("x = 1\n")
+        git("add", "-A")
+        git("commit", "-q", "-m", "stamp")
+        for i in range(3):
+            (tmp_path / "src" / "frob" / "pkg" / "a.py").write_text(f"x = {i}\n")
+            git("add", "-A")
+            git("commit", "-q", "-m", f"code change {i}")
+        violations = _test012_producer_abandoned(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].severity == Severity.ERROR
+        assert "ABANDONED" in violations[0].message
+
+    # frob:ticket T-2999
+    def test_test012_pinned_producer_stays_quiet(
+        self, tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    ) -> None:
+        """MUST-STAY-QUIET: identical code-churn shape to the must-fire
+        case above, but the lock carries a `pin` -- a deliberate freeze
+        must never fire the ABANDONED-producer error."""
+        # frob:tests src/frob/gates/__init__.py::_test012_producer_abandoned
+        import subprocess
+
+        from frob.gates import _test012_producer_abandoned
+
+        monkeypatch.setattr(
+            "frob.gates._lock_producer.ABANDONED_CODE_COMMIT_THRESHOLD", 2
+        )
+
+        def git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-C", str(tmp_path), *args], check=True, capture_output=True
+            )
+
+        git("init", "-q")
+        git("config", "user.email", "t@t")
+        git("config", "user.name", "t")
+        (tmp_path / "frob-coverage.lock.json").write_text(
+            '{"v": 1, "pin": {"reason": "frozen on purpose", "ticket": "T-1"}}'
+        )
+        (tmp_path / "src" / "frob" / "pkg").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "pkg" / "a.py").write_text("x = 1\n")
+        git("add", "-A")
+        git("commit", "-q", "-m", "stamp")
+        for i in range(3):
+            (tmp_path / "src" / "frob" / "pkg" / "a.py").write_text(f"x = {i}\n")
+            git("add", "-A")
+            git("commit", "-q", "-m", f"code change {i}")
+        violations = _test012_producer_abandoned(tmp_path)
+        assert violations == ()
 
     def test_ci_workflow_self_gate_does_not_swallow_errors(self) -> None:
         """T-1265 (CHK-THEME-GITIGNORED-TRUST successor): the CI self-gate

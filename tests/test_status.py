@@ -153,6 +153,7 @@ class TestFindingsMovementModel:
         assert movement.gates_covered == ()
 
 
+# frob:ticket T-2999
 class TestBuildStatusReportIntegration:
     """A thin integration check against a real (empty) worktree -- proves
     the assembly wiring itself (baseline load -> verify status -> ticket
@@ -172,6 +173,105 @@ class TestBuildStatusReportIntegration:
         report = build_status_report(tmp_path, only=[], include_tickets=False)
         assert report.findings.measured is False
         assert report.tickets_open is None
+
+    # frob:tests tests/test_status.py::TestBuildStatusReportIntegration.test_baseline_locks_section_is_always_populated kind="unit"  # noqa: E501
+    def test_baseline_locks_section_is_always_populated(self, tmp_path: Path) -> None:
+        """T-2999: the baseline-locks section has no opt-out flag (unlike
+        ticket flow) -- it is always present on `build_status_report`'s
+        output, one entry per `frob.gates._lock_producer.KNOWN_LOCKS`,
+        even against a fresh repo with none of the three locks committed
+        (every entry reads UNMEASURED, not silently absent)."""
+        import subprocess
+
+        from frob.app.status_runner import build_status_report
+        from frob.gates._lock_producer import KNOWN_LOCKS
+
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+        report = build_status_report(tmp_path, only=[], include_tickets=False)
+        assert len(report.baseline_locks) == len(KNOWN_LOCKS)
+        assert {lock.verdict for lock in report.baseline_locks} == {"UNMEASURED"}
+
+    # frob:tests tests/test_status.py::TestBuildStatusReportIntegration.test_print_status_human_renders_every_baseline_lock_verdict kind="unit"  # noqa: E501
+    def test_print_status_human_renders_every_baseline_lock_verdict(self) -> None:
+        """T-2999: `_print_status_human`'s baseline-locks branch renders a
+        distinct, verdict-specific line for ABANDONED/PINNED/UNMEASURED/
+        FRESH -- one fixture status per verdict, asserting the rendered
+        text actually differs (kills the `compare Eq swapped` mutants a
+        pure-model test cannot reach)."""
+        import io
+
+        from frob.app.status_runner import (
+            FindingsMovement,
+            StatusReport,
+            _print_status_human,
+        )
+        from frob.gates._lock_producer import LockPin, LockProducerStatus
+        from frob.render import Renderer
+
+        locks = (
+            LockProducerStatus(
+                name="abandoned-one",
+                path_rel="a.lock.json",
+                exists=True,
+                last_stamp_commit="abc",
+                last_stamp_date="2020-01-01",
+                commits_since=100,
+                code_commits_since=99,
+                pin=None,
+                verdict="ABANDONED",
+            ),
+            LockProducerStatus(
+                name="pinned-one",
+                path_rel="b.lock.json",
+                exists=True,
+                last_stamp_commit="abc",
+                last_stamp_date="2020-01-01",
+                commits_since=100,
+                code_commits_since=99,
+                pin=LockPin(reason="frozen on purpose"),
+                verdict="PINNED",
+            ),
+            LockProducerStatus(
+                name="unmeasured-one",
+                path_rel="c.lock.json",
+                exists=False,
+                last_stamp_commit=None,
+                last_stamp_date=None,
+                commits_since=None,
+                code_commits_since=None,
+                pin=None,
+                verdict="UNMEASURED",
+            ),
+            LockProducerStatus(
+                name="fresh-one",
+                path_rel="d.lock.json",
+                exists=True,
+                last_stamp_commit="abc",
+                last_stamp_date="2020-01-01",
+                commits_since=1,
+                code_commits_since=1,
+                pin=None,
+                verdict="FRESH",
+            ),
+        )
+        report = StatusReport(
+            findings=FindingsMovement(measured=False, note="x"),
+            verify_watermark_commit=None,
+            verify_commits_since_watermark=None,
+            verify_quarantine_raised=None,
+            tickets_open=None,
+            tickets_landed_today=None,
+            trailing_net_rate=None,
+            baseline_locks=locks,
+        )
+        buf = io.StringIO()
+        r = Renderer.for_stream(buf, color_flag="never", no_color_flag=True)
+        _print_status_human(r, report)
+        text = buf.getvalue()
+        assert "ABANDONED -- 99 commit(s)" in text
+        assert "PINNED -- frozen on purpose" in text
+        assert "UNMEASURED -- no committed lock" in text
+        assert "fresh (1 commit(s) since last stamp)" in text
 
     # frob:tests tests/test_status.py::TestBuildStatusReportIntegration.test_stamped_baseline_with_no_tree_change_is_a_real_zero kind="unit"  # noqa: E501
     def test_stamped_baseline_with_no_tree_change_is_a_real_zero(

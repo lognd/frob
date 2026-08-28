@@ -452,6 +452,18 @@ never a silent omission or a fabricated zero. `--no-tickets` is a
 deprecated no-op kept only so a pre-T-2950 script/CI invocation that
 already passes it does not break.
 
+**Baseline-locks section (T-2999)**: always populated (no opt-out flag,
+unlike ticket movement -- three `git log`/`git rev-list` calls, well
+under a second) -- one line per `frob.gates._lock_producer.KNOWN_LOCKS`
+entry (`frob-coverage.lock.json`, `frob-ratchet.lock.json`,
+`frob-deprecated-baseline.lock.json`), showing each lock's measured
+producer verdict: `FRESH`, `PINNED` (with its stated reason),
+`ABANDONED` (unpinned, with the code churn since last stamp that makes
+the case), or `UNMEASURED` (no committed lock, or git history for it
+could not be read). See docs/modules/gates.md#baseline-lock-producer-staleness-t-2999
+for the full mechanism, including the LOUD `TEST012` gate finding a
+genuinely `ABANDONED` coverage-lock producer also fires.
+
 ## frob quality
 
 `frob quality {check,test,dup,arch,bind,cycle,mutate,perf} ...` is a

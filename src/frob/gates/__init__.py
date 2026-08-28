@@ -4930,11 +4930,25 @@ def _test012_lock(snapshot: GraphSnapshot, data: CoverageData) -> tuple[Violatio
     alone. The severity is intentionally revisited once the lock is
     established as standard practice -- see T-0545's Done report for the
     promotion-to-ERROR follow-up filed for that.
+
+    T-2999: a THIRD, ERROR-severity finding joins the two WARN ones above
+    -- unlike missing/drifted (both about the lock's CONTENT), this one
+    is about its PRODUCER: `frob.gates._lock_producer.producer_status`
+    measured against the real git history, ERROR whenever the verdict is
+    `ABANDONED` (unpinned, and the coverage-relevant code has moved on
+    without a re-stamp). Content drift alone cannot catch this -- a lock
+    nobody has touched in months can still happen to match a fresh
+    coverage.xml by coincidence (or simply never get compared, if no
+    fresh xml exists locally) while its producer has genuinely stopped
+    running; this is the LOUD failure T-2999 asked for, deliberately
+    separate from the WARN content checks so a genuinely pinned lock
+    (its own dedicated `pin` field) never trips it.
     """
     root = Path(snapshot.root)
+    producer_findings = _test012_producer_abandoned(root)
     lock = load_coverage_lock(root)
     if lock is None:
-        return (
+        return producer_findings + (
             Violation(
                 rule="TEST012",
                 severity=Severity.WARN,
@@ -4950,9 +4964,9 @@ def _test012_lock(snapshot: GraphSnapshot, data: CoverageData) -> tuple[Violatio
         )
     drifted = coverage_lock_diff(lock, data)
     if not drifted:
-        return ()
+        return producer_findings
     modules = ", ".join(drifted)
-    return (
+    return producer_findings + (
         Violation(
             rule="TEST012",
             severity=Severity.WARN,
@@ -4963,6 +4977,43 @@ def _test012_lock(snapshot: GraphSnapshot, data: CoverageData) -> tuple[Violatio
                 f"coverage.xml for: {modules} -- the committed coverage claim "
                 "may not be reproducible from a clean run; re-stamp "
                 "(frob check --stamp-coverage) if this run is the accurate one"
+            ),
+        ),
+    )
+
+
+# frob:ticket T-2999
+# frob:tests \
+# tests/test_gates.py::TestTestGate.test_test012_abandoned_producer_fires_error
+# frob:tests tests/test_gates.py::TestTestGate.test_test012_pinned_producer_stays_quiet
+def _test012_producer_abandoned(root: Path) -> tuple[Violation, ...]:
+    """TEST012 (error): `frob.gates._lock_producer.producer_status` for
+    the `coverage` lock reads `ABANDONED` -- unpinned, and
+    `code_commits_since` has crossed `ABANDONED_CODE_COMMIT_THRESHOLD`
+    with no re-stamp. See `_test012_lock`'s own docstring for why this
+    is a separate, ERROR-severity check from the WARN content-drift
+    checks it accompanies."""
+    from frob.gates._lock_producer import KNOWN_LOCKS, producer_status
+
+    coverage_lock = next(lock for lock in KNOWN_LOCKS if lock.name == "coverage")
+    status = producer_status(root, coverage_lock)
+    if status.verdict != "ABANDONED":
+        return ()
+    return (
+        Violation(
+            rule="TEST012",
+            severity=Severity.ERROR,
+            file=str(_COVERAGE_LOCK_REL),
+            line=0,
+            message=(
+                "TEST012: coverage lock producer looks ABANDONED -- "
+                f"{status.code_commits_since} commit(s) touched "
+                f"{coverage_lock.code_glob} since {_COVERAGE_LOCK_REL} was "
+                f"last stamped ({status.last_stamp_date}) with no re-stamp "
+                "and no pin; run `frob check --stamp-coverage` and commit "
+                "the refreshed lock, or if this IS a deliberate freeze add "
+                'a top-level {"pin": {"reason": "...", "ticket": "T-####"}} '
+                f"to {_COVERAGE_LOCK_REL}"
             ),
         ),
     )

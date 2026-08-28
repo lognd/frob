@@ -60,6 +60,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, ConfigDict
 
 from frob.app.config import AppConfig
+from frob.gates._lock_producer import LockProducerStatus
 from frob.logging import get_logger
 from frob.render import Renderer
 
@@ -129,6 +130,13 @@ class StatusReport(BaseModel):
     tickets_open: int | None
     tickets_landed_today: int | None
     trailing_net_rate: float | None
+    #: T-2999: one entry per `frob.gates._lock_producer.KNOWN_LOCKS`,
+    #: always populated (this section has no opt-out and no expensive
+    #: git-history mining -- three `git log`/`git rev-list` calls,
+    #: unlike the ticket-flow section above) -- so an abandoned baseline
+    #: producer is visible on every `frob status`, not behind a flag a
+    #: reader has to know to pass.
+    baseline_locks: tuple[LockProducerStatus, ...] = ()
 
 
 # frob:doc docs/modules/cli.md#frob-status-t-2911
@@ -276,6 +284,18 @@ def _flow_section(root: Path) -> tuple[int | None, int | None, float | None]:
     return report.open_count, landed_today, report.trailing_net_rate
 
 
+# frob:ticket T-2999
+# frob:tests tests/test_status.py::TestBuildStatusReportIntegration.test_baseline_locks_section_is_always_populated kind="unit"  # noqa: E501
+def _baseline_locks_section(root: Path) -> tuple[LockProducerStatus, ...]:
+    """`frob.gates._lock_producer.all_producer_statuses` for `root` --
+    three `git log`/`git rev-list` calls, cheap enough (T-2999 measured:
+    well under a second) to run unconditionally on every `frob status`,
+    unlike the opt-in ticket-flow section above."""
+    from frob.gates._lock_producer import all_producer_statuses
+
+    return all_producer_statuses(root)
+
+
 # frob:doc docs/modules/cli.md#frob-status-t-2911
 # frob:tests tests/test_status.py::TestBuildStatusReportIntegration.test_no_baseline_reports_unmeasured_findings kind="unit"  # noqa: E501
 # frob:ticket T-2911
@@ -302,6 +322,7 @@ def build_status_report(
         tickets_open=open_count,
         tickets_landed_today=landed_today,
         trailing_net_rate=trailing_net_rate,
+        baseline_locks=_baseline_locks_section(root),
     )
 
 
@@ -346,6 +367,26 @@ def _print_status_human(r: Renderer, report: StatusReport) -> None:
         r.line(f"  open: {report.tickets_open}")
         r.line(f"  landed today: {report.tickets_landed_today}")
         r.line(f"  trailing net rate: {report.trailing_net_rate:+.1f}/day")
+    r.line("")
+    r.line("== baseline locks ==")
+    for lock in report.baseline_locks:
+        if lock.verdict == "ABANDONED":
+            tail = (
+                f"ABANDONED -- {lock.code_commits_since} commit(s) touched "
+                "its own code since last stamp with no pin; producer "
+                "looks stopped"
+            )
+        elif lock.verdict == "PINNED":
+            reason = lock.pin.reason if lock.pin is not None else "(no reason)"
+            tail = f"PINNED -- {reason}"
+        elif lock.verdict == "UNMEASURED":
+            tail = (
+                "UNMEASURED -- no committed lock, or its git "
+                "history could not be read"
+            )
+        else:
+            tail = f"fresh ({lock.code_commits_since} commit(s) since last stamp)"
+        r.line(f"  {lock.name} ({lock.path_rel}): {tail}")
 
 
 # frob:ticket T-2911

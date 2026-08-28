@@ -3470,6 +3470,38 @@ unreadable file, an encoding error), `GATERULE001` reports
 `Severity.UNRESOLVED` naming exactly what could not be scanned, instead
 of letting a silent "0 unregistered" read as a false-clean pass.
 
+## Baseline lock producer staleness (T-2999)
+
+`frob.gates._lock_producer` distinguishes a DELIBERATELY frozen committed
+baseline lock (`frob-coverage.lock.json`, `frob-ratchet.lock.json`,
+`frob-deprecated-baseline.lock.json`) from one whose stamping producer has
+quietly ABANDONED it -- two states that raw file age alone cannot tell
+apart. `producer_status(root, lock)` measures, against the real git
+history, how many commits have touched the lock's own `code_glob` since
+its last stamp (`code_commits_since`); at or above
+`ABANDONED_CODE_COMMIT_THRESHOLD` with no pin, the verdict is `ABANDONED`.
+A lock MAY carry a top-level `{"pin": {"reason": "...", "ticket": "T-####"}}`
+object -- a positive declaration that staleness is deliberate, which
+always wins over the commit-count signal (`PINNED`).
+
+`all_producer_statuses(root)` runs this for every lock in `KNOWN_LOCKS`
+and is what `frob status`'s new "baseline locks" section (see
+docs/modules/cli.md#frob-status-t-2911) and `frob check`'s TEST012 gate
+both read. TEST012's third finding (`_test012_producer_abandoned`,
+`frob.gates.__init__`) escalates an `ABANDONED` coverage-lock producer to
+ERROR severity, deliberately separate from its two existing WARN
+content-drift checks -- a lock's CONTENT can match a fresh run by
+coincidence even while its PRODUCER has stopped running, so this is a
+distinct signal, not a severity bump on the same one.
+
+<!-- frob:describes src/frob/gates/_lock_producer.py::ABANDONED_CODE_COMMIT_THRESHOLD -->
+<!-- frob:describes src/frob/gates/_lock_producer.py::LockPin -->
+<!-- frob:describes src/frob/gates/_lock_producer.py::TrackedLock -->
+<!-- frob:describes src/frob/gates/_lock_producer.py::KNOWN_LOCKS -->
+<!-- frob:describes src/frob/gates/_lock_producer.py::LockProducerStatus -->
+<!-- frob:describes src/frob/gates/_lock_producer.py::producer_status -->
+<!-- frob:describes src/frob/gates/_lock_producer.py::all_producer_statuses -->
+
 ## Public API
 
 <!-- frob:describes src/frob/gates/_suppress.py::SuppressionDialect -->

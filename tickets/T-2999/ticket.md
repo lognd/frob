@@ -2,7 +2,7 @@
 id: T-2999
 title: 'Baseline lock files: staleness warning, and a LOUD failure when the producer
   that stamps them stops running'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -93,6 +93,13 @@ scope_changes:
     (_test012_producer_abandoned)
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/unit/gates/test_lock_producer.py::TestProducerStatusVerdicts::test_must_fire_abandoned_when_code_moved_and_no_pin
+- tests/unit/gates/test_lock_producer.py::TestProducerStatusVerdicts::test_must_stay_quiet_when_pinned
+- tests/test_gates.py::TestTestGate::test_test012_abandoned_producer_fires_error
+- tests/test_gates.py::TestTestGate::test_test012_pinned_producer_stays_quiet
+- tests/test_status.py::TestBuildStatusReportIntegration::test_baseline_locks_section_is_always_populated
+- tests/test_status.py::TestBuildStatusReportIntegration::test_print_status_human_renders_every_baseline_lock_verdict
 designated_repro_test: null
 threat: null
 component: null
