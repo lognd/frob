@@ -472,6 +472,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3109: refactor split/move: import-rewrite drops indentation on a nested (function-local/block) import
 - T-3110: frob refactor verbs have no realistic corpus test: three independent defects shipped and were found by one real extraction
 - T-3111: Move land's native rebuild after the landing commit, out of the dirty-root window
+- T-3112: post-land sweep regression from an unattributed source (sweep spawned by T-3107): 20 new (rule, file) identit(ies), 38 finding(s) (AFFECT001, COV002, I001, SUPPRESS001)
 - T-3113: frob ticket block is add-only: a mistaken blocked_by edge cannot be removed without hand-editing the ledger
 - T-3114: Add resync_root_to_published_tip primitive for the post-CAS root resync
 - T-3115: WIRE003 reports the working 'frob refactor' verb as unresolvable; the verb is also missing from frob --help

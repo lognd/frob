@@ -2,7 +2,7 @@
 id: T-3112
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3107):
   20 new (rule, file) identit(ies), 38 finding(s) (AFFECT001, COV002, I001, SUPPRESS001)'
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-08-27'
@@ -45,6 +45,18 @@ triage_changes:
     nothing to fix, no code surface changed'
   actor: logan
   at: '2026-08-27'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure re-measurement close: all 20 (rule,file)
+    identities checked individually against a fresh frob check run and confirmed not
+    to reproduce -- stale/transient residue, no code touched, nothing for BUG002 to
+    reproduce'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 1938
+  new_length: 2189
+evidence:
+- cmd:python3 /tmp/verify_t3112.py exit=0 sha256=6cfa164dbb1b
 designated_repro_test: null
 threat: null
 component: null
@@ -80,3 +92,5 @@ New (rule, file) identit(ies) filed here:
 - unresolved-attribute  tests/unit/test_main_entry.py
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:no-behavior-change reason="pure re-measurement close: all 20 (rule,file) identities checked individually against a fresh frob check run and confirmed not to reproduce -- stale/transient residue, no code touched, nothing for BUG002 to reproduce"
