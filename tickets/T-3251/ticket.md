@@ -2,7 +2,7 @@
 id: T-3251
 title: 'Release can be dispatched from a red main: nothing gates the PyPI upload on
   green CI for the released commit'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
