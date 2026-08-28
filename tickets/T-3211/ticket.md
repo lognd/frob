@@ -1,7 +1,7 @@
 ---
 id: T-3211
 title: Burn down platform-unsafe code surfaced by multi-platform ty (T-3191)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
