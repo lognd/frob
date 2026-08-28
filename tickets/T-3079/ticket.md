@@ -69,7 +69,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b251dffa0392ecda1b857ced1afd96ad9a9653c2
 findings:
 - - LARGE001
   - strata-core/src/graph/vmodel.rs
