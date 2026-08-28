@@ -55,7 +55,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 373e04b30d01227e349d02c105e18efb95cda843
 ---
 T-3191 wired frob.check._python._run_ty to run ty check once per
 platform in frob.toml's [ty] target_platforms (default
