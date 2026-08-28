@@ -19,9 +19,9 @@ scope:
 - src/frob/gates/_debt_deprecated.py
 - src/frob/gates/_waive.py
 - tests/unit/gates/test_deprecated_baseline.py
-- tests/unit/gates/test_waive.py
 - docs/design/registry/check-coverage.yaml
 - docs/modules/gates.md
+- tests/test_waive_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -70,6 +70,16 @@ scope_changes:
 - op: add
   glob: docs/modules/gates.md
   reason: DEPR006/WAIVE011 doc anchors
+  actor: logan
+  at: '2026-08-28'
+- op: remove
+  glob: tests/unit/gates/test_waive.py
+  reason: WAIVE009/010 tests actually live in tests/test_waive_gate.py, not tests/unit/gates/test_waive.py
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/test_waive_gate.py
+  reason: WAIVE009/010 tests actually live in tests/test_waive_gate.py, not tests/unit/gates/test_waive.py
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
