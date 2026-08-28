@@ -14,10 +14,52 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_lock_producer.py
+- src/frob/app/status_runner.py
+- tests/unit/gates/test_lock_producer.py
+- src/frob/gates/_coverage.py
+- docs/modules/status.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_lock_producer.py
+  reason: shared producer-staleness helper + frob status wiring + one concrete LOUD-failure
+    wire-up (coverage lock, the best-established of the three) with must-fire/must-stay-quiet
+    coverage
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/app/status_runner.py
+  reason: shared producer-staleness helper + frob status wiring + one concrete LOUD-failure
+    wire-up (coverage lock, the best-established of the three) with must-fire/must-stay-quiet
+    coverage
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/gates/test_lock_producer.py
+  reason: shared producer-staleness helper + frob status wiring + one concrete LOUD-failure
+    wire-up (coverage lock, the best-established of the three) with must-fire/must-stay-quiet
+    coverage
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_coverage.py
+  reason: shared producer-staleness helper + frob status wiring + one concrete LOUD-failure
+    wire-up (coverage lock, the best-established of the three) with must-fire/must-stay-quiet
+    coverage
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/status.md
+  reason: shared producer-staleness helper + frob status wiring + one concrete LOUD-failure
+    wire-up (coverage lock, the best-established of the three) with must-fire/must-stay-quiet
+    coverage
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
