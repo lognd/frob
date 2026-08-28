@@ -25,6 +25,8 @@ scope:
 - docs/modules/tickets-merge-driver.md
 - changelog.d/T-2997.md
 - tests/unit/test_rapid_sweep.py
+- tests/unit/test_gitattributes_merge.py
+- tests/unit/test_gitattributes_crlf_normalization.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -97,6 +99,18 @@ scope_changes:
   reason: 'T-2997: record_rapid_debt now writes under .frob/, which the test fixture
     repo must gitignore like a real repo does, or the commit-clean invariant test
     breaks on an untracked .frob/ dir'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_gitattributes_merge.py
+  reason: T-2997 removed rapid-debt.jsonl's merge=union and eol=lf gitattributes pins
+    (file no longer tracked); the tests asserting those pins need updating to match
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_gitattributes_crlf_normalization.py
+  reason: T-2997 removed rapid-debt.jsonl's merge=union and eol=lf gitattributes pins
+    (file no longer tracked); the tests asserting those pins need updating to match
   actor: logan
   at: '2026-08-28'
 body_changes:
