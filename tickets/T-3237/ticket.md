@@ -1,7 +1,7 @@
 ---
 id: T-3237
 title: 'post-land sweep regression from T-2885: 1 new (rule, file) identit(ies) (OPAQUE001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-28'
@@ -15,6 +15,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/test_vet_capability.py
+findings:
+- - OPAQUE001
+  - tests/test_vet_capability.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,9 +28,6 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
-findings:
-- - OPAQUE001
-  - tests/test_vet_capability.py
 ---
 The deferred post-land unscoped sweep (T-1684) for T-2885 at commit 70e20f4c2ce96e213be651aad923b89ba00ca1e8 found 1 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 
@@ -42,3 +42,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - OPAQUE001  tests/test_vet_capability.py  -> attributed to T-2885 (commit 70e20f4c2ce9, already closed/dropped -- filed below) via tests/test_vet_capability.py::TestLeadingCommentDoesNotDefeatDocstringExclusion
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-28: Byte-identical duplicate of T-3236: same rule (OPAQUE001), same file (tests/test_vet_capability.py), same sweep commit (70e20f4c2ce9), same attribution chain, same body text -- verified via frob ticket show on both before starting work. Triaged once: T-3236 waived OPAQUE001 at tests/test_vet_capability.py:219 (fixture docstring-prose false positive) and closed. Nothing left to fix here. (absorbed by T-3236)
