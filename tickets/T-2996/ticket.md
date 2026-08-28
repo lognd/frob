@@ -14,10 +14,42 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/lang/_support.py
+- src/frob/gates/_lang_conformance.py
+- tests/test_lang_support.py
+- tests/test_gates_lang_conformance.py
+- docs/modules/lang.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/lang/_support.py
+  reason: facet registry, LANG003 gate, meta-test coverage for T-2996
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_lang_conformance.py
+  reason: facet registry, LANG003 gate, meta-test coverage for T-2996
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/test_lang_support.py
+  reason: facet registry, LANG003 gate, meta-test coverage for T-2996
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/test_gates_lang_conformance.py
+  reason: facet registry, LANG003 gate, meta-test coverage for T-2996
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/lang.md
+  reason: facet registry, LANG003 gate, meta-test coverage for T-2996
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
