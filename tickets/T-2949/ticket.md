@@ -2,7 +2,7 @@
 id: T-2949
 title: 'frob ticket land --finish: ''already done'' check reads uncommitted working-tree
   state, not main''s HEAD -- can delete a worktree before the real land happens'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
