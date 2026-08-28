@@ -16,10 +16,56 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_ratchet.py
 - src/frob/gates/_deprecated_baseline.py
+- src/frob/gates/_debt_deprecated.py
+- src/frob/gates/_waive.py
+- tests/unit/gates/test_deprecated_baseline.py
+- tests/unit/gates/test_waive.py
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_debt_deprecated.py
+  reason: DEPR006 wired into the existing DEPR family for the deprecated-baseline
+    lock; WAIVE011 wired into the existing WAIVE family for the ratchet lock (no other
+    existing gate owns either mechanism cleanly) -- both reuse T-2999 _lock_producer.producer_status,
+    matching TEST012s precedent
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: DEPR006 wired into the existing DEPR family for the deprecated-baseline
+    lock; WAIVE011 wired into the existing WAIVE family for the ratchet lock (no other
+    existing gate owns either mechanism cleanly) -- both reuse T-2999 _lock_producer.producer_status,
+    matching TEST012s precedent
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/gates/test_deprecated_baseline.py
+  reason: DEPR006 wired into the existing DEPR family for the deprecated-baseline
+    lock; WAIVE011 wired into the existing WAIVE family for the ratchet lock (no other
+    existing gate owns either mechanism cleanly) -- both reuse T-2999 _lock_producer.producer_status,
+    matching TEST012s precedent
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/gates/test_waive.py
+  reason: DEPR006 wired into the existing DEPR family for the deprecated-baseline
+    lock; WAIVE011 wired into the existing WAIVE family for the ratchet lock (no other
+    existing gate owns either mechanism cleanly) -- both reuse T-2999 _lock_producer.producer_status,
+    matching TEST012s precedent
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: DEPR006 wired into the existing DEPR family for the deprecated-baseline
+    lock; WAIVE011 wired into the existing WAIVE family for the ratchet lock (no other
+    existing gate owns either mechanism cleanly) -- both reuse T-2999 _lock_producer.producer_status,
+    matching TEST012s precedent
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
