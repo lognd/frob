@@ -2,7 +2,7 @@
 id: T-2996
 title: Language-support matrix has 5 facets but 13 packages specialize per-language;
   refactor is silently Python-only and invisible to detection
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
