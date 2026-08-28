@@ -1,7 +1,7 @@
 ---
 id: T-3012
 title: Rust symbol resolution does not cover impl-block methods (DRIFT002/frob:tests)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
