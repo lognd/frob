@@ -51,7 +51,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a81ddeec697593cddacb251389ba9823c0f0d91f
 ---
 MEASURED 2026-08-27 while scoping T-3179. The scope-lease overlap check refuses
 a requested glob that CANNOT share any path with the leased glob it names.
