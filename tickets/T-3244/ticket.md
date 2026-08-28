@@ -2,7 +2,7 @@
 id: T-3244
 title: Burn down remaining platform-unsafe test-fixture code surfaced by multi-platform
   ty (T-3211 split)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
