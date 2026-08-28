@@ -22,6 +22,7 @@ scope:
 - docs/modules/cli.md
 - docs/modules/gates.md
 - tests/test_status.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -84,6 +85,12 @@ scope_changes:
   glob: tests/test_status.py
   reason: wired frob status's new baseline-locks section, needs a targeted regression
     test there
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: TEST012 gate extended with the new ERROR-severity abandoned-producer finding
+    (_test012_producer_abandoned)
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
