@@ -2,7 +2,7 @@
 id: T-3041
 title: 13 live-repo self-conformance tests fail (repo currently non-zero on multiple
   gates)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
