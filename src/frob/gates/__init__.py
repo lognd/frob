@@ -294,7 +294,7 @@ from frob.testing._collect import (
     python_collection_failure_detail,
 )
 from frob.testing._models import CollectedTests
-from frob.tickets import Ticket, TicketQueue, TicketState, load_queue
+from frob.tickets import Ticket, TicketError, TicketQueue, TicketState, load_queue
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
     _scope_globs,
@@ -6128,31 +6128,51 @@ def _require(
     return Ok(result.danger_ok)
 
 
+# frob:ticket T-2710
+# frob:tests \
+# tests/test_gates.py::TestRunGatesQueueFailureThreadsRealTicketError.test_duplicate_id_across_active_and_archive_surfaces_as_ticketerror  # noqa: E501
 def _load_graph_queue_lock(
     root: Path,
-) -> Result[tuple[GraphSnapshot, TicketQueue, LockFile], GateError]:
+) -> Result[tuple[GraphSnapshot, TicketQueue, LockFile], GateError | TicketError]:
     """Load the graph snapshot, ticket queue, and lock file -- the first
-    third of `_load_required_state`'s mandatory loads."""
+    third of `_load_required_state`'s mandatory loads.
+
+    T-2710: the ticket-queue step deliberately does NOT go through
+    `_require` (which would collapse `load_queue`'s real `TicketError` --
+    e.g. `DuplicateId`, `MalformedFrontmatter` -- into the generic
+    `GateError.QueueUnavailable` sentinel, the exact information loss
+    T-2684's own body flags as its unfixed remainder). Propagating
+    `load_queue`'s actual `TicketError` here lets `_gates_error_result`
+    name the real failing MODE (which kind of ledger corruption) instead
+    of a single undifferentiated "queue load failed" message -- still
+    short of the exact failing file path (that needs `frob.tickets`
+    storage internals outside this ticket's scope to surface), but no
+    longer forcing a `frob ticket list`/`frob ticket show <id>` round
+    trip just to learn duplicate-id vs. malformed-frontmatter."""
     build = _require(
         build_graph(root, root / _CACHE_REL), "graph build", GateError.GraphUnavailable
     )
     if build.is_err:
         return Err(build.danger_err)
-    queue = _require(load_queue(root), "ticket queue load", GateError.QueueUnavailable)
-    if queue.is_err:
-        return Err(queue.danger_err)
+    queue_result = load_queue(root)
+    if queue_result.is_err:
+        _log.error(
+            "run_gates: ticket queue load failed: %s", queue_result.danger_err
+        )
+        return Err(queue_result.danger_err)
     lock = _require(
         load_lock(root / "frob.lock"), "lock load", GateError.ConfigMalformed
     )
     if lock.is_err:
         return Err(lock.danger_err)
-    return Ok((build.danger_ok, queue.danger_ok, lock.danger_ok))
+    return Ok((build.danger_ok, queue_result.danger_ok, lock.danger_ok))
 
 
 def _load_required_state(
     root: Path,
 ) -> Result[
-    tuple[GraphSnapshot, TicketQueue, LockFile, tuple[Invariant, ...], list], GateError
+    tuple[GraphSnapshot, TicketQueue, LockFile, tuple[Invariant, ...], list],
+    GateError | TicketError,
 ]:
     """Load the gates' mandatory state -- graph, ticket queue, lock,
     invariants, policy -- or the first hard failure."""
@@ -6230,7 +6250,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
     )
 
 
-def _load_inputs(cfg: GateConfig) -> Result[_GateInputs, GateError]:
+def _load_inputs(cfg: GateConfig) -> Result[_GateInputs, GateError | TicketError]:
     """Load every piece of state the gates need, or the first hard failure."""
     root = Path(cfg.root)
     required = _load_required_state(root)
@@ -8004,12 +8024,21 @@ def _maybe_autorebuild_natives(root: Path) -> None:
 # frob:ticket T-0602
 def run_gates(
     cfg: GateConfig, *, use_cache: bool = False
-) -> Result[GateReport, GateError]:
+) -> Result[GateReport, GateError | TicketError]:
     """Public entry point: `_run_gates_bounded` with no process-pool-size
     override (T-1436 -- kept as a thin, signature-stable wrapper so this
     function's own `frob:doc` contract in `docs/modules/gates.md`/
     `docs/modules/serve.md` needs no update just to add an internal-only
-    sizing knob a handful of callers use)."""
+    sizing knob a handful of callers use).
+
+    T-2710: the Err type widened from bare `GateError` to `GateError |
+    TicketError` -- a ticket-queue load failure now returns the REAL
+    `TicketError` (e.g. `DuplicateId`, `MalformedFrontmatter`) instead of
+    the undifferentiated `GateError.QueueUnavailable` sentinel, so
+    `frob.check._python._gates_error_result` can name the actual failing
+    MODE in its diagnostic. Purely additive: every OTHER failure path
+    still returns a plain `GateError` exactly as before, so any caller
+    matching on a specific `GateError` member is unaffected."""
     return _run_gates_bounded(cfg, use_cache=use_cache)
 
 
@@ -8018,7 +8047,7 @@ def run_gates(
 # frob:ticket T-2806
 def _run_gates_bounded(
     cfg: GateConfig, *, use_cache: bool = False, max_process_workers: int | None = None
-) -> Result[GateReport, GateError]:
+) -> Result[GateReport, GateError | TicketError]:
     """Load everything once, then run the selected gates in parallel and
     merge -- `run_gates`'s actual implementation, plus one T-1436 addition:
     `max_process_workers`, private (no external caller contract), lets a

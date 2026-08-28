@@ -20508,6 +20508,38 @@ class TestFfiBoundaryGate:
 
 
 # frob:ticket T-0688
+class TestRunGatesQueueFailureThreadsRealTicketError:
+    """T-2710: `run_gates` used to collapse ANY ticket-queue load failure
+    into the bare `GateError.QueueUnavailable` sentinel -- a reader could
+    not tell a duplicate id from a malformed frontmatter file without a
+    separate `frob ticket list`/`frob ticket show <id>` run. It must now
+    propagate the REAL `TicketError` `load_queue` hit."""
+
+    # frob:tests \
+    # tests/test_gates.py::TestRunGatesQueueFailureThreadsRealTicketError.test_duplicate_id_across_active_and_archive_surfaces_as_ticketerror  # noqa: E501
+    def test_duplicate_id_across_active_and_archive_surfaces_as_ticketerror(
+        self, tmp_path: Path
+    ) -> None:
+        """Must-fire control: the same id present in both v2-mode active
+        and archive storage (T-2678's own DuplicateId incident shape)
+        makes `load_queue` -- and therefore `run_gates` -- fail with the
+        real `TicketError.DuplicateId`, not the generic
+        `GateError.QueueUnavailable` sentinel."""
+        from frob.tickets import TicketError
+        from frob.tickets._store import write_archived_ticket
+
+        _git_init(tmp_path)
+        ticket = _ticket()
+        write_ticket(tmp_path, ticket).danger_ok
+        write_archived_ticket(tmp_path, ticket).danger_ok
+
+        result = run_gates(GateConfig(root=str(tmp_path)))
+
+        assert result.is_err
+        assert result.danger_err == TicketError.DuplicateId
+        assert result.danger_err != GateError.QueueUnavailable
+
+
 class TestErrorsAsValuesAdvisory:
     """T-0688: frob.arch._exceptions.check_errors_as_values -- a PUBLIC
     function/method whose recoverable may-raise set (computed via

@@ -1003,7 +1003,16 @@ def _label_replay(results: list, *, age_s: float) -> list:  # noqa: ANN001
 
 
 # frob:ticket T-2684
+# frob:ticket T-2710
 # frob:enforces CHK-GATE-QUEUE001
+# frob:tests \
+# tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable.test_queue_unavailable_sets_real_code_and_no_stale_path  # noqa: E501
+# frob:tests \
+# tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable.test_other_gate_error_is_a_soft_skip_not_an_error  # noqa: E501
+# frob:tests \
+# tests/unit/test_check.py::TestGatesErrorResultRealTicketError.test_real_ticket_error_names_specific_mode  # noqa: E501
+# frob:tests \
+# tests/unit/test_check.py::TestGatesErrorResultRealTicketError.test_dummy_sentinel_still_a_defensive_fallback  # noqa: E501
 def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
     """The `ToolResult` for a failed `run_gates` call: a hard ERROR if the
     ticket queue itself failed to load, else a soft skip.
@@ -1017,15 +1026,29 @@ def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
     path that exists nowhere on disk sends whoever reads it looking for a
     stale monofile instead of the real ledger corruption (the confirmed
     T-2134 incident this ticket traces: four failed land attempts and a
-    long misdiagnosis). `GateError` (a bare `ErrorSet` value with no
-    payload) carries no path detail to surface here, so `file=None`
-    (rather than a second wrong guess) plus a real `code="QUEUE001"` (so
-    the finding is waivable/searchable by rule id, unlike the empty
-    rule id this used to render with) is the honest fix available at
-    this layer -- naming the ACTUAL failing path would need `GateError`
-    itself to carry one, a separate, larger change this ticket's own
-    scope does not cover."""
-    if err is gate_error_cls.QueueUnavailable:
+    long misdiagnosis). `file=None` (rather than a second wrong guess)
+    plus a real `code="QUEUE001"` (so the finding is waivable/searchable
+    by rule id, unlike the empty rule id this used to render with) was
+    the honest fix available at that layer.
+
+    T-2710: `run_gates` now returns the REAL `TicketError` (e.g.
+    `DuplicateId`, `MalformedFrontmatter`) for a ticket-queue load
+    failure instead of the undifferentiated `GateError.QueueUnavailable`
+    sentinel (`frob.gates._load_graph_queue_lock`'s own docstring has the
+    full rationale), so `err` here is a `TicketError` instance for that
+    case -- checked BEFORE the `gate_error_cls.QueueUnavailable` sentinel
+    comparison below, which no longer fires (nothing constructs that
+    sentinel value any more) but is left in place as a defensive
+    fallback. This still cannot name the exact failing PATH -- that
+    needs `frob.tickets` storage internals outside this ticket's own
+    scope to surface -- but it DOES now say which ledger corruption MODE
+    occurred, cutting the remaining `frob ticket list`/`frob ticket show
+    <id>` round trip down to confirming a known failure mode rather than
+    discovering it cold."""
+    from frob.tickets import TicketError
+
+    if isinstance(err, TicketError) or err is gate_error_cls.QueueUnavailable:
+        mode = err.value if isinstance(err, TicketError) else "queue load failed"
         return ToolResult(
             tool="gates",
             exit_code=1,
@@ -1035,19 +1058,20 @@ def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
                     severity="error",
                     code="QUEUE001",
                     message=(
-                        "QUEUE001: ticket queue failed to load: all gates "
-                        "were skipped. This is a hard failure, not a soft "
-                        "skip -- run `frob ticket list` or `frob ticket "
-                        "show <id>` directly for a more specific error (a "
-                        "malformed tickets/T-####/ticket.md, or a "
-                        "duplicate id across active/archive), fix it, and "
-                        "re-run `frob check`."
+                        f"QUEUE001: ticket queue failed to load ({mode}): "
+                        "all gates were skipped. This is a hard failure, "
+                        "not a soft skip -- run `frob ticket list` or "
+                        "`frob ticket show <id>` directly for the specific "
+                        "failing artifact (a malformed "
+                        "tickets/T-####/ticket.md, or a duplicate id "
+                        "across active/archive), fix it, and re-run "
+                        "`frob check`."
                     ),
                 )
             ],
             summary=(
-                "gates FAILED: ticket queue failed to load -- run "
-                "`frob ticket list` for the specific ledger error"
+                f"gates FAILED: ticket queue failed to load ({mode}) -- run "
+                "`frob ticket list` for the specific failing artifact"
             ),
         )
     return ToolResult(

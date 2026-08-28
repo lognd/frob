@@ -226,6 +226,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2707: SYS004 replaces the real ImportError with a hardcoded not-installed message, misdirecting diagnosis
 - T-2708: make install-tool is broken on uv 0.11.19: uv tool install has no --extra flag, blocking the only sanctioned install path
 - T-2709: Single-mode test coverage for set_body's archive routing (T-2678 successor)
+- T-2710: Thread the real failing ledger path through GateError.QueueUnavailable (T-2684 successor)
 - T-2711: A passenger ticket's content lands via --allow-cross-ticket while its own ledger state stays non-terminal, leaking its scope lease
 - T-2712: Re-triage 20 newly-unwaived PII010/011/012 findings after T-2696's symref population
 - T-2713: Deferred verification advances the watermark and records the rolling baseline from a budget-truncated check (saw 2 of 40 error identities, called it GREEN)

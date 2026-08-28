@@ -2,7 +2,7 @@
 id: T-2710
 title: Thread the real failing ledger path through GateError.QueueUnavailable (T-2684
   successor)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -22,6 +22,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_check.py::TestGatesErrorResultRealTicketError::test_real_ticket_error_names_specific_mode
+- tests/unit/test_check.py::TestGatesErrorResultRealTicketError::test_dummy_sentinel_still_a_defensive_fallback
+- tests/test_gates.py::TestRunGatesQueueFailureThreadsRealTicketError::test_duplicate_id_across_active_and_archive_surfaces_as_ticketerror
 designated_repro_test: null
 threat: null
 component: null

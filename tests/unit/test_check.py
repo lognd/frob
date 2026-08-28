@@ -2744,3 +2744,59 @@ class TestGatesErrorResultQueueUnavailable:
         assert result.tool == "gates"
         assert result.exit_code == 0
         assert result.diagnostics == []
+
+
+# frob:ticket T-2710
+class TestGatesErrorResultRealTicketError:
+    """T-2710: `run_gates` now propagates the REAL `TicketError` a
+    ticket-queue load failure hit (e.g. `DuplicateId`,
+    `MalformedFrontmatter`) instead of the undifferentiated
+    `GateError.QueueUnavailable` sentinel T-2684 left in place --
+    `_gates_error_result` must still render the QUEUE001 diagnostic for
+    this case, but name the SPECIFIC failure mode in its message rather
+    than a generic "queue load failed", closing the "still requires a
+    separate frob ticket list/show run to find" gap T-2710's own body
+    describes."""
+
+    # frob:tests \
+    # tests/unit/test_check.py::TestGatesErrorResultRealTicketError.test_real_ticket_error_names_specific_mode  # noqa: E501
+    def test_real_ticket_error_names_specific_mode(self) -> None:
+        """Must-fire control: a genuine `TicketError` (standing in for
+        what `frob.gates._load_graph_queue_lock` now propagates on a real
+        `load_queue` failure) still produces exactly one QUEUE001 ERROR
+        diagnostic, but its message names the specific TicketError mode
+        (e.g. "Ticket id already exists") instead of the old generic
+        "queue load failed" text -- the reader now knows WHICH kind of
+        ledger corruption to look for without a separate `frob ticket
+        list` run."""
+        from frob.check._python import _gates_error_result
+        from frob.gates import GateError
+        from frob.tickets import TicketError
+
+        result = _gates_error_result(TicketError.DuplicateId, GateError)
+
+        assert result.tool == "gates"
+        assert result.exit_code == 1
+        assert len(result.diagnostics) == 1
+        diag = result.diagnostics[0]
+        assert diag.code == "QUEUE001"
+        assert diag.file is None
+        assert diag.severity == "error"
+        assert TicketError.DuplicateId.value in diag.message
+        assert TicketError.DuplicateId.value in result.summary
+
+    # frob:tests \
+    # tests/unit/test_check.py::TestGatesErrorResultRealTicketError.test_dummy_sentinel_still_a_defensive_fallback  # noqa: E501
+    def test_dummy_sentinel_still_a_defensive_fallback(self) -> None:
+        """Must-NOT-regress control: the pre-T-2710 bare
+        `GateError.QueueUnavailable` sentinel (nothing constructs it any
+        more on the real path, but a stale caller or mock still might)
+        still renders the QUEUE001 diagnostic, just without a specific
+        mode to name."""
+        from frob.check._python import _gates_error_result
+        from frob.gates import GateError
+
+        result = _gates_error_result(GateError.QueueUnavailable, GateError)
+
+        assert result.exit_code == 1
+        assert result.diagnostics[0].code == "QUEUE001"
