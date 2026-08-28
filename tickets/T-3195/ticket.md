@@ -18,6 +18,7 @@ scope:
 - src/frob/tickets/_done_report.py
 - src/frob/tickets/_evidence.py
 - src/frob/tickets/_models.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,6 +51,18 @@ scope_changes:
   glob: src/frob/tickets/_models.py
   reason: wire the hollow-done-report refusal guard into the existing done-transition
     check chain and add its TicketError variant
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: AFFECT001 requires touching this doc's Error types section for the new TicketError.HollowDoneReport
+    variant
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: AFFECT001 requires touching this doc's Error types section for the new TicketError.HollowDoneReport
+    variant
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
