@@ -2,7 +2,7 @@
 id: T-3188
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2616):
   2 new (rule, file) identit(ies), 0 finding(s) (DOC006, REF002)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-27'
@@ -48,3 +48,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - REF002  .claude-scratch/T-3122-close-guard-repro-capture.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-28: Filed with the sweep's own re-measure already reporting 0 finding(s) in the ticket title. T-3222 (landed 46979e6a683a6deb1205e3a2ea2bb25c2bc409ee) proved the mechanism: _file_regression_ticket spent an independent frob check --json re-measure at file time via _true_finding_count_for_identities, used it only as a cosmetic title label, and filed anyway; these three are the named evidence in that ticket. Spot-verified T-3215's DOC006@docs/commands/check.md directly via 'frob check --only docblocks' on current main: 0 hits, gate genuinely ran (no FAST_EXIT1). T-3188/T-3210 identities not individually re-run; dropped on the same proven mechanism.
