@@ -21,7 +21,7 @@ scope:
 - frob.toml
 - tests/unit/test_check.py
 - docs/modules/process.md
-- docs/modules/check.md
+- docs/commands/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -65,6 +65,18 @@ scope_changes:
 - op: add
   glob: docs/modules/check.md
   reason: 'T-3191: doc-edge closure for touched public symbols in _reap.py/_pid_liveness.py/_python.py'
+  actor: logan
+  at: '2026-08-27'
+- op: remove
+  glob: docs/modules/check.md
+  reason: 'T-3191: correct doc path -- check gate docs live at docs/commands/check.md,
+    not docs/modules/check.md'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/commands/check.md
+  reason: 'T-3191: correct doc path -- check gate docs live at docs/commands/check.md,
+    not docs/modules/check.md'
   actor: logan
   at: '2026-08-27'
 designated_repro_test: null
