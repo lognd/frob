@@ -20,6 +20,7 @@ scope:
 - tests/unit/test_process.py
 - tests/unit/test_check_measurement.py
 - docs/commands/check.md
+- tests/unit/test_app_runners_batch6.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -65,6 +66,13 @@ scope_changes:
   glob: docs/commands/check.md
   reason: 'doc-closure: adding a new public ToolResult/CheckResult field requires
     updating this anchor doc'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_app_runners_batch6.py
+  reason: T-2486's byte-identical JSON contract test hardcodes ToolResult's field
+    set; adding measurement/measurement_reason genuinely changes that shape and this
+    pre-existing test's expected dict must be updated in the same change
   actor: logan
   at: '2026-08-27'
 designated_repro_test: null
