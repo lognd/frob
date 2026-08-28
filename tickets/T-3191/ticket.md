@@ -2,7 +2,7 @@
 id: T-3191
 title: 'Local gate typechecks only the host platform: Windows/macOS ty diagnostics
   are unreachable before CI'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
