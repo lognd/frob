@@ -1469,16 +1469,46 @@ def _close(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-2738
+# frob:ticket T-2878
 def _pending_draft_ids_after_close(root: Path, closed_ticket_id: str) -> list[str]:
     """T-2738: the queue-read half of `_promote_pending_drafts_after_close`,
     split out under ARCH103 -- resolve the closed ticket's queue and
-    return the sorted ids of every still-open `T-draft-*` follow-up it
-    may have filed (`load_queue` returning the merged active+archive
-    view means an already-terminal DONE/DROPPED draft, e.g. one
-    deliberately dropped in a past land, is NOT "pending" and must be
-    excluded here). A queue load failure is logged as a warning (with
-    the hand-recovery command) and degrades to an empty list -- this
-    function never raises, matching the caller's best-effort posture."""
+    return the sorted ids of every still-open `T-draft-*` follow-up
+    `closed_ticket_id` ITSELF affirmatively claims to have filed
+    (`load_queue` returning the merged active+archive view means an
+    already-terminal DONE/DROPPED draft, e.g. one deliberately dropped in
+    a past land, is NOT "pending" and must be excluded here). A queue
+    load failure is logged as a warning (with the hand-recovery command)
+    and degrades to an empty list -- this function never raises, matching
+    the caller's best-effort posture.
+
+    T-2878: this used to return EVERY still-open draft id in the WHOLE
+    fleet-wide queue, with no check for which ticket actually created a
+    given draft -- so any ticket's close swept in and finalized every
+    other agent's still-in-flight draft too. Live-hit: T-2872's close
+    promoted `T-draft-90b2bcf5`, a draft filed by a completely unrelated
+    ticket's own COV007 work, racing that draft's rightful owner (who
+    was independently promoting the SAME draft at roughly the same
+    moment) into a rename/rename git conflict on `frob ticket land`.
+
+    There is no dedicated provenance field recording which ticket filed a
+    given draft (checked `frob.tickets._models.Ticket` -- `parent`/
+    `blocked_by` exist, filing provenance does not; a real field is
+    schema/migration work, filed separately, T-2880), but this repo
+    already has a hardened, well-tested signal for exactly this claim:
+    TICK006's own `_tick006_phantom_ids`/`_tick006_done_report_text`
+    (`frob.gates._tickets_gate`) parse a ticket's OWN Done report for its
+    affirmative "Filed: <id>" claims -- the same grammar this module's
+    own tests already write ("Filed: " + draft_id) and the same
+    machinery that already gates a ticket from closing with a PHANTOM
+    filing claim (an id that resolves to nothing). Reusing it here scopes
+    the sweep to drafts `closed_ticket_id` itself claims, with no new
+    parsing surface to keep in sync with TICK006's own (T-1966: one home
+    for this rule, not two)."""
+    from frob.gates._tickets_gate import (
+        _tick006_done_report_text,
+        _tick006_phantom_ids,
+    )
     from frob.tickets import TicketState, load_queue
     from frob.tickets._provisional import is_draft_id
 
@@ -1494,10 +1524,24 @@ def _pending_draft_ids_after_close(root: Path, closed_ticket_id: str) -> list[st
         )
         return []
     all_tickets = queue_result.danger_ok.tickets
+    closed_ticket = all_tickets.get(closed_ticket_id)
+    if closed_ticket is None:
+        _log.warning(
+            "ticket close: %s: not found in its own just-loaded queue -- "
+            "cannot determine which drafts (if any) it claims to have "
+            "filed; treating as none",
+            closed_ticket_id,
+        )
+        return []
+    claimed_ids = set(
+        _tick006_phantom_ids(_tick006_done_report_text(closed_ticket.body))
+    )
     return sorted(
         tid
         for tid, t in all_tickets.items()
-        if is_draft_id(tid) and t.state not in (TicketState.DONE, TicketState.DROPPED)
+        if is_draft_id(tid)
+        and tid in claimed_ids
+        and t.state not in (TicketState.DONE, TicketState.DROPPED)
     )
 
 

@@ -92,6 +92,51 @@ class TestClosePromotesPendingDrafts:
         assert promoted, f"expected a promoted real id in {sorted(tickets)}"
         assert not is_draft_id(promoted[0])
 
+    # frob:ticket T-2878
+    # frob:waive DUP001 reason="genuinely distinct guard from \
+    # test_close_ignores_an_already_dropped_draft (an already-terminal draft is \
+    # skipped because it is not PENDING; this one is skipped because it is not \
+    # CLAIMED, the T-2872 incident's actual shape) -- the fixture-repo shape is \
+    # necessarily near-identical since both exercise the same 'draft left untouched' \
+    # assertion via the same helpers, T-2949's own class of near-duplicate test waiver"
+    def test_close_never_sweeps_a_draft_it_did_not_claim(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_\
+        # close_never_sweeps_a_draft_it_did_not_claim
+        """T-2872's own live incident: an UNRELATED ticket's pending
+        draft must survive `T-0900`'s close untouched, even though it is
+        `QUEUED` (pending) in the very same fleet-wide queue -- T-0900
+        never mentions it, so it is not T-0900's to promote. Before
+        T-2878's fix, `_pending_draft_ids_after_close` swept EVERY
+        pending draft in the queue with no ownership check at all, which
+        is exactly what raced a different agent's rightful promotion of
+        this draft into a rename/rename git conflict."""
+        from frob.tickets import TicketState, load_queue
+        from frob.tickets._provisional import mint_draft_id
+
+        _init_git_repo(tmp_path)
+        unrelated_draft_id = mint_draft_id()
+        _write_ticket(
+            tmp_path,
+            "T-0900",
+            TicketState.DONE,
+            "## Description\nx\n\n## Done report\n\nNothing filed here.\n",
+        )
+        _write_ticket(
+            tmp_path,
+            unrelated_draft_id,
+            TicketState.QUEUED,
+            "## Description\nsomeone else's in-flight COV007 work\n",
+        )
+
+        _promote_pending_drafts_after_close(tmp_path, "T-0900")
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok, queue.err
+        # Untouched: still sitting under its own draft id, never renamed
+        # or finalized -- T-0900's close has nothing to say about it.
+        assert unrelated_draft_id in queue.danger_ok.tickets
+
     def test_close_ignores_an_already_dropped_draft(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_close_ignores_an_already_dropped_draft  # noqa: E501
         """A draft-id ticket already terminal (DROPPED, e.g. a past
@@ -174,10 +219,18 @@ class TestClosePromotesPendingDrafts:
         assert not any(r.levelno >= logging.ERROR for r in caplog.records)
 
         # Now the genuine-failure path: a real draft ticket in the ledger,
-        # with finalize_draft patched to fail.
+        # CLAIMED in T-0900's own Done report (T-2878: only a claimed
+        # draft is ever attempted now), with finalize_draft patched to
+        # fail.
         from frob.tickets._provisional import mint_draft_id
 
         draft_id = mint_draft_id()
+        _write_ticket(
+            tmp_path,
+            "T-0900",
+            TicketState.DONE,
+            "## Description\nx\n\n## Done report\n\nFiled: " + draft_id + "\n",
+        )
         _write_ticket(
             tmp_path, draft_id, TicketState.QUEUED, "## Description\nfollow-up\n"
         )

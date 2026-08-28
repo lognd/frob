@@ -2,7 +2,7 @@
 id: T-2878
 title: close's draft auto-promote sweeps ANOTHER ticket's pending draft, races its
   rightful promotion
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -21,7 +21,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_promotes_a_draft_the_ticket_filed
+- tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_never_sweeps_a_draft_it_did_not_claim
+- tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_ignores_an_already_dropped_draft
+- tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_with_no_drafts_is_unchanged
+- tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_reports_and_exits_nonzero_when_a_draft_cannot_be_promoted
+designated_repro_test: tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_never_sweeps_a_draft_it_did_not_claim
 threat: null
 component: null
 anchor: false

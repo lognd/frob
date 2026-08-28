@@ -353,6 +353,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2874: Waive COV007's last finding (_reap.py) and promote COV007 to ERROR
 - T-2875: frob.graph.dsl._RESERVED_MARKER_VERBS omits callee-raises, so a real # frob:callee-raises call-site marker fires DSL001 unknown-verb
 - T-2877: SELFAUDIT001: T-2849's process/_reap.py env.read growth and a new via-less core ffi grant lack ratchet/because coverage
+- T-2878: close's draft auto-promote sweeps ANOTHER ticket's pending draft, races its rightful promotion
 - T-2879: Red-tail sweep: COV001/DRIFT002/DOCENUM001/PERF004/DOC011/DOC006 (6 independent causes, CYCLE001/TICK004 verified correctly left alone)
 - T-2880: T-2849's PDEATHSIG fix is loaded but forkservers still leak: 27 new orphans in the 49 minutes after it landed, likely an already-started helper that never sees the arming env var
 - T-2883: docs/modules/gates.md: document T-2870's BUG002 malformed-waiver diagnostic
