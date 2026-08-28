@@ -32,6 +32,13 @@ triage_changes:
     this disposition-only close
   actor: logan
   at: '2026-08-28'
+body_changes:
+- mode: append
+  reason: record re-verification for series-DC disposition
+  actor: logan
+  at: '2026-08-28'
+  old_length: 1244
+  new_length: 1553
 designated_repro_test: null
 threat: null
 component: null
@@ -52,3 +59,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - E501  /home/logan/projects/frob/src/frob/narrative/_cli.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+Re-verified on current main (2026-08-28): ran 'frob check --only lint' (ruff) against src/frob/narrative/_cli.py -- no E501 findings. Manual line-length scan confirms every line is <=88 chars (max observed well under the limit). Pre-existing residue the rolling baseline had not recorded; not a live defect.
