@@ -16,10 +16,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/conftest.py
+- tests/unit/test_conftest_suite_result_status.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_conftest_suite_result_status.py
+  reason: T-3246's must-fire/must-stay-quiet fixtures for the DID-NOT-COMPLETE label
+    live in a new file (test_conftest_stackdump.py was under a live T-3244 scope lease
+    at land time)
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
