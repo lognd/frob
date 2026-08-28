@@ -2,7 +2,7 @@
 id: T-3195
 title: A done-report recording zero evidence and zero changed files reached main while
   the work sat unlanded
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
