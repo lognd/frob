@@ -2,7 +2,7 @@
 id: T-3112
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3107):
   20 new (rule, file) identit(ies), 38 finding(s) (AFFECT001, COV002, I001, SUPPRESS001)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-27'
