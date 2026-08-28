@@ -2,7 +2,7 @@
 id: T-3217
 title: 'UNCONFIRMED-ONCE: close-guard false-fire + sqlite ''database is locked'' crash
   under concurrent frob check load'
-state: in-progress
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -105,3 +105,6 @@ block, and the `database is locked` hard crash) under deliberately
 concurrent `frob check`/`frob ticket close` load before doing anything
 else. If neither reproduces after a real attempt, drop this with that
 reason, per the same T-3131 standard.
+
+## Drop reason
+- 2026-08-28: UNCONFIRMED-ONCE observation from series BT, seen once under concurrent fleet load (a live land + 6 concurrent frob check runs), 2026-08-27. Re-attempted reproduction here (series DK, 2026-08-28) via direct calls to compose_done_report + disclosure_shaped_language with realistic Tier-A generated Done-report content (Changed/Evidence sections, no hand-typed subheading) -- returns None (no false-fire), matching the original agent's own non-reproduction via direct guard-function calls. True concurrent-load reproduction (parallel frob check + frob ticket close) was not attempted with backgrounded/parallel frob processes per this session's house rules against backgrounding frob commands; within that constraint, no reproduction was achieved by any method tried across two independent attempts. Per the T-3131 standard applied tonight: dropping rather than carrying an unreproducible, unconfirmed-once finding as open work or inventing a speculative fix for a race that cannot be demonstrated. The sqlite 'database is locked' crash under ordinary concurrent frob check load noted in the same capture is a separate, plausible, but likewise unconfirmed-here mechanism -- not independently reproduced in this session either. If this resurfaces with a second sighting under the same load conditions, re-file with both sightings' details.
