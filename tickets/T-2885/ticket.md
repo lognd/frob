@@ -36,7 +36,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 70e20f4c2ce96e213be651aad923b89ba00ca1e8
 ---
 Found while working the red-tail sweep's OPAQUE001 finding on
 src/frob/gates/_refs.py:31 (T-2879's follow-up dispatch). Investigation-
