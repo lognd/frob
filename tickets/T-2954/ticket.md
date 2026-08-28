@@ -1,7 +1,7 @@
 ---
 id: T-2954
 title: frob ticket archive can strand a non-terminal ticket with no restore path (T-0450)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
