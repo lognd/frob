@@ -98,7 +98,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3bc56e3a099c2311a279b0e6280e62063d37851f
 ---
 Split from T-2999 (Baseline lock files: staleness warning, and a LOUD
 failure when the producer that stamps them stops running).
