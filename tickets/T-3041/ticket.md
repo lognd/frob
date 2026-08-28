@@ -17,8 +17,11 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/strata/
 - tests/system/test_frob_self_model.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: T-3041 is a triage umbrella over the repo's own self-conformance
+  test family (13 tests spanning many gate modules under tests/unit/strata/ + test_frob_self_model.py);
+  the broad glob is the honest scope for a triage ticket whose job is categorizing
+  findings across many files, not editing one narrow package.
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
