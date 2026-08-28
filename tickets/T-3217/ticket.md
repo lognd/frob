@@ -2,7 +2,7 @@
 id: T-3217
 title: 'UNCONFIRMED-ONCE: close-guard false-fire + sqlite ''database is locked'' crash
   under concurrent frob check load'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
