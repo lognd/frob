@@ -19,7 +19,8 @@ scope:
 - src/frob/app/status_runner.py
 - tests/unit/gates/test_lock_producer.py
 - src/frob/gates/_coverage.py
-- docs/modules/status.md
+- docs/modules/cli.md
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -58,6 +59,24 @@ scope_changes:
   reason: shared producer-staleness helper + frob status wiring + one concrete LOUD-failure
     wire-up (coverage lock, the best-established of the three) with must-fire/must-stay-quiet
     coverage
+  actor: logan
+  at: '2026-08-28'
+- op: remove
+  glob: docs/modules/status.md
+  reason: match existing frob:doc anchors for status_runner.py/_coverage.py rather
+    than a nonexistent docs/modules/status.md
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/cli.md
+  reason: match existing frob:doc anchors for status_runner.py/_coverage.py rather
+    than a nonexistent docs/modules/status.md
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/gates.md
+  reason: match existing frob:doc anchors for status_runner.py/_coverage.py rather
+    than a nonexistent docs/modules/status.md
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
