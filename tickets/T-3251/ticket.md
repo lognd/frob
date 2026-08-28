@@ -78,7 +78,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 159251143da3feaf975d87513b2b80da446c226f
 ---
 OWNER DECISION, 2026-08-28: the goal is a fully green CI matrix and a working
 `frob` on PyPI before 1.0.0. PyPI currently serves 0.0.9 and is badly stale. The
