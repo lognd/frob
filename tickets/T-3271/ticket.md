@@ -18,10 +18,32 @@ scope:
 - src/frob/app/scaffold_runner.py
 - src/frob/scaffold/project.py
 - docs/commands/scaffold.md
+- src/frob/_cli_parsers/_core.py
+- tests/system/test_scaffold_dx.py
+- tests/unit/test_scaffold_project.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_core.py
+  reason: CLI --output help text and unit/system test coverage for the parent-dir
+    semantics fix
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/system/test_scaffold_dx.py
+  reason: CLI --output help text and unit/system test coverage for the parent-dir
+    semantics fix
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_scaffold_project.py
+  reason: CLI --output help text and unit/system test coverage for the parent-dir
+    semantics fix
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
