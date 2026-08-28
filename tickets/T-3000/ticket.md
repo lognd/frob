@@ -40,7 +40,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6e45b9748a42294cd95a54aebd99eb3a15419d2e
 ---
 ## Unblock log
 - 2026-08-28: unblocked by T-2954 -- T-2954 landed at 06313333aa7d3c1de5b7c61558221c13238ccbb1; its lease on src/frob/app/ticket_runner/__init__.py is released
