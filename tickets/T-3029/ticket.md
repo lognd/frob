@@ -2,7 +2,7 @@
 id: T-3029
 title: 'self-conformance (SYS100/SYS102/SYS107) red on main: ci_report.py/ci_validity.py/ghio.py
   unbound, env.read gaps'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
