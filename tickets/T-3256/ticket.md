@@ -2,7 +2,7 @@
 id: T-3256
 title: 'Six concurrent frob check runs drive the box to zero free memory: each sizes
   its pool against the whole machine, with no cross-process budget'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
