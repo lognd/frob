@@ -2,7 +2,7 @@
 id: T-3268
 title: 'frob perf spawns a hardcoded bare ''python'' instead of sys.executable: wrong
   interpreter or outright SpawnFailed for real users'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
