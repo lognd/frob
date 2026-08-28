@@ -26,7 +26,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 853c62f0569a5c0f616d003db969ca66624b7bb5
 ---
 T-2678 fixed set_body's archived-ticket write routing and added v2-mode
 tests (the mode this repo actually runs, per _store_mode's fresh-repo
