@@ -51,7 +51,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 
 ## Commands
 
-46 total commands, statically bound to the live subcommand registry
+49 total commands, statically bound to the live subcommand registry
 (DOC005, docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435)
 -- a subcommand added or removed here with no matching edit below fails
 `frob check`.
@@ -99,7 +99,10 @@ Every violation message embeds its own remedy command, so an agent acting on
 | `frob gitlog` | Summarize git history filtered by conventional commit type |
 | `frob perf` | Profiling (`profile`/`heat`) and the PERF001-004 linear-scan gates |
 | `frob mutate` | Mutation testing: the honest test-quality oracle |
+| `frob narrative` | Migrate a T-#### narrative comment block |
+| `frob refactor` | Transactional symbol move/rename/split |
 | `frob stats` | DORA-ish delivery measurement (queue health + commit cadence); measurement only |
+| `frob status` | Delta-first movement summary: findings healed/introduced since the last stamped baseline, verification lag, ticket landing velocity (T-2911) |
 | `frob serve` | MCP stdio adapter exposing doable tickets, stale docs, scope/graph queries as read-only tools |
 
 ### Setup

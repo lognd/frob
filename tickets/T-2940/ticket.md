@@ -2,7 +2,7 @@
 id: T-2940
 title: 'README.md: add the frob status command-table row/count (T-2911 land-tooling
   workaround)'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-26'
@@ -20,6 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:/tmp/claude-1000/-home-logan-projects-frob/79c6402d-b401-4652-bea7-f81df1be9322/scratchpad/t2940_evidence.sh
+  exit=0 sha256=7b41e3087bba
 designated_repro_test: null
 threat: null
 component: null
