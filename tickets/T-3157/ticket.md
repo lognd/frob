@@ -43,7 +43,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fece5760372a8beaad5eab5b1fe93825a643e3d3
 ---
 Four separate defects were found in scripts/fleet_status.py in a single day
 (2026-08-27):
