@@ -569,6 +569,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3227: post-land sweep regression from an unattributed source (sweep spawned by T-2878): 2 new (rule, file) identit(ies), 1 finding(s) (CLAUDE001, OPAQUE001)
 - T-3228: LOUD gate failure for ratchet/deprecated-baseline lock producer abandonment
 - T-3230: Audit failed-subprocess-folded-into-positive-finding sites (T-3216 sibling survey)
+- T-3236: post-land sweep regression from T-2885: 1 new (rule, file) identit(ies) (OPAQUE001)
 - T-3238: post-land sweep regression from T-3220: 1 new (rule, file) identit(ies), 2 finding(s) (DRIFT002)
 - T-3244: Burn down remaining platform-unsafe test-fixture code surfaced by multi-platform ty (T-3211 split)
 - T-3246: SUITE-RESULT reports an ABORTED run (exitstatus=3) in the same shape as a completed one: failed=24 is a lower bound read as a count

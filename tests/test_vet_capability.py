@@ -207,6 +207,11 @@ class TestDocstringProseNotObservedLineLevel:
 # header comment (outside the docstring) must still be observed
 # (must-fire) -- the fix must not blind the scanner, only restore the
 # exclusion.
+# frob:waive OPAQUE001 reason="the 'importlib.import_module(...)' text below is prose \
+# INSIDE a fixture string literal (a docstring being fed to the capability scanner \
+# under test) -- it is never executed, this module never calls importlib.import_module \
+# itself; the fixture's own comment already says so ('mentioned here only as prose, \
+# never called')"
 _LEADING_COMMENT_THEN_DOCSTRING_PROSE_ONLY = '''# frob:waive LARGE001 example header block
 # preceding the module docstring, same shape as the repo's own files
 """Module docstring describing an opacity concern.
