@@ -426,6 +426,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2984: gh_io part 2: structured CI failure reporting -- typed run/job/step/test-node records, clustered by signature, no raw log grepping
 - T-2985: gh_io part 3: CI result validity -- classify each outcome STILL VALID / STALE / UNKNOWN against the affects graph, never render stale as green
 - T-2986: Archive move breaks COV004 attachment path resolution repo-wide (tickets/archive/<id> vs recorded tickets/<id> path)
+- T-2988: Docstrings: replace the blanket one-line rule with a utility/reuse test and per-visibility tiers; move ticket archaeology out of code
 - T-2989: Rename frob.yamlio to frob.yamlio for io-seam naming consistency (via frob refactor, not hand-edits)
 - T-2990: frob refactor has no module/file move verb: symbol-scoped only, so a module rename falls back to hand-editing imports
 - T-2991: frob subprocess children spawned by system tests can be orphaned when their pytest worker is killed

@@ -395,6 +395,12 @@ _KNOWN_GATE_RULES = frozenset(
         # to the bulk-pool ratchet mechanism (T-0569) instead of one
         # inline frob:waive comment.
         "WAIVE011",
+        # T-2988: a public symbol's docstring cites a ticket AND reads as
+        # change-narrative rather than utility prose -- the WAIVE009/010
+        # provenance-vs-deferred-work discriminator applied to docstrings
+        # instead of frob:waive reasons; see frob.gates.
+        # _docstring_archaeology.
+        "DOCARCH001",
         "DEC001",
         "DEC002",
         "REL001",

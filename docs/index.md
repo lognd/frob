@@ -101,6 +101,9 @@ The four components that make up the enforcement layer:
 - `docs/modules/gates.md` -- `frob.gates`: the drift, coverage, scope, pre-work,
   invariant, test, and policy gates; the rule catalog; invariants; and
   `frob check` integration.
+- [`docs/modules/docstrings.md`](modules/docstrings.md) -- the docstring
+  standard (T-2988): the utility/reuse purpose test, the three visibility
+  tiers, and DOCARCH001 (the ticket-archaeology detector).
 - `docs/modules/testing.md` -- `frob.testing`: touched-set selection across the diff,
   the per-language runner registry, and worktree-correct git semantics via
   `frob.gitio`.

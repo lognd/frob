@@ -103,6 +103,7 @@ from frob.gates._doclink_docanchor import (
 )
 from frob.gates._docptr import doc006_gate
 from frob.gates._docstatus import docmake_gate, docseverity_gate, docstatus_gate
+from frob.gates._docstring_archaeology import docarch001_violations
 from frob.gates._dup import dup_gate
 from frob.gates._dup_graph_schema import dup_schema_gate, graph_schema_gate
 from frob.gates._env_var_docs import env_var_doc_gate
@@ -8393,6 +8394,12 @@ def _assemble_gate_report(
         # -- see waive011_violations's own docstring for why this lives in
         # the WAIVE family rather than a new gate.
         *waive011_violations(st.repo_root),
+        # T-2988: same PROVENANCE-vs-DEFERRED-WORK wording discriminator
+        # as WAIVE009/010, applied to public docstrings instead of
+        # frob:waive reasons -- re-parses source directly (docstring text
+        # is not on SymbolRecord), so it needs only root, same self-check
+        # posture as waive011_violations immediately above.
+        *docarch001_violations(st.repo_root),
         # T-0779: stale-waiver detection needs only the snapshot's own
         # waive edges plus the merged ticket queue -- no assembled
         # violation set dependency, so it runs alongside the other WAIVE00*

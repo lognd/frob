@@ -2,7 +2,7 @@
 id: T-2988
 title: 'Docstrings: replace the blanket one-line rule with a utility/reuse test and
   per-visibility tiers; move ticket archaeology out of code'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-26'
