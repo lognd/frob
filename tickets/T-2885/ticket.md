@@ -2,7 +2,7 @@
 id: T-2885
 title: 'OPAQUE001/sys false positives: module docstring not excluded when a comment
   precedes it'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-22'
