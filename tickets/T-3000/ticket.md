@@ -7,8 +7,6 @@ kind: bug
 origin: human
 created: '2026-08-26'
 priority: medium
-blocked_by:
-- T-2954
 parent: null
 tier: ticket
 sprint: null
@@ -33,3 +31,5 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+## Unblock log
+- 2026-08-28: unblocked by T-2954 -- T-2954 landed at 06313333aa7d3c1de5b7c61558221c13238ccbb1; its lease on src/frob/app/ticket_runner/__init__.py is released
