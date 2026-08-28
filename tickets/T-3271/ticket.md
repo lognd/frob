@@ -56,7 +56,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f30318895e0f9b84875e6d0fc0b67b81d28508dd
 ---
 REPORTED FROM A REAL FIRST-USE of frob in a sibling repo (../diax,
 FROBLEMS.md F-001, frob 0.530.0, 2026-08-28). Independently confirmed in the
