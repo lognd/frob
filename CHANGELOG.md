@@ -213,6 +213,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2685: Persistent unfixed repo-debt tracking (continuation of T-2674): 35 identit(ies) remaining
 - T-2686: COV003 on 6 closed tickets: deleted/renamed test node ids, six materially different dispositions needed
 - T-2690: TICK006 phantom-filing auto-recovery is 92% false-positive and its refusal blocks unrelated lands
+- T-2693: TICK006 phantom-refile of T-draft-be1e79b5 (cited by T-2685) collides with T-2689's identical title/scope
 - T-2694: Split src/frob/app/telemetry.py: 3 real seams (event/footgun/usage), T-1656 successor
 - T-2695: LARGE001 remainder batch 2: ~80 files after T-1656's batch-1 (2 waived, 1 seam filed)
 - T-2697: post-land sweep regression from an unattributed source (sweep spawned by T-1549): 1 new (rule, file) identit(ies), 1 finding(s) (DOC006)

@@ -2,7 +2,7 @@
 id: T-2693
 title: TICK006 phantom-refile of T-draft-be1e79b5 (cited by T-2685) collides with
   T-2689's identical title/scope
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -21,6 +21,21 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): premise stale: the standing TICK006 finding
+    for T-2685/T-2689/T-draft-be1e79b5 this ticket was filed to fix no longer exists
+    on main, already resolved by the T-2690->T-2699->T-2701->T-2702 chain (T-2702
+    landed the real fix, e983c75cdbbc74601a056fcb5d123b1a68412907, with a designated
+    repro test for exactly this two-lands-cite-same-draft shape); T-2689 is itself
+    dropped. Measured directly via frob check --only tickets: zero TICK006 findings
+    name T-2685/T-2689/T-draft-be1e79b5 today. No code change needed.'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 1290
+  new_length: 1833
+evidence:
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket
 designated_repro_test: null
 threat: null
 component: null
@@ -50,3 +65,5 @@ nothing left to refile. Whichever path, the TICK006 finding needs to
 actually clear -- it is currently a standing tax on every OTHER ticket's
 land that happens to touch `tickets.md` (which is implicitly in scope
 for everything).
+
+frob:no-behavior-change reason="premise stale: the standing TICK006 finding for T-2685/T-2689/T-draft-be1e79b5 this ticket was filed to fix no longer exists on main, already resolved by the T-2690->T-2699->T-2701->T-2702 chain (T-2702 landed the real fix, e983c75cdbbc74601a056fcb5d123b1a68412907, with a designated repro test for exactly this two-lands-cite-same-draft shape); T-2689 is itself dropped. Measured directly via frob check --only tickets: zero TICK006 findings name T-2685/T-2689/T-draft-be1e79b5 today. No code change needed."
