@@ -157,9 +157,6 @@ acceptance:
   - tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_section_present_and_names_the_gate_and_reason
   - tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_json_exposes_measurement_without_a_dedicated_key
   - tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_legitimate_json_payload_is_byte_identical_with_guard_active
-- text: Given a project declaring no surface for a given gate, when that gate runs,
-    then it reports NOT_APPLICABLE with an explanation rather than a silent zero.
-  evidence: []
 - text: Given a frob check run where any gate is unmeasured, when it completes, then
     the exit code and the printed summary both distinguish that run from one where
     every gate measured and found nothing.
@@ -185,6 +182,18 @@ acceptance_amendments:
   reason: deferred to follow-up T-draft-09d7321f (GATESTATUS001 meta-check) -- see
     T-2391's own Done report for the explicit cut; T-1662's own standard forbids implementing
     a lexical-pattern-matching meta-check without a design pass first
+  actor: logan
+  at: '2026-08-28'
+- op: remove
+  index: 1
+  old_text: Given a project declaring no surface for a given gate, when that gate
+    runs, then it reports NOT_APPLICABLE with an explanation rather than a silent
+    zero.
+  new_text: null
+  reason: deferred to follow-up T-draft-b44869e6 (per-gate NOT_APPLICABLE self-declaration
+    for a hardcoded-layout-style gate) -- see T-2391's own Done report for the explicit
+    cut; needs a per-gate declared-surface resolver this generic aggregation-layer
+    change cannot provide
   actor: logan
   at: '2026-08-28'
 threat: null
