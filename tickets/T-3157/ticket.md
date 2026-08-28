@@ -1,7 +1,7 @@
 ---
 id: T-3157
 title: Ground-truth fixture suite for scripts/fleet_status.py
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -26,6 +26,18 @@ scope_changes:
     read access to fleet_status.py from tests/, not write scope on the file itself
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/system/test_fleet_status_ground_truth.py::TestChecksRunningClaim::test_must_fire_on_python_dash_m_frob_check
+- tests/system/test_fleet_status_ground_truth.py::TestChecksRunningClaim::test_must_fire_on_venv_executable_path_form
+- tests/system/test_fleet_status_ground_truth.py::TestChecksRunningClaim::test_must_stay_quiet_on_frob_as_a_substring
+- tests/system/test_fleet_status_ground_truth.py::TestChecksRunningClaim::test_must_stay_quiet_on_frob_without_check_subcommand
+- tests/system/test_fleet_status_ground_truth.py::TestLandLockHolderClaim::test_must_fire_the_true_holder_among_waiters
+- tests/system/test_fleet_status_ground_truth.py::TestLandLockHolderClaim::test_must_stay_quiet_when_only_waiters_hold_the_fd_open
+- tests/system/test_fleet_status_ground_truth.py::TestOrphanedForkserverAgeFloorClaim::test_must_fire_on_old_forkserver_with_no_check_ancestor
+- tests/system/test_fleet_status_ground_truth.py::TestOrphanedForkserverAgeFloorClaim::test_must_stay_quiet_on_young_forkserver_with_no_check_ancestor
+- tests/system/test_fleet_status_ground_truth.py::TestOrphanedForkserverAgeFloorClaim::test_age_floor_matches_reap_orphaned_forkservers_default
+- tests/system/test_fleet_status_ground_truth.py::TestWorktreeLeaseLeakClaim::test_must_fire_worktree_whose_start_transition_already_landed
+- tests/system/test_fleet_status_ground_truth.py::TestWorktreeLeaseLeakClaim::test_must_stay_quiet_abandoned_ticket_with_no_worktree_at_all
 designated_repro_test: null
 threat: null
 component: null

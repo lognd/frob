@@ -514,6 +514,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3154: post-land sweep regression from T-3145: 1 new (rule, file) identit(ies) (SEC110)
 - T-3155: Extract evidence_covers_scope out of frob.gates to break the gates<->tickets edge
 - T-3156: D-02 has no legitimate evidence route for docs-only bug-kind or Rust-only tickets
+- T-3157: Ground-truth fixture suite for scripts/fleet_status.py
 - T-3158: post-land sweep regression from T-3139: 2 new (rule, file) identit(ies), 1 finding(s) (DOC006, DRIFT001)
 - T-3160: post-land sweep regression from an unattributed source (sweep spawned by T-3152): 1 new (rule, file) identit(ies), 1 finding(s) (missing-argument)
 - T-3162: frob ticket reopen crashes mirroring to primary checkout (missing LEDGER_VERB_STRATEGY entry)
