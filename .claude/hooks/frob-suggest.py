@@ -148,6 +148,10 @@ _RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
         "artifact stale, and everything downstream reads it as current.",
         None,
     ),
+    # frob:tests tests/test_hook_frob_suggest.py::test_recursive_grep_stays_quiet_when_scoped_with_a_trailing_redirect  # noqa: E501
+    # frob:tests tests/test_hook_frob_suggest.py::test_recursive_grep_still_fires_unscoped_with_a_trailing_redirect  # noqa: E501
+    # frob:tests tests/test_hook_frob_suggest.py::test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory  # noqa: E501
+    # frob:tests tests/test_hook_frob_suggest.py::test_recursive_grep_still_fires_unscoped_at_repo_root  # noqa: E501
     (
         "recursive-grep",
         re.compile(_POS + r"grep +(?:-\w*[rR]|--recursive)", re.M),
@@ -162,7 +166,24 @@ _RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
         # (T-2908 audit), demonstrated directly: `grep -rn 'foo'
         # src/frob/strata` used to block with no usable alternative. `.`/
         # the repo root still fall through and keep firing.
-        re.compile(r"\s([A-Za-z0-9_][\w.-]*(?:/[A-Za-z0-9_][\w.-]*)+)\s*(?:[|;&]|$)"),
+        #
+        # T-2932: the path token is very often followed by a REDIRECT
+        # before the pipe/semicolon/EOL (`2>&1 | head -30` is the
+        # overwhelmingly common shape for a scoped command whose output
+        # gets filtered) -- the original lookahead required the path to
+        # be IMMEDIATELY followed by `[|;&]|$`, so `2>&1` between the two
+        # defeated it and a genuinely-scoped command still blocked.
+        # Tolerate zero or more redirect clauses (`>`, `>>`, `<`, each
+        # optionally fd-numbered and/or fd-duplicated -- `2>&1`, `1>&2`,
+        # `>out.txt`, `2>/dev/null`) between the path and the final
+        # separator, mirroring `handrolled-floor-count`'s own documented
+        # "cannot exclude `&` -- `2>&1` is nearly always present" lesson
+        # (T-2031) one rule up.
+        re.compile(
+            r"\s([A-Za-z0-9_][\w.-]*(?:/[A-Za-z0-9_][\w.-]*)+)\s*"
+            r"(?:(?:\d*>{1,2}&?\d*|\d*>{1,2}[^\s|;&]*|\d*<[^\s|;&]*)\s*)*"
+            r"(?:[|;&]|$)"
+        ),
     ),
     (
         "unscoped-symbol-search",
@@ -569,8 +590,9 @@ def _deny(reason: str) -> None:
 
 
 # frob:doc docs/guides/claude-hooks.md#frob-suggestpy
-def _escalate(key: str, name: str, suggestion: str, acked: bool, first_hint: str,
-              repeat_hint: str) -> None:
+def _escalate(
+    key: str, name: str, suggestion: str, acked: bool, first_hint: str, repeat_hint: str
+) -> None:
     """Shared block-once-then-escalate flow (T-2164) for BOTH the Bash-
     command rules and the Edit-based rename rule (T-3069) -- `key` is
     whatever the caller wants counted as "the same thing recurring" (the
@@ -673,6 +695,7 @@ def _handle_bash(payload: dict, root: Path) -> None:
     )
 
 
+# frob:doc docs/guides/claude-hooks.md#frob-suggestpy
 def main() -> None:
     try:
         payload = json.load(sys.stdin)

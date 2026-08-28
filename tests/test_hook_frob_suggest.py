@@ -52,7 +52,12 @@ def _run_hook(command: str, *, home: Path, cwd: Path):
 
 
 def _run_edit_hook(
-    file_path: str, old_string: str, new_string: str, *, home: Path, cwd: Path,
+    file_path: str,
+    old_string: str,
+    new_string: str,
+    *,
+    home: Path,
+    cwd: Path,
     env: dict | None = None,
 ):
     """Invoke the hook's Edit-tool PreToolUse contract (T-3069): same
@@ -363,7 +368,7 @@ def test_floor_count_stays_quiet_when_grepping_a_rule_id(tmp_path: Path):
     root = tmp_path / "repo"
     _init_repo(root)
     for command in (
-        'uv run frob check --json 2>&1 | grep LANG003',
+        "uv run frob check --json 2>&1 | grep LANG003",
         'uv run frob check --json 2>&1 | grep -vE "DOC006|WAIVE001"',
         "uv run frob check 2>&1 | tail -20",
     ):
@@ -406,9 +411,7 @@ def test_raw_worktree_still_fires(tmp_path: Path):
     home = tmp_path / "home"
     root = tmp_path / "repo"
     _init_repo(root)
-    result = _run_hook(
-        "git worktree add /tmp/x -b y main", home=home, cwd=root
-    )
+    result = _run_hook("git worktree add /tmp/x -b y main", home=home, cwd=root)
     reason = _denial_reason(result)
     assert reason is not None
     assert "frob ticket work" in reason
@@ -425,9 +428,7 @@ def test_raw_worktree_no_longer_recommends_enterworktree(tmp_path: Path):
     home = tmp_path / "home"
     root = tmp_path / "repo"
     _init_repo(root)
-    result = _run_hook(
-        "git worktree add /tmp/x -b y main", home=home, cwd=root
-    )
+    result = _run_hook("git worktree add /tmp/x -b y main", home=home, cwd=root)
     reason = _denial_reason(result)
     assert reason is not None
     assert "Use `uv run frob ticket work" in reason
@@ -461,9 +462,7 @@ def test_hand_edit_ledger_stays_quiet_on_an_unrelated_file(tmp_path: Path):
     home = tmp_path / "home"
     root = tmp_path / "repo"
     _init_repo(root)
-    result = _run_hook(
-        "sed -i 's/x/y/' docs/tickets.md.example", home=home, cwd=root
-    )
+    result = _run_hook("sed -i 's/x/y/' docs/tickets.md.example", home=home, cwd=root)
     assert result.stdout.strip() == ""
 
 
@@ -492,6 +491,43 @@ def test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory(tmp_path: Path
     _init_repo(root)
     result = _run_hook("grep -rn 'foo' src/frob/strata", home=home, cwd=root)
     assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2932
+def test_recursive_grep_stays_quiet_when_scoped_with_a_trailing_redirect(
+    tmp_path: Path,
+):
+    """T-2932: a scoped `grep -rn ... <path> 2>&1 | ...` -- the extremely
+    common "redirect stderr into the pipe" shape -- must stay quiet the
+    same way the no-redirect scoped case above does. Before the fix, the
+    negative pattern required the path token to be IMMEDIATELY followed
+    by `[|;&]|$`; the `2>&1` between the path and the pipe defeated that
+    lookahead and this genuinely-scoped command still blocked."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        "grep -rn 'foo' src/frob/strata 2>&1 | head -30", home=home, cwd=root
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2932
+def test_recursive_grep_still_fires_unscoped_with_a_trailing_redirect(
+    tmp_path: Path,
+):
+    """T-2932: the redirect tolerance must not swallow the unscoped case
+    -- `grep -rn ... . 2>&1 | ...` (no real subdirectory scoping) must
+    still be blocked, same as the no-redirect unscoped case above."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook("grep -rn 'foo' . 2>&1 | head -30", home=home, cwd=root)
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "frob explore xref" in reason
 
 
 # --- T-2927: must-stay-quiet fixtures for the 5 rules T-2908's audit found
@@ -616,9 +652,7 @@ def test_unscoped_pytest_stays_quiet_when_a_path_is_given(tmp_path: Path):
     home = tmp_path / "home"
     root = tmp_path / "repo"
     _init_repo(root)
-    result = _run_hook(
-        "pytest tests/test_foo.py -q", home=home, cwd=root
-    )
+    result = _run_hook("pytest tests/test_foo.py -q", home=home, cwd=root)
     assert result.stdout.strip() == ""
 
 
@@ -696,7 +730,7 @@ def test_hand_rename_sed_stays_quiet_without_import_mention(tmp_path: Path):
     root = tmp_path / "repo"
     _init_repo(root)
     result = _run_hook(
-        "sed -i 's/version = \"1.0\"/version = \"1.1\"/' pyproject.toml",
+        'sed -i \'s/version = "1.0"/version = "1.1"/\' pyproject.toml',
         home=home,
         cwd=root,
     )

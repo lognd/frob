@@ -2,7 +2,7 @@
 id: T-2932
 title: 'frob-suggest: recursive-grep negative pattern misses a scoped command''s own
   2>&1 redirect'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -21,6 +21,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_hook_frob_suggest.py::test_recursive_grep_stays_quiet_when_scoped_with_a_trailing_redirect
+- tests/test_hook_frob_suggest.py::test_recursive_grep_still_fires_unscoped_with_a_trailing_redirect
+- tests/test_hook_frob_suggest.py::test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory
+- tests/test_hook_frob_suggest.py::test_recursive_grep_still_fires_unscoped_at_repo_root
 designated_repro_test: null
 threat: null
 component: null
