@@ -2,7 +2,7 @@
 id: T-3179
 title: Attribution engine records UNATTRIBUTED for findings with a directly findable
   cause (2 measured)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -38,6 +38,11 @@ scope_changes:
   reason: frob:tests and frob:doc closure targets for the attribution symbols
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/unit/verify/test_attribution.py::TestAttributeBatch::test_signature_change_attributes_to_the_callee_commit
+- tests/unit/verify/test_attribution.py::TestAttributeBatch::test_both_directions_reaching_same_commit_is_still_one_candidate
+- tests/unit/verify/test_attribution.py::TestAttributeBatch::test_genuinely_unrelated_symbols_stay_unattributed_both_directions
+- tests/unit/verify/test_attribution.py::TestAttributeBatch::test_caller_break_attributes_to_the_caller_commit
 designated_repro_test: null
 threat: null
 component: null

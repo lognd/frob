@@ -520,6 +520,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3174: T-2114 fork-based concurrent-writer sim spuriously skips lock contention once ledger_lock spans the fork point
 - T-3177: Declare or waive SYS003 scripts_ops -> graphlang in branch_stranded_work_analysis.py
 - T-3178: Refresh add_cmd_evidence kind-gate description in tickets-data-storage.md
+- T-3179: Attribution engine records UNATTRIBUTED for findings with a directly findable cause (2 measured)
 - T-3180: Scope-lease overlap check refuses provably-disjoint globs (literal accepted, wildcard refused)
 
 ## [0.530.0] - unreleased

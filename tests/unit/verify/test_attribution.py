@@ -106,6 +106,97 @@ class TestAttributeBatch:
         assert attribution.commit_sha == "commitA"
         assert attribution.reachability_path == ("a.py::fn",)
 
+    def test_signature_change_attributes_to_the_callee_commit(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_signature_change_attributes_to_the_callee_commit  # noqa: E501
+        # T-3179 MUST-FIRE: commit A touches `callee` (e.g. a signature
+        # change); `caller` still calls `callee` the old way and now
+        # fails -- the finding is anchored at `caller`, the CALLER, not
+        # at `callee`. `caller -> callee` is the call-graph edge (caller
+        # calls callee), so `touched=callee` cannot reach `target=caller`
+        # forward; only `target -> touched` does. Before T-3179 this
+        # attributed nothing (forward-only), which is exactly the
+        # measured "directly findable cause reported UNATTRIBUTED" defect.
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "caller.py::caller": make_symbol("caller.py", "caller", 1, 5),
+                "callee.py::callee": make_symbol("callee.py", "callee", 1, 5),
+            },
+            edges=(),
+        )
+        call_graph = CallGraph(calls={"caller.py::caller": ("callee.py::callee",)})
+        batch = (make_queue_entry("commitA", "T-0001", ("callee.py::callee",)),)
+        result = attribute_batch(
+            tmp_path,
+            [("missing-argument", "caller.py", 3)],
+            batch,
+            graph_and_calls=(snapshot, call_graph),
+        )
+        assert result.is_ok
+        (attribution,) = result.danger_ok
+        assert attribution.status == "attributed"
+        assert attribution.commit_sha == "commitA"
+        assert attribution.ticket_id == "T-0001"
+
+    def test_both_directions_reaching_same_commit_is_still_one_candidate(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_both_directions_reaching_same_commit_is_still_one_candidate  # noqa: E501
+        # T-3179 MUST-STAY-QUIET: a single batch commit whose touched
+        # symbol reaches the finding in BOTH directions (mutually
+        # recursive/circular call edge) must not double-count itself as
+        # two separate reaching commits -- checking both directions must
+        # not manufacture a spurious ambiguity out of one real commit.
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn_a": make_symbol("a.py", "fn_a", 1, 5),
+                "b.py::fn_b": make_symbol("b.py", "fn_b", 1, 5),
+            },
+            edges=(),
+        )
+        call_graph = CallGraph(
+            calls={"a.py::fn_a": ("b.py::fn_b",), "b.py::fn_b": ("a.py::fn_a",)}
+        )
+        batch = (make_queue_entry("commitA", "T-0001", ("b.py::fn_b",)),)
+        result = attribute_batch(
+            tmp_path,
+            [("RULE1", "a.py", 2)],
+            batch,
+            graph_and_calls=(snapshot, call_graph),
+        )
+        assert result.is_ok
+        (attribution,) = result.danger_ok
+        assert attribution.status == "attributed"
+        assert attribution.commit_sha == "commitA"
+
+    def test_genuinely_unrelated_symbols_stay_unattributed_both_directions(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_genuinely_unrelated_symbols_stay_unattributed_both_directions  # noqa: E501
+        # T-3179 MUST-STAY-QUIET: checking the reverse direction must not
+        # turn every finding attributable -- two symbols with NO edge
+        # either way stay UNATTRIBUTED.
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={"orphan.py::fn": make_symbol("orphan.py", "fn", 1, 5)},
+            edges=(),
+        )
+        call_graph = CallGraph(calls={})
+        batch = (make_queue_entry("commitA", "T-0001", ("unrelated.py::other",)),)
+        result = attribute_batch(
+            tmp_path,
+            [("RULE1", "orphan.py", 2)],
+            batch,
+            graph_and_calls=(snapshot, call_graph),
+        )
+        assert result.is_ok
+        (attribution,) = result.danger_ok
+        assert attribution.status == "unattributed"
+        assert attribution.candidate_commits == ()
+
     def test_two_reaching_commits_is_unattributed(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_two_reaching_commits_is_unattributed  # noqa: E501
         # Both commits touch symbols that reach the same finding -- never

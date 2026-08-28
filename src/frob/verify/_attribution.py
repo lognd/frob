@@ -299,12 +299,15 @@ def attribute_batch(
 
     For each finding: resolve its symbol (or, absent a line, its
     whole-file candidate symbol set -- see this module's own docstring),
-    then check every `batch` entry's `touched_symbols` for forward
-    reachability to that symbol via the reference call graph. Exactly one
-    reaching commit is `attributed`; zero or more than one is
-    `unattributed`, with every reaching commit's sha recorded in
-    `candidate_commits` for the ambiguous case (empty for the
-    zero-candidate case).
+    then check every `batch` entry's `touched_symbols` for reachability
+    to that symbol via the reference call graph -- forward
+    (touched-calls-finding) first, falling back to reverse
+    (finding-calls-touched) only when forward finds nothing at all
+    (T-3179; see `_matching_batch_entries`'s own docstring for why the
+    two tiers are not merged). Exactly one reaching commit is
+    `attributed`; zero or more than one is `unattributed`, with every
+    reaching commit's sha recorded in `candidate_commits` for the
+    ambiguous case (empty for the zero-candidate case).
 
     `graph_and_calls`, when given, is an already-built `(GraphSnapshot,
     CallGraph)` pair -- lets a caller (or a test) skip the load/build step
@@ -497,16 +500,88 @@ def _matching_batch_entries(
     reference call graph, paired with the reachability path that proved
     it -- the rule this whole module exists to implement (a finding
     attributes to the batch commit whose touched symbols REACH it, never
-    a path-string match)."""
+    a path-string match).
+
+    T-3179 TWO-TIER CHECK -- forward first, reverse only as a fallback.
+    A change can break a caller two distinct ways: (1) `touched` (the
+    changed code) calls `target` (the finding site) with something now
+    wrong -- the original, forward-only check, tier A below; (2)
+    `touched` IS the callee whose signature/contract changed, and
+    `target` (the finding site) is a CALLER of `touched` now broken by
+    that change -- e.g. a signature edit that leaves a stale call site
+    raising `TypeError` at the call site's own enclosing symbol. Forward-
+    only reachability structurally cannot see case (2): it walks from
+    `touched` outward along `calls`, but the edge for case (2) runs
+    `target -> touched`, the opposite direction from `touched`. MEASURED
+    (T-3179): two independent real findings -- a stale-arity call site
+    after a callee's signature change, and a module import made stale by
+    a moved symbol -- both hit case (2) and both came back UNATTRIBUTED
+    under the forward-only check despite a directly findable cause.
+
+    Tier B (`target -> touched`, reverse) runs ONLY when tier A found NO
+    matches at all -- never merged into one combined direction-agnostic
+    check. Trying both directions unconditionally was tried and reverted
+    (see the removed test failure this comment used to describe): a
+    finding's own code routinely calls several other symbols that some
+    OTHER, unrelated batch commit happens to have also touched (e.g. a
+    docstring-only edit) -- checking `target -> touched` for every
+    candidate regardless of tier A's outcome turns that coincidental call
+    edge into a spurious extra "candidate", manufacturing ambiguity out
+    of a case that used to be a clean, correct single attribution. Tier A
+    already includes the depth-zero `touched == target` self-touch case,
+    which is the strongest possible evidence a commit caused a finding;
+    a reverse-direction inference must never outrank that. Falling back
+    to tier B only on a tier-A ZERO keeps every previously-clean
+    attribution exactly as clean as before, while still recovering the
+    T-3179 cases that used to be a false UNATTRIBUTED specifically
+    because NOTHING in the batch touched the finding's own symbol or
+    anything it called forward. This does not touch T-2929's staleness
+    refusal (that gate runs upstream of this function entirely) or loosen
+    the ambiguity rule -- zero-or-many reaching commits within whichever
+    tier actually ran is still `unattributed`."""
+    tier_a = _matches_in_direction(
+        candidates,
+        batch,
+        call_graph,
+        forward=True,
+        max_depth=max_depth,
+        max_nodes=max_nodes,
+    )
+    if tier_a:
+        return tier_a
+    return _matches_in_direction(
+        candidates,
+        batch,
+        call_graph,
+        forward=False,
+        max_depth=max_depth,
+        max_nodes=max_nodes,
+    )
+
+
+def _matches_in_direction(
+    candidates: frozenset[str],
+    batch: Sequence[VerifyQueueEntry],
+    call_graph,  # noqa: ANN001
+    *,
+    forward: bool,
+    max_depth: int,
+    max_nodes: int,
+) -> list[tuple[VerifyQueueEntry, tuple[str, ...]]]:
+    """One direction of `_matching_batch_entries`'s two-tier check:
+    `forward=True` is the original touched-reaches-target rule; `forward
+    =False` is T-3179's target-reaches-touched fallback (the finding
+    site is a caller of the touched, changed symbol)."""
     matches: list[tuple[VerifyQueueEntry, tuple[str, ...]]] = []
     for batch_entry in batch:
         found_path: tuple[str, ...] | None = None
         for touched in batch_entry.touched_symbols:
             for target in candidates:
+                start, end = (touched, target) if forward else (target, touched)
                 path = _reaches(
                     call_graph.calls,
-                    touched,
-                    target,
+                    start,
+                    end,
                     max_depth=max_depth,
                     max_nodes=max_nodes,
                 )
