@@ -10,7 +10,22 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
+
+#: T-2391: the three states a `ToolResult` can actually be in, replacing
+#: the ambiguous "a list of findings, whose emptiness means... something"
+#: shape the fail-loudly doctrine names as this repo's single dominant
+#: bug class. `ToolResult.measurement` (below) derives this from data
+#: already present on every `ToolResult` today -- no per-gate migration
+#: required for the cases it covers (see `ToolResult.measurement`'s own
+#: docstring for exactly which cases those are, and which are NOT yet
+#: covered and were filed as follow-up tickets instead of guessed at).
+# frob:waive COV001 reason="docs/modules/process.md (this module's own doc home) was \
+# held by a LIVE cross-worktree lease (T-3191, in-progress) when this symbol was added \
+# -- filed T-3206 (renumbers on its own land, T-1999/T-2003's own precedent for this \
+# exact lease-collision shape) to add the frob:doc anchor once that lease clears; not \
+# silently dropped"
+Measurement = Literal["measured", "not_measured"]
 
 # frob:doc docs/modules/process.md#public-api
 Severity = Literal["error", "warning", "note", "info"]
@@ -96,6 +111,11 @@ class TestCase(BaseModel):
 
 
 # frob:doc docs/modules/process.md#public-api
+# frob:waive AFFECT001 reason="T-2391 added measurement/measurement_reason computed \
+# fields to this class; docs/modules/process.md (this class's own affects()-closure \
+# doc) was held by a LIVE cross-worktree lease (T-3191, in-progress) at the time -- \
+# filed T-3206 (T-1999/T-2003's own precedent for this exact lease-collision shape) to \
+# update that doc once the lease clears; not silently dropped"
 class ToolResult(BaseModel):
     """
     Parsed output of a single tool invocation.
@@ -131,6 +151,72 @@ class ToolResult(BaseModel):
         # frob:doc docs/modules/process.md#public-api
         """Test cases that neither passed nor were skipped."""
         return [t for t in self.tests if not t.passed and not t.skipped]
+
+    # frob:ticket T-2391
+    # frob:waive COV001 reason="docs/modules/process.md (this module's own doc home) \
+    # was held by a LIVE cross-worktree lease (T-3191, in-progress) when this symbol \
+    # was added -- filed T-3206 (renumbers on its own land, T-1999/T-2003's own \
+    # precedent for this exact lease-collision shape) to add the frob:doc anchor once \
+    # that lease clears; not silently dropped"
+    # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_zero_diagnostics  # noqa: E501
+    # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_a_real_error_is_present  # noqa: E501
+    # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_not_measured_when_every_diagnostic_is_unresolved_info  # noqa: E501
+    # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_unresolved_mixes_with_a_real_warning  # noqa: E501
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def measurement(self) -> Measurement:
+        """T-2391 fail-loudly doctrine: `"not_measured"` iff this
+        `ToolResult` is a `gate:<FAMILY>` result whose ENTIRE content is
+        `Severity.UNRESOLVED` (T-1664's existing "could not determine an
+        answer" signal, rendered by `frob.check._python` as
+        `severity="info"`) -- zero errors, zero warnings, at least one
+        diagnostic, every diagnostic `"info"`. That is the one
+        `ToolResult` shape this repo already produces in dozens of gate
+        families (every `*_SCHEMA` config-table validator, FLAGCOV001,
+        REF001/REF002) whose zero-error/zero-warning summary is
+        genuinely ambiguous between "measured, clean" and "could not
+        measure anything" -- `"measured"` (the default) covers both a
+        real clean pass AND every OTHER unmeasured shape this repo has
+        (budget truncation, a hardcoded-layout gate against a foreign
+        project, a matcher that silently never fires): those need a
+        per-call-site or per-gate signal this generic, data-only
+        computation cannot invent, and were filed as T-2391 follow-up
+        tickets rather than guessed at here. A computed field (not a
+        stored one) so every EXISTING caller across this repo that
+        already builds a `ToolResult` gets this for free, retroactively,
+        with no migration -- the identical data `frob.check.
+        _is_unresolved_only_gate` already computed privately just for
+        `as_text`'s icon, now a first-class part of the model so
+        `as_json()` discloses it too (T-2891 left exactly this JSON gap
+        open; see this repo's own doc comment there)."""
+        if (
+            self.tool.startswith("gate:")
+            and self.error_count == 0
+            and self.warning_count == 0
+            and bool(self.diagnostics)
+            and all(d.severity == "info" for d in self.diagnostics)
+        ):
+            return "not_measured"
+        return "measured"
+
+    # frob:ticket T-2391
+    # frob:waive COV001 reason="docs/modules/process.md (this module's own doc home) \
+    # was held by a LIVE cross-worktree lease (T-3191, in-progress) when this symbol \
+    # was added -- filed T-3206 (renumbers on its own land, T-1999/T-2003's own \
+    # precedent for this exact lease-collision shape) to add the frob:doc anchor once \
+    # that lease clears; not silently dropped"
+    # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_not_measured_when_every_diagnostic_is_unresolved_info  # noqa: E501
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def measurement_reason(self) -> str:
+        """Non-empty iff `measurement == "not_measured"`: the joined
+        messages of every diagnostic that made this result
+        `not_measured` -- so a `--json` consumer never has to re-derive
+        "why" from `diagnostics` by hand the way `as_text`'s reader
+        already could just by looking at the rendered lines."""
+        if self.measurement != "not_measured":
+            return ""
+        return "; ".join(d.message for d in self.diagnostics)
 
     def _partition_diagnostics(
         self,

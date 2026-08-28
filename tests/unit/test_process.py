@@ -353,3 +353,88 @@ def test_junit_malformed():
     r = parse_junit_xml("not xml at all")
     assert not r.passed
     assert "malformed" in r.summary.lower()
+
+
+# ---------------------------------------------------------------------------
+# ToolResult.measurement (T-2391 fail-loudly doctrine)
+# ---------------------------------------------------------------------------
+
+
+class TestToolResultMeasurement:
+    """`ToolResult.measurement`/`measurement_reason`: the computed-field
+    MEASURED/NOT_MEASURED distinction a `--json` consumer can now read
+    directly, instead of re-deriving `frob.check._is_unresolved_only_gate`'s
+    predicate by hand."""
+
+    def test_measured_when_zero_diagnostics(self) -> None:
+        # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_zero_diagnostics  # noqa: E501
+        from frob.process.parsers.common import ToolResult
+
+        r = ToolResult(tool="gate:COV", diagnostics=[], summary="0 errors, 0 warnings")
+        assert r.measurement == "measured"
+        assert r.measurement_reason == ""
+
+    def test_measured_when_a_real_error_is_present(self) -> None:
+        # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_a_real_error_is_present  # noqa: E501
+        from frob.process.parsers.common import Diagnostic, ToolResult
+
+        r = ToolResult(
+            tool="gate:COV",
+            diagnostics=[Diagnostic(severity="error", message="boom")],
+        )
+        assert r.measurement == "measured"
+
+    def test_not_measured_when_every_diagnostic_is_unresolved_info(self) -> None:
+        # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_not_measured_when_every_diagnostic_is_unresolved_info  # noqa: E501
+        from frob.process.parsers.common import Diagnostic, ToolResult
+
+        r = ToolResult(
+            tool="gate:FLAGCOV",
+            diagnostics=[
+                Diagnostic(severity="info", message="FLAGCOV001: no commands declared")
+            ],
+        )
+        assert r.measurement == "not_measured"
+        assert "no commands declared" in r.measurement_reason
+
+    def test_measured_when_unresolved_mixes_with_a_real_warning(self) -> None:
+        # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_unresolved_mixes_with_a_real_warning  # noqa: E501
+        from frob.process.parsers.common import Diagnostic, ToolResult
+
+        r = ToolResult(
+            tool="gate:COV",
+            diagnostics=[
+                Diagnostic(severity="info", message="unresolved for one target"),
+                Diagnostic(severity="warning", message="a real finding"),
+            ],
+        )
+        assert r.measurement == "measured"
+
+    def test_non_gate_tool_is_never_not_measured(self) -> None:
+        # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_non_gate_tool_is_never_not_measured  # noqa: E501
+        # T-2391: restricted to `gate:`-prefixed tools -- an ordinary
+        # tool (ruff, ty) emitting an info-severity note for an unrelated
+        # reason must never be misread as an unmeasured gate.
+        from frob.process.parsers.common import Diagnostic, ToolResult
+
+        r = ToolResult(
+            tool="ruff-check",
+            diagnostics=[Diagnostic(severity="info", message="a stray note")],
+        )
+        assert r.measurement == "measured"
+
+    def test_json_discloses_measurement(self) -> None:
+        # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_json_discloses_measurement  # noqa: E501
+        # T-2391 acceptance[0]: NOT_MEASURED must be visible in --json
+        # output, not only the human `as_text` rendering (the T-2891 gap).
+        import json
+
+        from frob.process.parsers.common import Diagnostic, ToolResult
+
+        r = ToolResult(
+            tool="gate:REF",
+            diagnostics=[Diagnostic(severity="info", message="no targets resolved")],
+        )
+        dumped = json.loads(r.model_dump_json())
+        assert dumped["measurement"] == "not_measured"
+        assert "no targets resolved" in dumped["measurement_reason"]

@@ -698,6 +698,11 @@ class TestJsonStdoutStructuralGuard:
                 "diagnostics": [],
                 "tests": [],
                 "summary": "",
+                # T-2391: ToolResult's own computed measurement fields,
+                # genuinely part of the JSON shape now -- "measured" is
+                # the correct default-shim value for a bare "fake" tool.
+                "measurement": "measured",
+                "measurement_reason": "",
             }
         ]
 

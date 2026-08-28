@@ -2,7 +2,7 @@
 id: T-2391
 title: 'a zero-findings gate result is ambiguous: unmeasured and inapplicable gates
   report as green'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -21,11 +21,11 @@ scope:
 - tests/unit/test_check_measurement.py
 - docs/commands/check.md
 - tests/unit/test_app_runners_batch6.py
-- tickets/T-draft-09d7321f/**
-- tickets/T-draft-7df3a108/**
-- tickets/T-draft-b00e9a5f/**
-- tickets/T-draft-b44869e6/**
-- tickets/T-draft-c7bfd2e9/**
+- tickets/T-3202/**
+- tickets/T-3203/**
+- tickets/T-3204/**
+- tickets/T-3205/**
+- tickets/T-3206/**
 - rapid-debt.jsonl
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -82,36 +82,36 @@ scope_changes:
   actor: logan
   at: '2026-08-27'
 - op: add
-  glob: tickets/T-draft-09d7321f/**
+  glob: tickets/T-3202/**
   reason: frob ticket new for the four required T-2391 follow-up tickets writes tickets/T-draft-*/ticket.md
     before renumbering -- a machinery side effect of filing this ticket's own required
     follow-up work, not scope creep (T-3172 precedent)
   actor: logan
   at: '2026-08-28'
 - op: add
-  glob: tickets/T-draft-7df3a108/**
+  glob: tickets/T-3203/**
   reason: frob ticket new for the four required T-2391 follow-up tickets writes tickets/T-draft-*/ticket.md
     before renumbering -- a machinery side effect of filing this ticket's own required
     follow-up work, not scope creep (T-3172 precedent)
   actor: logan
   at: '2026-08-28'
 - op: add
-  glob: tickets/T-draft-b00e9a5f/**
+  glob: tickets/T-3204/**
   reason: frob ticket new for the four required T-2391 follow-up tickets writes tickets/T-draft-*/ticket.md
     before renumbering -- a machinery side effect of filing this ticket's own required
     follow-up work, not scope creep (T-3172 precedent)
   actor: logan
   at: '2026-08-28'
 - op: add
-  glob: tickets/T-draft-b44869e6/**
+  glob: tickets/T-3205/**
   reason: frob ticket new for the four required T-2391 follow-up tickets writes tickets/T-draft-*/ticket.md
     before renumbering -- a machinery side effect of filing this ticket's own required
     follow-up work, not scope creep (T-3172 precedent)
   actor: logan
   at: '2026-08-28'
 - op: add
-  glob: tickets/T-draft-c7bfd2e9/**
-  reason: frob ticket new for the doc-anchor follow-up ticket writes tickets/T-draft-c7bfd2e9/ticket.md
+  glob: tickets/T-3206/**
+  reason: frob ticket new for the doc-anchor follow-up ticket writes tickets/T-3206/ticket.md
     -- machinery side effect (T-3172 precedent)
   actor: logan
   at: '2026-08-28'
@@ -179,7 +179,7 @@ acceptance_amendments:
     a status, when the meta-check runs, then it is reported, proving the doctrine
     is enforced structurally rather than by convention.
   new_text: null
-  reason: deferred to follow-up T-draft-09d7321f (GATESTATUS001 meta-check) -- see
+  reason: deferred to follow-up T-3202 (GATESTATUS001 meta-check) -- see
     T-2391's own Done report for the explicit cut; T-1662's own standard forbids implementing
     a lexical-pattern-matching meta-check without a design pass first
   actor: logan
@@ -190,7 +190,7 @@ acceptance_amendments:
     runs, then it reports NOT_APPLICABLE with an explanation rather than a silent
     zero.
   new_text: null
-  reason: deferred to follow-up T-draft-b44869e6 (per-gate NOT_APPLICABLE self-declaration
+  reason: deferred to follow-up T-3205 (per-gate NOT_APPLICABLE self-declaration
     for a hardcoded-layout-style gate) -- see T-2391's own Done report for the explicit
     cut; needs a per-gate declared-surface resolver this generic aggregation-layer
     change cannot provide

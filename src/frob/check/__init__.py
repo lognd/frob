@@ -245,14 +245,16 @@ def _is_unresolved_only_gate(r: ToolResult) -> bool:
     prefixed tools: other stages (`frob-arch`'s `large-file` suggestions,
     for one) also emit `"info"`-severity diagnostics for reasons that
     have nothing to do with T-1664's UNRESOLVED concept, and must not be
-    caught by this check."""
-    return (
-        r.tool.startswith("gate:")
-        and r.error_count == 0
-        and r.warning_count == 0
-        and bool(r.diagnostics)
-        and all(d.severity == "info" for d in r.diagnostics)
-    )
+    caught by this check.
+
+    T-2391: now a thin wrapper over `ToolResult.measurement` (a computed
+    field with the IDENTICAL predicate, promoted onto the model itself so
+    `as_json()` discloses it too, not only this text-rendering helper).
+    Kept as its own named function rather than inlined at both call
+    sites -- `as_text`'s icon selection and (via `measurement`) `as_json`
+    -- because the T-2891 docstring above is the canonical explanation of
+    WHY this shape matters and is cited from both places."""
+    return r.measurement == "not_measured"
 
 
 # frob:doc docs/commands/check.md#public-api
@@ -276,6 +278,20 @@ class CheckResult(BaseModel):
         """Sum of warning-severity diagnostics across every tool that ran."""
         return sum(r.warning_count for r in self.results)
 
+    # frob:ticket T-2391
+    # frob:doc docs/commands/check.md#public-api
+    # frob:tests tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_empty_when_every_result_measured  # noqa: E501
+    # frob:tests tests/unit/test_check_measurement.py::TestUnmeasuredResults.test_lists_every_not_measured_result  # noqa: E501
+    @property
+    def unmeasured_results(self) -> list[ToolResult]:
+        """Every `results` entry whose `measurement` is not `"measured"`
+        (T-2391) -- the roster `as_text` prints automatically (standing
+        directive: automatic over commands, a finding that requires
+        remembering a second command is not a control) and `as_json`
+        callers can derive the identical list from without re-deriving
+        the `_is_unresolved_only_gate` predicate by hand."""
+        return [r for r in self.results if r.measurement != "measured"]
+
     def as_text(self, color: bool = False) -> str:
         # frob:doc docs/commands/check.md#public-api
         """Human-readable report: errors, then warnings, then notes, then a
@@ -294,6 +310,24 @@ class CheckResult(BaseModel):
         lines.extend(
             _section_lines("## Notes / suggestions", BOLD, buckets["note"], color)
         )
+
+        # T-2391: printed unconditionally whenever non-empty, in the
+        # place an operator already looks (this same report), never a
+        # second command to remember -- the fail-loudly doctrine's own
+        # "automatic over commands" directive applied to gate status.
+        unmeasured = self.unmeasured_results
+        if unmeasured:
+            from frob.logging.color import CYAN
+
+            lines.append(paint("## Unmeasured gates", f"{BOLD};{YELLOW}", color))
+            lines.append(
+                "  the following gate(s) could not determine an answer for "
+                "part or all of their scope -- their zero-error/zero-warning "
+                "count above is NOT a clean measurement, do not read it as one:"
+            )
+            for r in unmeasured:
+                lines.append(f"  {paint(r.tool, CYAN, color)}: {r.measurement_reason}")
+            lines.append("")
 
         lines.append(paint("## Tool summary", BOLD, color))
         for r in self.results:
