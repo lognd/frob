@@ -2,7 +2,7 @@
 id: T-3021
 title: 'blocked_by never auto-clears: 8 queued tickets are hidden from doable by blockers
   that are already done or dropped'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
