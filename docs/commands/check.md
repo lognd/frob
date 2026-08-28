@@ -149,6 +149,39 @@ Runs in order:
 Output order: errors first, then warnings, then notes. Each tool gets a
 one-line summary. Fails fast if errors are found.
 
+### Multi-platform typecheck (T-3191)
+
+`ty check --python-platform` defaults to the host running it (`ty check
+--help`), so stage 3 above (`frob.check._python._run_ty`) used to
+typecheck ONLY the platform `frob check` happened to run on -- a
+Windows- or macOS-only diagnostic was structurally unreachable from any
+other host, and CI (whichever runner drew that job) was the first place
+it could ever surface. CI run 33135896391 measured this directly: 4
+Windows-only Typecheck diagnostics (an `os.sysconf` call and a
+`ctypes.windll` access, both POSIX/Windows-conditional in `frob.process.
+_reap`/`_pid_liveness`) that no prior Linux-hosted `frob check` had ever
+seen.
+
+`_run_ty` now runs `ty check` once per platform in `frob.toml`'s `[ty]
+target_platforms` (default `["linux", "win32", "darwin"]` --
+`frob.check._python._DEFAULT_TY_TARGET_PLATFORMS`, this project's own
+full CI OS matrix, `.github/workflows/ci.yml`) and reports the union as
+one `tool="ty"` `ToolResult`, each diagnostic's message prefixed
+`[platform=<name>]` so a platform-only finding is attributable at a
+glance. Measured added cost: ~1.2s per extra platform on this repo (`ty`
+is Rust-native) -- ~2.5s total for the two non-host platforms, run on
+every `frob check`, not deferred to a land-time/CI-parity-only gate.
+
+A platform-inverted finding -- a `ty: ignore` required on one target and
+reported as an unused suppression (itself an error) on another, since a
+single static suppression cannot satisfy opposite targets at once -- is
+not special-cased by this runner. T-3191's own two sites resolved that
+shape by removing the need for any suppression at all: an explicit
+`if sys.platform == "win32":` guard around the platform-specific access,
+which `ty` narrows per `--python-platform` target the same way
+typeshed's own conditional stubs do (see "PID liveness (T-3018)" in
+`docs/modules/process.md`).
+
 ### Skip flags
 
 <!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_parser -->

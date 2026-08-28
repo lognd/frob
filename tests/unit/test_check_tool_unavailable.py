@@ -107,14 +107,18 @@ class TestTyHermeticRootResolution:
         assert isinstance(r, ToolResult)
         assert r.passed
 
-        assert len(captured) == 1
-        argv = captured[0]
+        # T-3191: one invocation per declared `--python-platform` target
+        # (`_DEFAULT_TY_TARGET_PLATFORMS`), not a single bare host-platform
+        # check -- every one of them must still carry the T-0996 pinning
+        # flags below.
+        assert len(captured) == 3
         expected_src = str((tmp_path / "src").resolve())
         expected_venv = str((tmp_path / ".venv").resolve())
-        assert "--extra-search-path" in argv
-        assert argv[argv.index("--extra-search-path") + 1] == expected_src
-        assert "--python" in argv
-        assert argv[argv.index("--python") + 1] == expected_venv
+        for argv in captured:
+            assert "--extra-search-path" in argv
+            assert argv[argv.index("--extra-search-path") + 1] == expected_src
+            assert "--python" in argv
+            assert argv[argv.index("--python") + 1] == expected_venv
 
     def test_no_src_or_venv_omits_the_pinning_flags(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
@@ -131,10 +135,11 @@ class TestTyHermeticRootResolution:
         monkeypatch.setattr(subprocess, "run", _fake_run)
         _run_ty(tmp_path)
 
-        assert len(captured) == 1
-        argv = captured[0]
-        assert "--extra-search-path" not in argv
-        assert "--python" not in argv
+        # T-3191: still one invocation per declared target platform.
+        assert len(captured) == 3
+        for argv in captured:
+            assert "--extra-search-path" not in argv
+            assert "--python" not in argv
 
 
 # frob:ticket T-0142

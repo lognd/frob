@@ -2,7 +2,7 @@
 id: T-3191
 title: 'Local gate typechecks only the host platform: Windows/macOS ty diagnostics
   are unreachable before CI'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -17,6 +17,15 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_reap.py
 - src/frob/process/_pid_liveness.py
+- src/frob/check/_python.py
+- frob.toml
+- tests/unit/test_check.py
+- tests/unit/test_check_tool_unavailable.py
+- tests/unit/test_process_reap.py
+- tests/unit/test_process_pid_liveness.py
+- docs/modules/process.md
+- docs/commands/check.md
+- tickets/T-3211/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +43,72 @@ scope_changes:
     by the implementer once the policy is chosen
   actor: logan
   at: '2026-08-27'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: 'T-3191: re-apply scope additions -- prior --add calls appear to have landed
+    on a divergent ref, not this worktree''s own branch'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: frob.toml
+  reason: 'T-3191: re-apply scope additions -- prior --add calls appear to have landed
+    on a divergent ref, not this worktree''s own branch'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: 'T-3191: re-apply scope additions -- prior --add calls appear to have landed
+    on a divergent ref, not this worktree''s own branch'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_check_tool_unavailable.py
+  reason: 'T-3191: re-apply scope additions -- prior --add calls appear to have landed
+    on a divergent ref, not this worktree''s own branch'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_process_reap.py
+  reason: 'T-3191: re-apply scope additions -- prior --add calls appear to have landed
+    on a divergent ref, not this worktree''s own branch'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_process_pid_liveness.py
+  reason: 'T-3191: re-apply scope additions -- prior --add calls appear to have landed
+    on a divergent ref, not this worktree''s own branch'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/process.md
+  reason: 'T-3191: re-apply scope additions -- prior --add calls appear to have landed
+    on a divergent ref, not this worktree''s own branch'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/commands/check.md
+  reason: 'T-3191: re-apply scope additions -- prior --add calls appear to have landed
+    on a divergent ref, not this worktree''s own branch'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tickets/T-3211/ticket.md
+  reason: 'T-3191: re-apply scope additions -- prior --add calls appear to have landed
+    on a divergent ref, not this worktree''s own branch'
+  actor: logan
+  at: '2026-08-28'
+evidence:
+- tests/unit/test_check.py::TestRunTyMultiPlatform::test_default_platforms_all_run
+- tests/unit/test_check.py::TestRunTyMultiPlatform::test_windows_only_diagnostic_is_reported_from_linux_host
+- tests/unit/test_check.py::TestRunTyMultiPlatform::test_ordinary_cross_platform_code_stays_quiet
+- tests/unit/test_check.py::TestRunTyMultiPlatform::test_configured_target_platforms_override_default
+- tests/unit/test_check.py::TestRunTyMultiPlatform::test_one_failing_platform_fails_the_merged_result
+- tests/unit/test_check_tool_unavailable.py::TestTyHermeticRootResolution::test_extra_search_path_and_python_pin_to_root
+- tests/unit/test_check_tool_unavailable.py::TestTyHermeticRootResolution::test_no_src_or_venv_omits_the_pinning_flags
+- tests/unit/test_process_reap.py::TestReadUptimeAndClkTck::test_win32_skips_sysconf_and_uses_fallback
+- tests/unit/test_process_reap.py::TestReadUptimeAndClkTck::test_non_win32_still_reads_sysconf
+- tests/unit/test_process_pid_liveness.py::TestKernel32PlatformGuard::test_win32_resolves_kernel32
+- tests/unit/test_process_pid_liveness.py::TestKernel32PlatformGuard::test_non_win32_leaves_kernel32_none
 designated_repro_test: null
 threat: null
 component: null

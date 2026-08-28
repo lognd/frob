@@ -226,33 +226,74 @@ def _run_ruff_autofix(root: Path) -> list[ToolResult]:
     return out
 
 
+#: T-3191: the declared `ty --python-platform` targets a bare `_run_ty(root)`
+#: checks when `frob.toml` names no `[ty] target_platforms` of its own. `ty
+#: check --python-platform` defaults to "the current system's platform"
+#: (`ty check --help`), so every prior local/CI run typechecked ONLY the host
+#: it happened to execute on -- a Windows- or macOS-only diagnostic (e.g. a
+#: `ctypes.windll` attribute access, or `os.sysconf` being POSIX-only) was
+#: structurally unreachable from a Linux host, and CI was the first place it
+#: could ever surface (see T-3191's own ticket body, filed from CI run
+#: 33135896391's 4 Windows-only Typecheck diagnostics). This default set
+#: covers every OS this project's own CI matrix actually runs
+#: (.github/workflows/ci.yml: ubuntu-latest/windows-latest/macos-latest).
+_DEFAULT_TY_TARGET_PLATFORMS: tuple[str, ...] = ("linux", "win32", "darwin")
+
+
 # frob:ticket T-0142
 # frob:ticket T-0996
+# frob:ticket T-3191
+# frob:tests \
+# tests/unit/test_check.py::TestRunTyMultiPlatform::test_default_platforms_all_run
+# frob:tests \
+# tests/unit/test_check.py::TestRunTyMultiPlatform::test_windows_only_diagnostic_is_rep\
+# orted_from_linux_host
+# frob:tests \
+# tests/unit/test_check.py::TestRunTyMultiPlatform::test_ordinary_cross_platform_code_s\
+# tays_quiet
+# frob:tests \
+# tests/unit/test_check.py::TestRunTyMultiPlatform::test_configured_target_platforms_ov\
+# erride_default
 def _run_ty(root: Path) -> ToolResult:
-    """ty type-check, honouring a local ty.toml's extra-paths. A missing
-    `ty` binary (T-0142) is a typed failing ToolResult, never a silent
-    skip -- the previous `None` return vanished the stage entirely.
+    """ty type-check, honouring a local ty.toml's extra-paths (T-0996), run
+    ONCE PER TARGET PLATFORM (T-3191, see module docstring / docs/commands/
+    check.md's "Multi-platform typecheck" section for the full rationale)
+    and reported as the union, each diagnostic labelled `[platform=<name>]`.
+    A missing `ty` binary (T-0142) is a typed failing ToolResult, never a
+    silent skip -- the previous `None` return vanished the stage entirely."""
+    base_cmd, scan = _ty_base_cmd(root)
+    platforms = _resolve_ty_target_platforms(scan)
+    results = [
+        _run_ty_one([*base_cmd, "--python-platform", platform], platform)
+        for platform in platforms
+    ]
+    return _merge_ty_results(results, platforms)
 
-    T-0996: `ty` resolves first-party imports and its Python environment
-    by walking UP the directory tree from `root` looking for the nearest
-    `pyproject.toml`/`.venv` -- there is no ty flag that pins that search
-    to `root` and disables the upward walk (`--project` only changes the
+
+# frob:ticket T-0996
+# frob:ticket T-3191
+def _ty_base_cmd(root: Path) -> tuple[list[str], Path]:
+    """The `ty check <root>` argv shared by every `--python-platform`
+    invocation `_run_ty` makes, plus the `scan` dir (`root` itself, or its
+    parent if `root` names a file) that dir-relative lookups below resolve
+    against -- factored out of `_run_ty` so per-platform looping stays
+    readable (T-3191).
+
+    T-0996: `ty` resolves first-party imports and its Python environment by
+    walking UP the directory tree from `root` looking for the nearest
+    `pyproject.toml`/`.venv` -- there is no ty flag that pins that search to
+    `root` and disables the upward walk (`--project` only changes the
     walk's starting point, per `ty check --help`). A `root` nested under
     ANY ancestor directory that happens to contain an unrelated
     `pyproject.toml`/`.venv` (a stray scratch file from another process, a
     monorepo parent, ...) silently mis-resolves every first-party import
     and every third-party dependency to that ancestor instead of `root`
-    (reproduced against a stray `/tmp/pyproject.toml` + `/tmp/.venv`
-    during T-0996's investigation -- a fresh scaffold nested three levels
-    under a polluted `/tmp` failed `ty check` with `unresolved-import` on
-    its OWN package, while the identical scaffold one level under `$HOME`
-    passed cleanly). Passing `--extra-search-path <root>/src` (when a
-    src-layout exists) and `--python <root>/.venv` (when a project-local
+    (reproduced against a stray `/tmp/pyproject.toml` + `/tmp/.venv` during
+    T-0996's investigation). Passing `--extra-search-path <root>/src` (when
+    a src-layout exists) and `--python <root>/.venv` (when a project-local
     venv exists) makes first-party and third-party resolution hermetic to
-    `root` regardless of what ancestor directories contain, independent
-    of a `ty.toml`."""
-    from frob.process.parsers import parse_ty
-
+    `root` regardless of what ancestor directories contain, independent of
+    a `ty.toml`."""
     scan = root if root.is_dir() else root.parent
     cmd = ["ty", "check", str(root)]
     src_dir = scan / "src"
@@ -272,17 +313,83 @@ def _run_ty(root: Path) -> ToolResult:
                 cmd += ["--extra-search-path", str((scan / p).resolve())]
         except Exception:
             pass
+    return cmd, scan
+
+
+# frob:ticket T-3191
+def _resolve_ty_target_platforms(scan: Path) -> tuple[str, ...]:
+    """The `ty --python-platform` targets `_run_ty` checks against --
+    `frob.toml`'s `[ty] target_platforms` if declared, else
+    `_DEFAULT_TY_TARGET_PLATFORMS`. A malformed/unreadable `frob.toml` or an
+    empty/non-list `target_platforms` falls back to the default rather than
+    checking nothing -- PLATFORM001 doctrine is to declare the boundary, not
+    silently shrink it."""
+    frob_cfg = scan / "frob.toml"
+    if frob_cfg.exists():
+        try:
+            import tomllib
+
+            with frob_cfg.open("rb") as f:
+                doc = tomllib.load(f)
+            declared = doc.get("ty", {}).get("target_platforms")
+            if isinstance(declared, list) and declared:
+                platforms = tuple(str(p) for p in declared)
+                if platforms:
+                    return platforms
+        except Exception:
+            pass
+    return _DEFAULT_TY_TARGET_PLATFORMS
+
+
+# frob:ticket T-3191
+def _run_ty_one(cmd: list[str], platform: str) -> ToolResult:
+    """One `ty check` invocation for a single `--python-platform`, as a
+    `ToolResult` labelled `tool="ty:<platform>"` -- `_merge_ty_results`
+    folds every platform's result back into the single `tool="ty"`
+    `ToolResult` callers expect."""
+    from frob.process.parsers import parse_ty
 
     try:
         run_result = guarded_subprocess_run(cmd, capture_output=True, text=True)
     except FileNotFoundError:
-        return tool_unavailable_result("ty", "ty")
+        return tool_unavailable_result(f"ty:{platform}", "ty")
     if run_result.is_err:
-        return tool_disabled_result("ty", EXEC_KILL_SWITCH_ENV)
+        return tool_disabled_result(f"ty:{platform}", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
     r = parse_ty(proc.stdout + proc.stderr, exit_code=proc.returncode)
-    r.tool = "ty"
+    r.tool = f"ty:{platform}"
     return r
+
+
+# frob:ticket T-3191
+def _merge_ty_results(
+    results: list[ToolResult], platforms: tuple[str, ...]
+) -> ToolResult:
+    """Union `results` (one per `platforms` entry, same order) into a single
+    `tool="ty"` `ToolResult` -- the shape every existing caller of `_run_ty`
+    already expects. Each diagnostic's `message` is prefixed
+    `[platform=<name>]` so a platform-only finding (T-3191's whole point) is
+    attributable at a glance instead of looking identical to a universal
+    one. The merged `exit_code` is the first nonzero one found (or 0 if every
+    platform passed) -- one failing platform must fail the stage, exactly
+    like any other single-platform `ty check` failure already does."""
+    diagnostics: list[Diagnostic] = []
+    exit_code = 0
+    summaries: list[str] = []
+    for platform, r in zip(platforms, results, strict=True):
+        for d in r.diagnostics:
+            tagged = f"[platform={platform}] {d.message}"
+            diagnostics.append(d.model_copy(update={"message": tagged}))
+        if r.exit_code and not exit_code:
+            exit_code = r.exit_code
+        if r.summary:
+            summaries.append(f"{platform}: {r.summary}")
+    return ToolResult(
+        tool="ty",
+        exit_code=exit_code,
+        diagnostics=diagnostics,
+        summary="; ".join(summaries),
+    )
 
 
 def _build_import_graph(scan_root: Path):  # noqa: ANN202

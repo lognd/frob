@@ -667,3 +667,22 @@ override_ratchet = true
 # net effect with zero ticket-file writes.
 [tickets]
 default_milestone = "1.0.0"
+
+# T-3191: `ty check --python-platform` defaults to the host's own platform,
+# so a bare local `frob check` never typechecked Windows- or macOS-only code
+# paths at all -- CI run 33135896391 measured 4 such diagnostics (`os.
+# sysconf`, `ctypes.windll`) that were structurally unreachable from a Linux
+# host. `frob.check._python._run_ty` now runs `ty check` once per platform
+# named here (falling back to `_DEFAULT_TY_TARGET_PLATFORMS` -- this same
+# list -- if this table/key is absent) and reports the union, each
+# diagnostic labelled `[platform=<name>]`. Declared explicitly rather than
+# left to the code default so a future change to this project's own CI OS
+# matrix (.github/workflows/ci.yml) is a one-line diff here, not a silent
+# mismatch between what CI runs and what the local gate covers.
+#
+# No dedicated TYSCHEMA001-style known-keys validator exists yet for this
+# table (unlike [dup]/[profile]/... which each have one via [ty_schema]) --
+# filed as a follow-up rather than built here, since T-3191's scope is
+# platform reachability, not the config-schema-validator family.
+[ty]
+target_platforms = ["linux", "win32", "darwin"]

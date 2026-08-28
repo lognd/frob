@@ -415,6 +415,23 @@ lock-holder reclaim logic, which must never auto-reclaim on an ambiguous
 probe) still draws that distinction itself around `pid_alive`'s POSIX-
 specific exception shape, the same way it always did.
 
+`_kernel32` (module-level, resolved once) used to be a bare
+`ctypes.windll.kernel32` wrapped in `try/except AttributeError` -- a
+RUNTIME guard, invisible to a static type checker. `windll` is declared
+in typeshed's `ctypes/__init__.pyi` only under `if sys.platform ==
+"win32":`, so a `ty check --python-platform win32` target genuinely needs
+a suppression there and a Linux target genuinely does not -- T-3191
+measured this as a matched-opposite-error no single `ty: ignore` can
+satisfy (required on one target, reported as an unused suppression, an
+error in its own right, on the other). `_kernel32` is now resolved behind
+an explicit `if sys.platform == "win32":` guard instead, which `ty`
+narrows per `--python-platform` target exactly like typeshed's own stub
+does -- the branch is checked with `windll` available on a win32 target
+and treated as unreachable (never checked at all) on every other target.
+No `ty: ignore` is needed in either direction. See "Multi-platform
+typecheck (T-3191)" in `docs/commands/check.md` for how `frob check`
+now reaches this diagnostic shape from a non-Windows host at all.
+
 <!-- frob:doc docs/modules/process.md#concurrent-check-advisory-t-2473 -->
 ## Concurrent check advisory (T-2473)
 

@@ -779,6 +779,7 @@ def reap_orphaned_forkservers(
 
 
 # frob:ticket T-3152
+# frob:ticket T-3191
 def _read_uptime_and_clk_tck(proc: Path) -> tuple[float | None, int]:
     """`(/proc/uptime's first field, os.sysconf("SC_CLK_TCK"))` -- read
     ONCE per scan (mirrors `scripts/fleet_status.py`'s own `_forkserver_
@@ -789,15 +790,32 @@ def _read_uptime_and_clk_tck(proc: Path) -> tuple[float | None, int]:
     fabricated value) if `/proc/uptime` is missing/unparseable (non-Linux
     `/proc`); `clk_tck` falls back to the near-universal Linux default of
     100 if `os.sysconf` itself fails, matching `_forkserver_age_s`'s own
-    fallback."""
+    fallback.
+
+    T-3191: `os.sysconf` is POSIX-only -- typeshed's `os.pyi` declares it
+    under `if sys.platform != "win32":`, so a Windows-target `ty check`
+    reports `unresolved-attribute` on a bare, unconditional call. Callers
+    already never reach this path on Windows (`_forkserver_orphans`/
+    `_process_start_age_s` both refuse before it via their own
+    `sys.platform == "win32"` guard), but that caller-side guard is
+    invisible to `ty`, which checks each function's body independently of
+    who calls it. The `sys.platform != "win32"` check INSIDE this
+    function is what lets `ty` narrow per `--python-platform` target the
+    same way typeshed's own stub does: on a win32 target the `sysconf`
+    branch is unreachable and never checked at all; on every other
+    target it is checked exactly as before. This needs no `ty: ignore`
+    in either direction -- the matched-opposite-error shape a static
+    suppression cannot satisfy (see T-3191) never arises here."""
     try:
         uptime_s = float((proc / "uptime").read_text(encoding="utf-8").split()[0])
     except (OSError, ValueError, IndexError):
         uptime_s = None
-    try:
-        clk_tck = os.sysconf("SC_CLK_TCK")
-    except (ValueError, OSError):
-        clk_tck = 100
+    clk_tck = 100
+    if sys.platform != "win32":
+        try:
+            clk_tck = os.sysconf("SC_CLK_TCK")
+        except (ValueError, OSError):
+            clk_tck = 100
     return uptime_s, clk_tck
 
 

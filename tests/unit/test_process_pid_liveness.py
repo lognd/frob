@@ -168,3 +168,52 @@ class TestPidAliveWindowsBackend:
         monkeypatch.setattr(_pid_liveness, "_kernel32", fake)
         assert _pid_liveness.pid_alive_tristate(1) is True
         assert _pid_liveness.pid_alive_tristate(2) is False
+
+
+# frob:ticket T-3191
+class TestKernel32PlatformGuard:
+    """T-3191: `_kernel32`'s import-time resolution used to be a bare
+    `ctypes.windll.kernel32` inside `try/except AttributeError` -- a
+    RUNTIME guard invisible to `ty`, which forced a `ty: ignore` that was
+    REQUIRED on a Linux `--python-platform` target and reported as an
+    unused suppression (itself an error) on a Windows target -- a
+    matched-opposite-error no single static suppression can satisfy. It
+    is now behind an explicit `if sys.platform == "win32":` check instead,
+    which `ty` narrows per target the same way typeshed's own stub does,
+    needing no suppression in either direction. These fixtures exercise
+    that RUNTIME guard directly (via `importlib.reload` under a faked
+    `sys.platform`), independent of the `ty`-visible shape, as the actual
+    must-fire/must-stay-quiet pair for this site."""
+
+    def test_win32_resolves_kernel32(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # MUST-FIRE: on a win32 host, `_kernel32` is resolved from
+        # `ctypes.windll.kernel32`.
+        import ctypes
+        import importlib
+        import sys
+        import types
+
+        fake_windll = types.SimpleNamespace(kernel32=object())
+        monkeypatch.setattr(sys, "platform", "win32")
+        monkeypatch.setattr(ctypes, "windll", fake_windll, raising=False)
+        try:
+            reloaded = importlib.reload(_pid_liveness)
+            assert reloaded._kernel32 is fake_windll.kernel32
+        finally:
+            importlib.reload(_pid_liveness)
+
+    def test_non_win32_leaves_kernel32_none(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # MUST-STAY-QUIET: on every other platform, `_kernel32` stays
+        # `None` and `ctypes.windll` is never touched at all (it may not
+        # even exist there).
+        import importlib
+        import sys
+
+        monkeypatch.setattr(sys, "platform", "linux")
+        try:
+            reloaded = importlib.reload(_pid_liveness)
+            assert reloaded._kernel32 is None
+        finally:
+            importlib.reload(_pid_liveness)

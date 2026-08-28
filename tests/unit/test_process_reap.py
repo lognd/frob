@@ -152,13 +152,49 @@ def _write_proc_entry(
     (entry / "cmdline").write_bytes(cmdline)
     starttime_ticks = int((_FAKE_UPTIME_S - age_s) * _FAKE_CLK_TCK)
     filler = " ".join(["0"] * 12)
-    stat_line = (
-        f"{pid} (python3) S {ppid} {pid} 0 0 -1 0 {filler} {starttime_ticks}\n"
-    )
+    stat_line = f"{pid} (python3) S {ppid} {pid} 0 0 -1 0 {filler} {starttime_ticks}\n"
     (entry / "stat").write_text(stat_line)
     uptime_path = proc / "uptime"
     if not uptime_path.exists():
         uptime_path.write_text(f"{_FAKE_UPTIME_S} 0.0\n")
+
+
+# frob:ticket T-3191
+class TestReadUptimeAndClkTck:
+    """T-3191: `os.sysconf` is POSIX-only (typeshed declares it under
+    `if sys.platform != "win32":`) -- these are the must-fire/must-stay-
+    quiet pair for the `sys.platform != "win32"` guard `_read_uptime_and_
+    clk_tck` now uses instead of a bare unconditional call."""
+
+    def test_win32_skips_sysconf_and_uses_fallback(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # MUST-FIRE: on a win32 host, `os.sysconf` is never called at all
+        # (it doesn't exist there) -- `clk_tck` must still come back as
+        # the documented 100 fallback rather than raising.
+        # frob:tests src/frob/process/_reap.py::_read_uptime_and_clk_tck kind="unit"
+        monkeypatch.setattr(_reap.sys, "platform", "win32")
+
+        def _boom(*a, **kw):
+            raise AssertionError("os.sysconf must not be called on win32")
+
+        monkeypatch.setattr(_reap.os, "sysconf", _boom, raising=False)
+        _write_proc_entry(tmp_path, pid=1, cmdline=b"x\x00", ppid=0)
+        _, clk_tck = _reap._read_uptime_and_clk_tck(tmp_path)
+        assert clk_tck == 100
+
+    def test_non_win32_still_reads_sysconf(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # MUST-STAY-QUIET: on every other platform, behavior is unchanged
+        # -- `os.sysconf` is still consulted (falling back to 100 only on
+        # its own documented failure).
+        # frob:tests src/frob/process/_reap.py::_read_uptime_and_clk_tck kind="unit"
+        monkeypatch.setattr(_reap.sys, "platform", "linux")
+        monkeypatch.setattr(_reap.os, "sysconf", lambda name: 250, raising=False)
+        _write_proc_entry(tmp_path, pid=1, cmdline=b"x\x00", ppid=0)
+        _, clk_tck = _reap._read_uptime_and_clk_tck(tmp_path)
+        assert clk_tck == 250
 
 
 class TestIsOrphanedForkserver:
@@ -252,7 +288,7 @@ class TestReapOrphanedForkservers:
     def test_forkserver_of_orphaned_forkserver_is_reaped(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_forkserver_of_orphaned_forkserver_is_reaped  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers.test_forkserver_of_orphaned_forkserver_is_reaped  # noqa: E501
         """T-3072 must-fire: a forkserver (4242) whose parent is ANOTHER
         forkserver (5000) whose own originating check already died
         (reparented to init) -- the one-hop check this replaced read 4242
@@ -282,7 +318,7 @@ class TestReapOrphanedForkservers:
     def test_forkserver_under_a_live_check_is_never_reaped(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_forkserver_under_a_live_check_is_never_reaped  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers.test_forkserver_under_a_live_check_is_never_reaped  # noqa: E501
         """T-3072 MUST-STAY-QUIET, the one that matters most: a forkserver
         several hops below a genuinely running `frob check` -- invoked the
         fleet's own dominant way, `python -m frob check ...` (T-3072's
@@ -345,17 +381,15 @@ class TestIsLiveCheckProcess:
     to carry it directly)."""
 
     def test_matches_module_invoked_check(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess::test_matches_module_invoked_check  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess.test_matches_module_invoked_check  # noqa: E501
         """The regression case: `python -m frob check ...` -- the
         anchor-bugged regex this replaced never matched a bare `frob`
         token not preceded by `/` and not at cmdline start."""
-        _write_proc_entry(
-            tmp_path, 4242, cmdline=_MODULE_INVOKED_CHECK_CMDLINE, ppid=1
-        )
+        _write_proc_entry(tmp_path, 4242, cmdline=_MODULE_INVOKED_CHECK_CMDLINE, ppid=1)
         assert _is_live_check_process(4242, tmp_path) is True
 
     def test_matches_executable_path_invoked_check(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess::test_matches_executable_path_invoked_check  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess.test_matches_executable_path_invoked_check  # noqa: E501
         _write_proc_entry(
             tmp_path,
             4242,
@@ -365,12 +399,12 @@ class TestIsLiveCheckProcess:
         assert _is_live_check_process(4242, tmp_path) is True
 
     def test_does_not_match_unrelated_process(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess::test_does_not_match_unrelated_process  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess.test_does_not_match_unrelated_process  # noqa: E501
         _write_proc_entry(tmp_path, 4242, cmdline=b"sleep\x0030\x00", ppid=1)
         assert _is_live_check_process(4242, tmp_path) is False
 
     def test_does_not_match_check_repro_subcommand(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess::test_does_not_match_check_repro_subcommand  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestIsLiveCheckProcess.test_does_not_match_check_repro_subcommand  # noqa: E501
         """Must not fire on a DIFFERENT ticket subcommand that merely
         contains the substring 'check' -- token equality, never a
         substring match."""
@@ -388,10 +422,8 @@ class TestForkserverRootIsLiveCheck:
     walk `reap_orphaned_forkservers` now uses instead of a one-hop
     `ppid == 1` test."""
 
-    def test_direct_child_of_live_check_is_not_orphaned(
-        self, tmp_path: Path
-    ) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck::test_direct_child_of_live_check_is_not_orphaned  # noqa: E501
+    def test_direct_child_of_live_check_is_not_orphaned(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck.test_direct_child_of_live_check_is_not_orphaned  # noqa: E501
         _write_live_check_entry(tmp_path, 999, cmdline=_MODULE_INVOKED_CHECK_CMDLINE)
         _write_proc_entry(tmp_path, 4242, cmdline=_FORKSERVER_CMDLINE, ppid=999)
         ppid_map = _all_process_ppids(tmp_path)
@@ -401,7 +433,7 @@ class TestForkserverRootIsLiveCheck:
     def test_orphaned_forkserver_of_forkserver_is_orphaned(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck::test_orphaned_forkserver_of_forkserver_is_orphaned  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck.test_orphaned_forkserver_of_forkserver_is_orphaned  # noqa: E501
         _write_proc_entry(tmp_path, 5000, cmdline=_FORKSERVER_CMDLINE, ppid=1)
         _write_proc_entry(tmp_path, 4242, cmdline=_FORKSERVER_CMDLINE, ppid=5000)
         ppid_map = _all_process_ppids(tmp_path)
@@ -411,7 +443,7 @@ class TestForkserverRootIsLiveCheck:
     def test_deep_chain_under_a_live_check_is_not_orphaned(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck::test_deep_chain_under_a_live_check_is_not_orphaned  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestForkserverRootIsLiveCheck.test_deep_chain_under_a_live_check_is_not_orphaned  # noqa: E501
         _write_live_check_entry(tmp_path, 6000, cmdline=_MODULE_INVOKED_CHECK_CMDLINE)
         _write_proc_entry(tmp_path, 5000, cmdline=_FORKSERVER_CMDLINE, ppid=6000)
         _write_proc_entry(tmp_path, 4242, cmdline=_FORKSERVER_CMDLINE, ppid=5000)
@@ -426,28 +458,28 @@ class TestProcessStartAge:
     <pid>` directory's mtime any more."""
 
     def test_reads_age_from_starttime(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAge::test_reads_age_from_starttime  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAge.test_reads_age_from_starttime  # noqa: E501
         _write_proc_entry(tmp_path, 4242, cmdline=b"x\x00", ppid=1, age_s=120.0)
         age = _process_start_age_s(4242, tmp_path, _FAKE_UPTIME_S, _FAKE_CLK_TCK)
         assert age is not None
         assert 119.0 < age < 121.0
 
     def test_missing_entry_returns_none(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAge::test_missing_entry_returns_none  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAge.test_missing_entry_returns_none  # noqa: E501
         assert (
             _process_start_age_s(999999, tmp_path, _FAKE_UPTIME_S, _FAKE_CLK_TCK)
             is None
         )
 
     def test_unknown_uptime_returns_none(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAge::test_unknown_uptime_returns_none  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAge.test_unknown_uptime_returns_none  # noqa: E501
         # Must-stay-quiet-in-reverse: an unmeasurable /proc/uptime must
         # degrade to None (unmeasured), never a fabricated age.
         _write_proc_entry(tmp_path, 4242, cmdline=b"x\x00", ppid=1, age_s=120.0)
         assert _process_start_age_s(4242, tmp_path, None, _FAKE_CLK_TCK) is None
 
     def test_zero_clk_tck_returns_none(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAge::test_zero_clk_tck_returns_none  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAge.test_zero_clk_tck_returns_none  # noqa: E501
         _write_proc_entry(tmp_path, 4242, cmdline=b"x\x00", ppid=1, age_s=120.0)
         assert _process_start_age_s(4242, tmp_path, _FAKE_UPTIME_S, 0) is None
 
@@ -462,10 +494,8 @@ class TestProcessStartAgeMatchesFleetStatus:
     import" contract, `_stat_fields_after_comm`'s own docstring), so
     nothing else guarantees these two stay in sync except this test."""
 
-    def test_same_stat_line_and_uptime_yield_the_same_age(
-        self, tmp_path: Path
-    ) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAgeMatchesFleetStatus::test_same_stat_line_and_uptime_yield_the_same_age  # noqa: E501
+    def test_same_stat_line_and_uptime_yield_the_same_age(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAgeMatchesFleetStatus.test_same_stat_line_and_uptime_yield_the_same_age  # noqa: E501
         from tests.unit.conftest import _load_script
 
         fleet_status = _load_script("fleet_status")
@@ -486,7 +516,7 @@ class TestProcessStartAgeMatchesFleetStatus:
         assert reap_age == pytest.approx(337.0, abs=0.02)
 
     def test_both_agree_none_on_unknown_uptime(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAgeMatchesFleetStatus::test_both_agree_none_on_unknown_uptime  # noqa: E501
+        # frob:tests tests/unit/test_process_reap.py::TestProcessStartAgeMatchesFleetStatus.test_both_agree_none_on_unknown_uptime  # noqa: E501
         from tests.unit.conftest import _load_script
 
         fleet_status = _load_script("fleet_status")
@@ -563,7 +593,9 @@ class TestArmParentDeathSignal:
             os.waitpid(pid, 0)
         assert outcome == b"1"
 
-    def test_self_kills_on_missed_reparent_race(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_self_kills_on_missed_reparent_race(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_self_kills_on_missed_reparent_race  # noqa: E501
         # T-2930: this exercises the Linux-only self-kill logic PAST the
         # `sys.platform != "linux"` guard via mocked `getppid`/`ctypes.

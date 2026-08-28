@@ -2439,6 +2439,122 @@ class TestRunTyRealPaths:
         assert result.tool == "ty"
 
 
+# frob:ticket T-3191
+class TestRunTyMultiPlatform:
+    """T-3191: `_run_ty` runs one `ty check --python-platform <p>` per
+    declared target and reports the union -- these fixtures are the
+    must-fire/must-stay-quiet pair the ticket requires: a platform-only
+    diagnostic must be reachable from a host that is not that platform,
+    and ordinary cross-platform code must not gain spurious diagnostics
+    from checking extra platforms."""
+
+    def test_default_platforms_all_run(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ty kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        seen_platforms = []
+
+        def _fake_run(cmd, **kw):
+            seen_platforms.append(cmd[cmd.index("--python-platform") + 1])
+            return Ok(_FakeProc("All checks passed!\n", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        result = python_mod._run_ty(tmp_path)
+        assert seen_platforms == ["linux", "win32", "darwin"]
+        assert result.tool == "ty"
+
+    def test_windows_only_diagnostic_is_reported_from_linux_host(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # MUST-FIRE fixture (T-3191 acceptance): a win32-only diagnostic
+        # is visible in `_run_ty`'s result even though the fake host
+        # never claims to be Windows.
+        # frob:tests src/frob/check/_python.py::_run_ty kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        windows_diag = (
+            "error[unresolved-attribute]: Module `os` has no member `sysconf`\n"
+            "  --> src/mod.py:1:1\n"
+            "Found 1 diagnostic\n"
+        )
+
+        def _fake_run(cmd, **kw):
+            platform = cmd[cmd.index("--python-platform") + 1]
+            if platform == "win32":
+                return Ok(_FakeProc(windows_diag, 1))
+            return Ok(_FakeProc("All checks passed!\n", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        result = python_mod._run_ty(tmp_path)
+        assert not result.passed
+        assert any(
+            "sysconf" in d.message and "[platform=win32]" in d.message
+            for d in result.diagnostics
+        )
+
+    def test_ordinary_cross_platform_code_stays_quiet(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # MUST-STAY-QUIET fixture (T-3191 acceptance): every platform
+        # passing yields a clean, passing merged result -- checking three
+        # platforms instead of one must not manufacture new diagnostics
+        # for ordinary code.
+        # frob:tests src/frob/check/_python.py::_run_ty kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Ok(_FakeProc("All checks passed!\n", 0)),
+        )
+        result = python_mod._run_ty(tmp_path)
+        assert result.passed
+        assert result.diagnostics == []
+
+    def test_configured_target_platforms_override_default(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_resolve_ty_target_platforms kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        (tmp_path / "frob.toml").write_text('[ty]\ntarget_platforms = ["linux"]\n')
+        seen_platforms = []
+
+        def _fake_run(cmd, **kw):
+            seen_platforms.append(cmd[cmd.index("--python-platform") + 1])
+            return Ok(_FakeProc("", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        python_mod._run_ty(tmp_path)
+        assert seen_platforms == ["linux"]
+
+    def test_one_failing_platform_fails_the_merged_result(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_merge_ty_results kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        def _fake_run(cmd, **kw):
+            platform = cmd[cmd.index("--python-platform") + 1]
+            if platform == "darwin":
+                return Ok(_FakeProc("error[x]: boom\n  --> a.py:1:1\n", 1))
+            return Ok(_FakeProc("", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        result = python_mod._run_ty(tmp_path)
+        assert not result.passed
+
+
 # frob:ticket T-1507
 # frob:ticket T-1512
 class TestBuildImportGraphAndCycleRealPaths:
