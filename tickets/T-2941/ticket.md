@@ -39,7 +39,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 388573487c82197f728ed6fd7c22fa38ad6901c1
 ---
 `frob ticket land`'s pre-merge "does-not-worsen" guard for DOC005
 (`frob.app.ticket_runner._land_cmd._doc005_checker`, T-2285) resolves the
