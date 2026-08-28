@@ -1,7 +1,7 @@
 ---
 id: T-3224
 title: REG005/REG008 findings on docs/design/registry/check-coverage.yaml
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -60,6 +60,8 @@ scope_changes:
     pre-existing gaps, CPLACE001/CPLACE002 a T-3218 regression)
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
 designated_repro_test: null
 threat: null
 component: null

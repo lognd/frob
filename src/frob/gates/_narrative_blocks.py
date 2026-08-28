@@ -124,6 +124,7 @@ def scan_narrative_blocks(
 # T-3014: wired into gates/__init__.py's GATE_RUNNERS dict (the WIRE001
 # waiver this comment used to carry is no longer warranted -- the T-2986
 # lease that blocked it has been released and the wiring is done).
+# frob:enforces CHK-GATE-NARR001
 def narrative_blocks_gate(root: Path) -> tuple[Violation, ...]:
     """NARR001 over every tracked `.py`/`.strata` file under `root` (T-2993).
     Reads files directly rather than via a shared snapshot object -- this
@@ -141,8 +142,7 @@ def narrative_blocks_gate(root: Path) -> tuple[Violation, ...]:
         # under root, same repo-wide-scan shape excludehazard/refs/secrets already \
         # declare fs.read for; T-3014 wired this gate into GATE_RUNNERS but could not \
         # add its fs.read to the 'gates' strata node because design/frob.strata was \
-        # T-2989-leased for this ticket's whole work window" \
-        # follow_up="T-3020"
+        # T-2989-leased for this ticket's whole work window" follow_up="T-3020"
         try:
             text = full.read_text(encoding="utf-8")
         except OSError:

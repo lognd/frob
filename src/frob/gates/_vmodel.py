@@ -153,6 +153,7 @@ def _collect_vmodel_graph(
 # tests/test_gates_vmodel.py::TestVmodelGate.test_fires_vmod001_on_closure_violation
 # frob:tests \
 # tests/test_gates_vmodel.py::TestVmodelGate.test_quiet_on_a_genuinely_closed_graph
+# frob:enforces CHK-GATE-VMOD001
 def vmodel_gate(root: Path) -> tuple[Violation, ...]:
     """VMOD001 (WARN): every `strata_core.vmodel_check` construction error
     or closure-rule violation over the ONE V-model graph assembled from

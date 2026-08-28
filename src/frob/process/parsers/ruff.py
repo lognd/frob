@@ -23,6 +23,7 @@ _TEXT_LINE = re.compile(r"^(.*?):(\d+):(\d+):\s+([A-Z]\d+)\s+(.*)$")
 # frob:ticket T-0045
 # frob:ticket T-2373
 # frob:enforces CHK-GATE-I001
+# frob:enforces CHK-GATE-F401
 def _is_ruff_error_code(code: str) -> bool:
     """True for a ruff `code` that must render as an error diagnostic:
     E/F codes always were; T-2373 promotes I001 (import-sort) from

@@ -321,6 +321,7 @@ def _tdd001_unresolved_message(artifact_symref: str, test_symref: str) -> str:
 # called from frob.tickets._land rather than from within this module; T-3057 wired the \
 # call site (frob.tickets._land._check_tdd_order), closing the follow-up this waiver \
 # used to point at"
+# frob:enforces CHK-GATE-TDD001
 def tdd_order_violations(root: Path, edges: Sequence[Edge]) -> list[Violation]:
     """TDD001's whole surface: every `EdgeKind.TESTS` edge (`src` = the
     artifact/implementation symbol the directive sits on, `target` = the

@@ -19,7 +19,7 @@
 #     fabricated ticket). As work closes a concern down to a real gate
 #     rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 350
+gate_rule_total: 351
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     fixability: "manual"
