@@ -206,6 +206,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2677: fleet_status.py's REPO constant resolves via __file__, giving 0 live leases when run from a worktree
 - T-2678: frob ticket body writes an archived ticket's update to a fresh non-archive copy, causing DuplicateId
 - T-2679: A timed-out land marks the ticket done and records evidence while zero code reaches main
+- T-2680: playbook 5b's FROB_WORKTREE/FROB_AGENT leak fix only covers tests/system/**, not direct land()/new_ticket() calls elsewhere
 - T-2681: Add frob ticket unblock verb -- blocked_by can only be appended, never removed, via CLI
 - T-2682: LANG004: behavioral coverage for test_discovery (the last of 7 capabilities left structural-only)
 - T-2683: Consumer-side self-disclosure when an OPTIONAL adapter capability gap silently degrades output

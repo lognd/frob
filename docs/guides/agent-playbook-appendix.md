@@ -711,6 +711,23 @@ behavior still can -- pass it explicitly via `run(..., env={"FROB_AGENT":
 your shell's lease env before recording evidence for `tests/system/**`
 tickets; the helper handles it.
 
+T-2680 CORRECTION: this section's fix was scoped to `tests/system/**`'s
+own `run()` subprocess helper only -- it never covered tests elsewhere
+that call `frob.tickets._land.land()`/`new_ticket()` (or other
+`enforce_worktree_lease`-guarded mutators) directly as in-process Python
+calls, e.g. `tests/test_ticket_land.py`'s `TestSigkillMidStaging`. Those
+tests inherit the calling shell's `os.environ` unfiltered, so a dispatched
+agent's own `FROB_WORKTREE`/`FROB_AGENT` shell env (present whenever
+`frob ticket evidence` spawns pytest as a subprocess from inside a leased
+worktree) tripped the guard against the WRONG cwd (the test's own
+`tmp_path` fixture repo). This gap is now closed, but by a SEPARATE fix at
+a different layer: `tests/conftest.py`'s repo-wide autouse
+`_isolate_worktree_lease_env_before_test` fixture (T-3145) now POPS both
+vars at the setup of EVERY test collected under `tests/`, not only ones
+under `tests/system/**` -- so this section's "you do not need to unset
+your shell's lease env" guarantee now holds for evidence recording
+generally, not just for `tests/system/**` specifically.
+
 ## 6. Gate measurement discipline
 
 Prefer `frob check --delta` against a stamped baseline over stash-isolation

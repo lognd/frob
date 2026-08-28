@@ -2,7 +2,7 @@
 id: T-2680
 title: playbook 5b's FROB_WORKTREE/FROB_AGENT leak fix only covers tests/system/**,
   not direct land()/new_ticket() calls elsewhere
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -28,6 +28,17 @@ scope_changes:
     per T-2680
   actor: logan
   at: '2026-08-27'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): the underlying code gap this bug ticket describes
+    was already closed by T-3145''s repo-wide conftest fixture (confirmed: TestSigkillMidStaging
+    passes under an ambient lease env at the parent commit too); this ticket''s only
+    change is a doc correction to a stale claim in agent-playbook-appendix.md, with
+    no runtime behavior delta of its own to reproduce as fail-then-pass'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 1539
+  new_length: 1943
 evidence:
 - tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
 - tests/test_ticket_land.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content
@@ -68,3 +79,5 @@ helpers (if pytest itself is spawned as a subprocess by some evidence-
 recording paths), or correct playbook section 5b to scope its claim
 accurately to tests/system/** only, not stated as blanket "you do not
 need to unset your shell's lease env" without qualification.
+
+frob:no-behavior-change reason="the underlying code gap this bug ticket describes was already closed by T-3145's repo-wide conftest fixture (confirmed: TestSigkillMidStaging passes under an ambient lease env at the parent commit too); this ticket's only change is a doc correction to a stale claim in agent-playbook-appendix.md, with no runtime behavior delta of its own to reproduce as fail-then-pass"
