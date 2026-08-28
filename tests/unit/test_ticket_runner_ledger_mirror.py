@@ -110,6 +110,26 @@ class TestLedgerMirrorReachesMain:
 
         assert _visible_on_primary(primary, "T-9999")
 
+    # frob:ticket T-2616
+    def test_milestone_edit_from_worktree_is_visible_on_primary(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2616: `milestone` writes through `_set_ticket_field`, the
+        same primitive `priority`/`kind`/`tier` use, but was left
+        classified `GENERIC_COMMIT_UNMIRRORED` when T-2603 unified the
+        two legacy sets -- a worktree agent's `frob ticket milestone`
+        committed locally but was never mirrored to the primary
+        checkout, invisible to the fleet until the ticket landed."""
+        assert "milestone" in MIRRORED_LEDGER_VERBS
+        primary, worktree = _setup(tmp_path)
+        path = worktree / "tickets" / "T-0001" / "ticket.md"
+        path.write_text(path.read_text() + "milestone: 0.1.0\n")
+        _git("commit", "-q", "-am", "milestone edit", cwd=worktree)
+
+        mirror_ledger_change_to_primary(worktree, "T-0001", "milestone")
+
+        assert _visible_on_primary(primary, "milestone: 0.1.0")
+
     # frob:ticket T-2840
     def test_requeue_edit_from_worktree_is_visible_on_primary(
         self, tmp_path: Path

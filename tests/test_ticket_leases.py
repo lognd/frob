@@ -4034,6 +4034,11 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
             "ticket_scope_reason": "T-3035 dispatch-table coverage",
         },
         "milestone": {"ticket_id": "T-0001", "ticket_milestone_value": "0.1.0"},
+        # T-3162: `reopen` requires state=done first, per-test.
+        "reopen": {
+            "ticket_id": "T-0001",
+            "ticket_reason": "T-2616 dispatch-table coverage",
+        },
     }
 
     def test_dispatch_table_verbs_are_all_accounted_for(self) -> None:
@@ -4072,6 +4077,18 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
         if verb == "requeue":
             ticket_run(
                 AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
+            )
+        if verb == "reopen":
+            assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+            assert transition(repo, "T-0001", TicketState.IN_PROGRESS).is_ok
+            _commit_all(repo, "start T-0001 for reopen coverage")
+            ticket_run(
+                AppConfig(
+                    ticket_command="close",
+                    ticket_path=repo,
+                    ticket_id="T-0001",
+                    ticket_evidence_cmd="echo verified",
+                )
             )
         if verb == "set-parent":
             ticket_run(

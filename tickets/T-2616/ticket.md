@@ -2,7 +2,7 @@
 id: T-2616
 title: milestone missing from MIRRORED_LEDGER_VERBS; 4 verbs unclassified in dispatch-table
   accounting test
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -21,6 +21,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain::test_milestone_edit_from_worktree_is_visible_on_primary
+- tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable::test_dispatch_table_verbs_are_all_accounted_for
+- tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable::test_verb_leaves_repo_clean[reopen]
+- tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable::test_verb_leaves_repo_clean[milestone]
 designated_repro_test: null
 threat: null
 component: null

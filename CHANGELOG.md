@@ -162,6 +162,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2613: Sync docs/modules/gates.md frob:enumerates member list (DOCENUM001, includes MILE003)
 - T-2614: T-2450 scope is a single semicolon-joined glob string, not two scope entries
 - T-2615: changelog emits an entry for a DROPPED ticket and duplicates the ticket id on 101 lines
+- T-2616: milestone missing from MIRRORED_LEDGER_VERBS; 4 verbs unclassified in dispatch-table accounting test
 - T-2617: worktree classifier reports 18 STRANDED where the verified answer is stale-behind-main, reproducing the exact test T-2599 specified against
 - T-2618: declared_source_prefixes/declared_project_package_name never got their promised lang.md anchor (T-2612 audit)
 - T-2619: unlanded_branch_work anomaly class undocumented (T-2612 lease-premise audit)

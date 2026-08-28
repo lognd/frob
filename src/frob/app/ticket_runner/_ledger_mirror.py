@@ -165,6 +165,15 @@ LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
     "component": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "kind": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "label": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    # frob:ticket T-2616
+    # T-2574's `milestone` writes through `_set_ticket_field`, the same
+    # primitive `priority`/`kind`/`tier` use -- reclassified here from
+    # GENERIC_COMMIT_UNMIRRORED (where T-2603's audit deliberately left
+    # it to match behaviour exactly rather than silently fix it out of
+    # scope): a worktree agent's `frob ticket milestone` was committing
+    # locally but never mirrored to the primary checkout, invisible to
+    # the fleet until the ticket landed.
+    "milestone": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "priority": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "review": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "runs-last": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
@@ -213,14 +222,6 @@ LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
     "evidence": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
     "done-report": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
     "archive": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
-    # T-2574: added post-T-1615/T-2563 and never classified into either
-    # legacy set -- see the follow-up bug this audit filed for whether it
-    # belongs in GENERIC_COMMIT_MIRRORED instead (its write primitive,
-    # `_set_ticket_field`, is the same one `priority`/`kind`/`tier` use).
-    # Kept here, unmirrored, to match TODAY's actual behaviour exactly --
-    # this table's job is a faithful unification, not a silent drive-by
-    # fix of a bug outside T-2603's own scope.
-    "milestone": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
     # NOT_TICKET_SCOPED -- read-only, or a write this mechanism never
     # engages with (`cfg.ticket_id` is always `None` when these dispatch).
     "list": LedgerWriteStrategy.NOT_TICKET_SCOPED,
