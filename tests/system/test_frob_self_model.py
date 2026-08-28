@@ -487,6 +487,19 @@ class TestFrobSelfModel:
     # `design/frob.strata`, so it is the correct e2e evidence for the
     # design file as a deployable artifact.
     # frob:tests design/frob.strata kind="e2e"
+    # T-3247: measured 27.11s warm-cache locally (`build_graph` + `sys_gate`
+    # over this repo's own real tree, not a synthetic `tmp_path` fixture,
+    # T-1433's own docstring above on `_SELF_SCAN_HEAVY_NAME_SUBSTRINGS`
+    # documents this same test as a whole-repo scan). The 2026-08-28 CI run's
+    # own faulthandler dump (`faulthandler_timeout = 100`, pyproject.toml)
+    # caught this test still inside `build_graph -> _ingest_source_files ->
+    # parse_file` at the 100s mark on a CI runner, so the local baseline
+    # already understates CI cost by several-fold; 300s gives headroom above
+    # the observed near-miss without raising the global 120s ceiling that
+    # catches genuine hangs everywhere else (docs/guides/testing.md#per-test-
+    # timeout-ci-hardening, same reasoning T-0742 used for
+    # test_scaffold_dx.py).
+    @pytest.mark.timeout(300)
     def test_sys_gate_zero_violations(self, tmp_path: Path) -> None:
         """`frob check --only sys` against the live repo reports zero violations.
 
@@ -505,6 +518,15 @@ class TestFrobSelfModel:
         assert violations == (), f"unexpected SYS violation(s): {violations}"
 
     # frob:tests design/frob.strata kind="e2e"
+    # T-3247: same `build_graph(_REPO_ROOT, ...)` whole-repo-scan shape as
+    # `test_sys_gate_zero_violations` above (found by this ticket's own
+    # `tests/gates/test_scan_timeout_enforcement.py` enumeration, not
+    # named in the original CI failure -- the gate catching a real
+    # instance beyond the 3 it was written against). Same 300s reasoning:
+    # local baseline is a `build_graph` call over the whole tree, same
+    # cost class as the 27.11s measured for `test_sys_gate_zero_
+    # violations`, with the same CI-cost-multiplier risk.
+    @pytest.mark.timeout(300)
     def test_fragments_module_fs_read_is_declared_not_selfaudit001(
         self, tmp_path: Path
     ) -> None:
@@ -526,6 +548,12 @@ class TestFrobSelfModel:
         )
 
     # frob:tests design/frob.strata kind="e2e"
+    # T-3247: same `build_graph(_REPO_ROOT, ...)` whole-repo-scan shape as
+    # `test_sys_gate_zero_violations` above (found by this ticket's own
+    # `tests/gates/test_scan_timeout_enforcement.py` enumeration). Same
+    # 300s reasoning as the other `build_graph(_REPO_ROOT, ...)` tests in
+    # this class.
+    @pytest.mark.timeout(300)
     def test_checker_fleet_deploy_vet_have_no_undeclared_fs_write_selfaudit001(
         self, tmp_path: Path
     ) -> None:

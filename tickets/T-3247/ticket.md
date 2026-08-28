@@ -2,7 +2,7 @@
 id: T-3247
 title: Whole-repo-scan tests exceed the 120s per-test cap, killing the xdist worker
   and aborting the whole suite (root cause of the ubuntu hang)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -19,6 +19,7 @@ scope:
 - tests/system/test_frob_self_model.py
 - tests/unit/strata/test_selfconform.py
 - tests/system/test_fleet_status_ticket_readiness_arch001.py
+- tests/gates/test_scan_timeout_enforcement.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +46,23 @@ scope_changes:
     is where the fix actually lands'
   actor: logan
   at: '2026-08-28'
+- op: add
+  glob: tests/gates/test_scan_timeout_enforcement.py
+  reason: T-3247's enforcement gate is implemented as a self-contained repo test (AST/import-based
+    whole-repo-scan detector) rather than a frob-check gate rule, because src/frob/gates/__init__.py
+    is under a live T-3196 scope lease and cannot be edited
+  actor: logan
+  at: '2026-08-28'
+evidence:
+- tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations::test_must_fire_on_unmarked_whole_repo_scan_call
+- tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations::test_must_stay_quiet_on_ordinary_fast_test
+- tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations::test_must_stay_quiet_when_method_level_override_present
+- tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations::test_must_stay_quiet_when_class_level_pytestmark_present
+- tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations::test_must_stay_quiet_on_synthetic_repo_fixture_test
+- tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations::test_must_stay_quiet_on_synthetic_tmp_path_target
+- tests/gates/test_scan_timeout_enforcement.py::TestFindScanTimeoutViolations::test_must_stay_quiet_on_run_call_with_explicit_path_argument
+- tests/gates/test_scan_timeout_enforcement.py::TestRepoIsScanTimeoutClean::test_no_unmarked_whole_repo_scan_tests_in_repo
+- tests/system/test_fleet_status_ticket_readiness_arch001.py::TestFleetStatusTicketReadinessArch001::test_ticket_readiness_is_not_an_arch001_finding
 designated_repro_test: null
 threat: null
 component: null

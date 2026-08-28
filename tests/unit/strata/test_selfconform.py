@@ -1209,6 +1209,19 @@ class TestRealGateGreen:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance \
     # kind="integration"
+    # T-3247: `_python_resolved_candidates`'s own docstring
+    # (src/frob/vet/_capability_core.py, T-2798) measured this test's own
+    # call chain (`check_self_conformance -> _collect_sys_violations ->
+    # scan_file_capabilities -> _python_resolved_candidates`) at 94.25s of a
+    # 111.09s isolated `scan_file_capabilities` sweep over the whole repo
+    # tree -- already within ~9s of the 120s global cap on a fast machine.
+    # The 2026-08-28 windows CI run's own faulthandler dump (`faulthandler_
+    # timeout = 100`) caught this exact test still inside that same call
+    # chain, stamped "Timeout (0:01:40)", before the 120s kill. 300s gives
+    # headroom above the measured near-miss without raising the global
+    # ceiling (docs/guides/testing.md#per-test-timeout-ci-hardening, same
+    # reasoning T-0742 used for test_scaffold_dx.py).
+    @pytest.mark.timeout(300)
     def test_repo_design_and_declarations_are_self_conformant(self):
         """`design/frob.strata`'s real `code`/`may` declarations, run
         against the REAL repo tree (T-1091: the WHOLE tree, not just
