@@ -1,7 +1,7 @@
 ---
 id: T-3178
 title: Refresh add_cmd_evidence kind-gate description in tickets-data-storage.md
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-27'
@@ -19,6 +19,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:grep -n scope_has_python_surface docs/modules/tickets-data-storage.md exit=0
+  sha256=135daa79e314
 designated_repro_test: null
 threat: null
 component: null

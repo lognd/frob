@@ -1409,14 +1409,20 @@ overwrite an existing hook file without `force=True`.
   unvalidated evidence.
 - `evidence <id> [<pytest-node-id>...] [--evidence-cmd 'command']` and
   `close <id> [--evidence <id>...] [--evidence-cmd 'command']` (T-0215):
-  the non-pytest evidence channel for docs-kind tickets that have no
-  pytest surface of their own (pure doc/design work, where the old gate
-  forced writing a drift-lock test purely to satisfy close). `--evidence-cmd`
-  runs the given command, records its exit status and a stdout digest as
-  one evidence entry, and is kind-gated -- `add_cmd_evidence` refuses with
-  `Err(EvidenceKindNotAllowed)` for every kind except `docs`, so a
-  bug/feature/security ticket can never close on a shell command's exit
-  status alone; those kinds still require real pytest node ids via
+  the non-pytest evidence channel for tickets that have no pytest surface
+  of their own (pure doc/design work, where the old gate forced writing a
+  drift-lock test purely to satisfy close). `--evidence-cmd` runs the
+  given command, records its exit status and a stdout digest as one
+  evidence entry, and is kind-gated -- `add_cmd_evidence` always allows it
+  for `docs`/`ux` kinds (T-3045 added `ux` alongside `docs`: a design
+  review or accessibility pass is exactly as non-pytest-shaped as
+  documentation), and (T-3156) allows it for ANY OTHER kind too when the
+  ticket's entire declared scope has no Python file at all
+  (`scope_has_python_surface`) -- a Rust-only crate or a docs/ledger-only
+  bug investigation has no other legitimate D-02 route. Otherwise it
+  refuses with `Err(EvidenceKindNotAllowed)`, so a bug/feature/security
+  ticket with a real Python surface can never close on a shell command's
+  exit status alone; those tickets still require real pytest node ids via
   `--evidence`/`evidence`. A failing command (nonzero exit, or one that
   fails to launch) is `Err(EvidenceCmdFailed)` and never gets recorded.
   T-1892: a command whose captured stdout+stderr is EMPTY is also
