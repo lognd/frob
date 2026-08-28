@@ -1,7 +1,7 @@
 ---
 id: T-3228
 title: LOUD gate failure for ratchet/deprecated-baseline lock producer abandonment
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
