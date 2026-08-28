@@ -1763,6 +1763,24 @@
       "old_digest": "d7d0746681d4742c2c8b552aa42938bea617b3a017baaff1c5bc46379da70e41",
       "reason": "T-3156 widened add_cmd_evidence's kind gate (any kind may use cmd evidence when scope_has_python_surface is False, not just docs/ux); verified the function docstring and both tagged tests (test_docs_kind_closes, test_bug_kind_rejected) already describe/exercise the new body correctly. Found one stale prose mention in docs/modules/tickets-data-storage.md (not a tracked frob:doc anchor on this symbol) still saying add_cmd_evidence refuses every kind except docs -- filing a separate doc ticket for that, out of this ticket's scope.",
       "ref": "src/frob/tickets/_evidence.py::add_cmd_evidence"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-28",
+      "facet": "body",
+      "new_digest": "23a54fb22e0d478b2b098a87fbaa4271878fa72da043ce2d962cf915abf2a0a6",
+      "old_digest": "7b525742fc7823078612465164dd729f49b20dd5fecd3f997d80e02be23b7020",
+      "reason": "T-2949: re-verified after switching the \"already terminal on main\" check from load_all(root) (working-tree read) to _read_ticket_state_at_head (git show HEAD read); the 3 dependents (frob:tests + frob:ticket) still describe this function correctly",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_ticket_terminal_state_on_main"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-28",
+      "facet": "sig",
+      "new_digest": "bf68a9348364104588293bc5afaa01f7fa844975684f004e41057a2cb69c65e2",
+      "old_digest": "bf68a9348364104588293bc5afaa01f7fa844975684f004e41057a2cb69c65e2",
+      "reason": "T-2949: re-verified after switching the \"already terminal on main\" check from load_all(root) (working-tree read) to _read_ticket_state_at_head (git show HEAD read); the 3 dependents (frob:tests + frob:ticket) still describe this function correctly",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_ticket_terminal_state_on_main"
     }
   ],
   "entries": [
@@ -1837,7 +1855,7 @@
       "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
     },
     {
-      "digest": "7b525742fc7823078612465164dd729f49b20dd5fecd3f997d80e02be23b7020",
+      "digest": "23a54fb22e0d478b2b098a87fbaa4271878fa72da043ce2d962cf915abf2a0a6",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_land_cmd.py::_ticket_terminal_state_on_main"
     },

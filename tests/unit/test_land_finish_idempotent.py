@@ -20,6 +20,7 @@ import pytest
 from frob.app.config import AppConfig
 from frob.app.ticket_runner._land_cmd import (
     _finish_only_if_already_landed,
+    _read_ticket_state_at_head,
     _ticket_terminal_state_on_main,
 )
 from frob.tickets import (
@@ -82,6 +83,8 @@ def repo(tmp_path: Path) -> Path:
     return main_repo
 
 
+# frob:ticket T-2108
+# frob:ticket T-2949
 class TestTicketTerminalStateOnMain:
     """`_ticket_terminal_state_on_main` -- the one-ledger-read primitive
     `_finish_only_if_already_landed` gates on."""
@@ -92,8 +95,30 @@ class TestTicketTerminalStateOnMain:
         tid = created.danger_ok.id
         _make_closeable(repo, tid)
         assert transition(repo, tid, TicketState.DONE).is_ok
+        # T-2949: the check now reads git HEAD, not the working tree --
+        # commit the DONE transition so it is actually reachable from main.
+        _commit_all(repo, "close " + tid)
 
         assert _ticket_terminal_state_on_main(repo, tid) == "done"
+
+    def test_done_ticket_uncommitted_on_disk_returns_none(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_land_finish_idempotent.py::TestTicketTerminalStateOnMain.test\
+        # _done_ticket_uncommitted_on_disk_returns_none
+        """T-2949's actual repro shape: `state: done` sits on DISK
+        (uncommitted -- e.g. an aborted land's own pre-commit staging) but
+        `main`'s `HEAD` never advanced. Must read as non-terminal, never
+        as "already done" -- the working tree is not a source of truth for
+        this check."""
+        created = new_ticket(repo, _spec("Dirty done, not on main"))
+        tid = created.danger_ok.id
+        _make_closeable(repo, tid)
+        assert transition(repo, tid, TicketState.DONE).is_ok
+        # Deliberately NOT committed -- this is the aborted-land shape.
+
+        assert _ticket_terminal_state_on_main(repo, tid) is None
 
     def test_in_progress_ticket_returns_none(self, repo: Path) -> None:
         # frob:tests tests/unit/test_land_finish_idempotent.py::TestTicketTerminalStateOnMain.test_in_progress_ticket_returns_none  # noqa: E501
@@ -109,6 +134,8 @@ class TestTicketTerminalStateOnMain:
         assert _ticket_terminal_state_on_main(repo, "T-9999") is None
 
 
+# frob:ticket T-2108
+# frob:ticket T-2949
 class TestFinishOnlyIfAlreadyLanded:
     """`_finish_only_if_already_landed` -- the `_land` pre-check T-2108
     adds: skip `_land_core` entirely (never touch BUG002) when
@@ -123,6 +150,8 @@ class TestFinishOnlyIfAlreadyLanded:
         tid = created.danger_ok.id
         _make_closeable(repo, tid)
         assert transition(repo, tid, TicketState.DONE).is_ok
+        # T-2949: must be committed to count as terminal on main.
+        _commit_all(repo, "close " + tid)
 
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "solo-finish", str(wt)], repo)
@@ -179,3 +208,31 @@ class TestFinishOnlyIfAlreadyLanded:
         # No cleanup side effect either -- the caller proceeds to the
         # normal `_land_core` path exactly as before this fix.
         assert finish_calls == []
+
+
+# frob:ticket T-2949
+class TestReadTicketStateAtHead:
+    """`_read_ticket_state_at_head` -- the git-HEAD-only ledger read T-2949
+    introduces so `_ticket_terminal_state_on_main` can never mistake an
+    uncommitted working-tree edit for main's real state."""
+
+    def test_reads_committed_state_not_dirty_working_tree(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_rea\
+        # ds_committed_state_not_dirty_working_tree
+        created = new_ticket(repo, _spec("Committed then dirtied"))
+        tid = created.danger_ok.id
+        _make_closeable(repo, tid)
+        _commit_all(repo, "start " + tid)
+        assert _read_ticket_state_at_head(repo, tid) == "in-progress"
+
+        # Now dirty the working tree with an UNCOMMITTED transition to
+        # done -- HEAD must still answer with the committed state.
+        assert transition(repo, tid, TicketState.DONE).is_ok
+        assert _read_ticket_state_at_head(repo, tid) == "in-progress"
+
+    def test_returns_none_when_head_has_no_such_ticket(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_ret\
+        # urns_none_when_head_has_no_such_ticket
+        assert _read_ticket_state_at_head(repo, "T-9999") is None

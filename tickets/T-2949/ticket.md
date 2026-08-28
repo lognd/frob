@@ -2,7 +2,7 @@
 id: T-2949
 title: 'frob ticket land --finish: ''already done'' check reads uncommitted working-tree
   state, not main''s HEAD -- can delete a worktree before the real land happens'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -29,7 +29,16 @@ scope_changes:
     ticket-state read
   actor: logan
   at: '2026-08-28'
-designated_repro_test: null
+evidence:
+- tests/unit/test_land_finish_idempotent.py::TestTicketTerminalStateOnMain::test_done_ticket_returns_its_state
+- tests/unit/test_land_finish_idempotent.py::TestTicketTerminalStateOnMain::test_done_ticket_uncommitted_on_disk_returns_none
+- tests/unit/test_land_finish_idempotent.py::TestTicketTerminalStateOnMain::test_in_progress_ticket_returns_none
+- tests/unit/test_land_finish_idempotent.py::TestTicketTerminalStateOnMain::test_unknown_ticket_id_returns_none
+- tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded::test_terminal_on_main_skips_land_core_and_cleans_up
+- tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded::test_non_terminal_on_main_runs_the_normal_land
+- tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead::test_reads_committed_state_not_dirty_working_tree
+- tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead::test_returns_none_when_head_has_no_such_ticket
+designated_repro_test: tests/unit/test_land_finish_idempotent.py::TestTicketTerminalStateOnMain::test_done_ticket_uncommitted_on_disk_returns_none
 threat: null
 component: null
 anchor: false

@@ -396,6 +396,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2945: AF_UNIX socket path too long on macOS: relocate daemon.sock off deep project-root paths
 - T-2946: Burn TICK004/TICK007 to zero via real ticket-queue triage, then promote
 - T-2947: Land writes state=done and promotes drafts BEFORE the git merge succeeds: tip-drift leaves ledger-done with code absent from main
+- T-2949: frob ticket land --finish: 'already done' check reads uncommitted working-tree state, not main's HEAD -- can delete a worktree before the real land happens
 - T-2950: frob status takes 5m41s: an adoption surface nobody will wait for, and it exceeds the 200s foreground budget
 - T-2951: PLATFORM001 gap: does not catch platform-restricted attributes evaluated at import/def time (default args, module/class constants, decorator kwargs)
 - T-2952: Windows still cannot import frob: bare unconditional 'import fcntl' in _new_renumber.py/_socketd.py/_coverage_wait.py

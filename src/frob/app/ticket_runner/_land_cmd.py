@@ -2011,29 +2011,77 @@ def _resolve_land_root(root: Path, worktree: Path, ticket_id: str) -> Path:
 
 
 # frob:ticket T-2108
+# frob:ticket T-2949
 def _ticket_terminal_state_on_main(root: Path, ticket_id: str) -> str | None:
-    """`ticket_id`'s `state:` on `root`'s own ledger if it is already a
+    """`ticket_id`'s `state:` at `root`'s `HEAD` COMMIT if it is already a
     TERMINAL state (done/dropped -- the same pair `_land_proof_checks`'s
-    own `state_ok` treats as terminal, T-2108), else `None`. `root` is
-    always the primary checkout by the time this is called (`_land`
-    resolves it via `_resolve_land_root` first), so this reads the SAME
-    ledger `_land_proof_checks` reads post-land, just before any land
-    attempt this call might otherwise make. Reuses `frob.tickets.
-    load_all`, the same ledger-load primitive `_land_proof_checks` already
-    uses for its own `state_desc` -- no separate parse path to keep in
-    sync. `None` on a load failure or an unknown/non-terminal state (the
-    overwhelmingly common `--finish` case: a ticket that genuinely still
-    needs to land)."""
-    from frob.tickets import TicketState, load_all
+    own `state_ok` treats as terminal, T-2108), else `None`.
 
-    loaded = load_all(root)
-    if loaded.is_err:
-        return None
-    ticket = loaded.danger_ok.get(ticket_id)
-    if ticket is None:
+    T-2949: this used to call `frob.tickets.load_all(root)`, which parses
+    whatever `tickets.md`/`tickets/<id>/ticket.md` currently sits ON DISK
+    in `root`'s working tree -- including any uncommitted leftover content
+    a land attempt staged and then aborted out of (T-2927: a concurrent-
+    drift abort correctly left `tickets/T-2927/ticket.md` on disk reading
+    `state: done` from the aborted attempt's own pre-commit staging, while
+    `main`'s actual `HEAD` still had it `queued` and the real land commit
+    existed only on the orphaned worktree branch). Reading that as "already
+    landed" and then removing the worktree would have destroyed the only
+    remaining copy of the finished work had the branch also been swept
+    before anyone noticed -- the exact class this function exists to
+    short-circuit INTO, not around.
+
+    Now reads `git show HEAD:<ledger path>` in `root` instead -- committed
+    state only, never the working tree -- via `_read_ticket_state_at_head`.
+    `None` on a git failure, an unparseable/missing ticket, or an unknown/
+    non-terminal state (the overwhelmingly common `--finish` case: a
+    ticket that genuinely still needs to land)."""
+    from frob.tickets import TicketState
+
+    state = _read_ticket_state_at_head(root, ticket_id)
+    if state is None:
         return None
     terminal = {TicketState.DONE.value, TicketState.DROPPED.value}
-    return ticket.state.value if ticket.state.value in terminal else None
+    return state if state in terminal else None
+
+
+# frob:ticket T-2949
+# frob:tests \
+# tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_reads_commi\
+# tted_state_not_dirty_working_tree
+# frob:tests \
+# tests/unit/test_land_finish_idempotent.py::TestReadTicketStateAtHead.test_returns_non\
+# e_when_head_has_no_such_ticket
+def _read_ticket_state_at_head(root: Path, ticket_id: str) -> str | None:
+    """`ticket_id`'s raw `state:` value as committed at `root`'s `HEAD` --
+    never the working tree (T-2949). Tries v2 mode first (`git show
+    HEAD:tickets/<id>/ticket.md`), falling back to single-ledger mode
+    (`git show HEAD:tickets.md`, parsed and looked up by id) when the v2
+    path does not exist at `HEAD` -- the same two backends `load_all`
+    supports, but each read goes through git's object store instead of the
+    filesystem, so an uncommitted on-disk edit (staged-then-aborted, or
+    simply mid-edit) can never be mistaken for `main`'s real state.
+
+    `None` on any git failure, an unparseable blob, or `ticket_id` not
+    found at `HEAD` in either backend."""
+    from frob.tickets._store import _parse_ledger, _parse_ticket_text
+
+    v2_blob = run_argv(
+        ["git", "-C", str(root), "show", f"HEAD:tickets/{ticket_id}/ticket.md"]
+    )
+    if v2_blob.is_ok and v2_blob.danger_ok.returncode == 0:
+        parsed = _parse_ticket_text(v2_blob.danger_ok.stdout, f"HEAD:{ticket_id}")
+        if parsed.is_ok:
+            return parsed.danger_ok.state.value
+        return None
+
+    ledger_blob = run_argv(["git", "-C", str(root), "show", "HEAD:tickets.md"])
+    if ledger_blob.is_err or ledger_blob.danger_ok.returncode != 0:
+        return None
+    parsed_ledger = _parse_ledger(ledger_blob.danger_ok.stdout)
+    if parsed_ledger.is_err:
+        return None
+    ticket = parsed_ledger.danger_ok.get(ticket_id)
+    return ticket.state.value if ticket is not None else None
 
 
 # frob:ticket T-2108
