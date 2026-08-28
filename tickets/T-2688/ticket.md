@@ -80,7 +80,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 26feec484dee3c2bde6161ea2ecb9c6ed763505c
 ---
 Deleting or renaming a test silently orphans OTHER tickets' evidence
 citations, and this is a KNOWN, expensive defect class -- it has
