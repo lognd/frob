@@ -1,5 +1,5 @@
 ---
-id: T-draft-bdcd9fab
+id: T-3218
 title: 'Gate: refuse over-long ticket-citing comment blocks in src, and ticket ids
   outside docs provenance sections'
 state: queued
