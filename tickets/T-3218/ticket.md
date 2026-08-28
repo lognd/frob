@@ -2,7 +2,7 @@
 id: T-3218
 title: 'Gate: refuse over-long ticket-citing comment blocks in src, and ticket ids
   outside docs provenance sections'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-28'

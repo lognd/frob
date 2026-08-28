@@ -66,6 +66,7 @@ from frob.gates._baseline import (
     violation_fingerprint,
 )
 from frob.gates._cache_gate import cache_gate
+from frob.gates._comment_placement import comment_placement_gate
 from frob.gates._coverage import (
     coverage_lock_diff,
     is_stamp_stale,
@@ -6016,6 +6017,12 @@ _ALL_GATES = frozenset(
         # lightweight-text-scan shape (T-2993 built the detector, this
         # ticket wires it into the live gate dict per T-2994's doctrine).
         "narrative_blocks",
+        # T-3218: CPLACE001/CPLACE002 (frob.gates._comment_placement.
+        # comment_placement_gate), same position/shape as narrative_blocks
+        # immediately above -- the remaining T-2994 placement gap NARR001
+        # does not cover (frob:waive reason length, docs narrative
+        # placement).
+        "comment_placement",
         # frob:ticket T-1784
         "root_asset_dirs",
         # frob:ticket T-1782
@@ -6481,6 +6488,9 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "excludehazard",
     # T-3014: NARR001, same position as the _ALL_GATES entry above.
     "narrative_blocks",
+    # T-3218: CPLACE001/CPLACE002, same position as the _ALL_GATES entry
+    # above.
+    "comment_placement",
     # frob:ticket T-1784
     "root_asset_dirs",
     # frob:ticket T-1782
@@ -6979,6 +6989,9 @@ def _build_thread_jobs(
         # narrative comment block is repo-wide by construction, not
         # scoped to st.root.
         "narrative_blocks": lambda: narrative_blocks_gate(st.repo_root),
+        # T-3218: CPLACE001/CPLACE002, same repo-root-always reasoning as
+        # narrative_blocks immediately above.
+        "comment_placement": lambda: comment_placement_gate(st.repo_root),
         # T-1784: repo-root scan, always against repo_root (never the
         # possibly-scoped st.root) -- same reasoning as excludehazard
         # above, a top-level directory hazard is repo-wide by construction.
@@ -8475,6 +8488,7 @@ __all__ = [
     "delta_violations",
     "drift_gate",
     "exclude_hazard_gate",
+    "comment_placement_gate",
     "narrative_blocks_gate",
     "root_asset_dir_gate",
     "env_var_doc_gate",

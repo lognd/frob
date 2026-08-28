@@ -710,6 +710,12 @@ _KNOWN_GATE_RULES = frozenset(
         # severity pending the burn-then-promote ratchet
         # (frob.gates._narrative_blocks).
         "NARR001",
+        # T-3218: CPLACE001 (frob:waive reason prose over the T-2987 cap)
+        # and CPLACE002 (docs ticket-narrative outside a provenance table),
+        # the remaining T-2994 placement gap NARR001 does not cover
+        # (frob.gates._comment_placement).
+        "CPLACE001",
+        "CPLACE002",
         # T-1784: repo-root top-level directory with zero code references
         # (frob.gates._root_asset_dirs).
         "ROOT001",

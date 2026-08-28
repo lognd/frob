@@ -431,6 +431,31 @@ errors, not silent no-ops. Never add a blanket waiver to make a gate go
 quiet; waive the specific violation with a specific, honest reason, or fix
 the underlying issue.
 
+## 7b. Comment placement (T-3218)
+
+T-2994's rule: tickets carry narrative (why, what was measured, what was
+rejected, the history); code and docs carry utility (how to run it, what
+the rules mean, what the failure modes are). Two gates enforce the parts
+of that split `NARR001` (T-2993) does not already cover:
+
+- `CPLACE001` (`src/**/*.py`) -- a `frob:waive reason="..."` directive over
+  2 physical lines. `frob:ticket`/`frob:tests`/`frob:doc` stay exempt at
+  any length (pure binding syntax); `frob:waive` does not, because a long
+  justification essay is itself the narrative bloat T-2994 is about. Move
+  the argument into the ticket the waiver already names; leave a one-line
+  summary plus the ticket id in the directive.
+- `CPLACE002` (`docs/modules/**/*.md`) -- a ticket-id-citing prose
+  paragraph outside a markdown table row (which is provenance by
+  construction) longer than 15 words. A bare `(T-1234)` citation or short
+  `see T-1234` attribution stays quiet. Move an elaborated paragraph with
+  `frob narrative move`.
+
+Both ship at WARN, not ERROR: the migrations that would burn the existing
+findings down (`T-2987` for waivers, `T-3022` for docs) had not landed at
+the time these gates shipped, so an immediate ERROR would only get waived
+away wholesale. `changelog.d/`, `CHANGELOG.md`, `docs/decisions/`, and
+`tickets/**` are exempt from both rules -- provenance is the point there.
+
 ## 8. Done-report requirements
 
 - Report only measured numbers: command output you actually ran and read,
