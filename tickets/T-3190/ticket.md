@@ -34,6 +34,15 @@ scope_changes:
     semantics; queue stamping is a ledger mutation needing no source scope
   actor: logan
   at: '2026-08-27'
+body_changes:
+- mode: append
+  reason: record the owner's 2026-08-28 decision (publish 0.530.0 to PyPI before 1.0.0),
+    which is exactly what this ticket was waiting on; adds the implied two-milestone
+    partition and the known blocker set
+  actor: logan
+  at: '2026-08-28'
+  old_length: 3369
+  new_length: 6651
 designated_repro_test: null
 threat: null
 component: null
@@ -104,3 +113,62 @@ ACCEPTANCE
 - A statement of what `REL2xx`/`REL3xx` actually gate -- staged/partial release,
   or only version coherence. This was not verified when this ticket was filed
   and should not be assumed.
+
+
+OWNER DECISION RECORDED 2026-08-28 -- this ticket was blocked on exactly this
+and is now unblocked.
+
+The owner's stated goal: a fully green CI matrix and a WORKING `frob` on PyPI
+BEFORE 1.0.0. PyPI currently serves 0.0.9 and is badly stale. The first publish
+carries 0.530.0 as-is (the existing `.frob-release.json`/REL001 authority), NOT
+a renumber -- see T-3251 for that reasoning.
+
+So the milestone partition is no longer a hypothetical. There are at least two
+real milestones, and `default_milestone = "1.0.0"` in frob.toml is now
+demonstrably wrong: it asserts that shipping to PyPI and reaching 1.0.0 are the
+same event, which the owner has just said they are not.
+
+THE PARTITION THIS DECISION IMPLIES (propose, do not assume -- the owner sees
+the final split):
+  - 0.530.0 -- "publishable": a green CI matrix on all three platforms, and an
+    artifact that installs and works from PyPI. Everything genuinely required
+    for a user to `pip install frob` and have it function.
+  - 1.0.0 -- everything else currently sitting in the default bucket.
+
+KNOWN 0.530.0-BLOCKING WORK at the time of writing (verify each; states move):
+    T-3246  SUITE-RESULT renders an aborted run as a completed one
+    T-3247  whole-repo-scan tests blow the 120s cap and abort the suite
+    T-3250  macOS CI hangs at 99% with zero diagnostics
+    T-3249  unowned 11-failure cluster, load-dependent
+    T-3251  release can be dispatched from a red main
+Note these are the CURRENTLY KNOWN blockers, not a closed set -- a green matrix
+may surface more. Do not treat this list as the definition of the milestone.
+
+WHY THIS IS THE POINT OF THE TICKET. MILE001 (blocked_by a later milestone) and
+MILE003 (unresolvable milestone) are registered and wired but STRUCTURALLY
+INERT: with every ticket in one bucket, no ticket can ever be blocked by a later
+milestone, so MILE001 cannot fire by construction. The machinery has never once
+been exercised against real data. A partition makes it live -- and the first
+thing it should catch is a 0.530.0 ticket blocked_by a 1.0.0 ticket, which is a
+release that cannot ship.
+
+DO NOT DO A BULK BACKFILL. This ticket's original body already warned against
+writing `milestone: 1.0.0` into every open ticket file, and that warning stands
+with the numbers changed. A mechanical mass-edit produces a partition nobody
+believes and that nobody can defend per-ticket. Derive the 0.530.0 set from what
+actually blocks a green matrix and a working install, ticket by ticket, and say
+what rule you used.
+
+PROVE THE MACHINERY WORKS ON THE WAY THROUGH. A must-fire fixture where a
+0.530.0 ticket is blocked_by a 1.0.0 ticket and MILE001 FIRES is worth more than
+the partition itself -- it is the only evidence that these gates do anything.
+This repo has been bitten repeatedly by catalogued-but-unenforced machinery, and
+by "shipped" features whose code path was never reachable. Positive control or
+it proves nothing.
+
+ACCEPTANCE
+- `default_milestone` no longer conflates shipping with 1.0.0.
+- A 0.530.0 set derived per-ticket from a STATED rule, not a bulk write.
+- MILE001 demonstrated FIRING on a real (or fixture) later-milestone block, and
+  MILE003 likewise -- both were inert before this change.
+- The owner sees the proposed split before it is treated as settled.
