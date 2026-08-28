@@ -2,7 +2,7 @@
 id: T-3101
 title: Move native-rebuild sub-stage after land's publish, out of the pre-publish
   transaction
-state: in-progress
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -78,3 +78,45 @@ window, and moving it after the commit is a strict improvement that needs
 no out-of-tree pipeline and survives T-3089's rewrite unchanged. When
 T-3089 lands, what remains here is only re-pointing that same call site
 from "after `_commit_squash_apply`" to "after `publish_ref_cas`".
+
+## Drop reason
+- 2026-08-27: FALSE PREMISE, already delivered. Re-read src/frob/tickets/_land_compose.py
+and _land_squash.py as they exist on main NOW (as briefed) before concluding
+this: T-3111 (landed 7fad6e96c, BEFORE this ticket was filed) moved the
+native-rebuild call out of _land_squash_apply_finish into a dedicated
+_post_publish_native_rebuild, called AFTER _seal_squash_apply succeeds --
+not hardcoded to the old in-root _commit_squash_apply. T-3089 (landed
+1e9020107) and T-3121 (landed 53d06fb16, flip onto the disposable
+worktree + CAS publish) then generalized _seal_squash_apply itself to
+branch on squash_precomposed: True -> _publish_squash_apply (which calls
+publish_ref_cas), False -> the legacy in-root _commit_squash_apply. Because
+_post_publish_native_rebuild sits structurally AFTER that branch, not
+inside either arm, the native rebuild already runs after publish_ref_cas
+for every land that takes the default out-of-tree path (squash_precomposed
+=True, set at both call sites in _land.py -- the disposable-worktree path
+and the warm-stage path; the in-root False path only remains for a warm
+sweep-stage-unavailable rapid-profile fallback). No ticket ever needed to
+"re-point the call site" the way this ticket's own body predicted -- T-3121
+generalized the seal step for an unrelated reason (CAS publish) and the
+rebuild's position after it came along for free.
+
+Verified, not inferred: tests/test_ticket_land.py::TestRebuildNatives (all
+4 tests, including test_rebuild_runs_after_the_landing_commit_is_durable,
+T-3111's own must-fire regression) pass on CURRENT main and in this
+ticket's own fresh worktree, exercising land()'s real default path (which
+this session's own T-3104/T-3131 lands moments ago also went through --
+disposable-stage compose + CAS publish, confirmed by their own log output).
+
+T-3163 (landed 31ecab73b, the ledger-splice regression this briefing named)
+is orthogonal: it made ledger_lock(root) span the whole compose+publish
+transaction for the disposed-stage path specifically (a concurrent-sibling-
+write data-loss window between the two lock windows), and does not touch
+_post_publish_native_rebuild's position at all -- confirmed by reading its
+landed diff area; the rebuild still runs after _seal_squash_apply, after
+the ledger_lock's own span, unchanged by T-3163.
+
+No code change is needed for this ticket's stated WANT. Verified: no
+frob:waive/frob:todo anywhere in _land_squash.py or _land_compose.py
+defers this specific work, and grep of both files for "publish_ref_cas"/
+"_maybe_rebuild_natives"/"_post_publish_native_rebuild" shows exactly the
+call graph described above, not a stub or partial wiring.
