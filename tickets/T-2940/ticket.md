@@ -28,7 +28,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d7124285c5d3d8a67d67dea5ff97a806fcd59471
 ---
 T-2911 added `frob status` as a real subcommand but could not update
 README.md's command table/count in the same land (see the land-tooling
