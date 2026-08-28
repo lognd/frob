@@ -2,7 +2,7 @@
 id: T-2680
 title: playbook 5b's FROB_WORKTREE/FROB_AGENT leak fix only covers tests/system/**,
   not direct land()/new_ticket() calls elsewhere
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
