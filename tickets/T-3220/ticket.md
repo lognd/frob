@@ -18,6 +18,7 @@ scope:
 - src/frob/clean/_rules.py
 - src/frob/clean/_core.py
 - tests/test_clean.py
+- docs/modules/clean.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,14 @@ scope_changes:
   reason: test file for the new protection logic in _core.py/_rules.py
   actor: logan
   at: '2026-08-28'
+- op: add
+  glob: docs/modules/clean.md
+  reason: new frob:doc anchor for TIER3_PROTECTED_PATHS
+  actor: logan
+  at: '2026-08-28'
+evidence:
+- tests/test_clean.py::test_deep_clean_preserves_rapid_debt_jsonl
+- tests/test_clean.py::test_deep_clean_still_wholesale_removes_frob_without_the_ledger
 designated_repro_test: null
 threat: null
 component: null
