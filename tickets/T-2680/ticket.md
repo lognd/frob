@@ -50,7 +50,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2580414e9846df72db383e7213bfc39ed2ce9b6d
 ---
 Playbook section 5b (agent-playbook.md) states the T-0880 fix means "you
 do not need to unset your shell's lease env before recording evidence
