@@ -96,7 +96,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 27bd2c0bcce3464bd05a5af1af32bf13215a8aaf
 ---
 T-3216 fixed one instance of this defect class in _land_git_ops.py/_land.py:
 a failed git status subprocess call was folded into "found uncommitted
