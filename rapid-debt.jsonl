@@ -3249,6 +3249,12 @@
 {"commit": "c93e4265a216e22e49ee214c0595491d439cd651", "skipped": "close-rel001-preflight-skipped", "ticket": "T-3154"}
 {"commit": "c8695e39d257c2eae726984c1b91bb96e32658f1", "skipped": "land-evidence-scope-unbound", "ticket": "T-3154"}
 {"commit": "a40e4b7bf0d1d823f17575fca84fe77cff0b50e2", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-3174"}
+{"commit": "33d4edf7e6255da0f768ea15ae4d85800595635b", "skipped": "close-rel001-preflight-skipped", "ticket": "T-3177"}
+{"commit": "33d4edf7e6255da0f768ea15ae4d85800595635b", "skipped": "missing-evidence-or-done-report", "ticket": "T-3177"}
+{"commit": "5fec8907c6163759201f9178e0e25c0b6d35c419", "skipped": "close-rel001-preflight-skipped", "ticket": "T-3177"}
+{"commit": "5fec8907c6163759201f9178e0e25c0b6d35c419", "skipped": "missing-evidence-or-done-report", "ticket": "T-3177"}
+{"commit": "13c8f8db20a9dd9b087becaa5f64b7bc0e5ac411", "skipped": "close-rel001-preflight-skipped", "ticket": "T-3177"}
+{"commit": "13c8f8db20a9dd9b087becaa5f64b7bc0e5ac411", "skipped": "close-rel001-preflight-skipped", "ticket": "T-3177"}
 {"commit": "dec5390e82bf2d64545f8c257f765fbde2e8c3ea", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-3154"}
 {"commit": "11acce5a67e7c1d6754cb0e0c73fdb6bbff6d969", "skipped": "close-rel001-preflight-skipped", "ticket": "T-3160"}
 {"commit": "3e2115e6fb87e59d1d0026975164e0a8e852a7a0", "skipped": "land-evidence-scope-unbound", "ticket": "T-3160"}
@@ -3261,3 +3267,6 @@
 {"commit": "5e5c4fbb37f28b6020ae8707636ca59891224732", "skipped": "close-rel001-preflight-skipped", "ticket": "T-3112"}
 {"commit": "c5399985483009ab6c6841b176c519467aaed507", "skipped": "land-evidence-scope-unbound", "ticket": "T-3112"}
 {"commit": "3d69c5874f0a34deef0db0a38b86dd9cfc94c4d6", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-3112"}
+{"commit": "46e22565a1a0b2cb28c2f6d1c863030b18df09c3", "skipped": "close-rel001-preflight-skipped", "ticket": "T-3177"}
+{"commit": "46e22565a1a0b2cb28c2f6d1c863030b18df09c3", "skipped": "missing-evidence-or-done-report", "ticket": "T-3177"}
+{"commit": "580cf507fa1599c4ab446b3a213e0e5dc528eba6", "skipped": "land-evidence-scope-unbound", "ticket": "T-3177"}

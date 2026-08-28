@@ -1,7 +1,7 @@
 ---
 id: T-3177
 title: Declare or waive SYS003 scripts_ops -> graphlang in branch_stranded_work_analysis.py
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -19,6 +19,33 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): SYS003 resolved via frob:waive comment additions
+    and a directive-anchor relocation to fix collateral COV001/COV007/TEST001; no
+    runtime code path changed, nothing to repro-test against'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 960
+  new_length: 1178
+- mode: append
+  reason: 'BUG002 front door (T-2393): SYS003 resolved via frob:waive comment additions
+    and a directive-anchor relocation to fix collateral COV001/COV007/TEST001; no
+    runtime code path changed, nothing to repro-test against'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 1178
+  new_length: 1396
+- mode: append
+  reason: 'BUG002 front door (T-2393): SYS003 resolved via frob:waive comment additions
+    and a directive-anchor relocation to fix collateral COV001/COV007/TEST001; no
+    runtime code path changed, nothing to repro-test against'
+  actor: logan
+  at: '2026-08-27'
+  old_length: 1178
+  new_length: 1396
+evidence:
+- tests/unit/test_branch_stranded_work_analysis.py::TestTicketIdsOnBranch::test_ledger_path_yields_its_own_id
 designated_repro_test: null
 threat: null
 component: null
@@ -30,3 +57,7 @@ scripts/branch_stranded_work_analysis.py:287-289 imports frob.graph.EdgeKind, fr
 
 ## Reopen log
 - 2026-08-27: land refused: needs bound evidence/no-behavior-change front door
+
+frob:no-behavior-change reason="SYS003 resolved via frob:waive comment additions and a directive-anchor relocation to fix collateral COV001/COV007/TEST001; no runtime code path changed, nothing to repro-test against"
+
+frob:no-behavior-change reason="SYS003 resolved via frob:waive comment additions and a directive-anchor relocation to fix collateral COV001/COV007/TEST001; no runtime code path changed, nothing to repro-test against"

@@ -234,13 +234,6 @@ def ticket_state_on_main(ticket_id: str, ref: str) -> str | None:
     return None
 
 
-# frob:doc docs/audits/branch-stranded-work-2026-08-25.md#method
-# frob:tests \
-# tests/unit/test_branch_stranded_work_analysis.py::TestTicketIdsOnBranch.test_ledger_p\
-# ath_yields_its_own_id kind="unit"
-# frob:tests \
-# tests/unit/test_branch_stranded_work_analysis.py::TestTicketIdsOnBranch.test_directiv\
-# e_comment_in_non_ticket_file_is_found kind="unit"
 #: T-2915: one reusable scratch file per suffix, mirroring `frob.tickets.
 #: _unlanded._scratch_file_for_suffix` (T-2645) exactly -- a fresh
 #: `tempfile.NamedTemporaryFile` per candidate is the same per-candidate
@@ -284,8 +277,18 @@ def _directive_ids_via_real_parser(text: str, path: str) -> frozenset[str] | Non
     literal "frob:ticket" occurrences in its own fixtures), which the
     bare regex cannot."""
     try:
+        # frob:waive SYS003 reason="one-off scripts_ops measurement script, same \
+        # exemption as scripts/measure_evidence_reach.py's frob.graph import: \
+        # design/frob.strata Flow declarations are out of this ticket's scope (T-3177 \
+        # scopes only this file), so a real Flow entry is not added here"
         from frob.graph import EdgeKind
+
+        # frob:waive SYS003 reason="same one-off measurement-script exemption as the \
+        # frob.graph import immediately above"
         from frob.graph.dsl import parse_directives
+
+        # frob:waive SYS003 reason="same one-off measurement-script exemption as the \
+        # frob.graph import immediately above"
         from frob.lang import parse_file
     except ImportError:
         return None
@@ -304,6 +307,13 @@ def _directive_ids_via_real_parser(text: str, path: str) -> frozenset[str] | Non
     return frozenset(edge.target for edge in edges if edge.kind is EdgeKind.TICKET)
 
 
+# frob:doc docs/audits/branch-stranded-work-2026-08-25.md#method
+# frob:tests \
+# tests/unit/test_branch_stranded_work_analysis.py::TestTicketIdsOnBranch.test_ledger_p\
+# ath_yields_its_own_id kind="unit"
+# frob:tests \
+# tests/unit/test_branch_stranded_work_analysis.py::TestTicketIdsOnBranch.test_directiv\
+# e_comment_in_non_ticket_file_is_found kind="unit"
 def ticket_ids_on_branch(branch: str, changed: list[str]) -> set[str]:
     """Every ticket id `changed` signals for `branch` -- ledger paths plus
     a `frob:ticket T-####` directive-comment mention in the non-ticket
