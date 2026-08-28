@@ -560,6 +560,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3223: DOC006: dead path pointers in tickets/T-2962/ticket.md
 - T-3224: REG005/REG008 findings on docs/design/registry/check-coverage.yaml
 - T-3225: WAIVE006: AFFECT001 waiver on _rule_id_scan.py bound to closed ticket T-2993
+- T-3230: Audit failed-subprocess-folded-into-positive-finding sites (T-3216 sibling survey)
 
 ## [0.530.0] - unreleased
 

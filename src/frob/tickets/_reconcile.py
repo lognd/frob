@@ -26,6 +26,7 @@ import re
 from pathlib import Path
 
 from pydantic import BaseModel
+from typani import Nothing, Option, Some
 from typani.result import Err, Ok, Result
 
 from frob.gitio import run_argv
@@ -78,25 +79,30 @@ class ReconcileReport(BaseModel):
     removed_orphans: bool
 
 
-def _live_worktrees(root: Path) -> tuple[Path, ...]:
+def _live_worktrees(root: Path) -> Option[tuple[Path, ...]]:
     """Every linked `git worktree` path for `root`'s repository, EXCLUDING
     the main checkout itself (`git worktree list --porcelain`'s first
     entry) -- these are the candidates `reconcile` checks for an orphan
-    (T-0476). Degrades to `()` if `root` is not a git work tree or the git
-    call fails, matching every other best-effort git-derived read in this
-    package."""
+    (T-0476). `Nothing()` if `root` is not a git work tree or the git call
+    fails -- T-3230: a prior version collapsed that failure into `()`,
+    identical to "measured, zero live worktrees"; `_orphan_worktree_paths`
+    only ever reads this in the false-negative-safe direction (an
+    unmeasurable read yields no reported orphans, never a false orphan), so
+    `Nothing()` there degrades the same as before. Kept distinct from
+    `Some(())` anyway so a caller CAN tell the two apart if that safety
+    argument ever stops holding for a future caller."""
     spawned = run_argv(["git", "-C", str(root), "worktree", "list", "--porcelain"])
     if spawned.is_err or spawned.danger_ok.returncode != 0:
         _log.warning("tickets: git worktree list failed under %s", root)
-        return ()
+        return Nothing()
     paths: list[Path] = []
     for line in spawned.danger_ok.stdout.splitlines():
         if line.startswith("worktree "):
             paths.append(Path(line[len("worktree ") :]).resolve())
     if not paths:
-        return ()
+        return Some(())
     main = paths[0]
-    return tuple(p for p in paths[1:] if p != main)
+    return Some(tuple(p for p in paths[1:] if p != main))
 
 
 # T-2276@T-2291's own default worktree-cutting convention
@@ -112,7 +118,7 @@ _DEFAULT_WORKTREE_BRANCH_RE = re.compile(
 )
 
 
-def _live_worktree_ticket_ids(root: Path) -> frozenset[str]:
+def _live_worktree_ticket_ids(root: Path) -> Option[frozenset[str]]:
     """Ticket ids inferable from a LIVE `git worktree`'s own branch name
     (T-2292), via `_DEFAULT_WORKTREE_BRANCH_RE` -- best-effort defense-in-
     depth alongside the lease-based liveness check `_stale_in_progress_
@@ -129,10 +135,20 @@ def _live_worktree_ticket_ids(root: Path) -> frozenset[str]:
     sessions) is simply invisible to this check and falls back to the
     lease-only signal, unchanged from before this ticket -- this narrows
     false positives (never requeuing a live default-convention worktree),
-    it does not widen them."""
+    it does not widen them.
+
+    `Nothing()` if the `git worktree list` spawn itself fails -- T-3230:
+    a prior version returned `frozenset()` on that failure, indistinguishable
+    from "measured, zero live default-convention worktrees", which let
+    `_stale_in_progress_ticket_ids` count an UNMEASURABLE read as the
+    "not in live_worktree_ticket_ids" half of its stale-hold test -- exactly
+    the T-2292 dangerous direction (a transient git failure could requeue
+    genuinely live work) this whole function exists to close off. The
+    caller MUST treat `Nothing()` as "cannot confirm absence", never as
+    proof of it."""
     spawned = run_argv(["git", "-C", str(root), "worktree", "list", "--porcelain"])
     if spawned.is_err or spawned.danger_ok.returncode != 0:
-        return frozenset()
+        return Nothing()
     ids: set[str] = set()
     for line in spawned.danger_ok.stdout.splitlines():
         if not line.startswith("branch "):
@@ -146,14 +162,14 @@ def _live_worktree_ticket_ids(root: Path) -> frozenset[str]:
             ids.add(f"T-{match.group('seq')}")
         else:
             ids.add(f"T-draft-{match.group('draft')}")
-    return frozenset(ids)
+    return Some(frozenset(ids))
 
 
 def _stale_in_progress_ticket_ids(
     root: Path,
     tickets: dict,
     leased_ticket_ids: frozenset[str],
-    live_worktree_ticket_ids: frozenset[str],
+    live_worktree_ticket_ids: Option[frozenset[str]],
 ) -> tuple[str, ...]:
     """Ticket ids the LOCAL ledger shows `IN_PROGRESS` with no corresponding
     LIVE lease (T-0476's stale-hold anomaly) -- `leased_ticket_ids` already
@@ -173,13 +189,31 @@ def _stale_in_progress_ticket_ids(
     rather than only once at `apply`'s own entry) and
     `live_worktree_ticket_ids` (`_live_worktree_ticket_ids`'s
     branch-name-convention signal, computed once by the caller and passed
-    in rather than re-derived per ticket)."""
+    in rather than re-derived per ticket).
+
+    T-3230: `live_worktree_ticket_ids` is `Nothing()` when that signal's own
+    `git worktree list` spawn failed -- an UNMEASURED read, not a measured
+    "no live default-convention worktree". Per the T-2292 reasoning just
+    above (false-positive requeue is the dangerous direction), this
+    function refuses to call ANYTHING stale on an unmeasured read rather
+    than silently treating `Nothing()` as an empty set: an empty return
+    here means "reconcile could not confirm one of its liveness signals
+    this cycle", not "found zero stale holds"."""
+    if live_worktree_ticket_ids.is_nothing:
+        _log.warning(
+            "tickets: reconcile: live-worktree signal unmeasured under %s -- "
+            "skipping stale-hold detection this cycle rather than treating "
+            "'cannot tell' as 'no live worktree' (T-2292 dangerous direction)",
+            root,
+        )
+        return ()
+    live_ids = live_worktree_ticket_ids.danger_some
     return tuple(
         ticket_id
         for ticket_id, ticket in sorted(tickets.items())
         if ticket.state is TicketState.IN_PROGRESS
         and ticket_id not in leased_ticket_ids
-        and ticket_id not in live_worktree_ticket_ids
+        and ticket_id not in live_ids
         and not _land_in_progress_for_ticket(root, ticket_id)
     )
 
@@ -189,9 +223,15 @@ def _orphan_worktree_paths(
 ) -> tuple[Path, ...]:
     """Live linked worktrees (T-0476's orphan-worktree anomaly): a real
     `git worktree` entry that no lease names, i.e. holding no in-progress
-    ticket at all."""
+    ticket at all. `()` (never a false orphan) when `_live_worktrees`
+    itself could not measure -- this is the false-negative-safe direction
+    T-3230 preserved for this specific caller (see `_live_worktrees`'s own
+    docstring)."""
+    worktrees = _live_worktrees(root)
+    if worktrees.is_nothing:
+        return ()
     return tuple(
-        path for path in _live_worktrees(root) if str(path) not in leased_worktrees
+        path for path in worktrees.danger_some if str(path) not in leased_worktrees
     )
 
 

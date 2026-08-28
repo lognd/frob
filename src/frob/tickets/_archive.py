@@ -248,10 +248,33 @@ def _refuse_archive_if_other_worktrees_live(root: Path) -> Result[None, TicketEr
     level import cycle (`_reconcile` imports from `_archive`'s sibling
     modules, not this one directly, but keeping the cross-family import
     local matches this package's existing late-import convention for
-    cross-family calls, e.g. `frob.tickets._doable`'s own late imports)."""
+    cross-family calls, e.g. `frob.tickets._doable`'s own late imports).
+
+    T-3230: `_live_worktrees` returns `Nothing()` when its own `git
+    worktree list` spawn fails, distinct from `Some(())` ("measured,
+    genuinely zero live worktrees"). A prior version of this guard read
+    both the same way (an empty/falsy `()`), which meant a transient git
+    failure was treated as "confirmed no live worktree" and silently
+    ALLOWED the archive -- the exact fail-open shape T-3216 fixed for
+    DirtyMain, backwards here too: an unmeasurable read is never license
+    to proceed with a write this guard exists to gate. `Nothing()` now
+    refuses with `GitFailed`, distinct from the genuine
+    `ArchiveLiveLeaseExists` refusal below, so an operator sees "could not
+    measure" rather than a false claim of a live worktree that may not
+    exist."""
     from frob.tickets._reconcile import _live_worktrees
 
-    live = _live_worktrees(root)
+    worktrees = _live_worktrees(root)
+    if worktrees.is_nothing:
+        _log.error(
+            "tickets: archive refused -- could not measure live git "
+            "worktrees under %s (git worktree list failed); an unmeasurable "
+            "read is never treated as 'no live worktrees' -- retry, or pass "
+            "--force if you have confirmed no other worktree is live",
+            root,
+        )
+        return Err(TicketError.ArchiveWorktreeMeasurementFailed)
+    live = worktrees.danger_some
     if not live:
         return Ok(None)
     _log.error(

@@ -345,6 +345,116 @@ class TestReconcileLiveWorktreeShield:
         assert loaded.danger_ok[tid].state == TicketState.QUEUED
 
 
+class TestReconcileWorktreeMeasurementFailure:
+    """T-3230: `_live_worktree_ticket_ids`'s own `git worktree list` spawn
+    can fail (transient contention, a corrupt worktree admin dir, exec
+    disabled) -- that must degrade to Nothing(), never to an empty set that
+    reads as "confirmed no live worktree", or a stale-hold ledger sync
+    (`_set_state_directly`, no lease) racing a genuinely live worktree could
+    be requeued out from under it on nothing more than a flaky git spawn."""
+
+    def test_live_worktrees_returns_nothing_on_a_real_spawn_failure(
+        self, tmp_path: Path
+    ) -> None:
+        """Direct unit coverage of `_live_worktrees`'s own `spawned.is_err
+        or spawned.danger_ok.returncode != 0` branch (T-3230): a REAL failed
+        spawn (not-a-git-repo, not a monkeypatched return) against a
+        non-git directory must yield `Nothing()`, never `Some(())` -- the
+        two are NOT the same "no worktrees" answer."""
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure.test_\
+        # live_worktrees_returns_nothing_on_a_real_spawn_failure
+        from frob.tickets._reconcile import _live_worktrees
+
+        not_a_repo = tmp_path / "not-a-repo"
+        not_a_repo.mkdir()
+
+        result = _live_worktrees(not_a_repo)
+        assert result.is_nothing
+
+    def test_live_worktrees_returns_some_empty_on_a_real_clean_measurement(
+        self, repo: Path
+    ) -> None:
+        """Must-stay-quiet control for the same branch: a real, successful
+        `git worktree list` against a repo with no OTHER linked worktree
+        must yield `Some(())`, not `Nothing()` -- a genuinely measured
+        empty result is not the same case as an unmeasurable one."""
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure.test_\
+        # live_worktrees_returns_some_empty_on_a_real_clean_measurement
+        from frob.tickets._reconcile import _live_worktrees
+
+        result = _live_worktrees(repo)
+        assert result.is_some
+        assert result.danger_some == ()
+
+    def test_unmeasurable_worktree_signal_is_never_requeued(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Must-fire: force `_live_worktree_ticket_ids` to Nothing() (spawn
+        failure) for an in-progress ticket with no lease -- pre-fix this
+        would have requeued it (empty set collapsed with "no live
+        worktree"); post-fix it must be left untouched."""
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure.test_\
+        # unmeasurable_worktree_signal_is_never_requeued
+        from typani import Nothing
+
+        from frob.tickets import _reconcile as reconcile_module
+
+        created = new_ticket(repo, _spec("Unmeasurable", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+        _set_state_directly(repo, tid, TicketState.IN_PROGRESS)
+
+        monkeypatch.setattr(
+            reconcile_module, "_live_worktree_ticket_ids", lambda root: Nothing()
+        )
+
+        result = reconcile(repo, apply=True)
+        assert result.is_ok
+        assert tid not in result.danger_ok.requeued_tickets
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert loaded.danger_ok[tid].state == TicketState.IN_PROGRESS
+
+    def test_measured_signal_still_requeues_normally(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Must-stay-quiet control: a genuinely MEASURED empty set (real
+        `Some(frozenset())`, not `Nothing()`) still requeues a stale hold as
+        before -- the fix narrows exactly the unmeasurable case, not the
+        ordinary "measured, confirmed no live worktree" case."""
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure.test_\
+        # measured_signal_still_requeues_normally
+        from typani import Some
+
+        from frob.tickets import _reconcile as reconcile_module
+
+        created = new_ticket(repo, _spec("MeasuredEmpty", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+        _set_state_directly(repo, tid, TicketState.IN_PROGRESS)
+
+        monkeypatch.setattr(
+            reconcile_module,
+            "_live_worktree_ticket_ids",
+            lambda root: Some(frozenset()),
+        )
+
+        result = reconcile(repo, apply=True)
+        assert result.is_ok
+        assert result.danger_ok.requeued_tickets == (tid,)
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert loaded.danger_ok[tid].state == TicketState.QUEUED
+
+
 class TestReconcileOrphanWorktree:
     def test_live_worktree_with_no_lease_is_flagged_not_removed(
         self, repo: Path

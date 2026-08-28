@@ -927,6 +927,17 @@ class TicketError(ErrorSet):
     ArchiveNonTerminalTicket = (
         "archive refuses to move a ticket whose state is not terminal"
     )
+    # T-3230: `_refuse_archive_if_other_worktrees_live`'s own `git worktree
+    # list` measurement can fail; this is DISTINCT from ArchiveLiveLeaseExists
+    # (a genuine live worktree was found) -- an unmeasurable read fails
+    # CLOSED (refuses) rather than being collapsed into "no live worktree
+    # found" the way it was before this ticket.
+    ArchiveWorktreeMeasurementFailed = (
+        "could not measure live git worktrees (git worktree list failed); "
+        "an unmeasurable read is never treated as 'no live worktrees' -- "
+        "retry, or pass --force if you have confirmed no other worktree "
+        "is live"
+    )
 
 class ClipboardError(ErrorSet):
     NoBackend     = "No clipboard backend available on this platform"

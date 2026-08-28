@@ -526,6 +526,35 @@ class TestArchiveRefusesLiveWorktrees:
         assert result.is_ok
         assert result.danger_ok == 1
 
+    # frob:ticket T-3230
+    def test_unmeasurable_worktree_list_refuses_not_allows(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3230: a `git worktree list` spawn failure must fail CLOSED
+        (refuse the archive with `GitFailed`), never fail open into
+        `ArchiveLiveLeaseExists`'s `not live` == `()` == "measured, no
+        worktrees" path a prior version collapsed it into."""
+        # frob:tests \
+        # tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_unme\
+        # asurable_worktree_list_refuses_not_allows
+        from typani import Nothing
+
+        from frob.tickets import _reconcile as reconcile_module
+        from frob.tickets import archive
+
+        root = self._repo(tmp_path)
+        self._write_done(root, "T-0001")
+
+        monkeypatch.setattr(reconcile_module, "_live_worktrees", lambda root: Nothing())
+
+        result = archive(root)
+        assert result.is_err
+        assert result.danger_err == TicketError.ArchiveWorktreeMeasurementFailed
+
+        active = load_all(root)
+        assert active.is_ok
+        assert "T-0001" in active.danger_ok
+
 
 # frob:ticket T-1613
 class TestRunsLast:

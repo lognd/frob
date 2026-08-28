@@ -2504,6 +2504,19 @@ class TicketError(ErrorSet):
         "archiving now would run concurrently with in-flight work -- run "
         "in a quiet window or pass --force to override"
     )
+    # T-3230: `_refuse_archive_if_other_worktrees_live`'s own `git worktree
+    # list` measurement can fail (transient contention, a corrupt worktree
+    # admin dir); this is a DISTINCT outcome from ArchiveLiveLeaseExists
+    # (a genuine live worktree was found) -- collapsing an unmeasurable
+    # read into "no live worktree found" fails open into exactly the
+    # T-3216-class bug (a transient measurement failure silently permitted
+    # a write this guard exists to gate).
+    ArchiveWorktreeMeasurementFailed = (
+        "could not measure live git worktrees (git worktree list failed); "
+        "an unmeasurable read is never treated as 'no live worktrees' -- "
+        "retry, or pass --force if you have confirmed no other worktree "
+        "is live"
+    )
     # T-0764: a ledger write whose rendered text would produce a section
     # with no marker line, or silently drop an id its input carried, is
     # refused rather than committed -- the structural guard for the

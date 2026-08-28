@@ -2,7 +2,7 @@
 id: T-3230
 title: Audit failed-subprocess-folded-into-positive-finding sites (T-3216 sibling
   survey)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -79,7 +79,19 @@ evidence:
 - tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure::test_unmeasurable_worktree_signal_is_never_requeued
 - tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure::test_measured_signal_still_requeues_normally
 - tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees::test_unmeasurable_worktree_list_refuses_not_allows
-designated_repro_test: tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure::test_unmeasurable_worktree_signal_is_never_requeued
+- tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure::test_live_worktrees_returns_nothing_on_a_real_spawn_failure
+- tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure::test_live_worktrees_returns_some_empty_on_a_real_clean_measurement
+- tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree::test_live_worktree_with_no_lease_is_flagged_not_removed
+designated_repro_test: tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure::test_live_worktrees_returns_nothing_on_a_real_spawn_failure
+designated_repro_changes:
+- old_value: tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure::test_unmeasurable_worktree_signal_is_never_requeued
+  new_value: tests/test_ticket_reconcile.py::TestReconcileWorktreeMeasurementFailure::test_live_worktrees_returns_nothing_on_a_real_spawn_failure
+  reason: Fix changes _live_worktrees's return type (tuple -> Option) in the same
+    commit as this test; no ancestor commit holds the test passing/failing cleanly
+    against the old tuple-typed function without a TypeError on Option-shaped assertions,
+    not a clean red state to diff against.
+  actor: logan
+  at: '2026-08-28'
 threat: null
 component: null
 anchor: false
