@@ -2,7 +2,7 @@
 id: T-3249
 title: 'Unowned 11-failure cluster: frob check fires spurious REF001/PRE001/SCOPE001
   only under concurrent load (T-2992 misattributed it to the already-landed T-3019)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
