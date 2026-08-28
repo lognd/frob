@@ -14,10 +14,47 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- docs/modules/*.md
+- src/frob/gates/_docstring*.py
+- src/frob/gates/__init__.py
+- tests/test_docstring*.py
+- tests/gates/*docstring*.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/*.md
+  reason: detector for T-2988's utility/reuse purpose test lives in a new docstring-archaeology
+    gate; docs standard lives in docs/modules
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_docstring*.py
+  reason: detector for T-2988's utility/reuse purpose test lives in a new docstring-archaeology
+    gate; docs standard lives in docs/modules
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: detector for T-2988's utility/reuse purpose test lives in a new docstring-archaeology
+    gate; docs standard lives in docs/modules
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/test_docstring*.py
+  reason: detector for T-2988's utility/reuse purpose test lives in a new docstring-archaeology
+    gate; docs standard lives in docs/modules
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/gates/*docstring*.py
+  reason: detector for T-2988's utility/reuse purpose test lives in a new docstring-archaeology
+    gate; docs standard lives in docs/modules
+  actor: logan
+  at: '2026-08-28'
 triage_changes:
 - field: parent
   old_value: null
