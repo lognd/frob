@@ -34,6 +34,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2282f6de7700fa068c79f401c55764a2e17c8503
 ---
 T-2988 landed a comment near the docarch001_violations call site in run_gates that reads 'applied to public docstrings instead of frob:waive reasons' -- the literal token 'frob:waive' mid-prose gets picked up by frob.graph.dsl's directive scanner and fails to parse as a real directive (bad attribute syntax), surfacing as a DSL001-eligible malformed directive at src/frob/gates/__init__.py:8399 (confirmed via land's own WARNING: malformed directive log line). Reword the comment to avoid the literal 'frob:waive ' token outside an actual directive (e.g. 'a waive-style reason' or backtick/hyphenate it so the scanner does not match).
