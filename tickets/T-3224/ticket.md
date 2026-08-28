@@ -1,7 +1,7 @@
 ---
 id: T-3224
 title: REG005/REG008 findings on docs/design/registry/check-coverage.yaml
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
