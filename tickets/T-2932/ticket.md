@@ -31,7 +31,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3594cc6c8e80c4c7921abc1a5ef7c76d80741c88
 ---
 T-2908's recursive-grep fix added a negative pattern requiring the scoped
 subdirectory path token to be immediately followed by a pipe/semicolon/
