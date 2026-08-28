@@ -63,7 +63,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 23ebfa18915961c3433836663c81c0c64c2f3097
 ---
 Child of T-2994 (the placement-rule epic): the GATE half specifically.
 T-2987 (waiver-reason cap) and T-2988 (docstring standard) cover their
