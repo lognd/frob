@@ -19,6 +19,7 @@ scope:
 - tests/unit/test_release_workflow_gate.py
 - scripts/verify_release_ci_status.py
 - tests/unit/test_verify_release_ci_status.py
+- docs/guides/release.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +41,13 @@ scope_changes:
     repo''s existing scripts/*.py convention) rather than embedded bash+jq in release.yml,
     so it can be deterministically unit-tested without a real gh binary or network
     access'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/guides/release.md
+  reason: 'T-3251: DOCUMENT AS YOU GO -- the new verify-ci-status job/script''s frob:doc
+    anchors point here; added a Decision 4 section explaining the fourth gate, the
+    three outcomes, and the override'
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
