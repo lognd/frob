@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_done_report.py
+- src/frob/tickets/_evidence.py
+- src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +28,30 @@ scope_changes:
   reason: the done-report write path that produced the hollow record
   actor: logan
   at: '2026-08-27'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: wire the hollow-done-report refusal guard into the existing done-transition
+    check chain and add its TicketError variant
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: wire the hollow-done-report refusal guard into the existing done-transition
+    check chain and add its TicketError variant
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: wire the hollow-done-report refusal guard into the existing done-transition
+    check chain and add its TicketError variant
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: wire the hollow-done-report refusal guard into the existing done-transition
+    check chain and add its TicketError variant
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
