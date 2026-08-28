@@ -17,6 +17,10 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_git_ops.py
 - src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+- docs/modules/tickets-verify-sweep.md
+- tests/unit/test_rapid_sweep.py
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +68,32 @@ scope_changes:
     false-positive branch both live in _log_dirty_main_refusal/_refuse_if_main_dirty
     in _land.py, which consumes _land_git_ops.py's STATUS-UNREADABLE signal; the fix
     is incomplete without it
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: test_ticket_land.py is where the _land.py-level fixture for the STATUS-UNREADABLE
+    refusal lives; tickets-verify-sweep.md is describe_root_dirt's affects()-closure
+    doc target
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: test_ticket_land.py is where the _land.py-level fixture for the STATUS-UNREADABLE
+    refusal lives; tickets-verify-sweep.md is describe_root_dirt's affects()-closure
+    doc target
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: T-3216 adds tests to test_rapid_sweep.py for the new _porcelain_status_error/_render_dirty_paths/describe_root_dirt
+    behavior; frob.lock is a normal ack side effect
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: frob.lock
+  reason: T-3216 adds tests to test_rapid_sweep.py for the new _porcelain_status_error/_render_dirty_paths/describe_root_dirt
+    behavior; frob.lock is a normal ack side effect
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
