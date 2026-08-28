@@ -2,7 +2,7 @@
 id: T-2878
 title: close's draft auto-promote sweeps ANOTHER ticket's pending draft, races its
   rightful promotion
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-22'
