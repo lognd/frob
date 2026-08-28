@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
 - tests/system/test_fleet_status_ground_truth.py
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +38,12 @@ scope_changes:
   glob: tests/system/test_fleet_status_ground_truth.py
   reason: narrowed to the two genuine platform-unsafe product-code findings (os.major/os.minor/os.sysconf)
     this triage pass fixes; remaining test-fixture files split to a follow-up ticket
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: must-fire/must-stay-quiet fixtures for the new _flock_holders_matching win32
+    guard
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
