@@ -2,7 +2,7 @@
 id: T-2967
 title: 'macOS: frob.serve._socketd daemon.sock exceeds AF_UNIX sun_path length limit
   (12 failures)'
-state: in-progress
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -75,3 +75,6 @@ platform's sun_path limit.
 ## Failure log
 - 2026-08-26 attempt 1: dispatched as T-2967 by id mismatch; actual content is macOS AF_UNIX sun_path length limit, not the exit-code-contract mismatch task briefed (that is T-2968); no work done on this ticket's scope, returning to queue untouched
 - 2026-08-28 attempt 2: stale premise: T-2945 (done) already fixed this exact defect
+
+## Drop reason
+- 2026-08-28: 2026-08-28 confirmed duplicate of T-2945 (done). T-2945's done report shows the exact same root cause (src/frob/serve/_socketd.py::socket_path building <root>/.frob/daemon.sock, exceeding macOS's 104-byte sockaddr_un.sun_path limit under deep pytest-xdist tmp paths) and the exact same fix (relocate to <system temp dir>/frob-<16-hex-digest-of-root>.sock, keep lock_path unchanged, updated docs/modules/serve.md). Verified directly in this worktree: src/frob/serve/_socketd.py already contains the T-2945 fix (short_socket_filename / hash-based relocation, docstring citing the 104/108-byte limit) and tests/test_serve_socket.py::TestSocketPath (4 tests) + tests/test_app_daemon_proxy.py TestProbeDaemon/TestProbeDaemonVersion pass locally, 9/9. T-2967's own failure-log attempt 2 already flagged this; this attempt re-confirms it with a fresh local test run rather than trusting the prior note.
