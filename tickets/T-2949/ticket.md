@@ -43,7 +43,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 79dbe8afd8a29a9dd7027783f4e9caa46c8beba3
 ---
 Reproduced directly this session (T-2927, immediately after the T-2927
 land attempt hit a concurrent-drift abort -- "refused to unwind ... drift
