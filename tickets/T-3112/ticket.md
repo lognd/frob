@@ -3,7 +3,7 @@ id: T-3112
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3107):
   20 new (rule, file) identit(ies), 38 finding(s) (AFFECT001, COV002, I001, SUPPRESS001)'
 state: in-progress
-kind: bug
+kind: docs
 origin: agent
 created: '2026-08-27'
 priority: high
@@ -36,6 +36,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: 'pure re-measurement: all 20 (rule,file) identities checked against a fresh
+    frob check run and confirmed to NOT reproduce on main -- stale/pre-existing residue,
+    nothing to fix, no code surface changed'
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
