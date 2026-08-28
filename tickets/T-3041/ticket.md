@@ -17,6 +17,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/strata/
 - tests/system/test_frob_self_model.py
+- tests/golden/frob_export_iam.json
+- tests/golden/frob_export_k8s.yaml
+- tests/golden/frob_export_seccomp.json
 scope_breadth_ack: true
 scope_breadth_ack_reason: T-3041 is a triage umbrella over the repo's own self-conformance
   test family (13 tests spanning many gate modules under tests/unit/strata/ + test_frob_self_model.py);
@@ -24,6 +27,31 @@ scope_breadth_ack_reason: T-3041 is a triage umbrella over the repo's own self-c
   findings across many files, not editing one narrow package.
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/golden/frob_export_iam.json
+  reason: test_export_golden.py (in scope) asserts these fixtures byte-match design/frob.strata's
+    real export -- T-3029 legitimately changed that model (new narrative node/flows/may-via),
+    so the golden files are stale-by-construction and must be regenerated as part
+    of fixing the in-scope test
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/golden/frob_export_k8s.yaml
+  reason: test_export_golden.py (in scope) asserts these fixtures byte-match design/frob.strata's
+    real export -- T-3029 legitimately changed that model (new narrative node/flows/may-via),
+    so the golden files are stale-by-construction and must be regenerated as part
+    of fixing the in-scope test
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/golden/frob_export_seccomp.json
+  reason: test_export_golden.py (in scope) asserts these fixtures byte-match design/frob.strata's
+    real export -- T-3029 legitimately changed that model (new narrative node/flows/may-via),
+    so the golden files are stale-by-construction and must be regenerated as part
+    of fixing the in-scope test
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
