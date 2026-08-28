@@ -47,7 +47,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3297135baa1de81ab73c71b5124035f589f90533
 ---
 MEASURED 2026-08-27. `.claude-scratch/T-3122-close-guard-repro-capture.md` is
 the sole tracked file under `.claude-scratch/`. It has no inbound reference from
