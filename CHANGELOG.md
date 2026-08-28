@@ -429,6 +429,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2989: Rename frob.yamlio to frob.yamlio for io-seam naming consistency (via frob refactor, not hand-edits)
 - T-2990: frob refactor has no module/file move verb: symbol-scoped only, so a module rename falls back to hand-editing imports
 - T-2991: frob subprocess children spawned by system tests can be orphaned when their pytest worker is killed
+- T-2992: capture and triage the real test failures the ubuntu CI hang was hiding
 - T-2993: Ticket-narrative comment blocks: 1728 blocks / 11116 lines of T-id archaeology in code, still being written
 - T-2995: Docs narrative: 44% of doc lines sit in paragraphs citing a ticket id; keep the change info, move the story
 - T-2996: Language-support matrix has 5 facets but 13 packages specialize per-language; refactor is silently Python-only and invisible to detection

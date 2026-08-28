@@ -78,6 +78,9 @@ body_changes:
   at: '2026-08-28'
   old_length: 4746
   new_length: 5819
+evidence:
+- cmd:uv run pytest tests/system/test_cli_check.py -k clean_code_exits_zero -q -p
+  no:randomly exit=0 sha256=0321e840af75
 kind_history:
 - 2026-08-28 bug->docs evidence=0 done_report=yes
 designated_repro_test: null
