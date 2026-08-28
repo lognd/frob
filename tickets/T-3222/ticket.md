@@ -2,7 +2,7 @@
 id: T-3222
 title: 'Post-land sweep files findings that are 90% stale: 27 of 30 identities across
   two samples no longer reproduce'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
