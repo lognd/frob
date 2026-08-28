@@ -27,6 +27,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 37cfe045915e802c66728a594dc2a4626274a7df
 ---
 docs/modules/tickets-data-storage.md (~line 1416) still says 'add_cmd_evidence refuses with Err(EvidenceKindNotAllowed) for every kind except docs' -- stale since T-3156 widened the gate (any kind may use cmd evidence when scope_has_python_surface is False) and T-3045 added ux alongside docs. Found while acking DRIFT001 on add_cmd_evidence for T-3172; not a tracked frob:doc anchor on that symbol so it did not itself trip DRIFT001, but the prose is wrong and should be brought in line with docs/modules/tickets.md's already-updated description.
