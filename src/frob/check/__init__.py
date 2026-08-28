@@ -529,6 +529,14 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             # out of the ticket's four NAMED gates but the same fix, same
             # symbol, same commit; not a separate scope.
             "narrative_blocks",
+            # T-3249: comment_placement (CPLACE001/CPLACE002, T-3218) has
+            # the identical registered-but-unreachable omission shape as
+            # narrative_blocks/T-3030 above -- added to frob.gates._ALL_
+            # GATES by T-3218 but never added to any _STAGE_GROUPS member.
+            # Thread-pool, sub-second (not in frob.gates._PROCESS_POOL_
+            # GATES), so it belongs in gates-fast like every other entry
+            # in this same omission class.
+            "comment_placement",
         }
     ),
     # frob:ticket T-0688

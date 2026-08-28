@@ -167,6 +167,19 @@ class TestCheckOnlyPerf:
         _git("init", "-q", "-b", "main", cwd=tmp_path)
         _git("config", "user.email", "test@example.com", cwd=tmp_path)
         _git("config", "user.name", "Test", cwd=tmp_path)
+        # T-3249: this fixture deliberately COMMITS `coverage.xml` (below,
+        # for TEST017's module-join reading) -- a normally-gitignored
+        # coverage-report artifact, not a universal per-project file like
+        # pyproject.toml/frob.toml, so it does not belong in
+        # `_DEFAULT_ROOT_MANIFEST_EXEMPT` (`src/frob/gates/_refs.py`).
+        # REF001 correctly flags a committed-but-unreferenced file by its
+        # own design; this fixture's own `frob.toml` downgrades it to warn
+        # in the same adoption-baseline list `tests/system/test_cli_check.
+        # py`'s `_make_project` already uses (T-3019) -- this test isolates
+        # PERF001's own severity, not REF001's orphan-file discipline.
+        (tmp_path / "frob.toml").write_text(
+            '[gates.severity]\nREF001 = "warn"\n'
+        )
         (tmp_path / "pkg.py").write_text(
             "def scan(items):\n"
             "    data = [1, 2, 3]\n"

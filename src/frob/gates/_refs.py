@@ -284,6 +284,17 @@ _DEFAULT_ROOT_MANIFEST_EXEMPT = frozenset(
         ".gitignore",
         "package.json",
         "tsconfig.json",
+        # T-3249: root `tickets.md` is ledger-v1's own universal, exactly-
+        # one-per-repo ticket ledger, read only by `frob ticket`/`frob
+        # check` tooling (LEDGERV1001) -- never referenced from other
+        # tracked source files, the identical shape this frozenset already
+        # exempts pyproject.toml/frob.toml for. Before this, a plain
+        # frob-enabled project's root `tickets.md` failed REF001 on first
+        # clean run (confirmed via tests/system/test_cli_perf.py and
+        # tests/system/test_cli_native_missing.py's own minimal fixtures),
+        # the same "clean project fails clean" gap T-3019 closed for the
+        # two files above.
+        "tickets.md",
     }
 )
 

@@ -2,7 +2,7 @@
 id: T-3249
 title: 'Unowned 11-failure cluster: frob check fires spurious REF001/PRE001/SCOPE001
   only under concurrent load (T-2992 misattributed it to the already-landed T-3019)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -21,9 +21,9 @@ scope:
 - tests/test_refs_gate.py
 - tests/system/test_cli_perf.py
 - tests/system/test_cli_native_missing.py
-- tickets/T-draft-db6c513a/**
-- tickets/T-draft-460d9c7e/**
-- tickets/T-draft-0ef9d7be/**
+- tickets/T-3264/**
+- tickets/T-3263/**
+- tickets/T-3262/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -80,7 +80,7 @@ scope_changes:
   actor: logan
   at: '2026-08-28'
 - op: add
-  glob: tickets/T-draft-db6c513a/**
+  glob: tickets/T-3264/**
   reason: draft tickets filed as follow-ups while working T-3249 for the 3 remaining
     root causes out of this ticket's own scope (native-missing SYS004 unhandled exception,
     render_lint pytest prefix loss, scaffold OPAQUE001/REF001); their own ticket.md
@@ -89,7 +89,7 @@ scope_changes:
   actor: logan
   at: '2026-08-28'
 - op: add
-  glob: tickets/T-draft-460d9c7e/**
+  glob: tickets/T-3263/**
   reason: draft tickets filed as follow-ups while working T-3249 for the 3 remaining
     root causes out of this ticket's own scope (native-missing SYS004 unhandled exception,
     render_lint pytest prefix loss, scaffold OPAQUE001/REF001); their own ticket.md
@@ -98,7 +98,7 @@ scope_changes:
   actor: logan
   at: '2026-08-28'
 - op: add
-  glob: tickets/T-draft-0ef9d7be/**
+  glob: tickets/T-3262/**
   reason: draft tickets filed as follow-ups while working T-3249 for the 3 remaining
     root causes out of this ticket's own scope (native-missing SYS004 unhandled exception,
     render_lint pytest prefix loss, scaffold OPAQUE001/REF001); their own ticket.md

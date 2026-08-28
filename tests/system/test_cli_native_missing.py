@@ -98,6 +98,15 @@ def _init_no_design_repo(tmp_path: Path) -> Path:
         "[gates.severity]\n"
         'COV001 = "warn"\nTEST001 = "warn"\nTEST002 = "warn"\n'
         'TEST003 = "warn"\nTEST005 = "warn"\nTEST006 = "warn"\n'
+        # T-3249: this fixture's own package is a single unconsumed
+        # __init__.py with no test/entry-point importing it -- a genuine
+        # REF001 orphan by that gate's own design (same shape T-3019
+        # already documented for tests/system/test_cli_check.py's
+        # `_make_project`), not a bug. Belongs in this same adoption-
+        # baseline warn list for the same reason: this fixture exercises
+        # the native-missing degrade path, not REF001's orphan-file
+        # discipline.
+        'REF001 = "warn"\n'
     )
     src_dir = repo / "src" / "p"
     src_dir.mkdir(parents=True)

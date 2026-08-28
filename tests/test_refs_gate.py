@@ -262,6 +262,39 @@ class TestDefaultRootManifestExempt:
 
         assert "REF001" in _rule_ids(violations, "somecrate/pyproject.toml")
 
+    # frob:ticket T-3249
+    def test_root_tickets_md_is_exempt_with_no_declaration(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3249: root `tickets.md` (ledger-v1's universal, exactly-one-
+        per-repo ticket ledger, read only by `frob ticket`/`frob check`
+        tooling) is exempt with the same reasoning already applied to
+        pyproject.toml/frob.toml above -- confirmed missing via a direct
+        `frob check` repro on tests/system/test_cli_perf.py and
+        tests/system/test_cli_native_missing.py's minimal fixtures, both
+        of which failed REF001 on a freshly committed root tickets.md."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "pyproject.toml", "[project]\nname = \"x\"\n")
+        _write(tmp_path, "tickets.md", "# Tickets\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert _rule_ids(violations, "tickets.md") == []
+
+    # frob:ticket T-3249
+    def test_nested_tickets_md_still_subject_to_ref001(
+        self, tmp_path: Path
+    ) -> None:
+        _init_repo(tmp_path)
+        (tmp_path / "sub").mkdir()
+        _write(tmp_path, "sub/tickets.md", "# Tickets\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert "REF001" in _rule_ids(violations, "sub/tickets.md")
+
 
 class TestNativeStubLinking:
     """T-0449: a `.pyi` sidecar beside a `pyproject.toml` whose
