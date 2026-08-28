@@ -2,7 +2,7 @@
 id: T-3017
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2993):
   2 new (rule, file) identit(ies), 1 finding(s) (I001, REF002)'
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-08-26'
@@ -42,6 +42,17 @@ body_changes:
   at: '2026-08-28'
   old_length: 1409
   new_length: 1986
+- mode: append
+  reason: 'BUG002 front door (T-2393): I001 and REF002 identities from this ticket
+    no longer reproduce on current main; REF002''s file (src/frob/yaml_io.py) was
+    renamed to yamlio.py by T-2989 and the renamed module carries no REF002; ruff
+    check on the named test file reports no issues. Pre-existing residue, no fix required.'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 1986
+  new_length: 2306
+evidence:
+- cmd:git grep -L yaml_io -- src/frob/yamlio.py exit=0 sha256=5b1a196424eb
 designated_repro_test: null
 threat: null
 component: null
@@ -66,3 +77,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
 
 Re-verified on current main (2026-08-28): src/frob/yaml_io.py no longer exists -- T-2989 (landed 2026-08-26, commit 2f0d14f8a) renamed frob.yaml_io -> frob.yamlio repo-wide; the module now at src/frob/yamlio.py carries no REF002 (single-anchor) finding in a fresh gates-fast run. ruff check tests/test_narrative_migrate.py reports 'no issues' -- I001 (import sort) does not fire either. Both identities are pre-existing residue the rolling baseline had not recorded, since resolved incidentally by an unrelated rename land (T-2989), not by any fix in this ticket's own scope.
+
+frob:no-behavior-change reason="I001 and REF002 identities from this ticket no longer reproduce on current main; REF002's file (src/frob/yaml_io.py) was renamed to yamlio.py by T-2989 and the renamed module carries no REF002; ruff check on the named test file reports no issues. Pre-existing residue, no fix required."
