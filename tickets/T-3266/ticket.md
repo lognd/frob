@@ -20,6 +20,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'scope correction: the class is stale-count not zero (61 wrong non-zero
+    cases the original scan missed), and a liveness measurement showing 6 of the 15
+    newest reports wrong including T-3247 landed today'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 3442
+  new_length: 6315
 designated_repro_test: null
 threat: null
 component: null
@@ -88,3 +97,62 @@ ACCEPTANCE
   why it should not.
 - A re-run of the scan showing the count for NEW reports is zero. The historical
   136 may remain; say explicitly which choice was made.
+
+
+SCOPE CORRECTION AND A LIVENESS MEASUREMENT, both taken 2026-08-28 after this
+ticket was filed. The defect is BROADER and MORE ACTIVE than the original body
+says.
+
+1. THE CLASS IS "STALE COUNT", NOT "ZERO". The original filing counted only
+reports claiming `0 passed (from 0 evidence id(s))` against a non-empty
+evidence list. Re-measuring for ANY disagreement between the claims line and
+the ticket's own evidence count, across all 1,917 done tickets that carry a
+claims line:
+
+    claims match evidence      1719
+    claims = 0, evidence > 0    137
+    claims non-zero but WRONG    61
+    TOTAL WRONG                 198   (10.3%)
+
+Example of the previously-missed shape: T-3230 has 6 evidence ids and its
+report claims 3. A fix that special-cases zero would leave those 61 wrong.
+Fix the rendering so the number is derived from the ticket's evidence at close
+time, whatever the number is.
+
+2. IT IS LIVE AND FREQUENT, NOT HISTORICAL. Of the 15 most recently written
+done-reports, SIX are wrong:
+
+    T-3247   evidence=9    report_claims=0     (landed 2026-08-28)
+    T-3244   evidence=47   report_claims=0
+    T-2988   evidence=8    report_claims=0
+    T-3255   evidence=1    report_claims=0
+    T-2940   evidence=1    report_claims=0
+    T-2992   evidence=1    report_claims=0
+    T-3230   evidence=6    report_claims=3     (partial shape)
+
+T-3247 landed roughly an hour before this measurement, with 9 evidence ids
+rendered as 0. So this is not a legacy artifact being cleaned up -- it is
+producing a wrong record on roughly 40% of current lands, including tickets
+that shipped enforcement gates.
+
+That matters for the owner's current goal. A PyPI release review that reads
+done-reports to answer "what shipped and was it tested" will get a false
+answer for one ticket in ten, and the failure is biased toward UNDER-reporting
+evidence, so the record looks worse than reality rather than better. Both
+directions are bad but this one invites redoing work that was already done.
+
+3. WHAT DOES NOT CHANGE. The ledger is still correct -- evidence ids are
+recorded, land commits are real. Only the rendered claims line is wrong. Do not
+merge this with the hollow-report defect (T-3157), where the ledger itself was
+empty. And still do NOT bulk-rewrite the 198 historical reports; fix the
+renderer, then decide separately and say what you decided.
+
+ACCEPTANCE ADDITION
+- The must-fire fixture must cover BOTH shapes: a ticket with N evidence ids
+  rendering 0, and one rendering a wrong non-zero count.
+- Re-run the scan after the fix and report the three counts above. The
+  "claims non-zero but WRONG" bucket must be zero for new reports, not just the
+  zero bucket.
+- Scan scripts used for these numbers are at
+  /tmp/claude-1000/-home-logan-projects-frob/79c6402d-b401-4652-bea7-f81df1be9322/scratchpad/scan3.py
+  -- re-run rather than trusting the counts second-hand.
