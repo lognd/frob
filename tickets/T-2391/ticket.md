@@ -179,8 +179,8 @@ acceptance_amendments:
     a status, when the meta-check runs, then it is reported, proving the doctrine
     is enforced structurally rather than by convention.
   new_text: null
-  reason: deferred to follow-up T-3202 (GATESTATUS001 meta-check) -- see
-    T-2391's own Done report for the explicit cut; T-1662's own standard forbids implementing
+  reason: deferred to follow-up T-3202 (GATESTATUS001 meta-check) -- see T-2391's
+    own Done report for the explicit cut; T-1662's own standard forbids implementing
     a lexical-pattern-matching meta-check without a design pass first
   actor: logan
   at: '2026-08-28'
@@ -190,8 +190,8 @@ acceptance_amendments:
     runs, then it reports NOT_APPLICABLE with an explanation rather than a silent
     zero.
   new_text: null
-  reason: deferred to follow-up T-3205 (per-gate NOT_APPLICABLE self-declaration
-    for a hardcoded-layout-style gate) -- see T-2391's own Done report for the explicit
+  reason: deferred to follow-up T-3205 (per-gate NOT_APPLICABLE self-declaration for
+    a hardcoded-layout-style gate) -- see T-2391's own Done report for the explicit
     cut; needs a per-gate declared-surface resolver this generic aggregation-layer
     change cannot provide
   actor: logan
@@ -203,7 +203,7 @@ labels:
 - fail-loudly
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 491c56353f5736cc346bdcf1106eb74ea4ea17e7
 ---
 USER DOCTRINE, 2026-08-18: "a zero-findings result must follow the
 fail-loudly doctrine." A gate reporting zero must PROVE it measured
