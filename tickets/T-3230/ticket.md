@@ -18,6 +18,7 @@ scope:
 - src/frob/tickets/_reconcile.py
 - tests/test_ticket_reconcile.py
 - src/frob/tickets/_archive.py
+- tests/test_tickets_organization.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -52,6 +53,12 @@ scope_changes:
   reason: the T-3230 fix changes _live_worktrees return type; _archive.py::_refuse_archive_if_worktrees_live
     is the one other caller and must be updated to keep working and to fail closed
     (refuse archive) rather than fail open (allow archive) on an unmeasurable read
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/test_tickets_organization.py
+  reason: must-fire/must-stay-quiet fixtures for the new _refuse_archive_if_other_worktrees_live
+    unmeasurable-git-worktree-list fail-closed path
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
