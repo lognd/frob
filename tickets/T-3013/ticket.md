@@ -2,7 +2,7 @@
 id: T-3013
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2990):
   1 new (rule, file) identit(ies), 0 finding(s) (DOC006)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-26'
@@ -30,6 +30,15 @@ body_changes:
   at: '2026-08-28'
   old_length: 967
   new_length: 1361
+- mode: append
+  reason: 'BUG002 front door (T-2393): DOC006 identity on docs/strata/graph.md does
+    not reproduce on current main; independent re-measurement (gates-fast) found the
+    only two DOC006 hits repo-wide are on tickets/T-2962/ticket.md, unrelated. Pre-existing
+    residue the rolling baseline had not recorded; no fix required.'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 1361
+  new_length: 1673
 designated_repro_test: null
 threat: null
 component: null
@@ -48,3 +57,5 @@ New (rule, file) identit(ies) filed here:
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
 
 Re-verified on current main (2026-08-28): ran gates-fast; DOC006 does not fire on docs/strata/graph.md at all -- the only two DOC006 hits repo-wide are on tickets/T-2962/ticket.md, an unrelated file. This confirms the ticket's own independent re-measurement (0 findings). Disposition: pre-existing/stale residue from the rolling baseline gap, not a live defect. Closing without a code change.
+
+frob:no-behavior-change reason="DOC006 identity on docs/strata/graph.md does not reproduce on current main; independent re-measurement (gates-fast) found the only two DOC006 hits repo-wide are on tickets/T-2962/ticket.md, unrelated. Pre-existing residue the rolling baseline had not recorded; no fix required."
