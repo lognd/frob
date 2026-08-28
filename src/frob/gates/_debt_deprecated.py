@@ -25,6 +25,7 @@ from tree_sitter import Node, Tree
 
 from frob.exports import _IMPORT_LINE_RE
 from frob.gates._deprecated_baseline import (
+    BASELINE_REL,
     file_reference_counts,
     load_deprecated_baseline,
 )
@@ -899,6 +900,47 @@ def _depr005_violations(
     return tuple(violations)
 
 
+# frob:ticket T-3228
+# frob:enforces CHK-GATE-DEPR006
+# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDepr006ProducerAbandoned.test_abandoned_producer_fires_error kind="unit"  # noqa: E501
+# frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDepr006ProducerAbandoned.test_pinned_producer_stays_quiet kind="unit"  # noqa: E501
+def _depr006_producer_abandoned(root: Path) -> tuple[Violation, ...]:
+    """DEPR006 (T-3228, error): `frob.gates._lock_producer.producer_status`
+    for the `deprecated-baseline` lock reads `ABANDONED` -- unpinned, and
+    `code_commits_since` has crossed `ABANDONED_CODE_COMMIT_THRESHOLD`
+    with no re-stamp. Same shape as TEST012's coverage-lock producer
+    check (`frob.gates.__init__._test012_producer_abandoned`): DEPR005's
+    content check alone (does a symbol's reference set exceed what is
+    baselined) cannot catch a lock nobody has re-stamped in months but
+    that happens to still cover every live caller -- this is the LOUD,
+    separate signal that the PRODUCER (`tighten_deprecated_baseline`)
+    itself has stopped running."""
+    from frob.gates._lock_producer import KNOWN_LOCKS, producer_status
+
+    lock = next(entry for entry in KNOWN_LOCKS if entry.name == "deprecated-baseline")
+    status = producer_status(root, lock)
+    if status.verdict != "ABANDONED":
+        return ()
+    return (
+        Violation(
+            rule="DEPR006",
+            severity=Severity.ERROR,
+            file=str(BASELINE_REL),
+            line=0,
+            message=(
+                "DEPR006: deprecated-baseline lock producer looks ABANDONED "
+                f"-- {status.code_commits_since} commit(s) touched "
+                f"{lock.code_glob} since {BASELINE_REL} was last stamped "
+                f"({status.last_stamp_date}) with no re-stamp and no pin; "
+                "re-run tighten_deprecated_baseline and commit the "
+                "refreshed lock, or if this IS a deliberate freeze add a "
+                'top-level {"pin": {"reason": "...", "ticket": "T-####"}} '
+                f"to {BASELINE_REL}"
+            ),
+        ),
+    )
+
+
 # frob:doc docs/modules/gates.md#deprecated-gate-t-0576
 # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr001_malformed_directive_is_reported  # noqa: E501
 # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr002_closed_ticket_is_reported  # noqa: E501
@@ -914,20 +956,24 @@ def deprecated_gate(
     *,
     current_date: str,
 ) -> tuple[Violation, ...]:
-    """DEPR001-005 (T-0576, DEPR005 T-0639): `frob:deprecated`'s states --
-    a malformed directive, a directive bound to a non-open ticket, a
-    directive still in its warning window, a directive past its sunset
-    date, and a directive whose reference set gained a new, un-baselined
-    caller. `current_date` (`YYYY-MM-DD`) is injected rather than computed
-    here so this stays a pure function of its inputs, matching
-    `debt_gate`; `root` is needed only by DEPR005, to resolve
-    `frob-deprecated-baseline.lock.json` and the current reference set."""
+    """DEPR001-006 (T-0576, DEPR005 T-0639, DEPR006 T-3228):
+    `frob:deprecated`'s states -- a malformed directive, a directive bound
+    to a non-open ticket, a directive still in its warning window, a
+    directive past its sunset date, a directive whose reference set
+    gained a new, un-baselined caller, and (DEPR006) the baseline lock's
+    own producer looking abandoned (see `_depr006_producer_abandoned`).
+    `current_date` (`YYYY-MM-DD`) is injected rather than computed here
+    so this stays a pure function of its inputs, matching `debt_gate`;
+    `root` is needed by DEPR005 (to resolve
+    `frob-deprecated-baseline.lock.json` and the current reference set)
+    and DEPR006 (to measure the lock's own git history)."""
     return (
         *_depr001_violations(snapshot),
         *_depr002_violations(snapshot, queue),
         *_depr003_violations(snapshot, queue, current_date=current_date),
         *_depr004_violations(snapshot, queue, current_date=current_date),
         *_depr005_violations(snapshot, queue, root, current_date=current_date),
+        *_depr006_producer_abandoned(root),
     )
 
 

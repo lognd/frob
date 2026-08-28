@@ -1,7 +1,7 @@
 ---
 id: T-3228
 title: LOUD gate failure for ratchet/deprecated-baseline lock producer abandonment
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -88,7 +88,12 @@ scope_changes:
   reason: wired waive011_violations into the WAIVE00* import list and _assemble_gate_report
   actor: logan
   at: '2026-08-28'
-designated_repro_test: null
+evidence:
+- tests/unit/gates/test_deprecated_baseline.py::TestDepr006ProducerAbandoned::test_abandoned_producer_fires_error
+- tests/unit/gates/test_deprecated_baseline.py::TestDepr006ProducerAbandoned::test_pinned_producer_stays_quiet
+- tests/test_waive_gate.py::TestWaive011ProducerAbandoned::test_abandoned_producer_fires_error
+- tests/test_waive_gate.py::TestWaive011ProducerAbandoned::test_pinned_producer_stays_quiet
+designated_repro_test: tests/unit/gates/test_deprecated_baseline.py::TestDepr006ProducerAbandoned::test_abandoned_producer_fires_error
 threat: null
 component: null
 anchor: false

@@ -1257,6 +1257,11 @@ gate_rule_entries:
     name: "DEPR005 is a live, enforced gate rule"
     disposition: "handled_by:DEPR005"
     cross_refs: []
+  - id: "CHK-GATE-DEPR006"
+    fixability: "manual"
+    name: "DEPR006 is a live, enforced gate rule"
+    disposition: "handled_by:DEPR006"
+    cross_refs: []
   - id: "CHK-GATE-TICK009"
     fixability: "manual"
     name: "TICK009 is a live, enforced gate rule"
@@ -1755,6 +1760,11 @@ gate_rule_entries:
   - id: "CHK-GATE-WAIVE010"
     name: "WAIVE010 is a live, enforced gate rule"
     disposition: "handled_by:WAIVE010"
+    fixability: "manual"
+    cross_refs: []
+  - id: "CHK-GATE-WAIVE011"
+    name: "WAIVE011 is a live, enforced gate rule"
+    disposition: "handled_by:WAIVE011"
     fixability: "manual"
     cross_refs: []
   - id: "CHK-GATE-COV008"

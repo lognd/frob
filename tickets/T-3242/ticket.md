@@ -1,0 +1,34 @@
+---
+id: T-3242
+title: Recovered from T-3031's phantom TICK006 citation of T-draft-36006d55
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-28'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Auto-filed by the TICK006 Tier-A fix (T-1544): T-3031's Done report claimed T-draft-36006d55 was filed, but T-draft-36006d55 resolves to no block in tickets.md or tickets-archive.md -- a phantom filing trail. The original claim's own surrounding text (the only surviving description of the intended work) is quoted verbatim below; review and refine as needed.
+
+> fore this ticket's diff ever touched anything; two of the three
+  (T-3028, T-3030) were already filed by T-3019's own land, the third
+  filed here as T-draft-36006d55 (gets a real id at land/renumber).
+
+Filed: T-draft-36006d55 ("TestGitlessTargetGateSeverity::
+test_render_lint_gate_warns_not_errors_

@@ -1118,3 +1118,85 @@ class TestWaive009Wiring:
 
         report = run_gates(GateConfig(root=str(tmp_path))).danger_ok
         assert not any(v.rule == "WAIVE009" for v in report.violations)
+
+
+class TestWaive011ProducerAbandoned:
+    """T-3228: `frob-ratchet.lock.json`'s own producer (`frob pool
+    snapshot RULE`, T-0569) can quietly stop running while the code its
+    baselined pools cover keeps moving. Same shape as TEST012's coverage-
+    lock producer check (T-2999) and DEPR006's deprecated-baseline-lock
+    sibling (T-3228)."""
+
+    def test_abandoned_producer_fires_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MUST-FIRE: a ratchet lock stamped once, then real git commits
+        touch its own code_glob with no re-stamp and no pin."""
+        # frob:tests src/frob/gates/_waive.py::waive011_violations
+        import subprocess
+
+        from frob.gates._waive import waive011_violations
+
+        monkeypatch.setattr(
+            "frob.gates._lock_producer.ABANDONED_CODE_COMMIT_THRESHOLD", 2
+        )
+
+        def git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-C", str(tmp_path), *args], check=True, capture_output=True
+            )
+
+        git("init", "-q")
+        git("config", "user.email", "t@t")
+        git("config", "user.name", "t")
+        (tmp_path / "frob-ratchet.lock.json").write_text('{"v": 1}')
+        (tmp_path / "src" / "frob" / "pkg").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "pkg" / "a.py").write_text("x = 1\n")
+        git("add", "-A")
+        git("commit", "-q", "-m", "stamp")
+        for i in range(3):
+            (tmp_path / "src" / "frob" / "pkg" / "a.py").write_text(f"x = {i}\n")
+            git("add", "-A")
+            git("commit", "-q", "-m", f"code change {i}")
+        violations = waive011_violations(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "WAIVE011"
+        assert violations[0].severity == Severity.ERROR
+        assert "ABANDONED" in violations[0].message
+
+    def test_pinned_producer_stays_quiet(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MUST-STAY-QUIET: identical code-churn shape to the must-fire
+        case above, but the lock carries a `pin` -- a deliberate freeze
+        must never fire the ABANDONED-producer error."""
+        # frob:tests src/frob/gates/_waive.py::waive011_violations
+        import subprocess
+
+        from frob.gates._waive import waive011_violations
+
+        monkeypatch.setattr(
+            "frob.gates._lock_producer.ABANDONED_CODE_COMMIT_THRESHOLD", 2
+        )
+
+        def git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-C", str(tmp_path), *args], check=True, capture_output=True
+            )
+
+        git("init", "-q")
+        git("config", "user.email", "t@t")
+        git("config", "user.name", "t")
+        (tmp_path / "frob-ratchet.lock.json").write_text(
+            '{"v": 1, "pin": {"reason": "frozen on purpose", "ticket": "T-1"}}'
+        )
+        (tmp_path / "src" / "frob" / "pkg").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "pkg" / "a.py").write_text("x = 1\n")
+        git("add", "-A")
+        git("commit", "-q", "-m", "stamp")
+        for i in range(3):
+            (tmp_path / "src" / "frob" / "pkg" / "a.py").write_text(f"x = {i}\n")
+            git("add", "-A")
+            git("commit", "-q", "-m", f"code change {i}")
+        violations = waive011_violations(tmp_path)
+        assert violations == ()

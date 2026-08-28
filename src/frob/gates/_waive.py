@@ -64,6 +64,14 @@ from frob.tickets import TicketQueue
 
 _log = get_logger(__name__)
 
+# frob:ticket T-3228
+#: Committed path of `frob.gates._ratchet`'s baseline lock (T-0569) --
+#: duplicated here rather than importing `_ratchet._LOCK_REL` (private)
+#: since `frob.gates._lock_producer.KNOWN_LOCKS` already carries this as
+#: `path_rel` too; kept as a literal here only for the message string,
+#: matching TEST012's own `_COVERAGE_LOCK_REL` posture in gates/__init__.py.
+_RATCHET_LOCK_REL = Path("frob-ratchet.lock.json")
+
 
 def _waive_edges(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
     """Every valid `frob:waive` edge in the snapshot (dsl.py already rejects a
@@ -327,6 +335,12 @@ _KNOWN_GATE_RULES = frozenset(
         # frob-deprecated-baseline.lock.json -- a genuinely NEW caller of a
         # symbol already declared on its way out.
         "DEPR005",
+        # T-3228: frob-deprecated-baseline.lock.json's own PRODUCER
+        # (tighten_deprecated_baseline) looks ABANDONED per
+        # frob.gates._lock_producer.producer_status -- content drift
+        # (DEPR005) alone cannot catch a lock nobody has re-stamped in
+        # months that still happens to cover every live caller.
+        "DEPR006",
         # T-0404 finding 5: catch-all for a malformed `frob:` directive not
         # already claimed by a per-flavor check (WAIVE001/TEST010/DEBT001).
         "DSL001",
@@ -375,6 +389,12 @@ _KNOWN_GATE_RULES = frozenset(
         # deliberately dead because <reasoning established there>" -- that
         # this rule must never flag).
         "WAIVE010",
+        # T-3228: frob-ratchet.lock.json's own PRODUCER (frob pool
+        # snapshot RULE) looks ABANDONED per frob.gates._lock_producer.
+        # producer_status -- the same shape as WAIVE009/WAIVE010 applied
+        # to the bulk-pool ratchet mechanism (T-0569) instead of one
+        # inline frob:waive comment.
+        "WAIVE011",
         "DEC001",
         "DEC002",
         "REL001",
@@ -2029,6 +2049,53 @@ def waive010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             )
         )
     return tuple(out)
+
+
+# frob:ticket T-3228
+# frob:doc docs/modules/gates.md#rule-catalog
+# frob:enforces CHK-GATE-WAIVE011
+# frob:tests tests/test_waive_gate.py::TestWaive011ProducerAbandoned.test_abandoned_producer_fires_error kind="unit"  # noqa: E501
+# frob:tests tests/test_waive_gate.py::TestWaive011ProducerAbandoned.test_pinned_producer_stays_quiet kind="unit"  # noqa: E501
+def waive011_violations(root: Path) -> tuple[Violation, ...]:
+    """WAIVE011 (T-3228, error): `frob.gates._lock_producer.producer_
+    status` for the `ratchet` lock reads `ABANDONED` -- unpinned, and
+    `code_commits_since` has crossed `ABANDONED_CODE_COMMIT_THRESHOLD`
+    with no re-stamp. `frob-ratchet.lock.json` (`frob.gates._ratchet`,
+    T-0569) freezes an existing warn-rule's findings as a baseline so
+    only NEW ones error -- the same "committed exemption that must stay
+    honest" shape `frob:waive` itself already gets WAIVE009/WAIVE010
+    checks for, applied here to the bulk-pool mechanism instead of one
+    inline comment. Homed in the WAIVE family (not a new gate family)
+    because a stale ratchet pool is functionally the same failure mode
+    as a stale inline waiver: a frozen exemption nobody is re-verifying.
+    Needs only `root` (no snapshot/queue), so it runs alongside the
+    other WAIVE00* self-checks in `_assemble_gate_report` rather than
+    after `job_violations`."""
+    from frob.gates._lock_producer import KNOWN_LOCKS, producer_status
+
+    lock = next(entry for entry in KNOWN_LOCKS if entry.name == "ratchet")
+    status = producer_status(root, lock)
+    if status.verdict != "ABANDONED":
+        return ()
+    return (
+        Violation(
+            rule="WAIVE011",
+            severity=Severity.ERROR,
+            file=str(_RATCHET_LOCK_REL),
+            line=0,
+            message=(
+                "WAIVE011: ratchet lock producer looks ABANDONED -- "
+                f"{status.code_commits_since} commit(s) touched "
+                f"{lock.code_glob} since {_RATCHET_LOCK_REL} was last "
+                f"stamped ({status.last_stamp_date}) with no re-stamp and "
+                "no pin; run `frob pool snapshot RULE` for the pools that "
+                "still need refreshing and commit the updated lock, or if "
+                "this IS a deliberate freeze add a top-level "
+                '{"pin": {"reason": "...", "ticket": "T-####"}} to '
+                f"{_RATCHET_LOCK_REL}"
+            ),
+        ),
+    )
 
 
 # frob:ticket T-1764

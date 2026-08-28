@@ -8,6 +8,8 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from frob.gates import deprecated_current_references, deprecated_gate
 from frob.gates._deprecated_baseline import (
     DeprecatedBaselineEntry,
@@ -17,6 +19,7 @@ from frob.gates._deprecated_baseline import (
     save_deprecated_baseline,
     tighten_deprecated_baseline,
 )
+from frob.gates._models import Severity
 from frob.graph import build_graph
 from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
 
@@ -477,3 +480,86 @@ class TestDepr005ViolationsGrowth:
         depr005 = [v for v in violations if v.rule == "DEPR005"]
         assert len(depr005) == 1
         assert depr005[0].file.endswith("growing_caller.py")
+
+
+class TestDepr006ProducerAbandoned:
+    """T-3228: `frob-deprecated-baseline.lock.json`'s own producer
+    (`tighten_deprecated_baseline`) can quietly stop running while the
+    code it summarizes keeps moving -- content drift alone (DEPR005)
+    cannot catch this, since a stale lock can still happen to cover
+    every live caller by coincidence. Same shape as TEST012's coverage-
+    lock producer check (T-2999)."""
+
+    def test_abandoned_producer_fires_error(
+        self, tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    ) -> None:
+        """MUST-FIRE: a baseline lock stamped once, then real git commits
+        touch its own code_glob with no re-stamp and no pin."""
+        # frob:tests src/frob/gates/_debt_deprecated.py::_depr006_producer_abandoned
+        import subprocess
+
+        from frob.gates._debt_deprecated import _depr006_producer_abandoned
+
+        monkeypatch.setattr(
+            "frob.gates._lock_producer.ABANDONED_CODE_COMMIT_THRESHOLD", 2
+        )
+
+        def git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-C", str(tmp_path), *args], check=True, capture_output=True
+            )
+
+        git("init", "-q")
+        git("config", "user.email", "t@t")
+        git("config", "user.name", "t")
+        (tmp_path / "frob-deprecated-baseline.lock.json").write_text('{"v": 1}')
+        (tmp_path / "src" / "frob" / "pkg").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "pkg" / "a.py").write_text("x = 1\n")
+        git("add", "-A")
+        git("commit", "-q", "-m", "stamp")
+        for i in range(3):
+            (tmp_path / "src" / "frob" / "pkg" / "a.py").write_text(f"x = {i}\n")
+            git("add", "-A")
+            git("commit", "-q", "-m", f"code change {i}")
+        violations = _depr006_producer_abandoned(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "DEPR006"
+        assert violations[0].severity == Severity.ERROR
+        assert "ABANDONED" in violations[0].message
+
+    def test_pinned_producer_stays_quiet(
+        self, tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    ) -> None:
+        """MUST-STAY-QUIET: identical code-churn shape to the must-fire
+        case above, but the lock carries a `pin` -- a deliberate freeze
+        must never fire the ABANDONED-producer error."""
+        # frob:tests src/frob/gates/_debt_deprecated.py::_depr006_producer_abandoned
+        import subprocess
+
+        from frob.gates._debt_deprecated import _depr006_producer_abandoned
+
+        monkeypatch.setattr(
+            "frob.gates._lock_producer.ABANDONED_CODE_COMMIT_THRESHOLD", 2
+        )
+
+        def git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-C", str(tmp_path), *args], check=True, capture_output=True
+            )
+
+        git("init", "-q")
+        git("config", "user.email", "t@t")
+        git("config", "user.name", "t")
+        (tmp_path / "frob-deprecated-baseline.lock.json").write_text(
+            '{"v": 1, "pin": {"reason": "frozen on purpose", "ticket": "T-1"}}'
+        )
+        (tmp_path / "src" / "frob" / "pkg").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "pkg" / "a.py").write_text("x = 1\n")
+        git("add", "-A")
+        git("commit", "-q", "-m", "stamp")
+        for i in range(3):
+            (tmp_path / "src" / "frob" / "pkg" / "a.py").write_text(f"x = {i}\n")
+            git("add", "-A")
+            git("commit", "-q", "-m", f"code change {i}")
+        violations = _depr006_producer_abandoned(tmp_path)
+        assert violations == ()
