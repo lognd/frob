@@ -1,7 +1,7 @@
 ---
 id: T-3223
 title: 'DOC006: dead path pointers in tickets/T-2962/ticket.md'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
