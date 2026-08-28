@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 import time
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -47,14 +48,18 @@ def _harness_argv(argv: Sequence[str], pstats_path: Path) -> list[str]:
 
     Uses the harness (not `python -m cProfile`, which swallows the workload's
     exit code): it profiles the target programmatically and propagates the
-    real exit status. A caller-supplied leading "python"/"python3" is
-    stripped since the harness supplies the interpreter.
+    real exit status. Spawns under `sys.executable` -- the interpreter
+    actually running frob -- never a bare "python"/"python3" PATH lookup,
+    which may not exist (Windows, python3-only distros) or may resolve to a
+    different environment (venv/uv tool install/pyenv/conda) than the one
+    profiling was requested from. A caller-supplied leading "python"/"python3"
+    is stripped since the harness supplies the interpreter.
     """
     harness = Path(__file__).parent / "_harness.py"
     script_argv = list(argv)
     if script_argv and script_argv[0] in ("python", "python3"):
         script_argv = script_argv[1:]
-    return ["python", str(harness), str(pstats_path), *script_argv]
+    return [sys.executable, str(harness), str(pstats_path), *script_argv]
 
 
 # frob:doc docs/modules/perf.md#public-api

@@ -575,6 +575,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3251: Release can be dispatched from a red main: nothing gates the PyPI upload on green CI for the released commit
 - T-3255: Fix malformed directive false-positive in docarch001_violations wiring comment
 - T-3256: Six concurrent frob check runs drive the box to zero free memory: each sizes its pool against the whole machine, with no cross-process budget
+- T-3268: frob perf spawns a hardcoded bare 'python' instead of sys.executable: wrong interpreter or outright SpawnFailed for real users
 
 ## [0.530.0] - unreleased
 

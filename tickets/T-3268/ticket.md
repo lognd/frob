@@ -2,7 +2,7 @@
 id: T-3268
 title: 'frob perf spawns a hardcoded bare ''python'' instead of sys.executable: wrong
   interpreter or outright SpawnFailed for real users'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -45,6 +45,11 @@ body_changes:
   at: '2026-08-28'
   old_length: 3680
   new_length: 6802
+evidence:
+- tests/test_perf.py::test_profile_command_ignores_wrong_python_on_path
+- tests/test_perf.py::test_profile_command_strips_leading_python_interpreter
+- tests/system/test_cli_perf.py::TestPerfProfileAndHeat::test_profile_then_heat_shows_hot_function
+- tests/system/test_cli_perf.py::TestPerfProfileAndHeat::test_heat_json_output_is_valid_json
 designated_repro_test: null
 threat: null
 component: null

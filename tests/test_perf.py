@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -820,6 +821,27 @@ def test_profile_command_strips_leading_python_interpreter(tmp_path):
     # frob:ticket T-0021
     (tmp_path / "ok.py").write_text("sum(range(10))\n")
     result = profile_command(["python", "ok.py"], tmp_path)
+    assert result.is_ok, result.err
+    assert result.danger_ok.exit_code == 0
+
+
+def test_profile_command_ignores_wrong_python_on_path(tmp_path, monkeypatch):
+    """T-3268: profiling must spawn `sys.executable`, never a bare `python`
+    PATH lookup -- a `python` shadowing PATH with a non-frob interpreter (no
+    frob installed, or simply a broken shim) must not affect the result.
+    Must-fire: fails if `_harness_argv` ever regresses to a literal
+    "python"/"python3" argv entry."""
+    # frob:ticket T-3268
+    # frob:tests src/frob/perf/_profile.py::_harness_argv
+    shadow_dir = tmp_path / "shadow_bin"
+    shadow_dir.mkdir()
+    fake_python = shadow_dir / "python"
+    fake_python.write_text("#!/bin/sh\nexit 97\n")
+    fake_python.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{shadow_dir}{os.pathsep}{os.environ.get('PATH', '')}")
+
+    (tmp_path / "ok.py").write_text("sum(range(10))\n")
+    result = profile_command(["ok.py"], tmp_path)
     assert result.is_ok, result.err
     assert result.danger_ok.exit_code == 0
 
