@@ -1,7 +1,7 @@
 ---
 id: T-2728
 title: Wire migrate_missing_v2 into the CLI, or delete it
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-20'
@@ -17,10 +17,18 @@ scope:
 - src/frob/tickets/_store_migrate.py
 - src/frob/_cli_parsers/_ticket/_progress.py
 - src/frob/app/ticket_runner/_query.py
+- tests/test_tickets_migration.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_migration.py
+  reason: 'T-2728: CLI wiring tests for migrate_missing_v2 live here alongside the
+    existing --to v2 CLI test class'
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
