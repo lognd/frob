@@ -3,7 +3,7 @@ id: T-3027
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3011):
   1 new (rule, file) identit(ies), 3 finding(s) (E501)'
 state: in-progress
-kind: bug
+kind: docs
 origin: agent
 created: '2026-08-26'
 priority: high
@@ -23,6 +23,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: T-3027's E501 finding on src/frob/narrative/_cli.py no longer reproduces;
+    reclassifying to docs-kind so the docs-kind --evidence-cmd channel applies to
+    this disposition-only close
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
