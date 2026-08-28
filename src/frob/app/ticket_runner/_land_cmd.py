@@ -4808,6 +4808,8 @@ def _doc005_checker(worktree: Path, rel_path: str, text: str) -> tuple[Violation
     for the full reasoning."""
     if rel_path != "README.md":
         return ()
+    import functools
+
     from frob.gates._docblocks import (
         _console_command_sources,
         _console_trees,
@@ -4815,11 +4817,24 @@ def _doc005_checker(worktree: Path, rel_path: str, text: str) -> tuple[Violation
         _doc005_missing_stale_violations,
         _readme_table_rows,
     )
+    from frob.gates._docblocks_refs import _load_parser_factory_from_root
 
     console_sources = _console_command_sources(worktree)
     if not console_sources:
         return ()
-    console_trees = _console_trees(worktree, console_sources)
+    # T-2941: `_console_trees`'s DEFAULT loader (`_load_parser_factory`)
+    # resolves the "live" subcommand tree against the RUNNING land
+    # process's already-imported `frob` package, which is still the
+    # PRE-merge tree even while THIS check is meant to validate the
+    # merge candidate `worktree` -- the guard was, by construction,
+    # always one commit stale for a diff that adds/removes a subcommand
+    # in the same land. Pass a `worktree`-rooted loader instead so the
+    # tree is read fresh from the candidate's own on-disk content.
+    console_trees = _console_trees(
+        worktree,
+        console_sources,
+        loader=functools.partial(_load_parser_factory_from_root, root=worktree),
+    )
     if not console_trees:
         return ()
     rows = _readme_table_rows(text)

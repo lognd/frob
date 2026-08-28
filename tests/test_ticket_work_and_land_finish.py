@@ -879,7 +879,9 @@ class TestAssertTouchedFilesLintCleanPreLand:
             _assert_touched_files_lint_clean_pre_land,
         )
 
-        _assert_touched_files_lint_clean_pre_land(repo, "T-3061", None)  # must not raise
+        _assert_touched_files_lint_clean_pre_land(
+            repo, "T-3061", None
+        )  # must not raise
         _assert_touched_files_lint_clean_pre_land(
             repo, "T-3061", frozenset()
         )  # must not raise
@@ -1406,6 +1408,30 @@ _FAKE_DOC005_CONFIG = (
 )
 
 
+# frob:ticket T-2941
+def _write_fake_doc005_parser_module(repo: Path, commands: tuple[str, ...]) -> None:
+    """Writes `tests/test_docblocks_gate.py` INSIDE `repo` itself with a
+    synthetic `_fake_parser_factory` registering `commands` as top-level
+    subcommands. T-2941: `_doc005_checker`'s land-time call now resolves
+    `_FAKE_DOC005_CONFIG`'s `parser` dotted path fresh from `repo`'s OWN
+    on-disk content (`_load_parser_factory_from_root`), not the running
+    test process's already-imported `tests` package -- so a DOC005
+    land-time fixture needs its own physical copy of the module rather
+    than relying on the real project's `tests/test_docblocks_gate.py:
+    _fake_parser_factory` (which is what every DOC005 land test relied on
+    before T-2941, and is exactly the staleness the fix corrects)."""
+    (repo / "tests").mkdir(exist_ok=True)
+    registrations = "\n    ".join(f'sub.add_parser("{c}")' for c in commands)
+    (repo / "tests" / "test_docblocks_gate.py").write_text(
+        "import argparse\n\n\n"
+        "def _fake_parser_factory():\n"
+        '    parser = argparse.ArgumentParser(prog="acme")\n'
+        '    sub = parser.add_subparsers(dest="subcommand")\n'
+        f"    {registrations}\n"
+        "    return parser\n"
+    )
+
+
 # frob:ticket T-2285
 class TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005:
     """`_doc005_checker` wired into `_FILE_LOCAL_ERROR_CHECKERS` (T-2285):
@@ -1422,6 +1448,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005:
         )
 
         (repo / "frob.toml").write_text(_FAKE_DOC005_CONFIG)
+        _write_fake_doc005_parser_module(repo, ("widget", "gadget"))
         (repo / "README.md").write_text(
             "## Commands\n\n| Command | Description |\n|---|---|\n"
             "| `acme widget` | does widget things |\n"
@@ -1452,6 +1479,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005:
         )
 
         (repo / "frob.toml").write_text(_FAKE_DOC005_CONFIG)
+        _write_fake_doc005_parser_module(repo, ("widget", "gadget"))
         (repo / "README.md").write_text(
             "## Commands\n\n| Command | Description |\n|---|---|\n"
             "| `acme widget` | does widget things |\n"
@@ -1468,6 +1496,51 @@ class TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005:
         _assert_diff_does_not_add_new_file_local_errors_pre_land(
             repo, "T-2285", frozenset({"README.md"})
         )  # must not raise
+
+    def test_a_same_diff_new_subcommand_does_not_falsely_refuse(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005.test_a_same_diff_new_subcommand_does_not_falsely_refuse  # noqa: E501
+        """T-2941: a diff that adds a brand-new top-level subcommand AND
+        documents it in the SAME README.md row must NOT refuse -- the new
+        command genuinely exists in the CURRENT worktree content, which
+        is what the "live" registry must reflect. Before the T-2941 fix,
+        `_doc005_checker` resolved its configured parser factory via a
+        plain `importlib.import_module`, which returns whatever the
+        RUNNING land process already has imported rather than reading
+        `repo`'s own on-disk `tests/test_docblocks_gate.py` -- so a
+        same-diff new command was invisible to it by construction and
+        the new README row was misread as STALE ("no longer exists in
+        the live registry"), refusing forever."""
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_add_new_file_local_errors_pre_land,
+        )
+
+        (repo / "frob.toml").write_text(_FAKE_DOC005_CONFIG)
+        _write_fake_doc005_parser_module(repo, ("widget", "gadget"))
+        (repo / "README.md").write_text(
+            "## Commands\n\n| Command | Description |\n|---|---|\n"
+            "| `acme widget` | does widget things |\n"
+            "| `acme gadget` | does gadget things |\n"
+        )
+        _commit_all(repo, "add doc005 config and a clean table")
+
+        # Same diff: the parser factory module grows a THIRD subcommand
+        # (`thingamajig`) and README.md's own row for it lands together --
+        # the exact "new subcommand + own README update in the same diff"
+        # shape T-2941 describes.
+        _write_fake_doc005_parser_module(repo, ("widget", "gadget", "thingamajig"))
+        (repo / "README.md").write_text(
+            "## Commands\n\n| Command | Description |\n|---|---|\n"
+            "| `acme widget` | does widget things |\n"
+            "| `acme gadget` | does gadget things |\n"
+            "| `acme thingamajig` | does thingamajig things |\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        _assert_diff_does_not_add_new_file_local_errors_pre_land(
+            repo, "T-2941", frozenset({"README.md"})
+        )  # must not raise -- thingamajig is genuinely live in this diff
 
     def test_no_docblocks_config_is_a_no_op(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005.test_no_docblocks_config_is_a_no_op  # noqa: E501

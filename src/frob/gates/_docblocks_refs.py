@@ -195,8 +195,88 @@ def _load_parser_factory(dotted: str):
     `None` on any import/lookup failure -- degrades to "no console
     checking for this source", never a gate crash. T-2397: thin
     `log_prefix="doc004"` wrapper over the shared `resolve_dotted_symbol`
-    (also FLAGCOV001's own resolver for the same declared entries)."""
+    (also FLAGCOV001's own resolver for the same declared entries).
+
+    WARNING (T-2941): this resolves `dotted` via a plain `importlib.
+    import_module`, which returns whatever is ALREADY in `sys.modules`
+    (or importable off the CURRENT process's `sys.path`) -- the running
+    process's own package, not any particular `root`/worktree's on-disk
+    content. Fine for the whole-repo `doc004_gate`/`doc005_gate` runs
+    (both execute in-process against the checkout they were invoked in,
+    so "current process" and "the tree being checked" are the same
+    tree). WRONG for `frob ticket land`'s pre-merge DOC005 guard
+    (`_land_cmd._doc005_checker`), which calls this indirectly through
+    `_console_trees` to check a not-yet-merged candidate tree while the
+    running land process's own already-imported `frob` package is still
+    the PRE-merge one -- see `_load_parser_factory_from_root` below,
+    which that one call site now uses instead."""
     return resolve_dotted_symbol(dotted, log_prefix="doc004")
+
+
+# frob:ticket T-2941
+def _load_parser_factory_from_root(dotted: str, root: Path):
+    """Like `_load_parser_factory`, but resolves `dotted` (`module:attr`)
+    by importing the module FRESH from `root`'s own on-disk source
+    (`importlib.util.spec_from_file_location`, executed under a
+    process-unique module name so it never reads or pollutes
+    `sys.modules`) instead of delegating to whatever the running
+    process's own `sys.path` already has imported.
+
+    T-2941: `_load_parser_factory`/`resolve_dotted_symbol`'s plain
+    `importlib.import_module` returns the CURRENT process's already-
+    imported package -- correct for a whole-repo gate run (in-process
+    against the tree it was invoked in) but wrong for `frob ticket
+    land`'s pre-merge DOC005 guard, which must see the merge-candidate
+    `root`'s own content even though the running land process's `frob`
+    package is still the pre-merge one. Only handles a plain `module:
+    attr` path resolvable to a single `.py` file under `root` via the
+    standard `src/`-layout convention (`pkg.sub.mod` ->
+    `root/src/pkg/sub/mod.py`, falling back to `root/pkg/sub/mod.py` for
+    a non-src layout); returns `None` (fail-open, same posture as
+    `resolve_dotted_symbol`) on any missing file, import error, or
+    lookup failure -- never raises."""
+    import importlib.util
+    import uuid
+
+    module_name, _, attr = dotted.partition(":")
+    if not module_name or not attr:
+        _log.warning(
+            "doc005: malformed dotted path %r (want 'module:attribute')", dotted
+        )
+        return None
+    rel_parts = module_name.split(".")
+    candidates = (
+        root.joinpath("src", *rel_parts).with_suffix(".py"),
+        root.joinpath(*rel_parts).with_suffix(".py"),
+    )
+    source_path = next((p for p in candidates if p.is_file()), None)
+    if source_path is None:
+        _log.warning(
+            "doc005: could not locate %r under %s (tried %s)",
+            module_name,
+            root,
+            ", ".join(str(p) for p in candidates),
+        )
+        return None
+    # frob:waive OPAQUE001 reason="T-2941: dotted/root are the same \
+    # repo-owner-authored frob.toml [[docblocks.commands]].parser config value and the \
+    # land's own merge-candidate worktree path, never externally/untrusted-input \
+    # controlled -- same plugin-loading justification as resolve_dotted_symbol's own \
+    # OPAQUE001 waiver (T-1185)"
+    fresh_name = f"_frob_doc005_land_fresh_{uuid.uuid4().hex}"
+    spec = importlib.util.spec_from_file_location(fresh_name, source_path)
+    if spec is None or spec.loader is None:
+        _log.warning("doc005: could not build an import spec for %s", source_path)
+        return None
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+        return getattr(module, attr)
+    except Exception as exc:  # noqa: BLE001 -- fail open, never crash the land
+        _log.warning(
+            "doc005: fresh import of %s (for %r) raised: %s", source_path, dotted, exc
+        )
+        return None
 
 
 # frob:invariant terminates reason="_subparser_tree only recurses into a subparser's own choices, and argparse subparser trees are built once at module load as a finite, non-self-referential tree (a subcommand can never register itself or an ancestor as one of its own subparsers)" measure="depth of the argparse subparser tree strictly decreases with each recursive call"  # noqa: E501
@@ -282,7 +362,9 @@ _BYPASS_LEAF_PATCHES: dict[tuple[str, str], tuple[str, ...]] = {
 }
 
 
-def _apply_bypass_subtree_patches(parser_dotted: str, tree: dict) -> dict:
+def _apply_bypass_subtree_patches(
+    parser_dotted: str, tree: dict, *, loader=_load_parser_factory
+) -> dict:
     """Splice `_BYPASS_SUBTREE_PATCHES`/`_BYPASS_LEAF_PATCHES` (T-2533)
     into `tree` (already the live `_build_parser()`-derived subparser
     tree for `parser_dotted`) -- a no-op for every verb/parser this repo
@@ -290,11 +372,18 @@ def _apply_bypass_subtree_patches(parser_dotted: str, tree: dict) -> dict:
     project's own `[[docblocks.commands]]` tree is never touched. Failure
     to resolve/call a patch factory degrades to leaving the ORIGINAL
     (possibly incomplete) tree for that one verb alone -- same fail-open
-    posture as the rest of this console-tree walk, never a gate crash."""
+    posture as the rest of this console-tree walk, never a gate crash.
+
+    T-2941: `loader` defaults to `_load_parser_factory` (in-process
+    resolution) for every existing whole-repo-gate caller, unchanged.
+    `_console_trees`'s land-time caller passes `_load_parser_factory_
+    from_root` bound to the merge-candidate root instead, so a bypassed
+    verb's real subtree is read from the SAME tree being checked rather
+    than the running process's already-imported package."""
     for (owner_parser, verb), dotted in _BYPASS_SUBTREE_PATCHES.items():
         if owner_parser != parser_dotted:
             continue
-        factory = _load_parser_factory(dotted)
+        factory = loader(dotted)
         if factory is None:
             continue
         try:
@@ -319,7 +408,10 @@ def _apply_bypass_subtree_patches(parser_dotted: str, tree: dict) -> dict:
 # frob:ticket T-1195
 # frob:ticket T-2533
 def _console_trees(
-    root: Path, console_sources: tuple[_ConsoleCommandSource, ...]
+    root: Path,
+    console_sources: tuple[_ConsoleCommandSource, ...],
+    *,
+    loader=_load_parser_factory,
 ) -> dict[str, dict]:
     """`{source.parser: live subparser tree}` for every configured
     `[[docblocks.commands]]` entry -- the SAME live-registry walk DOC004's
@@ -330,10 +422,20 @@ def _console_trees(
     it against `_BYPASS_SUBTREE_PATCHES`/`_BYPASS_LEAF_PATCHES` -- a
     `_dispatch_*`-bypassed verb's REAL subcommand set, not
     `_build_parser()`'s own decorative (and possibly incomplete)
-    `--help`-only mirror of it."""
+    `--help`-only mirror of it.
+
+    T-2941: `loader` defaults to `_load_parser_factory`, which resolves
+    each `source.parser` against the CURRENT process's already-imported
+    `frob` package -- correct for a whole-repo gate run (in-process
+    against the tree it was invoked in), wrong for `frob ticket land`'s
+    pre-merge DOC005 guard checking a not-yet-merged candidate `root`.
+    That one call site (`_land_cmd._doc005_checker`) passes `loader=
+    functools.partial(_load_parser_factory_from_root, root=root)`
+    instead, so the "live" tree is read fresh from `root`'s own on-disk
+    content rather than the running land process's pre-merge import."""
     console_trees: dict[str, dict] = {}
     for source in console_sources:
-        factory = _load_parser_factory(source.parser)
+        factory = loader(source.parser)
         if factory is None:
             continue
         try:
@@ -343,7 +445,7 @@ def _console_trees(
             continue
         tree = _subparser_tree(parser)
         console_trees[source.parser] = _apply_bypass_subtree_patches(
-            source.parser, tree
+            source.parser, tree, loader=loader
         )
     return console_trees
 

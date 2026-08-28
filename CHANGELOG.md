@@ -390,6 +390,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2936: frob does not IMPORT on Windows: signal.SIGKILL evaluated as a default arg at module load crashes in 54s before any test runs
 - T-2937: frob ticket new blocks up to ~5min on an unrelated land, then strands an uncommitted ticket on timeout
 - T-2938: Move ClaimDivergence re-verification onto the deferred post-land queue instead of scoping it inline
+- T-2941: frob ticket land: DOC005 pre-merge guard checks a same-diff new subcommand against a stale, pre-merge registry (refuses forever, unwaivable)
 - T-2942: macOS CI: remaining small failure clusters needing individual triage (SYS107, FIFO pipe, timing threshold, resolved-root, load_lock)
 - T-2943: macOS: git subprocess returncode=128 in test fixtures - 100+ system/CLI test failures, root cause unconfirmed
 - T-2944: PLATFORM001 misses sys.platform-string guards; /proc-only worktree-liveness scan is permissive on macOS/Windows

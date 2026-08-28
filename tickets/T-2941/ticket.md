@@ -2,7 +2,7 @@
 id: T-2941
 title: 'frob ticket land: DOC005 pre-merge guard checks a same-diff new subcommand
   against a stale, pre-merge registry (refuses forever, unwaivable)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -21,6 +21,19 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005::test_a_same_diff_new_subcommand_does_not_falsely_refuse
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005::test_a_new_stale_row_refuses_the_land
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005::test_a_pre_existing_stale_row_merely_touched_does_not_refuse
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005::test_no_docblocks_config_is_a_no_op
+- tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot::test_malformed_missing_attr_returns_none
+- tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot::test_malformed_missing_module_returns_none
+- tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot::test_missing_source_file_returns_none
+- tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot::test_resolves_fresh_from_root_not_the_process_import
+- tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot::test_resolves_under_src_layout
+- tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot::test_spec_none_returns_none
+- tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot::test_spec_loader_none_returns_none
+- tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot::test_exec_module_raising_returns_none
 designated_repro_test: null
 threat: null
 component: null

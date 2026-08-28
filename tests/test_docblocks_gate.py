@@ -610,3 +610,122 @@ class TestCliCommandTableGenerator:
         assert not any(
             v.rule == "DOC005" and "docs/modules/cli.md" in v.file for v in violations
         )
+
+
+# frob:ticket T-2941
+class TestLoadParserFactoryFromRoot:
+    """`_load_parser_factory_from_root` (T-2941): resolves a `module:attr`
+    dotted path by importing the module FRESH from `root`'s own on-disk
+    file, never the running process's already-imported package -- the
+    fix for `frob ticket land`'s DOC005 guard reading a stale pre-merge
+    registry."""
+
+    def test_malformed_missing_attr_returns_none(self, tmp_path: Path, caplog) -> None:
+        # frob:tests tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot.test_malformed_missing_attr_returns_none  # noqa: E501
+        from frob.gates._docblocks_refs import _load_parser_factory_from_root
+
+        with caplog.at_level("WARNING"):
+            result = _load_parser_factory_from_root("pkg.mod:", tmp_path)
+        assert result is None
+        assert any("malformed dotted path" in r.message for r in caplog.records)
+
+    def test_malformed_missing_module_returns_none(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot.test_malformed_missing_module_returns_none  # noqa: E501
+        from frob.gates._docblocks_refs import _load_parser_factory_from_root
+
+        with caplog.at_level("WARNING"):
+            result = _load_parser_factory_from_root(":factory", tmp_path)
+        assert result is None
+        assert any("malformed dotted path" in r.message for r in caplog.records)
+
+    def test_missing_source_file_returns_none(self, tmp_path: Path, caplog) -> None:
+        # frob:tests tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot.test_missing_source_file_returns_none  # noqa: E501
+        from frob.gates._docblocks_refs import _load_parser_factory_from_root
+
+        with caplog.at_level("WARNING"):
+            result = _load_parser_factory_from_root("nope.mod:factory", tmp_path)
+        assert result is None
+        assert any("could not locate" in r.message for r in caplog.records)
+
+    def test_resolves_fresh_from_root_not_the_process_import(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot.test_resolves_fresh_from_root_not_the_process_import  # noqa: E501
+        from frob.gates._docblocks_refs import _load_parser_factory_from_root
+
+        (tmp_path / "pkg").mkdir()
+        (tmp_path / "pkg" / "mod.py").write_text(
+            "def factory():\n    return 'from-root'\n"
+        )
+        factory = _load_parser_factory_from_root("pkg.mod:factory", tmp_path)
+        assert factory is not None
+        assert factory() == "from-root"
+
+    def test_resolves_under_src_layout(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot.test_resolves_under_src_layout  # noqa: E501
+        from frob.gates._docblocks_refs import _load_parser_factory_from_root
+
+        (tmp_path / "src" / "pkg").mkdir(parents=True)
+        (tmp_path / "src" / "pkg" / "mod.py").write_text(
+            "def factory():\n    return 'from-src'\n"
+        )
+        factory = _load_parser_factory_from_root("pkg.mod:factory", tmp_path)
+        assert factory is not None
+        assert factory() == "from-src"
+
+    def test_spec_none_returns_none(self, tmp_path: Path, monkeypatch, caplog) -> None:
+        # frob:tests tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot.test_spec_none_returns_none  # noqa: E501
+        import importlib.util
+
+        from frob.gates._docblocks_refs import _load_parser_factory_from_root
+
+        (tmp_path / "pkg").mkdir()
+        (tmp_path / "pkg" / "mod.py").write_text("def factory():\n    pass\n")
+        monkeypatch.setattr(
+            importlib.util, "spec_from_file_location", lambda *a, **k: None
+        )
+        with caplog.at_level("WARNING"):
+            result = _load_parser_factory_from_root("pkg.mod:factory", tmp_path)
+        assert result is None
+        assert any(
+            "could not build an import spec" in r.message for r in caplog.records
+        )
+
+    def test_spec_loader_none_returns_none(
+        self, tmp_path: Path, monkeypatch, caplog
+    ) -> None:
+        # frob:tests tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot.test_spec_loader_none_returns_none  # noqa: E501
+        import importlib.util
+
+        from frob.gates._docblocks_refs import _load_parser_factory_from_root
+
+        (tmp_path / "pkg").mkdir()
+        (tmp_path / "pkg" / "mod.py").write_text("def factory():\n    pass\n")
+
+        class _LoaderlessSpec:
+            loader = None
+
+        monkeypatch.setattr(
+            importlib.util,
+            "spec_from_file_location",
+            lambda *a, **k: _LoaderlessSpec(),
+        )
+        with caplog.at_level("WARNING"):
+            result = _load_parser_factory_from_root("pkg.mod:factory", tmp_path)
+        assert result is None
+        assert any(
+            "could not build an import spec" in r.message for r in caplog.records
+        )
+
+    def test_exec_module_raising_returns_none(self, tmp_path: Path, caplog) -> None:
+        # frob:tests tests/test_docblocks_gate.py::TestLoadParserFactoryFromRoot.test_exec_module_raising_returns_none  # noqa: E501
+        from frob.gates._docblocks_refs import _load_parser_factory_from_root
+
+        (tmp_path / "pkg").mkdir()
+        (tmp_path / "pkg" / "mod.py").write_text("raise RuntimeError('boom')\n")
+        with caplog.at_level("WARNING"):
+            result = _load_parser_factory_from_root("pkg.mod:factory", tmp_path)
+        assert result is None
+        assert any("raised" in r.message for r in caplog.records)
