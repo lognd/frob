@@ -2,7 +2,7 @@
 id: T-3246
 title: 'SUITE-RESULT reports an ABORTED run (exitstatus=3) in the same shape as a
   completed one: failed=24 is a lower bound read as a count'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -29,6 +29,13 @@ scope_changes:
     at land time)
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_labels_did_not_complete_runs
+- tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_completed_run_format_is_unchanged
+- tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_marks_failing_set_incomplete_on_abort
+- tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_completed_run_never_marked_incomplete
+- tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_names_internalerror_cause
+- tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_configure_resets_stale_internal_error
 designated_repro_test: null
 threat: null
 component: null

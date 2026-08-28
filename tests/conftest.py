@@ -200,7 +200,15 @@ def pytest_configure(config: pytest.Config) -> None:
     T-1433: also installs `_install_stackdump_handler` -- UNLIKE the
     journal restore above, this runs on EVERY process (controller and
     every xdist worker alike, no early `workerinput` return), since a
-    wedge's dead-lock-holder could be either."""
+    wedge's dead-lock-holder could be either.
+
+    T-3246: also resets `_last_internal_error` to `None` at the start of
+    every session, so a value stashed by `pytest_internalerror` during an
+    earlier in-process run (e.g. a prior `pytest.main()` call within the
+    same interpreter) can never leak into a later run's `SUITE-RESULT:`
+    line."""
+    global _last_internal_error
+    _last_internal_error = None
     _install_stackdump_handler()
     if hasattr(config, "workerinput"):
         return
@@ -213,12 +221,82 @@ name before collapsing the remainder into an 'and N more' tail -- keeps the
 always-visible summary bounded even on a suite with hundreds of failures."""
 
 
+_COMPLETED_EXIT_STATUSES = frozenset({0, 1})
+"""T-3246: pytest's own documented exit codes for a run that actually
+finished collecting and executing its full item set -- 0 (all passed) and 1
+(tests failed, but the session ran to completion). Every other documented
+code (2 interrupted, 3 internal error, 4 usage error, 5 no tests collected)
+means the session did NOT run to completion, so `session.testscollected`/
+`session.testsfailed` are partial counts of unknown looseness, not a real
+total -- see `_EXIT_STATUS_LABELS` and `pytest_sessionfinish` below."""
+
+_EXIT_STATUS_LABELS: dict[int, str] = {
+    0: "OK",
+    1: "TESTS-FAILED",
+    2: "INTERRUPTED",
+    3: "INTERNAL-ERROR",
+    4: "USAGE-ERROR",
+    5: "NO-TESTS-COLLECTED",
+}
+"""T-3246: human-readable name for each of pytest's documented exit codes,
+named in the `SUITE-RESULT:` line so a reader distinguishes a completed run
+(status 0/1) from an aborted one (2/3/4/5) without memorizing pytest's exit
+code table. An undocumented/future code falls back to `f"CODE-{exitstatus}"`
+in `pytest_sessionfinish` rather than raising or silently omitting a label."""
+
+_last_internal_error: str | None = None
+"""T-3246: the most recent `pytest_internalerror` cause, stashed here because
+`pytest_sessionfinish` receives only the exit status, not the exception --
+`pytest_internalerror` fires (when it fires) strictly before
+`pytest_sessionfinish` in the same process, so this is populated by the time
+the `SUITE-RESULT:` line is written for an `exitstatus=3` (INTERNAL-ERROR)
+run. Reset at the start of every session (`pytest_configure`) so a stale
+value from an earlier in-process run can never leak into a later one."""
+
+
+# frob:ticket T-3246
+# frob:waive WIRE001 reason="genuinely wired -- pytest calls pytest_internalerror via \
+# its plugin hook protocol (name-based discovery, like the pre-existing \
+# pytest_configure/pytest_sessionfinish hooks in this same file), not a direct in-repo \
+# call site"
+def pytest_internalerror(
+    excrepr: object, excinfo: pytest.ExceptionInfo[BaseException]
+) -> None:
+    """Record an INTERNALERROR's cause (T-3246) so the always-visible
+    `SUITE-RESULT:` line can name it instead of just reporting
+    `exitstatus=3` with no context -- pytest calls this hook, when it fires
+    at all, before `pytest_sessionfinish` in the same process."""
+    global _last_internal_error
+    _last_internal_error = f"{excinfo.typename}: {excinfo.value}"
+
+
 # frob:ticket T-1596
 # frob:ticket T-1673
+# frob:ticket T-3246
 # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_prints_greppable_line_at_any_verbosity  # noqa: E501
 # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_skips_on_xdist_worker  # noqa: E501
 # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_lists_failing_node_ids  # noqa: E501
 # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_caps_failing_node_ids_with_and_n_more  # noqa: E501
+# frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_labels_did_not_complete_runs  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
+# waivers"
+# frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_marks_failing_set_incomplete_on_abort  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
+# waivers"
+# frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_names_internalerror_cause  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
+# waivers"
+# frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_completed_run_format_is_unchanged  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
+# waivers"
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     """Print an always-visible `SUITE-RESULT:` line at the end of every run
     (T-1596), independent of pytest's own verbosity-gated terminal summary,
@@ -257,12 +335,53 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     verbosity (it drives the summary section, it is not gated by it), so
     reading it here and writing each node id via the same unsuppressed
     `write_line` channel makes the failing set visible without a second
-    run."""
+    run.
+
+    T-3246 root cause: an ABORTED run (pytest exit code 2/3/4/5 -- e.g. an
+    xdist worker crash producing `INTERNALERROR> KeyError` at exitstatus=3)
+    rendered in the EXACT SAME line shape as a completed run with real
+    failures, differing only in the unlabelled `exitstatus=` digit --
+    `session.testscollected`/`testsfailed` are themselves partial counts of
+    unknown looseness on an aborted run (collection/execution stopped
+    mid-way), not a real total, and the `SUITE-RESULT-FAILED:` node ids
+    that follow are only whatever had been recorded before the abort, not
+    the suite's actual failing set. A reader (including the author of
+    T-3246, by their own account) mistook the partial list for a complete
+    failure count. Fixed by branching on `exitstatus` via
+    `_COMPLETED_EXIT_STATUSES`: a completed run (0/1) keeps the EXACT
+    pre-existing line format (pinned by
+    `tests/unit/test_conftest_stackdump.py`, deliberately unchanged); a
+    did-not-complete run instead gets a `DID-NOT-COMPLETE` line naming the
+    exit status via `_EXIT_STATUS_LABELS`, marks both counts as partial,
+    and -- if any failing ids are collected at all -- prefixes them with an
+    explicit `SUITE-RESULT: failing set INCOMPLETE` line so the partial
+    list can never again be read as the real one. Per the ticket: the
+    partial information is NOT suppressed (it is the only record of what
+    ran before the abort) -- only the missing label is fixed."""
     if hasattr(session.config, "workerinput"):
         return
     total = getattr(session, "testscollected", 0)
     failed = getattr(session, "testsfailed", 0)
-    line = f"SUITE-RESULT: exitstatus={exitstatus} collected={total} failed={failed}"
+    completed = exitstatus in _COMPLETED_EXIT_STATUSES
+    if completed:
+        line = (
+            f"SUITE-RESULT: exitstatus={exitstatus} collected={total} failed={failed}"
+        )
+    else:
+        label = _EXIT_STATUS_LABELS.get(exitstatus, f"CODE-{exitstatus}")
+        # T-3246: keep the bare `collected={total}`/`failed={failed}`
+        # substrings intact (partial-ness noted as a trailing annotation,
+        # not folded into the key name) -- `src/frob/gates/_bug_repro.py`'s
+        # `_classify_designated_test_exit` already regex-matches the
+        # literal `\bcollected=0\b` substring against this line to detect
+        # a "test does not exist" repro run (T-2025); reshaping the key
+        # would silently break that sibling consumer.
+        line = (
+            f"SUITE-RESULT: DID-NOT-COMPLETE exitstatus={exitstatus} ({label}) "
+            f"collected={total} (partial) failed={failed} (partial, lower-bound)"
+        )
+        if _last_internal_error is not None:
+            line += f" cause={_last_internal_error}"
     reporter = session.config.pluginmanager.get_plugin("terminalreporter")
     if reporter is not None:
         reporter.write_line(line)
@@ -274,6 +393,11 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
                     nodeid = getattr(report, "nodeid", None)
                     if nodeid is not None:
                         failing_ids.append(f"{nodeid} ({outcome})")
+            if failing_ids and not completed:
+                reporter.write_line(
+                    "SUITE-RESULT: failing set INCOMPLETE -- run aborted before "
+                    "collecting/executing all tests, this is NOT the full failing set"
+                )
             shown = failing_ids[:_SUITE_RESULT_MAX_NODE_IDS]
             for node_line in shown:
                 reporter.write_line(f"SUITE-RESULT-FAILED: {node_line}")
@@ -460,6 +584,9 @@ def _isolate_worktree_lease_env_before_test() -> Iterator[None]:
     up independently by `monkeypatch`'s own teardown, which runs before
     this fixture's `finally`) without this fixture fighting it."""
     keys = (FROB_WORKTREE_ENV, FROB_AGENT_ENV, PYTEST_XDIST_AUTO_NUM_WORKERS_ENV)
+    # frob:waive SEC110 reason="FROB_WORKTREE/FROB_AGENT/PYTEST_XDIST_AUTO_NUM_WORKERS \
+    # are dispatch-context markers (T-0574), never secrets -- same shape as the \
+    # .claude/hooks/_agent_context.py waivers for the identical two vars"
     prior = {key: os.environ.get(key) for key in keys}
     for key in (FROB_WORKTREE_ENV, FROB_AGENT_ENV):
         os.environ.pop(key, None)
@@ -470,6 +597,8 @@ def _isolate_worktree_lease_env_before_test() -> Iterator[None]:
             if value is None:
                 os.environ.pop(key, None)
             else:
+                # frob:waive SEC110 reason="restoring a dispatch-context marker's \
+                # prior value into os.environ, not writing a secret (T-0574)"
                 os.environ[key] = value
 
 
