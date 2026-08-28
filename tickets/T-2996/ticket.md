@@ -50,6 +50,13 @@ scope_changes:
   reason: facet registry, LANG003 gate, meta-test coverage for T-2996
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/test_lang_support.py::TestPackageAudit::test_every_measured_package_is_registered
+- tests/test_lang_support.py::TestPackageAudit::test_must_fire_unregistered_language_branching
+- tests/test_lang_support.py::TestPackageAudit::test_must_stay_quiet_agnostic_package
+- tests/test_lang_support.py::TestPackageAudit::test_registered_package_never_flagged_even_with_literals
+- tests/test_lang_support.py::TestPackageAudit::test_real_repo_source_tree_is_fully_registered
+- tests/test_lang_support.py::test_refactor_adapter_languages_matches_live_registry
 designated_repro_test: null
 threat: null
 component: null
