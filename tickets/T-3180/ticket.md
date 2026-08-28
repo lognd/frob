@@ -2,7 +2,7 @@
 id: T-3180
 title: Scope-lease overlap check refuses provably-disjoint globs (literal accepted,
   wildcard refused)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
