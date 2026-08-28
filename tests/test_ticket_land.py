@@ -5689,6 +5689,50 @@ class TestDirtOwnerTickets:
         assert other_id in caplog.text
         assert "src/other_owned.py" in caplog.text
 
+    # frob:ticket T-3216
+    def test_status_unreadable_refusal_never_claims_uncommitted_work(
+        self,
+        repo: Path,
+        caplog: pytest.LogCaptureFixture,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestDirtOwnerTickets.test_status_unreadable_refusa\
+        # l_never_claims_uncommitted_work
+        """T-3216's exact incident: `_porcelain_dirty_paths`'s own `git
+        status` call fails (index.lock contention), landing on the
+        `_dirt_owned_by_no_open_ticket` branch with an empty path set --
+        this must be short-circuited to a STATUS-UNREADABLE refusal
+        BEFORE that branch, never a message claiming uncommitted work
+        exists nor telling the reader retrying cannot help."""
+        import frob.tickets._land_git_ops as land_git_ops_mod
+        from frob.tickets._land import _log_dirty_main_refusal
+
+        landing = new_ticket(repo, _spec("Landing work", scope=("src/mine.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        assert transition(repo, landing_id, TicketState.PLANNED).is_ok
+
+        def _fail(*a: object, **k: object):
+            from typani import Ok
+
+            class _Proc:
+                returncode = 128
+                stdout = ""
+                stderr = "fatal: Unable to create '.git/index.lock': File exists."
+
+            return Ok(_Proc())
+
+        monkeypatch.setattr(land_git_ops_mod, "run_argv", _fail)
+        caplog.clear()
+        with caplog.at_level("ERROR", logger="frob.tickets._land"):
+            _log_dirty_main_refusal(repo, repo / "worktree", landing_id)
+
+        assert "STATUS-UNREADABLE" in caplog.text
+        assert "index.lock" in caplog.text
+        assert "cannot fix this by retrying" not in caplog.text
+        assert "belonging to NO open ticket" not in caplog.text
+
 
 # frob:ticket T-0338
 class TestRebuildNatives:

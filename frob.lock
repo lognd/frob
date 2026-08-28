@@ -1799,6 +1799,42 @@
       "old_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
       "reason": "T-3222: re-read docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690 against the new file-time liveness re-verify step; the attribution contract this doc describes is unchanged -- the new step runs after attribution partitioning, only dropping already-partitioned pairs that no longer reproduce",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-28",
+      "facet": "body",
+      "new_digest": "3753f2627487655a7a63cea6e44abb163f8f8f330957b52a6a5af78294c9363a",
+      "old_digest": null,
+      "reason": "T-3216: re-read docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684; describe_root_dirt's new STATUS-UNREADABLE short-circuit does not change the deferred-sweep contract this doc describes -- it only adds a distinct message for an unreadable git status before the existing dirty-path rendering runs",
+      "ref": "src/frob/tickets/_land_git_ops.py::describe_root_dirt"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-28",
+      "facet": "sig",
+      "new_digest": "ed38327bc3a59742b8e17e4e1bbf0341f8a84da1bdc6b45a62dc7d74b63d5332",
+      "old_digest": null,
+      "reason": "T-3216: re-read docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684; describe_root_dirt's new STATUS-UNREADABLE short-circuit does not change the deferred-sweep contract this doc describes -- it only adds a distinct message for an unreadable git status before the existing dirty-path rendering runs",
+      "ref": "src/frob/tickets/_land_git_ops.py::describe_root_dirt"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-28",
+      "facet": "body",
+      "new_digest": "3753f2627487655a7a63cea6e44abb163f8f8f330957b52a6a5af78294c9363a",
+      "old_digest": "3753f2627487655a7a63cea6e44abb163f8f8f330957b52a6a5af78294c9363a",
+      "reason": "T-3216: re-verified after ruff-format; describe_root_dirt's STATUS-UNREADABLE short-circuit still does not change docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684's documented contract",
+      "ref": "src/frob/tickets/_land_git_ops.py::describe_root_dirt"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-28",
+      "facet": "sig",
+      "new_digest": "ed38327bc3a59742b8e17e4e1bbf0341f8a84da1bdc6b45a62dc7d74b63d5332",
+      "old_digest": "ed38327bc3a59742b8e17e4e1bbf0341f8a84da1bdc6b45a62dc7d74b63d5332",
+      "reason": "T-3216: re-verified after ruff-format; describe_root_dirt's STATUS-UNREADABLE short-circuit still does not change docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684's documented contract",
+      "ref": "src/frob/tickets/_land_git_ops.py::describe_root_dirt"
     }
   ],
   "entries": [
@@ -2901,6 +2937,16 @@
       "digest": "171f99c383c706f1eb53a1fc71a11343c983bf1ff421e13c61b1de536ff67485",
       "facet": "sig",
       "ref": "src/frob/tickets/_land_compose.py::LandComposeError"
+    },
+    {
+      "digest": "3753f2627487655a7a63cea6e44abb163f8f8f330957b52a6a5af78294c9363a",
+      "facet": "body",
+      "ref": "src/frob/tickets/_land_git_ops.py::describe_root_dirt"
+    },
+    {
+      "digest": "ed38327bc3a59742b8e17e4e1bbf0341f8a84da1bdc6b45a62dc7d74b63d5332",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_land_git_ops.py::describe_root_dirt"
     },
     {
       "digest": "96ef2203511eae4afa78815f1c46a64b4f169f96692ebc419fd984caeca33b47",

@@ -2,7 +2,7 @@
 id: T-3216
 title: DirtyMain reports an unreadable git status as uncommitted work and tells the
   reader not to retry
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -96,6 +96,14 @@ scope_changes:
     behavior; frob.lock is a normal ack side effect
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestPorcelainStatusError::test_readable_status_is_none
+- tests/unit/test_rapid_sweep.py::TestPorcelainStatusError::test_spawn_failure_names_the_git_error
+- tests/unit/test_rapid_sweep.py::TestPorcelainStatusError::test_nonzero_exit_names_stderr
+- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_empty_paths_renders_as_none_not_unavailable
+- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_status_unreadable_names_the_git_error_not_uncommitted_work
+- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_readable_clean_status_is_not_status_unreadable
+- tests/test_ticket_land.py::TestDirtOwnerTickets::test_status_unreadable_refusal_never_claims_uncommitted_work
 designated_repro_test: null
 threat: null
 component: null

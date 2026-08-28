@@ -646,6 +646,46 @@ _DIRTY_PATHS_SHOWN = 10
 
 
 # frob:ticket T-1698
+# frob:ticket T-3216
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestPorcelainStatusError.test_readable_status_is_none
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestPorcelainStatusError.test_spawn_failure_names_the\
+# _git_error
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestPorcelainStatusError.test_nonzero_exit_names_stde\
+# rr
+def _porcelain_status_error(root: Path) -> str | None:
+    """T-3216: `None` iff `git status --porcelain` in `root` actually ran
+    and returned zero -- the single source of truth a `DirtyMain` refusal
+    needs to tell "found nothing dirty" apart from "could not measure".
+
+    MEASURED incident: `_porcelain_dirty_paths` below collapses BOTH a
+    genuinely clean tree AND a failed `git status` invocation (index.lock
+    contention from a concurrent land, most often) into the SAME empty
+    tuple -- so a refusal built only from that tuple cannot tell them
+    apart, and previously guessed "unreadable" from emptiness alone. That
+    guess was wrong in the observed incident: `_porcelain_dirty`'s OWN
+    separate `git status` call (T-1740, run moments earlier) had already
+    succeeded and found real dirt, so the tree WAS dirty -- but THIS
+    function's status call, made again to list the paths, hit transient
+    index.lock contention and failed, and the resulting message asserted
+    "uncommitted work" that could not actually be named, then told the
+    reader retrying could not help -- exactly backwards, since retrying
+    (after the contention passed) is what fixed it. Callers needing the
+    STATUS-UNREADABLE state must ask THIS function directly, never infer
+    it from `_porcelain_dirty_paths` returning `()`."""
+    spawned = run_argv(["git", "-C", str(root), "status", "--porcelain"])
+    if spawned.is_err:
+        return f"git status spawn failed: {spawned.danger_err}"
+    if spawned.danger_ok.returncode != 0:
+        stderr = spawned.danger_ok.stderr.strip()
+        return f"git status exited {spawned.danger_ok.returncode}" + (
+            f": {stderr}" if stderr else ""
+        )
+    return None
+
+
 def _porcelain_dirty_paths(root: Path) -> tuple[str, ...]:
     """The paths making `root` dirty, by the SAME `.frob/`-ignoring rule
     `_porcelain_dirty` decides on -- so what a DirtyMain refusal names can
@@ -658,7 +698,12 @@ def _porcelain_dirty_paths(root: Path) -> tuple[str, ...]:
     does not name its own cause is a structural defect in a tool whose job
     is enforcement. Empty tuple on a git failure -- the caller has already
     reported that separately and must not turn "cannot tell" into "clean".
-    """
+
+    T-3216: this empty-tuple-on-failure contract is preserved UNCHANGED
+    here -- every existing caller (set-diffs across `_land.py`/`_land_
+    finalize.py`/`_land_squash.py`) depends on it. A caller that needs to
+    tell "clean" apart from "unreadable" must call `_porcelain_status_
+    error` directly, never infer it from this function's return alone."""
     spawned = run_argv(["git", "-C", str(root), "status", "--porcelain"])
     if spawned.is_err or spawned.danger_ok.returncode != 0:
         return ()
@@ -720,14 +765,28 @@ def _porcelain_dirty_paths_staged(root: Path) -> tuple[str, ...]:
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_paths
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_truncation_declares_itself
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_empty_paths_renders_as_none\
+# _not_unavailable
 # frob:ticket T-1698
+# frob:ticket T-3216
 def _render_dirty_paths(paths: tuple[str, ...]) -> str:
     """`paths` rendered for a refusal message, capped at
     `_DIRTY_PATHS_SHOWN` with an explicit `(+N more)` -- a truncated list
     that hides its own truncation would send someone to fix one file when
-    twenty are dirty."""
+    twenty are dirty.
+
+    T-3216: an EMPTY `paths` here is ambiguous on its own (a genuinely
+    clean tree and a failed `git status` both render as `()`) -- this
+    function no longer guesses which one it is. Its only caller,
+    `describe_root_dirt`, now checks `_porcelain_status_error` FIRST and
+    never reaches this function at all on the unreadable path, so an
+    empty `paths` reaching here means the status call succeeded and
+    genuinely found nothing (the caller is dirty by some OTHER signal,
+    e.g. a staged-only check finding nothing while the working tree
+    itself has something outside this specific query)."""
     if not paths:
-        return "(git status unavailable)"
+        return "(none)"
     shown = ", ".join(paths[:_DIRTY_PATHS_SHOWN])
     extra = len(paths) - _DIRTY_PATHS_SHOWN
     return f"{shown} (+{extra} more)" if extra > 0 else shown
@@ -2287,15 +2346,24 @@ def _likely_sweep_authored(paths: tuple[str, ...]) -> bool:
 
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684
+# frob:waive AFFECT001 reason="T-3216 re-verified: describe_root_dirt's new \
+# STATUS-UNREADABLE short-circuit (a 3rd distinct message when git status itself \
+# cannot be read) does not change the deferred-sweep contract this doc section \
+# describes -- it only adds a message branch BEFORE the existing dirty-path rendering \
+# this section already documents; frob ack already recorded on this exact digest, \
+# waived here too since AFFECT001 (unlike DRIFT001) does not honor ack"
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_a_real_dirty_file
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unavailable_status_is_not_reported_as_clean  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_empty_paths_renders_as_none_not_unavailable  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_status_unreadable_names_the_git_error_not_uncommitted_work  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_readable_clean_status_is_not_status_unreadable  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_detached_sweep_as_likely_author  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_real_ticket_from_a_staged_rapid_debt_line  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unattributed_when_the_true_author_cannot_be_determined  # noqa: E501
 # frob:ticket T-1698
 # frob:ticket T-1755
 # frob:ticket T-1821
+# frob:ticket T-3216
 def describe_root_dirt(root: Path) -> str:
     """What is making `root` dirty, rendered for a `DirtyMain` refusal.
 
@@ -2320,7 +2388,27 @@ def describe_root_dirt(root: Path) -> str:
     agent seeing this refusal is, per T-1755's own incident, structurally
     isolated from root and cannot investigate WHO left it dirty; naming
     the likely author turns "report and wait" into "report the specific,
-    actionable cause" without the agent needing to guess."""
+    actionable cause" without the agent needing to guess.
+
+    T-3216: checks `_porcelain_status_error` FIRST and, if `git status`
+    itself could not be read, returns a STATUS-UNREADABLE description
+    naming the underlying git error -- never the paths-based rendering
+    below, and never a claim that uncommitted work exists. MEASURED
+    incident: a transient `index.lock` failure (concurrent land) here
+    used to render as "(git status unavailable)" glued onto a message
+    that asserted real uncommitted work and told the reader retrying
+    could not fix it -- backwards, since retrying (once the contention
+    passed) is exactly what did."""
+    status_error = _porcelain_status_error(root)
+    if status_error is not None:
+        return (
+            f"STATUS-UNREADABLE ({status_error}) -- git status itself "
+            "could not be read, so no dirty paths can be named; this is "
+            "NOT a confirmed claim of uncommitted work. If a concurrent "
+            "land is running, this is likely transient index.lock "
+            "contention -- retrying is appropriate, unlike a genuine "
+            "DirtyMain refusal"
+        )
     all_paths = _porcelain_dirty_paths(root)
     staged_paths = _porcelain_dirty_paths_staged(root)
     rendered = _render_dirty_paths(all_paths)

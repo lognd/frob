@@ -1610,6 +1610,60 @@ class TestPersistCommitStepFailure:
         assert path is None
 
 
+# frob:ticket T-3216
+class TestPorcelainStatusError:
+    """T-3216: `_porcelain_status_error` -- the single source of truth
+    for telling "git status could not be read" apart from "read fine,
+    found nothing", which `_porcelain_dirty_paths`'s empty-tuple return
+    collapses for its many other (unchanged) callers."""
+
+    def test_readable_status_is_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestPorcelainStatusError.test_readable_status_is_none  # noqa: E501
+        from frob.tickets._land_git_ops import _porcelain_status_error
+
+        repo = _seed_repo(tmp_path)
+        assert _porcelain_status_error(repo) is None
+
+    def test_spawn_failure_names_the_git_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestPorcelainStatusError.test_spawn_failure_names_the_git_error  # noqa: E501
+        from typani import Err
+
+        import frob.tickets._land_git_ops as land_git_ops_mod
+        from frob.gitio import GitError
+        from frob.tickets._land_git_ops import _porcelain_status_error
+
+        monkeypatch.setattr(
+            land_git_ops_mod, "run_argv", lambda *a, **k: Err(GitError.GitFailed)
+        )
+        error = _porcelain_status_error(tmp_path)
+        assert error is not None
+        assert "spawn failed" in error
+
+    def test_nonzero_exit_names_stderr(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestPorcelainStatusError.test_nonzero_exit_names_stderr  # noqa: E501
+        from typani import Ok
+
+        import frob.tickets._land_git_ops as land_git_ops_mod
+        from frob.tickets._land_git_ops import _porcelain_status_error
+
+        def _fail(*a: object, **k: object):
+            class _Proc:
+                returncode = 128
+                stdout = ""
+                stderr = "fatal: Unable to create '.git/index.lock': File exists."
+
+            return Ok(_Proc())
+
+        monkeypatch.setattr(land_git_ops_mod, "run_argv", _fail)
+        error = _porcelain_status_error(tmp_path)
+        assert error is not None
+        assert "index.lock" in error
+
+
 class TestDescribeRootDirt:
     """T-1698: a DirtyMain refusal must name what made it refuse."""
 
@@ -1627,12 +1681,58 @@ class TestDescribeRootDirt:
         rendered = _render_dirty_paths(tuple(f"f{i}.py" for i in range(14)))
         assert rendered.endswith("(+4 more)")
 
-    def test_unavailable_status_is_not_reported_as_clean(self) -> None:
-        # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unavailable_status_is_not_reported_as_clean  # noqa: E501
+    def test_empty_paths_renders_as_none_not_unavailable(self) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_empty_paths_renders_as_none_not_unavailable  # noqa: E501
+        # T-3216: `_render_dirty_paths` no longer guesses "unreadable"
+        # from emptiness -- its only caller (`describe_root_dirt`) now
+        # asks `_porcelain_status_error` directly and never reaches this
+        # function on the unreadable path, so an empty `paths` here
+        # means the status call succeeded and found nothing.
         from frob.tickets._land_git_ops import _render_dirty_paths
 
-        # "cannot tell" must never render as "clean".
-        assert _render_dirty_paths(()) == "(git status unavailable)"
+        assert _render_dirty_paths(()) == "(none)"
+
+    # frob:ticket T-3216
+    def test_status_unreadable_names_the_git_error_not_uncommitted_work(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_status_unreadable_names_the_git_error_not_uncommitted_work  # noqa: E501
+        # T-3216's exact incident: `git status` itself fails (index.lock
+        # contention). The rendered description must name STATUS-
+        # UNREADABLE and the underlying error, never assert uncommitted
+        # work exists.
+        import frob.tickets._land_git_ops as land_git_ops_mod
+        from frob.tickets._land_git_ops import describe_root_dirt
+
+        def _fail(*a: object, **k: object):
+            from typani import Ok
+
+            class _Proc:
+                returncode = 128
+                stdout = ""
+                stderr = "fatal: Unable to create '.git/index.lock': File exists."
+
+            return Ok(_Proc())
+
+        monkeypatch.setattr(land_git_ops_mod, "run_argv", _fail)
+        rendered = describe_root_dirt(tmp_path)
+        assert "STATUS-UNREADABLE" in rendered
+        assert "index.lock" in rendered
+        # must state this is NOT a confirmed claim, never assert it flatly
+        assert "NOT a confirmed claim" in rendered
+        assert "retrying is appropriate" in rendered
+
+    # frob:ticket T-3216
+    def test_readable_clean_status_is_not_status_unreadable(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_readable_clean_status_is_not_status_unreadable  # noqa: E501
+        # Must-stay-quiet: a real, readable `git status` (even one that
+        # happens to find nothing) is never reported as unreadable.
+        from frob.tickets._land_git_ops import describe_root_dirt
+
+        repo = _seed_repo(tmp_path)
+        assert "STATUS-UNREADABLE" not in describe_root_dirt(repo)
 
     def test_names_a_real_dirty_file(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_a_real_dirty_file  # noqa: E501

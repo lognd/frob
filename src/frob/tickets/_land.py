@@ -3284,9 +3284,48 @@ def _log_dirty_main_refusal(root: Path, worktree: Path, ticket_id: str) -> None:
     ticket's declared scope (just not `ticket_id`'s own), name that
     ticket explicitly rather than falling through to the generic
     "has uncommitted changes in: ..." message -- T-2071's own measured
-    incident shape."""
-    from frob.tickets._land_git_ops import _porcelain_dirty_paths, describe_root_dirt
+    incident shape.
 
+    T-3216: checks `_porcelain_status_error` FIRST, before any of the
+    ownership branches below. MEASURED incident: `_apply_dirty_main_
+    auto_heals`'s OWN separate `git status` call had already succeeded and
+    found real dirt (this function would not even be reached otherwise)
+    -- but THIS function's own `_porcelain_dirty_paths(root)` call,
+    made moments later to list the paths, hit transient `index.lock`
+    contention from a concurrent land and failed, returning `()`.
+    `_dirt_owned_by_no_open_ticket(root, ())` is vacuously `True` over
+    an empty path set, so the refusal fell into the "belongs to NO open
+    ticket" branch and asserted uncommitted work that could not
+    actually be named -- then told the reader retrying could not fix
+    it, which is exactly backwards for transient contention. A THIRD,
+    distinct STATUS-UNREADABLE message short-circuits both ownership
+    branches below: it never claims uncommitted work exists, and it
+    says retrying is appropriate rather than telling the reader an
+    agent cannot fix this."""
+    from frob.tickets._land_git_ops import (
+        _porcelain_dirty_paths,
+        _porcelain_status_error,
+        describe_root_dirt,
+    )
+
+    status_error = _porcelain_status_error(root)
+    if status_error is not None:
+        _log.error(
+            "land: %s refused -- STATUS-UNREADABLE in %s (%s): git "
+            "status could not be read, so no dirty paths can be named "
+            "and NO claim of uncommitted work is being made; if a "
+            "concurrent land is running elsewhere this is likely "
+            "transient index.lock contention -- retry `frob ticket "
+            "land %s --worktree %s` once the contention passes (git -C "
+            "%s status to confirm the tree's real state first)",
+            ticket_id,
+            root,
+            status_error,
+            ticket_id,
+            worktree,
+            root,
+        )
+        return
     dirty_paths = _porcelain_dirty_paths(root)
     if _dirt_owned_by_no_open_ticket(root, dirty_paths):
         _log.error(
@@ -4082,8 +4121,7 @@ def _tdd_order_scoped_edges(worktree: Path, ticket: Ticket, base_ref: str) -> li
     ]
     if not scoped_edges:
         _log.info(
-            "land: %s: TDD001 -- no frob:tests edges among this land's "
-            "touched symbols",
+            "land: %s: TDD001 -- no frob:tests edges among this land's touched symbols",
             ticket.id,
         )
     return scoped_edges
