@@ -15,9 +15,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/test_vet_capability.py
-findings:
-- - OPAQUE001
-  - tests/test_vet_capability.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +25,9 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+findings:
+- - OPAQUE001
+  - tests/test_vet_capability.py
 ---
 The deferred post-land unscoped sweep (T-1684) for T-2885 at commit 70e20f4c2ce96e213be651aad923b89ba00ca1e8 found 1 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 

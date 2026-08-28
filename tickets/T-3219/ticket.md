@@ -37,6 +37,16 @@ scope:
 - tests/unit/test_stackdump.py
 - tests/unit/test_ticket_store.py
 - tickets/T-3181
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 findings:
 - - COV003
   - tickets/T-3181
@@ -84,16 +94,6 @@ findings:
   - tests/unit/test_stackdump.py
 - - unresolved-attribute
   - tests/unit/test_ticket_store.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
-designated_repro_test: null
-threat: null
-component: null
-anchor: false
-anchor_reason: null
-land_commit: null
 ---
 The deferred post-land unscoped sweep (T-1684) for T-3195 at commit 46b172704c7008408feedb7624654e233336eae9 found 23 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 

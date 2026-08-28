@@ -19,15 +19,6 @@ scope:
 - frob-deprecated-baseline.lock.json
 - frob-ratchet.lock.json
 - src/frob/gates/_waive.py
-findings:
-- - ARCH102
-  - src/frob/gates/_waive.py
-- - DEPR006
-  - frob-deprecated-baseline.lock.json
-- - REG005
-  - docs/design/registry/check-coverage.yaml
-- - WAIVE011
-  - frob-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +29,15 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+findings:
+- - ARCH102
+  - src/frob/gates/_waive.py
+- - DEPR006
+  - frob-deprecated-baseline.lock.json
+- - REG005
+  - docs/design/registry/check-coverage.yaml
+- - WAIVE011
+  - frob-ratchet.lock.json
 ---
 The deferred post-land unscoped sweep (T-1684) for T-3228 at commit 3bc56e3a099c2311a279b0e6280e62063d37851f found 4 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 

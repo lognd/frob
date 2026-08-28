@@ -2,6 +2,9 @@
 // token-stream primitives (`expect_*`, `at_*`, `parse_unit`/`parse_quantity`)
 // every grammar-family module builds on (docs/strata/surface.md#parser).
 
+// frob:debt LARGE001 reason="T-3044 added parse_vmodel_node/parse_vmodel_edge \
+// (V-model H3 grammar), pushing this file from ~795 to 827 lines against the 800-line \
+// threshold" ticket="T-3260"
 // ---------------------------------------------------------------------
 // Parser
 // ---------------------------------------------------------------------
@@ -138,15 +141,16 @@ impl Parser {
         }
     }
 
-    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s module split -- \
-    // git shows the whole file as newly added since one file split into six, so the dup scanner \
-    // treats this small, already-existing helper as fresh/new and re-flags its structural \
-    // similarity to unrelated code that was never a real duplication before the split either; no \
-    // behavior or code shape changed"
-    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- this method \
-    // and its sibling both existed verbatim, side by side, in the pre-split monolithic parse.rs; \
-    // the split did not introduce a new duplication, only a new file boundary the dup scanner \
-    // reads as 'both new in this diff'"
+    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s \
+    // module split -- git shows the whole file as newly added since one file split \
+    // into six, so the dup scanner treats this small, already-existing helper as \
+    // fresh/new and re-flags its structural similarity to unrelated code that was \
+    // never a real duplication before the split either; no behavior or code shape \
+    // changed"
+    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- \
+    // this method and its sibling both existed verbatim, side by side, in the \
+    // pre-split monolithic parse.rs; the split did not introduce a new duplication, \
+    // only a new file boundary the dup scanner reads as 'both new in this diff'"
     fn expect_ident(&mut self, what: &str) -> Result<String, ParseError> {
         match &self.cur().kind {
             TokKind::Ident(s) => {
@@ -173,15 +177,16 @@ impl Parser {
         Ok(n as i64)
     }
 
-    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s module split -- \
-    // git shows the whole file as newly added since one file split into six, so the dup scanner \
-    // treats this small, already-existing helper as fresh/new and re-flags its structural \
-    // similarity to unrelated code that was never a real duplication before the split either; no \
-    // behavior or code shape changed"
-    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- this method \
-    // and its sibling both existed verbatim, side by side, in the pre-split monolithic parse.rs; \
-    // the split did not introduce a new duplication, only a new file boundary the dup scanner \
-    // reads as 'both new in this diff'"
+    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s \
+    // module split -- git shows the whole file as newly added since one file split \
+    // into six, so the dup scanner treats this small, already-existing helper as \
+    // fresh/new and re-flags its structural similarity to unrelated code that was \
+    // never a real duplication before the split either; no behavior or code shape \
+    // changed"
+    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- \
+    // this method and its sibling both existed verbatim, side by side, in the \
+    // pre-split monolithic parse.rs; the split did not introduce a new duplication, \
+    // only a new file boundary the dup scanner reads as 'both new in this diff'"
     fn expect_string(&mut self, what: &str) -> Result<String, ParseError> {
         match &self.cur().kind {
             TokKind::Str(s) => {
@@ -257,15 +262,16 @@ impl Parser {
     /// UNIT := IDENT ('/' IDENT)* | '%'; the next bare IDENT after a
     /// complete unit is never consumed (surface.md: "min" alone, "req/s"
     /// as one unit).
-    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s module split -- \
-    // git shows the whole file as newly added since one file split into six, so the dup scanner \
-    // treats this small, already-existing helper as fresh/new and re-flags its structural \
-    // similarity to unrelated code that was never a real duplication before the split either; no \
-    // behavior or code shape changed"
-    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- this method \
-    // and its sibling both existed verbatim, side by side, in the pre-split monolithic parse.rs; \
-    // the split did not introduce a new duplication, only a new file boundary the dup scanner \
-    // reads as 'both new in this diff'"
+    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s \
+    // module split -- git shows the whole file as newly added since one file split \
+    // into six, so the dup scanner treats this small, already-existing helper as \
+    // fresh/new and re-flags its structural similarity to unrelated code that was \
+    // never a real duplication before the split either; no behavior or code shape \
+    // changed"
+    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- \
+    // this method and its sibling both existed verbatim, side by side, in the \
+    // pre-split monolithic parse.rs; the split did not introduce a new duplication, \
+    // only a new file boundary the dup scanner reads as 'both new in this diff'"
     fn parse_unit(&mut self) -> Result<String, ParseError> {
         if self.at_symbol('%') {
             self.advance();
@@ -375,15 +381,16 @@ impl Parser {
         Ok(())
     }
 
-    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s module split -- \
-    // git shows the whole file as newly added since one file split into six, so the dup scanner \
-    // treats this small, already-existing helper as fresh/new and re-flags its structural \
-    // similarity to unrelated code that was never a real duplication before the split either; no \
-    // behavior or code shape changed"
-    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- this method \
-    // and its sibling both existed verbatim, side by side, in the pre-split monolithic parse.rs; \
-    // the split did not introduce a new duplication, only a new file boundary the dup scanner \
-    // reads as 'both new in this diff'"
+    // frob:waive DUP001 reason="pre-existing code relocated verbatim by T-1099s \
+    // module split -- git shows the whole file as newly added since one file split \
+    // into six, so the dup scanner treats this small, already-existing helper as \
+    // fresh/new and re-flags its structural similarity to unrelated code that was \
+    // never a real duplication before the split either; no behavior or code shape \
+    // changed"
+    // frob:waive DUP002 reason="same T-1099 relocation artifact as DUP001 above -- \
+    // this method and its sibling both existed verbatim, side by side, in the \
+    // pre-split monolithic parse.rs; the split did not introduce a new duplication, \
+    // only a new file boundary the dup scanner reads as 'both new in this diff'"
     fn parse_module(
         &mut self,
         ast: &mut ModuleAst,

@@ -17,11 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/verify/test_quarantine.py
 - tickets/T-3086/ticket.md
-findings:
-- - DOC006
-  - tickets/T-3086/ticket.md
-- - I001
-  - /home/logan/projects/frob/tests/unit/verify/test_quarantine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +27,11 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+findings:
+- - DOC006
+  - tickets/T-3086/ticket.md
+- - I001
+  - /home/logan/projects/frob/tests/unit/verify/test_quarantine.py
 ---
 The deferred post-land unscoped sweep (T-1684) for an unattributed source (sweep spawned by T-3039) at commit b99c0a9fa9be410b2439fec8ade5fd2bc9da6732 found 2 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 

@@ -18,7 +18,7 @@ scope:
 - strata-core/src/graph/vmodel.rs
 - strata-core/src/parse/grammar_core.rs
 - tickets.md
-- tickets/T-draft-703f9e02/ticket.md
+- tickets/T-3260/ticket.md
 evidence_scope:
 - tests/test_arch_gate.py
 scope_breadth_ack: false
@@ -28,14 +28,14 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tickets.md
-  reason: filing the deferred-split follow-up ticket (T-draft-703f9e02) for this sweep-regression
+  reason: filing the deferred-split follow-up ticket (T-3260) for this sweep-regression
     ticket writes tickets.md and its own ticket.md; both are frob ticket-infra artifacts
     of doing this ticket's work, not unrelated scope creep
   actor: logan
   at: '2026-08-28'
 - op: add
-  glob: tickets/T-draft-703f9e02/ticket.md
-  reason: filing the deferred-split follow-up ticket (T-draft-703f9e02) for this sweep-regression
+  glob: tickets/T-3260/ticket.md
+  reason: filing the deferred-split follow-up ticket (T-3260) for this sweep-regression
     ticket writes tickets.md and its own ticket.md; both are frob ticket-infra artifacts
     of doing this ticket's work, not unrelated scope creep
   actor: logan
@@ -46,9 +46,8 @@ body_changes:
     against current main: frob check --only arch confirmed both LARGE001 identities
     are genuinely live (vmodel.rs 597->988 lines, grammar_core.rs 795->827 lines,
     both grown by T-3044, threshold 800). Bound frob:debt LARGE001 (not frob:waive)
-    to follow-up split ticket T-draft-703f9e02 rather than fixing inline. This is
-    a comment-directive-only change with no runtime behavior delta -- it changes gate
-    bookkeeping, not code.'
+    to follow-up split ticket T-3260 rather than fixing inline. This is a comment-directive-only
+    change with no runtime behavior delta -- it changes gate bookkeeping, not code.'
   actor: logan
   at: '2026-08-28'
   old_length: 1524
