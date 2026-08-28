@@ -489,6 +489,47 @@ descendant.
 MILE004 is registered in `_KNOWN_GATE_RULES` (`frob.gates._waive`) like
 every other rule, so `frob:waive MILE004 reason="..."` binds normally.
 
+### TICK014 -- empty code diff on close (T-3092)
+
+TICK014 (WARN, `frob.gates._empty_diff_close.empty_code_diff_
+violations`, dispatched from `tickets_gate()` alongside TICK001..
+TICK013) flags every DONE ticket whose `kind` is `feature` or `bug`
+and whose own Done report's auto-composed `### Changed` block
+(`frob.tickets._evidence.render_changed_block`, T-0458) lists no file
+outside ticket-ledger bookkeeping (the `tickets/`, `tickets.md`, and
+`tickets-archive.md` prefixes). Motivating incident: T-3064 closed done
+with a Done report whose own narrative said "T-3064 is BLOCKED, not
+implemented", and its land touched only the ledger -- a mechanically
+detectable shape a reviewer skimming prose could miss.
+
+Read, never re-derived: this check parses the SAME `### Changed` text
+`compose_done_report` already wrote (via `render_changed_block`'s
+`git diff --stat` dump), rather than computing its own diff -- it can
+never disagree with what the Done report itself recorded, and needs no
+extra git call. A Done report with no parsable `### Changed` block at
+all (predating T-0458, or written outside `compose_done_report`) is
+treated as "cannot tell" and stays silent, never as a false-positive
+empty-diff claim.
+
+Three exemptions, checked directly against `Ticket` fields (never
+inferred from the diff): `kind == docs` (filtered by the check's own
+applicable-kinds set, `feature`/`bug` only), `tier == epic` (a rollup
+ticket's own close legitimately carries no code -- its descendants do),
+and `no_scope_declared=True` (an explicit "this ticket never expected a
+file scope" declaration, `frob ticket scope --declare-no-scope`). A
+non-DONE ticket never fires -- it has not closed yet.
+
+Deliberately narrow (disclosed, not silently assumed complete): only
+the three named ledger prefixes count as "no code" -- a close that also
+touches a rapid-land bookkeeping artifact outside those prefixes (e.g.
+`rapid-debt.jsonl`, a CHANGELOG fragment) is NOT exempted and WILL
+still fire; a future ticket may widen the exemption list if that proves
+too noisy in practice, but this one does not silently assume it is
+covered.
+
+TICK014 is registered in `_KNOWN_GATE_RULES` (`frob.gates._waive`) like
+every other rule, so `frob:waive TICK014 reason="..."` binds normally.
+
 ### Sprints (T-0715)
 
 `Ticket.sprint` is a free-form commitment label (`"2026-W30"`,

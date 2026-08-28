@@ -491,6 +491,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3087: A ticket can reach done with an unsatisfied blocked_by, and a falsely-closed ticket cannot be reopened
 - T-3088: Land compose: out-of-tree tree/commit-object plumbing + CAS ref publish primitive
 - T-3089: Wire out-of-tree compose+CAS publish into the squash-apply land stage
+- T-3092: Warn when a FEATURE/BUG ticket closes with an empty code diff
 - T-3093: fleet_status reports lock WAITERS as holders: label claims more than the /proc fd scan measures
 - T-3094: T-2221 fleet xdist bound never reaches pytest: 0 of 40 running workers carry PYTEST_XDIST_AUTO_NUM_WORKERS
 - T-3095: Isolate land's three post-squash file-mutating stages so the whole transaction is invisible in the shared tree

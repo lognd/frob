@@ -27,6 +27,7 @@ from pathlib import Path
 
 from typani.result import Result
 
+from frob.gates._empty_diff_close import empty_code_diff_violations
 from frob.gates._models import Severity, Violation
 from frob.gates._mutation_evidence import (
     _double_quote_char_ranges,
@@ -1465,7 +1466,7 @@ def _ledgerv1001_violations(root: Path) -> tuple[Violation, ...]:
 # frob:doc docs/modules/tickets-lifecycle.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007/TICK008/
-    TICK009/TICK010/TICK011/TICK012/TICK013: the T-0162 ticket-id
+    TICK009/TICK010/TICK011/TICK012/TICK013/TICK014: the T-0162 ticket-id
     collision invariant gate, plus the T-0409 ledger-hygiene check, the
     T-0411 priority-rot check, the T-0537 post-merge terminal-state-
     regression lint, the T-0726 phantom-filing-claim check, the T-0820/
@@ -1474,7 +1475,9 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     reports (relocated out of `frob ticket doable`'s own per-invocation
     diagnostics), the T-1129 disclosed-cut-without-ticket check, the
     T-2561 in-progress-lease-vs-declared-scope drift check, and the
-    T-2557 in-progress/planned-empty-scope-without-declaration check.
+    T-2557 in-progress/planned-empty-scope-without-declaration check, and
+    the T-3092 empty-code-diff-on-close warn (`frob.gates._empty_diff_
+    close.empty_code_diff_violations`).
 
     T-0929 (docs/audits/check-performance.md row 10, `tickets` gate): the
     full `tickets.md`/`tickets-archive.md` ledger text is now loaded ONCE
@@ -1509,4 +1512,9 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         + _tick013_empty_scope_without_declaration(queue)
         + stale_leases
         + _ledgerv1001_violations(root)
+        # T-3092: TICK014 (frob.gates._empty_diff_close) -- a FEATURE/BUG
+        # ticket closed done with a diff touching only ticket
+        # bookkeeping, likely marked done without its described work
+        # actually landing (the T-3064 incident this closes).
+        + empty_code_diff_violations(queue)
     )

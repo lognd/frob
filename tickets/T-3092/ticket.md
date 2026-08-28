@@ -1,7 +1,7 @@
 ---
 id: T-3092
 title: Warn when a FEATURE/BUG ticket closes with an empty code diff
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -103,7 +103,8 @@ acceptance:
     proving the rule fires through its real production call path, not merely a standalone
     pure-function check; the check then PASSES once TICK014 is wired (test currently
     green).
-  evidence: []
+  evidence:
+  - tests/test_gates_empty_diff_close.py::TestTick014::test_bug_warns
 threat: null
 component: null
 anchor: false

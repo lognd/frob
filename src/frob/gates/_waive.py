@@ -576,6 +576,13 @@ _KNOWN_GATE_RULES = frozenset(
         # case: an undeclared empty scope holds a write lease while
         # testing nothing against it.
         "TICK013",
+        # T-3092: TICK014 (frob.gates._empty_diff_close.
+        # empty_code_diff_violations) -- WARN per DONE feature/bug ticket
+        # whose own Done-report `### Changed` block lists no path outside
+        # ticket bookkeeping (tickets/tickets.md/tickets-archive.md); the
+        # T-3064 incident this closes (a Done report saying "not
+        # implemented" on a ledger-only land).
+        "TICK014",
         # T-2580: MILE001 (frob.gates._milestone.milestone_gate) -- an
         # OPEN ticket `blocked_by` an OPEN ticket in a LATER effective
         # milestone -- a provable release deadlock.
