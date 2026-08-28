@@ -23,9 +23,13 @@ re-exported here for the same reason (T-0599).
 from __future__ import annotations
 
 import concurrent.futures
+import contextlib
+import json
 import logging
+import os
+import time
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Iterator
 
 from pydantic import BaseModel
 
@@ -69,6 +73,297 @@ _log = get_logger(__name__)
 _TOOL_STAGES = frozenset(
     {"ruff", "ty", "cycle", "dup", "arch", "bind", "exports", "gates"}
 )
+
+
+# ---------------------------------------------------------------------------
+# T-3256: cross-process, memory-aware admission budget
+# ---------------------------------------------------------------------------
+#
+# MEASURED 2026-08-28 with six agent series live on a 12-core/23GB box: load
+# 35.89, 0GB free, 51 forkserver processes totalling 14.5GB RSS. Every gate
+# worker pool downstream of `run_check` (`frob.gates._run_gates`'s
+# `proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))`,
+# plus `frob.lang`/`frob.graph.cache`'s own `os.cpu_count()`-sized pools)
+# sizes itself against the WHOLE machine's core count with no cross-process
+# awareness -- N concurrent `frob check` runs is an N-fold oversubscription
+# no single one of them is wrong about.
+#
+# THE MECHANISM CHOSEN: `_admission_budget` registers this process in a
+# lightweight cross-process file registry under `.frob/check-admission/`
+# (one small marker per live `frob check` PID, T-3256's "token file"
+# candidate), counts how many OTHER checks are concurrently registered,
+# reads real available memory (`/proc/meminfo`'s `MemAvailable`, Linux
+# only), and derives a per-process worker budget capped by BOTH the real
+# core count and (available memory / a per-worker MB estimate), divided by
+# the concurrent-check count. It then monkeypatches `os.cpu_count()` for
+# the remainder of this process's life (restored on exit) to return that
+# budget -- NOT because patching a stdlib function is the first choice,
+# but because it is the one mechanism that reaches every downstream
+# `os.cpu_count()`-sized pool (`frob.gates`, `frob.lang`, `frob.graph.
+# cache`) WITHOUT editing those modules, which this ticket's scope
+# (`src/frob/check/__init__.py` only) does not permit -- and because in
+# THIS codebase `os.cpu_count()` gates PROCESS COUNT at each of those call
+# sites (not merely a scheduling hint), so shrinking it directly shrinks
+# the number of forkserver workers spawned, addressing the MEASURED
+# memory constraint, not just CPU scheduling (an `os.sched_setaffinity`-
+# only approach would throttle CPU scheduling but leave the same worker
+# COUNT -- and therefore the same RSS -- unchanged).
+#
+# DEGRADE, NEVER REFUSE (T-3256 requirement 2): `_compute_admitted_
+# workers` always returns >= 1; `_admission_budget` only patches
+# `os.cpu_count()` (and only logs) when the admitted budget is actually
+# smaller than the real core count. On an idle box (one check running,
+# ample memory) admitted == real core count, nothing is patched, nothing
+# is logged (MUST-STAY-QUIET). This also satisfies "do not lower the pool
+# size unconditionally" -- the reduction is proportional to OBSERVED
+# concurrent load and OBSERVED available memory, never a fixed cap.
+#
+# OUT OF SCOPE, reported not fixed here (per the ticket's own instruction):
+#   - Whether `fleet_status` can distinguish "N checks fighting over the
+#     box" from "N agents stalled" -- see T-3256's Done report for what was
+#     found; no fleet_status code is touched by this ticket.
+#   - Making `frob ticket land`'s own wall-clock timeout budget-aware
+#     (extending it while its child `frob check` is demonstrably still
+#     progressing) -- a real, distinct fix the coordinator's T-3256 field
+#     evidence (a land killed by its own `timeout 540` wrapper while its
+#     child check was 335s in at 82.8% CPU, not stalled) argues for, but
+#     it touches ticket-land/timeout-wrapper code, not `src/frob/check/
+#     __init__.py` -- filed as a follow-up rather than expanding this
+#     ticket's scope.
+
+#: Rough per-worker memory budget in MiB for a `frob check` gate worker --
+#: derived directly from T-3256's field measurement (14,552MB RSS / 51
+#: forkservers ~= 285MB/worker), rounded up to a conservative round number.
+#: Overridable per-box via `FROB_CHECK_PER_WORKER_MEM_MB`.
+_DEFAULT_PER_WORKER_MEM_MB = 300
+_PER_WORKER_MEM_ENV = "FROB_CHECK_PER_WORKER_MEM_MB"
+
+#: Explicit worker-count override/opt-out (mirrors `frob.testing.
+#: _coverage_refresh`'s `FROB_COVERAGE_MAX_WORKERS`, T-1672's precedent):
+#: `0` disables the admission budget entirely (this process's `os.
+#: cpu_count()` is never patched); a positive integer pins an exact
+#: admitted worker count regardless of measured memory/concurrency.
+_MAX_WORKERS_ENV = "FROB_CHECK_MAX_WORKERS"
+
+_ADMISSION_DIR_NAME = "check-admission"
+
+
+def _available_memory_mb() -> int | None:
+    """Best-effort available memory in MiB (T-3256), delegating to `frob.
+    testing._coverage_refresh._available_memory_mb` (`/proc/meminfo`'s
+    `MemAvailable` line, Linux only, `None` on any non-Linux/unreadable
+    case -- T-1672's own precedent, reused rather than a second,
+    100%-identical copy DUP001 caught). Imported LOCALLY, not at module
+    level: `frob.testing` transitively imports `frob.graph`, which
+    imports `frob.check._memo` -- a top-level import here reintroduces
+    exactly the cycle `docs/rework.md`'s layering rule (and `frob.
+    tickets._reporting.set_done_report`'s own docstring) already calls
+    out. Moving the function to a shared, coverage-agnostic home is out
+    of this ticket's `src/frob/check/__init__.py`-only scope; this
+    deferred import is the dedup."""
+    from frob.testing._coverage_refresh import (
+        _available_memory_mb as _shared_available_memory_mb,
+    )
+
+    return _shared_available_memory_mb()
+
+
+def _pid_alive(pid: int) -> bool:
+    """Whether `pid` is a live process, best-effort (T-3256): `os.kill(pid,
+    0)` sends no signal, only probes existence. A permission error still
+    means the process exists (just not ours to signal); any other OSError
+    (e.g. an invalid pid) reads as dead rather than raising -- this is a
+    registry-reaping heuristic, never allowed to crash a check run."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+    return True
+
+
+def _admission_dir(root: Path) -> Path:
+    """`.frob/check-admission/` under `root` -- the cross-process registry
+    directory `_register_admission`/`_live_concurrent_checks` share."""
+    return root / ".frob" / _ADMISSION_DIR_NAME
+
+
+def _register_admission(root: Path) -> Path:
+    """Write this process's marker (`{pid}.json`, best-effort content: pid
+    + start time, never load-bearing) into the admission registry,
+    creating the directory if needed. Returns the marker path so the
+    caller can remove it on exit (`_admission_budget`'s `finally`). Never
+    raises -- an unwritable `.frob/` (permissions, read-only checkout)
+    degrades to "this check is invisible to the registry", which only
+    means OTHER concurrent checks under-count it, never a crash here."""
+    marker = _admission_dir(root) / f"{os.getpid()}.json"
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(
+            json.dumps({"pid": os.getpid(), "started": time.time()}),
+            encoding="utf-8",
+        )
+    except OSError:
+        _log.debug("check: admission registry unwritable at %s", marker)
+    return marker
+
+
+def _live_concurrent_checks(root: Path) -> int:
+    """Count admission markers whose PID is still alive under `root`'s
+    registry, reaping (best-effort `unlink`) any marker whose PID is
+    already dead -- so a killed/crashed `frob check` never permanently
+    inflates the count later checks divide their budget by. Always >= 1
+    when this process's own marker is registered (the normal case);
+    returns 0 only if the registry itself could not be read at all."""
+    directory = _admission_dir(root)
+    if not directory.exists():
+        return 0
+    alive = 0
+    try:
+        entries = list(directory.glob("*.json"))
+    except OSError:
+        return 0
+    for entry in entries:
+        try:
+            pid = int(entry.stem)
+        except ValueError:
+            continue
+        if _pid_alive(pid):
+            alive += 1
+        else:
+            try:
+                entry.unlink()
+            except OSError:
+                pass
+    return alive
+
+
+def _max_workers_override() -> tuple[bool, int | None]:
+    """Read `FROB_CHECK_MAX_WORKERS` (T-3256), mirroring `frob.testing.
+    _coverage_refresh._max_workers_override`'s T-1672 contract exactly:
+    `(True, value)` when the override applies (`value` is `None` for an
+    explicit `<= 0` opt-out), `(False, None)` when unset or malformed (the
+    caller falls through to the memory/concurrency-based computation)."""
+    # frob:waive SEC110 reason="FROB_CHECK_MAX_WORKERS is a numeric worker-count knob \
+    # (T-3256), not a secret"
+    raw = os.environ.get(_MAX_WORKERS_ENV)
+    if raw is None:
+        return (False, None)
+    try:
+        override = int(raw)
+    except ValueError:
+        _log.warning("check: %s=%r is not an integer, ignoring", _MAX_WORKERS_ENV, raw)
+        return (False, None)
+    return (True, override if override > 0 else None)
+
+
+def _per_worker_mem_budget_mb() -> int:
+    """Read `FROB_CHECK_PER_WORKER_MEM_MB` (T-3256), falling back to
+    `_DEFAULT_PER_WORKER_MEM_MB` on absence or any malformed/non-positive
+    value."""
+    # frob:waive SEC110 reason="FROB_CHECK_PER_WORKER_MEM_MB is a numeric \
+    # memory-budget knob (T-3256), not a secret"
+    raw = os.environ.get(_PER_WORKER_MEM_ENV)
+    if raw is None:
+        return _DEFAULT_PER_WORKER_MEM_MB
+    try:
+        value = int(raw)
+    except ValueError:
+        _log.warning(
+            "check: %s=%r is not an integer, using default %dMB",
+            _PER_WORKER_MEM_ENV,
+            raw,
+            _DEFAULT_PER_WORKER_MEM_MB,
+        )
+        return _DEFAULT_PER_WORKER_MEM_MB
+    return value if value > 0 else _DEFAULT_PER_WORKER_MEM_MB
+
+
+def _compute_admitted_workers(root: Path) -> tuple[int, int, int | None, int]:
+    """The admission budget's pure math (T-3256): `(admitted, real_cpu,
+    available_mem_mb, concurrent_checks)`. `admitted` is always >= 1
+    (degrade, never refuse). `available_mem_mb` is `None` when it could
+    not be measured (non-Linux, unreadable `/proc/meminfo`) -- the budget
+    then falls back to a concurrency-only split of the real core count,
+    still never refusing, just without the memory bound.
+
+    `FROB_CHECK_MAX_WORKERS` (checked first) bypasses all of this: an
+    explicit override always wins over measurement, matching `frob.
+    testing._coverage_refresh`'s T-1672 precedent."""
+    real_cpu = os.cpu_count() or 4
+    overridden, override_value = _max_workers_override()
+    if overridden:
+        value = override_value if override_value is not None else real_cpu
+        return (max(1, value), real_cpu, None, 1)
+
+    concurrent = max(1, _live_concurrent_checks(root))
+    mem_mb = _available_memory_mb()
+    if mem_mb is None:
+        admitted = max(1, real_cpu // concurrent)
+        return (admitted, real_cpu, None, concurrent)
+
+    per_worker = _per_worker_mem_budget_mb()
+    total_budget = max(1, min(real_cpu, mem_mb // per_worker))
+    admitted = max(1, total_budget // concurrent)
+    return (admitted, real_cpu, mem_mb, concurrent)
+
+
+@contextlib.contextmanager
+def _admission_budget(root: Path) -> Iterator[int]:
+    """T-3256: register this `frob check` run in the cross-process
+    admission registry, compute a memory- and concurrency-aware worker
+    budget, and (only if it is smaller than the real core count) patch
+    `os.cpu_count()` for the duration of the `yield` so every downstream
+    pool sized from it (`frob.gates`/`frob.lang`/`frob.graph.cache`, none
+    of which this ticket's scope touches directly) shrinks with it --
+    restored in `finally` regardless of how the body exits. Logs the
+    reduction once, at WARNING, naming the exact numbers an operator needs
+    (admitted/real, concurrent check count, available memory, per-worker
+    budget, the override env var) -- MUST-STAY-QUIET when nothing was
+    reduced (the idle-box case, T-3256's own must-stay-quiet fixture)."""
+    marker = _register_admission(root)
+    real_cpu_count_fn = os.cpu_count
+    try:
+        admitted, real_cpu, mem_mb, concurrent = _compute_admitted_workers(root)
+        if admitted < real_cpu:
+            if mem_mb is not None:
+                _log.warning(
+                    "check: admission budget reduced worker pool to %d "
+                    "(of %d cores) -- %d concurrent frob check process(es), "
+                    "%dMB available memory, %dMB/worker budget; override via %s",
+                    admitted,
+                    real_cpu,
+                    concurrent,
+                    mem_mb,
+                    _per_worker_mem_budget_mb(),
+                    _MAX_WORKERS_ENV,
+                )
+            else:
+                _log.warning(
+                    "check: admission budget reduced worker pool to %d "
+                    "(of %d cores) -- %d concurrent frob check process(es), "
+                    "available memory unmeasurable (non-Linux or /proc/"
+                    "meminfo unreadable); override via %s",
+                    admitted,
+                    real_cpu,
+                    concurrent,
+                    _MAX_WORKERS_ENV,
+                )
+
+            def _admitted_cpu_count(*, _admitted: int = admitted) -> int:
+                return _admitted
+
+            os.cpu_count = _admitted_cpu_count  # ty: ignore[invalid-assignment]
+        yield admitted
+    finally:
+        os.cpu_count = real_cpu_count_fn
+        try:
+            marker.unlink()
+        except OSError:
+            pass
 
 
 # frob:ticket T-2764
@@ -912,14 +1207,22 @@ def _run_check_with_skips(
     """`run_check`'s task-selection and execution tail, once its many
     `skip_*` flags have been collapsed into `skips`. `on_task_done`
     (T-2978) passes straight through to `_collect_results`."""
-    # T-0859: hold a SHARED `derived_state_lock` for the run's entire
-    # duration -- precheck through the last stage's read -- so a second
-    # frob process's EXCLUSIVE writer cannot rewrite `.frob` between this
-    # process's integrity precheck and a later stage's read of the same
-    # artifacts (the cross-process TOCTOU window T-0603 disclosed as its
-    # own residual). See `derived_state_lock`'s docstring for the
-    # shared/exclusive contract.
-    with derived_state_lock(root, exclusive=False):
+    # T-3256: register/size the cross-process, memory-aware admission
+    # budget BEFORE the derived-state lock and every downstream stage --
+    # see `_admission_budget`'s own docstring for the full mechanism and
+    # why it lives here (the one seam every Python-mode check run passes
+    # through, upstream of `frob.gates`'s `os.cpu_count()`-sized pool).
+    with (
+        _admission_budget(root),
+        # T-0859: hold a SHARED `derived_state_lock` for the run's entire
+        # duration -- precheck through the last stage's read -- so a
+        # second frob process's EXCLUSIVE writer cannot rewrite `.frob`
+        # between this process's integrity precheck and a later stage's
+        # read of the same artifacts (the cross-process TOCTOU window
+        # T-0603 disclosed as its own residual). See `derived_state_lock`'s
+        # docstring for the shared/exclusive contract.
+        derived_state_lock(root, exclusive=False),
+    ):
         # T-0603: single, synchronous, pre-dispatch integrity check -- see
         # `_derived_state_integrity_result`'s docstring for why this must
         # run before any concurrent stage starts, not from inside one.

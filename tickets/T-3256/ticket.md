@@ -2,7 +2,7 @@
 id: T-3256
 title: 'Six concurrent frob check runs drive the box to zero free memory: each sizes
   its pool against the whole machine, with no cross-process budget'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -46,6 +46,15 @@ body_changes:
   at: '2026-08-28'
   old_length: 6150
   new_length: 8508
+evidence:
+- tests/unit/test_check_admission.py::TestComputeAdmittedWorkers::test_idle_box_admits_full_pool
+- tests/unit/test_check_admission.py::TestComputeAdmittedWorkers::test_six_concurrent_checks_reduce_the_pool
+- tests/unit/test_check_admission.py::TestComputeAdmittedWorkers::test_memory_bound_beats_cpu_bound
+- tests/unit/test_check_admission.py::TestComputeAdmittedWorkers::test_never_admits_zero
+- tests/unit/test_check_admission.py::TestAdmissionBudgetContextManager::test_reduced_budget_patches_cpu_count_for_the_duration
+- tests/unit/test_check_admission.py::TestAdmissionBudgetContextManager::test_full_budget_never_patches_cpu_count
+- tests/unit/test_check_admission.py::TestAdmissionBudgetContextManager::test_cpu_count_restored_even_on_exception
+- tests/unit/test_check_admission.py::TestAdmissionBudgetContextManager::test_marker_removed_even_on_exception
 designated_repro_test: null
 threat: null
 component: null
@@ -175,7 +184,7 @@ the box, this ticket's own MEASURED condition)" from "N agents are stalled" -- b
 conditions can present as elevated load + low free memory + many live forkservers, and an
 operator reading fleet_status today cannot tell them apart. A live-but-contended check and
 a stalled one are the same picture from the outside. This is a real gap and belongs in its
-own ticket (fleet_status.py is not in T-3256's scope); filed as a follow-up: T-draft-65015efc.
+own ticket (fleet_status.py is not in T-3256's scope); filed as a follow-up: T-3269.
 
 LAND-TIMEOUT BUDGET-AWARENESS (considered, NOT built here; per the coordinator's T-3256
 field evidence -- a `frob ticket land` killed by its own `timeout 540` wrapper while its
@@ -190,4 +199,4 @@ odds a land's child check needs anywhere near 540s in the first place (fewer, be
 concurrent pools finish faster), but it does not eliminate the fixed-timeout race the
 coordinator's evidence documents -- a genuinely slow but progressing check under residual
 contention can still be killed at the wall clock. That is a distinct, real fix and is
-filed as a follow-up ticket rather than expanding this one's scope: T-draft-e740234e.
+filed as a follow-up ticket rather than expanding this one's scope: T-3270.
