@@ -14,10 +14,52 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/process/parsers/common.py
+- src/frob/check/__init__.py
+- tests/unit/test_process.py
+- tests/unit/test_check_measurement.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/process/parsers/common.py
+  reason: 'well-chosen subset: type-level MEASURED/NOT_MEASURED distinction as a computed
+    ToolResult field (derived from existing UNRESOLVED-severity signal, no per-gate
+    migration needed) plus CheckResult roster/JSON exposure; src/frob/check/_python.py
+    and tests/unit/test_check.py excluded (leased by in-progress T-3191); new dedicated
+    test file avoids that conflict; remainder filed as follow-up tickets'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: 'well-chosen subset: type-level MEASURED/NOT_MEASURED distinction as a computed
+    ToolResult field (derived from existing UNRESOLVED-severity signal, no per-gate
+    migration needed) plus CheckResult roster/JSON exposure; src/frob/check/_python.py
+    and tests/unit/test_check.py excluded (leased by in-progress T-3191); new dedicated
+    test file avoids that conflict; remainder filed as follow-up tickets'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_process.py
+  reason: 'well-chosen subset: type-level MEASURED/NOT_MEASURED distinction as a computed
+    ToolResult field (derived from existing UNRESOLVED-severity signal, no per-gate
+    migration needed) plus CheckResult roster/JSON exposure; src/frob/check/_python.py
+    and tests/unit/test_check.py excluded (leased by in-progress T-3191); new dedicated
+    test file avoids that conflict; remainder filed as follow-up tickets'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_check_measurement.py
+  reason: 'well-chosen subset: type-level MEASURED/NOT_MEASURED distinction as a computed
+    ToolResult field (derived from existing UNRESOLVED-severity signal, no per-gate
+    migration needed) plus CheckResult roster/JSON exposure; src/frob/check/_python.py
+    and tests/unit/test_check.py excluded (leased by in-progress T-3191); new dedicated
+    test file avoids that conflict; remainder filed as follow-up tickets'
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 acceptance:
 - text: Given a gate that could not run (budget truncation, refused spawn, missing
