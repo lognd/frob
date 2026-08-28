@@ -21,6 +21,7 @@ scope:
 - tests/gates/*docstring*.py
 - docs/modules/docstrings.md
 - docs/modules/gates.md
+- docs/index.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -72,6 +73,11 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: narrow to the doc file that states the new standard plus the gate catalog
     entry
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/index.md
+  reason: docs/index.md's module index needs a docstrings.md row for DOC001 doc-reachability
   actor: logan
   at: '2026-08-28'
 triage_changes:
