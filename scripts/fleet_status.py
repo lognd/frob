@@ -2180,13 +2180,25 @@ def _true_flock_holder_pid(
 
 
 # frob:ticket T-3093
+# frob:ticket T-3211
 def _flock_holders_matching(lines: list[str], lock_stat: os.stat_result) -> set[int]:
     """ARCH001 split of `_true_flock_holder_pid` (T-3093): parses
     `/proc/locks`' own lines (`man proc`: `"<id>: FLOCK ADVISORY WRITE
     <pid> <maj>:<min>:<ino> ..."`, device/inode in HEX) and returns the
     set of live pids holding a GRANTED `FLOCK` matching `lock_stat`'s own
     device/inode -- `_true_flock_holder_pid`'s own docstring covers the
-    full contract; this is purely the mechanical parse/match step."""
+    full contract; this is purely the mechanical parse/match step.
+
+    T-3211: `os.major`/`os.minor` are POSIX-only -- typeshed declares
+    them under `if sys.platform != "win32":`, so a Windows-target `ty
+    check` reports `unresolved-attribute` on a bare call (this whole
+    function is `/proc/locks`-only anyway, meaningless off Linux/POSIX;
+    same `sys.platform != "win32"` narrowing shape T-3191 established
+    for `os.sysconf`/`ctypes.windll`). Empty set on win32 -- callers
+    already only reach this from `_true_flock_holder_pid`'s own
+    `/proc/locks` read, which never succeeds there either."""
+    if _sys.platform == "win32":
+        return set()
     target_major = os.major(lock_stat.st_dev)
     target_minor = os.minor(lock_stat.st_dev)
     matches: set[int] = set()
@@ -2570,10 +2582,18 @@ def _forkserver_snapshot(
         uptime_s = float((proc / "uptime").read_text(encoding="utf-8").split()[0])
     except (OSError, ValueError, IndexError):
         uptime_s = None
-    try:
-        clk_tck = os.sysconf("SC_CLK_TCK")
-    except (ValueError, OSError):
-        clk_tck = 100
+    clk_tck = 100
+    # T-3211: `os.sysconf` is POSIX-only (typeshed: `if sys.platform !=
+    # "win32":`) -- this whole function only ever runs past the
+    # `proc.is_dir()` guard above, which is already False on win32 (no
+    # `/proc`), but that caller-side fact is invisible to `ty`'s
+    # per-function narrowing. Same shape T-3191 established for
+    # `_reap.py::_clk_tck_and_uptime`.
+    if _sys.platform != "win32":
+        try:
+            clk_tck = os.sysconf("SC_CLK_TCK")
+        except (ValueError, OSError):
+            clk_tck = 100
     procs: list[dict[str, int | float | None]] = []
     for entry in entries:
         parsed = _parse_forkserver_entry(entry, uptime_s, clk_tck)

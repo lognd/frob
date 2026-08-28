@@ -30,6 +30,7 @@ separately-filed ticket for the land-proof misattribution this exposed.
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -113,6 +114,11 @@ class TestLandLockHolderClaim:
         lock_path = root / ".frob" / "land.lock"
         lock_path.write_text("{}", encoding="utf-8")
         st = lock_path.stat()
+        # T-3211: os.major/os.minor are POSIX-only (typeshed: `if
+        # sys.platform != "win32":`); this whole test is a /proc/locks
+        # fixture, meaningless off Linux/POSIX in the first place, but
+        # ty checks the function body regardless of platform relevance.
+        assert sys.platform != "win32", "this suite only makes sense on POSIX"
         maj, minor = os.major(st.st_dev), os.minor(st.st_dev)
 
         proc = tmp_path / "proc"

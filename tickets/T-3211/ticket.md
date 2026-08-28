@@ -1,7 +1,7 @@
 ---
 id: T-3211
 title: Burn down platform-unsafe code surfaced by multi-platform ty (T-3191)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -46,7 +46,11 @@ scope_changes:
     guard
   actor: logan
   at: '2026-08-28'
-designated_repro_test: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestFlockHoldersMatchingWin32Guard::test_win32_platform_returns_empty_without_calling_os_major_minor
+- tests/unit/test_coordinator_scripts.py::TestFlockHoldersMatchingWin32Guard::test_posix_platform_still_matches_normally
+- tests/system/test_fleet_status_ground_truth.py::TestLandLockHolderClaim::test_must_fire_the_true_holder_among_waiters
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestFlockHoldersMatchingWin32Guard::test_win32_platform_returns_empty_without_calling_os_major_minor
 threat: null
 component: null
 anchor: false

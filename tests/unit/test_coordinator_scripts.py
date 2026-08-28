@@ -5614,3 +5614,43 @@ class TestOwnDocstringHasNoMalformedDirective:
         assert malformed == (), (
             f"unescaped directive-shaped prose in {this_file.name}: {malformed}"
         )
+
+
+# frob:ticket T-3211
+class TestFlockHoldersMatchingWin32Guard:
+    """T-3211: `_flock_holders_matching` gained a `sys.platform == "win32"`
+    guard purely so `ty --python-platform win32` can narrow past
+    `os.major`/`os.minor` (POSIX-only per typeshed) -- this whole function
+    is `/proc/locks`-only anyway, meaningless off Linux/POSIX. Confirms
+    the guard's own behavior at both ends: win32 returns empty (never
+    calls the POSIX-only os functions), and the ordinary POSIX path is
+    unchanged."""
+
+    def test_win32_platform_returns_empty_without_calling_os_major_minor(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MUST-FIRE: on a win32 platform, the function must short-circuit
+        to an empty set -- never reach `os.major`/`os.minor`, which would
+        raise `AttributeError` on a real Windows interpreter."""
+        # frob:tests \
+        # tests/unit/test_coordinator_scripts.py::TestFlockHoldersMatchingWin32Guard.te\
+        # st_win32_platform_returns_empty_without_calling_os_major_minor
+        monkeypatch.setattr(fleet_status._sys, "platform", "win32")
+        lock_stat = os.stat(__file__)
+        result = fleet_status._flock_holders_matching(
+            ["1: FLOCK  ADVISORY  WRITE 100 08:01:12345 0 EOF"], lock_stat
+        )
+        assert result == set()
+
+    def test_posix_platform_still_matches_normally(self) -> None:
+        """MUST-STAY-QUIET control: the win32 guard must not narrow the
+        ordinary POSIX path -- a real matching /proc/locks line still
+        resolves to the holder pid, exactly as before this ticket."""
+        # frob:tests \
+        # tests/unit/test_coordinator_scripts.py::TestFlockHoldersMatchingWin32Guard.te\
+        # st_posix_platform_still_matches_normally
+        lock_stat = os.stat(__file__)
+        maj, minor = os.major(lock_stat.st_dev), os.minor(lock_stat.st_dev)
+        line = f"1: FLOCK  ADVISORY  WRITE 100 {maj:02x}:{minor:02x}:{lock_stat.st_ino} 0 EOF"
+        result = fleet_status._flock_holders_matching([line], lock_stat)
+        assert result == {100}
