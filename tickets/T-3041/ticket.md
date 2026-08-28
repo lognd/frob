@@ -62,7 +62,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 034f4fbae5bbb417018e0aa4860be1dc6821049f
 ---
 Linux full-suite triage (T-2992): 13 tests fail that all share ONE
 distinctive shape: they assert the repo's OWN gate/registry/self-model
