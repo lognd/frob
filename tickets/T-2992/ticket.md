@@ -1,8 +1,8 @@
 ---
 id: T-2992
 title: capture and triage the real test failures the ubuntu CI hang was hiding
-state: queued
-kind: bug
+state: done
+kind: docs
 origin: human
 created: '2026-08-26'
 priority: medium
@@ -18,6 +18,17 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: pure investigation/triage record -- surface, enumerate,
   and file per-failure tickets once a clean unscoped run exists
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: T-2992's deliverable is a MEASUREMENT (the authoritative Linux failing-node-id
+    list and its root-cause histogram), not a code change. It intentionally changes
+    no behaviour, so there are no pytest node ids to bind; the honest evidence is
+    the command that produced the list. Same reclassification Series DC applied to
+    T-3013/T-3017/T-3027 for the same reason.
+  actor: logan
+  at: '2026-08-28'
 body_changes:
 - mode: append
   reason: 'BUG002 front door (T-2393): pure investigation/triage ticket, scope=[];
@@ -34,6 +45,41 @@ body_changes:
   at: '2026-08-28'
   old_length: 2147
   new_length: 3482
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure investigation/triage ticket, scope=[],
+    no code owned by this ticket. Measurement WAS taken: prior session ran the full
+    suite via 5 bounded chunks (unscoped single-shot is infeasible -- confirmed again
+    this session, truncated at 32% collection in a 540s quiet-box attempt) and recorded
+    86 real Linux failures, fully triaged and filed into T-3019/T-3033/T-3034/T-3035/T-3037/T-3040/T-3041,
+    all six now done on main. This close corrects an earlier same-day close that used
+    this flag without re-verifying the underlying measurement was genuine; re-verification
+    is now recorded in the ticket body.'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 3482
+  new_length: 4114
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure investigation/triage ticket, scope=[],
+    no code owned by this ticket. Measurement WAS taken: prior session ran the full
+    suite via 5 bounded chunks (unscoped single-shot is infeasible -- confirmed again
+    this session, truncated at 32% collection in a 540s quiet-box attempt) and recorded
+    86 real Linux failures, fully triaged and filed into T-3019/T-3033/T-3034/T-3035/T-3037/T-3040/T-3041,
+    all six now done on main. This close corrects an earlier same-day close that used
+    this flag without re-verifying the underlying measurement was genuine; re-verification
+    is now recorded in the ticket body.'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 4114
+  new_length: 4746
+- mode: append
+  reason: correct stale T-3019 in-progress attribution per coordinator, backed by
+    direct re-repro on current main
+  actor: logan
+  at: '2026-08-28'
+  old_length: 4746
+  new_length: 5819
+kind_history:
+- 2026-08-28 bug->docs evidence=0 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
@@ -95,3 +141,28 @@ authoritative RAW RESULT (86 real failures, all triaged and filed into
 T-3019/T-3033/T-3034/T-3035/T-3037/T-3040/T-3041, all six now [done] on
 main). That prior chunked measurement stands; nothing new was found in
 this re-verification beyond confirming its premise.
+
+frob:no-behavior-change reason="pure investigation/triage ticket, scope=[], no code owned by this ticket. Measurement WAS taken: prior session ran the full suite via 5 bounded chunks (unscoped single-shot is infeasible -- confirmed again this session, truncated at 32% collection in a 540s quiet-box attempt) and recorded 86 real Linux failures, fully triaged and filed into T-3019/T-3033/T-3034/T-3035/T-3037/T-3040/T-3041, all six now done on main. This close corrects an earlier same-day close that used this flag without re-verifying the underlying measurement was genuine; re-verification is now recorded in the ticket body."
+
+frob:no-behavior-change reason="pure investigation/triage ticket, scope=[], no code owned by this ticket. Measurement WAS taken: prior session ran the full suite via 5 bounded chunks (unscoped single-shot is infeasible -- confirmed again this session, truncated at 32% collection in a 540s quiet-box attempt) and recorded 86 real Linux failures, fully triaged and filed into T-3019/T-3033/T-3034/T-3035/T-3037/T-3040/T-3041, all six now done on main. This close corrects an earlier same-day close that used this flag without re-verifying the underlying measurement was genuine; re-verification is now recorded in the ticket body."
+
+
+## Cluster A correction (coordinator-requested, 2026-08-28)
+
+Coordinator caught a stale attribution: the histogram's cluster A entry
+said "T-3019 (in-progress, another agent)" -- wrong on both counts.
+T-3019 is [done], landed at 0c4b152f5 on 2026-08-26 20:54, two days
+before this measurement. Direct re-verification on current main (this
+worktree merged with main):
+
+  pytest tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
+  SUITE-RESULT: exitstatus=0 collected=1 failed=0
+
+The representative test PASSES now. This is neither a regression of
+T-3019 nor a misattribution: the 11-test cluster was a real failure at
+the time it was chunked-run (before T-3019's fix reached this worktree),
+and T-3019's landed fix does resolve it. Corrected status: cluster A is
+RESOLVED by T-3019 (done), not "in-progress" -- the label was stale
+because the histogram was written while T-3019 was still being worked
+by another agent, and it was never updated after T-3019 landed. No new
+ticket filed for this cluster; it is legitimately owned and closed.
