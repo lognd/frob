@@ -3,7 +3,7 @@ id: T-3017
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2993):
   2 new (rule, file) identit(ies), 1 finding(s) (I001, REF002)'
 state: in-progress
-kind: bug
+kind: docs
 origin: agent
 created: '2026-08-26'
 priority: high
@@ -26,6 +26,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: T-3017's findings (I001 test_narrative_migrate.py, REF002 src/frob/yaml_io.py)
+    no longer reproduce; reclassifying to docs-kind so the docs-kind --evidence-cmd
+    channel applies to this disposition-only close
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
