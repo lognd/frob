@@ -17,6 +17,11 @@ runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/sync-claude-config.py
 - src/frob/app/ticket_runner/_land_cmd.py
+findings:
+- - CLAUDE001
+  - .claude/hooks/sync-claude-config.py
+- - OPAQUE001
+  - src/frob/app/ticket_runner/_land_cmd.py
 evidence_scope:
 - tests/test_vet_capability.py
 scope_breadth_ack: false
@@ -30,12 +35,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
-findings:
-- - CLAUDE001
-  - .claude/hooks/sync-claude-config.py
-- - OPAQUE001
-  - src/frob/app/ticket_runner/_land_cmd.py
+land_commit: a1d207c007eff4b051fc258bb5143f0efadc6ee2
 ---
 The deferred post-land unscoped sweep (T-1684) for an unattributed source (sweep spawned by T-2878) at commit bc439433a8d983ff49b2a9fa99a55e570f7b1500 found 2 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 
