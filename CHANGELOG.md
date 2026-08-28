@@ -437,6 +437,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3019: frob check fires spurious REF001/PRE001/SCOPE001 on any clean project; frob check is not repo-clean on main
 - T-3025: A single trivial unattributed finding disables fleet-wide landing: four occurrences today, ~90 minutes lost, no severity proportionality
 - T-3026: Post-land findings from the T-3006/T-2995/T-3014 batch: ARCH103, DOC001, E501, 2x LARGE001, REF001, REF002
+- T-3029: self-conformance (SYS100/SYS102/SYS107) red on main: ci_report.py/ci_validity.py/ghio.py unbound, env.read gaps
 - T-3030: _STAGE_GROUPS missing milestone/env_var_docs/root_asset_dirs/profile_boundary gates
 - T-3031: TestCheckTypescript::test_clean_ts_passes_tsc fails on main (REF001 on node_modules/package.json/tsconfig.json, MILE003 on real tickets.md)
 - T-3033: test_doctor.py times out under xdist contention (branch-scan cost)

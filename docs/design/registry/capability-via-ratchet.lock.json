@@ -6,9 +6,9 @@
       "ticket": "T-1628"
     },
     "cli::env.read": {
-      "accepted_count": 11,
-      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
-      "ticket": "T-2743"
+      "accepted_count": 12,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     },
     "cli::eval": {
       "accepted_count": 1,
@@ -16,9 +16,9 @@
       "ticket": "T-1628"
     },
     "cli::exec": {
-      "accepted_count": 6,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 7,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     },
     "cli::fs.read": {
       "accepted_count": 19,
@@ -41,9 +41,9 @@
       "ticket": "T-1628"
     },
     "core::env.read": {
-      "accepted_count": 4,
-      "reason": "T-2877: SYS111 measured this pair above its committed ceiling of 3; the new site is src/frob/process/_reap.py, added by T-2849's forkserver leak fix -- a genuine new env.read call (os.environ.get(FORKSERVER_ARM_PDEATHSIG_ENV)), not a moved one, so bumping the ceiling to the current measured count is correct rather than a via-repoint.",
-      "ticket": "T-2877"
+      "accepted_count": 5,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     },
     "core::env.write": {
       "accepted_count": 1,
@@ -101,9 +101,9 @@
       "ticket": "T-2743"
     },
     "gates::fs.read": {
-      "accepted_count": 49,
-      "reason": "T-2871: SYS111 measured this pair above its committed ceiling of 48; the new site is src/frob/gates/_docstatus.py, T-2843's split of docstatus/docmake/docseverity gates out of _doclink_docanchor.py (an already-declared fs.read via-source for gates) -- bumping the ceiling to the current measured count rather than re-justifying an already-declared site.",
-      "ticket": "T-2871"
+      "accepted_count": 51,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     },
     "gates::fs.write": {
       "accepted_count": 40,
@@ -171,14 +171,14 @@
       "ticket": "T-1628"
     },
     "testsuite::env.read": {
-      "accepted_count": 8,
-      "reason": "T-2871: SYS111 measured this pair above its committed ceiling of 7; the new site is tests/unit/test_check.py, an existing test file with a legitimate env.read call, not a fresh capability -- bumping the ceiling to the current measured count rather than re-justifying an already-declared site.",
-      "ticket": "T-2871"
+      "accepted_count": 15,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     },
     "testsuite::env.write": {
-      "accepted_count": 1,
-      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
-      "ticket": "T-2743"
+      "accepted_count": 6,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     },
     "testsuite::eval": {
       "accepted_count": 15,
@@ -186,9 +186,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 199,
-      "reason": "T-2911+T-2910: merged during a real land-time conflict -- tests/test_status.py (T-2911) and tests/unit/strata/test_bootstrap.py + tests/unit/test_app_runners_batch7.py (T-2910) each add a genuine subprocess.run([\"git\", ...]) exec site, growing exec on testsuite from 197 to 199 site(s) total; confirmed by reading design/frob.strata's own merged via-list count.",
-      "ticket": "T-2911"
+      "accepted_count": 219,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -201,14 +201,14 @@
       "ticket": "T-1628"
     },
     "testsuite::fs.read": {
-      "accepted_count": 134,
-      "reason": "T-2488: ratchet had fallen behind 2 already-landed via-list additions (before=132/committed-ceiling=132 -> after=134): tests/unit/test_waive_audit_runner.py, tests/unit/test_waive_audit_watermark.py (both T-2482, \"Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests\"). Genuine, already-reviewed sites in an already-landed ticket, not new scope; bumping the stale ceiling to match. Traced via git log -S<file> -- design/frob.strata, not assumed.",
-      "ticket": "T-2488"
+      "accepted_count": 170,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     },
     "testsuite::fs.write": {
-      "accepted_count": 351,
-      "reason": "T-2488: ratchet had fallen behind 3 already-landed via-list additions (before=348/committed-ceiling=348 -> after=351): tests/unit/gates/test_rel001_deferred_bump.py, tests/unit/test_waive_audit_runner.py, tests/unit/test_waive_audit_watermark.py (all three T-2482, \"Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests\"). Genuine, already-reviewed sites in an already-landed ticket, not new scope; bumping the stale ceiling to match. Traced via git log -S<file> -- design/frob.strata, not assumed.",
-      "ticket": "T-2488"
+      "accepted_count": 396,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
@@ -241,9 +241,9 @@
       "ticket": "T-1628"
     },
     "tickets_ledger::env.read": {
-      "accepted_count": 1,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 2,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     },
     "tickets_ledger::eval": {
       "accepted_count": 3,
@@ -261,9 +261,9 @@
       "ticket": "T-2986"
     },
     "tickets_ledger::fs.write": {
-      "accepted_count": 20,
-      "reason": "T-2986: added src/frob/tickets/_archive.py to the fs.write via-list -- _rewrite_moved_attachment_paths writes the rewritten ticket.md back in place after the archive-time attachment path rewrite (see the paired fs.read entry above for the full rationale).",
-      "ticket": "T-2986"
+      "accepted_count": 21,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     },
     "verify::exec": {
       "accepted_count": 2,
@@ -296,9 +296,9 @@
       "ticket": "T-1628"
     },
     "vet::fs.read": {
-      "accepted_count": 10,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 11,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     },
     "vet::install-hook": {
       "accepted_count": 1,
@@ -309,6 +309,41 @@
       "accepted_count": 1,
       "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
       "ticket": "T-1628"
+    },
+    "cli::env.write": {
+      "accepted_count": 1,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
+    },
+    "narrative::fs.read": {
+      "accepted_count": 1,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
+    },
+    "narrative::fs.write": {
+      "accepted_count": 1,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
+    },
+    "refactor::env.read": {
+      "accepted_count": 1,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
+    },
+    "refactor::fs.read": {
+      "accepted_count": 11,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
+    },
+    "refactor::fs.write": {
+      "accepted_count": 1,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
+    },
+    "serve::eval": {
+      "accepted_count": 1,
+      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
+      "ticket": "T-3029"
     }
   },
   "generated_by": "T-1628",

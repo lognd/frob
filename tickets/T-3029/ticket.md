@@ -2,7 +2,7 @@
 id: T-3029
 title: 'self-conformance (SYS100/SYS102/SYS107) red on main: ci_report.py/ci_validity.py/ghio.py
   unbound, env.read gaps'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -29,6 +29,10 @@ scope_changes:
     with the strata file, not a separate concern
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+- tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean
 designated_repro_test: null
 threat: null
 component: null
