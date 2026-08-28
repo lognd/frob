@@ -1422,6 +1422,98 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV003" for v in violations)
 
+    # frob:ticket T-2688
+    def test_cov008_fires_when_diff_deletes_a_cited_test(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE fixture (T-2688's own required positive control):
+        deleting a test file some ticket's evidence still cites must be
+        refused at diff time, not discovered later by an unrelated COV003
+        sweep."""
+        _git_init(tmp_path)
+        node = "tests/test_x.py::test_foo"
+        _write(tmp_path, "tests/test_x.py", "def test_foo():\n    pass\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "add test_x"], cwd=tmp_path, check=True
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002", state=TicketState.DONE, evidence=(node,)
+                )
+            }
+        )
+        (tmp_path / "tests" / "test_x.py").unlink()
+        diff = working_diff(tmp_path, "main").danger_ok
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV008")
+        assert v is not None
+        assert "T-0002" in v.message
+        assert node in v.message
+
+    # frob:ticket T-2688
+    def test_cov008_silent_on_uncited_deletion(self, tmp_path: Path) -> None:
+        """MUST-STAY-QUIET fixture #1 (T-2688): deleting a test file NO
+        ticket's evidence cites is the overwhelming majority of ordinary
+        test cleanup and must never fire -- COV008 is not a blanket "no
+        test may ever be deleted" tax."""
+        _git_init(tmp_path)
+        _write(tmp_path, "tests/test_x.py", "def test_foo():\n    pass\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "add test_x"], cwd=tmp_path, check=True
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/test_y.py::test_unrelated",),
+                )
+            }
+        )
+        (tmp_path / "tests" / "test_x.py").unlink()
+        diff = working_diff(tmp_path, "main").danger_ok
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV008" for v in violations)
+
+    # frob:ticket T-2688
+    def test_cov008_silent_on_rename_with_rebound_citation(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET fixture #2 (T-2688): a rename whose citation was
+        ALREADY rebound to the test's new node id must stay silent -- the
+        ticket's evidence no longer names the vanished old path at all, so
+        there is nothing left for COV008 to match against the old path's
+        disappearance."""
+        _git_init(tmp_path)
+        _write(tmp_path, "tests/test_x.py", "def test_foo():\n    pass\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "add test_x"], cwd=tmp_path, check=True
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/test_y.py::test_foo",),
+                )
+            }
+        )
+        (tmp_path / "tests" / "test_x.py").unlink()
+        _write(tmp_path, "tests/test_y.py", "def test_foo():\n    pass\n")
+        diff = working_diff(tmp_path, "main").danger_ok
+        tests = CollectedTests(node_ids=frozenset({"tests/test_y.py::test_foo"}))
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV008" for v in violations)
+
     def test_load_tests_merges_python_and_rust_node_ids(
         self, tmp_path: Path, monkeypatch
     ) -> None:

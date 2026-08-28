@@ -1245,7 +1245,7 @@ def coverage_gate(
     diff_load_no_repo: bool = False,
     python_collection_failed: str | None = None,
 ) -> tuple[Violation, ...]:
-    """COV001..COV007, PLACE001, and TODO001/TODO002/TODO003.
+    """COV001..COV008, PLACE001, and TODO001/TODO002/TODO003.
 
     `root` (repo root, T-0233) lets COV001 tell a *resolving* `frob:doc`
     edge apart from a broken one -- see `_resolved_documented_srcs`.
@@ -1291,6 +1291,7 @@ def coverage_gate(
     violations.extend(_cov005(root, snapshot, diff))
     violations.extend(_cov006(root, snapshot))
     violations.extend(_cov007(root, snapshot))
+    violations.extend(_cov008(root, diff, queue, tests))
     violations.extend(_place001(root, snapshot))
     if diff_load_failed and not diff_load_no_repo:
         violations.append(_diff_load_failed_violation("TODO001", diff.base))
@@ -2020,6 +2021,108 @@ def _cov003_evidence_violation(
         line=0,
         message=message,
     )
+
+
+# frob:ticket T-2688
+def _diff_deleted_or_renamed_paths(root: Path, base: str) -> frozenset[str]:
+    """Repo-relative paths this diff's `base` commit had that the CURRENT
+    working tree no longer has at that path -- a straight delete, or the
+    OLD side of a detected rename (T-2688). `_cov008`'s cross-reference
+    set: cheap (`git diff --name-status -M`, no content diffing) even
+    repo-wide, and computed fresh per check run rather than cached, since
+    it must reflect whatever the working diff is ABOUT to commit, not a
+    stale prior measurement. A failed spawn (no git repo, bad `base`)
+    degrades to an empty set -- the same "diff genuinely has nothing to
+    say" posture COV002/TODO001 already apply to `diff_load_failed`,
+    never a crash."""
+    result = run_argv(("git", "diff", "--name-status", "-M", base), cwd=root)
+    if result.is_err:
+        _log.debug("COV008: git diff --name-status against %s failed, skipping", base)
+        return frozenset()
+    paths: set[str] = set()
+    for line in result.danger_ok.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 2:
+            continue
+        status = parts[0]
+        if status == "D":
+            paths.add(parts[1])
+        elif status.startswith("R") and len(parts) >= 3:
+            # "R100\told\tnew" -- the OLD path is what a still-cited
+            # evidence id would name; the NEW path is what a rebound
+            # citation would already have moved to.
+            paths.add(parts[1])
+    return frozenset(paths)
+
+
+# frob:enforces CHK-GATE-COV008
+# frob:ticket T-2688
+def _cov008_violation(ticket: Ticket, evidence: str, file_part: str) -> Violation:
+    """The COV008 `Violation` for one evidence id whose file this diff
+    deletes or renames away from, and which no longer resolves against
+    the current collected set (T-2688)."""
+    return Violation(
+        rule="COV008",
+        severity=Severity.ERROR,
+        file=f"tickets/{ticket.id}",
+        line=0,
+        message=(
+            f"COV008: {ticket.id} evidence {evidence!r} cites a test in "
+            f"{file_part!r}, which this diff deletes or renames away from, "
+            "and the evidence no longer resolves against the current "
+            "collected set -- rebind it to the test's new name/location "
+            "(`frob ticket evidence --replace OLD NEW --reason ...`) before "
+            "this diff lands, or replace it with a still-valid id if the "
+            "test is genuinely obsolete"
+        ),
+    )
+
+
+# frob:ticket T-2688
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov008_fires_when_diff_deletes_a_cited_test
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov008_silent_on_uncited_deletion
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_cov008_silent_on_rename_with_rebound_citat\
+# ion
+def _cov008(
+    root: Path, diff: Diff, queue: TicketQueue, tests: CollectedTests
+) -> tuple[Violation, ...]:
+    """COV008: refuse a diff that deletes or renames a test file some
+    ticket's evidence (open OR done) still cites AND whose evidence no
+    longer resolves against the current collected set (T-2688) -- the
+    DIFF-TIME complement to COV003's own repo-wide sweep, which only ever
+    discovers an already-broken citation well after the deleting diff has
+    already landed (this repo's own measured incident: 6 closed tickets'
+    evidence broke silently, one finding at a time, across an unrelated
+    later sweep).
+
+    Scoped to files `_diff_deleted_or_renamed_paths` reports this diff as
+    deleting or renaming away from: an UNCITED deletion (the overwhelming
+    majority of ordinary test cleanup) never matches any ticket's
+    evidence and stays silent by construction -- this must never become a
+    blanket "no test may ever be deleted" tax. A rename whose citation was
+    ALREADY rebound (`frob ticket evidence --replace`) also stays silent,
+    because the ticket's evidence no longer names the vanished old path at
+    all. Only a still-cited evidence id that (a) names a path this diff is
+    removing/renaming away from and (b) no longer resolves against `tests`
+    fires."""
+    changed = _diff_deleted_or_renamed_paths(root, diff.base)
+    if not changed:
+        return ()
+    violations: list[Violation] = []
+    for ticket in queue.tickets.values():
+        for evidence in ticket.evidence:
+            if is_cmd_evidence(evidence):
+                continue
+            file_part = evidence.split("::", 1)[0]
+            if file_part not in changed:
+                continue
+            if _evidence_collected(evidence, tests):
+                continue
+            violations.append(_cov008_violation(ticket, evidence, file_part))
+    return tuple(violations)
 
 
 def _cov004(queue: TicketQueue) -> tuple[Violation, ...]:

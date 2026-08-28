@@ -191,6 +191,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-2580
 # frob:ticket T-2919
 # frob:ticket T-3014
+# frob:ticket T-2688
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -202,6 +203,9 @@ _KNOWN_GATE_RULES = frozenset(
         # a `frob:doc` anchor bound to a private helper (COV007).
         "COV006",
         "COV007",
+        # T-2688: a diff about to delete/rename a test file some ticket's
+        # evidence (open or done) still cites AND that no longer resolves.
+        "COV008",
         # T-0504: class-directive placement lint (a `frob:` directive that
         # class-falls-back but plausibly missed a nearby real symbol).
         "PLACE001",
