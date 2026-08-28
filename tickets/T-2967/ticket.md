@@ -73,3 +73,4 @@ platform's sun_path limit.
 
 ## Failure log
 - 2026-08-26 attempt 1: dispatched as T-2967 by id mismatch; actual content is macOS AF_UNIX sun_path length limit, not the exit-code-contract mismatch task briefed (that is T-2968); no work done on this ticket's scope, returning to queue untouched
+- 2026-08-28 attempt 2: stale premise: T-2945 (done) already fixed this exact defect
