@@ -15,11 +15,12 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- docs/modules/*.md
 - src/frob/gates/_docstring*.py
 - src/frob/gates/__init__.py
 - tests/test_docstring*.py
 - tests/gates/*docstring*.py
+- docs/modules/docstrings.md
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -53,6 +54,24 @@ scope_changes:
   glob: tests/gates/*docstring*.py
   reason: detector for T-2988's utility/reuse purpose test lives in a new docstring-archaeology
     gate; docs standard lives in docs/modules
+  actor: logan
+  at: '2026-08-28'
+- op: remove
+  glob: docs/modules/*.md
+  reason: narrow to the doc file that states the new standard plus the gate catalog
+    entry
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/docstrings.md
+  reason: narrow to the doc file that states the new standard plus the gate catalog
+    entry
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/gates.md
+  reason: narrow to the doc file that states the new standard plus the gate catalog
+    entry
   actor: logan
   at: '2026-08-28'
 triage_changes:
