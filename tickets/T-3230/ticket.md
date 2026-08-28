@@ -15,12 +15,37 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/tickets/
-- src/frob/gates/
+- src/frob/tickets/_reconcile.py
+- tests/test_ticket_reconcile.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/
+  reason: triage narrowed fix to the reconcile stale-hold worktree-measurement site;
+    remainder split into follow-up tickets
+  actor: logan
+  at: '2026-08-28'
+- op: remove
+  glob: src/frob/gates/
+  reason: triage narrowed fix to the reconcile stale-hold worktree-measurement site;
+    remainder split into follow-up tickets
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_reconcile.py
+  reason: triage narrowed fix to the reconcile stale-hold worktree-measurement site;
+    remainder split into follow-up tickets
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/test_ticket_reconcile.py
+  reason: triage narrowed fix to the reconcile stale-hold worktree-measurement site;
+    remainder split into follow-up tickets
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
