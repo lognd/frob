@@ -2,7 +2,7 @@
 id: T-2931
 title: Generalize WIRE001's dynamic-dispatch exemption to recognize atexit.register
   callbacks
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-25'
@@ -17,10 +17,25 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_waive.py
 - src/frob/gates/_wire.py
+- tests/unit/test_wire001_atexit_register.py
+- tickets/T-draft-56527a0d/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_wire001_atexit_register.py
+  reason: new must-fire/must-stay-quiet fixture file, plus the filed follow-up ticket's
+    own ledger file
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tickets/T-draft-56527a0d/ticket.md
+  reason: new must-fire/must-stay-quiet fixture file, plus the filed follow-up ticket's
+    own ledger file
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
