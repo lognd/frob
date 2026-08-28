@@ -22,6 +22,7 @@ scope:
 - src/frob/_cli_parsers/_ticket/_closeout.py
 - tests/unit/test_ticket_restore.py
 - docs/modules/tickets-lifecycle.md
+- src/frob/app/ticket_runner/_ledger_mirror.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -79,6 +80,13 @@ scope_changes:
   glob: docs/modules/tickets-lifecycle.md
   reason: restore command needs a doc anchor; tickets-lifecycle.md already documents
     archive/reopen/drop in the same place
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/app/ticket_runner/_ledger_mirror.py
+  reason: restore must be classified in LEDGER_VERB_STRATEGY (T-2603) or ledger_write_strategy_for
+    raises a loud KeyError on dispatch; restore needs GENERIC_COMMIT_MIRRORED, same
+    reasoning as reopen/requeue
   actor: logan
   at: '2026-08-28'
 body_changes:
