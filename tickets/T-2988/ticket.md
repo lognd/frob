@@ -22,6 +22,9 @@ scope:
 - docs/modules/docstrings.md
 - docs/modules/gates.md
 - docs/index.md
+evidence_scope:
+- tests/gates/test_rule_id_scan_branches.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -88,7 +91,19 @@ triage_changes:
     narrative'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_ticket_plus_narrative_wording_warns
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_bare_ticket_reference_stays_quiet
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_long_utility_docstring_stays_quiet
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_private_symbol_exempt_even_with_archaeology
+- tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_real_repo_registry_is_complete
+- tests/test_gates.py::test_gates_run_gates_integration
 designated_repro_test: null
+acceptance:
+- text: DOCARCH001 fires through a real run_gates pass on a docstring reading as ticket
+    archaeology, and stays quiet on a utility-only docstring (T-0756 new-gate-rule
+    proof)
+  evidence: []
 threat: null
 component: null
 anchor: false
