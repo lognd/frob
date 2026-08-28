@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0df755195f5f5e30ccf65dc36364f27c8d663147
 ---
 T-2685's Done report carries a phantom TICK006 citation of
 `T-draft-be1e79b5`, which the land-time Tier-A auto-fix
