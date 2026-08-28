@@ -24,6 +24,7 @@ scope:
 - docs/commands/check.md
 - tests/unit/test_process_reap.py
 - tests/unit/test_process_pid_liveness.py
+- tests/unit/test_check_tool_unavailable.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -91,6 +92,11 @@ scope_changes:
   reason: 'T-3191: new must-fire/must-stay-quiet unit tests for the sys.platform guards'
   actor: logan
   at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_check_tool_unavailable.py
+  reason: 'T-3191: SCOPE002 -- _run_ty''s frob:tests target lives here'
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
