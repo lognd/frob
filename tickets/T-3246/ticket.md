@@ -2,7 +2,7 @@
 id: T-3246
 title: 'SUITE-RESULT reports an ABORTED run (exitstatus=3) in the same shape as a
   completed one: failed=24 is a lower bound read as a count'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
