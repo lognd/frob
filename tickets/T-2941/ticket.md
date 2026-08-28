@@ -2,7 +2,7 @@
 id: T-2941
 title: 'frob ticket land: DOC005 pre-merge guard checks a same-diff new subcommand
   against a stale, pre-merge registry (refuses forever, unwaivable)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
