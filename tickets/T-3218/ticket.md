@@ -18,10 +18,25 @@ scope:
 - src/frob/gates/_comment_placement.py
 - tests/gates/test_comment_placement.py
 - docs/guides/agent-playbook.md
+- docs/modules/gates.md
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: wiring the new gate into the live GATE_RUNNERS dict and its rule-catalog
+    row, same as NARR001's own T-3014 wiring ticket needed
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: wiring the new gate into the live GATE_RUNNERS dict and its rule-catalog
+    row, same as NARR001's own T-3014 wiring ticket needed
+  actor: logan
+  at: '2026-08-28'
 triage_changes:
 - field: parent
   old_value: null
