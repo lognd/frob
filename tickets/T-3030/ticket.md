@@ -35,7 +35,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f022dec36dbd708160e642eb0684cfd8734a867d
 ---
 Found while root-causing T-3019 (spurious REF001/PRE001/SCOPE001 on a
 clean project). tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
