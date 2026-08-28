@@ -2,7 +2,7 @@
 id: T-3230
 title: Audit failed-subprocess-folded-into-positive-finding sites (T-3216 sibling
   survey)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
