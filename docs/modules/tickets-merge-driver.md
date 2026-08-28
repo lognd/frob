@@ -113,30 +113,26 @@ the authoritative main checkout being read FROM, not the branch being
 merged, so its own disk state was never stale to begin with) or either
 ref's archive content fails to parse.
 
-## rapid-debt.jsonl merge rule (T-1873)
+## force-overrides.jsonl merge rule (T-1873)
 
 <!-- frob:describes src/frob/tickets/_evidence.py::record_rapid_debt -->
 
-`rapid-debt.jsonl` is a tracked, append-only ledger at the repo root --
-every rapid-profile land appends one JSON-lines record to its tail
-(`frob ticket land`'s own T-1681 relaxation trail). With several agents
-landing concurrently, two worktrees routinely append different records
-near the same line, which -- BEFORE this fix -- git's default line-level
-merge reported as a textual conflict, and nothing told an agent how to
-resolve it: each one improvised by hand, on a file whose whole value is
-that no debt record is ever lost. Hand-editing an append-only ledger
-during conflict resolution is exactly how a record silently disappears,
-and a dropped record is indistinguishable afterward from debt that was
-never incurred.
+`force-overrides.jsonl` is a tracked, append-only ledger at the repo root
+(`frob.tickets._force_override`, T-1762 -- covered proactively even
+though no `--force` override has happened yet in this repo). With
+several agents landing concurrently, two worktrees could append
+different records near the same line, which -- BEFORE this fix --
+git's default line-level merge reported as a textual conflict, and
+nothing told an agent how to resolve it: each one improvised by hand,
+on a file whose whole value is that no debt record is ever lost.
+Hand-editing an append-only ledger during conflict resolution is
+exactly how a record silently disappears, and a dropped record is
+indistinguishable afterward from debt that was never incurred.
 
 **This IS handled -- do not hand-edit a conflict here.** `.gitattributes`
-routes both `rapid-debt.jsonl` and `force-overrides.jsonl` (the sibling
-tracked append-only ledger, `frob.tickets._force_override`, T-1762 --
-covered proactively even though no `--force` override has happened yet
-in this repo) through git's BUILT-IN `merge=union` driver:
+routes `force-overrides.jsonl` through git's BUILT-IN `merge=union` driver:
 
 ```
-/rapid-debt.jsonl merge=union
 /force-overrides.jsonl merge=union
 ```
 
@@ -152,14 +148,14 @@ failure mode this ticket exists to close, and a mechanism this repo does
 not need to build when git already ships it. The pattern is anchored with
 a leading slash for the same reason `/tickets.md` is (the anchoring
 precedent this file's own historical `.gitattributes` comment records) --
-unanchored, it would also match any other file named `rapid-debt.jsonl`
+unanchored, it would also match any other file named `force-overrides.jsonl`
 anywhere in the tree.
 
 Verified by REPRODUCTION, not by inspecting `.gitattributes`
 (`tests/unit/test_gitattributes_merge.py`): two branches each append a
-different record to `rapid-debt.jsonl`, a real `git merge` between them
-reports a clean merge (exit 0, empty `git status --porcelain`), and both
-records survive with zero conflict markers.
+different record to `force-overrides.jsonl`, a real `git merge` between
+them reports a clean merge (exit 0, empty `git status --porcelain`), and
+both records survive with zero conflict markers.
 
 **Exact-duplicate lines deduplicate, they do not double up.** Measured
 directly (`test_identical_line_appended_on_both_sides_deduplicates`):
@@ -170,4 +166,20 @@ retry re-emitting a byte-identical record for the same commit, and
 collapsing that to one entry is the correct outcome, not data loss. No
 dedup-on-read pass was added to the reader; this was a measured finding,
 not a speculative mitigation.
+
+### rapid-debt.jsonl moved out of git (T-2997)
+
+`rapid-debt.jsonl` (the debt ledger `record_rapid_debt` below writes) USED
+to share this exact `merge=union` treatment, tracked at the repo root
+alongside `force-overrides.jsonl`. T-2997 moved it to `.frob/rapid-debt.jsonl`
+(gitignored, per-checkout) instead: the file had grown unbounded in git
+(2,882+ lines / 345+ KB at filing) and was the repo's dominant merge-
+conflict hotspot, appended by every single rapid land. A gitignored,
+per-checkout file is never merged in the first place, so it no longer
+needs -- and no longer has -- a `merge=union` line or an explicit `eol=lf`
+pin in `.gitattributes`. The tradeoff, accepted explicitly: this file no
+longer survives a clone or a fresh checkout; it is per-machine operational
+telemetry now, not a shared team record. Pre-move history stays reachable
+in git log for any commit before T-2997's land; it was not carried into
+the new location.
 

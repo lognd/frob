@@ -70,7 +70,17 @@ class TestGitattributesEolNormalization:
         """T-1433/T-2239's `-text` attachment pin is untouched by the new default."""
         assert _check_attr("text", "tickets/T-0001/attachments/x.md") == "unset"
 
-    def test_rapid_debt_lease_pin_still_holds(self) -> None:
-        """T-2586's `rapid-debt.jsonl` pin still resolves `eol=lf`."""
+    def test_rapid_debt_no_longer_carries_an_explicit_pin(self) -> None:
+        """T-2997: rapid-debt.jsonl moved to gitignored `.frob/` and its
+        explicit T-2586 `text eol=lf` pin was removed alongside it -- it
+        still resolves `eol=lf` (via the repo-wide `* text=auto eol=lf`
+        default), but `text` now reads `auto`, not the explicit `set` an
+        untracked, gitignored file's attributes are irrelevant to
+        anyway (git never applies attributes to a path it never sees)."""
         assert _check_attr("eol", "rapid-debt.jsonl") == "lf"
-        assert _check_attr("text", "rapid-debt.jsonl") == "set"
+        assert _check_attr("text", "rapid-debt.jsonl") == "auto"
+
+    def test_force_overrides_lease_pin_still_holds(self) -> None:
+        """T-2586's `force-overrides.jsonl` pin still resolves `eol=lf`."""
+        assert _check_attr("eol", "force-overrides.jsonl") == "lf"
+        assert _check_attr("text", "force-overrides.jsonl") == "set"

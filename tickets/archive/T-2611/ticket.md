@@ -31,8 +31,16 @@ scope_changes:
 evidence:
 - tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_sampled_source_files_are_pinned_to_lf
 - tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_attachment_binary_pin_still_holds
-- tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_rapid_debt_lease_pin_still_holds
+- tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_rapid_debt_no_longer_carries_an_explicit_pin
 designated_repro_test: tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_sampled_source_files_are_pinned_to_lf
+evidence_changes:
+- old_node: tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_rapid_debt_lease_pin_still_holds
+  new_node: tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_rapid_debt_no_longer_carries_an_explicit_pin
+  reason: 'T-2997: rapid-debt.jsonl''s explicit T-2586 eol=lf pin was removed (file
+    no longer git-tracked); renamed test now asserts the new (still-lf-via-default,
+    no-longer-explicit) reality'
+  actor: logan
+  at: '2026-08-28'
 threat: null
 component: null
 anchor: false

@@ -1331,9 +1331,13 @@ produced under relaxed rules.
 
 `record_rapid_debt(root, ticket_id, skipped)` is the other half of that
 bargain -- every check `rapid` skips appends one self-contained JSON line
-(`ticket`, `skipped`, `commit`) to `rapid-debt.jsonl`. TRACKED, not under
-`.frob/`: the debt must survive a clone and a `frob clean`, and must be
-reviewable in a diff. Best-effort by construction (failing to record debt
+(`ticket`, `skipped`, `commit`) to `.frob/rapid-debt.jsonl`. T-2997: this
+used to be TRACKED at the repo root (surviving a clone and a `frob
+clean`, reviewable in a diff) but grew unbounded in git and was the
+dominant merge-conflict hotspot in the repo (appended by every rapid
+land); it now lives under gitignored `.frob/` instead, per-checkout
+only -- it no longer survives a clone or a fresh checkout, an owner-
+accepted tradeoff. Best-effort by construction (failing to record debt
 never fails a close) but logged at ERROR, because an unrecorded
 relaxation is the one outcome that makes the cleanup pass unreliable.
 The T-1681 re-verification pass drains that file rather than

@@ -2,7 +2,7 @@
 id: T-2997
 title: 'rapid-debt.jsonl grows unbounded in git with no rotation: 2882 lines / 345KB,
   appended by every land, a merge-conflict hotspot'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -121,6 +121,12 @@ body_changes:
   at: '2026-08-26'
   old_length: 0
   new_length: 2200
+evidence:
+- tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_lives_under_dot_frob_not_the_tracked_root
+- tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_creates_dot_frob_when_missing
+- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_leaves_the_repo_clean
+- tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge::test_two_branches_appending_different_records_both_survive
+- tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_rapid_debt_no_longer_carries_an_explicit_pin
 designated_repro_test: null
 threat: null
 component: null

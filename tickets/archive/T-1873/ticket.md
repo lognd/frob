@@ -11,6 +11,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - .gitattributes
 - docs/modules/tickets.md
@@ -18,6 +21,8 @@ scope:
 - design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/unit/test_gitattributes_merge.py
@@ -33,13 +38,29 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/unit/test_gitattributes_merge.py::TestRapidDebtUnionMerge::test_two_branches_appending_different_records_both_survive
-- tests/unit/test_gitattributes_merge.py::TestRapidDebtUnionMerge::test_identical_line_appended_on_both_sides_deduplicates
+- tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge::test_two_branches_appending_different_records_both_survive
+- tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge::test_identical_line_appended_on_both_sides_deduplicates
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_gitattributes_merge.py::TestRapidDebtUnionMerge::test_two_branches_appending_different_records_both_survive
+  new_node: tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge::test_two_branches_appending_different_records_both_survive
+  reason: T-2997 renamed the class from TestRapidDebtUnionMerge to TestForceOverridesUnionMerge
+    (rapid-debt.jsonl moved off the merge=union mechanism this test covers; force-overrides.jsonl
+    keeps it)
+  actor: logan
+  at: '2026-08-28'
+- old_node: tests/unit/test_gitattributes_merge.py::TestRapidDebtUnionMerge::test_identical_line_appended_on_both_sides_deduplicates
+  new_node: tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge::test_identical_line_appended_on_both_sides_deduplicates
+  reason: T-2997 renamed the class from TestRapidDebtUnionMerge to TestForceOverridesUnionMerge
+    (rapid-debt.jsonl moved off the merge=union mechanism this test covers; force-overrides.jsonl
+    keeps it)
+  actor: logan
+  at: '2026-08-28'
 threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 OWNER REPORT, 2026-08-08: "rapid-debt.jsonl is being manually edited by
 agents because of diff; can we figure out a way to reconcile that?"

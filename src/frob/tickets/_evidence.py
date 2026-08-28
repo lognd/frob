@@ -334,11 +334,15 @@ def _head_commit_or_unknown(root: Path) -> str:
 # tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_appends_one_json_line_per_call
 # frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_records_a_commit_field_even_outside_a_git_repo  # noqa: E501
 # frob:tests \
-# tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_is_tracked_not_under_dot_frob
+# tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_lives_under_dot_frob_not_the_\
+# tracked_root
+# frob:tests \
+# tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_creates_dot_frob_when_missing
 # frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_an_unwritable_path_never_raises  # noqa: E501
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#rapid-debt-and-the-ratchet-override-t-1681
 # frob:ticket T-1681
+# frob:ticket T-2997
 def record_rapid_debt(root: Path, ticket_id: str, skipped: str) -> None:
     """Append one line to `rapid-debt.jsonl` naming a check that `rapid`
     skipped for `ticket_id` (T-1681).
@@ -351,18 +355,30 @@ def record_rapid_debt(root: Path, ticket_id: str, skipped: str) -> None:
     ticket closed at, so a later pass can re-run precisely that check
     against precisely that tree.
 
-    TRACKED, not under `.frob/` -- the debt must survive a clone and a
-    `frob clean`, and must be reviewable in a diff. Best-effort: failing
-    to record debt must never fail a close, but it is logged at ERROR
-    because an unrecorded relaxation is the one outcome that makes the
-    cleanup pass unreliable."""
+    T-2997: lives under `.frob/` (gitignored), NOT the tracked repo root
+    -- the prior tracked-root placement made this file grow unbounded in
+    git (2,882 lines / 345 KB at filing time) and put it on the write
+    path of every single land, making it the repo's dominant merge-
+    conflict hotspot (every concurrent land appended the same file).
+    Moving it under `.frob/` removes both problems at once: unbounded
+    growth stops being a git concern, and `.frob/` is per-checkout so
+    concurrent lands in different worktrees never touch the same bytes.
+    OWNER TRADEOFF, accepted explicitly (T-2997): this file no longer
+    survives a clone or a fresh checkout -- it is now per-machine
+    operational telemetry, not a shared team record. The 2,882 pre-move
+    lines stay reachable in git history (any commit before this ticket's
+    land); they are not carried forward into the new location. Best-
+    effort: failing to record debt must never fail a close, but it is
+    logged at ERROR because an unrecorded relaxation is the one outcome
+    that makes the cleanup pass unreliable."""
     entry = {
         "ticket": ticket_id,
         "skipped": skipped,
         "commit": _head_commit_or_unknown(root),
     }
-    path = root / "rapid-debt.jsonl"
+    path = root / ".frob" / "rapid-debt.jsonl"
     try:
+        path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(entry, sort_keys=True) + "\n")
     except OSError as exc:

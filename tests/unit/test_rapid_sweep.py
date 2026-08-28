@@ -1255,7 +1255,13 @@ def _seed_repo(tmp_path: Path) -> Path:
     _git(tmp_path, "config", "user.email", "test@example.com")
     _git(tmp_path, "config", "user.name", "test")
     (tmp_path / "seed.txt").write_text("seed\n", encoding="utf-8")
-    _git(tmp_path, "add", "seed.txt")
+    # T-2997: record_rapid_debt now writes under .frob/, exactly like a
+    # real checkout -- gitignore it here too, or an untracked .frob/
+    # falsely reads as repo dirt in this fixture's "leaves the repo
+    # clean" assertions, a gap no real checkout (which always gitignores
+    # .frob/) actually has.
+    (tmp_path / ".gitignore").write_text(".frob/\n", encoding="utf-8")
+    _git(tmp_path, "add", "seed.txt", ".gitignore")
     _git(tmp_path, "commit", "-qm", "seed")
     return tmp_path
 
@@ -1268,16 +1274,20 @@ class TestCommitRapidDebt:
     def test_leaves_the_repo_clean(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_leaves_the_repo_clean
+        # T-2997: record_rapid_debt now writes under gitignored .frob/,
+        # so the repo is already clean before _commit_rapid_debt even
+        # runs -- it stays a correct, harmless no-op (nothing tracked to
+        # stage or commit) rather than the "stage and commit one dirty
+        # line" step it used to be.
         from frob.tickets._evidence import record_rapid_debt
 
         repo = _seed_repo(tmp_path)
 
         record_rapid_debt(repo, "T-0001", "post-land-unscoped-sweep-deferred")
-        assert _git(repo, "status", "--porcelain").strip() != ""
-        _rapid_sweep._commit_rapid_debt(repo, "T-0001")
-        # The actual invariant, not "a commit helper was called".
         assert _git(repo, "status", "--porcelain").strip() == ""
-        assert "rapid-debt.jsonl" in _git(repo, "ls-files")
+        _rapid_sweep._commit_rapid_debt(repo, "T-0001")
+        assert _git(repo, "status", "--porcelain").strip() == ""
+        assert "rapid-debt.jsonl" not in _git(repo, "ls-files")
 
     # frob:ticket T-2669
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
@@ -1392,8 +1402,16 @@ class TestCommitRapidDebt:
             current_branch,
         )
 
+        # T-2997: record_rapid_debt writes under gitignored .frob/ now,
+        # so the repo is already clean -- the T-2071 guard this test
+        # exists to prove `_commit_rapid_debt` survives is simply never
+        # reached any more (nothing dirty to stage or commit). The guard
+        # itself is exercised elsewhere (test_guard_still_refuses_a_
+        # genuinely_foreign_file, above); this test now proves the
+        # no-op stays a no-op under the same real-shape preconditions
+        # (scaffolded hook + linked worktree).
         record_rapid_debt(repo, "T-2669", "post-land-unscoped-sweep-deferred")
-        assert _git(repo, "status", "--porcelain").strip() != ""
+        assert _git(repo, "status", "--porcelain").strip() == ""
 
         # The real incident's shell has neither var set -- this is a
         # dispatched land process's own environment, not an agent shell.
@@ -1407,7 +1425,7 @@ class TestCommitRapidDebt:
             "rapid-debt.jsonl commit was refused by the scaffolded "
             "pre-commit hook (T-2071) and the root was left dirty"
         )
-        assert "rapid-debt.jsonl" in _git(repo, "ls-files")
+        assert "rapid-debt.jsonl" not in _git(repo, "ls-files")
 
     # frob:ticket T-2671
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
@@ -1424,7 +1442,6 @@ class TestCommitRapidDebt:
         via the module logger and nothing else; this test would have
         found zero files under `.frob/rapid-sweep/` naming the failure."""
         from frob.scaffold import install_worktree_lease_hook
-        from frob.tickets._evidence import record_rapid_debt
 
         repo = _seed_repo(tmp_path)
         installed = install_worktree_lease_hook(repo)
@@ -1442,7 +1459,15 @@ class TestCommitRapidDebt:
             current_branch,
         )
 
-        record_rapid_debt(repo, "T-2671", "post-land-unscoped-sweep-deferred")
+        # T-2997: record_rapid_debt no longer dirties the repo (it writes
+        # under gitignored .frob/), so `_commit_rapid_debt`'s failure
+        # branch (the thing under test here) can only still be reached
+        # via a manually force-tracked rapid-debt.jsonl -- simulating
+        # legacy/residual dirt at the pre-T-2997 root path, the one shape
+        # left that can still make this now-mostly-dead helper's `git
+        # status -- rapid-debt.jsonl` spawn see something dirty.
+        (repo / "rapid-debt.jsonl").write_text('{"ticket": "T-2671"}\n', encoding="utf-8")
+        _git(repo, "add", "--force", "rapid-debt.jsonl")
         assert _git(repo, "status", "--porcelain").strip() != ""
 
         # Force the commit step itself to be refused: bypass T-2669's own

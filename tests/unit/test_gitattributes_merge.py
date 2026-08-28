@@ -1,5 +1,7 @@
-"""T-1873: `rapid-debt.jsonl`/`force-overrides.jsonl` merge via git's
+"""T-1873: `force-overrides.jsonl` merge via git's
 BUILT-IN `merge=union` driver (`.gitattributes`), not a new frob driver --
+(T-2997: this file used to also cover rapid-debt.jsonl, which moved to
+gitignored `.frob/` and is no longer git-tracked or merge-driven at all)
 union is exactly append-only "keep both sides" semantics and needs no
 per-clone `git config` registration, unlike `merge=frob-ledger`
 (tests/test_ticket_merge_driver.py's own precedent, which DOES need
@@ -49,7 +51,7 @@ def _commit_all(root: Path, message: str) -> None:
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
     """A main checkout carrying THIS repo's real `.gitattributes` rule
-    for `rapid-debt.jsonl` (T-1873) plus one seed record, so the fixture
+    for `force-overrides.jsonl` (T-1873) plus one seed record, so the fixture
     exercises the actual rule under test rather than a hand-rewritten
     copy that could silently drift from it."""
     main_repo = tmp_path / "main"
@@ -57,7 +59,7 @@ def repo(tmp_path: Path) -> Path:
     (main_repo / ".gitignore").write_text(".frob/\n.coverage*\n")
     real_gitattributes = Path(__file__).parents[2] / ".gitattributes"
     (main_repo / ".gitattributes").write_text(real_gitattributes.read_text())
-    (main_repo / "rapid-debt.jsonl").write_text(
+    (main_repo / "force-overrides.jsonl").write_text(
         '{"commit": "seed0000", "skipped": "post-land-unscoped-sweep-deferred", '
         '"ticket": "T-0000"}\n'
     )
@@ -65,17 +67,17 @@ def repo(tmp_path: Path) -> Path:
     return main_repo
 
 
-class TestRapidDebtUnionMerge:
+class TestForceOverridesUnionMerge:
     """T-1873 item 3: reproduction, not inspection."""
 
     def test_two_branches_appending_different_records_both_survive(
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_gitattributes_merge.py::TestRapidDebtUnionMerge.test_two_bran\
-        # ches_appending_different_records_both_survive
+        # tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge.test_two\
+        # _branches_appending_different_records_both_survive
         _run(["git", "checkout", "-q", "-b", "worktree-a"], repo)
-        with (repo / "rapid-debt.jsonl").open("a", encoding="utf-8") as fh:
+        with (repo / "force-overrides.jsonl").open("a", encoding="utf-8") as fh:
             fh.write(
                 '{"commit": "aaaaaaaa", "skipped": "land-evidence-scope-unbound", '
                 '"ticket": "T-1111"}\n'
@@ -84,7 +86,7 @@ class TestRapidDebtUnionMerge:
 
         _run(["git", "checkout", "-q", "main"], repo)
         _run(["git", "checkout", "-q", "-b", "worktree-b"], repo)
-        with (repo / "rapid-debt.jsonl").open("a", encoding="utf-8") as fh:
+        with (repo / "force-overrides.jsonl").open("a", encoding="utf-8") as fh:
             fh.write(
                 '{"commit": "bbbbbbbb", "skipped": "post-land-unscoped-sweep-deferred", '
                 '"ticket": "T-2222"}\n'
@@ -104,7 +106,7 @@ class TestRapidDebtUnionMerge:
         )
         assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
 
-        text = (repo / "rapid-debt.jsonl").read_text()
+        text = (repo / "force-overrides.jsonl").read_text()
         assert '"commit": "aaaaaaaa"' in text
         assert '"commit": "bbbbbbbb"' in text
         assert "<<<<<<<" not in text
@@ -115,13 +117,13 @@ class TestRapidDebtUnionMerge:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/unit/test_gitattributes_merge.py::TestRapidDebtUnionMerge.test_identica\
-        # l_line_appended_on_both_sides_deduplicates
+        # tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge.test_ide\
+        # ntical_line_appended_on_both_sides_deduplicates
         """T-1873 item 4: whether union merge can duplicate a record when
         both sides append the byte-identical line. Measured: git's native
         `merge=union` DEDUPLICATES an exact duplicate line rather than
         keeping two copies -- the surviving file has the line exactly
-        once, not twice. This is harmless for rapid-debt.jsonl's shape
+        once, not twice. This is harmless for force-overrides.jsonl's shape
         (each real record embeds a unique commit sha, so a genuine
         duplicate can only arise from a retry re-emitting a byte-
         identical record for the same commit, which collapsing to one
@@ -132,13 +134,13 @@ class TestRapidDebtUnionMerge:
             '"ticket": "T-3333"}\n'
         )
         _run(["git", "checkout", "-q", "-b", "worktree-c"], repo)
-        with (repo / "rapid-debt.jsonl").open("a", encoding="utf-8") as fh:
+        with (repo / "force-overrides.jsonl").open("a", encoding="utf-8") as fh:
             fh.write(same_line)
         _commit_all(repo, "worktree-c: rapid debt record")
 
         _run(["git", "checkout", "-q", "main"], repo)
         _run(["git", "checkout", "-q", "-b", "worktree-d"], repo)
-        with (repo / "rapid-debt.jsonl").open("a", encoding="utf-8") as fh:
+        with (repo / "force-overrides.jsonl").open("a", encoding="utf-8") as fh:
             fh.write(same_line)
         _commit_all(repo, "worktree-d: rapid debt record")
 
@@ -155,7 +157,7 @@ class TestRapidDebtUnionMerge:
         )
         assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
 
-        text = (repo / "rapid-debt.jsonl").read_text()
+        text = (repo / "force-overrides.jsonl").read_text()
         assert text.count('"commit": "cccccccc"') == 1
 
 

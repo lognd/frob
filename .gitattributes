@@ -7,10 +7,11 @@
 # already strips line endings (ruff, python's own line iteration, git
 # itself) silently counts the trailing CR as content: this exact defect
 # turned zero real E501 violations into four apparent ones in one session
-# (T-2596). T-2586 already pinned `text eol=lf` for rapid-debt.jsonl and
-# force-overrides.jsonl below -- this generalizes that fix to the whole
-# tree rather than replacing those two lines, which stay as explicit,
-# self-documenting pins even though this default now also covers them.
+# (T-2596). T-2586 already pinned `text eol=lf` for force-overrides.jsonl
+# below (and, before T-2997 moved it out of git tracking, rapid-debt.jsonl)
+# -- this generalizes that fix to the whole tree rather than replacing
+# that line, which stays as an explicit, self-documenting pin even though
+# this default now also covers it.
 # `text=auto` normalizes CRLF to LF in the index for any file git detects
 # as text (binary files are left alone); `eol=lf` pins the WORKING TREE
 # to LF on checkout regardless of `core.autocrlf`, closing the actual
@@ -32,13 +33,11 @@
 # THIS repo's now-inert data files and the .gitattributes lines that
 # routed them through the driver are retired here.
 
-# T-1873: rapid-debt.jsonl is a tracked, append-only ledger -- every rapid
-# -profile land appends one record to its tail, and concurrent worktrees
-# appending near the same line hit git's default line-level merge, which
-# reports a false textual conflict on a file whose whole value is that no
-# record is ever lost (agents were hand-editing it to resolve this, which
-# is exactly how a record silently disappears). git's BUILT-IN `merge=
-# union` driver is preferred over a new frob driver here: union is
+# T-1873: force-overrides.jsonl is a tracked, append-only ledger -- a
+# concurrent `--force` override appending near the same line hits git's
+# default line-level merge, which reports a false textual conflict on a
+# file whose whole value is that no record is ever lost. git's BUILT-IN
+# `merge=union` driver is preferred over a new frob driver here: union is
 # exactly append-only "keep both sides" semantics, and unlike `merge=
 # frob-ledger` above it needs NO per-clone `git config` registration --
 # a worktree that skipped that one-time setup silently falls back to the
@@ -48,36 +47,30 @@
 # record merge with both records surviving and zero conflict markers.
 # T-0480: anchored with a leading slash for the same reason `/tickets.md`
 # is above -- an unanchored pattern would also match any other file named
-# `rapid-debt.jsonl` (or `force-overrides.jsonl`) anywhere in the tree.
-# force-overrides.jsonl (frob.tickets._force_override, T-1762) is the
-# same tracked-root-append-only shape -- covered here even though no
-# `--force` override has happened yet in this repo (the file does not
+# `force-overrides.jsonl` anywhere in the tree. Covered here even though
+# no `--force` override has happened yet in this repo (the file does not
 # exist on disk), so the FIRST concurrent append is already covered
 # rather than conflicting once, then getting a follow-up fix.
-/rapid-debt.jsonl merge=union
+# T-2997: rapid-debt.jsonl used to be covered by an identical line here
+# -- it moved to `.frob/rapid-debt.jsonl` (gitignored, per-checkout) and
+# is no longer git-tracked at all, so it no longer needs a merge driver;
+# a per-checkout file is never merged in the first place.
 /force-overrides.jsonl merge=union
 
 # T-2586: this repo's own `core.autocrlf=true` (a Windows-checkout
 # setting, present on this Linux/WSL clone) converts LF to CRLF on
 # checkout for any tracked text file with no explicit `text`/`eol`
-# attribute -- `git check-attr text eol -- rapid-debt.jsonl` read both
-# "unspecified" before this line. Every deferred rapid-profile sweep
-# rewrites `rapid-debt.jsonl` with LF-only content; without a pinned
-# attribute, `autocrlf` reintroduces CRLF on the next checkout, and the
-# resulting byte-count mismatch against the LF-only index blob is
-# exactly what fooled `git status`'s stat-comparison fast path into a
-# false "modified" report (root_dirt's own content-confirmation fix in
-# this same ticket is the second, independent layer -- this line
-# removes the CAUSE; that one makes the report correct regardless of
-# cause). `eol=lf` pins this file to LF on checkout AND normalizes CRLF
-# to LF on commit, matching the `merge=union` line immediately above --
-# both attributes are declared HERE, in the tracked repo, rather than
-# left to a per-clone `git config core.autocrlf=false`, because a config
-# change does not travel with the repo and a clone that skips it
-# silently falls back to the broken behavior (the same argument that
-# chose a built-in merge driver over a per-clone git config for the
-# `merge=union` line above).
-/rapid-debt.jsonl text eol=lf
+# attribute -- `git check-attr text eol -- force-overrides.jsonl` read
+# "unspecified" before this line. `eol=lf` pins this file to LF on
+# checkout AND normalizes CRLF to LF on commit, matching the `merge=
+# union` line immediately above -- both attributes are declared HERE, in
+# the tracked repo, rather than left to a per-clone `git config core.
+# autocrlf=false`, because a config change does not travel with the repo
+# and a clone that skips it silently falls back to the broken behavior
+# (the same argument that chose a built-in merge driver over a per-clone
+# git config for the `merge=union` line above).
+# T-2997: rapid-debt.jsonl's identical line was removed alongside its
+# `merge=union` line above -- see that note.
 /force-overrides.jsonl text eol=lf
 
 # T-1433 incident: attachment shas are byte-exact; CRLF conversion breaks COV004.
