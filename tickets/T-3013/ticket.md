@@ -23,6 +23,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: record re-verification for series-DC disposition
+  actor: logan
+  at: '2026-08-28'
+  old_length: 967
+  new_length: 1361
 designated_repro_test: null
 threat: null
 component: null
@@ -39,3 +46,5 @@ New (rule, file) identit(ies) filed here:
 - DOC006  docs/strata/graph.md
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+Re-verified on current main (2026-08-28): ran gates-fast; DOC006 does not fire on docs/strata/graph.md at all -- the only two DOC006 hits repo-wide are on tickets/T-2962/ticket.md, an unrelated file. This confirms the ticket's own independent re-measurement (0 findings). Disposition: pre-existing/stale residue from the rolling baseline gap, not a live defect. Closing without a code change.
