@@ -48,7 +48,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a32f23fedb59ba6e1fc84431e4d8604ed269dbda
 ---
 MEASURED 2026-08-27, TWO INDEPENDENT MISSES IN ONE DRIVE, same mechanism. The
 sweep recorded each finding with `commit=None, ticket=None` (UNATTRIBUTED) even
