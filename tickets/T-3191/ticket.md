@@ -20,6 +20,8 @@ scope:
 - src/frob/check/_python.py
 - frob.toml
 - tests/unit/test_check.py
+- docs/modules/process.md
+- docs/modules/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -53,6 +55,16 @@ scope_changes:
   glob: tests/unit/test_check.py
   reason: 'T-3191: fixing the platform-inverted ty:ignore pair requires wiring multi-platform
     ty into frob check''s _run_ty and declaring the target set in frob.toml'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/process.md
+  reason: 'T-3191: doc-edge closure for touched public symbols in _reap.py/_pid_liveness.py/_python.py'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/check.md
+  reason: 'T-3191: doc-edge closure for touched public symbols in _reap.py/_pid_liveness.py/_python.py'
   actor: logan
   at: '2026-08-27'
 designated_repro_test: null
