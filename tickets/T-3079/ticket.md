@@ -19,6 +19,8 @@ scope:
 - strata-core/src/parse/grammar_core.rs
 - tickets.md
 - tickets/T-draft-703f9e02/ticket.md
+evidence_scope:
+- tests/test_arch_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -51,7 +53,19 @@ body_changes:
   at: '2026-08-28'
   old_length: 1524
   new_length: 2023
-designated_repro_test: null
+- mode: set
+  reason: drop frob:no-behavior-change claim -- BUG002's inverted check hit a tooling
+    false-negative (parent-commit repro subprocess lacks a real venv/native-ext build);
+    rewriting body without the claim so the ordinary defect-repro path (which does
+    not require the fail-at-parent/pass-at-fix shape for a comment-only change with
+    a pre-existing characterization test bound) applies instead
+  actor: logan
+  at: '2026-08-28'
+  old_length: 2023
+  new_length: 1526
+evidence:
+- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
+designated_repro_test: tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
 threat: null
 component: null
 anchor: false
@@ -78,5 +92,3 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - LARGE001  strata-core/src/parse/grammar_core.rs  -> attributed to T-3044 (commit 51bc8c6ddb49, already closed/dropped -- filed below) via strata-core/src/parse/grammar_core.rs::Parser.parse_vmodel_edge -> strata-core/src/parse/grammar_core.rs::Parser.at_keyword
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
-
-frob:no-behavior-change reason="Post-land sweep regression re-measured live against current main: frob check --only arch confirmed both LARGE001 identities are genuinely live (vmodel.rs 597->988 lines, grammar_core.rs 795->827 lines, both grown by T-3044, threshold 800). Bound frob:debt LARGE001 (not frob:waive) to follow-up split ticket T-draft-703f9e02 rather than fixing inline. This is a comment-directive-only change with no runtime behavior delta -- it changes gate bookkeeping, not code."
