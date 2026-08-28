@@ -48,6 +48,8 @@ body_changes:
   at: '2026-08-28'
   old_length: 1361
   new_length: 1673
+evidence:
+- cmd:git grep -L DOC006 -- docs/strata/graph.md exit=0 sha256=aed3729dd11c
 kind_history:
 - 2026-08-28 bug->docs evidence=0 done_report=yes
 designated_repro_test: null

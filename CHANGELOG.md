@@ -430,6 +430,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3007: V-model spec graph as strata instances: requirement/spec/design/component nodes with paired verification levels (T-3004 sections 1-2)
 - T-3009: Enforce TDD from git history: a verification nodes introducing commit must precede its implementation node (T-3004 section 7)
 - T-3011: Epic: publish frob-core and strata-core wheels to PyPI -- build now, publish only on explicit owner consent
+- T-3013: post-land sweep regression from an unattributed source (sweep spawned by T-2990): 1 new (rule, file) identit(ies), 0 finding(s) (DOC006)
 - T-3014: Wire NARR001 (T-2993's narrative-block detector) into gates/__init__.py
 - T-3015: guarded_subprocess_run raises subprocess.TimeoutExpired uncaught instead of returning Err
 - T-3018: os.kill(pid,0) liveness probe can actually TerminateProcess on Windows (land.py, leases.py)
