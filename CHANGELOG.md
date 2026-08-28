@@ -568,6 +568,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3225: WAIVE006: AFFECT001 waiver on _rule_id_scan.py bound to closed ticket T-2993
 - T-3228: LOUD gate failure for ratchet/deprecated-baseline lock producer abandonment
 - T-3230: Audit failed-subprocess-folded-into-positive-finding sites (T-3216 sibling survey)
+- T-3238: post-land sweep regression from T-3220: 1 new (rule, file) identit(ies), 2 finding(s) (DRIFT002)
 - T-3244: Burn down remaining platform-unsafe test-fixture code surfaced by multi-platform ty (T-3211 split)
 - T-3246: SUITE-RESULT reports an ABORTED run (exitstatus=3) in the same shape as a completed one: failed=24 is a lower bound read as a count
 - T-3247: Whole-repo-scan tests exceed the 120s per-test cap, killing the xdist worker and aborting the whole suite (root cause of the ubuntu hang)

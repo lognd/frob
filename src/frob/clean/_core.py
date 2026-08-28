@@ -68,8 +68,9 @@ def _dir_size(path: Path) -> int:
 
 
 # frob:ticket T-3220
-# frob:tests tests/test_clean.py::test_protected_path_survives_deep_clean
-# frob:tests tests/test_clean.py::test_protected_path_expansion_still_removes_siblings
+# frob:tests tests/test_clean.py::test_deep_clean_preserves_rapid_debt_jsonl
+# frob:tests \
+# tests/test_clean.py::test_deep_clean_still_wholesale_removes_frob_without_the_ledger
 def _protect_excluded_paths(root: Path, candidates: dict[Path, str]) -> dict[Path, str]:
     """T-3220: `candidates` with every `TIER3_PROTECTED_PATHS` entry
     carved OUT of removal, even when it only matched because some

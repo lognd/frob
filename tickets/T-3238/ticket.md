@@ -2,7 +2,7 @@
 id: T-3238
 title: 'post-land sweep regression from T-3220: 1 new (rule, file) identit(ies), 2
   finding(s) (DRIFT002)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-28'
@@ -32,6 +32,8 @@ scope_changes:
     not unrelated scope creep
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/test_clean.py::test_deep_clean_preserves_rapid_debt_jsonl
 designated_repro_test: null
 threat: null
 component: null
