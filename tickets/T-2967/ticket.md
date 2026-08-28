@@ -2,7 +2,7 @@
 id: T-2967
 title: 'macOS: frob.serve._socketd daemon.sock exceeds AF_UNIX sun_path length limit
   (12 failures)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -18,8 +18,9 @@ scope:
 - src/frob/serve/_socketd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: decision-record ticket being dropped as confirmed duplicate;
+  no code fix in this ticket
 designated_repro_test: null
 acceptance:
 - text: 1. Root-cause confirmed by reading frob.serve._socketd's bind path
