@@ -31,7 +31,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 915eff3fdfa55eedd0cf5cb27186e0310bff446a
 ---
 Found while working T-2603 (ledger-write-pattern unification design pass).
 
