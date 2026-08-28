@@ -1,7 +1,7 @@
 ---
 id: T-2992
 title: capture and triage the real test failures the ubuntu CI hang was hiding
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -18,6 +18,16 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: pure investigation/triage record -- surface, enumerate,
   and file per-failure tickets once a clean unscoped run exists
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure investigation/triage ticket, scope=[];
+    the authoritative Linux failure list (86 node ids) was captured and fully triaged
+    into T-3019/T-3033/T-3034/T-3035/T-3037/T-3040/T-3041, all now done on main --
+    no code change belongs to this ticket itself'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 1580
+  new_length: 1864
 designated_repro_test: null
 threat: null
 component: null
@@ -51,3 +61,8 @@ T-2980's acceptance was making the suite terminate and report, not
 clearing this backlog. Cross-reference against T-2971 (macOS's
 ~144 uncharacterized failures) for overlap before assuming these are
 new/distinct.
+
+frob:no-behavior-change reason="pure investigation/triage ticket, scope=[]; the authoritative Linux failure list (86 node ids) was captured and fully triaged into T-3019/T-3033/T-3034/T-3035/T-3037/T-3040/T-3041, all now done on main -- no code change belongs to this ticket itself"
+
+## Reopen log
+- 2026-08-28: closed on --no-behavior-change without taking a fresh measurement; ticket's deliverable is a Linux failing-node-id measurement, not a code change -- reopening per coordinator direction to attempt a real bounded suite run under tonight's quiet-box window
