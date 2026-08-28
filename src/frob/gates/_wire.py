@@ -197,6 +197,25 @@ def _new_callable_records(
 # frob:ticket T-1532
 _JOB_TABLE_MARKER_NAMES = frozenset({"_ProcessJob"})
 
+# frob:ticket T-2931
+# T-2931: `atexit.register(_target, ...)` is a fourth by-reference wiring
+# shape (`_scratch_file_for_suffix`'s registration of `_remove_scratch_
+# file`, T-2645) -- the stdlib's OWN dynamic-dispatch registry invokes
+# the callback at interpreter exit, never via a call token this module's
+# text scan can see, the identical class of gap `_WRAPPER_MARKER_NAMES`
+# already covers for `memoize_per_run(_target)`-shaped wrapper markers.
+# Kept as its own DOTTED-marker set rather than folded into
+# `_WRAPPER_MARKER_NAMES` (whose members `_wire_reach_patterns`'
+# `wrapper_pattern` matches as a BARE name immediately before `(` --
+# `(?<![A-Za-z0-9_.])`'s negative lookbehind explicitly excludes a
+# dot-preceded match, so a bare "register" alternative would either miss
+# `atexit.register(` entirely or, worse, false-positive on any OTHER
+# object's unrelated `.register(` method sharing the bare name) --
+# `_DOTTED_WRAPPER_MARKERS` instead pairs each marker with its required
+# qualifier (`"atexit"`) so the alternative it builds
+# (`atexit\.register\(`) is exact, not a bare-name collision risk.
+_DOTTED_WRAPPER_MARKERS = (("atexit", "register"),)
+
 
 # frob:ticket T-2746
 _PROPERTY_DECORATOR_RE = re.compile(r"^\s*@property\s*$")
@@ -370,11 +389,12 @@ def _wire_reach_patterns(
     re.Pattern[str], re.Pattern[str], re.Pattern[str] | None, re.Pattern[str] | None
 ]:
     """The four "reached" regexes `_is_reached_outside_diff_tests` scans
-    with: a plain call-shaped token, the T-1502/T-1532/T-1684/T-2778
-    bare-name-argument shape (decorator/memoization wrapper markers, job-
-    table constructors, dict-table values, PLUS -- FUNCTION records only
-    -- a bare keyword-argument value -- all four pass the symbol BY
-    REFERENCE, not as a call),
+    with: a plain call-shaped token, the T-1502/T-1532/T-1684/T-2778/
+    T-2931 bare-name-argument shape (decorator/memoization wrapper
+    markers, job-table constructors, dict-table values, a bare keyword-
+    argument value, PLUS -- FUNCTION records only -- a DOTTED wrapper
+    marker like `atexit.register(_target, ...)` -- all five pass the
+    symbol BY REFERENCE, not as a call),
     (CLASS records only, T-1527) the ErrorSet bare-member-access
     shape, and (T-2746, only when `is_property` is set) a property-
     shaped bare ATTRIBUTE-access alternative -- split out purely to keep
@@ -470,10 +490,30 @@ def _wire_reach_patterns(
         if kind == SymbolKind.FUNCTION
         else ""
     )
+    # T-2931: a fifth by-reference shape -- a DOTTED wrapper marker
+    # (`atexit.register(_target, ...)`) -- `marker_names`'s bare
+    # alternative above cannot match this (its `(?<![A-Za-z0-9_.])`
+    # lookbehind explicitly excludes a dot-preceded name), so each
+    # `_DOTTED_WRAPPER_MARKERS` pair gets its own exact
+    # `module\.attr\(` alternative instead of loosening the bare-name
+    # lookbehind repo-wide (which would risk matching an unrelated
+    # object's same-named `.register(` method). Restricted to `kind ==
+    # SymbolKind.FUNCTION` like `keyword_arg_pattern` above -- no
+    # evidenced CLASS/METHOD instance of this shape exists yet.
+    dotted_wrapper_pattern = (
+        "".join(
+            rf"|(?<![A-Za-z0-9_.]){re.escape(mod)}\.{re.escape(attr)}"
+            rf"\s*\(\s*{re.escape(short)}\s*[,)]"
+            for mod, attr in _DOTTED_WRAPPER_MARKERS
+        )
+        if kind == SymbolKind.FUNCTION
+        else ""
+    )
     wrapper_pattern = re.compile(
         rf"(?<![A-Za-z0-9_.])(?:{marker_names})\s*\(\s*{re.escape(short)}\s*[,)]"
         rf"|:\s*(?:[A-Za-z_][A-Za-z0-9_]*\.)?{re.escape(short)}\s*[,}}]"
         rf"{keyword_arg_pattern}"
+        rf"{dotted_wrapper_pattern}"
     )
     member_access_pattern = None
     if kind == SymbolKind.CLASS:
