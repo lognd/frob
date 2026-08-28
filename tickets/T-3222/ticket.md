@@ -18,6 +18,7 @@ scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - tests/unit/test_rapid_sweep.py
 - docs/modules/tickets-verify-sweep.md
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,12 @@ scope_changes:
   glob: docs/modules/tickets-verify-sweep.md
   reason: own test file and the module's frob:doc target, required by scope gates
     for the reverify-at-file-time change
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: frob.lock
+  reason: frob ack for _file_regression_ticket writes digest updates here; standard
+    side effect of acking a doc within this ticket's own scope
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
