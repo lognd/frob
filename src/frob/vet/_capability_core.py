@@ -192,10 +192,12 @@ def _fully_in_any_span(start: int, end: int, spans: tuple[ByteSpan, ...]) -> boo
 
 
 # frob:ticket T-1223
+# frob:ticket T-2885
 #: The python docstring Query source (T-1223): every module/class/function
-#: body whose FIRST named child is a bare `string` node, or an
-#: `expression_statement` wrapping one -- mirrors the exact shape
-#: `_py_leading_docstring_node` (pre-T-1223) tested node-by-node in Python.
+#: body whose FIRST named child (after skipping any leading `comment`
+#: nodes, T-2885) is a bare `string` node, or an `expression_statement`
+#: wrapping one -- mirrors the exact shape `_py_leading_docstring_node`
+#: (pre-T-1223) tested node-by-node in Python.
 #: NOTE: `expression_statement` is a tree-sitter-python SUPERTYPE, not a
 #: concrete node kind -- it also matches concrete nodes like `assignment`
 #: (verified: `(expression_statement (string) @doc)` alone spuriously
@@ -207,13 +209,25 @@ def _fully_in_any_span(start: int, end: int, spans: tuple[ByteSpan, ...]) -> boo
 #: literally `"module"`, `"block"` (the bare-string case), or
 #: `"expression_statement"` (the wrapped case) -- never `"assignment"` or
 #: any other expression_statement-conforming concrete kind.
+#: T-2885: the `.` anchor requires the docstring to be tree-sitter's
+#: IMMEDIATE first named child -- this project's tree-sitter-python
+#: grammar does NOT mark `comment` as an `extra` node the query engine
+#: treats as anchor-transparent (confirmed empirically), so a file that
+#: opens with a `#`-comment (e.g. any `frob:waive`/`frob:ticket` header
+#: block, common repo-wide) silently defeated the anchor and the "real"
+#: docstring was reported as unstarted, exposing every needle-shaped
+#: substring in its prose to the needle-scan gates it should have been
+#: excluded from (OPAQUE001, the `sys` capability scanner). Each pattern
+#: now explicitly tolerates zero-or-more leading `(comment)*` nodes
+#: before the anchored string/expression_statement, so a header comment
+#: no longer breaks docstring-span detection.
 _PY_DOCSTRING_QUERY_SRC = """
-(module . (string) @doc)
-(module . (expression_statement (string) @doc))
-(function_definition body: (block . (string) @doc))
-(function_definition body: (block . (expression_statement (string) @doc)))
-(class_definition body: (block . (string) @doc))
-(class_definition body: (block . (expression_statement (string) @doc)))
+(module . (comment)* . (string) @doc)
+(module . (comment)* . (expression_statement (string) @doc))
+(function_definition body: (block . (comment)* . (string) @doc))
+(function_definition body: (block . (comment)* . (expression_statement (string) @doc)))
+(class_definition body: (block . (comment)* . (string) @doc))
+(class_definition body: (block . (comment)* . (expression_statement (string) @doc)))
 """
 
 #: Concrete parent `.type` values that make a `_PY_DOCSTRING_QUERY_SRC`

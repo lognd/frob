@@ -358,6 +358,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2880: T-2849's PDEATHSIG fix is loaded but forkservers still leak: 27 new orphans in the 49 minutes after it landed, likely an already-started helper that never sees the arming env var
 - T-2883: docs/modules/gates.md: document T-2870's BUG002 malformed-waiver diagnostic
 - T-2884: Daemon version-skew self-heal is version-string-based, blind to source-only changes with no version bump
+- T-2885: OPAQUE001/sys false positives: module docstring not excluded when a comment precedes it
 - T-2888: Red-tail sweep round 2: OPAQUE001 fix, LANG004/TICK003/TICK006 characterized
 - T-2891: twelve *SCHEMA-family gates (plus FLAGCOV) resolve UNRESOLVED off-repo and render as a clean pass
 - T-2892: T-2384: bind evidence to acceptance criteria and close epic

@@ -13,6 +13,7 @@ from pathlib import Path
 import frob.vet._capability as _capability_mod
 from frob.strata import KernelModel, Node, bind_code, check_capability_conformance
 from frob.vet._capability import (
+    _opaque_indirection_findings,
     non_executable_line_numbers,
     scan_file_capabilities,
 )
@@ -192,6 +193,70 @@ class TestDocstringProseNotObservedLineLevel:
             lambda path: ((None, 3),),
         )
         assert non_executable_line_numbers(pkg) == frozenset()
+
+
+# T-2885: a `#`-comment header (e.g. a `frob:waive`/`frob:ticket` block,
+# common repo-wide) preceding the module docstring used to defeat
+# `_PY_DOCSTRING_QUERY_SRC`'s `.` anchor, which required the docstring to
+# be tree-sitter's IMMEDIATE first named child of `module` -- the anchor
+# silently failed to match, the docstring's span was never excluded, and
+# any capability-shaped substring in its prose (an example, a rejected
+# alternative) became a live false positive for OPAQUE001/the `sys`
+# scanner. Both directions matter: the docstring must stay excluded WITH
+# a leading comment (must-stay-quiet), and a real call placed after the
+# header comment (outside the docstring) must still be observed
+# (must-fire) -- the fix must not blind the scanner, only restore the
+# exclusion.
+_LEADING_COMMENT_THEN_DOCSTRING_PROSE_ONLY = '''# frob:waive LARGE001 example header block
+# preceding the module docstring, same shape as the repo's own files
+"""Module docstring describing an opacity concern.
+
+For example, importlib.import_module(...) is a dynamic-dispatch construct
+this gate itself watches for -- mentioned here only as prose, never called.
+"""
+
+
+def describe() -> str:
+    """Prose only, no real call."""
+    return "see docs"
+'''
+
+#: positive control (must-fire): identical leading-comment shape, but with
+#: a REAL `importlib.import_module` call outside the docstring -- the fix
+#: must not blind the scanner to genuine opaque-indirection observations.
+_LEADING_COMMENT_THEN_REAL_OPAQUE_CALL = (
+    "# frob:waive LARGE001 example header block\n"
+    '"""Module docstring, no capability-shaped prose here."""\n'
+    "\n"
+    "import importlib\n"
+    "\n"
+    "\n"
+    "def load(name: str):\n"
+    '    """Actually resolve a module by computed name."""\n'
+    "    return importlib.import_module(name)\n"
+)
+
+
+class TestLeadingCommentDoesNotDefeatDocstringExclusion:
+    # frob:tests src/frob/vet/_capability_core.py::_non_executable_byte_spans \
+    # kind="unit"
+    def test_leading_comment_then_docstring_prose_stays_quiet(
+        self, tmp_path: Path
+    ) -> None:
+        pkg = tmp_path / "leading_comment.py"
+        pkg.write_text(_LEADING_COMMENT_THEN_DOCSTRING_PROSE_ONLY)
+        assert _opaque_indirection_findings(pkg) == ()
+
+    # frob:tests src/frob/vet/_capability_core.py::_non_executable_byte_spans \
+    # kind="unit"
+    def test_leading_comment_then_real_call_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        pkg = tmp_path / "leading_comment_real_call.py"
+        pkg.write_text(_LEADING_COMMENT_THEN_REAL_OPAQUE_CALL)
+        findings = _opaque_indirection_findings(pkg)
+        assert len(findings) == 1
+        assert findings[0].construct_name == "importlib.import_module"
 
 
 # T-1626: capability detection must be symbol-resolved with full alias

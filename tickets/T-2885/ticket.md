@@ -2,7 +2,7 @@
 id: T-2885
 title: 'OPAQUE001/sys false positives: module docstring not excluded when a comment
   precedes it'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -28,6 +28,9 @@ scope_changes:
     fix
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/test_vet_capability.py::TestLeadingCommentDoesNotDefeatDocstringExclusion::test_leading_comment_then_docstring_prose_stays_quiet
+- tests/test_vet_capability.py::TestLeadingCommentDoesNotDefeatDocstringExclusion::test_leading_comment_then_real_call_still_fires
 designated_repro_test: null
 threat: null
 component: null
