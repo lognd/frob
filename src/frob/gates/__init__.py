@@ -8395,10 +8395,11 @@ def _assemble_gate_report(
         # the WAIVE family rather than a new gate.
         *waive011_violations(st.repo_root),
         # T-2988: same PROVENANCE-vs-DEFERRED-WORK wording discriminator
-        # as WAIVE009/010, applied to public docstrings instead of
-        # frob:waive reasons -- re-parses source directly (docstring text
-        # is not on SymbolRecord), so it needs only root, same self-check
-        # posture as waive011_violations immediately above.
+        # as WAIVE009/010, applied to public docstrings instead of a
+        # waiver's own reason text -- re-parses source directly
+        # (docstring text is not on SymbolRecord), so it needs only root,
+        # same self-check posture as waive011_violations immediately
+        # above.
         *docarch001_violations(st.repo_root),
         # T-0779: stale-waiver detection needs only the snapshot's own
         # waive edges plus the merged ticket queue -- no assembled

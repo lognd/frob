@@ -1,7 +1,7 @@
 ---
 id: T-3255
 title: Fix malformed directive false-positive in docarch001_violations wiring comment
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -15,10 +15,20 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: regression test proving no malformed-directive false positive on the real
+    gates/__init__.py file after the reword
+  actor: logan
+  at: '2026-08-28'
+evidence:
+- tests/test_gates.py::TestDsl001::test_docarch001_wiring_comment_does_not_self_match
 designated_repro_test: null
 threat: null
 component: null

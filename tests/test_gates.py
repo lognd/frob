@@ -2706,6 +2706,29 @@ class TestDsl001:
         assert any(v.rule == "DSL001" for v in violations)
         assert violations[0].severity == Severity.ERROR
 
+    def test_docarch001_wiring_comment_does_not_self_match(self) -> None:
+        """T-3255 regression: a plain `#` comment near
+        `docarch001_violations`'s `run_gates` call site used to describe
+        the discriminator as applying to "frob:waive reasons" -- the
+        literal `frob:waive` token mid-prose parsed as a malformed
+        directive and DSL001 fired against the gate module's OWN source
+        (production self-match, not a test fixture). Runs against the
+        real, checked-out `src/frob/gates/__init__.py` (not a synthetic
+        tmp_path fixture) so a future reintroduction of a bare `frob:`
+        verb token in prose is caught the same way this one was."""
+        from pathlib import Path as _Path
+
+        from frob.gates import _dsl001_violations  # noqa: PLC0415
+
+        repo_root = _Path(__file__).resolve().parents[1]
+        snap = _snapshot(repo_root)
+        hits = [
+            v for v in _dsl001_violations(snap) if v.file.endswith("gates/__init__.py")
+        ]
+        assert hits == [], (
+            f"DSL001 false-positive(s) reintroduced in gates/__init__.py: {hits}"
+        )
+
     def test_waive_reason_and_tests_kind_not_double_flagged(
         self, tmp_path: Path
     ) -> None:

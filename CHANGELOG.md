@@ -569,6 +569,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3228: LOUD gate failure for ratchet/deprecated-baseline lock producer abandonment
 - T-3230: Audit failed-subprocess-folded-into-positive-finding sites (T-3216 sibling survey)
 - T-3244: Burn down remaining platform-unsafe test-fixture code surfaced by multi-platform ty (T-3211 split)
+- T-3255: Fix malformed directive false-positive in docarch001_violations wiring comment
 
 ## [0.530.0] - unreleased
 
