@@ -109,6 +109,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7f9be8015dae5c2604ae54763d4d5ef5b24d1560
 ---
 T-3087 follow-up (deferred, optional per its own brief). A done-report that says work was NOT implemented, on a land whose diff touches nothing outside tickets/, is mechanically detectable: a FEATURE- or BUG-kind ticket closing with an empty code diff should be at minimum a WARN. Needs a frob.gates-level diff scan at close/land time (frob.tickets deliberately stays free of frob.gates, per _done_transition_guard's own docstring on why covers_scope/mutation_evidence/etc are injected booleans, never computed in-package). Exemptions required: docs-kind, epic-tier, no_scope_declared tickets legitimately close without code -- each needs its own must-stay-quiet fixture. T-3064 (closed done with a done-report literally saying "T-3064 is BLOCKED, not implemented" and a land touching only tickets/) is the motivating measured incident.
