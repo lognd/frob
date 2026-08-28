@@ -2,7 +2,7 @@
 id: T-3254
 title: 'frob release check REFUSES 0.530.0 (BUMP REQUIRED, need >= 0.531.0): no documented
   release-cut procedure places the version bump'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
