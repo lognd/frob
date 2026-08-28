@@ -38,7 +38,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ea92587bc9e4fc62032fc3a88b9863e5725f9c92
 ---
 Split from T-3019 (cluster B): tests/unit/strata/test_selfconform.py::
 TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
