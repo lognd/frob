@@ -2,7 +2,7 @@
 id: T-3041
 title: 13 live-repo self-conformance tests fail (repo currently non-zero on multiple
   gates)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -52,6 +52,11 @@ scope_changes:
     of fixing the in-scope test
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/unit/strata/test_effects.py::TestDeployServeMutateNodeSplitConformance::test_serve_declares_zero_may_and_exercises_zero_effects
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
 designated_repro_test: null
 threat: null
 component: null

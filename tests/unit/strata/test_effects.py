@@ -523,10 +523,18 @@ class TestDeployServeMutateNodeSplitConformance:
         strata's own `serve` node, which already declares both) is the
         honest disposition (option (a) from T-1166's ticket body), not a
         silent capability creep: this fixture's `may=` now mirrors the
-        real design model exactly, so a FUTURE effect outside fs/net (an
-        `exec` call, for instance) still surfaces here as a real
-        violation, preserving the guard's original purpose for every
-        capability serve has NOT been granted.
+        real design model exactly, so a FUTURE effect outside fs/net/exec
+        still surfaces here as a real violation, preserving the guard's
+        original purpose for every capability serve has NOT been
+        granted.
+
+        T-2884/T-3029: `exec` joins the tuple too -- `_source_head_sha`
+        spawns `git rev-parse HEAD` directly (bounded 1s timeout) to
+        compute the daemon's own content-sensitive source identity for
+        the version-skew self-heal, a real site design/frob.strata's own
+        `serve` node has declared (via a bare `may "exec"`) since T-2884;
+        this fixture's own `may=` had drifted behind that declaration
+        (T-3041 investigation) until now.
         """
         root = Path(__file__).resolve().parents[3]
         model = KernelModel(
@@ -535,7 +543,7 @@ class TestDeployServeMutateNodeSplitConformance:
                     id="serve",
                     trust="trusted",
                     attrs=("code=src/frob/serve/**",),
-                    may=("fs", "net"),
+                    may=("fs", "net", "exec"),
                 ),
             )
         )

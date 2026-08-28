@@ -450,6 +450,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3038: evidence bind-time cost probe loses timeout floor after T-3015
 - T-3039: mutate scores timeout as run-abort not killed-mutant after T-3015
 - T-3040: frob cycle refuses on bare tmp_path, breaking 3 test_system.py tests
+- T-3041: 13 live-repo self-conformance tests fail (repo currently non-zero on multiple gates)
 - T-3042: V-model H1: vmodel_check has zero callers and no authoring format, so the epic can complete without ever checking anything
 - T-3043: V-model H2: the four closure rules check local edge degree, not path closure -- a mutual-satisfies pair with zero requirements passes all four
 - T-3044: V-model H3: graph nodes carry no payload -- test nodes bind to nothing runnable, artifacts bind to no code, supersedes cannot carry a reason

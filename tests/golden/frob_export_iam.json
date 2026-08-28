@@ -45,6 +45,34 @@
     {
       "action": "read",
       "effect": "Allow",
+      "principal": "checker",
+      "resource": "natives",
+      "sid": "f_checker_natives-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "checker",
+      "resource": "natives",
+      "sid": "f_checker_natives-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "checker",
+      "resource": "stratamod",
+      "sid": "f_checker_stratamod-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "checker",
+      "resource": "stratamod",
+      "sid": "f_checker_stratamod-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
       "principal": "cli",
       "resource": "checker",
       "sid": "f_cli_checker-read"
@@ -409,6 +437,20 @@
     {
       "action": "read",
       "effect": "Allow",
+      "principal": "natives",
+      "resource": "stratamod",
+      "sid": "f_natives_stratamod-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "natives",
+      "resource": "stratamod",
+      "sid": "f_natives_stratamod-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
       "principal": "cli",
       "resource": "graphlang",
       "sid": "f_parse-read"
@@ -531,6 +573,20 @@
       "principal": "stratamod",
       "resource": "core",
       "sid": "f_strata_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "stratamod",
+      "resource": "gates",
+      "sid": "f_strata_gates-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "stratamod",
+      "resource": "gates",
+      "sid": "f_strata_gates-write"
     },
     {
       "action": "read",
@@ -1133,6 +1189,132 @@
       "principal": "verify",
       "resource": "cli",
       "sid": "f_t2407_verify_cli-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "checker",
+      "resource": "tickets_ledger",
+      "sid": "f_t3029_checker_tickets_ledger-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "checker",
+      "resource": "tickets_ledger",
+      "sid": "f_t3029_checker_tickets_ledger-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "narrative",
+      "sid": "f_t3029_cli_narrative-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "narrative",
+      "sid": "f_t3029_cli_narrative-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "narrative",
+      "sid": "f_t3029_gates_narrative-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "narrative",
+      "sid": "f_t3029_gates_narrative-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "refactor",
+      "sid": "f_t3029_gates_refactor-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "refactor",
+      "sid": "f_t3029_gates_refactor-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "narrative",
+      "resource": "core",
+      "sid": "f_t3029_narrative_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "narrative",
+      "resource": "core",
+      "sid": "f_t3029_narrative_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "narrative",
+      "resource": "tickets_ledger",
+      "sid": "f_t3029_narrative_tickets_ledger-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "narrative",
+      "resource": "tickets_ledger",
+      "sid": "f_t3029_narrative_tickets_ledger-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "scripts_ops",
+      "resource": "graphlang",
+      "sid": "f_t3029_scripts_ops_graphlang-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "scripts_ops",
+      "resource": "graphlang",
+      "sid": "f_t3029_scripts_ops_graphlang-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "narrative",
+      "sid": "f_t3029_testsuite_narrative-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "narrative",
+      "sid": "f_t3029_testsuite_narrative-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "cli",
+      "sid": "f_t3029_tickets_ledger_cli-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "cli",
+      "sid": "f_t3029_tickets_ledger_cli-write"
     },
     {
       "action": "read",
