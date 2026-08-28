@@ -22,6 +22,8 @@ scope:
 - tests/unit/test_check.py
 - docs/modules/process.md
 - docs/commands/check.md
+- tests/unit/test_process_reap.py
+- tests/unit/test_process_pid_liveness.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -77,6 +79,16 @@ scope_changes:
   glob: docs/commands/check.md
   reason: 'T-3191: correct doc path -- check gate docs live at docs/commands/check.md,
     not docs/modules/check.md'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_process_reap.py
+  reason: 'T-3191: new must-fire/must-stay-quiet unit tests for the sys.platform guards'
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/unit/test_process_pid_liveness.py
+  reason: 'T-3191: new must-fire/must-stay-quiet unit tests for the sys.platform guards'
   actor: logan
   at: '2026-08-27'
 designated_repro_test: null
