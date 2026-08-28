@@ -1,7 +1,7 @@
 ---
 id: T-2971
 title: Re-measure macOS CI after T-2943/T-2969 land
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-26'
@@ -27,6 +27,9 @@ body_changes:
   at: '2026-08-28'
   old_length: 712
   new_length: 6751
+evidence:
+- cmd:/tmp/claude-1000/-home-logan-projects-frob/79c6402d-b401-4652-bea7-f81df1be9322/scratchpad/t2971_evidence_check.sh
+  exit=0 sha256=5c545b9f4724
 designated_repro_test: null
 threat: null
 component: null

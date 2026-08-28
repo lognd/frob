@@ -407,6 +407,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2968: test_cli_cycle.py: 3 exit-code assertions predate cycle-found=1 CLI contract
 - T-2969: Audit remaining test_cli_*.py fixtures for the same missing-git-init pattern as T-2943
 - T-2970: frob-dup: narrow the tests/ renamed-detector threshold (fixture-repetition false positives)
+- T-2971: Re-measure macOS CI after T-2943/T-2969 land
 - T-2977: post-land sweep regression from an unattributed source (sweep spawned by T-2966): 2 new (rule, file) identit(ies), 2 finding(s) (F401)
 - T-2978: Long-running commands show no live progress: no phase, no unit count, no elapsed time on a TTY
 - T-2979: Default output is debug spam: gitio/process spawn traces drown the result on nearly every command
