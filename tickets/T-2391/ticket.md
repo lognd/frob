@@ -26,6 +26,7 @@ scope:
 - tickets/T-draft-b00e9a5f/**
 - tickets/T-draft-b44869e6/**
 - tickets/T-draft-c7bfd2e9/**
+- rapid-debt.jsonl
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -112,6 +113,18 @@ scope_changes:
   glob: tickets/T-draft-c7bfd2e9/**
   reason: frob ticket new for the doc-anchor follow-up ticket writes tickets/T-draft-c7bfd2e9/ticket.md
     -- machinery side effect (T-3172 precedent)
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: rapid-debt.jsonl
+  reason: close's REL001-preflight-skipped debt line is machinery bookkeeping written
+    by frob ticket close itself, not scope creep
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: rapid-debt.jsonl
+  reason: close's REL001-preflight-skipped debt line is machinery bookkeeping written
+    by frob ticket close itself, not scope creep
   actor: logan
   at: '2026-08-28'
 evidence:
