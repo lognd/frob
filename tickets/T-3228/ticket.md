@@ -22,6 +22,7 @@ scope:
 - docs/design/registry/check-coverage.yaml
 - docs/modules/gates.md
 - tests/test_waive_gate.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -80,6 +81,11 @@ scope_changes:
 - op: add
   glob: tests/test_waive_gate.py
   reason: WAIVE009/010 tests actually live in tests/test_waive_gate.py, not tests/unit/gates/test_waive.py
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: wired waive011_violations into the WAIVE00* import list and _assemble_gate_report
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
