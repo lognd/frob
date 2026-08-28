@@ -2,7 +2,7 @@
 id: T-3079
 title: 'post-land sweep regression from T-3044: 2 new (rule, file) identit(ies), 2
   finding(s) (LARGE001)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-27'
@@ -17,11 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - strata-core/src/graph/vmodel.rs
 - strata-core/src/parse/grammar_core.rs
-findings:
-- - LARGE001
-  - strata-core/src/graph/vmodel.rs
-- - LARGE001
-  - strata-core/src/parse/grammar_core.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +27,11 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
+findings:
+- - LARGE001
+  - strata-core/src/graph/vmodel.rs
+- - LARGE001
+  - strata-core/src/parse/grammar_core.rs
 ---
 The deferred post-land unscoped sweep (T-1684) for T-3044 at commit 51bc8c6ddb492d00af3341e00f7727011e8a961c found 2 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 
