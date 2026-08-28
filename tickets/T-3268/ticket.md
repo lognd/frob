@@ -55,7 +55,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3e5881ee60fdf9fe301188418a87987f12561af5
 ---
 MEASURED 2026-08-28 on main (8a229c515) while re-running the failing node ids
 from the 2026-08-28 CI run.
