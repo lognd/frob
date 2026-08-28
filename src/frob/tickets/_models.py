@@ -503,24 +503,17 @@ def _tokenize_glob(pattern: str) -> tuple[str, ...]:
 
 
 # frob:ticket T-0453
-# frob:tests \
-# tests/test_tickets_lease.py::TestGlobsIntersect.test_wildcard_prefix_overlaps_literal
-# frob:tests \
-# tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_literal_siblings
-def _globs_intersect(glob_a: str, glob_b: str) -> bool:
-    """Whether two fnmatch-style glob patterns can ever match the SAME
-    concrete path -- a sound path/glob intersection test (T-0453 DESIGN
-    CORRECTION), not a literal-prefix heuristic: `'*'` matches any
-    (possibly empty) run of characters and `'?'`/a bracket class matches
-    exactly one, on EITHER side, via the standard two-pattern wildcard-
-    intersection DP (memoized over token positions). This is what keeps
-    the T-0453 scope-lease overlap check sound for arbitrary globs -- not
-    just the `dir/**`-vs-literal-file case, and specifically NOT special-
-    casing `tests/**`/`docs/` out of the comparison (the thing the design
-    correction says never to do).
-    """
-    tok_a = _tokenize_glob(glob_a)
-    tok_b = _tokenize_glob(glob_b)
+def _segment_intersect(seg_a: str, seg_b: str) -> bool:
+    """Whether two fnmatch-style glob SEGMENTS (no `/` in either -- the
+    caller has already split on path separators) can ever match the same
+    literal text: `'*'` matches any (possibly empty) run of non-separator
+    characters and `'?'`/a bracket class matches exactly one, on EITHER
+    side, via the standard two-pattern wildcard-intersection DP (memoized
+    over token positions). This is the T-0453 char-level engine, scoped
+    to a single path segment by T-3180 -- see `_globs_intersect` for why
+    a segment boundary matters."""
+    tok_a = _tokenize_glob(seg_a)
+    tok_b = _tokenize_glob(seg_b)
     memo: dict[tuple[int, int], bool] = {}
 
     def rec(i: int, j: int) -> bool:
@@ -538,6 +531,73 @@ def _globs_intersect(glob_a: str, glob_b: str) -> bool:
             result = (a_tok == "?" or b_tok == "?" or a_tok == b_tok) and rec(
                 i + 1, j + 1
             )
+        else:
+            result = False
+        memo[key] = result
+        return result
+
+    return rec(0, 0)
+
+
+# frob:ticket T-3180
+# frob:tests \
+# tests/test_tickets_lease.py::TestGlobsIntersect.test_wildcard_prefix_overlaps_literal
+# frob:tests \
+# tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_literal_siblings
+# frob:tests \
+# tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_directory_siblings
+# frob:tests \
+# tests/test_tickets_lease.py::TestGlobsIntersect.test_identical_globs_overlap
+# frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_wildcard_basenames_same_directory  # noqa: E501
+# frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_literal_under_shared_doublestar  # noqa: E501
+# frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_wildcard_basenames_under_shared_doublestar  # noqa: E501
+# frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_doublestar_prefix_overlaps_nested_literal  # noqa: E501
+# frob:tests \
+# tests/test_tickets_lease.py::TestGlobsIntersect.test_doublestar_subsumes_other_pattern
+def _globs_intersect(glob_a: str, glob_b: str) -> bool:
+    """Whether two fnmatch-style glob patterns can ever match the SAME
+    concrete path -- a sound path/glob intersection test (T-0453 DESIGN
+    CORRECTION, T-3180 PATH-SEGMENT CORRECTION).
+
+    T-3180: patterns are matched PATH-SEGMENT-AWARE, not as flat character
+    strings. Each pattern is split on `/` first; a segment that is
+    EXACTLY `**` is a globstar (matches zero or more WHOLE segments,
+    across directory boundaries); every other segment is matched against
+    its counterpart with `_segment_intersect`, which -- because a segment
+    by construction never contains `/` -- lets a bare `*` or `?` match
+    only WITHIN one path component, never across it.
+
+    The prior implementation ran the char-level DP directly on the
+    un-split pattern, which made a bare `*` behave exactly like `**`
+    (fnmatch's own `*` matches `/` too): `tests/unit/verify/test_x*.py`
+    was then judged to overlap `tests/**/test_y*.py`, because the DP could
+    always stuff the literal text `/test_y...` into the trailing `*`'s
+    match. No real two-segment glob pair like that can ever name the same
+    file when `*` is read the conventional way (single segment) -- the
+    over-approximation was specific to treating every `*` as a `**`, not
+    a general soundness slack. Splitting on `/` first and reserving
+    cross-segment matching for an explicit `**` token restores that
+    distinction without weakening the guard for any case where the
+    patterns truly do share a directory tree (`_segment_intersect` and
+    the `**`-branches below are exactly as permissive as T-0453's design
+    for those cases).
+    """
+    segs_a = tuple(glob_a.split("/"))
+    segs_b = tuple(glob_b.split("/"))
+    memo: dict[tuple[int, int], bool] = {}
+
+    def rec(i: int, j: int) -> bool:
+        key = (i, j)
+        if key in memo:
+            return memo[key]
+        if i == len(segs_a) and j == len(segs_b):
+            result = True
+        elif i < len(segs_a) and segs_a[i] == "**":
+            result = rec(i + 1, j) or (j < len(segs_b) and rec(i, j + 1))
+        elif j < len(segs_b) and segs_b[j] == "**":
+            result = rec(i, j + 1) or (i < len(segs_a) and rec(i + 1, j))
+        elif i < len(segs_a) and j < len(segs_b):
+            result = _segment_intersect(segs_a[i], segs_b[j]) and rec(i + 1, j + 1)
         else:
             result = False
         memo[key] = result

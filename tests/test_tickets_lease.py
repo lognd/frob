@@ -70,6 +70,52 @@ class TestGlobsIntersect:
     def test_identical_globs_overlap(self) -> None:
         assert _globs_intersect("src/frob/gates/**", "src/frob/gates/**") is True
 
+    def test_disjoint_wildcard_basenames_same_directory(self) -> None:
+        # T-3180 MUST-STAY-QUIET: a wildcard-bearing add glob against a
+        # held wildcard glob in the SAME directory, disjoint basenames --
+        # the "literal accepted, wildcard refused" discriminator.
+        assert (
+            _globs_intersect(
+                "tests/unit/verify/test_nonexistent_xyz*.py",
+                "tests/**/test_fleet_status*.py",
+            )
+            is False
+        )
+        assert (
+            _globs_intersect(
+                "tests/unit/verify/test_attribution*.py",
+                "tests/**/test_fleet_status*.py",
+            )
+            is False
+        )
+
+    def test_disjoint_literal_under_shared_doublestar(self) -> None:
+        # T-3180: the literal (no wildcard) case must also stay quiet --
+        # this one already passed before the fix; guard against regression.
+        assert (
+            _globs_intersect(
+                "tests/unit/verify/test_attribution.py",
+                "tests/**/test_fleet_status*.py",
+            )
+            is False
+        )
+
+    def test_disjoint_wildcard_basenames_under_shared_doublestar(self) -> None:
+        # T-3180 MUST-STAY-QUIET: disjoint basenames under a shared `**`
+        # prefix -- two independent wildcard globs whose final-segment
+        # literal prefixes cannot both match the same file.
+        assert _globs_intersect("tests/**/test_a*.py", "tests/**/test_b*.py") is False
+
+    def test_doublestar_prefix_overlaps_nested_literal(self) -> None:
+        # T-3180 MUST-FIRE: `tests/**/a*.py` genuinely overlaps a concrete
+        # nested literal path it can match.
+        assert _globs_intersect("tests/**/a*.py", "tests/unit/ab.py") is True
+
+    def test_doublestar_subsumes_other_pattern(self) -> None:
+        # T-3180 MUST-FIRE: a `**` that genuinely subsumes the other
+        # pattern must still be refused.
+        assert _globs_intersect("src/**", "src/foo/bar.py") is True
+
 
 class TestScopeOverlap:
     def test_precise_scopes_disjoint(self) -> None:

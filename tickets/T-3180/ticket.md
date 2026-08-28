@@ -2,7 +2,7 @@
 id: T-3180
 title: Scope-lease overlap check refuses provably-disjoint globs (literal accepted,
   wildcard refused)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -40,6 +40,12 @@ scope_changes:
     file for the fixtures
   actor: logan
   at: '2026-08-27'
+evidence:
+- tests/test_tickets_lease.py::TestGlobsIntersect::test_disjoint_wildcard_basenames_same_directory
+- tests/test_tickets_lease.py::TestGlobsIntersect::test_disjoint_literal_under_shared_doublestar
+- tests/test_tickets_lease.py::TestGlobsIntersect::test_disjoint_wildcard_basenames_under_shared_doublestar
+- tests/test_tickets_lease.py::TestGlobsIntersect::test_doublestar_prefix_overlaps_nested_literal
+- tests/test_tickets_lease.py::TestGlobsIntersect::test_doublestar_subsumes_other_pattern
 designated_repro_test: null
 threat: null
 component: null
