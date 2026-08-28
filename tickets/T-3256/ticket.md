@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'coordinator-supplied live evidence: a land killed by its own 540s wrapper
+    while its child frob check was actively progressing (335s, 82.8% CPU), plus lock-starvation
+    of non-landing ledger ops during the same window; verified independently before
+    folding into fix design'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 3750
+  new_length: 6150
 designated_repro_test: null
 threat: null
 component: null
@@ -92,3 +102,46 @@ ALSO REPORT, DO NOT FIX HERE: whether `fleet_status` can see this condition at
 all. An operator watching the fleet should be able to tell "six checks are
 fighting over the box" from "six agents are stalled", and those look identical
 from the outside today.
+
+
+FIRST MEASURED CASE OF THIS CONTENTION KILLING A LAND, not merely slowing one.
+2026-08-28, observed live from the coordinator.
+
+Series DP's `frob ticket land T-3246` ran to its `timeout 540` wrapper and was
+killed. At the moment of death:
+
+    land pid 3521399        age 540s (wrapper budget exhausted)
+    child frob check        age 335s, 82.8% CPU
+                            (`frob check --ticket T-3246`)
+
+The child was doing real work at full CPU. This was not a deadlock, not a stall,
+and not a defect in the ticket's own changes. The land simply could not finish
+inside 540 seconds because five other series were landing concurrently and every
+land spawns its own full `frob check`.
+
+AFTERMATH, verified: T-3246 remained `state: in-progress` with no land commit on
+main. Nothing was half-written this time. That matters, because this repo has a
+recorded failure mode where a timed-out land writes `state: done` with evidence
+while ZERO code reaches main -- so the cost of this contention is not bounded by
+"the agent retries". A land killed at the wrong instant can corrupt the ledger.
+
+WHY THIS SHARPENS THE TICKET. The original filing argued from resource
+measurements (load 36, 0 GB free, 51 forkservers, 14.5 GB RSS) and from prior
+recorded history. This is a direct causal observation: oversubscription consumed
+a land's entire wall-clock budget while it was actively progressing. The 540s
+wrapper is not generous or stingy in itself -- it is simply not a fixed quantity
+when N unbudgeted checks share 12 cores.
+
+CONSEQUENCE FOR THE FIX, and this is the part that should change the design: any
+solution that only makes checks share CPU more politely still leaves each land
+racing a FIXED wall-clock timeout. Consider whether the land's timeout should be
+budget-aware (extended when the check is demonstrably progressing) as well as
+whether the pool should be smaller. State which you chose. Do NOT simply raise
+the 540s wrapper -- an unbounded land is worse than a killed one, and the
+timeout is what makes a genuinely wedged land fail fast.
+
+ALSO WORTH COUNTING: the coordinator was refused the ledger lock on three
+consecutive `frob ticket close` attempts during the same window, and frob's own
+[REPEATED_FAILURE] guard correctly told it to stop. Lock starvation of
+non-landing operations is a second, distinct symptom of the same
+oversubscription and belongs in the same analysis.
