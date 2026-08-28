@@ -21,6 +21,7 @@ scope:
 - src/frob/gates/_coverage.py
 - docs/modules/cli.md
 - docs/modules/gates.md
+- tests/test_status.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -77,6 +78,12 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: match existing frob:doc anchors for status_runner.py/_coverage.py rather
     than a nonexistent docs/modules/status.md
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/test_status.py
+  reason: wired frob status's new baseline-locks section, needs a targeted regression
+    test there
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
