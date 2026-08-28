@@ -1,7 +1,7 @@
 ---
 id: T-2709
 title: Single-mode test coverage for set_body's archive routing (T-2678 successor)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting::test_single_mode_append_on_archived_ticket_writes_archive_only
 designated_repro_test: null
 threat: null
 component: null
