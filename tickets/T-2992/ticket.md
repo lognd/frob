@@ -28,6 +28,12 @@ body_changes:
   at: '2026-08-28'
   old_length: 1580
   new_length: 1864
+- mode: append
+  reason: record honest re-verification attempt requested by coordinator before re-closing
+  actor: logan
+  at: '2026-08-28'
+  old_length: 2147
+  new_length: 3482
 designated_repro_test: null
 threat: null
 component: null
@@ -66,3 +72,26 @@ frob:no-behavior-change reason="pure investigation/triage ticket, scope=[]; the 
 
 ## Reopen log
 - 2026-08-28: closed on --no-behavior-change without taking a fresh measurement; ticket's deliverable is a Linux failing-node-id measurement, not a code change -- reopening per coordinator direction to attempt a real bounded suite run under tonight's quiet-box window
+
+
+## Series DJ re-verification (2026-08-28)
+
+Reopened after closing on --no-behavior-change without re-verifying the
+measurement claim. Attempted ONE genuine single-shot unscoped run under
+tonight's quiet-box window (load avg ~5-7, 10GB free) per coordinator
+request: `timeout 540 PYTHONFAULTHANDLER=1 uv run pytest -q -n auto`
+(fleet-bounded to 4 workers). Result: truncated at the 540s shell
+timeout having reached only ~32% of collection (12039 total). One test,
+tests/system/test_frob_self_model.py::test_sys_gate_zero_violations,
+stalled past pytest's 100s per-test threshold under xdist and took a
+worker down ("[gw3] node down: Not properly terminated") -- same
+xdist-contention shape as the T-3033 test_doctor.py finding. This
+CONFIRMS the prior session's own conclusion: a single unscoped shot
+does not complete in a bounded window even under good conditions: the
+chunked methodology (tests/unit whole, tests/gates, thirds of
+tests/*.py, tests/integration+system, test_doctor.py separately) was
+the only viable path and is what actually produced this ticket's
+authoritative RAW RESULT (86 real failures, all triaged and filed into
+T-3019/T-3033/T-3034/T-3035/T-3037/T-3040/T-3041, all six now [done] on
+main). That prior chunked measurement stands; nothing new was found in
+this re-verification beyond confirming its premise.
