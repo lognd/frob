@@ -2,7 +2,7 @@
 id: T-2616
 title: milestone missing from MIRRORED_LEDGER_VERBS; 4 verbs unclassified in dispatch-table
   accounting test
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
