@@ -24,6 +24,8 @@ scope:
 - docs/modules/tickets-lifecycle.md
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - tests/test_ticket_leases.py
+- src/frob/tickets/_models.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -94,6 +96,20 @@ scope_changes:
   glob: tests/test_ticket_leases.py
   reason: TestLedgerAutoCommitEnumeratedOverDispatchTable::test_dispatch_table_verbs_are_all_accounted_for
     enumerates every dispatch verb by hand; restore must be filed into it
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: the new TicketError members (RestoreReasonMissing etc, ArchiveNonTerminalTicket)
+    live in _models.py; AFFECT001 requires touching the error-types doc section that
+    closure-covers TicketError
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: the new TicketError members (RestoreReasonMissing etc, ArchiveNonTerminalTicket)
+    live in _models.py; AFFECT001 requires touching the error-types doc section that
+    closure-covers TicketError
   actor: logan
   at: '2026-08-28'
 body_changes:
