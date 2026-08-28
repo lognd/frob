@@ -2,7 +2,7 @@
 id: T-3238
 title: 'post-land sweep regression from T-3220: 1 new (rule, file) identit(ies), 2
   finding(s) (DRIFT002)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-28'
@@ -16,19 +16,28 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/clean/_core.py
+- tests/test_clean.py
+findings:
+- - DRIFT002
+  - src/frob/clean/_core.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_clean.py
+  reason: DRIFT002's own remedy for a dangling frob:tests reference with no rename
+    candidates is to write the missing test -- doing so is this ticket's direct fix,
+    not unrelated scope creep
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
 land_commit: null
-findings:
-- - DRIFT002
-  - src/frob/clean/_core.py
 ---
 The deferred post-land unscoped sweep (T-1684) for T-3220 at commit c5ea05d6947c0c69d6ef31d6b80bbee987259f39 found 1 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 
