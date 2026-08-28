@@ -2,7 +2,7 @@
 id: T-3271
 title: 'frob scaffold new writes into the output dir, not <output>/<name>: contradicts
   its own quickstart and scattered a project across a user''s home'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
