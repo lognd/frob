@@ -40,8 +40,11 @@ from __future__ import annotations
 import multiprocessing
 import os
 import signal
+import sys
 import time
 from pathlib import Path
+
+import pytest
 
 from frob.tickets._land import _land_lock
 from frob.tickets._leases import refuse_if_land_in_progress
@@ -66,6 +69,8 @@ def _spawn_and_kill_holder(root: Path, tmp_path: Path) -> int:
     confirm acquisition, then SIGKILL it and wait for the OS to reap it.
     Returns the killed child's pid (now confirmed dead) for the caller's
     own assertions."""
+    if sys.platform == "win32":
+        pytest.skip("POSIX-only (T-3244)")
     ready_path = tmp_path / "ready.flag"
     ctx = multiprocessing.get_context("fork")
     proc = ctx.Process(target=_child_hold_lock, args=(root, ready_path))

@@ -793,9 +793,7 @@ def _normalize_gate_timing(payload_text: str) -> str:
     normalized = re.sub(
         r"\[[a-z_]+=[0-9.]+s(?:, [a-z_]+=[0-9.]+s)*\]", "[...]", payload_text
     )
-    return re.sub(
-        r"\[REPLAY age=[0-9.]+s, unchanged tree\]  ", "", normalized
-    )
+    return re.sub(r"\[REPLAY age=[0-9.]+s, unchanged tree\]  ", "", normalized)
 
 
 def _json_tail(stdout: str) -> str:
@@ -845,6 +843,8 @@ class TestProbeDaemon:
         """A socket file that no process is listening on. This is the state
         a crashed daemon leaves behind, and the one the old code could not
         distinguish from 'no daemon'."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         import socket as _socket
 
         from frob.app._daemon_proxy import DaemonLiveness, probe_daemon
@@ -865,6 +865,8 @@ class TestProbeDaemon:
         """A process IS listening but never answers. Spawning a rival here
         is the harmful case: the singleton lock refuses it, so every later
         invocation pays another failed spawn."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         import socket as _socket
 
         from frob.app._daemon_proxy import DaemonLiveness, probe_daemon
@@ -884,6 +886,8 @@ class TestProbeDaemon:
     def test_probe_of_a_silent_listener_stays_within_budget(self, tmp_path):
         """The POINT of T-1377: an unhealthy daemon must cost the probe
         budget, not `send_request`'s 10s query timeout."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         import socket as _socket
         import time
 
@@ -907,6 +911,8 @@ class TestProbeDaemon:
     def test_orphaned_socket_is_unlinked(self, tmp_path):
         """The orphan must be cleared, so the NEXT probe is a clean
         NoSocket instead of another refused connect forever."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         import socket as _socket
 
         from frob.app._daemon_proxy import (
@@ -941,6 +947,8 @@ class TestProbeDaemonVersion:
         `_client_source_sha()` (the "matches" case is the common one
         callers want); pass `None` explicitly for the "field omitted /
         unresolvable" case, or any other string for the "differs" case."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         import json
         import socket as _socket
         import threading

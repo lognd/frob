@@ -118,6 +118,13 @@ class _RawClient:
 
     def __init__(self, root: Path) -> None:
         """Connect once; every `call()` reuses the same socket."""
+        # T-3244: declared unconditionally so `call`/`close` still see a
+        # known attribute type under a win32 `ty` target, where the
+        # `pytest.skip` below makes the rest of this body unreachable.
+        self._sock: socket.socket
+        self._buf: bytes
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only: socket.AF_UNIX (T-3244)")
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self._sock.settimeout(10.0)
         self._sock.connect(str(socket_path(root)))

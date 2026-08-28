@@ -414,6 +414,10 @@ def _ticket_spec_from_cfg(
         # (the annotated field type is the POST-validation shape).
         # frob:ticket T-0737
         # `_resolve_new_acceptance` picks --acceptance or --acceptance-file.
+        # T-3244: `unused-ignore-comment` dropped from the bracket below --
+        # win32's `ty` target reported it as itself unused (the `invalid-
+        # argument-type` ignore it was silencing an "unused" warning about
+        # is live on every platform this repo's own `ty check` runs).
         acceptance=tuple(  # type: ignore[arg-type]  # noqa: E501  # ty: ignore[invalid-argument-type,unused-ignore-comment]
             _resolve_new_acceptance(cfg)
         ),
@@ -1227,9 +1231,7 @@ _BODY_SIMILARITY_WARN_THRESHOLD = 0.85
 
 
 # frob:ticket T-3124
-def _body_similarity_warnings(
-    root: Path, ticket_id: str, body: str
-) -> tuple[str, ...]:
+def _body_similarity_warnings(root: Path, ticket_id: str, body: str) -> tuple[str, ...]:
     """`(warning, ...)` for every OTHER non-terminal ticket whose own body
     scores >= `_BODY_SIMILARITY_WARN_THRESHOLD` on `difflib.SequenceMatcher.
     ratio()` against `body` (T-3124) -- the same simple, deterministic,

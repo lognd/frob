@@ -36,6 +36,8 @@ class TestStackdumpHandler:
         pid-<pid>.txt` file containing a recognizable stack-dump marker --
         the same artifact any frob process (not just a pytest worker)
         produces once it opts in."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         monkeypatch.setenv(STACKDUMP_ENV, "1")
         monkeypatch.chdir(tmp_path)
         previous = signal.getsignal(signal.SIGUSR1)
@@ -58,6 +60,8 @@ class TestStackdumpHandler:
         no-op -- the default handler (whatever it was before) stays in
         place, so an unrelated `SIGUSR1` sender is not silently
         intercepted by a debug-only feature, on ANY caller."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         monkeypatch.delenv(STACKDUMP_ENV, raising=False)
         previous = signal.getsignal(signal.SIGUSR1)
         try:

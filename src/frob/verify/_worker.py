@@ -80,6 +80,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import threading
 import time
 import uuid
@@ -406,14 +407,19 @@ def _ensure_reduced_priority() -> None:
 def _lower_cpu_nice_priority() -> None:
     """The CPU-priority half of `_ensure_reduced_priority` (T-1695, ARCH103
     split): `os.nice(10)`, best-effort -- a platform with no `os.nice`
-    (non-POSIX) just logs and continues, never a crash. T-2961: `ty`
-    flags `os.nice` as unresolved on a Windows target -- already-correct
-    runtime behavior (the `except AttributeError` below is exactly the
-    guard for that), so this is a suppression of a true, already-handled
-    positive, not a real gap; nothing here needs a platform-check
-    rewrite."""
+    (non-POSIX) just logs and continues, never a crash. T-2961/T-3244:
+    `os.nice` is POSIX-only per typeshed (`if sys.platform != "win32":`),
+    so a bare `ty: ignore[unresolved-attribute]` is REQUIRED for a win32
+    `ty` target but reported as an unused-ignore-comment on
+    linux/darwin -- a matched pair of opposites no single ignore comment
+    can satisfy on every platform. A `sys.platform` guard (the T-3191
+    pattern) replaces it: same runtime behavior, and `ty` narrows past
+    `os.nice` on every target without an ignore anywhere."""
+    if sys.platform == "win32":
+        _log.info("verify worker: os.nice unavailable on win32, skipping")
+        return
     try:
-        os.nice(10)  # ty: ignore[unresolved-attribute]
+        os.nice(10)
         _log.info("verify worker: lowered CPU nice priority by 10")
     except (AttributeError, OSError) as exc:
         _log.warning("verify worker: could not lower CPU nice priority: %s", exc)

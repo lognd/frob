@@ -431,6 +431,8 @@ class TestCoverageLockPlatformBackends:
 
             @staticmethod
             def locking(fd: int, mode: int, _nbytes: int) -> None:
+                if sys.platform == "win32":
+                    pytest.skip("POSIX-only (T-3244)")
                 if mode == _FakeMsvcrt.LK_UNLCK:
                     _real_fcntl.flock(fd, _real_fcntl.LOCK_UN)
                     return

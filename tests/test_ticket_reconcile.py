@@ -21,6 +21,7 @@ what actually records the lease the reconcile checks then judges live/dead.
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -188,6 +189,8 @@ class TestReconcileApplyLandInProgressGuard:
     def test_apply_refuses_and_writes_nothing_while_land_lock_held(
         self, repo: Path, caplog
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
         # tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_ap\
         # ply_refuses_and_writes_nothing_while_land_lock_held

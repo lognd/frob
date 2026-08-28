@@ -46,6 +46,8 @@ class TestStackdumpHandler:
         pid-<pid>.txt` file containing a recognizable stack-dump marker --
         the exact artifact a coordinator investigating a wedge would go
         looking for."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         module = _load_conftest()
         monkeypatch.setenv(module._STACKDUMP_ENV, "1")
         monkeypatch.chdir(tmp_path)
@@ -70,6 +72,8 @@ class TestStackdumpHandler:
         no-op -- the default handler (whatever it was before) stays in
         place, so an unrelated `SIGUSR1` sender is not silently
         intercepted by a debug-only feature."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         module = _load_conftest()
         monkeypatch.delenv(module._STACKDUMP_ENV, raising=False)
         previous = signal.getsignal(signal.SIGUSR1)

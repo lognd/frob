@@ -7,8 +7,11 @@ tier-inversion, self-parent) `set_tier` deliberately does not need.
 
 from __future__ import annotations
 
+import sys
 from datetime import date
 from pathlib import Path
+
+import pytest
 
 from frob.tickets import (
     Origin,
@@ -310,6 +313,8 @@ class TestSetParentLandInProgressGuard:
     def test_refuses_and_writes_nothing_while_land_lock_held(
         self, tmp_path: Path, monkeypatch
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/test_tickets_parent.py::TestSetParentLandInProgressGuard.test_refuses_and_writes_nothing_while_land_lock_held  # noqa: E501
         import fcntl
         import json

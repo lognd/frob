@@ -25,6 +25,7 @@ import multiprocessing
 import os
 import signal
 import subprocess
+import sys
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -472,6 +473,8 @@ class TestLandFinishPendingMarkerSigterm:
     def test_sigterm_between_marker_write_and_mutation_leaves_marker_for_reconcile(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/unit/test_land_finish_guard.py::TestLandFinishPendingMarkerSigterm.test_sigterm_between_marker_write_and_mutation_leaves_marker_for_reconcile  # noqa: E501
         import logging
 

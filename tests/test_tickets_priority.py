@@ -4,8 +4,11 @@ ordering, set_priority, and the TICK004 queue-rot gate
 
 from __future__ import annotations
 
+import sys
 from datetime import date, timedelta
 from pathlib import Path
+
+import pytest
 
 from frob.gates import _tick004_queue_rot
 from frob.tickets import (
@@ -327,6 +330,8 @@ class TestSetPriorityLandInProgressGuard:
     def test_refuses_and_writes_nothing_while_land_lock_held(
         self, tmp_path: Path, monkeypatch
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/test_tickets_priority.py::TestSetPriorityLandInProgressGuard.test_refuses_and_writes_nothing_while_land_lock_held  # noqa: E501
         import fcntl
         import json

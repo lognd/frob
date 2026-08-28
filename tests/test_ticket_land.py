@@ -16,6 +16,7 @@ import os
 import re
 import signal
 import subprocess
+import sys
 import time
 from collections.abc import Callable, Sequence
 from datetime import date
@@ -8885,6 +8886,8 @@ class TestSigkillMidStaging:
     def test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry(
         self, repo: Path
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-kill", str(wt)], repo)
@@ -8942,6 +8945,8 @@ class TestSigkillMidStaging:
     def test_unrelated_land_does_not_absorb_a_killed_lands_staged_content(
         self, repo: Path
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_unrelated_land_does_not_absorb_a_killed_lands_staged_content  # noqa: E501
         """T-2564: the hazard a bare abandoned-staged-content symptom does
         NOT by itself prove -- that a DIFFERENT, unrelated ticket's own
@@ -9032,6 +9037,8 @@ class TestSigkillMidStaging:
     def test_sigkill_during_finalize_close_leaves_ticket_recoverable_not_a_silent_lie(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_sigkill_during_finalize_close_leaves_ticket_recoverable_not_a_silent_lie  # noqa: E501
         """T-2679's own positive control, ONE step earlier than T-0907's:
         a real `SIGKILL` delivered while `land()` is mid-
@@ -9152,6 +9159,8 @@ class TestSigkillMidStaging:
     def test_sigkill_during_post_squash_reverification_leaves_ticket_recoverable(
         self, repo: Path
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_sigkill_during_post_squash_reverification_leaves_ticket_recoverable  # noqa: E501
         """The coordinator's own live-fire control (a real T-2696
         reproduction, 2026-08-20): a land was killed not right after the
@@ -11142,6 +11151,8 @@ class TestLandLockHolderMetadataAndTimeout:
     # d_after_context_exits
     # frob:ticket T-1515
     def test_lock_released_after_context_exits(self, tmp_path: Path) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         import fcntl
 
         from frob.tickets._land import _LAND_LOCK_REL, _land_lock
@@ -11166,6 +11177,8 @@ class TestLandLockHolderMetadataAndTimeout:
     def test_timeout_raises_when_a_foreign_holder_never_releases(
         self, tmp_path: Path
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         import fcntl
         import json
 
@@ -11262,6 +11275,8 @@ class TestLandLockHolderMetadataAndTimeout:
         with the flock ACTUALLY held via a separate fd, still times out
         exactly as before -- liveness alone is never a substitute for the
         real `flock`."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         import fcntl
         import json
 
@@ -11367,6 +11382,8 @@ class TestLandLockPlatformBackends:
 
             @staticmethod
             def locking(fd: int, mode: int, _nbytes: int) -> None:
+                if sys.platform == "win32":
+                    pytest.skip("POSIX-only (T-3244)")
                 if mode == _FakeMsvcrt.LK_UNLCK:
                     _real_fcntl.flock(fd, _real_fcntl.LOCK_UN)
                     return

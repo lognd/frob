@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from datetime import date
 from pathlib import Path
 from typing import cast
@@ -370,6 +371,10 @@ class TestBaselineLock:
         `_baseline_lock` code path that only ever runs for real on
         Windows: acquire, contend, timeout-degrade, release."""
         # frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_windows_backend_serializes_two_concurrent_holders  # noqa: E501
+        if sys.platform == "win32":
+            pytest.skip(
+                "POSIX-only: the fake backend below is real fcntl.flock under the hood (T-3244)"
+            )
         import fcntl as _fcntl
 
         from frob.app.ticket_runner._rapid_sweep import _baseline_lock
@@ -413,6 +418,8 @@ class TestBaselineLock:
         assert entered is True
 
     def test_serializes_two_concurrent_holders(self, tmp_path: Path) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_serializes_two_concurrent_holders  # noqa: E501
         # A foreign holder keeps the lock file exclusively locked; this
         # call must not block forever -- it degrades to proceeding

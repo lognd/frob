@@ -2296,6 +2296,8 @@ class TestTrueFlockHolderPid:
     membership."""
 
     def test_finds_the_true_holder(self, tmp_path: Path) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid.test_finds_the_true_holder  # noqa: E501
         lock_path = tmp_path / "land.lock"
         lock_path.write_text("{}", encoding="utf-8")
@@ -2312,6 +2314,8 @@ class TestTrueFlockHolderPid:
         )
 
     def test_ignores_a_lock_on_a_different_inode(self, tmp_path: Path) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid.test_ignores_a_lock_on_a_different_inode  # noqa: E501
         """A waiter that later acquires an UNRELATED file's lock must
         never be misread as this lock's holder."""
@@ -2860,6 +2864,8 @@ class TestOrphanedForkserverCount:
         writes the original short `stat` line (unmeasurable age, matching
         `reap_orphaned_forkservers`'s own 'never a candidate' posture for
         that case, exercised by `test_unmeasurable_age_never_counted`)."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         if not (proc / "uptime").exists():
             cls._write_proc_uptime(proc)
         entry = proc / str(pid)
@@ -3081,6 +3087,8 @@ class TestOrphanedForkserverCountAgreesWithReap:
     def _write_forkserver(
         proc: Path, pid: int, *, ppid: int, age_s: float, uptime_s: float
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         clk_tck = os.sysconf("SC_CLK_TCK")
         starttime_ticks = int((uptime_s - age_s) * clk_tck)
         entry = proc / str(pid)
@@ -3129,6 +3137,8 @@ class TestOrphanedForkserverCountAgreesWithReap:
         fixture pid is not a real OS process, so a real SIGTERM would
         raise `ProcessLookupError` regardless of classification and
         `reaped == []` would be true either way, proving nothing."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         from frob.process._reap import (
             DEFAULT_ORPHAN_AGE_FLOOR_S,
             _is_live_check_process,
@@ -3185,6 +3195,8 @@ class TestStaleForkserverCount:
     def _write_forkserver(
         proc: Path, pid: int, *, age_s: float, ppid: int = 999
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         clk_tck = os.sysconf("SC_CLK_TCK")
         uptime_s = float(proc.joinpath("uptime").read_text(encoding="utf-8").split()[0])
         starttime_ticks = int((uptime_s - age_s) * clk_tck)
@@ -5646,6 +5658,8 @@ class TestFlockHoldersMatchingWin32Guard:
         """MUST-STAY-QUIET control: the win32 guard must not narrow the
         ordinary POSIX path -- a real matching /proc/locks line still
         resolves to the holder pid, exactly as before this ticket."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
         # tests/unit/test_coordinator_scripts.py::TestFlockHoldersMatchingWin32Guard.te\
         # st_posix_platform_still_matches_normally

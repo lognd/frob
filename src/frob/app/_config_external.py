@@ -37,7 +37,7 @@ from __future__ import annotations
 import argparse
 import tomllib
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 # frob:ticket T-0021
 # frob:ticket T-0085
@@ -783,7 +783,14 @@ def _all_parser_dests(parser: argparse.ArgumentParser) -> frozenset[str]:
         for action in p._actions:  # noqa: SLF001 -- argparse's own public introspection surface, no other API exposes this
             if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
                 for sub in action.choices.values():
-                    _walk(sub)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+                    # T-3244: argparse._SubParsersAction.choices'
+                    # inferred value type does not narrow to
+                    # ArgumentParser for ty on every platform target
+                    # (linux flags invalid-argument-type here, win32
+                    # does not) -- a cast avoids a fixed ty: ignore
+                    # that would be live on one target and an unused-
+                    # ignore-comment warning on the other.
+                    _walk(cast(argparse.ArgumentParser, sub))
             elif action.dest != argparse.SUPPRESS:
                 dests.add(action.dest)
 

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 import threading
 import time
 from datetime import UTC, datetime, timedelta
@@ -1049,6 +1050,8 @@ class TestCommitTicketLedgerChange:
         is undone before `Err(LandInProgress)` returns -- `root` ends up
         exactly as clean as before the call, never stranded dirty the
         way an unqualified timeout leaves it today."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only: fcntl.flock (T-3244)")
         import fcntl
         import json
 
@@ -1494,6 +1497,8 @@ class TestRefuseIfLandInProgress:
         assert result.is_ok
 
     def test_refuses_while_land_lock_held(self, repo: Path, caplog) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_refuses_while_land_lock_held  # noqa: E501
         import fcntl
         import json
@@ -1579,6 +1584,8 @@ class TestRefuseIfLandInProgress:
 
     # frob:ticket T-1961
     def test_waits_then_succeeds_once_the_lock_frees(self, repo: Path, caplog) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
         # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_waits_then_succe\
         # eds_once_the_lock_frees
@@ -1600,6 +1607,8 @@ class TestRefuseIfLandInProgress:
         released = False
 
         def fake_sleep(_seconds: float) -> None:
+            if sys.platform == "win32":
+                pytest.skip("POSIX-only (T-3244)")
             nonlocal released
             if not released:
                 fcntl.flock(holder_fd, fcntl.LOCK_UN)
@@ -1624,6 +1633,8 @@ class TestRefuseIfLandInProgress:
 
     # frob:ticket T-1961
     def test_wait_times_out_and_still_refuses_loudly(self, repo: Path, caplog) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
         # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_wait_times_out_a\
         # nd_still_refuses_loudly
@@ -1653,6 +1664,8 @@ class TestRefuseIfLandInProgress:
         readings = iter([0.0, 5.0, 100.0])
 
         def fake_monotonic() -> float:
+            if sys.platform == "win32":
+                pytest.skip("POSIX-only (T-3244)")
             return next(readings, 100.0)
 
         try:
@@ -1676,6 +1689,8 @@ class TestRefuseIfLandInProgress:
     def test_wait_budget_counts_from_the_lands_own_start_not_this_calls_start(
         self, repo: Path, caplog
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
         # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_wait_budget_coun\
         # ts_from_the_lands_own_start_not_this_calls_start
@@ -1725,6 +1740,8 @@ class TestRefuseIfLandInProgress:
         poll_count = 0
 
         def fake_sleep(seconds: float) -> None:
+            if sys.platform == "win32":
+                pytest.skip("POSIX-only (T-3244)")
             nonlocal poll_count
             poll_count += 1
             clock["t"] += seconds
@@ -1873,6 +1890,8 @@ class TestDispatchLandGuard:
     def test_refuses_mutating_verb_while_land_in_progress(
         self, repo: Path, caplog
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501
         import fcntl
 
@@ -1909,6 +1928,8 @@ class TestDispatchLandGuard:
             os.close(holder_fd)
 
     def test_read_only_verb_runs_while_land_in_progress(self, repo: Path) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501
         import fcntl
 
@@ -2015,6 +2036,8 @@ class TestDispatchLandGuard:
         )
 
     def test_land_verb_itself_is_exempt(self, repo: Path) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501
         import fcntl
 
@@ -2437,6 +2460,8 @@ class TestLeaseStalenessReason:
 
     # frob:ticket T-2264
     def test_land_shields_lease(self, repo: Path, second_worktree: Path) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
         # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_land_shields_lease
         """(MUST FAIL FIRST, T-2264 acceptance 1) Reproduces the measured
@@ -2484,6 +2509,8 @@ class TestLeaseStalenessReason:
 
     # frob:ticket T-2264
     def test_other_land_no_shield(self, repo: Path, second_worktree: Path) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests \
         # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_other_land_no_shie\
         # ld
@@ -3100,6 +3127,8 @@ class TestConcurrentNewTicketAllocationDuringLand:
     def test_n_concurrent_new_ticket_calls_produce_distinct_ids(
         self, tmp_path: Path
     ) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/test_ticket_leases.py::TestConcurrentNewTicketAllocationDuringLand.test_n_concurrent_new_ticket_calls_produce_distinct_ids  # noqa: E501
         import fcntl
         import json
@@ -3139,6 +3168,8 @@ class TestConcurrentNewTicketAllocationDuringLand:
         errors: list[BaseException] = []
 
         def _file_one(i: int) -> None:
+            if sys.platform == "win32":
+                pytest.skip("POSIX-only (T-3244)")
             try:
                 spec = TicketSpec(
                     title=f"concurrent ticket {i}",

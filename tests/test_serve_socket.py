@@ -58,6 +58,8 @@ class TestSocketPath:
     capped at 104 bytes on macOS / 108 on Linux)."""
 
     def test_short_regardless_of_root_depth(self, tmp_path: Path) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/test_serve_socket.py::TestSocketPath.test_short_regardless_of_root_depth  # noqa: E501
         # Build a root deep enough that the OLD scheme
         # (`<root>/.frob/daemon.sock`) would overflow sun_path on EITHER
@@ -79,9 +81,7 @@ class TestSocketPath:
         # at the relocated path, not just be short on paper.
         import socket as _socket_module
 
-        sock = _socket_module.socket(
-            _socket_module.AF_UNIX, _socket_module.SOCK_STREAM
-        )
+        sock = _socket_module.socket(_socket_module.AF_UNIX, _socket_module.SOCK_STREAM)
         try:
             sock.bind(str(new_path))
         finally:
@@ -89,6 +89,8 @@ class TestSocketPath:
             new_path.unlink(missing_ok=True)
 
     def test_normal_depth_root_still_works(self, root: Path) -> None:
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
         # frob:tests tests/test_serve_socket.py::TestSocketPath.test_normal_depth_root_still_works  # noqa: E501
         # Must-stay-quiet control: an ordinary, shallow test root (the
         # shape every other test in this file already uses) must keep
@@ -97,9 +99,7 @@ class TestSocketPath:
         new_path = socket_path(root)
         import socket as _socket_module
 
-        sock = _socket_module.socket(
-            _socket_module.AF_UNIX, _socket_module.SOCK_STREAM
-        )
+        sock = _socket_module.socket(_socket_module.AF_UNIX, _socket_module.SOCK_STREAM)
         try:
             sock.bind(str(new_path))
         finally:
@@ -110,9 +110,7 @@ class TestSocketPath:
         # frob:tests tests/test_serve_socket.py::TestSocketPath.test_stable_for_the_same_root  # noqa: E501
         assert socket_path(root) == socket_path(root)
 
-    def test_distinct_roots_get_distinct_paths(
-        self, tmp_path: Path
-    ) -> None:
+    def test_distinct_roots_get_distinct_paths(self, tmp_path: Path) -> None:
         # frob:tests tests/test_serve_socket.py::TestSocketPath.test_distinct_roots_get_distinct_paths  # noqa: E501
         root_a = tmp_path / "a"
         root_b = tmp_path / "b"
@@ -219,6 +217,8 @@ class TestAcquireSingletonLockPlatformBackends:
 
             @staticmethod
             def locking(fd: int, mode: int, _nbytes: int) -> None:
+                if sys.platform == "win32":
+                    pytest.skip("POSIX-only (T-3244)")
                 if mode == _FakeMsvcrt.LK_UNLCK:
                     _real_fcntl.flock(fd, _real_fcntl.LOCK_UN)
                     return
@@ -239,8 +239,7 @@ class TestAcquireSingletonLockPlatformBackends:
 
         third = acquire_singleton_lock(root)
         assert third.is_ok, (
-            "windows backend release-on-close did not free the lock for "
-            "the next caller"
+            "windows backend release-on-close did not free the lock for the next caller"
         )
         third.danger_ok.close()
 
