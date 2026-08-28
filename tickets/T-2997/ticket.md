@@ -132,7 +132,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b48c57be772ba40414f91b6a1482d705a6539b93
 ---
 `rapid-debt.jsonl` is append-only operational telemetry (deferred-sweep records,
 attribution skips, quarantine events) tracked IN GIT at the repo root. Measured
