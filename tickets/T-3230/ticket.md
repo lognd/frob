@@ -19,6 +19,7 @@ scope:
 - tests/test_ticket_reconcile.py
 - src/frob/tickets/_archive.py
 - tests/test_tickets_organization.py
+- src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -59,6 +60,12 @@ scope_changes:
   glob: tests/test_tickets_organization.py
   reason: must-fire/must-stay-quiet fixtures for the new _refuse_archive_if_other_worktrees_live
     unmeasurable-git-worktree-list fail-closed path
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: new TicketError.ArchiveWorktreeMeasurementFailed variant needed to distinguish
+    the unmeasurable-worktree-list refusal from ArchiveLiveLeaseExists
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
