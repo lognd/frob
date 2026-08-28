@@ -109,7 +109,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 385c0aa28bfa8332d1e3e9e8dbc7d2783a23c6bf
 ---
 MEASURED 2026-08-28 landing T-3191. The DirtyMain guard refused a land, naming
 uncommitted work that did not exist:
