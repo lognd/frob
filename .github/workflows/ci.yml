@@ -61,8 +61,7 @@ jobs:
       # the job with a red X and NO information about where it was wedged,
       # barely better than the manual cancellations in this repo's own CI
       # history (runs 33135896391/33032904841/32968539246, all on
-      # ubuntu-latest -- windows/macos have never hung in this matrix's own
-      # history). `timeout -s ABRT` (not the default SIGTERM) plus
+      # ubuntu-latest). `timeout -s ABRT` (not the default SIGTERM) plus
       # `PYTHONFAULTHANDLER=1` makes Python's built-in fault handler dump
       # every live thread's stack to stderr the instant the budget is hit,
       # before the process dies -- the exact recipe this repo already uses
@@ -70,24 +69,93 @@ jobs:
       # stack-dump handler and the `PYTHONFAULTHANDLER=1 timeout -s ABRT N`
       # local recipe). `timeout` is GNU coreutils and only reliably present
       # on the ubuntu-latest runner's bash (not Windows' default pwsh, and
-      # not macOS's BSD userland) -- ubuntu is also the ONLY platform that
-      # has ever hung here, so this step is split per-OS rather than
-      # reaching for a cross-platform equivalent that has no real hang
-      # history to justify it. Budget: macOS's own Test stage completed in
-      # ~23 minutes when it last ran cleanly (run 33135896391) and ubuntu's
-      # Test step, when it fails outright rather than hanging, finishes
-      # within the ~15-minute whole-job budget (run 33035660969) -- 25
-      # minutes gives the slower platform's own observed ceiling a small
-      # margin without leaving a genuine hang to run anywhere near the
-      # 45-minute job timeout above.
+      # not macOS's BSD userland), so ubuntu keeps the GNU form directly.
+      #
+      # T-3250: run 33169097371 (job 98841565692, macos-latest) FALSIFIES
+      # the premise this comment used to state here ("windows/macos have
+      # never hung in this matrix's own history") -- macOS hung at 99% for
+      # 10m49s of total silence and produced ZERO diagnostics, because the
+      # step below used to be an uninstrumented `uv run pytest -q` for
+      # every non-Linux platform. macOS and Windows now get the same
+      # stack-dump-on-hang standard as ubuntu, using shell/pwsh builtins
+      # (`kill -ABRT` / `Wait-Process`) in place of GNU `timeout`, which
+      # remains genuinely absent from both userlands.
+      #
+      # Budget: macOS's own Test stage completed in ~23 minutes when it
+      # last ran cleanly (run 33135896391) and ubuntu's Test step, when it
+      # fails outright rather than hanging, finishes within the ~15-minute
+      # whole-job budget (run 33035660969) -- 25 minutes gives the slower
+      # platform's own observed ceiling a small margin without leaving a
+      # genuine hang to run anywhere near the 45-minute job timeout above.
+      #
+      # WHY faulthandler_timeout=100 / --timeout=120 (pyproject.toml,
+      # pytest-timeout, --timeout-method=thread) did NOT fire during the
+      # 649s macOS silence, even though the Windows job's own dumps in
+      # this same run ARE stamped by that exact mechanism ("Timeout
+      # (0:01:40)"): both are PER-TEST watchdogs armed only while a test
+      # is executing. The 99% marker means the last test had already
+      # finished; the silence was in session teardown / xdist worker
+      # shutdown, a window no per-test timeout structurally reaches. The
+      # step-level guards below are what cover that window; per-test hangs
+      # remain covered by the pyproject.toml settings as before.
       - name: Test (ubuntu, timed with stack-dump-on-hang)
         if: runner.os == 'Linux'
         env:
           PYTHONFAULTHANDLER: "1"
         run: timeout -s ABRT 25m uv run pytest -q
-      - name: Test (windows/macos)
-        if: runner.os != 'Linux'
-        run: uv run pytest -q
+      # T-3250: macOS has bash but not GNU coreutils' `timeout`. `kill -ABRT`
+      # is a POSIX shell builtin present in macOS's own bash, so it reaches
+      # the same faulthandler dump-then-die mechanism as ubuntu's step
+      # without depending on GNU tooling.
+      - name: Test (macos, timed with stack-dump-on-hang)
+        if: matrix.os == 'macos-latest'
+        env:
+          PYTHONFAULTHANDLER: "1"
+        run: |
+          set -uo pipefail
+          budget=1500  # 25m, same budget/rationale as ubuntu's step above
+          uv run pytest -q &
+          pid=$!
+          (
+            sleep "$budget"
+            if kill -0 "$pid" 2>/dev/null; then
+              echo "::error::macOS Test step exceeded ${budget}s with no completion (T-3250) -- sending SIGABRT for a PYTHONFAULTHANDLER stack dump before the kill"
+              kill -ABRT "$pid" 2>/dev/null || true
+              sleep 10
+              kill -KILL "$pid" 2>/dev/null || true
+            fi
+          ) &
+          watcher=$!
+          wait "$pid"
+          status=$?
+          kill "$watcher" 2>/dev/null || true
+          exit "$status"
+      # T-3250: Windows' default `run:` shell is pwsh, which has no `kill
+      # -ABRT` equivalent -- there is no portable way for an external
+      # process to trigger a SIGABRT-style fault dump in a Windows child.
+      # PLATFORM001 doctrine
+      # (docs/modules/gates.md#platform001-posix-only-primitive-degrades-silently-t-2919):
+      # declare that boundary rather than silently doing nothing. Per-test
+      # hangs still get thread-based stack dumps via pytest-timeout's
+      # --timeout=120/--timeout-method=thread (proven in run 33169097371 --
+      # the Windows job's own dumps are stamped "Timeout (0:01:40)"); this
+      # step only closes the teardown-window gap with a TIMED FAILURE and
+      # an explicit message, not a stack dump, on that one platform.
+      - name: Test (windows, timed with hang guard)
+        if: matrix.os == 'windows-latest'
+        env:
+          PYTHONFAULTHANDLER: "1"
+        run: |
+          $budget = 1500  # 25m, same budget/rationale as ubuntu's step above
+          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q" -NoNewWindow -PassThru
+          try {
+            Wait-Process -Id $p.Id -Timeout $budget -ErrorAction Stop
+          } catch {
+            Write-Host "::error::Windows Test step exceeded $budget s with no completion (T-3250) -- terminating. NOTE (PLATFORM001 declared boundary): Windows has no portable equivalent of SIGABRT-triggered faulthandler dump from an external process, so this teardown-window path gets a timed failure without a stack dump; per-test hangs are still covered by pytest-timeout's --timeout=120/--timeout-method=thread."
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            exit 1
+          }
+          exit $p.ExitCode
       # T-1265 (CHK-THEME-GITIGNORED-TRUST successor): this used to swallow
       # EVERY finding, ERROR-tier included, behind an unconditional
       # `|| echo "::warning"` -- a real gate error (SUPPRESS001, INV006,
