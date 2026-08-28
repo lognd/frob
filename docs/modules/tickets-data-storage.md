@@ -859,6 +859,11 @@ class TicketError(ErrorSet):
     MalformedFrontmatter = "Ticket file failed schema validation"
     InvalidTransition   = "State change not allowed by the state machine"
     MissingEvidence     = "done requires evidence and a Done report"
+    # T-3195: DONE-transition refusal when a Done report records ZERO
+    # evidence AND ZERO changed files (both empty-case placeholders
+    # literally present) -- exempt for a DOCS-kind rapid close or a
+    # narrative that explicitly names a no-behaviour-change close.
+    HollowDoneReport    = "Done report records zero evidence AND zero changed files"
     BlockerOpen         = "Cannot start: blocked_by contains open tickets"
     WriteFailed         = "Atomic ticket write failed"
     UnknownEvidence     = "Evidence id does not resolve to a collected test"

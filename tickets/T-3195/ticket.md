@@ -2,7 +2,7 @@
 id: T-3195
 title: A done-report recording zero evidence and zero changed files reached main while
   the work sat unlanded
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -65,6 +65,12 @@ scope_changes:
     variant
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/test_tickets.py::TestHollowDoneReportGuard::test_rapid_hollow_report_refused
+- tests/test_tickets.py::TestHollowDoneReportGuard::test_docs_kind_rapid_hollow_report_exempt
+- tests/test_tickets.py::TestHollowDoneReportGuard::test_no_behaviour_change_narrative_exempt
+- tests/test_tickets.py::TestHollowDoneReportGuard::test_real_evidence_never_flagged_as_hollow
+- tests/test_tickets.py::TestHollowDoneReportGuard::test_narrative_mentioning_the_markers_is_never_flagged
 designated_repro_test: null
 threat: null
 component: null

@@ -47,12 +47,13 @@ def _ticket(
     blocked_by: tuple[str, ...] = (),
     evidence: tuple[str, ...] = (),
     body: str = "## Description\nsomething\n",
+    kind: TicketKind = TicketKind.FEATURE,
 ) -> Ticket:
     return Ticket(
         id=ticket_id,
         title=title,
         state=state,
-        kind=TicketKind.FEATURE,
+        kind=kind,
         origin=Origin.HUMAN,
         created=created,
         blocked_by=blocked_by,
@@ -3337,3 +3338,124 @@ class TestDoneTransitionStructuralGuardRapidLeniency:
         assert result.is_err
         assert result.danger_err == TicketError.MissingEvidence
         assert recorded == []
+
+
+# frob:ticket T-3195
+class TestHollowDoneReportGuard:
+    """T-3195: a rapid close that records ZERO evidence AND ZERO changed
+    files (both empty-case placeholders literally present in the Done
+    report body) is refused, unless the ticket is a DOCS-kind rapid
+    close or its narrative explicitly records a no-behaviour-change
+    front door -- see `frob.tickets._done_report` for the two checked
+    predicates."""
+
+    _HOLLOW_BODY = (
+        "## Description\nx\n\n## Done report\nsome narrative\n\n"
+        "### Changed\n(no changed files detected)\n\n"
+        "### Evidence\n(no evidence recorded)\n"
+    )
+
+    # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_rapid_hollow_report_refused  # noqa: E501
+    def test_rapid_hollow_report_refused(self, tmp_path: Path) -> None:
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        ticket = _ticket(evidence=(), body=self._HOLLOW_BODY)
+        result = _done_transition_structural_guard(
+            tmp_path,
+            ticket,
+            {ticket.id: ticket},
+            covers_scope=None,
+            rapid=True,
+            debt_sink=lambda tid, what: None,
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.HollowDoneReport
+
+    # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_docs_kind_rapid_hollow_report_exempt  # noqa: E501
+    def test_docs_kind_rapid_hollow_report_exempt(self, tmp_path: Path) -> None:
+        from frob.tickets._evidence import _done_transition_structural_guard
+        from frob.tickets._models import TicketKind
+
+        ticket = _ticket(evidence=(), body=self._HOLLOW_BODY, kind=TicketKind.DOCS)
+        result = _done_transition_structural_guard(
+            tmp_path,
+            ticket,
+            {ticket.id: ticket},
+            covers_scope=None,
+            rapid=True,
+            debt_sink=lambda tid, what: None,
+        )
+        assert result.is_ok
+
+    # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_no_behaviour_change_narrative_exempt  # noqa: E501
+    def test_no_behaviour_change_narrative_exempt(self, tmp_path: Path) -> None:
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        body = (
+            "## Description\nx\n\n## Done report\nNo behaviour change, "
+            "renamed a private helper only.\n\n"
+            "### Changed\n(no changed files detected)\n\n"
+            "### Evidence\n(no evidence recorded)\n"
+        )
+        ticket = _ticket(evidence=(), body=body)
+        result = _done_transition_structural_guard(
+            tmp_path,
+            ticket,
+            {ticket.id: ticket},
+            covers_scope=None,
+            rapid=True,
+            debt_sink=lambda tid, what: None,
+        )
+        assert result.is_ok
+
+    # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_real_evidence_never_flagged_as_hollow  # noqa: E501
+    def test_real_evidence_never_flagged_as_hollow(self, tmp_path: Path) -> None:
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        body = (
+            "## Description\nx\n\n## Done report\nsome narrative\n\n"
+            "### Changed\n- src/x.py\n\n"
+            "### Evidence\n- `tests/x.py::test_a` (pytest node id, verified "
+            "passing when recorded)\n"
+        )
+        ticket = _ticket(evidence=("tests/x.py::test_a",), body=body)
+        result = _done_transition_structural_guard(
+            tmp_path,
+            ticket,
+            {ticket.id: ticket},
+            covers_scope=None,
+            rapid=True,
+            debt_sink=lambda tid, what: None,
+        )
+        assert result.is_ok
+
+    # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_narrative_mentioning_the_markers_is_never_flagged  # noqa: E501
+    def test_narrative_mentioning_the_markers_is_never_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """A narrative that QUOTES the hollow-report placeholder strings
+        while explaining/discussing them (as this guard's own docstring
+        and done-report do) must never itself be read as hollow -- the
+        check is scoped to the actual `### Changed`/`### Evidence`
+        section content, not a raw substring search over the whole body
+        (T-3195's own false-fire, hit and fixed during this ticket)."""
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        body = (
+            "## Description\nx\n\n## Done report\n"
+            'This guard refuses a report that says "(no evidence recorded)" '
+            'and "(no changed files detected)" together.\n\n'
+            "### Changed\n- src/x.py\n\n"
+            "### Evidence\n- `tests/x.py::test_a` (pytest node id, verified "
+            "passing when recorded)\n"
+        )
+        ticket = _ticket(evidence=("tests/x.py::test_a",), body=body)
+        result = _done_transition_structural_guard(
+            tmp_path,
+            ticket,
+            {ticket.id: ticket},
+            covers_scope=None,
+            rapid=True,
+            debt_sink=lambda tid, what: None,
+        )
+        assert result.is_ok

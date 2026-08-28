@@ -64,6 +64,10 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
+from frob.tickets._done_report import (
+    _hollow_done_report_exempt,
+    _is_hollow_done_report,
+)
 from frob.tickets._live_tracker import live_tracker_citations
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
@@ -459,6 +463,19 @@ def _done_transition_structural_guard(
                 ticket.id,
             )
             return Err(TicketError.MissingEvidence)
+    # frob:ticket T-3195
+    if _is_hollow_done_report(ticket.body) and not _hollow_done_report_exempt(
+        ticket, ticket.body, rapid=rapid
+    ):
+        _log.warning(
+            "tickets: %s cannot close, Done report records zero evidence AND "
+            "zero changed files (T-3195) -- either record real evidence/a "
+            "real diff, or (if genuinely evidence-free) close it as a "
+            "DOCS-kind rapid ticket or record a no-behaviour-change front "
+            "door in the narrative",
+            ticket.id,
+        )
+        return Err(TicketError.HollowDoneReport)
     if ticket.tier is not TicketTier.TICKET:
         open_descendants = _open_descendant_ids(ticket, queue)
         if open_descendants:

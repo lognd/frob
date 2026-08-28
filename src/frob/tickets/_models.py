@@ -2306,6 +2306,12 @@ class TicketError(ErrorSet):
     MalformedFrontmatter = "Ticket file failed schema validation"
     InvalidTransition = "State change not allowed by the state machine"
     MissingEvidence = "done requires evidence and a Done report"
+    # frob:ticket T-3195
+    HollowDoneReport = (
+        "Done report records zero evidence AND zero changed files -- refused "
+        "unless the ticket is a DOCS-kind rapid close or explicitly records a "
+        "no-behaviour-change front door"
+    )
     MalformedEvidence = "evidence entry failed schema validation"
     BlockerOpen = "Cannot start: blocked_by contains open tickets"
     # frob:ticket T-3087
