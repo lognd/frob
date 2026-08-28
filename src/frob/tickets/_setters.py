@@ -581,6 +581,8 @@ def _amend_raw_body(raw_body: str, text: str, mode: str) -> str:
 # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_append_on_archived_ticket_writes_archive_path_only  # noqa: E501
 # frob:tests \
 # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_append_on_active_ticket_still_writes_active_path  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_single_mode_append_on_archived_ticket_writes_archive_only  # noqa: E501
 def _ticket_currently_archived(root: Path, ticket_id: str) -> bool:
     """True when `ticket_id` currently lives ONLY in archive storage, not
     active (T-2678): `set_body` (and any other same-id mutation routed

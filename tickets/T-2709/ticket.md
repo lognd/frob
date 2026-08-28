@@ -1,7 +1,7 @@
 ---
 id: T-2709
 title: Single-mode test coverage for set_body's archive routing (T-2678 successor)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'

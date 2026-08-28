@@ -887,6 +887,57 @@ class TestSetBodyArchivedTicketRouting:
         assert "an appended note" in active_path.read_text(encoding="utf-8")
         assert not (tmp_path / "tickets" / "archive" / "T-2000").exists()
 
+    def test_single_mode_append_on_archived_ticket_writes_archive_only(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_single\
+        # _mode_append_on_archived_ticket_writes_archive_only kind="unit"
+        """T-2709: single mode's branch of `_ticket_currently_archived`
+        (a full `load_all`/`load_archive` membership check, since single
+        mode has no per-ticket path to test cheaply) had no direct unit
+        test -- only the v2-mode path was exercised end-to-end by
+        T-2678's own tests above. Pin single mode explicitly (fresh-repo
+        default is v2, T-1553) the way
+        `TestWriteArchivedTicket.test_single_mode_splices_into_archive_file`
+        does, and confirm `set_body` against an archived single-mode
+        ticket amends the shared `tickets-archive.md` monofile in place
+        rather than resurrecting a fresh active-tree entry."""
+        from frob.tickets import set_body
+        from frob.tickets._store import write_archived_ticket
+
+        # Pin v1/'single' mode explicitly (fresh-repo default is v2).
+        atomic_write(ledger_path(tmp_path), "# Tickets\n\n")
+        assert _store_mode(tmp_path) == "single"
+
+        ticket = _ticket("T-1688")
+        write_result = write_archived_ticket(tmp_path, ticket)
+        assert write_result.is_ok
+        assert _store_mode(tmp_path) == "single"
+
+        result = set_body(
+            tmp_path,
+            "T-1688",
+            "an appended note",
+            mode="append",
+            reason="test append",
+        )
+        assert result.is_ok
+
+        # The must-fire control: the shared archive monofile is amended.
+        archive_text = archive_path(tmp_path).read_text(encoding="utf-8")
+        assert "an appended note" in archive_text
+
+        # The must-NOT-fire control: no active-side entry was created.
+        active = load_all(tmp_path)
+        assert active.is_ok
+        assert active.danger_ok == {}
+
+        # A subsequent load must see exactly one T-1688, not a DuplicateId.
+        archived = load_archive(tmp_path)
+        assert archived.is_ok
+        assert archived.danger_ok.keys() == {"T-1688"}
+
 
 class TestMigrateToLedger:
     def test_moves_legacy_files_into_ledger(self, tmp_path: Path) -> None:
