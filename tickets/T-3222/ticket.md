@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_rapid_sweep.py
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +26,18 @@ scope_changes:
 - op: add
   glob: src/frob/app/ticket_runner/_rapid_sweep.py
   reason: the deferred post-land sweep that files these tickets
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: own test file and the module's frob:doc target, required by scope gates
+    for the reverify-at-file-time change
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: own test file and the module's frob:doc target, required by scope gates
+    for the reverify-at-file-time change
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
