@@ -88,7 +88,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: afcf3e027ef236ce4a525582ee70f7c6f93cd4c6
 ---
 T-2980 fixed the CI hang caused by tests/system/conftest.py's run()
 defaulting to an unbounded subprocess wait. With that fix in place the
