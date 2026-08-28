@@ -552,6 +552,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3195: A done-report recording zero evidence and zero changed files reached main while the work sat unlanded
 - T-3216: DirtyMain reports an unreadable git status as uncommitted work and tells the reader not to retry
 - T-3218: Gate: refuse over-long ticket-citing comment blocks in src, and ticket ids outside docs provenance sections
+- T-3220: frob clean --deep wholesale-deletes .frob/, which now also deletes rapid-debt.jsonl (T-2997)
 - T-3222: Post-land sweep files findings that are 90% stale: 27 of 30 identities across two samples no longer reproduce
 
 ## [0.530.0] - unreleased

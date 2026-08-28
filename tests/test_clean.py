@@ -166,6 +166,43 @@ def test_clean_deep_removes_frob_state(repo: Path) -> None:
     assert not (repo / "coverage.xml").exists()
 
 
+# frob:ticket T-3220
+# frob:tests tests/test_clean.py::test_deep_clean_preserves_rapid_debt_jsonl
+def test_deep_clean_preserves_rapid_debt_jsonl(repo: Path) -> None:
+    """T-3220 must-fire: T-2997 moved `rapid-debt.jsonl` (a durable
+    RECORD, not a regenerable cache) to `.frob/rapid-debt.jsonl`; a DEEP
+    clean's wholesale `.frob` match must never destroy it, even though
+    it still removes everything ELSE `.frob` matched."""
+    (repo / ".frob" / "rapid-debt.jsonl").write_text('{"ticket": "T-0001"}\n')
+
+    report = clean(repo, CleanTier.DEEP, dry_run=False).danger_ok
+
+    assert report.dry_run is False
+    assert (repo / ".frob" / "rapid-debt.jsonl").exists()
+    # the record's actual content, not merely the path, survived
+    assert "T-0001" in (repo / ".frob" / "rapid-debt.jsonl").read_text()
+    # everything else .frob matched is still removed as before
+    assert not (repo / ".frob" / "cache.db").exists()
+    assert not (repo / "FROBLEMS.md").exists()
+    assert not (repo / "build").exists()
+
+
+# frob:ticket T-3220
+# frob:tests \
+# tests/test_clean.py::test_deep_clean_still_wholesale_removes_frob_without_the_ledger
+def test_deep_clean_still_wholesale_removes_frob_without_the_ledger(
+    repo: Path,
+) -> None:
+    """T-3220 must-stay-quiet: when `rapid-debt.jsonl` does not exist
+    (the common case, most checkouts), `.frob` is still removed wholesale
+    exactly as before -- the protection logic must never leave a stray
+    empty `.frob/` behind when there is nothing in it to protect."""
+    report = clean(repo, CleanTier.DEEP, dry_run=False).danger_ok
+
+    assert report.dry_run is False
+    assert not (repo / ".frob").exists()
+
+
 # frob:tests tests/test_clean.py::test_reclaimed_bytes_sums_matched_entries
 def test_reclaimed_bytes_sums_matched_entries(repo: Path) -> None:
     """`CleanReport.reclaimed_bytes` sums exactly the matched entries' sizes,

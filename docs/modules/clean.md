@@ -47,6 +47,29 @@ list for a machine-readable report, compatible with either tier.
 
 Every tier is a strict superset of the tier before it.
 
+## DEEP clean protects rapid-debt.jsonl (T-3220)
+
+`.frob/` matches `CleanTier.DEEP`'s allowlist as one whole-directory glob
+pattern, and used to be entirely safe to `shutil.rmtree` -- every one of
+its contents was a regenerable cache. T-2997 changed that: it moved
+`rapid-debt.jsonl` (the T-1681 rapid-profile debt ledger, a durable
+RECORD an agent later drains, not a regenerable measurement cache) from
+the tracked repo root into `.frob/rapid-debt.jsonl` specifically. A DEEP
+clean that still removed `.frob/` unconditionally would silently destroy
+that record.
+
+`frob.clean._rules.TIER3_PROTECTED_PATHS` names every path (relative to
+the scan root) that must survive DEEP removal regardless of which
+allowlist pattern matched its containing directory; today that is just
+`.frob/rapid-debt.jsonl`. `frob.clean._core._protect_excluded_paths`
+enforces it: a matched directory that actually contains a protected path
+(checked by existence, never by path-shape alone) is expanded into its
+own immediate children minus the protected path(s), repeated until no
+candidate directory contains one -- so `.frob/` with nothing to protect
+is still removed wholesale exactly as before, and `.frob/` with
+`rapid-debt.jsonl` present survives with everything else inside it still
+removed individually.
+
 ## Fail-safe design
 
 `scan` only ever walks a KNOWN allowlist of glob patterns

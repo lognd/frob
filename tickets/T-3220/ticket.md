@@ -2,7 +2,7 @@
 id: T-3220
 title: frob clean --deep wholesale-deletes .frob/, which now also deletes rapid-debt.jsonl
   (T-2997)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'

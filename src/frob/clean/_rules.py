@@ -52,6 +52,24 @@ _TIER3_PATTERNS: tuple[str, ...] = (
     "FROBLEMS.md",
 )
 
+# frob:ticket T-3220
+#: Paths (relative to the scan root) that `_TIER3_PATTERNS`' wholesale
+#: `.frob` match must never carry into `clean`'s actual removal, even
+#: though the glob itself matches the whole directory. T-2997 moved
+#: `rapid-debt.jsonl` (a durable RECORD -- the T-1681 rapid-profile debt
+#: ledger, not a regenerable measurement cache) from the tracked repo
+#: root into `.frob/` specifically because `.frob/` used to be entirely
+#: disposable per-checkout scratch state; `frob clean --deep` still
+#: `shutil.rmtree`s that whole directory unconditionally, which now
+#: means "regenerate `.frob/`'s caches" also silently destroys the one
+#: piece of `.frob/` content that is NOT regenerable -- a real data-loss
+#: mode T-2997's own acceptance bar ("do not silently discard it")
+#: explicitly warned against. `frob.clean._core._protect_excluded_paths`
+#: is what actually keeps this out of a DEEP clean's removal set; this
+#: tuple is the single place that decides WHAT is protected.
+# frob:doc docs/modules/clean.md#deep-clean-protects-rapid-debtjsonl-t-3220
+TIER3_PROTECTED_PATHS: tuple[str, ...] = (".frob/rapid-debt.jsonl",)
+
 
 # frob:doc docs/modules/clean.md#tiers
 # frob:tests tests/test_clean.py::test_tier_patterns_cumulative

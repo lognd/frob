@@ -15,7 +15,11 @@ from typani import Err, Ok
 from typani.result import Result
 
 from frob.clean._models import ArtifactEntry, CleanError, CleanReport, CleanTier
-from frob.clean._rules import extra_patterns_from_config, tier_patterns
+from frob.clean._rules import (
+    TIER3_PROTECTED_PATHS,
+    extra_patterns_from_config,
+    tier_patterns,
+)
 from frob.gitio import repo_root, run_argv
 from frob.logging import get_logger
 
@@ -63,6 +67,60 @@ def _dir_size(path: Path) -> int:
     return total
 
 
+# frob:ticket T-3220
+# frob:tests tests/test_clean.py::test_protected_path_survives_deep_clean
+# frob:tests tests/test_clean.py::test_protected_path_expansion_still_removes_siblings
+def _protect_excluded_paths(root: Path, candidates: dict[Path, str]) -> dict[Path, str]:
+    """T-3220: `candidates` with every `TIER3_PROTECTED_PATHS` entry
+    carved OUT of removal, even when it only matched because some
+    ANCESTOR directory (`.frob`, wholesale) matched an allowlist
+    pattern -- a bare path-equality filter would miss that case entirely,
+    since the protected FILE itself is never its own candidate; only its
+    parent directory is.
+
+    A candidate directory that contains a protected path is expanded one
+    level (its own immediate children become the new candidates, same
+    rule, protected path(s) dropped) and the expansion is repeated on the
+    result until no candidate directory contains a protected path anymore
+    -- so a protected path nested more than one level deep under a
+    matched directory is still preserved, not just a direct child. Every
+    OTHER candidate (no protected content anywhere inside it) passes
+    through unchanged, and directories are still wholesale-removed
+    exactly as before -- this only ever narrows what `clean` deletes,
+    never widens it."""
+    if not TIER3_PROTECTED_PATHS:
+        return candidates
+    root_resolved = root.resolve()
+    protected = frozenset((root_resolved / p).resolve() for p in TIER3_PROTECTED_PATHS)
+
+    current = dict(candidates)
+    changed = True
+    while changed:
+        changed = False
+        next_round: dict[Path, str] = {}
+        for path, rule in current.items():
+            if path.is_dir() and any(
+                prot != path and prot.is_relative_to(path) and prot.exists()
+                for prot in protected
+            ):
+                changed = True
+                for child in path.iterdir():
+                    child_resolved = child.resolve()
+                    if child_resolved in protected:
+                        _log.info(
+                            "clean: %s is protected (T-3220, %s) -- excluded "
+                            "from this DEEP clean's removal set",
+                            child_resolved,
+                            rule,
+                        )
+                        continue
+                    next_round.setdefault(child_resolved, rule)
+            else:
+                next_round[path] = rule
+        current = next_round
+    return current
+
+
 def _match_candidates(root: Path, patterns: tuple[str, ...]) -> dict[Path, str]:
     """Every path under `root` matching any allowlist pattern, deduplicated and
     pruned so a match nested inside another matched directory is reported
@@ -87,7 +145,7 @@ def _match_candidates(root: Path, patterns: tuple[str, ...]) -> dict[Path, str]:
         if any(path != d and path.is_relative_to(d) for d in matched_dirs):
             continue
         pruned[path] = rule
-    return pruned
+    return _protect_excluded_paths(root, pruned)
 
 
 # frob:doc docs/modules/clean.md#public-api
