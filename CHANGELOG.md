@@ -572,6 +572,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3246: SUITE-RESULT reports an ABORTED run (exitstatus=3) in the same shape as a completed one: failed=24 is a lower bound read as a count
 - T-3247: Whole-repo-scan tests exceed the 120s per-test cap, killing the xdist worker and aborting the whole suite (root cause of the ubuntu hang)
 - T-3249: Unowned 11-failure cluster: frob check fires spurious REF001/PRE001/SCOPE001 only under concurrent load (T-2992 misattributed it to the already-landed T-3019)
+- T-3251: Release can be dispatched from a red main: nothing gates the PyPI upload on green CI for the released commit
 - T-3255: Fix malformed directive false-positive in docarch001_violations wiring comment
 - T-3256: Six concurrent frob check runs drive the box to zero free memory: each sizes its pool against the whole machine, with no cross-process budget
 

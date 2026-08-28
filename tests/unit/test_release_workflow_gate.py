@@ -116,3 +116,58 @@ class TestUploadJobConsentGate:
                 f"release.yml's {job_name} job must not require approval -- "
                 f"only upload is consent-gated"
             )
+
+
+# frob:ticket T-3251
+class TestCiStatusGate:
+    """T-3251: `upload` must not run against a commit whose CI is not
+    provably green -- a fourth gate ADDED alongside T-3011's three
+    (consent/needs-build/manual-dispatch-only), never a replacement for
+    any of them."""
+
+    def test_verify_ci_status_job_exists_with_actions_read_permission(self) -> None:
+        doc = _load(_RELEASE_WORKFLOW)
+        job = doc["jobs"]["verify-ci-status"]
+        assert job.get("permissions", {}).get("actions") == "read", (
+            "verify-ci-status needs actions:read to query ci.yml's runs "
+            "via the GitHub API"
+        )
+
+    def test_verify_ci_status_job_has_no_pypi_environment_gate(self) -> None:
+        """This job must stay UNgated itself (no reviewer approval to
+        merely CHECK a status) -- only `upload` carries the `pypi`
+        environment; the whole point is refusing automatically, not
+        adding a second human approval step."""
+        doc = _load(_RELEASE_WORKFLOW)
+        job = doc["jobs"]["verify-ci-status"]
+        assert "environment" not in job
+
+    def test_upload_needs_verify_ci_status_in_addition_to_existing_needs(self) -> None:
+        """T-3251 ADDS to `needs:`, it does not replace `build`/
+        `build-sdists` -- losing either of those would reintroduce the
+        stale/non-existent-artifact risk `test_upload_job_needs_build`
+        above already guards."""
+        doc = _load(_RELEASE_WORKFLOW)
+        needs = doc["jobs"]["upload"]["needs"]
+        needs_set = {needs} if isinstance(needs, str) else set(needs)
+        assert needs_set == {"build", "build-sdists", "verify-ci-status"}
+
+    def test_override_input_declared_and_defaults_to_false(self) -> None:
+        """The escape hatch exists, but its default must be false (never
+        the implicit path) and it must require a reason input alongside
+        it -- an override with no way to record why would be exactly the
+        silent workaround this gate exists to prevent."""
+        doc = _load(_RELEASE_WORKFLOW)
+        inputs = doc[_ON_KEY]["workflow_dispatch"]["inputs"]
+        assert inputs["override_red_ci"]["default"] is False
+        assert inputs["override_red_ci"]["type"] == "boolean"
+        assert "override_reason" in inputs
+
+    def test_only_workflow_dispatch_trigger_still_holds_with_inputs(self) -> None:
+        """Adding `inputs:` under `workflow_dispatch` must not smuggle in
+        a second top-level trigger key -- re-asserts
+        TestReleaseWorkflowNoAutomaticTrigger's own invariant after this
+        ticket's edit, since that class's fixture predates `inputs:`
+        existing at all."""
+        doc = _load(_RELEASE_WORKFLOW)
+        assert set(doc[_ON_KEY]) == {"workflow_dispatch"}

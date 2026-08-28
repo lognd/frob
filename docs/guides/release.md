@@ -15,24 +15,28 @@ x86_64 -- five platform wheels per crate, plus one sdist per crate.
 
 ## Workflow structure (`.github/workflows/release.yml`)
 
-Two jobs, deliberately separate:
+Three jobs:
 
-1. **`build`** -- runs on every manual dispatch (`workflow_dispatch`), no
-   approval needed. A `maturin-action`-based matrix builds `frob-core` and
-   `strata-core` wheels for all five targets plus their sdists, and a plain
-   `uv build` step builds the pure-Python `frob` wheel + sdist. Everything
-   is uploaded as a CI artifact (`actions/upload-artifact`) and retained --
-   this is the "prove it works, keep the evidence" half, and it is NEVER
-   gated on approval.
-2. **`upload`** -- `needs: build`, targets the `pypi` GitHub Environment,
-   which has a required reviewer configured in the repo's environment
-   protection rules. GitHub will not start this job until a human with
-   reviewer access clicks Approve on that specific run -- the approval is
-   recorded on the run itself, not merely a runbook convention. This job
-   downloads the `build` job's artifacts and runs
-   `pypa/gh-action-pypi-publish` using PyPI **trusted publishing** (OIDC:
-   `id-token: write` permission, no stored PyPI token) against each of the
-   three package indices.
+1. **`build`** (+ `build-sdists`) -- runs on every manual dispatch
+   (`workflow_dispatch`), no approval needed. A `maturin-action`-based
+   matrix builds `frob-core` and `strata-core` wheels for all five targets
+   plus their sdists, and a plain `uv build` step builds the pure-Python
+   `frob` wheel + sdist. Everything is uploaded as a CI artifact
+   (`actions/upload-artifact`) and retained -- this is the "prove it
+   works, keep the evidence" half, and it is NEVER gated on approval.
+2. **`verify-ci-status`** (T-3251) -- runs on every manual dispatch, no
+   approval needed either; see [below](#verify-ci-status) for what it
+   checks and why it exists as a fourth gate alongside the three T-3011
+   gates, not a replacement for any of them.
+3. **`upload`** -- `needs: [build, build-sdists, verify-ci-status]`,
+   targets the `pypi` GitHub Environment, which has a required reviewer
+   configured in the repo's environment protection rules. GitHub will not
+   start this job until a human with reviewer access clicks Approve on
+   that specific run -- the approval is recorded on the run itself, not
+   merely a runbook convention. This job downloads the `build` job's
+   artifacts and runs `pypa/gh-action-pypi-publish` using PyPI **trusted
+   publishing** (OIDC: `id-token: write` permission, no stored PyPI
+   token) against each of the three package indices.
 
 The `on:` block declares `workflow_dispatch` ONLY -- no `push`, no `tags`,
 no `pull_request`, no `release` trigger. There is structurally no event
@@ -166,6 +170,57 @@ before the first real publish -- a one-time, owner-performed setup step
 tracked separately from this ticket (it requires an existing PyPI project
 to attach the publisher to, which itself requires the first publish's
 approval this ticket is explicitly NOT authorized to give).
+
+<a id="verify-ci-status"></a>
+## Decision 4: `verify-ci-status` -- CI must be green for THE RELEASED COMMIT (T-3251)
+
+Before T-3251, nothing in `release.yml` checked that the commit being
+released had a green CI run. `upload`'s `needs: [build, build-sdists]`
+only proves wheels built and imported on each platform -- not that the
+test suite passed, `frob check` was clean, or the CI matrix was green. A
+human could dispatch a release from a red `main` and every existing gate
+would say yes. A PyPI upload is irreversible (a version number cannot be
+reused, even after a yank), so this was the one workflow in the repo
+where a bad run could not be fixed by a follow-up commit.
+
+`verify-ci-status` closes that gap as a FOURTH gate, added alongside
+T-3011's three (manual-dispatch-only trigger, `needs: build`, the `pypi`
+environment's required reviewer) -- none of those three was weakened or
+replaced to add this one.
+
+**What it checks.** `scripts/verify_release_ci_status.py` (unit-tested in
+`tests/unit/test_verify_release_ci_status.py`, no real `gh` binary or
+network access needed) queries `gh api repos/<owner>/<name>/actions/
+workflows/ci.yml/runs?head_sha=<sha>` for `github.sha` -- THE EXACT COMMIT
+being released, resolved by SHA, never by branch name and never "the most
+recent run" on any commit. A run on a different commit passing is never
+read as this commit passing.
+
+**Three distinct outcomes, never collapsed into two:**
+
+- **GREEN** -- the matching run is `status=completed`,
+  `conclusion=success`. The step exits 0; `upload` proceeds to its own
+  separate `pypi` environment approval gate, unchanged.
+- **RED** -- the matching run completed with any other conclusion
+  (`failure`, `cancelled`, `timed_out`, ...). The step exits 1;
+  `upload` is skipped via `needs:`.
+- **UNDETERMINED** -- the `gh api` call itself failed, returned
+  unparseable JSON, found no run for this exact SHA, or found one still
+  `in_progress`/`queued`. Fails CLOSED exactly like RED: an unreadable
+  status is never treated as green. This repo's own dominant defect
+  class is a failed measurement reported as a successful one, and a
+  release is the worst possible place to repeat it.
+
+**The override.** `workflow_dispatch` declares two inputs:
+`override_red_ci` (boolean, default `false`) and `override_reason`
+(string, default `""`). A RED or UNDETERMINED status is refused UNLESS
+`override_red_ci=true` AND `override_reason` is non-empty -- an override
+request with no reason is refused exactly like no override at all. The
+override is never the default, and the run's own log (via
+`github.actor`, already recorded on every workflow run, plus the printed
+`override_reason`) is the audit trail for who set it and why -- no
+separate approval mechanism was added for this, since `upload`'s own
+`pypi` environment reviewer gate still runs afterward regardless.
 
 ## Sequencing: build now, first publish gated on green + consent
 

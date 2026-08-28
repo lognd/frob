@@ -2,7 +2,7 @@
 id: T-3251
 title: 'Release can be dispatched from a red main: nothing gates the PyPI upload on
   green CI for the released commit'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -50,6 +50,29 @@ scope_changes:
     three outcomes, and the override'
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus::test_green_on_success_conclusion
+- tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus::test_red_on_failure_conclusion
+- tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus::test_undetermined_on_api_error
+- tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus::test_undetermined_on_no_matching_run
+- tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus::test_undetermined_on_unparseable_json
+- tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus::test_undetermined_on_run_still_in_progress
+- tests/unit/test_verify_release_ci_status.py::TestDetermineCiStatus::test_resolves_by_exact_sha_not_branch_or_latest
+- tests/unit/test_verify_release_ci_status.py::TestDecide::test_green_always_proceeds
+- tests/unit/test_verify_release_ci_status.py::TestDecide::test_red_without_override_refuses
+- tests/unit/test_verify_release_ci_status.py::TestDecide::test_undetermined_without_override_refuses
+- tests/unit/test_verify_release_ci_status.py::TestDecide::test_red_with_override_and_reason_proceeds
+- tests/unit/test_verify_release_ci_status.py::TestDecide::test_override_without_reason_is_refused_even_when_requested
+- tests/unit/test_verify_release_ci_status.py::TestRunGh::test_spawn_failure_reports_as_nonzero_with_stderr
+- tests/unit/test_verify_release_ci_status.py::TestCiStatusResultInvariant::test_valid_status_literal_constructs
+- tests/unit/test_verify_release_ci_status.py::TestCiStatusResultInvariant::test_invalid_status_literal_raises
+- tests/unit/test_verify_release_ci_status.py::TestMain::test_green_path_prints_green_and_exits_zero
+- tests/unit/test_verify_release_ci_status.py::TestMain::test_red_path_without_override_exits_nonzero
+- tests/unit/test_release_workflow_gate.py::TestCiStatusGate::test_verify_ci_status_job_exists_with_actions_read_permission
+- tests/unit/test_release_workflow_gate.py::TestCiStatusGate::test_verify_ci_status_job_has_no_pypi_environment_gate
+- tests/unit/test_release_workflow_gate.py::TestCiStatusGate::test_upload_needs_verify_ci_status_in_addition_to_existing_needs
+- tests/unit/test_release_workflow_gate.py::TestCiStatusGate::test_override_input_declared_and_defaults_to_false
+- tests/unit/test_release_workflow_gate.py::TestCiStatusGate::test_only_workflow_dispatch_trigger_still_holds_with_inputs
 designated_repro_test: null
 threat: null
 component: null

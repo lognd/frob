@@ -5,13 +5,61 @@ name: release
 # push does not upload" section, and tests/unit/test_release_workflow_gate.py
 # for the mechanical check that this stays true.
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      override_red_ci:
+        description: >-
+          T-3251 escape hatch ONLY: explicitly override a non-green (RED
+          or UNDETERMINED) CI status for the commit being released.
+          Never the default -- leave false for a normal release. Requires
+          override_reason to be non-empty or the override itself is
+          refused.
+        type: boolean
+        default: false
+      override_reason:
+        description: >-
+          Required when override_red_ci is true: why this release is
+          proceeding despite a non-green CI status. Recorded in this
+          run's own log alongside the dispatching actor.
+        type: string
+        default: ""
 
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
+  # T-3251: fail-closed gate ahead of `upload`. Resolves ci.yml's
+  # conclusion for THE EXACT COMMIT SHA being released (never a branch
+  # name, never "the most recent run" on any commit) via
+  # scripts/verify_release_ci_status.py, and distinguishes GREEN / RED /
+  # UNDETERMINED -- an unreadable status is never treated as green. Does
+  # NOT gate `build`/`build-sdists` (T-3011: building and retaining
+  # evidence is never consent-gated) and does NOT weaken/replace any
+  # existing T-3011 gate on `upload` -- it is an ADDITIONAL entry in
+  # `upload`'s own `needs:` list below.
+  verify-ci-status:
+    name: Verify CI is green for this commit
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Resolve ci.yml's status for this exact commit SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          OVERRIDE: ${{ inputs.override_red_ci }}
+          OVERRIDE_REASON: ${{ inputs.override_reason }}
+        run: |
+          set -e
+          uv run python3 scripts/verify_release_ci_status.py \
+            --repo "$REPO" --sha "$SHA" \
+            --override "$OVERRIDE" --override-reason "$OVERRIDE_REASON"
+
   # Builds wheels for the full target matrix plus an sdist per crate, and
   # retains everything as CI artifacts. Runs on every manual dispatch, no
   # approval required -- building and retaining evidence is never
@@ -122,8 +170,12 @@ jobs:
           path: dist/*
           retention-days: 90
 
-  # T-3011: the ONLY job that can reach PyPI. Gated three separate ways:
-  #   1. needs: [build, build-sdists] -- cannot start before real wheels exist.
+  # T-3011: the ONLY job that can reach PyPI. Gated four separate ways
+  # (T-3251 added #4; none of #1-3 were weakened to add it):
+  #   1. needs: [build, build-sdists, verify-ci-status] -- cannot start
+  #      before real wheels exist AND the released commit's CI resolved
+  #      GREEN (or was explicitly, auditably overridden -- see
+  #      verify-ci-status above).
   #   2. environment: pypi -- a GitHub Environment with a required reviewer
   #      configured in this repo's Settings > Environments; GitHub blocks
   #      this job until a human approves THIS SPECIFIC RUN, and records
@@ -133,7 +185,7 @@ jobs:
   # Trusted publishing (OIDC, `id-token: write`) is used instead of a
   # stored PyPI API token -- see docs/guides/release.md's "Decision 3".
   upload:
-    needs: [build, build-sdists]
+    needs: [build, build-sdists, verify-ci-status]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
