@@ -62,7 +62,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 79c76fd0aec15aa1ecfb7ccd797551d0d2dcf057
 ---
 frob already has the right machinery for this and it is genuinely good:
 `src/frob/lang/_support.py` derives a `LanguageSupport` snapshot per language
