@@ -71,13 +71,38 @@ scope_changes:
     alongside MILE003/MILE004's own anchors for the same tickets_gate() dispatch family
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/test_gates_empty_diff_close.py::TestTick014::test_bug_warns
+- tests/test_gates_empty_diff_close.py::TestTick014::test_feature_warns
+- tests/test_gates_empty_diff_close.py::TestTick014::test_docs_kind_quiet
+- tests/test_gates_empty_diff_close.py::TestTick014::test_epic_tier_quiet
+- tests/test_gates_empty_diff_close.py::TestTick014::test_no_scope_quiet
+- tests/test_gates_empty_diff_close.py::TestTick014::test_real_diff_quiet
+- tests/test_gates_empty_diff_close.py::TestTick014::test_no_block_quiet
+- tests/test_gates_empty_diff_close.py::TestTick014::test_open_never_fires
 designated_repro_test: null
 acceptance:
 - text: Given a BUG-kind ticket with no scope exemption closes with a diff touching
     only tickets/, when the check runs, then it WARNs
-  evidence: []
+  evidence:
+  - tests/test_gates_empty_diff_close.py::TestTick014::test_bug_warns
+  - tests/test_gates_empty_diff_close.py::TestTick014::test_feature_warns
 - text: Given a docs-kind, epic-tier, or no_scope_declared ticket closes with an empty
     code diff, when the check runs, then it stays quiet (fixture per exemption)
+  evidence:
+  - tests/test_gates_empty_diff_close.py::TestTick014::test_docs_kind_quiet
+  - tests/test_gates_empty_diff_close.py::TestTick014::test_epic_tier_quiet
+  - tests/test_gates_empty_diff_close.py::TestTick014::test_no_scope_quiet
+  - tests/test_gates_empty_diff_close.py::TestTick014::test_real_diff_quiet
+  - tests/test_gates_empty_diff_close.py::TestTick014::test_no_block_quiet
+  - tests/test_gates_empty_diff_close.py::TestTick014::test_open_never_fires
+- text: Before this change, tickets_gate() never called empty_code_diff_violations
+    and TICK014 could not fire at all; after, test_bug_warns constructs a Ticket and
+    calls empty_code_diff_violations(queue) -- the exact function tickets_gate() dispatches
+    -- and asserts it FAILS to stay quiet (returns exactly one TICK014 violation),
+    proving the rule fires through its real production call path, not merely a standalone
+    pure-function check; the check then PASSES once TICK014 is wired (test currently
+    green).
   evidence: []
 threat: null
 component: null
