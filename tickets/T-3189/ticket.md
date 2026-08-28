@@ -2,7 +2,7 @@
 id: T-3189
 title: 'Enforce the placement rule: ticket narratives belong in tickets, not code
   comments or module docs'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -124,3 +124,6 @@ ACCEPTANCE
 - Before/after counts for both surfaces, measured the same way as above.
 - No net loss of knowledge: every migrated block is reachable from the code site
   by a short pointer to the ticket id.
+
+## Drop reason
+- 2026-08-28: duplicate of the T-2994 placement-rule epic tree, filed independently of it; reconciled per coordinator instruction. T-2987 (waiver-reason cap) and T-2988 (docstring standard) already cover two of T-3189's angles under T-2994; T-3022 covers the docs-narrative bulk migration (was also duplicated as T-3023, dropped separately). The one genuinely missing piece -- the ENFORCEMENT GATE itself -- is filed as T-3218 (parented under T-2994), carrying forward both T-3189's measurements (28,273 lines in 4+ line ticket-citing code comment blocks, 96 blocks 26+ lines, worst 130 at src/frob/vet/_capability_typescript_bindtable.py:18; 6,283 ticket-id mentions across 143/152 docs files, worst docs/modules/gates.md at 884) and T-2987's finding that frob:waive reason prose is itself narrative bloat and should NOT be blanket-exempt the way T-3189 originally proposed for all frob: directives -- T-3218 narrows the exemption to frob:ticket/frob:tests/frob:doc only, per T-2987.

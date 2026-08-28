@@ -2,7 +2,7 @@
 id: T-3023
 title: 'Docs narrative bulk migration: 140 files still cite tickets in prose, split
   by file'
-state: queued
+state: dropped
 kind: docs
 origin: human
 created: '2026-08-26'
@@ -95,3 +95,6 @@ Do NOT attempt a single land touching all 140 files -- unreviewable, and would
 lock every doc file's lease against the rest of the fleet for however long that
 took. Split into per-file or small-file-group tickets as this ticket's own
 children, largest files first.
+
+## Drop reason
+- 2026-08-28: byte-identical duplicate of T-3022 (same title, same body verbatim) -- same filing-mechanism artifact flagged for T-3158/T-3159; survivor is T-3022
