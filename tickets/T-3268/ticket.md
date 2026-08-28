@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/perf/_profile.py
+- tests/test_perf.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_perf.py
+  reason: T-3268's fix requires a must-fire regression test proving sys.executable
+    is used instead of a bare python PATH lookup
+  actor: logan
+  at: '2026-08-28'
 triage_changes:
 - field: priority
   old_value: high
