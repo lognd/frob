@@ -3464,3 +3464,54 @@ index-plus-moved-HEAD shape for ITS pathspec, so v2 was never actually
 exempt from this bug; it was exempt from the misdiagnosis this section
 corrects. The `ledger_lock`-widening fix above applies unconditionally
 to both modes.
+
+### The T-3135 warm sweep stage
+
+"What deliberately did NOT move" above (the T-1514 pre-commit unscoped
+sweep) is now half-obsolete: it still describes the pre-T-3135 behavior
+correctly for the profiles that do NOT supply a `pre_commit_sweep`, but
+T-3135 gave the profiles that DO (every profile except `rapid`) a real
+off-root stage to sweep against, closing the "report unmeasurable or
+report mass phantom findings" gap that section describes T-3127 having
+measured against a freshly-cut disposable worktree (bare stage: 371.2s
+spawn timeout, unmeasurable; symlinked-venv stage: native-staleness
+abort, also unmeasurable).
+
+`_squash_apply_on_disposable_stage` now keeps a fixed, PERSISTENT `git
+worktree` at `.frob/warm-sweep-stage` -- inside `root`'s own
+already-gitignored `.frob/` directory, so it never appears in `git
+status` on `root` and is never torn down between lands, the way the
+per-land disposable stage is:
+
+1. `_ensure_warm_sweep_stage` creates the worktree on first use
+   (detached at `pre_land_tip`) or, on reuse, `_reset_warm_sweep_stage`
+   hard-resets it to `pre_land_tip` and `git clean -fdx`s everything
+   EXCEPT `.venv`/`.frob` -- keeping those two directories warm across
+   lands is T-3135's whole point, since a fresh disposable stage never
+   has them. Either step failing tears the stage down
+   (`_teardown_warm_sweep_stage`, best-effort `git worktree remove
+   --force` + `prune`) so the next call re-cuts it from scratch rather
+   than reuse possibly-corrupt state.
+2. `_squash_into_warm_stage` runs the same real three-way `git merge
+   --squash --no-commit` the per-land disposable stage's `compose_
+   squash_in_disposable_worktree` performs, via the shared
+   `_squash_into_worktree` primitive -- reused, not duplicated. A
+   conflicted or failed merge here just means the warm stage falls back
+   to the in-root sweep for this land; T-3135's stage exists for the
+   ALREADY-clean T-1514 sweep read, not per-path conflict resolution.
+3. On success, `_land_squash_apply` is called with `stage=warm_stage`
+   and `squash_precomposed=True`, exactly the same shape the per-land
+   disposable stage uses -- the warm stage owns its OWN real `.venv`
+   and built natives against its OWN tree (never symlinked from
+   `root`), so both the T-1514 sweep and `frob check`'s own `_maybe_
+   autorebuild_natives` see a tree they have already measured/built by
+   the time a second land reuses it. This is what makes T-3127's
+   structural blockers (cold chunk-timing model, native staleness from
+   a symlinked venv) go away rather than merely budget around them.
+
+Any failure along this path -- the worktree cannot be prepared, or the
+squash-merge into it conflicts -- falls back to the pre-T-3135 in-root
+path unchanged: a degraded-but-correct sweep (against `root`, as
+before), never a silently skipped one. `root` itself is never written
+to by the warm-stage attempt; only the fallback path still touches it,
+same as pre-T-3135.

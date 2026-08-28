@@ -518,6 +518,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3163: T-1036 ledger-splice regression under T-3121 disposable-stage: concurrent sibling write can silently drop the just-landed ticket's own record
 - T-3172: post-land sweep regression from T-3156: 2 new (rule, file) identit(ies), 7 finding(s) (DRIFT001, SYS003)
 - T-3174: T-2114 fork-based concurrent-writer sim spuriously skips lock contention once ledger_lock spans the fork point
+- T-3176: Document T-3135 warm sweep stage and split _squash_apply_on_disposable_stage
 - T-3177: Declare or waive SYS003 scripts_ops -> graphlang in branch_stranded_work_analysis.py
 - T-3178: Refresh add_cmd_evidence kind-gate description in tickets-data-storage.md
 - T-3179: Attribution engine records UNATTRIBUTED for findings with a directly findable cause (2 measured)

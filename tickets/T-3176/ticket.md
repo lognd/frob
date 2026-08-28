@@ -1,7 +1,7 @@
 ---
 id: T-3176
 title: Document T-3135 warm sweep stage and split _squash_apply_on_disposable_stage
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-27'
@@ -20,6 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:grep -n 'the-t-3135-warm-sweep-stage' docs/modules/tickets-landing.md src/frob/tickets/_land.py
+  exit=0 sha256=e94dc9f32445
 designated_repro_test: null
 threat: null
 component: null

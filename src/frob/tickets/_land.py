@@ -2283,23 +2283,18 @@ def _squash_into_warm_stage(stage: Path, branch_name: str) -> bool:
 # frob:ticket T-3121
 # frob:ticket T-3135
 # frob:doc docs/modules/tickets-landing.md#the-disposable-stage-flip-t-3121
+# frob:doc docs/modules/tickets-landing.md#the-t-3135-warm-sweep-stage
 # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_root_never_goes_dirty_during_the_squash_apply  # noqa: E501
 # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_worktree_setup_failure_refuses_without_touching_root  # noqa: E501
 # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_pre_commit_sweep_engages_the_warm_stage_not_root  # noqa: E501
 # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_warm_stage_reused_across_lands  # noqa: E501
 # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_warm_stage_unavailable_falls_back_to_root  # noqa: E501
-# frob:waive AFFECT001 reason="T-3135 extended this function's warm-stage carve-out; \
-# its affects()-closure doc docs/modules/tickets-landing.md \
-# #the-disposable-stage-flip-t-3121 is a real, needed update but that file is under \
-# another agent's live T-3163 scope lease for the whole of this ticket's work -- filed \
-# as this ticket's own known residue rather than forcing a cross-lease edit" \
-# follow_up="T-3176"
 # frob:waive ARCH001 reason="147 lines is the warm-stage try/fallback branch (ensure \
 # stage, squash-compose, fall back to in-root on either failure) plus the pre-existing \
 # disposable-stage compose this function already had at this length before T-3135; \
 # splitting the new branch out is real follow-up work, not attempted here to avoid \
 # reshaping a function three concurrent sibling tickets (T-3121/T-3127) also reference \
-# by exact line/symbol identity mid-drive" follow_up="T-3176"
+# by exact line/symbol identity mid-drive" follow_up="T-3193"
 def _squash_apply_on_disposable_stage(
     root: Path,
     worktree: Path,
