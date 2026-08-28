@@ -68,7 +68,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 86fd50076f747484dd85c58d1d8b699d74825f68
 ---
 MEASURED from the CI run of 2026-08-28. This is the ROOT CAUSE of the ubuntu
 "hang" and of the windows INTERNALERROR. Both platforms show the same chain.
