@@ -6,7 +6,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-08-28'
-priority: high
+priority: critical
 parent: null
 tier: ticket
 sprint: null
@@ -20,6 +20,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: high
+  new_value: critical
+  reason: 18 of 60 suite failures trace to this one hardcoded interpreter; largest
+    single identified block to a green suite and it ships broken to PyPI users whose
+    PATH lacks python
+  actor: logan
+  at: '2026-08-28'
 body_changes:
 - mode: append
   reason: full-suite baseline shows this one defect produces 18 of 60 failures across
