@@ -115,3 +115,6 @@ failed git invocation at all -- if not, that is itself worth fixing
 regardless of this cluster's root cause, since it is the single
 biggest diagnostic gap blocking a fast root-cause on the next actual
 macOS run.
+
+## Failure log
+- 2026-08-28 attempt 1: partial-duplicate check against T-2943/T-2969 (done): NOT a full duplicate. T-2943 fixed only tests/system/test_cli_cycle.py missing-git-init (9/12 failures); T-2969 audited the other 12 test_cli_*.py files, pattern absent in all 12. T-2939's cluster also names tests/test_gates.py, tests/test_serve_leases.py, tests/test_ticket_leases.py, tests/test_ticket_land_proof_claims.py, tests/test_makefile_lock_sync.py -- none touched by T-2943/T-2969. Measured locally on Linux: test_gates.py's only current failure is an unrelated pre-existing drift-lock (TestKnownGateRuleIds, TDD001/VMOD001/VERSION001 missing from _KNOWN_GATE_RULES), not git-128. The other 4 files have zero git_init_and_config/init_repo calls -- plausible match for the same pattern but UNCONFIRMED without a real macOS run (this worktree is Linux-only, cannot reproduce the macOS-specific symptom). Leaving queued: real non-duplicate work remains; needs the ticket's own NEXT STEP (real macOS run with captured git stderr) before a fix can be scoped safely.
