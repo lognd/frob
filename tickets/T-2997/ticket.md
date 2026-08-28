@@ -21,9 +21,9 @@ scope:
 - src/frob/tickets/_evidence.py
 - tests/unit/test_rapid_debt.py
 - CHANGELOG.md
-- changelog.d/*
 - docs/modules/tickets-verify-sweep.md
 - docs/modules/tickets-merge-driver.md
+- changelog.d/T-2997.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -79,6 +79,16 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-merge-driver.md
   reason: doc targets for record_rapid_debt docstring update
+  actor: logan
+  at: '2026-08-28'
+- op: remove
+  glob: changelog.d/*
+  reason: narrow to the specific changelog entry file
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: changelog.d/T-2997.md
+  reason: narrow to the specific changelog entry file
   actor: logan
   at: '2026-08-28'
 body_changes:
