@@ -17,6 +17,10 @@ scope:
 - src/frob/tickets/_store.py
 - src/frob/app/ticket_runner/*archive*
 - src/frob/_cli_parsers/_ops.py
+- src/frob/tickets/_archive.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/_cli_parsers/_ticket/_closeout.py
+- tests/unit/test_ticket_restore.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +38,42 @@ scope_changes:
     subcommands, not the whole parsers package'
   actor: logan
   at: '2026-08-26'
+- op: add
+  glob: src/frob/tickets/_archive.py
+  reason: 'the real files: _ops.py in the original scope does not register ticket
+    verbs at all (that is the ''frob ops'' group); the actual CLI wiring for archive/drop/reopen
+    lives in _cli_parsers/_ticket/_closeout.py + app/ticket_runner/__init__.py''s
+    dispatch table, and archive''s own core primitive lives in tickets/_archive.py,
+    not _store.py'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: 'the real files: _ops.py in the original scope does not register ticket
+    verbs at all (that is the ''frob ops'' group); the actual CLI wiring for archive/drop/reopen
+    lives in _cli_parsers/_ticket/_closeout.py + app/ticket_runner/__init__.py''s
+    dispatch table, and archive''s own core primitive lives in tickets/_archive.py,
+    not _store.py'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: 'the real files: _ops.py in the original scope does not register ticket
+    verbs at all (that is the ''frob ops'' group); the actual CLI wiring for archive/drop/reopen
+    lives in _cli_parsers/_ticket/_closeout.py + app/ticket_runner/__init__.py''s
+    dispatch table, and archive''s own core primitive lives in tickets/_archive.py,
+    not _store.py'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_ticket_restore.py
+  reason: 'the real files: _ops.py in the original scope does not register ticket
+    verbs at all (that is the ''frob ops'' group); the actual CLI wiring for archive/drop/reopen
+    lives in _cli_parsers/_ticket/_closeout.py + app/ticket_runner/__init__.py''s
+    dispatch table, and archive''s own core primitive lives in tickets/_archive.py,
+    not _store.py'
+  actor: logan
+  at: '2026-08-28'
 body_changes:
 - mode: set
   reason: reword to avoid DOC006 false-hit on a proposed, not-yet-existing subcommand
