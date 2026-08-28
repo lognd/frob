@@ -3,7 +3,7 @@ id: T-3013
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2990):
   1 new (rule, file) identit(ies), 0 finding(s) (DOC006)'
 state: done
-kind: bug
+kind: docs
 origin: agent
 created: '2026-08-26'
 priority: high
@@ -23,6 +23,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: T-3013's finding (DOC006 on docs/strata/graph.md) is a doc-lint identity,
+    not a code defect; scope is doc-only. Reclassifying to docs-kind so the docs-kind
+    --evidence-cmd channel applies, matching the pre-existing-residue disposition
+  actor: logan
+  at: '2026-08-28'
 body_changes:
 - mode: append
   reason: record re-verification for series-DC disposition
@@ -39,6 +48,8 @@ body_changes:
   at: '2026-08-28'
   old_length: 1361
   new_length: 1673
+kind_history:
+- 2026-08-28 bug->docs evidence=0 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
