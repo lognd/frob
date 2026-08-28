@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/__init__.py
+- tests/unit/test_check_admission.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_check_admission.py
+  reason: MUST-FIRE/MUST-STAY-QUIET fixtures for the new admission-budget mechanism
+    require their own test file; not a scope expansion of the fix itself
+  actor: logan
+  at: '2026-08-28'
 body_changes:
 - mode: append
   reason: 'coordinator-supplied live evidence: a land killed by its own 540s wrapper
