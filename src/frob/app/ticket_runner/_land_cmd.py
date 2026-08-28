@@ -4830,6 +4830,11 @@ def _doc005_checker(worktree: Path, rel_path: str, text: str) -> tuple[Violation
     # always one commit stale for a diff that adds/removes a subcommand
     # in the same land. Pass a `worktree`-rooted loader instead so the
     # tree is read fresh from the candidate's own on-disk content.
+    # frob:waive OPAQUE001 reason="functools.partial binds a real, statically-named \
+    # function (_load_parser_factory_from_root) -- the opacity is only that \
+    # OPAQUE001's resolver cannot see through a partial's bound target at all, not \
+    # that this target is actually dynamic/runtime-computed; root=worktree is a plain \
+    # local variable, not a decision point"
     console_trees = _console_trees(
         worktree,
         console_sources,

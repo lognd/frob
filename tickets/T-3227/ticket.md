@@ -2,7 +2,7 @@
 id: T-3227
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2878):
   2 new (rule, file) identit(ies), 1 finding(s) (CLAUDE001, OPAQUE001)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-28'
@@ -17,10 +17,14 @@ runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/sync-claude-config.py
 - src/frob/app/ticket_runner/_land_cmd.py
+evidence_scope:
+- tests/test_vet_capability.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_vet_capability.py::TestSymbolResolvedContainerAndPartialEvasions::test_functools_partial_wrapping_dangerous_op_resolves
 designated_repro_test: null
 threat: null
 component: null
