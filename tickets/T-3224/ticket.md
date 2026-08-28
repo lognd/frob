@@ -15,10 +15,51 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/design/registry/check-coverage.yaml
+- src/frob/gates/_comment_placement.py
+- src/frob/gates/_tdd_order.py
+- src/frob/gates/_vmodel.py
+- src/frob/gates/_narrative_blocks.py
+- src/frob/process/parsers/ruff.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_comment_placement.py
+  reason: REG005/REG008 required fixing the gate_rule_total denominator plus adding
+    frob:enforces CHK-GATE-<RULE> to each rule's own enforcing code site (TDD001/VMOD001/NARR001/F401
+    pre-existing gaps, CPLACE001/CPLACE002 a T-3218 regression)
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_tdd_order.py
+  reason: REG005/REG008 required fixing the gate_rule_total denominator plus adding
+    frob:enforces CHK-GATE-<RULE> to each rule's own enforcing code site (TDD001/VMOD001/NARR001/F401
+    pre-existing gaps, CPLACE001/CPLACE002 a T-3218 regression)
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_vmodel.py
+  reason: REG005/REG008 required fixing the gate_rule_total denominator plus adding
+    frob:enforces CHK-GATE-<RULE> to each rule's own enforcing code site (TDD001/VMOD001/NARR001/F401
+    pre-existing gaps, CPLACE001/CPLACE002 a T-3218 regression)
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_narrative_blocks.py
+  reason: REG005/REG008 required fixing the gate_rule_total denominator plus adding
+    frob:enforces CHK-GATE-<RULE> to each rule's own enforcing code site (TDD001/VMOD001/NARR001/F401
+    pre-existing gaps, CPLACE001/CPLACE002 a T-3218 regression)
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/process/parsers/ruff.py
+  reason: REG005/REG008 required fixing the gate_rule_total denominator plus adding
+    frob:enforces CHK-GATE-<RULE> to each rule's own enforcing code site (TDD001/VMOD001/NARR001/F401
+    pre-existing gaps, CPLACE001/CPLACE002 a T-3218 regression)
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
