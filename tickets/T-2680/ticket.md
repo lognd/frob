@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/guides/agent-playbook.md
+- docs/guides/agent-playbook-appendix.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/agent-playbook-appendix.md
+  reason: content moved here by T-2909; must correct the tests/system/** scoping claim
+    per T-2680
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
