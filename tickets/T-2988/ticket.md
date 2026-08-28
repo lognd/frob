@@ -137,7 +137,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5f903f91b639a5a24beca379a7066e373204d6a7
 ---
 DECISION (from the project owner, 2026-08-26). This supersedes the blanket
 "every public symbol gets a one-line docstring" rule with something more
