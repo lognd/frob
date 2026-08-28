@@ -44,18 +44,29 @@ from frob.tickets import load_queue
 
 def _pipe_path_with_content(content: str) -> Path:
     """A `Path` to an already-fully-written, write-end-CLOSED anonymous
-    pipe, exposed via `/proc/self/fd/<n>` -- the same non-seekable,
+    pipe, exposed via `/dev/fd/<n>` -- the same non-seekable,
     single-read-then-EOF shape a bash heredoc gives `/dev/stdin` (a named
     `mkfifo` blocks a second `open()` for reading once its writer has
     gone away, which is a DIFFERENT, unrepresentative failure mode; this
     pipe-plus-closed-write-end construction is what actually reproduces
     T-2021's "second read is silently empty, not blocked and not an
     error" symptom, confirmed directly: a second `open(path).read()`
-    against the same fd path returns `""` immediately, never blocking)."""
+    against the same fd path returns `""` immediately, never blocking).
+
+    `/dev/fd/<n>` rather than `/proc/self/fd/<n>` (T-2942): `/proc` does
+    not exist on macOS at all -- `/dev/fd` is the POSIX-portable
+    equivalent both platforms actually provide (on Linux it is itself a
+    symlink to `/proc/self/fd`, confirmed: `/dev/fd -> /proc/self/fd`),
+    so this one spelling reproduces the same non-seekable-fd shape on
+    both without a `sys.platform` branch. The pre-fix `/proc/self/fd`
+    path made every test in this module a silent macOS-only
+    `FileNotFoundError`/`SystemExit` (measured: T-2917 CI matrix, 2 of
+    the 156 macOS-only failures), not a real second-read-drains-the-pipe
+    finding -- masking the very defect this module exists to pin."""
     read_fd, write_fd = os.pipe()
     os.write(write_fd, content.encode("utf-8"))
     os.close(write_fd)
-    return Path(f"/proc/self/fd/{read_fd}")
+    return Path(f"/dev/fd/{read_fd}")
 
 
 class TestDoubleReadDrainsAPipe:

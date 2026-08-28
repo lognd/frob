@@ -2,7 +2,7 @@
 id: T-2942
 title: 'macOS CI: remaining small failure clusters needing individual triage (SYS107,
   FIFO pipe, timing threshold, resolved-root, load_lock)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'

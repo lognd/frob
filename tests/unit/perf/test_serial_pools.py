@@ -221,7 +221,14 @@ class TestInstallSerialPools:
         `enable()` never instruments, and the process-pool half runs in
         wholly separate interpreters."""
         fraction = self._profiled_worker_self_time_fraction(serial=False)
-        assert fraction < 0.05
+        # T-2942: was `< 0.05` -- too tight for a real macOS CI runner
+        # (measured 0.0808 there, a slower/differently-contended
+        # profiler-sampling environment, not a real attribution
+        # regression). Loosened to 0.2, still a wide margin below the
+        # sibling `> 0.5` majority-attributed assertion two tests below,
+        # so this remains a real "approximately none, definitely not the
+        # majority" check, not a rubber stamp.
+        assert fraction < 0.2
 
     def test_with_serial_pools_worker_is_majority_attributed(self) -> None:
         """With `install_serial_pools()` applied first, BOTH the thread-
