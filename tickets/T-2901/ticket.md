@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0b61bd8f6ee25e0765c6910dda5ae39325521061
 ---
 frob.graph.callgraph's shared call-detection heuristic (_called_names,
 src/frob/graph/callgraph.py) recognizes a call only as "identifier
