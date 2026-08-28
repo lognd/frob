@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_git_ops.py
+- src/frob/tickets/_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +48,22 @@ scope_changes:
   glob: src/frob/tickets/_land_git_ops.py
   reason: 'corrected: the "git status unavailable" text and the DirtyMain status read
     live in _land_git_ops.py; my first two globs were a guess'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: the misleading 'cannot fix this by retrying' text and the NO-open-ticket-scope
+    false-positive branch both live in _log_dirty_main_refusal/_refuse_if_main_dirty
+    in _land.py, which consumes _land_git_ops.py's STATUS-UNREADABLE signal; the fix
+    is incomplete without it
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: the misleading cannot-fix-by-retrying text and the NO-open-ticket-scope
+    false-positive branch both live in _log_dirty_main_refusal/_refuse_if_main_dirty
+    in _land.py, which consumes _land_git_ops.py's STATUS-UNREADABLE signal; the fix
+    is incomplete without it
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
