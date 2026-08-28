@@ -2,7 +2,7 @@
 id: T-3272
 title: 'Ledger v2 must be the default for new repos: all six scaffold manifests still
   emit the v1 single-file tickets.md'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-28'
@@ -16,10 +16,63 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/scaffold/project.py
+- src/frob/scaffold/data/shared/python/tickets.md.j2
+- tests/unit/test_scaffold_project.py
+- docs/commands/scaffold.md
+- docs/design/ledger-v2.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/scaffold/data/shared/python/tickets.md.j2
+  reason: removing the dead tickets.md.j2 seed template and its manifest entries,
+    plus unit fixtures and docs for the v2-default flip
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_scaffold_project.py
+  reason: removing the dead tickets.md.j2 seed template and its manifest entries,
+    plus unit fixtures and docs for the v2-default flip
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: removing the dead tickets.md.j2 seed template and its manifest entries,
+    plus unit fixtures and docs for the v2-default flip
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/design/ledger-v2.md
+  reason: removing the dead tickets.md.j2 seed template and its manifest entries,
+    plus unit fixtures and docs for the v2-default flip
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/tickets.md.j2
+  reason: removing the dead tickets.md.j2 seed template and its manifest entries,
+    plus unit fixtures and docs for the v2-default flip
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_scaffold_project.py
+  reason: removing the dead tickets.md.j2 seed template and its manifest entries,
+    plus unit fixtures and docs for the v2-default flip
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: removing the dead tickets.md.j2 seed template and its manifest entries,
+    plus unit fixtures and docs for the v2-default flip
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/design/ledger-v2.md
+  reason: removing the dead tickets.md.j2 seed template and its manifest entries,
+    plus unit fixtures and docs for the v2-default flip
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
