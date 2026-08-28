@@ -32,7 +32,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: bc439433a8d983ff49b2a9fa99a55e570f7b1500
 ---
 Live-hit during T-2872's land (2026-08-22): `frob ticket close T-2872`
 auto-promoted `T-draft-90b2bcf5` -- "Write 36 individual COV007 waivers
