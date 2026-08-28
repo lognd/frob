@@ -2,7 +2,7 @@
 id: T-2967
 title: 'macOS: frob.serve._socketd daemon.sock exceeds AF_UNIX sun_path length limit
   (12 failures)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
