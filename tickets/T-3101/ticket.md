@@ -2,7 +2,7 @@
 id: T-3101
 title: Move native-rebuild sub-stage after land's publish, out of the pre-publish
   transaction
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
