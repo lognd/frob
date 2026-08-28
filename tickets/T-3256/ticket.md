@@ -60,7 +60,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2cf518c13580e0affbf3c5bb2779ab7ce96495bc
 ---
 MEASURED 2026-08-28 with six agent series live on a 12-core / 23 GB box:
 
