@@ -38,6 +38,14 @@ body_changes:
   at: '2026-08-28'
   old_length: 3750
   new_length: 6150
+- mode: append
+  reason: 'T-3256 report-only findings: fleet_status visibility gap and land-timeout
+    budget-awareness, both filed as separate follow-up tickets rather than expanded
+    scope'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 6150
+  new_length: 8508
 designated_repro_test: null
 threat: null
 component: null
@@ -153,3 +161,33 @@ consecutive `frob ticket close` attempts during the same window, and frob's own
 [REPEATED_FAILURE] guard correctly told it to stop. Lock starvation of
 non-landing operations is a second, distinct symptom of the same
 oversubscription and belongs in the same analysis.
+
+
+FLEET_STATUS VISIBILITY (report only, per the ticket's own instruction -- no fleet_status
+code touched by this ticket): scripts/fleet_status.py already reads raw host load and
+memory (host_load(): 1-minute load average + MemAvailable from /proc/loadavg and
+/proc/meminfo) and separately counts STALE/orphaned forkservers via
+stale_forkserver_count/_derive_forkserver_stale_after_s -- but that staleness logic is
+explicitly designed to find OLD, abandoned forkservers, not to count or characterize LIVE,
+young ones. There is no metric anywhere in fleet_status that distinguishes "N forkservers
+are young and actively working (six legitimate concurrent frob check runs fighting over
+the box, this ticket's own MEASURED condition)" from "N agents are stalled" -- both
+conditions can present as elevated load + low free memory + many live forkservers, and an
+operator reading fleet_status today cannot tell them apart. A live-but-contended check and
+a stalled one are the same picture from the outside. This is a real gap and belongs in its
+own ticket (fleet_status.py is not in T-3256's scope); filed as a follow-up: T-draft-65015efc.
+
+LAND-TIMEOUT BUDGET-AWARENESS (considered, NOT built here; per the coordinator's T-3256
+field evidence -- a `frob ticket land` killed by its own `timeout 540` wrapper while its
+child `frob check` was 335s in at 82.8% CPU, actively progressing, not stalled): I
+considered whether this ticket should also make the land wall-clock timeout budget-aware
+(extend it while the child check is demonstrably still making progress) as well as sizing
+the pool. I chose NOT to build that here: it requires touching ticket-land/timeout-wrapper
+code (the `timeout 540` shell wrapper this repo's own house rules mandate, plus whatever
+internal land timeout exists in src/frob/tickets/_land*.py), none of which is
+`src/frob/check/__init__.py`. The admission budget in this ticket directly reduces the
+odds a land's child check needs anywhere near 540s in the first place (fewer, better-sized
+concurrent pools finish faster), but it does not eliminate the fixed-timeout race the
+coordinator's evidence documents -- a genuinely slow but progressing check under residual
+contention can still be killed at the wall clock. That is a distinct, real fix and is
+filed as a follow-up ticket rather than expanding this one's scope: T-draft-e740234e.
