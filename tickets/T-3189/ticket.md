@@ -43,7 +43,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cedfabc3260e9d4ac02c75b4f5c64e0913b22d71
 ---
 OWNER DIRECTIVE 2026-08-27: "TICKET NARRATIVES GO IN TICKETS. modules need to be
 debloated as well; they should have the details needed for an operator or a
