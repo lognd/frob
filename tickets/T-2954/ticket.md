@@ -21,6 +21,7 @@ scope:
 - src/frob/app/ticket_runner/__init__.py
 - src/frob/_cli_parsers/_ticket/_closeout.py
 - tests/unit/test_ticket_restore.py
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -72,6 +73,12 @@ scope_changes:
     lives in _cli_parsers/_ticket/_closeout.py + app/ticket_runner/__init__.py''s
     dispatch table, and archive''s own core primitive lives in tickets/_archive.py,
     not _store.py'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: restore command needs a doc anchor; tickets-lifecycle.md already documents
+    archive/reopen/drop in the same place
   actor: logan
   at: '2026-08-28'
 body_changes:
