@@ -45,6 +45,19 @@ triage_changes:
     T-2994 was missing (T-2987/T-2988/T-3022 cover migration, not enforcement)
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/gates/test_comment_placement.py::TestCplace001::test_must_fire_long_waive_reason
+- tests/gates/test_comment_placement.py::TestCplace001::test_must_stay_quiet_ordinary_one_line_waive
+- tests/gates/test_comment_placement.py::TestCplace001::test_must_stay_quiet_frob_ticket_directive_any_length
+- tests/gates/test_comment_placement.py::TestCplace001::test_does_not_fire_on_prose_mentioning_frobwaive_by_name
+- tests/gates/test_comment_placement.py::TestCplace001::test_must_stay_quiet_exempt_path
+- tests/gates/test_comment_placement.py::TestCplace001::test_threshold_boundary_is_inclusive
+- tests/gates/test_comment_placement.py::TestCplace002::test_must_fire_long_narrative_paragraph
+- tests/gates/test_comment_placement.py::TestCplace002::test_must_stay_quiet_table_row_citation
+- tests/gates/test_comment_placement.py::TestCplace002::test_must_stay_quiet_short_attribution
+- tests/gates/test_comment_placement.py::TestCplace002::test_must_stay_quiet_exempt_path
+- tests/gates/test_comment_placement.py::TestCplace002::test_word_limit_boundary
+- tests/gates/test_comment_placement.py::TestCommentPlacementGate::test_fires_across_both_surfaces
 designated_repro_test: null
 threat: null
 component: null
