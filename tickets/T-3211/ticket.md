@@ -14,11 +14,31 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- N/A
+- scripts/fleet_status.py
+- tests/system/test_fleet_status_ground_truth.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: N/A
+  reason: narrowed to the two genuine platform-unsafe product-code findings (os.major/os.minor/os.sysconf)
+    this triage pass fixes; remaining test-fixture files split to a follow-up ticket
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: scripts/fleet_status.py
+  reason: narrowed to the two genuine platform-unsafe product-code findings (os.major/os.minor/os.sysconf)
+    this triage pass fixes; remaining test-fixture files split to a follow-up ticket
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/system/test_fleet_status_ground_truth.py
+  reason: narrowed to the two genuine platform-unsafe product-code findings (os.major/os.minor/os.sysconf)
+    this triage pass fixes; remaining test-fixture files split to a follow-up ticket
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
