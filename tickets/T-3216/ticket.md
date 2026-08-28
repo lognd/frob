@@ -2,7 +2,7 @@
 id: T-3216
 title: DirtyMain reports an unreadable git status as uncommitted work and tells the
   reader not to retry
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
