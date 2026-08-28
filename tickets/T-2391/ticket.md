@@ -175,10 +175,18 @@ acceptance:
   - tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_section_present_and_names_the_gate_and_reason
   - tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_json_exposes_measurement_without_a_dedicated_key
   - tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_legitimate_json_payload_is_byte_identical_with_guard_active
-- text: Given a converted gate that returns a bare empty finding list without a status,
-    when the meta-check runs, then it is reported, proving the doctrine is enforced
-    structurally rather than by convention.
-  evidence: []
+acceptance_amendments:
+- op: remove
+  index: 3
+  old_text: Given a converted gate that returns a bare empty finding list without
+    a status, when the meta-check runs, then it is reported, proving the doctrine
+    is enforced structurally rather than by convention.
+  new_text: null
+  reason: deferred to follow-up T-draft-09d7321f (GATESTATUS001 meta-check) -- see
+    T-2391's own Done report for the explicit cut; T-1662's own standard forbids implementing
+    a lexical-pattern-matching meta-check without a design pass first
+  actor: logan
+  at: '2026-08-28'
 threat: null
 component: gates
 labels:
