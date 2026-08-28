@@ -16,10 +16,35 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_coverage.py
+- src/frob/gates/_waive.py
+- docs/modules/gates.md
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: the shared rule-id registry and doc enumeration/table for COV00X rules live
+    outside _coverage.py; src/frob/gates/__init__.py itself is currently leased live
+    by T-2710 so it is deferred, retried separately
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/modules/gates.md
+  reason: the shared rule-id registry and doc enumeration/table for COV00X rules live
+    outside _coverage.py; src/frob/gates/__init__.py itself is currently leased live
+    by T-2710 so it is deferred, retried separately
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_gates.py
+  reason: the shared rule-id registry and doc enumeration/table for COV00X rules live
+    outside _coverage.py; src/frob/gates/__init__.py itself is currently leased live
+    by T-2710 so it is deferred, retried separately
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
