@@ -366,6 +366,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2895: Root-write guard: cwd-keyed target, dead FROB_COORDINATOR hatch, mis-scoped ledger exemption
 - T-2899: post-land sweep regression from an unattributed source (sweep spawned by T-2361): 1 new (rule, file) identit(ies), 2 finding(s) (I001)
 - T-2900: wire or drop _parse_bash (bash raw-parse test helper)
+- T-2901: call_graph: bash bare-word invocation unrecognized by shared token-adjacency call detector
 - T-2902: post-land sweep regression from T-2891, T-1604: 5 new (rule, file) identit(ies), 5 finding(s) (DOC006, DOC008, LANG003)
 - T-2905: wire or drop _parse_csharp (csharp raw-parse test helper)
 - T-2906: wire bash+csharp into frob.vet/frob.dup/frob.gates._docblocks (capability/dup/docblock facets)

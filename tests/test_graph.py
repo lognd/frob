@@ -2029,6 +2029,7 @@ class TestGeneratedSource:
         assert is_generated_source(tmp_path, "src/does_not_exist.py") is False
 
 
+# frob:ticket T-2901
 class TestCallGraph:
     """T-0422: `build_reference_graph` broadens `build_call_graph`'s
     call-token-only recall to also catch a bare identifier reference
@@ -2259,6 +2260,102 @@ class TestCallGraph:
             "pub fn helper() -> i32 {\n    42\n}\n\nfn entry() -> i32 {\n    helper()\n}\n",
         )
         call_graph = build_call_graph(tmp_path, ("src/a.rs",))
+        assert call_graph.calls == {}
+
+    # frob:ticket T-2901
+    def test_build_call_graph_resolves_a_bash_bare_word_call_after_brace(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-2901 MUST-FIRE: bash has no parenthesized call syntax
+        # (`_called_names`'s paren-adjacency rule never matches a bash
+        # bare-word invocation), so this edge exists only because
+        # `_called_names_from_sym` unions in `_bash_called_names` for
+        # bash files -- the very first identifier in a function body,
+        # immediately after `{`, is an unambiguous new-command position.
+        from frob.graph.callgraph import build_call_graph
+
+        _write(
+            tmp_path,
+            "script.sh",
+            "_foo() {\n    echo hi\n}\n\n_bar() {\n    _foo\n}\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("script.sh",))
+        assert call_graph.calls == {"script.sh::_bar": ("script.sh::_foo",)}
+
+    # frob:ticket T-2901
+    def test_build_call_graph_resolves_bash_calls_after_semicolon_pipe_and_if(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-2901: every real, unambiguous bash statement-separator
+        # terminal (`;`, `|`, `if`) recovers a bare-word call --
+        # `_foo` appears after `;` AND after `if`, both resolve to one
+        # edge (the by-name index is name-keyed, not occurrence-keyed).
+        from frob.graph.callgraph import build_call_graph
+
+        _write(
+            tmp_path,
+            "script.sh",
+            "_foo() {\n    echo hi\n}\n"
+            "_qux() {\n    echo qux\n}\n\n"
+            "_bar() {\n"
+            "    x=5\n"
+            "    _foo; _qux\n"
+            "    if _foo; then\n"
+            "        _qux\n"
+            "    fi\n"
+            "}\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("script.sh",))
+        assert set(call_graph.calls["script.sh::_bar"]) == {
+            "script.sh::_qux",
+            "script.sh::_foo",
+        }
+
+    # frob:ticket T-2901
+    def test_build_call_graph_does_not_treat_bash_assignment_as_a_call(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-2901 MUST-STAY-QUIET: `x=5` tokenizes as the bare identifier
+        # `x` immediately after `{` -- exactly the position
+        # `_bash_called_names` otherwise treats as a call candidate.
+        # Without the "next token is `=`" exclusion this would fabricate
+        # a spurious call to a symbol literally named `x`.
+        from frob.graph.callgraph import build_call_graph
+
+        _write(
+            tmp_path,
+            "script.sh",
+            "_x() {\n    echo hi\n}\n\n_bar() {\n    x=5\n}\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("script.sh",))
+        assert call_graph.calls == {}
+
+    # frob:ticket T-2901
+    def test_build_call_graph_bash_newline_only_separation_is_a_known_gap(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-2901 MUST-STAY-QUIET (documents the known limitation, not a
+        # bug): two commands separated by ONLY a newline (no `;`) have
+        # NO token between them at all -- tree-sitter emits no leaf for
+        # whitespace -- so the second command is structurally
+        # unrecoverable from `body_tokens` alone. This asserts the
+        # documented gap stays exactly that (a miss, not a wrong edge),
+        # so a future change that silently "fixes" this via a text-level
+        # trick (e.g. scanning around embedded newline characters that
+        # do not actually exist in body_tokens) gets caught if it
+        # instead produces something incorrect.
+        from frob.graph.callgraph import build_call_graph
+
+        _write(
+            tmp_path,
+            "script.sh",
+            "_foo() {\n    echo hi\n}\n\n_bar() {\n    echo start\n    _foo\n}\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("script.sh",))
         assert call_graph.calls == {}
 
     # frob:ticket T-0840

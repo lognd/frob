@@ -161,6 +161,98 @@ def _short_name(qualname: str) -> str:
 # frob:ticket T-0583
 _WRAPPER_MARKER_NAMES = frozenset({"memoize_per_run", "wraps", "lru_cache", "cache"})
 
+# T-2901: bash calls a function the same way it invokes any other command
+# -- a bare word with no parentheses at all (`foo arg1 arg2`, never
+# `foo(arg1, arg2)`) -- so the paren-adjacency rule `_called_names` uses
+# for the other six grammars structurally cannot recognize a bash call.
+# `frob.lang._walk_bash`'s `body_tokens` extraction (`_leaf_tokens`, shared
+# across every grammar) never emits a token for plain whitespace/newlines
+# -- tree-sitter has no leaf node for them -- so the single most common
+# bash idiom (one command per line, no `;`) is NOT recoverable from a flat
+# token stream at all; there is no token sitting where the newline was.
+# What IS recoverable: every token here IS a real grammar terminal
+# (bash's own explicit statement/list separators and control-flow
+# keywords), so a bare word immediately after one of these is a genuine,
+# unambiguous new-command position. This is a real, measurable widening of
+# recognized bash calls (semicolon-, pipe-, and-or-, and control-flow-
+# adjacent commands), not a claim of full bash call-graph parity -- the
+# newline-only case remains a known gap requiring a schema change
+# (RawSymbol has no statement-boundary field) genuinely out of this
+# ticket's `src/frob/graph/callgraph.py`-only scope.
+_BASH_STATEMENT_BOUNDARY_TOKENS = frozenset(
+    {
+        ";",
+        "{",
+        "}",
+        "(",
+        "&&",
+        "||",
+        "|",
+        "&",
+        "do",
+        "then",
+        "else",
+        "elif",
+        "fi",
+        "done",
+        "esac",
+        "in",
+        "if",
+        "while",
+        "until",
+    }
+)
+
+# T-2901: bash reserved words that can sit in a statement-start position
+# (immediately after a `_BASH_STATEMENT_BOUNDARY_TOKENS` member) but are
+# never themselves a function/command invocation -- excluded from
+# `_bash_called_names`'s candidate set the same way `_called_names`
+# implicitly excludes non-identifier punctuation.
+_BASH_RESERVED_WORDS = frozenset(
+    {
+        "if",
+        "then",
+        "else",
+        "elif",
+        "fi",
+        "do",
+        "done",
+        "case",
+        "esac",
+        "while",
+        "until",
+        "for",
+        "in",
+        "function",
+        "select",
+        "time",
+    }
+)
+
+
+# frob:ticket T-2901
+def _bash_called_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
+    """Bare-word bash call candidates: an identifier immediately after a
+    `_BASH_STATEMENT_BOUNDARY_TOKENS` member (or at the very start of
+    `body_tokens`), excluding `_BASH_RESERVED_WORDS` (a control-flow
+    keyword sitting in that position is never itself a call) and any
+    identifier immediately followed by `=` (a bash variable assignment --
+    `x=5` tokenizes as the bare identifier `x` in exactly this position,
+    which would otherwise misread as a call). See `_BASH_STATEMENT_
+    BOUNDARY_TOKENS`'s docstring for what this can and cannot see -- the
+    dominant "one command per line, no `;`" idiom is a structural miss,
+    not a bug in this predicate."""
+    names: set[str] = set()
+    for i, tok in enumerate(body_tokens):
+        if not tok.isidentifier() or tok in _BASH_RESERVED_WORDS:
+            continue
+        if i > 0 and body_tokens[i - 1] not in _BASH_STATEMENT_BOUNDARY_TOKENS:
+            continue
+        if i + 1 < len(body_tokens) and body_tokens[i + 1] == "=":
+            continue
+        names.add(tok)
+    return frozenset(names)
+
 
 # frob:ticket T-0840
 def _ordered_called_names(body_tokens: tuple[str, ...]) -> tuple[str, ...]:
@@ -230,11 +322,25 @@ def _called_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
 
 
 # frob:ticket T-0565
-def _called_names_from_sym(sym) -> frozenset[str]:  # noqa: ANN001
+# frob:ticket T-2901
+def _called_names_from_sym(sym, path: str | None = None) -> frozenset[str]:  # noqa: ANN001
     """`_called_names` over `sym.body_tokens` -- the `build_call_graph`
     extractor, unchanged from before T-0565 (a call happens in a body, not
-    a signature)."""
-    return _called_names(sym.body_tokens)
+    a signature). T-2901: when `path` resolves to `language == "bash"`
+    (`frob.lang.language_for_extension`), ALSO union in
+    `_bash_called_names` -- bash's bare-word call syntax has no `(` for
+    `_called_names`'s paren-adjacency rule to ever match, so without this
+    every bash symbol would resolve zero calls, silently. `path` is
+    `None` for every pre-T-2901 caller (`_resolve_edges` did not pass one
+    before this ticket); `None`, or any path whose extension is not
+    bash's, is treated identically to prior behavior."""
+    names = set(_called_names(sym.body_tokens))
+    if path is not None:
+        from frob.lang import language_for_extension
+
+        if language_for_extension(Path(path).suffix) == "bash":
+            names |= _bash_called_names(sym.body_tokens)
+    return frozenset(names)
 
 
 # frob:ticket T-0813
@@ -287,12 +393,17 @@ def _unresolved_exempt_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
 
 # frob:ticket T-0422
 # frob:ticket T-0565
-def _referenced_names(sym) -> frozenset[str]:  # noqa: ANN001
+def _referenced_names(sym, path: str | None = None) -> frozenset[str]:  # noqa: ANN001,ARG001
     """Every bare identifier token in `sym`'s signature AND body, called or
     not -- broader recall than `_called_names`: also catches a dispatch-
     table/registry reference (`{"cmd": _foo}`), a decorator target, or a
     parameter default that never appears as a `name(...)` call token at
     all.
+
+    T-2901: `path` accepted and IGNORED -- `_resolve_edges`'s loop now
+    passes it uniformly to whichever `name_extractor` it holds so
+    `_called_names_from_sym` can derive a language for its bash-specific
+    widening; this extractor has no language-specific behavior to gate.
 
     T-0565: `sig_tokens` joins `body_tokens` here (previously body-only),
     closing two systematic DEAD001 false-positive classes the T-0422 Done
@@ -1035,7 +1146,7 @@ def _resolve_edges(
         for sym in symbols:
             callers.append(f"{path}::{sym.qualname}")
             caller_paths.append(path)
-            names_per_caller.append(list(name_extractor(sym)))
+            names_per_caller.append(list(name_extractor(sym, path)))
             exempt_per_caller.append(
                 list(exempt_extractor(sym)) if exempt_extractor is not None else []
             )

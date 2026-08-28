@@ -2,7 +2,7 @@
 id: T-2901
 title: 'call_graph: bash bare-word invocation unrecognized by shared token-adjacency
   call detector'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -27,7 +27,12 @@ scope_changes:
   reason: test fixtures for bash call detection
   actor: logan
   at: '2026-08-28'
-designated_repro_test: null
+evidence:
+- tests/test_graph.py::TestCallGraph::test_build_call_graph_resolves_a_bash_bare_word_call_after_brace
+- tests/test_graph.py::TestCallGraph::test_build_call_graph_resolves_bash_calls_after_semicolon_pipe_and_if
+- tests/test_graph.py::TestCallGraph::test_build_call_graph_does_not_treat_bash_assignment_as_a_call
+- tests/test_graph.py::TestCallGraph::test_build_call_graph_bash_newline_only_separation_is_a_known_gap
+designated_repro_test: tests/test_graph.py::TestCallGraph::test_build_call_graph_resolves_a_bash_bare_word_call_after_brace
 threat: null
 component: null
 anchor: false
