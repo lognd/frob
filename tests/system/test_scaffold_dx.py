@@ -70,8 +70,10 @@ def test_python_tool_scaffold_passes_check_immediately(tmp_path: Path) -> None:
     # frob:tests src/frob/scaffold kind="integration"
     # Renders a real project via render_project, commits it, then runs it
     # through git + the rest of the toolchain end to end.
+    # T-3271: output_dir is the PARENT -- render_project writes under
+    # tmp_path / "demo", so project_dir must match that, not tmp_path itself.
     project_dir = tmp_path / "demo"
-    result = render_project("python-tool", "demo", project_dir)
+    result = render_project("python-tool", "demo", tmp_path)
     assert result.is_ok, result
 
     subprocess.run(["git", "init", "-q", "-b", "main"], cwd=project_dir, check=True)

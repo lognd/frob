@@ -35,7 +35,13 @@ def _populate_scaffold_actions(scaffold_sub) -> None:
         "scaffold_type", metavar="type", help="project type (e.g. python-tool)"
     )
     scaffold_new_p.add_argument("scaffold_name", metavar="name", help="project name")
-    scaffold_new_p.add_argument("--output", dest="scaffold_output", metavar="DIR")
+    scaffold_new_p.add_argument(
+        "--output",
+        dest="scaffold_output",
+        metavar="DIR",
+        help="parent directory to scaffold into (default: .); the project "
+        "is always written to DIR/<name>, never loose into DIR (T-3271)",
+    )
     scaffold_new_p.add_argument(
         "--force",
         dest="scaffold_force",

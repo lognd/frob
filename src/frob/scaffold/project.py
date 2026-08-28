@@ -357,6 +357,11 @@ def render_project(
     *,
     force: bool = False,
 ) -> Result[list[Path], ScaffoldError]:
+    """Render `project_type` named `name` under `output_dir / name`
+    (`output_dir` is the PARENT, matching the CLI's `--output` docs and
+    the `frob scaffold new <type> <name>` quickstart -- T-3271: the bare
+    form with `output_dir=Path(".")` therefore creates `./<name>/`,
+    never scattering files loose into the caller's own directory)."""
     if project_type not in _MANIFESTS:
         return Err(ScaffoldError.UnknownType)
 
@@ -365,9 +370,10 @@ def render_project(
         keep_trailing_newline=True,
     )
     ctx = {"project": {"name": name, "type": project_type}}
+    project_dir = output_dir / name
 
     resolved_result = _resolve_manifest_paths(
-        _MANIFESTS[project_type], env, ctx, output_dir
+        _MANIFESTS[project_type], env, ctx, project_dir
     )
     if resolved_result.is_err:
         return Err(resolved_result.danger_err)

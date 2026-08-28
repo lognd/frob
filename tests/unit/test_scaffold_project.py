@@ -46,15 +46,18 @@ def test_render_project_unknown_type_is_err() -> None:
 # frob:tests \
 # tests/unit/test_scaffold_project.py::test_render_project_writes_expected_files
 def test_render_project_writes_expected_files(tmp_path: Path) -> None:
-    """A successful render writes every manifest entry for the given type."""
+    """A successful render writes every manifest entry for the given type
+    under `output_dir / name` (T-3271: `output_dir` is the PARENT), never
+    loose into `output_dir` itself."""
     result = render_project("python-tool", "demo", tmp_path)
     assert result.is_ok
     written = result.danger_ok
     assert len(written) > 0
     for path in written:
         assert path.exists()
-    assert (tmp_path / "README.md").exists()
-    assert (tmp_path / "src" / "demo" / "__init__.py").exists()
+    assert (tmp_path / "demo" / "README.md").exists()
+    assert (tmp_path / "demo" / "src" / "demo" / "__init__.py").exists()
+    assert not (tmp_path / "README.md").exists()
 
 
 # frob:tests \
@@ -106,7 +109,7 @@ def test_render_project_all_types_default_to_rapid_profile(tmp_path: Path) -> No
         out_dir = tmp_path / f"{project_type}-profile"
         result = render_project(project_type, "demo", out_dir)
         assert result.is_ok, f"{project_type} failed to render: {result.err}"
-        toml_path = out_dir / "frob.toml"
+        toml_path = out_dir / "demo" / "frob.toml"
         assert toml_path.exists(), f"{project_type} did not write frob.toml"
         contents = toml_path.read_text(encoding="utf-8")
         assert "[profile]" in contents, f"{project_type} missing [profile]"
@@ -172,6 +175,64 @@ def test_render_project_propagates_resolve_failure(tmp_path: Path, monkeypatch) 
 # tests/unit/test_scaffold_project.py::test_hooks_dir_kill_switch_refuses_without_spawn\
 # ing
 # frob:ticket T-0803
+# frob:ticket T-3271
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_render_project_creates_name_subdir_must_fire
+def test_render_project_creates_name_subdir_must_fire(tmp_path: Path) -> None:
+    """MUST-FIRE (T-3271): scaffolding `demo` into a temp dir creates
+    `<tmp>/demo/README.md`, never `<tmp>/README.md` -- `output_dir` is the
+    PARENT, matching docs/commands/scaffold.md's quickstart."""
+    result = render_project("python-tool", "demo", tmp_path)
+    assert result.is_ok
+    assert (tmp_path / "demo" / "README.md").exists()
+    assert not (tmp_path / "README.md").exists()
+
+
+# frob:ticket T-3271
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_render_project_existing_collision_still_ref\
+# uses_must_stay_quiet
+def test_render_project_existing_collision_still_refuses_must_stay_quiet(
+    tmp_path: Path,
+) -> None:
+    """MUST-STAY-QUIET (T-3271): the pre-existing OutputExists guard must
+    not regress -- a colliding file in the (now name-suffixed) project
+    directory still refuses without force, and force still overwrites."""
+    first = render_project("python-tool", "demo", tmp_path)
+    assert first.is_ok
+
+    second = render_project("python-tool", "demo", tmp_path)
+    assert second.is_err
+    assert second.danger_err is ScaffoldError.OutputExists
+
+    third = render_project("python-tool", "demo", tmp_path, force=True)
+    assert third.is_ok
+
+
+# frob:ticket T-3271
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_render_project_bare_form_does_not_scatter_i\
+# nto_existing_project_root
+def test_render_project_bare_form_does_not_scatter_into_existing_project_root(
+    tmp_path: Path,
+) -> None:
+    """THIRD FIXTURE (T-3271): the bare form (output_dir defaults to ".",
+    i.e. the caller's own directory in the CLI) run inside an existing
+    project root does not scatter files into it -- everything lands under
+    a `name` subdirectory instead, structurally, regardless of what
+    `tmp_path` already contains."""
+    (tmp_path / "README.md").write_text("pre-existing project readme\n")
+    (tmp_path / "pyproject.toml").write_text("[project]\nname = 'diax'\n")
+
+    result = render_project("python-tool", "demo", tmp_path)
+
+    assert result.is_ok
+    assert (tmp_path / "demo" / "README.md").exists()
+    # The pre-existing files at tmp_path's root are untouched.
+    assert tmp_path.joinpath("README.md").read_text() == "pre-existing project readme\n"
+    assert "diax" in tmp_path.joinpath("pyproject.toml").read_text()
+
+
 def test_hooks_dir_kill_switch_refuses_without_spawning(
     tmp_path: Path, monkeypatch
 ) -> None:

@@ -2,7 +2,7 @@
 id: T-3271
 title: 'frob scaffold new writes into the output dir, not <output>/<name>: contradicts
   its own quickstart and scattered a project across a user''s home'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -44,6 +44,13 @@ scope_changes:
     semantics fix
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/unit/test_scaffold_project.py::test_render_project_creates_name_subdir_must_fire
+- tests/unit/test_scaffold_project.py::test_render_project_existing_collision_still_refuses_must_stay_quiet
+- tests/unit/test_scaffold_project.py::test_render_project_bare_form_does_not_scatter_into_existing_project_root
+- tests/unit/test_scaffold_project.py::test_render_project_writes_expected_files
+- tests/unit/test_scaffold_project.py::test_render_project_all_registered_types_succeed
+- tests/unit/test_scaffold_project.py::test_render_project_all_types_default_to_rapid_profile
 designated_repro_test: null
 threat: null
 component: null

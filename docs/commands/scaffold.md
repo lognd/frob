@@ -14,7 +14,7 @@ available; verify by inspection if it isn't).
 ```bash
 frob scaffold list                  # list available project types
 frob scaffold new python-tool demo  # scaffold into ./demo/
-frob scaffold new python-tool demo --output /path/to/parent/
+frob scaffold new python-tool demo --output /path/to/parent/  # -> /path/to/parent/demo/
 frob scaffold new pyo3-library demo --force  # overwrite existing files
 ```
 
