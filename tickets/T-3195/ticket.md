@@ -76,7 +76,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 46b172704c7008408feedb7624654e233336eae9
 ---
 MEASURED 2026-08-27 while recovering T-3157's stranded work.
 
