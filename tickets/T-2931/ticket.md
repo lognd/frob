@@ -52,7 +52,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0e3a0c5eba169046c1cb63f685496059a60ad133
 ---
 `_unlanded.py::_remove_scratch_file`'s only caller is `atexit.register(_remove_scratch_file, path)` inside `_scratch_file_for_suffix` (T-2645) -- a dynamic registration WIRE001's call-graph resolver structurally cannot see, the same class of gap this repo already carved a named exemption for (`frob.gates._waive._WIRE001_RESCUE_EXEMPT_RULE`, covering autouse pytest fixtures and pydantic validators).
 
