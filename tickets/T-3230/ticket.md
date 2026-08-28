@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reconcile.py
 - tests/test_ticket_reconcile.py
+- src/frob/tickets/_archive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +45,13 @@ scope_changes:
   glob: tests/test_ticket_reconcile.py
   reason: triage narrowed fix to the reconcile stale-hold worktree-measurement site;
     remainder split into follow-up tickets
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_archive.py
+  reason: the T-3230 fix changes _live_worktrees return type; _archive.py::_refuse_archive_if_worktrees_live
+    is the one other caller and must be updated to keep working and to fail closed
+    (refuse archive) rather than fail open (allow archive) on an unmeasurable read
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
