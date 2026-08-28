@@ -2,7 +2,7 @@
 id: T-3030
 title: _STAGE_GROUPS missing milestone/env_var_docs/root_asset_dirs/profile_boundary
   gates
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
