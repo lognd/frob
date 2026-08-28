@@ -42,6 +42,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c5ea05d6947c0c69d6ef31d6b80bbee987259f39
 ---
 T-2997 moved rapid-debt.jsonl's write target from the tracked repo root to .frob/rapid-debt.jsonl (gitignored). frob clean --deep (tier 3, src/frob/clean/_rules.py _TIER3_PATTERNS) shutil.rmtrees the ENTIRE .frob/ directory, which now includes this debt ledger -- a real data-loss mode T-2997's own acceptance bar ('do not silently discard it') explicitly warns against, discovered while verifying T-2997's 'confirm nothing depends on reading it' requirement rather than assumed. Decide and implement a fix: either carve rapid-debt.jsonl out of the tier-3 walk (an explicit exclude pattern), or move its write target outside .frob/'s clean --deep blast radius, or get an explicit owner sign-off that clean --deep may destroy this telemetry too (matching the T-2997 tradeoff already accepted for clone-survival).
