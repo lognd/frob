@@ -2,7 +2,7 @@
 id: T-2688
 title: 'Gate: refuse/warn when a diff deletes or renames a test cited as some ticket''s
   evidence'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-19'
