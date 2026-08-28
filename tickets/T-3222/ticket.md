@@ -58,7 +58,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 46979e6a683a6deb1205e3a2ea2bb25c2bc409ee
 ---
 MEASURED 2026-08-27/28, TWO INDEPENDENT SAMPLES, same conclusion: the post-land
 sweep files tickets whose findings are overwhelmingly already gone by the time
