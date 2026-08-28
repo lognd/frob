@@ -2,7 +2,7 @@
 id: T-3192
 title: 'A hanging CI job produces no failure signal: turn ubuntu hangs into timed
   failures with stack dumps'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .github/workflows/ci.yml
+- tests/test_ci_workflow_timeout.py
+- tests/system/test_ci_hang_guard_positive_control.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +28,18 @@ scope_changes:
   reason: per-job timeout and faulthandler wiring
   actor: logan
   at: '2026-08-27'
+- op: add
+  glob: tests/test_ci_workflow_timeout.py
+  reason: 'T-3192: structural workflow-YAML tests plus a real planted-hang positive
+    control proving the timeout+stackdump mechanism fires'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/system/test_ci_hang_guard_positive_control.py
+  reason: 'T-3192: structural workflow-YAML tests plus a real planted-hang positive
+    control proving the timeout+stackdump mechanism fires'
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
