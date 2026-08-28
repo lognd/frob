@@ -35,7 +35,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 013c97097502a2e7d1a22e51378a1eacb60a24d1
 ---
 T-2969 audited all 12 candidate test_cli_*.py files for the T-2943
 missing-git-init pattern and found none of them carry it (see T-2969's
