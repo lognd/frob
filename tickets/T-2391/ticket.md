@@ -2,7 +2,7 @@
 id: T-2391
 title: 'a zero-findings gate result is ambiguous: unmeasured and inapplicable gates
   report as green'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -21,6 +21,11 @@ scope:
 - tests/unit/test_check_measurement.py
 - docs/commands/check.md
 - tests/unit/test_app_runners_batch6.py
+- tickets/T-draft-09d7321f/**
+- tickets/T-draft-7df3a108/**
+- tickets/T-draft-b00e9a5f/**
+- tickets/T-draft-b44869e6/**
+- tickets/T-draft-c7bfd2e9/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -75,20 +80,88 @@ scope_changes:
     pre-existing test's expected dict must be updated in the same change
   actor: logan
   at: '2026-08-27'
+- op: add
+  glob: tickets/T-draft-09d7321f/**
+  reason: frob ticket new for the four required T-2391 follow-up tickets writes tickets/T-draft-*/ticket.md
+    before renumbering -- a machinery side effect of filing this ticket's own required
+    follow-up work, not scope creep (T-3172 precedent)
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tickets/T-draft-7df3a108/**
+  reason: frob ticket new for the four required T-2391 follow-up tickets writes tickets/T-draft-*/ticket.md
+    before renumbering -- a machinery side effect of filing this ticket's own required
+    follow-up work, not scope creep (T-3172 precedent)
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tickets/T-draft-b00e9a5f/**
+  reason: frob ticket new for the four required T-2391 follow-up tickets writes tickets/T-draft-*/ticket.md
+    before renumbering -- a machinery side effect of filing this ticket's own required
+    follow-up work, not scope creep (T-3172 precedent)
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tickets/T-draft-b44869e6/**
+  reason: frob ticket new for the four required T-2391 follow-up tickets writes tickets/T-draft-*/ticket.md
+    before renumbering -- a machinery side effect of filing this ticket's own required
+    follow-up work, not scope creep (T-3172 precedent)
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tickets/T-draft-c7bfd2e9/**
+  reason: frob ticket new for the doc-anchor follow-up ticket writes tickets/T-draft-c7bfd2e9/ticket.md
+    -- machinery side effect (T-3172 precedent)
+  actor: logan
+  at: '2026-08-28'
+evidence:
+- tests/unit/test_process.py::TestToolResultMeasurement::test_measured_when_zero_diagnostics
+- tests/unit/test_process.py::TestToolResultMeasurement::test_not_measured_when_every_diagnostic_is_unresolved_info
+- tests/unit/test_process.py::TestToolResultMeasurement::test_measured_when_unresolved_mixes_with_a_real_warning
+- tests/unit/test_process.py::TestToolResultMeasurement::test_non_gate_tool_is_never_not_measured
+- tests/unit/test_process.py::TestToolResultMeasurement::test_json_discloses_measurement
+- tests/unit/test_check_measurement.py::TestUnmeasuredResults::test_empty_when_every_result_measured
+- tests/unit/test_check_measurement.py::TestUnmeasuredResults::test_lists_every_not_measured_result
+- tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_section_absent_when_everything_measured
+- tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_section_present_and_names_the_gate_and_reason
+- tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_json_exposes_measurement_without_a_dedicated_key
+- tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_legitimate_json_payload_is_byte_identical_with_guard_active
 designated_repro_test: null
 acceptance:
 - text: Given a gate that could not run (budget truncation, refused spawn, missing
     tool, parse failure), when frob check reports, then that gate is reported as NOT_MEASURED
     with its reason in both human and --json output, and is never counted as a zero-findings
     pass.
-  evidence: []
+  evidence:
+  - tests/unit/test_process.py::TestToolResultMeasurement::test_measured_when_zero_diagnostics
+  - tests/unit/test_process.py::TestToolResultMeasurement::test_not_measured_when_every_diagnostic_is_unresolved_info
+  - tests/unit/test_process.py::TestToolResultMeasurement::test_measured_when_unresolved_mixes_with_a_real_warning
+  - tests/unit/test_process.py::TestToolResultMeasurement::test_non_gate_tool_is_never_not_measured
+  - tests/unit/test_process.py::TestToolResultMeasurement::test_json_discloses_measurement
+  - tests/unit/test_check_measurement.py::TestUnmeasuredResults::test_empty_when_every_result_measured
+  - tests/unit/test_check_measurement.py::TestUnmeasuredResults::test_lists_every_not_measured_result
+  - tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_section_absent_when_everything_measured
+  - tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_section_present_and_names_the_gate_and_reason
+  - tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_json_exposes_measurement_without_a_dedicated_key
+  - tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_legitimate_json_payload_is_byte_identical_with_guard_active
 - text: Given a project declaring no surface for a given gate, when that gate runs,
     then it reports NOT_APPLICABLE with an explanation rather than a silent zero.
   evidence: []
 - text: Given a frob check run where any gate is unmeasured, when it completes, then
     the exit code and the printed summary both distinguish that run from one where
     every gate measured and found nothing.
-  evidence: []
+  evidence:
+  - tests/unit/test_process.py::TestToolResultMeasurement::test_measured_when_zero_diagnostics
+  - tests/unit/test_process.py::TestToolResultMeasurement::test_not_measured_when_every_diagnostic_is_unresolved_info
+  - tests/unit/test_process.py::TestToolResultMeasurement::test_measured_when_unresolved_mixes_with_a_real_warning
+  - tests/unit/test_process.py::TestToolResultMeasurement::test_non_gate_tool_is_never_not_measured
+  - tests/unit/test_process.py::TestToolResultMeasurement::test_json_discloses_measurement
+  - tests/unit/test_check_measurement.py::TestUnmeasuredResults::test_empty_when_every_result_measured
+  - tests/unit/test_check_measurement.py::TestUnmeasuredResults::test_lists_every_not_measured_result
+  - tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_section_absent_when_everything_measured
+  - tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_section_present_and_names_the_gate_and_reason
+  - tests/unit/test_check_measurement.py::TestAsTextUnmeasuredSection::test_json_exposes_measurement_without_a_dedicated_key
+  - tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_legitimate_json_payload_is_byte_identical_with_guard_active
 - text: Given a converted gate that returns a bare empty finding list without a status,
     when the meta-check runs, then it is reported, proving the doctrine is enforced
     structurally rather than by convention.
