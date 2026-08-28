@@ -532,6 +532,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3180: Scope-lease overlap check refuses provably-disjoint globs (literal accepted, wildcard refused)
 - T-3181: Tracked agent scratch file emits a permanent REF001 ERROR in the repo error floor
 - T-3191: Local gate typechecks only the host platform: Windows/macOS ty diagnostics are unreachable before CI
+- T-3192: A hanging CI job produces no failure signal: turn ubuntu hangs into timed failures with stack dumps
 - T-3195: A done-report recording zero evidence and zero changed files reached main while the work sat unlanded
 
 ## [0.530.0] - unreleased

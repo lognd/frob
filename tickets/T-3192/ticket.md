@@ -2,7 +2,7 @@
 id: T-3192
 title: 'A hanging CI job produces no failure signal: turn ubuntu hangs into timed
   failures with stack dumps'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -40,6 +40,14 @@ scope_changes:
     control proving the timeout+stackdump mechanism fires'
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/system/test_ci_hang_guard_positive_control.py::TestCiHangGuardPositiveControl::test_planted_hang_is_killed_and_stack_named
+- tests/system/test_ci_hang_guard_positive_control.py::TestCiHangGuardPositiveControl::test_ordinary_fast_test_is_unaffected
+- tests/test_ci_workflow_timeout.py::TestBuildJobHasATimeoutBackstop::test_build_job_declares_timeout_minutes
+- tests/test_ci_workflow_timeout.py::TestUbuntuTestStepIsTimedWithStackDump::test_ubuntu_test_step_wraps_pytest_in_timeout_abrt
+- tests/test_ci_workflow_timeout.py::TestUbuntuTestStepIsTimedWithStackDump::test_ubuntu_test_step_enables_faulthandler
+- tests/test_ci_workflow_timeout.py::TestUbuntuTestStepIsTimedWithStackDump::test_ubuntu_test_step_only_applies_on_linux
+- tests/test_ci_workflow_timeout.py::TestUbuntuTestStepIsTimedWithStackDump::test_a_non_gated_pytest_step_still_exists_for_other_platforms
 designated_repro_test: null
 threat: null
 component: null

@@ -16,6 +16,20 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    # T-3192: a hanging job used to produce NO failure signal at all -- the
+    # owner cancelled run 33135896391 by hand after 54 minutes, and runs
+    # 33032904841/32968539246 (2h40m) sit in history as `cancelled`, never
+    # `failure`, because nothing here ever timed the JOB out on its own
+    # (GitHub's own default ceiling is 6 hours). This backstops the
+    # per-step `timeout -s ABRT` below (which targets the Test step
+    # specifically, with a stack dump) -- a belt-and-braces ceiling in
+    # case a hang lands in a DIFFERENT step (Sync deps, native build,
+    # ...) that isn't individually wrapped. Budget: the slowest OBSERVED
+    # full-job completion in this matrix is macOS's ~23 minutes for the
+    # Test stage alone (run 33135896391); 45 minutes gives every step
+    # combined more than 2x that margin without leaving a hang to run for
+    # hours before anyone notices.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -42,7 +56,37 @@ jobs:
         run: uv run ruff check src tests
       - name: Typecheck
         run: uv run ty check src
-      - name: Test
+      # T-3192: a hanging Test step used to produce no failure signal beyond
+      # the job-level timeout-minutes backstop above -- a bare timeout kills
+      # the job with a red X and NO information about where it was wedged,
+      # barely better than the manual cancellations in this repo's own CI
+      # history (runs 33135896391/33032904841/32968539246, all on
+      # ubuntu-latest -- windows/macos have never hung in this matrix's own
+      # history). `timeout -s ABRT` (not the default SIGTERM) plus
+      # `PYTHONFAULTHANDLER=1` makes Python's built-in fault handler dump
+      # every live thread's stack to stderr the instant the budget is hit,
+      # before the process dies -- the exact recipe this repo already uses
+      # for local hang diagnosis (see docs/modules/testing.md's SIGUSR1
+      # stack-dump handler and the `PYTHONFAULTHANDLER=1 timeout -s ABRT N`
+      # local recipe). `timeout` is GNU coreutils and only reliably present
+      # on the ubuntu-latest runner's bash (not Windows' default pwsh, and
+      # not macOS's BSD userland) -- ubuntu is also the ONLY platform that
+      # has ever hung here, so this step is split per-OS rather than
+      # reaching for a cross-platform equivalent that has no real hang
+      # history to justify it. Budget: macOS's own Test stage completed in
+      # ~23 minutes when it last ran cleanly (run 33135896391) and ubuntu's
+      # Test step, when it fails outright rather than hanging, finishes
+      # within the ~15-minute whole-job budget (run 33035660969) -- 25
+      # minutes gives the slower platform's own observed ceiling a small
+      # margin without leaving a genuine hang to run anywhere near the
+      # 45-minute job timeout above.
+      - name: Test (ubuntu, timed with stack-dump-on-hang)
+        if: runner.os == 'Linux'
+        env:
+          PYTHONFAULTHANDLER: "1"
+        run: timeout -s ABRT 25m uv run pytest -q
+      - name: Test (windows/macos)
+        if: runner.os != 'Linux'
         run: uv run pytest -q
       # T-1265 (CHK-THEME-GITIGNORED-TRUST successor): this used to swallow
       # EVERY finding, ERROR-tier included, behind an unconditional
