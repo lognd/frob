@@ -1781,6 +1781,24 @@
       "old_digest": "bf68a9348364104588293bc5afaa01f7fa844975684f004e41057a2cb69c65e2",
       "reason": "T-2949: re-verified after switching the \"already terminal on main\" check from load_all(root) (working-tree read) to _read_ticket_state_at_head (git show HEAD read); the 3 dependents (frob:tests + frob:ticket) still describe this function correctly",
       "ref": "src/frob/app/ticket_runner/_land_cmd.py::_ticket_terminal_state_on_main"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-28",
+      "facet": "body",
+      "new_digest": "bcbb11cf08c37fc9c128562bc004e1971607445a9fc66a757592cedf72805521",
+      "old_digest": "9aa79af00a486c6e8f4c1459ef018735cc474953a9a7d87b2f673c4e7930d2bf",
+      "reason": "T-3222: re-read docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690 against the new file-time liveness re-verify step; the attribution contract this doc describes is unchanged -- the new step runs after attribution partitioning, only dropping already-partitioned pairs that no longer reproduce",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-28",
+      "facet": "sig",
+      "new_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "old_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "reason": "T-3222: re-read docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690 against the new file-time liveness re-verify step; the attribution contract this doc describes is unchanged -- the new step runs after attribution partitioning, only dropping already-partitioned pairs that no longer reproduce",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     }
   ],
   "entries": [
@@ -1875,7 +1893,7 @@
       "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     },
     {
-      "digest": "9aa79af00a486c6e8f4c1459ef018735cc474953a9a7d87b2f673c4e7930d2bf",
+      "digest": "bcbb11cf08c37fc9c128562bc004e1971607445a9fc66a757592cedf72805521",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     },

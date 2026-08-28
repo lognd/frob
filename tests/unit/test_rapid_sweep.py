@@ -32,6 +32,7 @@ from frob.app.ticket_runner._rapid_sweep import (
     _regression_count_line,
     _relativize_regression_scope_file,
     _resolve_actual_head,
+    _reverify_unfiled_pairs_at_file_time,
     _ticket_is_open,
     _tree_state_key,
     _true_finding_count_for_identities,
@@ -71,6 +72,36 @@ def _git_commit(root: Path, message: str) -> str:
         capture_output=True,
         text=True,
     ).stdout.strip()
+
+
+@pytest.fixture(autouse=True)
+def _default_true_count_spawn_refused(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T-3222: `_file_regression_ticket` now spends its own independent
+    `frob check --json` re-measure (`_reverify_unfiled_pairs_at_file_
+    time`, via `_matching_error_diagnostics`/`guarded_subprocess_run`) as
+    a FILING gate, not just a cosmetic count -- every test in this module
+    that builds a fake `tmp_path` "repo" and expects a finding to still
+    be filed would otherwise let that spawn run for REAL against a
+    directory `frob check` cannot meaningfully scan, which (truthfully,
+    but irrelevantly to what those tests are actually checking) reports
+    every identity as vanished and breaks assertions that predate T-3222
+    by design, not by coincidence. Default this spawn to REFUSED
+    (`ProcessGuardError.ExecDisabled`) for every test here -- the
+    `matched is None` -> "unmeasurable, file everything unchanged"
+    branch, i.e. exactly this module's pre-T-3222 behavior -- so tests
+    exercising attribution/dedup/naming/dispose/close logic never need
+    their own mock for this unrelated concern. Tests that specifically
+    exercise the liveness gate (`TestReverifyUnfiledPairsAtFileTime`, and
+    the two `TestFileRegressionTicket` tests naming T-3222) monkeypatch
+    the same target again afterward, which wins over this default."""
+    from typani import Err
+
+    from frob.process._guard import ProcessGuardError
+
+    monkeypatch.setattr(
+        "frob.process._guard.guarded_subprocess_run",
+        lambda *a, **k: Err(ProcessGuardError.ExecDisabled),
+    )
 
 
 class TestRollingBaseline:
@@ -1008,9 +1039,7 @@ class TestClaimDivergencePostLand:
         from typani.result import Ok
 
         monkeypatch.setattr("frob.tickets._load_one", lambda root, tid: Ok(ticket))
-        monkeypatch.setattr(
-            "frob.verify.rapid_soft_warning", lambda root: stale_reason
-        )
+        monkeypatch.setattr("frob.verify.rapid_soft_warning", lambda root: stale_reason)
         raised: list[dict[str, object]] = []
         monkeypatch.setattr(
             "frob.verify._quarantine.raise_quarantine",
@@ -1466,7 +1495,9 @@ class TestCommitRapidDebt:
         # legacy/residual dirt at the pre-T-2997 root path, the one shape
         # left that can still make this now-mostly-dead helper's `git
         # status -- rapid-debt.jsonl` spawn see something dirty.
-        (repo / "rapid-debt.jsonl").write_text('{"ticket": "T-2671"}\n', encoding="utf-8")
+        (repo / "rapid-debt.jsonl").write_text(
+            '{"ticket": "T-2671"}\n', encoding="utf-8"
+        )
         _git(repo, "add", "--force", "rapid-debt.jsonl")
         assert _git(repo, "status", "--porcelain").strip() != ""
 
@@ -2894,6 +2925,96 @@ class TestBuildRegressionBody:
         assert "- RULE1 a.py: unattributed" in body
 
 
+# frob:ticket T-3222
+class TestReverifyUnfiledPairsAtFileTime:
+    """T-3222: `_reverify_unfiled_pairs_at_file_time` -- the file-time
+    liveness gate. MEASURED: 27 of 30 sweep-filed identities across two
+    independent samples no longer reproduced by read time; the fix is
+    to re-check each identity with the SAME independent spawn the
+    pre-fix code already paid for (`_true_finding_count_for_identities`)
+    and use it to drop dead identities instead of only reporting a
+    count."""
+
+    @staticmethod
+    def _ok_result(stdout: str):
+        from typani import Ok
+
+        class _Proc:
+            def __init__(self, stdout: str) -> None:
+                self.stdout = stdout
+                self.returncode = 1
+
+        return Ok(_Proc(stdout))
+
+    # frob:ticket T-3222
+    def test_still_live_pair_is_kept(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestReverifyUnfiledPairsAtFileTime.test_still_live_pair_is_kept  # noqa: E501
+        payload = {
+            "results": [
+                {
+                    "tool": "gate-summary",
+                    "diagnostics": [
+                        {"code": "RULE1", "file": "a.py", "severity": "error"},
+                    ],
+                }
+            ]
+        }
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: self._ok_result(json.dumps(payload)),
+        )
+        live_pairs, true_count = _reverify_unfiled_pairs_at_file_time(
+            tmp_path, "T-9000", [("RULE1", "a.py")]
+        )
+        assert live_pairs == [("RULE1", "a.py")]
+        assert true_count == 1
+
+    # frob:ticket T-3222
+    def test_vanished_pair_is_dropped_and_recorded_as_debt(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestReverifyUnfiledPairsAtFileTime.test_vanished_pair_is_dropped_and_recorded_as_debt  # noqa: E501
+        # T-3188/T-3210/T-3215's exact real shape: the identity was fresh
+        # at spawn time but the independent re-measure at file time finds
+        # nothing for it -- it must be dropped, not filed with a "0
+        # finding(s)" label as the pre-fix code did.
+        payload = {"results": [{"tool": "gate-summary", "diagnostics": []}]}
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: self._ok_result(json.dumps(payload)),
+        )
+        live_pairs, true_count = _reverify_unfiled_pairs_at_file_time(
+            tmp_path, "T-9000", [("RULE1", "a.py")]
+        )
+        assert live_pairs == []
+        assert true_count == 0
+        debt_path = tmp_path / ".frob" / "rapid-debt.jsonl"
+        lines = debt_path.read_text(encoding="utf-8").splitlines()
+        assert len(lines) == 1
+        record = json.loads(lines[0])
+        assert record["ticket"] == "T-9000"
+        assert record["skipped"] == "sweep-finding-vanished-before-file:RULE1:a.py"
+
+    # frob:ticket T-3222
+    def test_unmeasurable_files_everything_as_before(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestReverifyUnfiledPairsAtFileTime.test_unmeasurable_files_everything_as_before  # noqa: E501
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: self._ok_result("not json at all"),
+        )
+        live_pairs, true_count = _reverify_unfiled_pairs_at_file_time(
+            tmp_path, "T-9000", [("RULE1", "a.py"), ("RULE2", "b.py")]
+        )
+        assert live_pairs == [("RULE1", "a.py"), ("RULE2", "b.py")]
+        assert true_count is None
+        # Unmeasurable must never be silently recorded as vanished debt.
+        assert not (tmp_path / ".frob" / "rapid-debt.jsonl").exists()
+
+
 # frob:ticket T-1791
 # frob:ticket T-2744
 # frob:ticket T-3051
@@ -2921,6 +3042,65 @@ class TestFileRegressionTicket:
             tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
         )
         assert filed is not None
+
+    # frob:ticket T-3222
+    def test_still_reproducing_finding_files_a_ticket(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_still_reproducing_finding_files_a_ticket  # noqa: E501
+        # Must-fire: a finding that STILL reproduces at file time must
+        # still result in a filed ticket.
+        from typani import Ok
+
+        class _Proc:
+            def __init__(self, stdout: str) -> None:
+                self.stdout = stdout
+                self.returncode = 1
+
+        payload = {
+            "results": [
+                {
+                    "tool": "gate-summary",
+                    "diagnostics": [
+                        {"code": "RULE1", "file": "a.py", "severity": "error"},
+                    ],
+                }
+            ]
+        }
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: Ok(_Proc(json.dumps(payload))),
+        )
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is not None
+
+    # frob:ticket T-3222
+    def test_vanished_finding_files_no_ticket(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_vanished_finding_files_no_ticket  # noqa: E501
+        # Must-stay-quiet: a finding fixed between spawn and file time
+        # (an independent re-measure that finds nothing for it) must NOT
+        # be filed as a ticket -- T-3222's exact defect, reproduced here
+        # as T-3188/T-3210/T-3215's shape.
+        from typani import Ok
+
+        class _Proc:
+            def __init__(self, stdout: str) -> None:
+                self.stdout = stdout
+                self.returncode = 1
+
+        payload = {"results": [{"tool": "gate-summary", "diagnostics": []}]}
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: Ok(_Proc(json.dumps(payload))),
+        )
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is None
 
     def test_commit_failure_skips_auto_dispose_and_returns_none(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

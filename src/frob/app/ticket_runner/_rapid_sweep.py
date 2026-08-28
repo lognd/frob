@@ -2207,6 +2207,78 @@ def _single_land_attribution_label(
     return f"an unattributed source (sweep spawned by {final_id})"
 
 
+# frob:ticket T-3222
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestReverifyUnfiledPairsAtFileTime.test_still_live_pair_is_kept  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestReverifyUnfiledPairsAtFileTime.test_vanished_pair_is_dropped_and_recorded_as_debt  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestReverifyUnfiledPairsAtFileTime.test_unmeasurable_files_everything_as_before  # noqa: E501
+def _reverify_unfiled_pairs_at_file_time(
+    root: Path, final_id: str, unfiled_pairs: Sequence[tuple[str, str]]
+) -> tuple[list[tuple[str, str]], int | None]:
+    """T-3222: the file-time liveness gate `_file_regression_ticket`
+    skipped for its whole life -- it already paid for exactly this
+    independent `frob check --json` re-measure (`_true_finding_count_
+    for_identities`, T-1935), but only ever used the result for a
+    cosmetic "N finding(s)" title label, never to decide whether a
+    now-dead identity should still be filed. MEASURED (T-3222, two
+    independent samples across three prior triage series): 27 of 30
+    sweep-filed identities no longer reproduced by read time; the
+    starkest confirmation was that several already-filed tickets
+    (T-3188, T-3210, T-3215) carried this SAME re-measure's own "0
+    finding(s)" result in their own body and were filed anyway.
+
+    Reuses `_matching_error_diagnostics` directly (the shared low-level
+    fetch both `_true_finding_count_for_identities` and
+    `_identities_still_reproducing` already build on) so this is still
+    exactly ONE independent check spawn -- the same one the pre-fix code
+    paid for, not a second one.
+
+    Returns `(live_pairs, true_count)`. `true_count` is `None` on an
+    unmeasurable re-check (timeout, spawn refused, unparsable output) --
+    per this module's long-standing posture, "unmeasurable" is never
+    read as "resolved", so `live_pairs` degrades to `unfiled_pairs`
+    unchanged (the pre-T-3222 behavior: file everything, no liveness
+    claim made). Every pair NOT in `live_pairs` is recorded as rapid
+    debt (`record_rapid_debt`) rather than silently dropped -- a finding
+    that vanished between measurement and file time may still be real
+    intermittently, and this keeps it in the cheap, machine-readable
+    record T-1681 already maintains instead of costing a future agent a
+    full ticket triage cycle for something that no longer reproduces."""
+    from frob.tickets._evidence import record_rapid_debt
+
+    matched = _matching_error_diagnostics(root, frozenset(unfiled_pairs), None)
+    if matched is None:
+        _log.warning(
+            "rapid sweep: %s: file-time re-verify unmeasurable -- filing "
+            "all %d new identit(ies) unchanged (T-3222: unmeasurable is "
+            "never read as resolved)",
+            final_id,
+            len(unfiled_pairs),
+        )
+        return list(unfiled_pairs), None
+    true_count = len(matched)
+    reproducing = frozenset((d.get("code") or "", d.get("file") or "") for d in matched)
+    live_pairs = [pair for pair in unfiled_pairs if pair in reproducing]
+    vanished_pairs = [pair for pair in unfiled_pairs if pair not in reproducing]
+    for rule, file in vanished_pairs:
+        record_rapid_debt(
+            root, final_id, f"sweep-finding-vanished-before-file:{rule}:{file}"
+        )
+    if vanished_pairs:
+        _log.warning(
+            "rapid sweep: %s: %d of %d new identit(ies) no longer "
+            "reproduced at file time (T-3222) -- recorded as rapid debt, "
+            "NOT filed as a ticket: %s",
+            final_id,
+            len(vanished_pairs),
+            len(unfiled_pairs),
+            ", ".join(f"{r} {f}" for r, f in vanished_pairs),
+        )
+    return live_pairs, true_count
+
+
 # frob:ticket T-2744
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_commit_failure_skips_auto_dispose_and_returns_none  # noqa: E501
@@ -2282,6 +2354,30 @@ def _file_regression_ticket(
         )
         return None
 
+    # T-3222: re-verify at FILE time -- MEASURED (T-3222, two independent
+    # samples): 27 of 30 sweep-filed identities no longer reproduced by
+    # the time an agent read the filed ticket, and several of those
+    # (T-3188, T-3210, T-3215) already carried this exact re-measure's
+    # OWN "0 finding(s)" result in their title/body and were filed
+    # anyway -- the re-measure existed but was never used as a filing
+    # gate, only as a cosmetic count. `_true_finding_count_for_identities`
+    # below is replaced with the shared lower-level fetch so the same
+    # single spawn answers both "how many findings" and "which identities
+    # are still live", instead of the pre-fix shape (which already paid
+    # for exactly this spawn and then discarded the liveness half of its
+    # answer).
+    unfiled_pairs, true_count = _reverify_unfiled_pairs_at_file_time(
+        root, final_id, unfiled_pairs
+    )
+    if not unfiled_pairs:
+        _log.info(
+            "rapid sweep: %s: every new finding vanished between "
+            "measurement and file time (T-3222) -- no regression ticket "
+            "filed",
+            final_id,
+        )
+        return None
+
     # T-2672: `attributed_ids` (T-2009) already handles the multi-land
     # window honestly -- it names every land that occurred, never just
     # `final_id`. The single-land window (`attributed_ids` empty/None)
@@ -2307,7 +2403,6 @@ def _file_regression_ticket(
     )
 
     rules = sorted({rule for rule, _ in unfiled_pairs})
-    true_count = _true_finding_count_for_identities(root, frozenset(unfiled_pairs))
     count_line = _regression_count_line(unfiled_pairs, true_count)
     body = _build_regression_body(
         attribution_label=attribution_label,

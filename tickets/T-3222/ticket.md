@@ -2,7 +2,7 @@
 id: T-3222
 title: 'Post-land sweep files findings that are 90% stale: 27 of 30 identities across
   two samples no longer reproduce'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -47,6 +47,12 @@ scope_changes:
     side effect of acking a doc within this ticket's own scope
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestReverifyUnfiledPairsAtFileTime::test_still_live_pair_is_kept
+- tests/unit/test_rapid_sweep.py::TestReverifyUnfiledPairsAtFileTime::test_vanished_pair_is_dropped_and_recorded_as_debt
+- tests/unit/test_rapid_sweep.py::TestReverifyUnfiledPairsAtFileTime::test_unmeasurable_files_everything_as_before
+- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_still_reproducing_finding_files_a_ticket
+- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_vanished_finding_files_no_ticket
 designated_repro_test: null
 threat: null
 component: null
