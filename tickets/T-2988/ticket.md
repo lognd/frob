@@ -98,12 +98,41 @@ evidence:
 - tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_private_symbol_exempt_even_with_archaeology
 - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_real_repo_registry_is_complete
 - tests/test_gates.py::test_gates_run_gates_integration
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_utility_only_does_not_fire_through_run_gates
 designated_repro_test: null
 acceptance:
-- text: DOCARCH001 fires through a real run_gates pass on a docstring reading as ticket
-    archaeology, and stays quiet on a utility-only docstring (T-0756 new-gate-rule
+- text: 'DOCARCH001 fixture proof: before this change the fixture test in TestDocarch001Wiring
+    did not exist (would fail/error against the pre-change gate registry); after this
+    change, test_fires_through_run_gates PASSES (DOCARCH001 fires through a real run_gates
+    production pass on an archaeology-shaped docstring) and test_utility_only_does_not_fire_through_run_gates
+    PASSES quiet on a utility-only docstring -- proving the rule fires through the
+    production invocation, not just a pure-function unit call.'
+  evidence:
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_ticket_plus_narrative_wording_warns
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_bare_ticket_reference_stays_quiet
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_long_utility_docstring_stays_quiet
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_private_symbol_exempt_even_with_archaeology
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
+  - tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_utility_only_does_not_fire_through_run_gates
+  - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_real_repo_registry_is_complete
+  - tests/test_gates.py::test_gates_run_gates_integration
+acceptance_amendments:
+- op: replace
+  index: 0
+  old_text: DOCARCH001 fires through a real run_gates pass on a docstring reading
+    as ticket archaeology, and stays quiet on a utility-only docstring (T-0756 new-gate-rule
     proof)
-  evidence: []
+  new_text: 'DOCARCH001 fixture proof: before this change the fixture test in TestDocarch001Wiring
+    did not exist (would fail/error against the pre-change gate registry); after this
+    change, test_fires_through_run_gates PASSES (DOCARCH001 fires through a real run_gates
+    production pass on an archaeology-shaped docstring) and test_utility_only_does_not_fire_through_run_gates
+    PASSES quiet on a utility-only docstring -- proving the rule fires through the
+    production invocation, not just a pure-function unit call.'
+  reason: T-0756 requires the criterion text itself to carry both a FAIL and a PASS
+    marker
+  actor: logan
+  at: '2026-08-28'
 threat: null
 component: null
 anchor: false
