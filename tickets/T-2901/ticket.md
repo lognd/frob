@@ -2,7 +2,7 @@
 id: T-2901
 title: 'call_graph: bash bare-word invocation unrecognized by shared token-adjacency
   call detector'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-25'
