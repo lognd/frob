@@ -30,7 +30,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: dfaa6df11cfe679bebb2012d1fc54cc4f6fec2fc
 ---
 The deferred post-land unscoped sweep (T-1684) for an unattributed source (sweep spawned by T-3152) at commit 6d7177894395ea627f18e7229995f0da3be4e6af found 1 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 
