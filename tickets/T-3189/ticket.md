@@ -14,10 +14,30 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_comment_placement.py
+- tests/gates/test_comment_placement.py
+- docs/guides/agent-playbook.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_comment_placement.py
+  reason: new placement gate, its fixtures, and the convention statement
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/gates/test_comment_placement.py
+  reason: new placement gate, its fixtures, and the convention statement
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: docs/guides/agent-playbook.md
+  reason: new placement gate, its fixtures, and the convention statement
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
