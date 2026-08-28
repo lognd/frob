@@ -105,7 +105,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f207ee8e093546a10646d69eddcaad3332e72171
 ---
 OWNER DECISION (2026-08-26): the `.lock.json` baselines should carry a staleness
 warning -- AND, the part that matters most, the failure mode where their
