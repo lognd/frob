@@ -912,6 +912,21 @@ class TicketError(ErrorSet):
         "parent's tier cannot rank lower than the child's in the "
         "epic -> story -> ticket hierarchy (T-0715)"
     )
+    # T-2954: `frob ticket restore <id> --reason TEXT` failure modes --
+    # the repair verb for a ticket stranded under tickets/archive/ in a
+    # non-terminal state (see "frob ticket restore" in
+    # tickets-lifecycle.md for the full T-0450 incident/rationale).
+    RestoreReasonMissing = "restore requires a non-empty --reason"
+    RestoreNotArchived  = "restore only moves a ticket OUT of tickets/archive/"
+    RestoreDestinationExists = "restore destination already exists in the active store"
+    RestoreV1Unsupported = "restore is only implemented for the v2 ledger backend"
+    # T-2954: `_archive_v2_move_tickets`'s defense-in-depth refusal if it
+    # is ever asked to move a non-terminal ticket -- structurally
+    # unreachable via the normal archive/archive_v2 selection filter
+    # today; belt-and-suspenders against a future weakening of it.
+    ArchiveNonTerminalTicket = (
+        "archive refuses to move a ticket whose state is not terminal"
+    )
 
 class ClipboardError(ErrorSet):
     NoBackend     = "No clipboard backend available on this platform"

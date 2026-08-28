@@ -1033,6 +1033,69 @@ T-0453) now also delegates to, extracted so the absent-file/malformed-
 TOML/non-positive-value fallback chain has exactly one home instead of two
 95%-identical copies.
 
+## `frob ticket restore` (T-2954)
+
+`archive`/`archive_v2` only ever SELECT done/dropped tickets to move into
+`tickets-archive.md`/`tickets/archive/` -- both build `to_archive` by
+filtering the active store to `state in (DONE, DROPPED)` before touching
+anything. That should make "a non-terminal ticket ends up archived"
+structurally unreachable through those two entry points. It happened
+anyway: T-2946's TICK004 triage found `T-0450` (`state: queued`) sitting
+under `tickets/archive/T-0450/`, 37 days stale, root cause never
+conclusively identified (this repo's own house rules already forbid the
+likely cause, a hand edit of the ledger -- see "Never hand-edit the
+ledger" in the agent playbook).
+
+Once a ticket is stranded that way, nothing could move it back: `frob
+ticket drop <id>` resolves ids via the active store only (`_load_one`/
+`load_all`, never the archive), so it reports plain `NotFound` against an
+archived id -- and no un-archive verb existed at all before T-2954.
+
+`frob ticket restore <id> --reason TEXT` is that verb:
+
+- v2 mode only (`Err(RestoreV1Unsupported)` for a v1/single-ledger repo --
+  T-0450's own repo runs v2, the only backend this incident actually
+  reproduces against; a v1 monofile splice is a different, more involved
+  primitive left for a future ticket if ever needed).
+- `git mv tickets/archive/<id> tickets/<id>` -- the exact reverse of
+  `_archive_v2_move_tickets`'s own move, including the reverse of its
+  T-2986 attachment-path rewrite (`archive/<id>/attachments/...` back to
+  `<id>/attachments/...`, or COV004 stops resolving the attachment the
+  moment it is back in the active tree).
+- Appends a dated `## Restore log` entry (mirrors `reopen_ticket`'s own
+  `## Reopen log` accountability pattern) recording WHY -- `--reason` is
+  required, same posture as `reopen`/`drop`.
+- Deliberately does NOT touch `ticket.state`: `restore` repairs a
+  LOCATION invariant (active vs. archived), not a state one. T-0450's own
+  `queued` state is exactly right once it is back in the active store --
+  no further correction needed. A restored done/dropped ticket (an
+  operator restoring by hand for inspection) is left exactly that way
+  too; the next `frob ticket archive` run picks it back up naturally.
+- Refuses loudly (`RestoreNotArchived`/`RestoreDestinationExists`) rather
+  than silently no-op-ing or clobbering, matching this repo's "refuse
+  loudly, not handle gracefully" posture for a ledger-location repair.
+- `LEDGER_VERB_STRATEGY["restore"] = GENERIC_COMMIT_MIRRORED` (T-2603) --
+  same reasoning as `reopen`/`requeue` just above: a restore releases a
+  ticket back to the active/doable pool, and no future `land` ever
+  carries a restored ticket's location across, so the write must reach
+  main immediately via `mirror_ledger_change_to_primary`, not wait on a
+  land that will never come. Its CLI wiring commits via `commit_full_
+  ledger_change` (the whole-ledger pathspec form), never the single-
+  ticket `commit_ticket_ledger_change` -- the `git mv` touches TWO
+  distinct pathspecs at once (`tickets/archive/<id>` vacated, `tickets/
+  <id>` created), and `_ledger_pathspecs`'s exists-check would only ever
+  return the new path, leaving the vacated archive-side deletion `git
+  mv` already staged in the index committed nowhere -- a genuinely dirty
+  tree straight out of a "successful" restore.
+
+**Defense in depth on the write side, too**: `_archive_v2_move_tickets`
+(the one place that actually performs the `git mv` into `tickets/
+archive/`) now also refuses loudly (`Err(ArchiveNonTerminalTicket)`) if
+it is ever asked to move a ticket whose state is not terminal -- belt-
+and-suspenders alongside `to_archive`'s own selection filter, for a
+future caller or refactor that might weaken it, rather than a NEW code
+path that fires under ordinary use.
+
 ## `frob ticket reconcile` (T-0476)
 
 The fuller two-way healing the T-0473 section above defers to. Reuses the

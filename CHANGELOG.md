@@ -404,6 +404,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2951: PLATFORM001 gap: does not catch platform-restricted attributes evaluated at import/def time (default args, module/class constants, decorator kwargs)
 - T-2952: Windows still cannot import frob: bare unconditional 'import fcntl' in _new_renumber.py/_socketd.py/_coverage_wait.py
 - T-2953: Windows: natives build crashes with UnicodeDecodeError decoding maturin subprocess output (cp1252)
+- T-2954: frob ticket archive can strand a non-terminal ticket with no restore path (T-0450)
 - T-2955: frob-dup: triage tests/ duplicate cluster (~490 groups)
 - T-2956: frob-dup: triage src/frob/gates renamed-duplicate cluster (20 groups)
 - T-2961: Windows: ty check fails on POSIX-only stdlib attrs (socket.AF_UNIX, socketserver.ThreadingUnixStreamServer, os.nice)

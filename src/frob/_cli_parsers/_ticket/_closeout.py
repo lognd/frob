@@ -579,7 +579,32 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "change; WARNS that the ledger is left dirty and will "
         "DirtyMain-block a concurrent `frob ticket land`",
     )
-    return [ticket_fail_p, ticket_evidence_p, ticket_drop_p, ticket_archive_p]
+
+    # frob:ticket T-2954
+    ticket_restore_p = ticket_sub.add_parser(
+        "restore",
+        help="move a ticket OUT of tickets/archive/ back into the active "
+        "store (T-2954): the repair verb for a ticket stranded archived "
+        "in a non-terminal state (e.g. a hand-edited ledger)",
+    )
+    ticket_restore_p.add_argument("ticket_id", metavar="id")
+    ticket_restore_p.add_argument(
+        "--reason", dest="ticket_reason", required=True, metavar="TEXT"
+    )
+    ticket_restore_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip the auto-commit of the restore ledger change (parity "
+        "with `drop`/`reopen`'s auto-commit)",
+    )
+    return [
+        ticket_fail_p,
+        ticket_evidence_p,
+        ticket_drop_p,
+        ticket_archive_p,
+        ticket_restore_p,
+    ]
 
 
 # frob:ticket T-0458

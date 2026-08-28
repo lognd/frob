@@ -207,6 +207,13 @@ LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
     # (the ticket is queued again, not in flight), so this write must
     # reach main immediately, the same way requeue's does.
     "reopen": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    # T-2954: `restore` moves a ticket OUT of tickets/archive/ back into
+    # the active store -- the same "released back to the doable pool,
+    # no future `land` ever carries this state across" shape `reopen`'s
+    # own comment describes just above (a restored ticket is not itself
+    # in flight; whatever land eventually lands its OWN work is a
+    # separate, later event this write must not wait on).
+    "restore": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     # GENERIC_COMMIT_UNMIRRORED -- state-machine progress `land` already
     # carries atomically; never mirrored ahead of the work it describes.
     "new": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,

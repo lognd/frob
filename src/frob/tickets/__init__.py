@@ -42,6 +42,7 @@ from frob.tickets._archive import (
     load_active,
     load_queue,
     migrate,
+    restore,
 )
 from frob.tickets._doable import (
     _repo_files,  # noqa: F401 -- re-exported so `_doable.scope_breadth_context`'s own
@@ -752,6 +753,7 @@ __all__ = [
     "record_failure",
     "record_review",
     "reopen_ticket",
+    "restore",
     "reconcile",
     "ReconcileReport",
     "parse_claims_from_done_report",

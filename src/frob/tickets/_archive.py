@@ -8,14 +8,22 @@ live-lease-refusal directives intact).
 from __future__ import annotations
 
 import re
+from datetime import date
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 from frob.tickets._leases import read_all_leases
-from frob.tickets._models import Ticket, TicketError, TicketQueue, TicketState
+from frob.tickets._models import (
+    RESTORE_LOG_HEADING,
+    Ticket,
+    TicketError,
+    TicketQueue,
+    TicketState,
+)
 from frob.tickets._store import (
+    _parse_ticket_file,
     _store_mode,
     git_mv_dir,
     ledger_digest,
@@ -29,6 +37,7 @@ from frob.tickets._store import (
     v2_ticket_dir,
     write_all,
     write_archive,
+    write_ticket,
 )
 from frob.tickets._worktree_guard import enforce_worktree_lease
 
@@ -344,16 +353,63 @@ def archive_v2(root: Path, *, force: bool = False) -> Result[int, TicketError]:
     return _archive_v2_move_tickets(root, to_archive)
 
 
+# frob:ticket T-2954
+# frob:waive DUP001 reason="the flagged matches are unrelated validation functions \
+# across unrelated modules (invariants.py, _elaborate.py, _accept.py, _land_merge.py) \
+# that only share the generic 'check a condition, return Err on failure' Result shape \
+# every guard function in this codebase has -- not the same rule, no shared behavior \
+# to extract"
+def _refuse_non_terminal_archive_target(
+    ticket_id: str, ticket: Ticket
+) -> Result[None, TicketError]:
+    """`_archive_v2_move_tickets`'s defense-in-depth guard, split out
+    under ARCH001's per-body budget: `Err(ArchiveNonTerminalTicket)` if
+    `ticket`'s state is not terminal (done/dropped), else `Ok(None)`. See
+    `_archive_v2_move_tickets`'s own docstring for the full T-2954
+    rationale (structurally unreachable via the normal selection filter
+    today, defense-in-depth against a future weakening of it)."""
+    if ticket.state not in (TicketState.DONE, TicketState.DROPPED):
+        _log.error(
+            "tickets: archive_v2 REFUSED to move %s -- state=%s is "
+            "not terminal (done/dropped); archive only ever moves "
+            "CLOSED work into tickets/archive/ (T-2954: this is the "
+            "exact invariant violation T-0450's incident produced -- "
+            "refusing here rather than reproducing it)",
+            ticket_id,
+            ticket.state.value,
+        )
+        return Err(TicketError.ArchiveNonTerminalTicket)
+    return Ok(None)
+
+
 # frob:ticket T-1750
+# frob:ticket T-2954
 def _archive_v2_move_tickets(
     root: Path, to_archive: dict[str, Ticket]
 ) -> Result[int, TicketError]:
     """`archive_v2`'s per-ticket `git mv` loop, split out to stay under
     ARCH001's per-body budget (T-1750): each ticket id's directory move
     runs under its own `ticket_lock`, so concurrent archives of DIFFERENT
-    tickets never contend."""
+    tickets never contend.
+
+    T-2954: `archive_v2`'s own `to_archive` dict-comprehension already
+    filters to done/dropped only, so a non-terminal ticket cannot reach
+    this loop TODAY -- but that filter is the only thing standing between
+    "archive only ever moves closed work" and T-0450's own incident (a
+    `queued` ticket stranded under `tickets/archive/`, root cause never
+    conclusively identified, T-2954's own investigation only ruled OUT
+    the two archive entry points as the direct cause). A second, cheap
+    defense-in-depth check (`_refuse_non_terminal_archive_target`) right
+    here -- at the one place that actually performs the `git mv` --
+    refuses loudly (`Err(ArchiveNonTerminalTicket)`) rather than silently
+    reproducing the exact stranding this ticket's series exists to close,
+    if a future refactor of the filter above (or a new caller of this
+    function) ever weakens it."""
     moved = 0
     for ticket_id in sorted(to_archive):
+        guard = _refuse_non_terminal_archive_target(ticket_id, to_archive[ticket_id])
+        if guard.is_err:
+            return Err(guard.danger_err)
         with ticket_lock(root, ticket_id):
             old_dir = v2_ticket_dir(root, ticket_id)
             if not old_dir.is_dir():
@@ -527,3 +583,187 @@ def _write_archived_and_active(
         len(overlap),
     )
     return Ok(len(newly_archived))
+
+
+# frob:ticket T-2954
+# frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-restore-t-2954
+# frob:tests \
+# tests/unit/test_ticket_restore.py::TestRestore.test_restores_a_non_terminal_archived_\
+# ticket_to_active
+# frob:tests \
+# tests/unit/test_ticket_restore.py::TestRestore.test_refuses_when_not_archived
+# frob:tests \
+# tests/unit/test_ticket_restore.py::TestRestore.test_refuses_when_destination_already_\
+# exists
+# frob:tests tests/unit/test_ticket_restore.py::TestRestore.test_refuses_a_blank_reason
+def restore(root: Path, ticket_id: str, *, reason: str) -> Result[Ticket, TicketError]:
+    """`frob ticket restore <id> --reason TEXT` (T-2954): the missing
+    repair primitive for a ticket stranded under `tickets/archive/` in a
+    NON-terminal state -- `archive`/`archive_v2` only ever SELECT
+    done/dropped tickets to move (see `to_archive`'s state filter in both
+    functions above), so they cannot themselves put a ticket into this
+    state; the incident this closes (T-0450: `state: queued` sitting
+    under `tickets/archive/T-0450/`, 37 days stale) happened by some
+    OTHER means this repo's own house rules already forbid (a hand edit
+    of the ledger) -- but once it happens, nothing could move the ticket
+    back: `frob ticket drop <id>` resolves ids via the active store only
+    (`_load_one`/`load_all`, never the archive), so it reports plain
+    `NotFound` against an archived id, and no un-archive verb existed at
+    all.
+
+    `git mv tickets/archive/<id> tickets/<id>` -- the exact reverse of
+    `_archive_v2_move_tickets`'s own move, including the reverse of its
+    T-2986 attachment-path rewrite (an archived ticket's v2-self-
+    contained attachment paths read `archive/<id>/attachments/...`;
+    restored, they must read `<id>/attachments/...` again, or COV004
+    stops resolving them the moment they are back in the active tree).
+    Then appends a dated `## Restore log` entry (mirrors `reopen_ticket`'s
+    own `## Reopen log` accountability pattern) recording WHY -- a ledger
+    correction this consequential is never silent, matching `reopen`'s
+    own `--reason`-required precedent (`Err(RestoreReasonMissing)` on a
+    blank one).
+
+    Deliberately does NOT touch `ticket.state` -- unlike `reopen_ticket`
+    (which repairs a specific done->queued transition), `restore` repairs
+    a LOCATION invariant (active vs. archived), not a state one; whatever
+    non-terminal state the stranded ticket already carries (T-0450's own
+    `queued`) is exactly right for it to land back in the active store
+    with no further correction needed. A restored ticket that happens to
+    be done/dropped (an operator restoring by hand for some other reason,
+    e.g. inspecting/editing it) is left exactly that way too -- the next
+    `frob ticket archive` run picks it back up naturally, same as any
+    other done/dropped ticket, no special-casing required here.
+
+    v2-mode only (`Err(RestoreV1Unsupported)` otherwise) -- the v1
+    monofile backend's `tickets-archive.md`/`tickets.md` splice is a
+    different, more involved primitive (`_write_archived_and_active`'s
+    reverse) this ticket's scope did not extend to; T-0450's own repo
+    runs v2 (design section 7's fresh-repo default), the only backend
+    this incident is actually reproducing against.
+
+    Validation-and-dispatch only (ARCH001 split): the actual git-mv +
+    rewrite + body-write sequence is `_restore_v2`."""
+    if not reason.strip():
+        return Err(TicketError.RestoreReasonMissing)
+    if _store_mode(root) != "v2":
+        _log.error(
+            "tickets: restore refused -- %s is not in v2 (file-per-ticket) "
+            "mode, and restore has no v1 (monofile) implementation",
+            root,
+        )
+        return Err(TicketError.RestoreV1Unsupported)
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    return _restore_v2(root, ticket_id, reason=reason)
+
+
+# frob:ticket T-2954
+def _restore_v2(
+    root: Path, ticket_id: str, *, reason: str
+) -> Result[Ticket, TicketError]:
+    """`restore`'s actual git-mv + attachment-path-reverse + `## Restore
+    log` write, split out under ARCH001's per-body budget -- see
+    `restore`'s own docstring for the full rationale."""
+    with ticket_lock(root, ticket_id):
+        archive_dir = v2_archive_dir(root, ticket_id)
+        if not archive_dir.is_dir():
+            _log.error(
+                "tickets: restore refused -- %s has no directory under "
+                "tickets/archive/ (nothing to restore)",
+                ticket_id,
+            )
+            return Err(TicketError.RestoreNotArchived)
+        active_dir = v2_ticket_dir(root, ticket_id)
+        if active_dir.exists():
+            _log.error(
+                "tickets: restore refused -- %s already exists at the "
+                "active destination %s",
+                ticket_id,
+                active_dir,
+            )
+            return Err(TicketError.RestoreDestinationExists)
+        move_result = git_mv_dir(root, archive_dir, active_dir)
+        if move_result.is_err:
+            return Err(move_result.danger_err)
+        rewrite_result = _rewrite_restored_attachment_paths(active_dir, ticket_id)
+        if rewrite_result.is_err:
+            return Err(rewrite_result.danger_err)
+        loaded = _parse_ticket_file(active_dir / "ticket.md")
+        if loaded.is_err:
+            _log.error(
+                "tickets: restore: %s moved to %s but failed to re-parse "
+                "afterward (%s) -- inspect by hand",
+                ticket_id,
+                active_dir,
+                loaded.danger_err,
+            )
+            return Err(loaded.danger_err)
+        ticket = loaded.danger_ok
+        from frob.tickets._reporting import _append_to_section
+        from frob.tickets._store import sanitize_narrative_for_ledger
+
+        line = (
+            f"- {date.today().isoformat()}: "
+            f"{sanitize_narrative_for_ledger(reason.strip())}"
+        )
+        new_body = _append_to_section(ticket.body, RESTORE_LOG_HEADING, line)
+        restored = ticket.model_copy(update={"body": new_body})
+        write_result = write_ticket(root, restored)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s restored (tickets/archive/%s -> tickets/%s, state=%s "
+        "unchanged): %s",
+        ticket_id,
+        ticket_id,
+        ticket_id,
+        restored.state.value,
+        reason.strip(),
+    )
+    return Ok(restored)
+
+
+# frob:ticket T-2954
+def _rewrite_restored_attachment_paths(
+    new_dir: Path, ticket_id: str
+) -> Result[None, TicketError]:
+    """`restore`'s reverse of `_rewrite_moved_attachment_paths` (T-2986):
+    after `git_mv_dir` has relocated `ticket_id`'s directory back to
+    `new_dir` (active `tickets/<id>/`), rewrite any `attachments[].path`
+    entry still reading the archive-prefixed `archive/<id>/attachments/
+    NN-x.ext` shape back to the plain `<id>/attachments/NN-x.ext` form --
+    the exact inverse substitution, same no-op-when-nothing-matches
+    posture."""
+    ticket_md = new_dir / "ticket.md"
+    try:
+        text = ticket_md.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.error(
+            "tickets: restore: failed to read moved %s for attachment "
+            "path rewrite: %s",
+            ticket_md,
+            exc,
+        )
+        return Err(TicketError.WriteFailed)
+    rewritten = re.sub(
+        rf"^(- path: )archive/{re.escape(ticket_id)}/",
+        rf"\1{ticket_id}/",
+        text,
+        flags=re.M,
+    )
+    if rewritten == text:
+        return Ok(None)
+    try:
+        ticket_md.write_text(rewritten, encoding="utf-8")
+    except OSError as exc:
+        _log.error(
+            "tickets: restore: failed to write rewritten %s: %s", ticket_md, exc
+        )
+        return Err(TicketError.WriteFailed)
+    _log.info(
+        "tickets: restore: rewrote attachment path(s) for %s back to the "
+        "active prefix (T-2954)",
+        ticket_id,
+    )
+    return Ok(None)

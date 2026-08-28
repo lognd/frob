@@ -794,8 +794,15 @@ DROP_REASON_HEADING = "## Drop reason"
 # never be misread as part of the Done-report narrative it follows.
 # frob:doc docs/modules/tickets.md#public-api
 REOPEN_LOG_HEADING = "## Reopen log"
+# frob:ticket T-2954
+# T-2954: `frob ticket restore` writes its dated reason line under this
+# heading -- the same structural-sentinel pattern REOPEN_LOG_HEADING
+# already set for the done->queued repair verb, applied to the archive->
+# active repair verb.
+# frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-restore-t-2954
+RESTORE_LOG_HEADING = "## Restore log"
 _STRUCTURAL_HEADINGS_AFTER_DONE_REPORT = frozenset(
-    {FAILURE_LOG_HEADING, DROP_REASON_HEADING, REOPEN_LOG_HEADING}
+    {FAILURE_LOG_HEADING, DROP_REASON_HEADING, REOPEN_LOG_HEADING, RESTORE_LOG_HEADING}
 )
 # D-03: a bare heading with nothing under it (or only blank lines)
 # previously satisfied close/land (`_has_done_report`'s old shape). The bar
@@ -2676,6 +2683,43 @@ class TicketError(ErrorSet):
         "epic -> story -> ticket hierarchy (T-0715); a ticket cannot "
         "parent an epic or story, a story cannot parent an epic -- "
         "same-tier chaining (e.g. epic parenting epic) is allowed"
+    )
+    # frob:ticket T-2954
+    # T-2954: `frob ticket restore <id> --reason TEXT` failure modes -- the
+    # missing repair primitive for a ticket stranded under tickets/
+    # archive/ with a NON-terminal state (T-0450's own incident: `archive`
+    # only ever moves done/dropped tickets by construction, but no CLI
+    # verb existed to move a ticket back OUT of archive/ once one somehow
+    # ended up there anyway, e.g. via a hand edit this repo's own house
+    # rules already forbid). Mirrors ReopenReasonMissing's "a ledger
+    # correction with no --reason is unaccountable" precedent.
+    RestoreReasonMissing = "restore requires a non-empty --reason"
+    RestoreNotArchived = (
+        "restore only moves a ticket OUT of tickets/archive/ -- this id is "
+        "not archived (nothing to restore)"
+    )
+    RestoreDestinationExists = (
+        "restore destination already exists in the active store -- a "
+        "duplicate id, resolve by hand before retrying"
+    )
+    RestoreV1Unsupported = (
+        "restore is only implemented for the v2 (file-per-ticket) ledger "
+        "backend; this repo is in single/dir-ledger mode"
+    )
+    # frob:ticket T-2954
+    # T-2954: `archive_v2`'s own per-ticket move loop's defense-in-depth
+    # refusal (`_archive_v2_move_tickets`) if it is ever asked to move a
+    # NON-terminal ticket -- the invariant `archive`'s own contract
+    # ("move done/dropped tickets") already promises and its selection
+    # filter already enforces; this is the belt-and-suspenders check at
+    # the actual `git mv` call site, not a NEW code path that could fire
+    # under ordinary use.
+    ArchiveNonTerminalTicket = (
+        "archive refuses to move a ticket whose state is not terminal "
+        "(done/dropped) into tickets/archive/ -- this should be "
+        "structurally unreachable via the normal archive/archive_v2 "
+        "selection filter; if it fired, something upstream computed "
+        "to_archive incorrectly"
     )
 
 

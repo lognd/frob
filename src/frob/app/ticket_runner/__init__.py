@@ -44,7 +44,7 @@ from frob.app.config import AppConfig
 from frob.logging import get_logger, logger_levels
 from frob.process._guard import guarded_subprocess_run
 
-from ._archive import _archive
+from ._archive import _archive, _restore
 from ._attach_backfill import _attach_dispatch
 from ._close_cmd import (
     _apply_close_time_evidence,
@@ -436,6 +436,8 @@ def _ticket_dispatch_table() -> dict:
             force_reason=cfg.ticket_force_reason,
             force_reason_file=cfg.ticket_force_reason_file,
         ),
+        # frob:ticket T-2954
+        "restore": _restore,
         # frob:ticket T-1570
         "debt": _debt,
         "deprecated": _deprecated,

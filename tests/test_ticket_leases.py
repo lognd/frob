@@ -4039,6 +4039,13 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
             "ticket_id": "T-0001",
             "ticket_reason": "T-2616 dispatch-table coverage",
         },
+        # T-2954: `restore` requires the ticket to be ARCHIVED first,
+        # per-test (see `test_verb_leaves_repo_clean`'s own `if verb ==
+        # "restore"` setup block below).
+        "restore": {
+            "ticket_id": "T-0001",
+            "ticket_reason": "T-2954 dispatch-table coverage",
+        },
     }
 
     def test_dispatch_table_verbs_are_all_accounted_for(self) -> None:
@@ -4101,6 +4108,27 @@ class TestLedgerAutoCommitEnumeratedOverDispatchTable:
                     ticket_body="## Done report\n\nDone.\n",
                 )
             )
+        if verb == "restore":
+            # T-2954: `restore` only ever finds work under
+            # tickets/archive/ -- close T-0001 for real, `archive` it,
+            # THEN restore it back (state stays `done`; restore repairs
+            # a LOCATION invariant, not a state one, so this exercises
+            # the ordinary, not the T-0450-anomalous, path).
+            assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+            assert transition(repo, "T-0001", TicketState.IN_PROGRESS).is_ok
+            _commit_all(repo, "start T-0001 for restore coverage")
+            ticket_run(
+                AppConfig(
+                    ticket_command="close",
+                    ticket_path=repo,
+                    ticket_id="T-0001",
+                    ticket_evidence_cmd="echo verified",
+                )
+            )
+            from frob.tickets import archive
+
+            archived = archive(repo)
+            assert archived.is_ok, archived.err
 
         ticket_run(AppConfig(ticket_command=verb, ticket_path=repo, **kwargs))
 

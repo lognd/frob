@@ -1,7 +1,7 @@
 ---
 id: T-2954
 title: frob ticket archive can strand a non-terminal ticket with no restore path (T-0450)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -120,7 +120,19 @@ body_changes:
   at: '2026-08-26'
   old_length: 1722
   new_length: 1743
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_restore.py::TestArchiveRefusesNonTerminal::test_refuses_a_non_terminal_ticket_reaching_the_move_loop
+- tests/unit/test_ticket_restore.py::TestArchiveRefusesNonTerminal::test_normal_archive_of_done_tickets_still_moves_them
+- tests/unit/test_ticket_restore.py::TestRestore::test_restores_a_non_terminal_archived_ticket_to_active
+- tests/unit/test_ticket_restore.py::TestRestore::test_restore_reverses_the_t2986_attachment_path_rewrite
+- tests/unit/test_ticket_restore.py::TestRestore::test_refuses_when_not_archived
+- tests/unit/test_ticket_restore.py::TestRestore::test_refuses_when_destination_already_exists
+- tests/unit/test_ticket_restore.py::TestRestore::test_refuses_a_blank_reason
+- tests/unit/test_ticket_restore.py::TestRestoreCli::test_restore_cli_wiring_delegates_and_commits
+- tests/unit/test_ticket_restore.py::TestRestoreCli::test_restore_exits_when_ticket_id_missing
+- tests/unit/test_ticket_restore.py::TestRestoreCli::test_restore_exits_when_reason_missing
+- tests/unit/test_ticket_restore.py::TestRestoreCli::test_restore_reason_flag_is_required_by_the_real_parser
+designated_repro_test: tests/unit/test_ticket_restore.py::TestArchiveRefusesNonTerminal::test_refuses_a_non_terminal_ticket_reaching_the_move_loop
 threat: null
 component: null
 anchor: false

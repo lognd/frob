@@ -166,3 +166,58 @@ def _archive(
     )
     if committed.is_err:
         sys.exit(1)
+
+
+# frob:ticket T-2954
+# frob:tests \
+# tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_cli_wiring_delegates_a\
+# nd_commits
+def _restore(root: Path, cfg) -> None:  # noqa: ANN001
+    """CLI wiring for `frob ticket restore <id> --reason TEXT` (T-2954):
+    the repair verb for a ticket stranded under `tickets/archive/` in a
+    non-terminal state (T-0450's own incident). Delegates entirely to
+    `frob.tickets.restore` for the git-mv + attachment-path-reverse +
+    `## Restore log` write; this layer only validates required args and
+    reports the Result -- the same thin-wiring shape `_reopen` already
+    uses for `reopen_ticket`.
+
+    T-2954: commits via `commit_full_ledger_change` (the WHOLE-ledger
+    pathspec form), never the single-ticket `commit_ticket_ledger_
+    change` -- `restore`'s `git mv` touches TWO distinct pathspecs at
+    once (`tickets/archive/<id>` vacated, `tickets/<id>` created), and
+    `_ledger_pathspecs(root, ticket_id)`'s exists-check would only ever
+    return the NEW path (the vacated archive directory no longer exists
+    on disk to be found), leaving `git commit -- tickets/<id>` alone: the
+    archive-side deletion `git mv` already staged in the index falls
+    OUTSIDE that pathspec and would be left committed-nowhere, a
+    genuinely dirty tree straight out of a 'successful' restore -- the
+    exact class `archive`'s own CLI wiring (`_archive`, this same file)
+    already avoids by using `commit_full_ledger_change` for its own
+    multi-path `git mv` sweep."""
+    from frob.tickets import restore
+    from frob.tickets._leases import commit_full_ledger_change
+
+    if cfg.ticket_id is None or not cfg.ticket_reason:
+        _log.error("frob ticket restore requires <id> and --reason")
+        sys.exit(1)
+
+    result = restore(root, cfg.ticket_id, reason=cfg.ticket_reason)
+    if result.is_err:
+        _log.error("restore failed: %s", result.danger_err)
+        sys.exit(1)
+    restored = result.danger_ok
+    _log.info(
+        "%s restored (tickets/archive/%s -> tickets/%s, state=%s)",
+        cfg.ticket_id,
+        cfg.ticket_id,
+        cfg.ticket_id,
+        restored.state.value,
+    )
+
+    committed = commit_full_ledger_change(
+        root,
+        f"chore(tickets): restore {cfg.ticket_id}",
+        no_commit=cfg.ticket_no_commit,
+    )
+    if committed.is_err:
+        sys.exit(1)
