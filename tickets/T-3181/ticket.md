@@ -14,10 +14,24 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- .claude-scratch/**
+- .gitignore
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .claude-scratch/**
+  reason: the orphaned scratch capture and the ignore file that should cover it
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: .gitignore
+  reason: the orphaned scratch capture and the ignore file that should cover it
+  actor: logan
+  at: '2026-08-27'
 designated_repro_test: null
 threat: null
 component: null
