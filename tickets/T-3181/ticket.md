@@ -2,7 +2,7 @@
 id: T-3181
 title: Tracked agent scratch file emits a permanent REF001 ERROR in the repo error
   floor
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - .claude-scratch/**
 - .gitignore
+- .claude-scratch/T-3122-close-guard-repro-capture.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,15 @@ scope_changes:
   reason: the orphaned scratch capture and the ignore file that should cover it
   actor: logan
   at: '2026-08-27'
+- op: add
+  glob: .claude-scratch/T-3122-close-guard-repro-capture.md
+  reason: the ** glob apparently doesn't match this literal file for the land-time
+    deletion-ownership check; add the literal path
+  actor: logan
+  at: '2026-08-28'
+evidence:
+- cmd:sh -c 'echo tracked-scratch-count=$(git ls-files -- .claude-scratch/ | wc -l);
+  test $(git ls-files -- .claude-scratch/ | wc -l) -eq 0' exit=0 sha256=2445dd9c006a
 designated_repro_test: null
 threat: null
 component: null
