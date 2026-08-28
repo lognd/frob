@@ -38,6 +38,7 @@ docstring.
 from __future__ import annotations
 
 from enum import StrEnum
+from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
@@ -81,17 +82,22 @@ __all__ = [
     "FACET_DOCBLOCK",
     "FACET_DUP",
     "FACET_GRAMMAR",
+    "FACET_REFACTOR",
     "KNOWN_GAP_TRACKING_TICKETS",
+    "LANGUAGE_SENSITIVE_PACKAGES",
     "AdapterCapabilitySupport",
     "CapabilityRequirement",
     "CapabilityStatus",
     "FacetState",
     "FacetStatus",
     "LanguageSupport",
+    "PackageAudit",
+    "PackageLanguageAxis",
     "capability_conformance_violations",
     "conformance_violations",
     "derive_capability_registry",
     "derive_language_registry",
+    "unfaceted_packages",
 ]
 
 # frob:doc docs/modules/lang.md#language-support-contract
@@ -119,6 +125,21 @@ FACET_ARCH = "arch"
 FACET_DOCBLOCK = "docblock"
 
 # frob:doc docs/modules/lang.md#language-support-contract
+#: T-2996: `frob.refactor` (move-module/move-symbol/rename) has a real,
+#: registered per-language reference scanner for this language --
+#: `frob.refactor._module_lang.supported_languages()` for whole-module
+#: moves, or an equivalent symbol-reference engine for single-symbol
+#: rename/move. Added because `frob.refactor` was found to be Python-only
+#: with ZERO language-literal branching (T-2996's "sharpest finding"): a
+#: silently single-language module is invisible to any scan that looks
+#: for per-language dispatch, because it has no dispatch to find. This
+#: facet exists so "does refactor support language X" is a declared cell,
+#: not a fact only discoverable by reading `_module_lang.py` source.
+# frob:ticket T-2996
+FACET_REFACTOR = "refactor"
+
+# frob:doc docs/modules/lang.md#language-support-contract
+# frob:ticket T-2996
 #: Every facet a registered language must account for, one way or another
 #: (`FacetState.IMPLEMENTED`/`NOT_APPLICABLE`/`KNOWN_GAP`) -- the
 #: conformance gate's enumeration universe (T-0405).
@@ -128,6 +149,7 @@ FACETS: tuple[str, ...] = (
     FACET_DUP,
     FACET_ARCH,
     FACET_DOCBLOCK,
+    FACET_REFACTOR,
 )
 
 # T-2365: a SECOND facet-shaped axis, distinct from FACETS above. FACETS is
@@ -397,6 +419,7 @@ def _cap_known_gap(requirement: CapabilityRequirement, detail: str) -> Capabilit
 
 # frob:doc docs/modules/lang.md#language-support-contract
 # frob:ticket T-0823
+# frob:ticket T-2996
 #: Every ticket id ever cited by a `_known_gap` `detail` string in this
 #: module, mapped to whether FROB'S OWN tracking still considers it open
 #: (T-0823). These ids are frob-internal (e.g. `T-0329`, frob's own
@@ -438,6 +461,12 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # removed -- the gap is closed, `_walk_strata.py` now derives a real
     # clearance-based `public` value; no live tracking ticket references
     # it here any more.
+    # T-3231: EPIC refactor multi-language: per-language reference
+    # scanners -- cited by `_refactor_status`'s known-gap detail for
+    # every language `frob.refactor._module_lang._MODULE_LANGUAGE_
+    # ADAPTERS` has no entry for yet (T-2996 found this is every
+    # language except python).
+    "T-3231": True,
 }
 
 
@@ -452,11 +481,29 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
 # silently).
 _ARCH_DISPATCHED_LANGUAGES = frozenset({"python", "cpp"})
 
+# T-2996: `frob.refactor._module_lang._MODULE_LANGUAGE_ADAPTERS`'s key set,
+# mirrored the same way `_ARCH_DISPATCHED_LANGUAGES` mirrors frob.arch's
+# dispatch above -- NOT a lazy import of `frob.refactor`, deliberately.
+# `frob.refactor._module_resolve` imports `frob.lang` at module level, so
+# `frob.lang._support` importing `frob.refactor` back (even lazily, inside
+# a function body -- CYCLE001's static analysis follows those edges too,
+# unlike Python's own runtime resolution) would close a real import cycle
+# across package boundaries: measured directly, this exact edge escalated
+# frob-cycle from 2 pre-existing same-package warnings to a new
+# cross-package ERROR the first time it was tried. If frob.refactor's
+# adapter registry changes, `tests/test_lang_support.py`'s fixture-driven
+# assertions on `derive_language_registry()` catch the drift the same way
+# the arch mirror's comment above describes.
+# frob:ticket T-2996
+# frob:tests tests/test_lang_support.py::test_refactor_adapter_languages_matches_live_registry  # noqa: E501
+_REFACTOR_ADAPTER_LANGUAGES = frozenset({"python"})
+
 # The bare `LANGUAGES` capability-registry bucket "c-cpp" covers both
 # `frob.lang`'s "c" and "cpp" labels (docs/modules/vet.md, T-0405 survey) --
 # derived here as a set so `_capability_status` never hand-copies the
 # `("c", "cpp")` pair a second time.
 _CAPABILITY_C_CPP_MEMBERS = frozenset({"c", "cpp"})
+
 
 def _docblock_languages() -> frozenset[str]:
     """DOC004's fenced-language buckets, normalized onto `frob.lang`
@@ -576,8 +623,34 @@ def _docblock_status(language: str) -> FacetStatus:
     return _known_gap(f"{language} has no DOC004 fenced-language bucket")
 
 
+# frob:ticket T-2996
+def _refactor_status(language: str) -> FacetStatus:
+    """T-2996: `frob.refactor` is Python-only today -- `_module_lang.
+    _MODULE_LANGUAGE_ADAPTERS` has exactly one entry, and `_scan.py`'s
+    single-symbol move/rename engine is Python `ast`-specific
+    (`find_python_files`, `_handle_import`, ...). `.strata` is a design
+    DSL with no established symbol-move/rename convention yet (unlike
+    dup/arch/docblock, this is not a "the concept does not apply" case --
+    a strata design element genuinely COULD be renamed/moved -- so this
+    is judged a known gap, not not-applicable, distinct from how strata
+    is treated by the other four facets)."""
+    if language in _REFACTOR_ADAPTER_LANGUAGES:
+        return _implemented(
+            "frob.refactor._module_lang._MODULE_LANGUAGE_ADAPTERS entry "
+            "(move-module reference scanner)"
+        )
+    return _known_gap(
+        f"{language} has no frob.refactor reference scanner -- "
+        f"move-module refuses it via RefactorError.UnsupportedLanguage "
+        f"(PLATFORM001 declared boundary, not a silent no-op) and "
+        f"move-symbol's engine is Python-ast-specific; tracked by T-3231 "
+        f"(EPIC refactor multi-language: per-language reference scanners)"
+    )
+
+
 # frob:doc docs/modules/lang.md#language-support-contract
 # frob:ticket T-0405
+# frob:ticket T-2996
 # frob:tests tests/test_lang_support.py::TestDeriveLanguageRegistry.test_covers_every_supported_language  # noqa: E501
 def derive_language_registry() -> dict[str, LanguageSupport]:
     """One `LanguageSupport` per `frob.lang.supported_languages()` member.
@@ -601,6 +674,7 @@ def derive_language_registry() -> dict[str, LanguageSupport]:
             FACET_DUP: _dup_status(language),
             FACET_ARCH: _arch_status(language),
             FACET_DOCBLOCK: _docblock_status(language),
+            FACET_REFACTOR: _refactor_status(language),
         }
         registry[language] = LanguageSupport(language=language, facets=facets)
     _log.info("derive_language_registry: %d language(s) registered", len(registry))
@@ -964,3 +1038,352 @@ def capability_conformance_violations(
                 f"missing cell"
             )
     return tuple(violations)
+
+
+# --------------------------------------------------------------------------
+# T-2996 part 2/3: the PACKAGE axis -- registers which `frob.*` packages
+# carry per-language specialisation at all, and whether that specialisation
+# is already accounted for by FACETS/ADAPTER_CAPABILITIES, or is a reasoned
+# exemption. Part 1 (FACET_REFACTOR above) fixed one invisible gap;
+# `refactor` had ZERO language literals to find, so no literal-scanning
+# audit alone would ever have caught it. This registry is therefore the
+# DECLARED half of the fix -- a maintainer judges and records each
+# package once -- and `unfaceted_packages` below is the DETECTION half:
+# a cross-check that fails when a package acquires language-literal
+# branching the registry does not yet know about, so the registry cannot
+# silently fall behind reality the way `refactor`'s Python-only assumption
+# fell behind for years.
+#
+# T-2996 2026-08-26 measurement (language-literal density per package,
+# `frob.lang` itself excluded as the source of truth every other entry
+# here is measured against):
+#
+#     321  frob.vet          82  frob.lang (source of truth, not audited)
+#      41  frob.gates        40  frob.arch          38  frob.app
+#      25  frob.perf         21  frob.strata        17  frob.dup
+#      10  frob._cli_parsers  9  frob.check          9  frob.graph
+#       8  frob.testing       4  frob.policy         0  frob.refactor (!)
+#
+# `unfaceted_packages`'s AST-based detection cross-check (below) also
+# turned up 5 more packages the density survey's manual grep pass missed:
+# frob.bind, frob.deploy, frob.docs, frob.natives, frob.xref -- each has
+# exactly one or a few language literals, which is precisely why they did
+# not surface in a coarse density ranking; every one is registered below
+# too, and this is the cross-check doing its job (T-2996 part 3): a
+# registry built by hand alone would have missed these five permanently.
+#
+# Each entry's `detail` records the actual reasoning, not just the verdict.
+# --------------------------------------------------------------------------
+
+
+# frob:doc docs/modules/lang.md#package-language-axis-t-2996
+# frob:ticket T-2996
+# frob:tests tests/test_lang_support.py::TestPackageAudit.test_every_measured_package_is_registered  # noqa: E501
+class PackageLanguageAxis(StrEnum):
+    """How a package's per-language specialisation is accounted for
+    (T-2996 part 2): `FACET`/`CAPABILITY` mean an existing FACETS/
+    ADAPTER_CAPABILITIES cell already tracks it end to end; `AGNOSTIC`
+    means the package contains language LITERALS (constants, choices
+    lists, extension tables) but no per-language behavioral gap for
+    `conformance_violations`/`capability_conformance_violations` to miss
+    -- a judged exemption, recorded with a reason, never silence."""
+
+    FACET = "facet"
+    CAPABILITY = "capability"
+    AGNOSTIC = "agnostic"
+
+
+# frob:doc docs/modules/lang.md#package-language-axis-t-2996
+# frob:ticket T-2996
+# frob:tests tests/test_lang_support.py::TestPackageAudit.test_every_measured_package_is_registered  # noqa: E501
+class PackageAudit(BaseModel):
+    """One package's T-2996 part-2 classification: which axis accounts
+    for its per-language specialisation, plus the reasoning."""
+
+    model_config = ConfigDict(frozen=True)
+
+    axis: PackageLanguageAxis
+    detail: str
+
+
+# frob:doc docs/modules/lang.md#package-language-axis-t-2996
+# frob:ticket T-2996
+# frob:tests tests/test_lang_support.py::TestPackageAudit.test_every_measured_package_is_registered  # noqa: E501
+#: T-2996 part 2's declared registry: every `frob.*` package this ticket's
+#: survey found branching on language identity (plus `frob.refactor`,
+#: which branches on nothing but is Python-only anyway -- the invisible
+#: case FACET_REFACTOR above exists to cover), mapped to how its
+#: specialisation is accounted for. `frob.lang` itself is the source of
+#: truth every FACETS/ADAPTER_CAPABILITIES cell derives from and is not
+#: a member here for the same reason `conformance_violations` does not
+#: audit itself.
+LANGUAGE_SENSITIVE_PACKAGES: dict[str, PackageAudit] = {
+    "frob.vet": PackageAudit(
+        axis=PackageLanguageAxis.FACET,
+        detail=(
+            "frob.vet._capability_registry.LANGUAGES IS FACET_CAPABILITY's "
+            "own source registry -- this is the facet, not a package that "
+            "needs one."
+        ),
+    ),
+    "frob.dup": PackageAudit(
+        axis=PackageLanguageAxis.FACET,
+        detail=(
+            "frob.dup._exhaustiveness.LANGUAGES IS FACET_DUP's own source registry."
+        ),
+    ),
+    "frob.arch": PackageAudit(
+        axis=PackageLanguageAxis.FACET,
+        detail=(
+            "frob.arch's per-language rule-submodule dispatch IS "
+            "FACET_ARCH's own source (`_ARCH_DISPATCHED_LANGUAGES`)."
+        ),
+    ),
+    "frob.gates": PackageAudit(
+        axis=PackageLanguageAxis.FACET,
+        detail=(
+            "frob.gates._docblocks's fenced-language buckets ARE "
+            "FACET_DOCBLOCK's own source (`_docblock_languages`); the "
+            "rest of frob.gates's language literals are LANG001/LANG002/"
+            "LANG003 themselves (this module's own gate, not a second "
+            "specialisation needing a facet)."
+        ),
+    ),
+    "frob.refactor": PackageAudit(
+        axis=PackageLanguageAxis.FACET,
+        detail=(
+            "FACET_REFACTOR (T-2996 part 1, added above) covers this "
+            "directly -- the package with ZERO language literals that "
+            "was nonetheless Python-only, the finding that motivated "
+            "this whole ticket."
+        ),
+    ),
+    "frob.graph": PackageAudit(
+        axis=PackageLanguageAxis.CAPABILITY,
+        detail=(
+            "frob.graph.callgraph's per-language dispatch and extension "
+            "table back CAPABILITY_CALL_GRAPH directly; frob.graph.dsl's "
+            "directive parsing backs CAPABILITY_DIRECTIVE_PARSE. Both "
+            "are ADAPTER_CAPABILITIES (T-2365) entries already."
+        ),
+    ),
+    "frob.testing": PackageAudit(
+        axis=PackageLanguageAxis.CAPABILITY,
+        detail=(
+            "frob.testing's collect_*_tests entrypoints "
+            "(`_TEST_DISCOVERY_COLLECTORS`) back CAPABILITY_TEST_"
+            "DISCOVERY directly -- kotlin's collector (T-2409) is the "
+            "concrete example a prior known-gap here closed against."
+        ),
+    ),
+    "frob.app": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.app.check_runner's per-language project-toolchain "
+            "sentinels (Cargo.toml/CMakeLists.txt/pyproject.toml/"
+            "package.json) decide WHICH gate stages a detected repo "
+            "runs -- a symmetric membership test over frob.lang."
+            "supported_languages()'s own set, not a place a language "
+            "can be partially or incorrectly supported independent of "
+            "grammar. A language missing here is a language missing "
+            "from frob.lang itself (LANG002 territory), not a new gap "
+            "this axis would add."
+        ),
+    ),
+    "frob.check": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.check.__init__'s detect_project_type is the same "
+            "project-toolchain-sentinel shape as frob.app.check_runner "
+            "(their own T-0404 finding-11 docstring says the two used to "
+            "disagree and were unified) -- same reasoning as frob.app "
+            "above, not a second axis."
+        ),
+    ),
+    "frob._cli_parsers": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "argparse `choices=[...]` lists on --lang flags (xref, "
+            "cycle, check) restrict which languages a CLI FLAG accepts; "
+            "they gate presentation of an underlying capability "
+            "(FACET_GRAMMAR/CAPABILITY_CALL_GRAPH) that already has its "
+            "own cell, not a second implementation. MEASURED GAP, "
+            "recorded not fixed here (out of T-2996's scope, which owns "
+            "frob.lang's facet registry, not frob._cli_parsers): several "
+            "choices lists (e.g. xref --lang) hard-code "
+            "['python','cpp','c'] and have drifted narrower than "
+            "frob.lang.supported_languages() -- filed as T-3233."
+        ),
+    ),
+    "frob.strata": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.strata's language literals (`_code_binding.py`'s "
+            "hard-coded 'python' import resolution, `_cve_fingerprint."
+            "py`'s per-language CVE catalog) are strata's OWN domain "
+            "reasoning about which host languages a design binds "
+            "code to -- not frob analyzing that language's own source "
+            "the way FACETS/ADAPTER_CAPABILITIES do. Distinct question "
+            "from 'does frob support language X', same distinction "
+            "already drawn for strata's own NOT_APPLICABLE cells "
+            "elsewhere in this module."
+        ),
+    ),
+    "frob.perf": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.perf._collectors._LANGUAGE_ADAPTER_EXTENSIONS picks a "
+            "hot-graph ADAPTER class for `frob perf collect`, an opt-in "
+            "profiling tool gated by which profiler actually ran, not a "
+            "conformance requirement every supported language must meet "
+            "the way FACETS/ADAPTER_CAPABILITIES are. MEASURED GAP, "
+            "recorded not fixed here: it only covers python/typescript/"
+            "rust/kotlin (4 of 9) -- filed as T-3234 rather than judged "
+            "in scope for this ticket's facet registry."
+        ),
+    ),
+    "frob.policy": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.policy's per-language import-statement regexes are a "
+            "SECOND, parallel import extractor alongside frob.lang."
+            "extract_imports (which backs CAPABILITY_IMPORT_GRAPH) -- "
+            "functionally the same axis, duplicated rather than reused. "
+            "That duplication is itself a finding (NO DUPLICATION), not "
+            "a facet gap; recorded and filed as T-3235 rather than fixed "
+            "in this ticket's scope (frob.lang's facet registry, not "
+            "frob.policy's implementation)."
+        ),
+    ),
+    "frob.docs": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.docs.__init__.extract_docstrings filters to "
+            "`parsed.language != 'python': return []` -- every other "
+            "language's docstrings are silently unextracted. MEASURED "
+            "GAP, recorded not fixed here -- filed as T-3232."
+        ),
+    ),
+    "frob.xref": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.xref.__init__._LANG_EXTS (the --lang filter map) only "
+            "covers python/c/cpp/strata; _ALL_EXTS (the actual "
+            "collection/search set) is the full frob.lang registry, so "
+            "this is a --lang FILTER gap, not a coverage gap -- xref "
+            "collects and searches every language, it just cannot filter "
+            "to typescript/rust/kotlin/csharp/bash individually. MEASURED "
+            "GAP, recorded not fixed here -- filed as T-3232."
+        ),
+    ),
+    "frob.bind": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.bind's 'cpp'/'rust' literals are PyO3-binding-drift-"
+            "specific (Python<->Rust FFI signature comparison) -- the "
+            "tool's whole domain is that one language pair, not a "
+            "general per-language capability with other-language cells "
+            "to fill."
+        ),
+    ),
+    "frob.deploy": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.deploy._drift.py's 'strata' literal is a `frob.toml` "
+            "TOML section-key NAME (`data.get('strata', {})`), not a "
+            "language dispatch -- deploy drift only ever concerns "
+            "`.strata` design models by definition (T-2996's own "
+            "detection heuristic false-positives on this one: a string "
+            "constant that happens to equal a language name but names a "
+            "config key, not a branch on language identity)."
+        ),
+    ),
+    "frob.natives": PackageAudit(
+        axis=PackageLanguageAxis.AGNOSTIC,
+        detail=(
+            "frob.natives._build.py's 'rust' literal gates a skip-check "
+            "for non-rust native specs -- native-extension building is "
+            "inherently rust-specific today (Cargo/PyO3 vendoring), not "
+            "a general per-language capability with other-language cells "
+            "expected."
+        ),
+    ),
+}
+
+
+# frob:doc docs/modules/lang.md#package-language-axis-t-2996
+# frob:ticket T-2996
+# frob:tests tests/test_lang_support.py::TestPackageAudit.test_must_fire_unregistered_language_branching  # noqa: E501
+# frob:tests tests/test_lang_support.py::TestPackageAudit.test_must_stay_quiet_agnostic_package  # noqa: E501
+# frob:waive ARCH001 reason="one cohesive AST-based scan (default-resolve known_languages/registry, then walk each package dir's .py files looking for a language-literal ast.Constant) -- splitting the default-resolution preamble or the inner per-file AST walk into a second function would fragment one linear pass into two callers that must always run together, the opposite of T-2996's own no-duplication rule"  # noqa: E501
+def unfaceted_packages(
+    src_root: Path,
+    known_languages: frozenset[str] | None = None,
+    registry: dict[str, PackageAudit] | None = None,
+) -> tuple[str, ...]:
+    """T-2996 part 3's detection cross-check: `frob.*` packages under
+    `src_root` (a `pathlib.Path` to a `src/frob` directory) whose source
+    contains a language-name string literal (compared against
+    `known_languages`, default `frob.lang.supported_languages()`) but
+    which have NO entry in `LANGUAGE_SENSITIVE_PACKAGES` (`registry`,
+    default the module-level registry).
+
+    Detection is AST-based (`ast.walk` over each file's parsed module,
+    matching `ast.Constant` string values), never a text/regex scan --
+    this repo's standing rule that checks compare SYMBOLS, not
+    substrings, applies here too: a language name appearing inside a
+    comment, a docstring example, or as a substring of an unrelated
+    identifier never triggers this, only an actual string literal in the
+    package's parsed AST.
+
+    This is the half that keeps `LANGUAGE_SENSITIVE_PACKAGES` honest: a
+    package can be missing from the registry (the must-fire case) or a
+    package the registry already accounts for stays quiet even though it
+    is full of language literals (the must-stay-quiet case) -- see the
+    two fixtures this docstring's `frob:tests` directives bind.
+    """
+    import ast
+
+    if known_languages is None:
+        from frob.lang import supported_languages
+
+        known_languages = frozenset(supported_languages())
+    if registry is None:
+        registry = LANGUAGE_SENSITIVE_PACKAGES
+
+    hits: list[str] = []
+    for package_dir in sorted(p for p in src_root.iterdir() if p.is_dir()):
+        if package_dir.name.startswith("_") or package_dir.name == "lang":
+            continue
+        package_name = f"frob.{package_dir.name}"
+        if package_name in registry:
+            continue
+        found_literal = False
+        for py_file in sorted(package_dir.rglob("*.py")):
+            try:
+                tree = ast.parse(py_file.read_text(encoding="utf-8"))
+            except (SyntaxError, UnicodeDecodeError, OSError) as exc:
+                _log.debug(
+                    "unfaceted_packages: skipping unparseable %s: %s",
+                    py_file,
+                    exc,
+                )
+                continue
+            for node in ast.walk(tree):
+                if (
+                    isinstance(node, ast.Constant)
+                    and isinstance(node.value, str)
+                    and node.value in known_languages
+                ):
+                    found_literal = True
+                    break
+            if found_literal:
+                break
+        if found_literal:
+            hits.append(package_name)
+    _log.info(
+        "unfaceted_packages: %d package(s) branch on language identity "
+        "with no LANGUAGE_SENSITIVE_PACKAGES entry",
+        len(hits),
+    )
+    return tuple(hits)

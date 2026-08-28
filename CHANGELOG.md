@@ -428,6 +428,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2991: frob subprocess children spawned by system tests can be orphaned when their pytest worker is killed
 - T-2993: Ticket-narrative comment blocks: 1728 blocks / 11116 lines of T-id archaeology in code, still being written
 - T-2995: Docs narrative: 44% of doc lines sit in paragraphs citing a ticket id; keep the change info, move the story
+- T-2996: Language-support matrix has 5 facets but 13 packages specialize per-language; refactor is silently Python-only and invisible to detection
 - T-2997: rapid-debt.jsonl grows unbounded in git with no rotation: 2882 lines / 345KB, appended by every land, a merge-conflict hotspot
 - T-2999: Baseline lock files: staleness warning, and a LOUD failure when the producer that stamps them stops running
 - T-3000: Verbose flag after a subcommand is silently accepted and ignored: only the pre-subcommand position works

@@ -557,7 +557,7 @@ not an open door: see `docs/design/language-adapter-tier-decision.md` for
 the T-0691 call on the next tier (Go/Java/C#) and its reopen criterion.
 
 ```python
-FACETS: tuple[str, ...]  # ("grammar", "capability", "dup", "arch", "docblock")
+FACETS: tuple[str, ...]  # ("grammar", "capability", "dup", "arch", "docblock", "refactor")
 
 class FacetState(StrEnum):
     IMPLEMENTED
@@ -609,6 +609,56 @@ bucket plus recognized bash's pre-existing console-command one) rather
 than leaving the citation in place -- both languages now read
 `IMPLEMENTED` on all three facets, `arch` remaining the one genuine,
 already-tracked T-0329 gap every other non-python/cpp language shares.
+
+T-2996: `refactor` joined `FACETS` after the audit found `frob.refactor`
+was Python-only with ZERO language-literal branching to find -- a
+silently single-language module is invisible to any scan looking for
+per-language dispatch, strictly worse than a declared gap. Adding it
+lit LANG003 up from 5 warnings to 12 (7 new `refactor` known-gap cells:
+every language except python and kotlin, kotlin having no `.kt` files
+present in this repo's own tree today) -- a large increase here is the
+success condition, not a regression: previously-invisible debt becoming
+visible, tracked by T-3231 (EPIC refactor multi-language: per-language
+reference scanners).
+
+### Package language axis (T-2996)
+
+FACETS answers "for a language frob already recognizes, is every facet
+accounted for". It does not answer the meta-question T-2996 asked:
+"do the facets that exist cover everything that requires per-language
+specialisation" -- a package can branch on language identity nowhere
+FACETS looks (as `frob.refactor` did, invisibly), or can be full of
+language literals that are not actually a facet-shaped gap at all (a
+project-toolchain sentinel, a CLI flag's `choices=`, a config key that
+happens to share a language's name).
+
+`frob.lang._support.LANGUAGE_SENSITIVE_PACKAGES` is the declared half of
+the answer: every `frob.*` package T-2996's survey found branching on
+language identity (18 in total, including 5 an AST literal scan turned
+up that a manual density-ranking pass had missed: `frob.bind`,
+`frob.deploy`, `frob.docs`, `frob.natives`, `frob.xref`), each mapped to
+a `PackageAudit` recording which axis accounts for it --
+`PackageLanguageAxis.FACET`/`CAPABILITY` (an existing FACETS/
+ADAPTER_CAPABILITIES cell already tracks it end to end) or `AGNOSTIC`
+(a judged exemption, with a reason, distinguishing "this is genuinely
+not a per-language completeness question" from "this IS one and it is
+measurably incomplete" -- several `AGNOSTIC` entries record a measured,
+filed, not-yet-fixed gap: T-3232 (`frob.docs`/`frob.xref`), T-3233
+(`frob._cli_parsers`), T-3234 (`frob.perf`), T-3235 (`frob.policy`
+duplicating `frob.lang.extract_imports`)).
+
+`frob.lang._support.unfaceted_packages(src_root)` is the detection half:
+an AST-based scan (never text/regex -- `ast.walk` matching
+`ast.Constant` string values against `frob.lang.supported_languages()`)
+over every `src/frob/<package>` that flags a package with a language-name
+literal in its source and NO `LANGUAGE_SENSITIVE_PACKAGES` entry. This
+is what keeps the declared registry from silently falling behind the way
+`frob.refactor`'s Python-only assumption did for years: a package
+acquiring language branching with no registry entry fails loudly, and a
+package the registry already accounts for stays quiet even though it is
+full of language literals (`tests/test_lang_support.py::TestPackageAudit`
+carries both fixtures, plus a real-repo assertion that `src/frob` itself
+produces zero hits against the live registry today).
 
 ### Per-project conformance (LANG002/LANG003, T-0406)
 

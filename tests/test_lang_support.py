@@ -338,3 +338,130 @@ class TestCapabilityConformanceViolations:
         violations = capability_conformance_violations(registry)
         assert len(violations) == 1
         assert "symbol_walk" in violations[0]
+
+
+# frob:ticket T-2996
+class TestPackageAudit:
+    """T-2996 part 2/3: `LANGUAGE_SENSITIVE_PACKAGES` (the declared
+    registry) plus `unfaceted_packages` (the detection cross-check)."""
+
+    # frob:ticket T-2996
+    def test_every_measured_package_is_registered(self) -> None:
+        """Every package T-2996's survey found branching on language
+        identity -- plus `frob.refactor`, the invisible zero-literal
+        case -- has a `LANGUAGE_SENSITIVE_PACKAGES` entry with a non-
+        blank reason. A hand-built registry with a blank detail is as
+        unaccountable as a missing FACETS cell."""
+        from frob.lang._support import LANGUAGE_SENSITIVE_PACKAGES
+
+        expected = {
+            "frob.vet",
+            "frob.dup",
+            "frob.arch",
+            "frob.gates",
+            "frob.refactor",
+            "frob.graph",
+            "frob.testing",
+            "frob.app",
+            "frob.check",
+            "frob._cli_parsers",
+            "frob.strata",
+            "frob.perf",
+            "frob.policy",
+            "frob.docs",
+            "frob.xref",
+            "frob.bind",
+            "frob.deploy",
+            "frob.natives",
+        }
+        assert expected <= set(LANGUAGE_SENSITIVE_PACKAGES)
+        for name, audit in LANGUAGE_SENSITIVE_PACKAGES.items():
+            assert audit.detail.strip(), f"{name} has a blank audit detail"
+
+    # frob:ticket T-2996
+    def test_must_fire_unregistered_language_branching(self, tmp_path) -> None:  # noqa: ANN001
+        """Must-fire fixture: a package with real language branching and
+        NO registry entry is flagged."""
+        from frob.lang._support import unfaceted_packages
+
+        pkg = tmp_path / "frob_widget"
+        pkg.mkdir()
+        (pkg / "_dispatch.py").write_text(
+            "def handle(language):\n"
+            "    if language == 'python':\n"
+            "        return 1\n"
+            "    return 0\n"
+        )
+        hits = unfaceted_packages(
+            tmp_path, known_languages=frozenset({"python", "rust"}), registry={}
+        )
+        assert "frob.frob_widget" in hits
+
+    # frob:ticket T-2996
+    def test_must_stay_quiet_agnostic_package(self, tmp_path) -> None:  # noqa: ANN001
+        """Must-stay-quiet fixture: a genuinely language-agnostic package
+        (no language-name string literal in its AST at all) produces no
+        hit, even with an empty registry -- it was never a candidate."""
+        from frob.lang._support import unfaceted_packages
+
+        pkg = tmp_path / "frob_quiet"
+        pkg.mkdir()
+        (pkg / "_util.py").write_text("def add(a, b):\n    return a + b\n")
+        hits = unfaceted_packages(
+            tmp_path, known_languages=frozenset({"python", "rust"}), registry={}
+        )
+        assert "frob.frob_quiet" not in hits
+
+    # frob:ticket T-2996
+    def test_registered_package_never_flagged_even_with_literals(
+        self, tmp_path
+    ) -> None:
+        """A package WITH language literals but a registry entry already
+        covering it stays quiet -- the registry, once declared, is
+        trusted; only an UNregistered package with literals fires."""
+        from frob.lang._support import (
+            PackageAudit,
+            PackageLanguageAxis,
+            unfaceted_packages,
+        )
+
+        pkg = tmp_path / "frob_covered"
+        pkg.mkdir()
+        (pkg / "_dispatch.py").write_text("LANG = 'python'\n")
+        registry = {
+            "frob.frob_covered": PackageAudit(
+                axis=PackageLanguageAxis.AGNOSTIC, detail="fixture: pre-registered"
+            )
+        }
+        hits = unfaceted_packages(
+            tmp_path, known_languages=frozenset({"python"}), registry=registry
+        )
+        assert hits == ()
+
+    # frob:ticket T-2996
+    def test_real_repo_source_tree_is_fully_registered(self) -> None:
+        """The actual `src/frob` tree produces zero hits against the
+        live `LANGUAGE_SENSITIVE_PACKAGES` registry -- the real-world
+        instance of the must-stay-quiet property above, over frob's own
+        source rather than a synthetic fixture."""
+        from pathlib import Path
+
+        from frob.lang._support import unfaceted_packages
+
+        src_root = Path(__file__).resolve().parent.parent / "src" / "frob"
+        assert unfaceted_packages(src_root) == ()
+
+
+# frob:ticket T-2996
+def test_refactor_adapter_languages_matches_live_registry() -> None:
+    """`_REFACTOR_ADAPTER_LANGUAGES` (the hand-mirrored set `_refactor_
+    status` uses to avoid a frob.lang<->frob.refactor import cycle) must
+    stay in sync with `frob.refactor._module_lang.supported_languages()`
+    -- the live source of truth it mirrors. This import is safe HERE
+    (a test module, not `frob.lang._support` itself) precisely because
+    the cycle risk is specific to `frob.lang` importing `frob.refactor`
+    back, not to anything importing both."""
+    from frob.lang._support import _REFACTOR_ADAPTER_LANGUAGES
+    from frob.refactor._module_lang import supported_languages as refactor_languages
+
+    assert _REFACTOR_ADAPTER_LANGUAGES == refactor_languages()
