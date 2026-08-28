@@ -6,6 +6,8 @@ kind: bug
 origin: human
 created: '2026-08-28'
 priority: medium
+blocked_by:
+- T-3228
 parent: null
 tier: ticket
 sprint: null
