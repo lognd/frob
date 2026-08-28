@@ -17,10 +17,27 @@ runs_last_parallel_safe_reason: null
 scope:
 - strata-core/src/graph/vmodel.rs
 - strata-core/src/parse/grammar_core.rs
+- tickets.md
+- tickets/T-draft-703f9e02/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets.md
+  reason: filing the deferred-split follow-up ticket (T-draft-703f9e02) for this sweep-regression
+    ticket writes tickets.md and its own ticket.md; both are frob ticket-infra artifacts
+    of doing this ticket's work, not unrelated scope creep
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tickets/T-draft-703f9e02/ticket.md
+  reason: filing the deferred-split follow-up ticket (T-draft-703f9e02) for this sweep-regression
+    ticket writes tickets.md and its own ticket.md; both are frob ticket-infra artifacts
+    of doing this ticket's work, not unrelated scope creep
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
