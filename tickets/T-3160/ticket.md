@@ -2,7 +2,7 @@
 id: T-3160
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3152):
   1 new (rule, file) identit(ies), 1 finding(s) (missing-argument)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-27'
@@ -23,6 +23,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCountAgreesWithReap::test_old_no_ancestor_forkserver_agrees
 designated_repro_test: null
 threat: null
 component: null

@@ -3157,7 +3157,7 @@ class TestOrphanedForkserverCountAgreesWithReap:
         is_orphaned_per_reap = not reap_root_is_live_check(
             4242, reap_ppid_map, reap_live_check_pids
         )
-        age_s = _process_start_age_s(4242, proc, time.time())
+        age_s = _process_start_age_s(4242, proc, uptime_s, os.sysconf("SC_CLK_TCK"))
         is_reap_candidate = (
             is_orphaned_per_reap
             and age_s is not None
