@@ -2,7 +2,7 @@
 id: T-2997
 title: 'rapid-debt.jsonl grows unbounded in git with no rotation: 2882 lines / 345KB,
   appended by every land, a merge-conflict hotspot'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -24,6 +24,7 @@ scope:
 - docs/modules/tickets-verify-sweep.md
 - docs/modules/tickets-merge-driver.md
 - changelog.d/T-2997.md
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -89,6 +90,13 @@ scope_changes:
 - op: add
   glob: changelog.d/T-2997.md
   reason: narrow to the specific changelog entry file
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: 'T-2997: record_rapid_debt now writes under .frob/, which the test fixture
+    repo must gitignore like a real repo does, or the commit-clean invariant test
+    breaks on an untracked .frob/ dir'
   actor: logan
   at: '2026-08-28'
 body_changes:
