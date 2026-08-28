@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_scope.py
+- src/frob/tickets/_models.py
+- tests/test_tickets_lease.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +26,18 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_scope.py
   reason: the glob-vs-glob lease overlap predicate lives here
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: fix lives in _globs_intersect (_models.py), imported by _scope.py; test
+    file for the fixtures
+  actor: logan
+  at: '2026-08-27'
+- op: add
+  glob: tests/test_tickets_lease.py
+  reason: fix lives in _globs_intersect (_models.py), imported by _scope.py; test
+    file for the fixtures
   actor: logan
   at: '2026-08-27'
 designated_repro_test: null
