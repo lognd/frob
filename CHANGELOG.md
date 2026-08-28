@@ -429,6 +429,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2995: Docs narrative: 44% of doc lines sit in paragraphs citing a ticket id; keep the change info, move the story
 - T-2997: rapid-debt.jsonl grows unbounded in git with no rotation: 2882 lines / 345KB, appended by every land, a merge-conflict hotspot
 - T-2999: Baseline lock files: staleness warning, and a LOUD failure when the producer that stamps them stops running
+- T-3000: Verbose flag after a subcommand is silently accepted and ignored: only the pre-subcommand position works
 - T-3001: Verification debt can never drain under fleet load: the budgeted verify run truncates, reports Unmeasurable, and retries forever
 - T-3003: Windows now reaches the Test stage: 19 failures across 7 files, clustered in test_cli_check and test_rule_id_scan_branches
 - T-3005: strata-core graph kernel: generic typed nodes, typed edges, closure, level constraints, cycle detection (see T-3004 section 4)

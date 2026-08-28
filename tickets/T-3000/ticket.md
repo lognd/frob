@@ -2,11 +2,13 @@
 id: T-3000
 title: 'Verbose flag after a subcommand is silently accepted and ignored: only the
   pre-subcommand position works'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
 priority: medium
+blocked_by:
+- T-2954
 parent: null
 tier: ticket
 sprint: null
@@ -33,7 +35,7 @@ evidence:
 - tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_global_frob_verbose_env_var_also_skips_the_clamp
 - tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_global_frob_log_level_env_var_also_skips_the_clamp
 - tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_no_verbose_signal_at_all_still_clamps
-designated_repro_test: null
+designated_repro_test: tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_global_frob_verbose_env_var_also_skips_the_clamp
 threat: null
 component: null
 anchor: false

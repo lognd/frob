@@ -792,6 +792,7 @@ def run(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0768
+# frob:ticket T-3000
 def _diagnostic_log_ctx(cfg: AppConfig):  # noqa: ANN202
     """The logger context `run` dispatches every subcommand under (T-0768).
 
@@ -799,14 +800,32 @@ def _diagnostic_log_ctx(cfg: AppConfig):  # noqa: ANN202
     library diagnostic chatter (`frob.gitio` spawn/returncode lines, the
     `frob.tickets` loader's per-run INFO) stays out of the terminal, while
     this module's own logger -- the ticket CLI's user-facing output channel
-    -- is pinned to INFO so listings still print. `-v` skips the clamp and
+    -- is pinned to INFO so listings still print. `ticket`'s OWN `-v`
+    (placed between `ticket` and its leaf subcommand, e.g. `frob ticket -v
+    show T-1`, parsed into `cfg.ticket_verbose`) skips the clamp and
     restores the full firehose. WARNING+ lines (stale leases, over-broad
     scopes) always show either way.
-    """
+
+    T-3000: the GLOBAL `-v`/`--verbose` flag (registered on the top-level
+    parser, `frob -v ticket show T-1`) is a SEPARATE flag from `ticket`'s
+    own local one above -- `_apply_verbose_env_override`
+    (`frob.__main__`) sets `FROB_VERBOSE=1` for it before dispatch, same
+    escape hatch `quiet_query_stdout` (T-2582) already honors, but this
+    clamp used to check ONLY `cfg.ticket_verbose`, ignoring that env var
+    entirely. The result: the global flag was silently accepted (no
+    argparse error, since it IS a valid top-level option) yet had no
+    effect once `ticket` dispatch reasserted its own WARNING clamp --
+    only the position between `ticket` and its leaf subcommand actually
+    worked. Checking `FROB_VERBOSE`/`FROB_LOG_LEVEL` here too, the same
+    way `quiet_query_stdout` does, makes the global flag work from
+    EITHER position instead of leaving one silently ignored."""
     import contextlib
     import logging
+    import os
 
     if cfg.ticket_verbose > 0:
+        return contextlib.nullcontext()
+    if os.environ.get("FROB_VERBOSE") == "1" or os.environ.get("FROB_LOG_LEVEL"):
         return contextlib.nullcontext()
     return logger_levels({"frob": logging.WARNING, __name__: logging.INFO})
 
