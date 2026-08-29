@@ -15,12 +15,27 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/strata/**
 - src/frob/__main__.py
+- src/frob/gates/_vmodel.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/strata/**
+  reason: T-3264's actual fix lives in _vmodel.py's unguarded import strata_core,
+    not anywhere under src/frob/strata/** (that package's own guarded imports were
+    already correct)
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_vmodel.py
+  reason: T-3264's actual fix lives in _vmodel.py's unguarded import strata_core,
+    not anywhere under src/frob/strata/** (that package's own guarded imports were
+    already correct)
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
