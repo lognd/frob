@@ -121,6 +121,14 @@ body_changes:
   at: '2026-08-29'
   old_length: 4604
   new_length: 7665
+evidence:
+- tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_no_ticket_id_errors
+- tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_resolvable_ticket_id_still_errors
+- tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_unresolvable_ticket_id_errors
+- tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_draft_ticket_id_still_errors
+- tests/test_waive_gate.py::TestWaive009Violations::test_no_promise_phrase_untouched
+- tests/test_waive_gate.py::TestWaive009Wiring::test_unresolvable_promise_fires_through_run_gates
+- tests/test_waive_gate.py::TestWaive009Wiring::test_resolvable_promise_also_fires_through_run_gates
 designated_repro_test: null
 threat: null
 component: null
