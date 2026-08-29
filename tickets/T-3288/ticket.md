@@ -53,7 +53,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 428321e76f87baeae79e759b044f369d5ddb0eda
 ---
 WORK-DESTROYING BUG, reported from real consumer use (../diax FROBLEMS.md
 F-034, marked "serious" by the reporter). Recovery was possible ONLY because a
