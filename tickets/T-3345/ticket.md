@@ -1,7 +1,7 @@
 ---
 id: T-3345
 title: 'COV001: strata-core graph/model.rs+query.rs (33) have zero frob:doc coverage'
-state: queued
+state: dropped
 kind: docs
 origin: human
 created: '2026-08-29'
@@ -28,3 +28,6 @@ anchor_reason: null
 land_commit: null
 ---
 frob check on main (SHA be9e767) shows 33 unwaived COV001 errors, all in strata-core/src/graph/model.rs (27) and query.rs (6) -- new Rust module shipped with no frob:doc anchors. Single root cause, likely one doc pass or file-level waive with follow-up closes it. Filed from Series ED CI-gate baseline sweep.
+
+## Drop reason
+- 2026-08-29: duplicate: COV001 strata-core cluster already covered by T-3343 (COV/TICK/REL/REG/REF clusters), filed by owner same day (absorbed by T-3343)
