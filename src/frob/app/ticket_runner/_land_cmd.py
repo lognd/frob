@@ -4281,8 +4281,7 @@ def _ruff_new_violations(
 # frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_genuinely_new_violation_still_refuses  # noqa: E501
 # frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_second_new_violation_sharing_identity_with_pre_existing_one_still_refuses  # noqa: E501
 # frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_baseline_unmeasurable_falls_back_to_file_scoped_refusal  # noqa: E501
-# frob:debt ARCH103 reason="6 decision points, I/O + string-formatting; a safe fix needs a consolidating split (T-3311's lesson: a split only helps when it owns ALL the branching), not a blind extraction -- deferred as tracked follow-up" ticket="T-3397"  # noqa: E501
-# frob:waive ARCH103 reason="tracked real-split follow-up, T-3397 -- too large/risky to do as a drive-by in a mixed-gate cleanup slice"  # noqa: E501
+# frob:ticket T-3397
 def _assert_touched_files_lint_clean_pre_land(
     worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
 ) -> None:
@@ -4366,6 +4365,23 @@ def _assert_touched_files_lint_clean_pre_land(
             len(parsed.diagnostics),
         )
         return
+    _refuse_pre_land_lint(ticket_id, new_violations, py_files)
+
+
+# frob:ticket T-3397
+def _refuse_pre_land_lint(
+    ticket_id: str, new_violations: list, py_files: list[str]
+) -> None:
+    """`_assert_touched_files_lint_clean_pre_land`'s own refusal tail,
+    split out for ARCH103 (T-3397): formats the new-violation summary and
+    `sys.exit(1)`s. Owns BOTH the `.join()` string-formatting and the
+    `sys.exit` I/O for this one refusal -- the only place in the parent
+    function either concern occurred -- so the parent keeps every one of
+    its decision points but no longer mixes I/O or formatting with them
+    at all. Per T-3311's lesson, a split only helps when it takes a
+    whole concern with it, not just some branches: this one is
+    unconditional (no decision points of its own), so it cannot itself
+    become a new mixed-concern site no matter how the caller grows."""
     _log.error(
         "ticket land: %s refused -- `ruff check` found %d NEW violation(s) "
         "in this ticket's own touched file(s): %s; a scoped `ruff check "
