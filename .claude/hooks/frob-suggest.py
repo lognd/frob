@@ -341,7 +341,7 @@ def _edit_rename_hit(file_path: str, old_string: str) -> tuple[str, str, str] | 
             hit = (
                 f"edit-rename:{module}",
                 "hand-rename-edit-multifile",
-                f"This is the second file (after {sorted(files)[0]!r}) whose "
+                f"This is the second file (after {min(files)!r}) whose "
                 f"existing `{module}` import has been hand-rewritten in this "
                 "session -- that shape is a rename/move, not an ordinary "
                 "import edit. Prefer `uv run frob refactor rename`/`move`/"
@@ -354,6 +354,8 @@ def _edit_rename_hit(file_path: str, old_string: str) -> tuple[str, str, str] | 
             )
         files.add(file_path)
         try:
+            # frob:ticket T-3059
+            # frob:waive PERF004 reason="files grows by one element each iteration, so this is not a hoistable repeated sort of unchanged data -- sorted only for a deterministic on-disk list"  # noqa: E501
             state_path.write_text(
                 json.dumps({"files": sorted(files)}), encoding="utf-8"
             )

@@ -1,5 +1,6 @@
 # frob:ticket T-3026
 # frob:debt LARGE001 reason="pre-existing debt, not introduced by the T-3006/T-2995/T-3014 batch this ticket cleans up after: verified via git history the file was already 845 lines (over the 800 threshold) BEFORE that batch landed. A real split is a dedicated CLI-wiring restructure (this module fans out to every subcommand parser) out of this bugfix ticket's declared scope." ticket="T-3059"  # noqa: E501
+# frob:waive LARGE001 reason="tracked real-split follow-up, T-3059 -- a CLI-wiring restructure is too large to do as a drive-by in a mixed-gate cleanup slice"  # noqa: E501
 from __future__ import annotations
 
 import argparse

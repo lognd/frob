@@ -619,6 +619,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3386: Fix SELFAUDIT001: add test_check_runner.py to testsuite exec scope
 - T-3389: Declare SEC110 unmapped env-var reads (logger, main, frob-suggest hook, worktree_guard test)
 - T-3393: Fix DOC011/DOCENUM001 stale doc references and PERF004 loop-sort findings
+- T-3398: Waive tracked LARGE001/PERF004 debt in __main__.py and frob-suggest.py
 
 ## [0.530.0] - unreleased
 
