@@ -53,7 +53,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 93c5b45245cecc8af2e11a2e58eb5e1fd1f70d1f
 ---
 Root-caused live (Series EF, re-measuring chunk3a):
 tests/test_gates_suppress.py::TestSuppress001Gate::test_mypy_suppressed_ty_unsuppressed_fires
