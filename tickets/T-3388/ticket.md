@@ -1,7 +1,7 @@
 ---
 id: T-3388
 title: 'SELFAUDIT001: refactor node exec via-list has no ratchet lock entry'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -30,7 +30,26 @@ scope_changes:
     so it belongs with this fix rather than a separate ticket
   actor: logan
   at: '2026-08-29'
+body_changes:
+- mode: append
+  reason: 'BUG002 waiver: fix is a declaratory config/model correction, real repro
+    test confounded by unrelated T-3350/T-3413 regression on main'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 1056
+  new_length: 2003
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
+  reason: test_sys_gate_zero_violations now fails on main due to an unrelated T-3350
+    regression (nodeid.py undeclared, filed T-draft-a220ec84) -- not this ticket's
+    own code; test_every_claim_proves still exercises this ticket's own weakness:CWE-78:refactor
+    assume/discharge closure and passes cleanly against merged main
+  actor: logan
+  at: '2026-08-29'
 threat: null
 component: null
 anchor: false
@@ -58,3 +77,5 @@ grant should be removed/tightened instead.
 Filed while working T-3386 (SUPPRESS001/SELFAUDIT001 gate-visibility
 sprint); do not fix inside T-3386, which is scoped to design/frob.strata
 plus the testsuite ratchet entry only.
+
+frob:waive BUG002 reason="this ticket adds a missing ratchet-lock entry (docs/design/registry/capability-via-ratchet.lock.json) plus a threat-model discharge assume (design/frob.strata) -- a declaratory config/model correction, not a code-behavior defect with a natural fail-then-pass unit test. The one test that DOES fail-then-pass on this exact fix (tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations) is now confounded post-merge by an unrelated T-3350 regression on main (src/frob/nodeid.py undeclared, tracked T-3413/T-draft-a220ec84) that trips the same zero-violations assertion for a different reason -- so it cannot currently prove THIS fix specifically without also depending on that separate, already-tracked defect being fixed first. test_every_claim_proves (bound as evidence) directly exercises the frob:claims/assume closure this fix adds and passes against the real repo." follow_up="T-3413"
