@@ -48,7 +48,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 65e13d70fd6e69c4bd114f900695c44e60c1fcb8
 ---
 ARCH103 fires on both single-concern helpers (subprocess env construction; git rev-parse + failure classification). Resolved via reasoned frob:waive ARCH103 -- both are single cohesive units where a further split would scatter one concern across artificial boundaries rather than reduce real complexity.
 
