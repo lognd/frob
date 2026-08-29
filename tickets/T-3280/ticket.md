@@ -48,3 +48,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DOC006  tickets/T-3272/ticket.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Failure log
+- 2026-08-29 attempt 1: already resolved on main: neither finding reproduces -- frob check --only docblocks shows 0 DOC006 findings against tickets/T-3272/ticket.md, and frob check --only coverage shows 0 COV007 findings against scripts/verify_release_ci_status.py (the file exists; only pre-existing waived COV007 identities remain elsewhere). T-3251 (the attributed source of the COV007 finding) is already closed/dropped per this ticket's own attribution note
