@@ -48,7 +48,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 46994fe51483894152247da5236bd7a5daca4d78
 ---
 fleet_status.py reported T-3394's scope lease as LEAKED ("T-3394 -> <no
 worktree>  [LEAK]") in the same run whose own WORKTREES section lists
