@@ -21,10 +21,35 @@ scope:
 - tests/test_docptr_gate.py
 - tests/test_registry_exhaustiveness.py
 - docs/design/registry/check-coverage.yaml
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
+- src/frob/gates/_empty_diff_close.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: T-3283's fix for the SYS gate/selfconform failures lives in design/frob.strata
+    (7 undeclared SYS100 capability grants from ~9 unrelated post-T-3041 lands) plus
+    its ratchet lock, and TICK014's missing frob:enforces directive in empty_diff_close.py
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: T-3283's fix for the SYS gate/selfconform failures lives in design/frob.strata
+    (7 undeclared SYS100 capability grants from ~9 unrelated post-T-3041 lands) plus
+    its ratchet lock, and TICK014's missing frob:enforces directive in empty_diff_close.py
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_empty_diff_close.py
+  reason: T-3283's fix for the SYS gate/selfconform failures lives in design/frob.strata
+    (7 undeclared SYS100 capability grants from ~9 unrelated post-T-3041 lands) plus
+    its ratchet lock, and TICK014's missing frob:enforces directive in empty_diff_close.py
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
