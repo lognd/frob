@@ -21,6 +21,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'coordinator directive: require a structural fixture over the LedgerWriteStrategy
+    dispatch table, not a show-specific regression test'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 4124
+  new_length: 5083
 designated_repro_test: null
 threat: null
 component: null
@@ -103,3 +111,21 @@ ancestor frob.toml and no ancestor .git -- must exit non-zero with a clear
 
 MUST-STAY-QUIET FIXTURE: every OWN_TRANSACTION and OWN_TRANSACTION_LEDGER_MIRROR
 verb (e.g. `close`, `promote`) keeps committing exactly as before.
+
+
+
+COORDINATOR NOTE (2026-08-29): confirmed structural, not a one-off -- fix
+the dispatch table's coverage, not just this one verb.
+
+REQUIRED EVIDENCE SHAPE: a regression test must NOT be scoped to "show no
+longer commits" alone -- that only proves this one instance is fixed and
+would not catch the next NOT_TICKET_SCOPED verb reopening the same gap.
+Required: a STRUCTURAL fixture that iterates every `LedgerWriteStrategy`
+value (or at minimum every value currently mapped in LEDGER_VERB_STRATEGY)
+and asserts `_auto_commit_ledger_after_dispatch` has an explicit,
+early-returning branch for each -- e.g. by asserting NOT_TICKET_SCOPED
+(and any future strategy) never reaches `commit_ticket_ledger_change`
+regardless of whether `cfg.ticket_id` happens to be set, rather than
+special-casing on a hardcoded verb name. A fixture keyed to the ENUM, not
+to "show", is what keeps this fixed when the next NOT_TICKET_SCOPED verb
+with a ticket-id argument is added.
