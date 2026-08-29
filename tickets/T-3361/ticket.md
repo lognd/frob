@@ -1,7 +1,7 @@
 ---
 id: T-3361
 title: fix stale mock signature in test_ticket_close_bug002_t1427
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_ticket_close_bug002_t1427.py
+- tests/unit/test_ticket_runner_designate_repro.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_runner_designate_repro.py
+  reason: same T-3104 env_absent kwarg drift affects this file's assert_called_once_with
+    expectations too -- one root cause, group the fix
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
