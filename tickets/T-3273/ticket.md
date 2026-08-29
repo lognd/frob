@@ -186,7 +186,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fb4bc3870c17ecd25a58a2d711dafc86725f8687
 ---
 OWNER OBSERVATION 2026-08-28, from first real use of frob in a new repo
 (../diax): "there's a lot of boilerplate in frob.toml".
