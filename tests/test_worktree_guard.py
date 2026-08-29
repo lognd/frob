@@ -28,6 +28,7 @@ from frob.tickets._worktree_guard import (
     agent_env_exports,
     apply_agent_env,
     enforce_worktree_lease,
+    warn_if_testmon_plugin_missing,
     warn_if_xdist_bound_missing,
     warn_if_xdist_plugin_missing,
 )
@@ -415,6 +416,49 @@ class TestWarnIfXdistPluginMissing:
         monkeypatch.setattr(guard_mod, "_xdist_plugin_present", lambda: True)
         with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
             warn_if_xdist_plugin_missing(tmp_path)
+        assert [r for r in caplog.records if r.levelname == "ERROR"] == []
+
+
+class TestWarnIfTestmonPluginMissing:
+    """T-3401: `warn_if_xdist_plugin_missing`'s pattern (T-3316) applied to
+    `pytest-testmon` -- the ONE other place this codebase asks pytest to
+    select tests incrementally (`make test-fast`, T-2244's disclosed
+    `frob test` gap)."""
+
+    # frob:ticket T-3401
+    def test_must_fire_when_plugin_not_importable(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestWarnIfTestmonPluginMissing.test_must_fire_when_plugin_not_importable  # noqa: E501
+        import frob.tickets._worktree_guard as guard_mod
+
+        _init_repo(tmp_path)
+        monkeypatch.setattr(guard_mod, "_testmon_plugin_present", lambda: False)
+        with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
+            warn_if_testmon_plugin_missing(tmp_path)
+        assert any(
+            "pytest-testmon" in record.message.lower()
+            and "not installed" in record.message.lower()
+            for record in caplog.records
+        )
+
+    # frob:ticket T-3401
+    def test_must_stay_quiet_when_plugin_importable(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestWarnIfTestmonPluginMissing.test_must_stay_quiet_when_plugin_importable  # noqa: E501
+        import frob.tickets._worktree_guard as guard_mod
+
+        _init_repo(tmp_path)
+        monkeypatch.setattr(guard_mod, "_testmon_plugin_present", lambda: True)
+        with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
+            warn_if_testmon_plugin_missing(tmp_path)
         assert [r for r in caplog.records if r.levelname == "ERROR"] == []
 
 

@@ -519,7 +519,16 @@ typecheck: $(STAMP)
 test: core
 	uv run frob test --all
 
+# T-3401: `--testmon` bypasses every frob-spawned pytest call site (this
+# is a raw shell invocation, not a `frob.testing` collector), so
+# `warn_if_testmon_plugin_missing` -- wired into every IN-process
+# pytest-spawning call site elsewhere -- cannot reach it that way; call
+# it explicitly here instead, mirroring T-3316's xdist-plugin check.
+# pytest-testmon absence otherwise degrades to a bare pytest exit 4
+# (unrecognized `--testmon`) with no explanation of why or how to fix
+# it -- loud either way, but only ONE of those tells you what happened.
 test-fast: core
+	@uv run python -c "from pathlib import Path; from frob.tickets._worktree_guard import warn_if_testmon_plugin_missing; warn_if_testmon_plugin_missing(Path('.'))"
 	uv run pytest $(TESTS)/ -q --testmon
 
 test-unit: core

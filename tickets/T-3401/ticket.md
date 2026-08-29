@@ -1,7 +1,7 @@
 ---
 id: T-3401
 title: 'frob test: detect missing pytest-testmon like xdist bound check'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-29'
@@ -34,6 +34,9 @@ scope_changes:
     the two new functions deferred to a follow-up'
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/test_worktree_guard.py::TestWarnIfTestmonPluginMissing::test_must_fire_when_plugin_not_importable
+- tests/test_worktree_guard.py::TestWarnIfTestmonPluginMissing::test_must_stay_quiet_when_plugin_importable
 designated_repro_test: null
 threat: null
 component: null

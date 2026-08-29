@@ -58,6 +58,13 @@ PYTEST_XDIST_AUTO_NUM_WORKERS_ENV = "PYTEST_XDIST_AUTO_NUM_WORKERS"
 #: "pytest-xdist" means.
 PYTEST_XDIST_PACKAGE = "pytest-xdist"
 
+# frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
+#: T-3401: the distribution name `importlib.metadata` resolves for the
+#: `pytest-testmon` plugin -- reused verbatim wherever `--testmon` is
+#: spawned (this repo's own `Makefile`'s `test-fast` target, T-2244),
+#: mirroring `PYTEST_XDIST_PACKAGE`'s role for the xdist check.
+PYTEST_TESTMON_PACKAGE = "pytest-testmon"
+
 
 # frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
 # frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease.test_no_env_var_is_unrestricted  # noqa: E501
@@ -290,6 +297,66 @@ def warn_if_xdist_plugin_missing(root: Path) -> None:
     )
 
 
+# frob:ticket T-3401
+# frob:tests tests/test_worktree_guard.py::TestWarnIfTestmonPluginMissing.test_must_fire_when_plugin_not_importable  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestWarnIfTestmonPluginMissing.test_must_stay_quiet_when_plugin_importable  # noqa: E501
+def _testmon_plugin_present() -> bool:
+    """Whether the `pytest-testmon` distribution resolves via
+    `importlib.metadata` in the CURRENT interpreter (T-3401) -- the real
+    precondition for `--testmon` (this repo's `make test-fast`, T-2244's
+    disclosed gap: incremental rerun has no `frob test` equivalent) to
+    work at all. Mirrors `_xdist_plugin_present`'s own probe rather than
+    inventing a second detection method for the same shape of fact."""
+    try:
+        metadata.version(PYTEST_TESTMON_PACKAGE)
+    except metadata.PackageNotFoundError:
+        return False
+    return True
+
+
+# frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
+# frob:ticket T-3401
+# frob:tests tests/test_worktree_guard.py::TestWarnIfTestmonPluginMissing.test_must_fire_when_plugin_not_importable  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestWarnIfTestmonPluginMissing.test_must_stay_quiet_when_plugin_importable  # noqa: E501
+def warn_if_testmon_plugin_missing(root: Path) -> None:
+    """LOUD check for T-3401, `warn_if_xdist_plugin_missing`'s pattern
+    applied to `pytest-testmon` (T-3316's own "detect the PLUGIN'S
+    ABSENCE, not just an unset flag/bound" fix, mirrored exactly for the
+    ONE other place this codebase asks pytest to select tests
+    incrementally): `make test-fast` spawns `pytest --testmon` directly
+    (T-2244's disclosed gap -- `frob test` has no incremental-rerun
+    equivalent today), and a missing `pytest-testmon` plugin makes that
+    spawn exit 4 (usage error, unrecognized `--testmon`) before a single
+    test runs -- opaque exactly like the xdist case, not a silent
+    fallback to a full run. `pytest-testmon` is already an unconditional
+    dev dependency in THIS repo's own `pyproject.toml`, so this mainly
+    guards a stale/un-synced venv; any OTHER caller of `--testmon`
+    outside `uv sync`'s guarantee gets the same loud diagnosis.
+
+    Best-effort diagnostic, never raises: an unresolvable `root` (not a
+    git worktree) degrades to a DEBUG log and returns, matching every
+    other guard in this module's "cannot resolve a root" posture -- this
+    is not a gate, just a preflight warning."""
+    actual = repo_root(root)
+    if actual.is_err:
+        _log.debug(
+            "testmon-plugin check: %s unresolvable as a repo (%s), skipping",
+            root,
+            actual.danger_err,
+        )
+        return
+    if _testmon_plugin_present():
+        return
+    _log.error(
+        "testmon-plugin: pytest-testmon is NOT installed in this "
+        "interpreter, but `--testmon` was requested -- a pytest spawn "
+        "with `--testmon` exits 4 (usage error, not a red suite, and "
+        "NOT a silent fall-through to a full run) before any test runs; "
+        "install it (pip install pytest-testmon, or: uv pip install "
+        "pytest-testmon) or run `uv sync` if your venv is stale",
+    )
+
+
 # frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
 # frob:ticket T-3094
 # frob:ticket T-3316
@@ -360,11 +427,13 @@ def warn_if_xdist_bound_missing(root: Path) -> None:
 __all__ = [
     "FROB_AGENT_ENV",
     "FROB_WORKTREE_ENV",
+    "PYTEST_TESTMON_PACKAGE",
     "PYTEST_XDIST_AUTO_NUM_WORKERS_ENV",
     "PYTEST_XDIST_PACKAGE",
     "agent_env_exports",
     "apply_agent_env",
     "enforce_worktree_lease",
+    "warn_if_testmon_plugin_missing",
     "warn_if_xdist_bound_missing",
     "warn_if_xdist_plugin_missing",
 ]
