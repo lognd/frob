@@ -56,11 +56,11 @@ def run(cfg: AppConfig) -> None:
 
 # frob:ticket T-2979
 # frob:tests \
-# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted::test_plain_\
-# path_raises_stdout_handlers_to_warning_by_default
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_plain_p\
+# ath_raises_stdout_handlers_to_warning_by_default
 # frob:tests \
-# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted::test_plain_\
-# path_leaves_stdout_handlers_alone_under_frob_verbose
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_plain_p\
+# ath_leaves_stdout_handlers_alone_under_frob_verbose
 def _run_plain(cfg: AppConfig, run_diagnosis) -> None:  # noqa: ANN001
     """`run`'s plain (human, non-`--json`, non-`--usage`) path -- extracted
     out of `run` to keep it under ARCH001's 60-line threshold (same move

@@ -3543,7 +3543,7 @@ distinct signal, not a severity bump on the same one.
 <!-- frob:describes src/frob/gates/_suppress.py::suppression_dialects -->
 <!-- frob:describes src/frob/gates/_waive.py::SCOPED_RUN_FLAKY_RULE_IDS -->
 <!-- frob:describes src/frob/gates/__init__.py::run_gates -->
-<!-- frob:describes src/frob/gates/__init__.py::evidence_covers_scope -->
+<!-- frob:describes src/frob/tickets/_scope_coverage.py::evidence_covers_scope -->
 <!-- frob:describes src/frob/gates/__init__.py::drift_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::affect_drift_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::coverage_gate -->
@@ -6390,7 +6390,7 @@ fail one against.
 
 ## Unresolved (T-1664)
 
-<!-- frob:describes src/frob/gates/_models.py::Severity -->
+<!-- frob:describes src/frob/findings.py::Severity -->
 <!-- frob:describes src/frob/check/_python.py::_unresolved_count -->
 <!-- frob:describes src/frob/check/_python.py::_diag_severity -->
 
@@ -6462,9 +6462,9 @@ finding gates still render their ordinary `pass`/`FAIL` icon.
 
 ## Data models
 
-<!-- frob:describes src/frob/gates/_models.py::Severity -->
-<!-- frob:describes src/frob/gates/_models.py::WaiverRef -->
-<!-- frob:describes src/frob/gates/_models.py::Violation -->
+<!-- frob:describes src/frob/findings.py::Severity -->
+<!-- frob:describes src/frob/findings.py::WaiverRef -->
+<!-- frob:describes src/frob/findings.py::Violation -->
 <!-- frob:describes src/frob/gates/_models.py::GateStats -->
 <!-- frob:describes src/frob/gates/_models.py::GateReport -->
 <!-- frob:describes src/frob/gates/_arch.py::arch_examined_sites -->

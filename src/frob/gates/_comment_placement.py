@@ -115,16 +115,16 @@ def _is_provenance_exempt(rel: str) -> bool:
 
 # frob:doc docs/guides/agent-playbook.md#7b-comment-placement-t-3218
 # frob:tests \
-# tests/gates/test_comment_placement.py::TestCplace001::test_must_fire_long_waive_reason
+# tests/gates/test_comment_placement.py::TestCplace001.test_must_fire_long_waive_reason
 # frob:tests \
-# tests/gates/test_comment_placement.py::TestCplace001::test_must_stay_quiet_ordinary_o\
-# ne_line_waive
+# tests/gates/test_comment_placement.py::TestCplace001.test_must_stay_quiet_ordinary_on\
+# e_line_waive
 # frob:tests \
-# tests/gates/test_comment_placement.py::TestCplace001::test_must_stay_quiet_frob_ticke\
-# t_directive_any_length
+# tests/gates/test_comment_placement.py::TestCplace001.test_must_stay_quiet_frob_ticket\
+# _directive_any_length
 # frob:tests \
-# tests/gates/test_comment_placement.py::TestCplace001::test_does_not_fire_on_prose_men\
-# tioning_frobwaive_by_name
+# tests/gates/test_comment_placement.py::TestCplace001.test_does_not_fire_on_prose_ment\
+# ioning_frobwaive_by_name
 # frob:enforces CHK-GATE-CPLACE001
 def scan_cplace001_waive_reason_length(
     path: Path, text: str, *, limit: int = CPLACE001_WAIVE_REASON_LIMIT_LINES
@@ -215,16 +215,16 @@ def _iter_paragraphs(lines: list[str]) -> list[tuple[int, int]]:
 
 # frob:doc docs/guides/agent-playbook.md#7b-comment-placement-t-3218
 # frob:tests \
-# tests/gates/test_comment_placement.py::TestCplace002::test_must_fire_long_narrative_p\
-# aragraph
+# tests/gates/test_comment_placement.py::TestCplace002.test_must_fire_long_narrative_pa\
+# ragraph
 # frob:tests \
-# tests/gates/test_comment_placement.py::TestCplace002::test_must_stay_quiet_table_row_\
-# citation
+# tests/gates/test_comment_placement.py::TestCplace002.test_must_stay_quiet_table_row_c\
+# itation
 # frob:tests \
-# tests/gates/test_comment_placement.py::TestCplace002::test_must_stay_quiet_short_attr\
-# ibution
+# tests/gates/test_comment_placement.py::TestCplace002.test_must_stay_quiet_short_attri\
+# bution
 # frob:tests \
-# tests/gates/test_comment_placement.py::TestCplace002::test_must_stay_quiet_exempt_path
+# tests/gates/test_comment_placement.py::TestCplace002.test_must_stay_quiet_exempt_path
 # frob:enforces CHK-GATE-CPLACE002
 def scan_cplace002_docs_narrative(
     path: Path, text: str, *, word_limit: int = CPLACE002_NARRATIVE_WORD_LIMIT
@@ -268,8 +268,8 @@ def scan_cplace002_docs_narrative(
 
 # frob:doc docs/guides/agent-playbook.md#7b-comment-placement-t-3218
 # frob:tests \
-# tests/gates/test_comment_placement.py::TestCommentPlacementGate::test_fires_across_bo\
-# th_surfaces
+# tests/gates/test_comment_placement.py::TestCommentPlacementGate.test_fires_across_bot\
+# h_surfaces
 def comment_placement_gate(root: Path) -> tuple[Violation, ...]:
     """CPLACE001 (src `frob:waive` reason length) and CPLACE002 (docs
     ticket-narrative placement) over every tracked file under `root`

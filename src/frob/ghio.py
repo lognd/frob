@@ -233,10 +233,10 @@ def _run_gh(
 # frob:doc docs/modules/ghio.md#public-api
 # frob:tests tests/test_ghio.py::TestPreflight.test_success
 # frob:tests \
-# tests/test_ghio.py::TestPreflight::test_no_gh_no_auth_no_remote_never_crashes
+# tests/test_ghio.py::TestPreflight.test_no_gh_no_auth_no_remote_never_crashes
 # frob:tests \
-# tests/test_ghio.py::TestPreflightIntegration::test_real_subprocess_seam_against_a_fak\
-# e_gh_binary
+# tests/test_ghio.py::TestPreflightIntegration.test_real_subprocess_seam_against_a_fake\
+# _gh_binary
 def preflight(root: Path) -> Result[GhEnvironment, GhError]:
     """Classify whether `gh` is usable at all under `root`, before any
     call that actually reaches GitHub is attempted: not installed, not

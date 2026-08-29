@@ -2,9 +2,9 @@
 hatch for a falsely-closed ticket. Reproduces the recovery path T-3064
 needed directly against the real function (not a re-implementation).
 
-frob:tests tests/unit/test_reopen_ticket.py::TestReopenTicket::test_reopen_requires_done
-frob:tests tests/unit/test_reopen_ticket.py::TestReopenTicket::test_reopen_requires_reason
-frob:tests tests/unit/test_reopen_ticket.py::TestReopenTicket::test_reopen_appends_dated_entry_and_requeues
+frob:tests tests/unit/test_reopen_ticket.py::TestReopenTicket.test_reopen_requires_done
+frob:tests tests/unit/test_reopen_ticket.py::TestReopenTicket.test_reopen_requires_reason
+frob:tests tests/unit/test_reopen_ticket.py::TestReopenTicket.test_reopen_appends_dated_entry_and_requeues
 """  # noqa: E501
 
 from __future__ import annotations

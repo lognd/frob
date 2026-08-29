@@ -3,9 +3,9 @@
 closed done with `blocked_by=['T-3066']` and T-3066 queued). Reproduces the
 close-time guard directly against the real helper (not a re-implementation).
 
-frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_open_blocker_names_the_open_ticket_not_the_terminal_one
-frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_no_blocked_by_returns_empty
-frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_unresolvable_blocker_id_is_ignored
+frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose.test_open_blocker_names_the_open_ticket_not_the_terminal_one
+frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose.test_no_blocked_by_returns_empty
+frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose.test_unresolvable_blocker_id_is_ignored
 """  # noqa: E501
 
 from __future__ import annotations
@@ -84,7 +84,7 @@ class TestOpenBlockersAtClose:
         assert open_ids == ("T-9002",)
 
     def test_terminal_blocker_never_refuses(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_terminal_blocker_never_refuses  # noqa: E501
+        # frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose.test_terminal_blocker_never_refuses  # noqa: E501
         from frob.tickets import TicketState
 
         blocked = _ticket("T-9001", TicketState.IN_PROGRESS, blocked_by=["T-9002"])
@@ -96,7 +96,7 @@ class TestOpenBlockersAtClose:
         assert open_ids == ()
 
     def test_dropped_blocker_never_refuses(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_dropped_blocker_never_refuses  # noqa: E501
+        # frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose.test_dropped_blocker_never_refuses  # noqa: E501
         from frob.tickets import TicketState
 
         blocked = _ticket("T-9001", TicketState.IN_PROGRESS, blocked_by=["T-9002"])
@@ -126,7 +126,7 @@ class TestOpenBlockersAtClose:
     def test_archived_terminal_blocker_resolves_via_load_queue(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_archived_terminal_blocker_resolves_via_load_queue  # noqa: E501
+        # frob:tests tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose.test_archived_terminal_blocker_resolves_via_load_queue  # noqa: E501
         #
         # Coordinator measurement on T-3087 (sweep of the whole active
         # ledger for the T-3064 shape): a blocker that has reached a

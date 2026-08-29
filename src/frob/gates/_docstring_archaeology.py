@@ -123,15 +123,15 @@ def _docarch001_violation(*, file: str, line: int, symref: str) -> Violation:
 # frob:ticket T-2988
 # frob:doc docs/modules/docstrings.md#docarch001
 # frob:tests \
-# tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_ticket_plus_narrative_wording_warns  # noqa: E501
+# tests/gates/test_docstring_archaeology.py::TestDocarch001Violations.test_ticket_plus_narrative_wording_warns  # noqa: E501
 # frob:tests \
-# tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_bare_ticket_reference_stays_quiet  # noqa: E501
+# tests/gates/test_docstring_archaeology.py::TestDocarch001Violations.test_bare_ticket_reference_stays_quiet  # noqa: E501
 # frob:tests \
-# tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_long_utility_docstring_stays_quiet  # noqa: E501
+# tests/gates/test_docstring_archaeology.py::TestDocarch001Violations.test_long_utility_docstring_stays_quiet  # noqa: E501
 # frob:tests \
-# tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates  # noqa: E501
+# tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring.test_fires_through_run_gates  # noqa: E501
 # frob:tests \
-# tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_utility_only_does_not_fire_through_run_gates  # noqa: E501
+# tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring.test_utility_only_does_not_fire_through_run_gates  # noqa: E501
 def docarch001_violations(root: Path) -> tuple[Violation, ...]:
     """DOCARCH001: a public or module-public symbol's docstring reads as
     ticket archaeology (`_is_archaeology`) instead of utility -- the

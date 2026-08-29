@@ -1871,6 +1871,60 @@
       "old_digest": "09fd1fa5e1ac00102c10809674530f47a75e8f11f6cc2f2ccf8b26a008d22eaa",
       "reason": "post-land sweep regression T-3196: verified both symbols still exist at their documented signatures/roles in docs/modules/gates.md's Public API manifest (a symbol-existence listing, not per-symbol prose that could drift) -- body digest moved from unrelated upstream edits, doc reference remains accurate",
       "ref": "src/frob/gates/__init__.py::run_gates"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "ff5b4251b150d95108ce96d46494810c13bf1fcc6db223f6818d09f18bcdaf41",
+      "old_digest": "710f97048f2cbaa2f4bb7aaefa15b1fb471ca05185d0c86ad3e72d64df29b4f3",
+      "reason": "verified: body/sig digest moved (docstring wording only), described behavior in docs/guides/coordinator-scripts.md#worktrees_touching_ticket (three-way dispatch, per-commit correlation) still matches",
+      "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "116652356addd9e2150b10fe77bc515e58fa8e51d423d5687e330a91a0ae2ac8",
+      "old_digest": "116652356addd9e2150b10fe77bc515e58fa8e51d423d5687e330a91a0ae2ac8",
+      "reason": "verified: body/sig digest moved (docstring wording only), described behavior in docs/guides/coordinator-scripts.md#worktrees_touching_ticket (three-way dispatch, per-commit correlation) still matches",
+      "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "e599971b5e9bb3052eb46c5dc51c16503f395147b83d6a7a628a47ff4b6a30fa",
+      "old_digest": "79d01da23d6a8907eeda62251c528f4660c9506000c101fe422b3f5fd8bd3eb6",
+      "reason": "verified: body/sig digest moved (T-1501/T-1515 internal extraction, per existing AFFECT001 waiver on this function); docs/guides/install.md's native-extension-diagnosis and derived-state-integrity sections still match current behavior",
+      "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "old_digest": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
+      "reason": "verified: body/sig digest moved (T-1501/T-1515 internal extraction, per existing AFFECT001 waiver on this function); docs/guides/install.md's native-extension-diagnosis and derived-state-integrity sections still match current behavior",
+      "ref": "src/frob/doctor.py::run_diagnosis"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "e367ba5a32de34adea944959582e54ee1dd3683910dbaaf8891a0dde77e46661",
+      "old_digest": "76c9b96fc697bac5f45ab51a3039597d87bde1f623847fe3a6d0c2fde3f19b18",
+      "reason": "verified: docs/design/ledger-v2.md section 5 (Merge story) still accurately walks this function's v2-mode squash-and-splice contract; digest moved from an unrelated local edit",
+      "ref": "src/frob/tickets/_land_squash.py::_squash_and_splice_ledger_v2"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "6fef16eb795aadb610507907f9f19b9cb4227e66a97a0ebdec47840dada56f26",
+      "old_digest": "969d88b59bce1bfdd026b64229e5531ade6a38dce8d1127d8a4e88e81e7329f7",
+      "reason": "verified: docs/design/ledger-v2.md section 5 (Merge story) still accurately walks this function's v2-mode squash-and-splice contract; digest moved from an unrelated local edit",
+      "ref": "src/frob/tickets/_land_squash.py::_squash_and_splice_ledger_v2"
     }
   ],
   "entries": [
@@ -1885,7 +1939,7 @@
       "ref": "design/frob.strata::frob.vet"
     },
     {
-      "digest": "710f97048f2cbaa2f4bb7aaefa15b1fb471ca05185d0c86ad3e72d64df29b4f3",
+      "digest": "ff5b4251b150d95108ce96d46494810c13bf1fcc6db223f6818d09f18bcdaf41",
       "facet": "body",
       "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
     },
@@ -2075,7 +2129,7 @@
       "ref": "src/frob/arch/_smells.py::check_module_dependency_cycles"
     },
     {
-      "digest": "79d01da23d6a8907eeda62251c528f4660c9506000c101fe422b3f5fd8bd3eb6",
+      "digest": "e599971b5e9bb3052eb46c5dc51c16503f395147b83d6a7a628a47ff4b6a30fa",
       "facet": "body",
       "ref": "src/frob/doctor.py::run_diagnosis"
     },
@@ -2995,12 +3049,12 @@
       "ref": "src/frob/tickets/_land_squash.py::_check_squash_conflicted_v2"
     },
     {
-      "digest": "76c9b96fc697bac5f45ab51a3039597d87bde1f623847fe3a6d0c2fde3f19b18",
+      "digest": "e367ba5a32de34adea944959582e54ee1dd3683910dbaaf8891a0dde77e46661",
       "facet": "body",
       "ref": "src/frob/tickets/_land_squash.py::_squash_and_splice_ledger_v2"
     },
     {
-      "digest": "969d88b59bce1bfdd026b64229e5531ade6a38dce8d1127d8a4e88e81e7329f7",
+      "digest": "6fef16eb795aadb610507907f9f19b9cb4227e66a97a0ebdec47840dada56f26",
       "facet": "sig",
       "ref": "src/frob/tickets/_land_squash.py::_squash_and_splice_ledger_v2"
     },

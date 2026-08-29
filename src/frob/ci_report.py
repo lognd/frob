@@ -174,7 +174,7 @@ def _signature(kind: str, reason: str) -> str:
 # frob:tests tests/test_ci_report.py::TestParsePytestLog.test_clean_run_is_no_failures
 # frob:tests tests/test_ci_report.py::TestParsePytestLog.test_no_result_line_is_not_recoverable  # noqa: E501
 # frob:tests \
-# tests/test_ci_report.py::TestParsePytestLog::test_truncated_with_no_evidence_is_not_recoverable  # noqa: E501
+# tests/test_ci_report.py::TestParsePytestLog.test_truncated_with_no_evidence_is_not_recoverable  # noqa: E501
 def parse_pytest_log(
     text: str, *, truncated: bool
 ) -> tuple[str, tuple[TestFailure, ...]]:
@@ -273,8 +273,8 @@ def build_job_report(
 # frob:doc docs/modules/ci_report.md#public-api
 # frob:tests tests/test_ci_report.py::TestBuildRunReport.test_all_jobs_reported
 # frob:tests \
-# tests/test_ci_report.py::TestBuildRunReport::test_one_job_log_failure_degrades_not_ab\
-# orts
+# tests/test_ci_report.py::TestBuildRunReport.test_one_job_log_failure_degrades_not_abo\
+# rts
 def build_run_report(root: Path, run_id: str) -> Result[RunReport, GhError]:
     """`frob.ghio.view_run` for `run_id`, then `build_job_report` for
     every job it names. A per-job `Err` (job log unavailable for a

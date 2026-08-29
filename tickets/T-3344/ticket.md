@@ -1,7 +1,7 @@
 ---
 id: T-3344
 title: Clear gate:DRIFT findings (53 errors) for release gate
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'

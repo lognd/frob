@@ -1408,8 +1408,8 @@ class TestCollectResultsProgressCallback:
 
     def test_on_task_done_fires_once_per_task_with_final_total(self) -> None:
         # frob:tests \
-        # tests/unit/test_check.py::TestCollectResultsProgressCallback::test_on_task_do\
-        # ne_fires_once_per_task_with_final_total
+        # tests/unit/test_check.py::TestCollectResultsProgressCallback.test_on_task_don\
+        # e_fires_once_per_task_with_final_total
         calls: list[tuple[str, int, int]] = []
         tasks: list[_NamedTask] = [
             ("a", lambda: ToolResult(tool="a")),
@@ -1426,8 +1426,8 @@ class TestCollectResultsProgressCallback:
 
     def test_results_stay_in_submission_order_regardless_of_callback(self) -> None:
         # frob:tests \
-        # tests/unit/test_check.py::TestCollectResultsProgressCallback::test_results_st\
-        # ay_in_submission_order_regardless_of_callback
+        # tests/unit/test_check.py::TestCollectResultsProgressCallback.test_results_sta\
+        # y_in_submission_order_regardless_of_callback
         # "b" finishes fastest (no sleep), "a" slowest -- a completion-
         # order bug would put "b" before "a" in the returned list.
         tasks: list[_NamedTask] = [
@@ -1440,8 +1440,8 @@ class TestCollectResultsProgressCallback:
 
     def test_no_callback_matches_pre_t2978_behavior_exactly(self) -> None:
         # frob:tests \
-        # tests/unit/test_check.py::TestCollectResultsProgressCallback::test_no_callbac\
-        # k_matches_pre_t2978_behavior_exactly
+        # tests/unit/test_check.py::TestCollectResultsProgressCallback.test_no_callback\
+        # _matches_pre_t2978_behavior_exactly
         tasks: list[_NamedTask] = [
             ("a", lambda: ToolResult(tool="a")),
             ("b", lambda: None),

@@ -1446,16 +1446,16 @@ class TestTaskProgressCallback:
 
     def test_none_progress_returns_none(self) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback::test_none_pr\
-        # ogress_returns_none
+        # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_none_pro\
+        # gress_returns_none
         from frob.app.check_runner import _task_progress_callback
 
         assert _task_progress_callback(None, "python") is None
 
     def test_updates_progress_with_language_qualified_label(self) -> None:
         # frob:tests \
-        # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback::test_updates\
-        # _progress_with_language_qualified_label
+        # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_updates_\
+        # progress_with_language_qualified_label
         import io
 
         from frob.app.check_runner import _task_progress_callback

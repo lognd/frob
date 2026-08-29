@@ -127,8 +127,8 @@ class TestDoctorRunnerPlainPathQuieted:
         return handler
 
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted::test_pl\
-    # ain_path_raises_stdout_handlers_to_warning_by_default
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_pla\
+    # in_path_raises_stdout_handlers_to_warning_by_default
     def test_plain_path_raises_stdout_handlers_to_warning_by_default(
         self, monkeypatch
     ) -> None:
@@ -155,8 +155,8 @@ class TestDoctorRunnerPlainPathQuieted:
         assert levels_seen_inside == [logging.WARNING]
 
     # frob:tests \
-    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted::test_pl\
-    # ain_path_leaves_stdout_handlers_alone_under_frob_verbose
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted.test_pla\
+    # in_path_leaves_stdout_handlers_alone_under_frob_verbose
     def test_plain_path_leaves_stdout_handlers_alone_under_frob_verbose(
         self, monkeypatch
     ) -> None:
