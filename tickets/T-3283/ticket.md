@@ -87,7 +87,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fed95d0153ded89f80151b948ece5d519e7d10ce
 ---
 T-3041's Done report claimed 13 live-repo self-conformance tests were all
 either fixed (5 by T-3029, 4 more by T-3041 itself: test_effects.py +
