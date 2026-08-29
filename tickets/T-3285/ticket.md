@@ -55,7 +55,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 81a95efa9244d95239caf4b56213197dd0392319
 ---
 T-3196's close hit: 'Done report contains disclosure-shaped language (non-standard Done-report subsection (Changed))' even though the rendered/merged body (verified directly via _merge_sibling_done_report + disclosure_shaped_language in a REPL) returns None -- no disclosure. The live close path apparently reads a different body representation than the merge helper. Needs investigation: does close call disclosure_shaped_language on the pre-merge ticket.md body, or is there a double-splice duplicating the done-report.md content under ledger v2's split-file format?
 
