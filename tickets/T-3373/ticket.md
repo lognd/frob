@@ -2,7 +2,7 @@
 id: T-3373
 title: T-3191's multi-platform ty union triples SUPPRESS001 findings for a cross-platform
   diagnostic
-state: in-progress
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -83,3 +83,6 @@ fully preserved in the underlying ty ToolResult/Diagnostic objects for
 every OTHER consumer (the ty gate's own report), this is scoped to the
 one downstream consumer (_ty_diagnostics/suppress001_gate) that
 implicitly assumed single-invocation cardinality.
+
+## Drop reason
+- 2026-08-29: stranded in-progress with no worktree; identical title and premise to T-3374, which landed the fix at 93c5b4524 (dedupe _ty_diagnostics by (file,line,code) across T-3191's per-platform ty runs). (absorbed by T-3374)
