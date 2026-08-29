@@ -59,8 +59,15 @@ scope_changes:
   at: '2026-08-19'
 evidence:
 - tests/test_waive_gate.py::TestWaive009Wiring::test_unresolvable_promise_fires_through_run_gates
-- tests/test_waive_gate.py::TestWaive009Wiring::test_resolvable_promise_does_not_fire_through_run_gates
+- tests/test_waive_gate.py::TestWaive009Wiring::test_resolvable_promise_also_fires_through_run_gates
 designated_repro_test: tests/test_waive_gate.py::TestWaive009Wiring::test_unresolvable_promise_fires_through_run_gates
+evidence_changes:
+- old_node: tests/test_waive_gate.py::TestWaive009Wiring::test_resolvable_promise_does_not_fire_through_run_gates
+  new_node: tests/test_waive_gate.py::TestWaive009Wiring::test_resolvable_promise_also_fires_through_run_gates
+  reason: T-3295 renamed this test (WAIVE009 now fires even when the cited ticket
+    resolves)
+  actor: logan
+  at: '2026-08-29'
 threat: null
 component: null
 anchor: false

@@ -34,6 +34,9 @@ case a tool by name.
 <!-- frob:describes src/frob/process/parsers/common.py::tool_disabled_result -->
 <!-- frob:describes src/frob/process/parsers/common.py::tool_crash_result -->
 <!-- frob:describes src/frob/process/parsers/common.py::tool_parse_failure_result -->
+<!-- frob:describes src/frob/process/parsers/common.py::Measurement -->
+<!-- frob:describes src/frob/process/parsers/common.py::ToolResult.measurement -->
+<!-- frob:describes src/frob/process/parsers/common.py::ToolResult.measurement_reason -->
 <!-- frob:describes src/frob/process/_guard.py::EXEC_KILL_SWITCH_ENV -->
 <!-- frob:describes src/frob/process/_guard.py::NET_KILL_SWITCH_ENV -->
 <!-- frob:describes src/frob/process/_guard.py::ProcessGuardError -->
@@ -78,6 +81,8 @@ class ToolResult(BaseModel)
     error_count: int              # property; count of error diagnostics
     warning_count: int            # property; count of warning diagnostics
     failed_tests: list[TestCase]  # property; tests that neither passed nor skipped
+    measurement: Measurement       # computed field; "measured" | "not_measured" (T-2391)
+    measurement_reason: str        # computed field; why, when measurement=="not_measured"
     def as_text(self, verbose: bool = False) -> str
         # Compact text for agentic consumption; failures always shown.
     def as_json(self) -> str
@@ -138,6 +143,44 @@ zero diagnostics, zero exit code. A warning-only nonzero exit (ruff-
 format's "N files would be reformatted") is untouched -- it never enters
 a parse-failure branch. T-2521's consumer-side guard
 (`_incomplete_tool_results`) remains in place as the second layer.
+
+### `measured` vs `not_measured` is a first-class fact, not a guess (T-2391)
+
+`ToolResult.measurement` (`Measurement = Literal["measured", "not_measured"]`)
+answers the question a bare `error_count == 0 and warning_count == 0`
+check cannot: did this result actually MEASURE something and find it
+clean, or did it fail to measure anything at all? Zero errors and zero
+warnings are byte-identical either way at the raw-count level -- exactly
+the fail-loudly doctrine's dominant bug class this repo keeps re-finding
+(T-2537 immediately above is the sibling incident at the parse-failure
+layer; this is the same shape one layer up, at the RESULT-classification
+layer).
+
+`measurement` is `"not_measured"` iff this `ToolResult` is a `gate:
+<FAMILY>` result whose ENTIRE diagnostic set is `Severity.UNRESOLVED`
+(T-1664's existing "could not determine an answer" signal, rendered as
+`severity="info"`): zero errors, zero warnings, at least one diagnostic,
+every diagnostic `"info"`. That is the one shape this repo's gates
+already produce in dozens of families (every `*_SCHEMA` config-table
+validator, FLAGCOV001, REF001/REF002) where a zero/zero summary is
+genuinely ambiguous between "measured, clean" and "could not measure
+anything." `"measured"` (the default) covers both a real clean pass AND
+every OTHER unmeasured shape this repo has (budget truncation, a
+hardcoded-layout gate against a foreign project, a matcher that silently
+never fires) -- those need a per-call-site or per-gate signal this
+generic, data-only computation cannot invent, and are tracked as
+separate follow-up work rather than guessed at here.
+
+It is a COMPUTED field, not a stored one, so every existing caller
+across this repo that already builds a `ToolResult` gets it for free,
+retroactively, with no migration -- the identical data `frob.check.
+_is_unresolved_only_gate` already computed privately just for
+`as_text`'s icon is now a first-class part of the model, so `as_json()`
+discloses it too. `measurement_reason` is the joined diagnostic messages
+that made a `not_measured` result what it is (empty string when
+`measurement == "measured"`) -- a `--json` consumer's equivalent of what
+`as_text`'s reader could already see just by looking at the rendered
+lines.
 
 ## Kill switch (T-0200)
 

@@ -458,10 +458,6 @@ def _try_touched_via_daemon(root: Path, cfg: AppConfig) -> bool:
 # frob:tests tests/test_app.py::TestWaitCoverage.test_wait_coverage_flag_dispatches_and_exits_zero_on_success  # noqa: E501
 # frob:tests tests/test_app.py::TestWaitCoverage.test_wait_coverage_flag_exits_1_on_failure  # noqa: E501
 # frob:ticket T-2492
-# frob:waive AFFECT001 reason="T-2492: docs/modules/app.md#runners one-line summary is \
-# still accurate -- this change only adds an internal --json stdout-corruption guard, \
-# no user-visible contract change; filed T-2491 to sync the doc note once its own \
-# lease clears, same precedent as T-2486"
 def run(cfg: AppConfig) -> None:
     """Compute the touched set (or run everything with --all) and run the
     tests. T-2492: `_resolve_test_root`'s `gitio` DEBUG spawn logging and

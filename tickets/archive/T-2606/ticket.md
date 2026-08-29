@@ -40,9 +40,9 @@ scope_changes:
   at: '2026-08-19'
 evidence:
 - tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_no_ticket_id_errors
-- tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_resolvable_ticket_id_passes
+- tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_resolvable_ticket_id_still_errors
 - tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_unresolvable_ticket_id_errors
-- tests/test_waive_gate.py::TestWaive009Violations::test_draft_ticket_id_resolves
+- tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_draft_ticket_id_still_errors
 - tests/test_waive_gate.py::TestWaive009Violations::test_no_promise_phrase_untouched
 - tests/test_waive_gate.py::TestWaive009Violations::test_known_gate_rule_ids_includes_waive009
 - tests/test_waive_gate.py::TestWaive009PromisePhraseDetection::test_follow_up_ticket_phrasing_promises
@@ -54,6 +54,19 @@ evidence:
 - tests/test_waive_gate.py::TestWaive009TicketIdExtraction::test_extracts_multiple
 - tests/test_waive_gate.py::TestWaive009TicketIdExtraction::test_no_mention_yields_empty
 designated_repro_test: tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_no_ticket_id_errors
+evidence_changes:
+- old_node: tests/test_waive_gate.py::TestWaive009Violations::test_draft_ticket_id_resolves
+  new_node: tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_draft_ticket_id_still_errors
+  reason: T-3295 renamed these test methods (WAIVE009 no longer treats a resolvable/draft
+    ticket citation as passing)
+  actor: logan
+  at: '2026-08-29'
+- old_node: tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_resolvable_ticket_id_passes
+  new_node: tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_resolvable_ticket_id_still_errors
+  reason: T-3295 renamed this test method (WAIVE009 no longer treats a resolvable
+    ticket citation as passing)
+  actor: logan
+  at: '2026-08-29'
 threat: null
 component: null
 anchor: false

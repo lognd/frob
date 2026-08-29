@@ -70,7 +70,6 @@ from pydantic import BaseModel
 from frob.gates._models import Severity, Violation, WaiverRef
 from frob.graph import Edge, EdgeKind, GraphSnapshot
 from frob.logging import get_logger
-from frob.tickets import TicketQueue
 
 _log = get_logger(__name__)
 
@@ -1855,15 +1854,29 @@ def _reason_ticket_ids(reason: str) -> set[str]:
 
 
 def _waive009_violation(
-    *, file: str, line: int, site: str, rule_and_target: str
+    *, file: str, line: int, site: str, rule_and_target: str, ticket_ids: set[str]
 ) -> Violation:
-    """The single WAIVE009 `Violation` for one waiver whose reason promises
-    future work but cites no ticket id that resolves in the queue."""
+    """The single WAIVE009 `Violation` for one waiver whose reason
+    promises follow-up work (T-3295: fires regardless of whether a cited
+    ticket id resolves -- see `waive009_violations`'s docstring for why
+    ticket-resolution state stopped being the discriminator). `ticket_ids`
+    (possibly empty) only changes the message's wording, never whether
+    this fires."""
     _log.error(
-        "WAIVE009: %s (%s) promises follow-up work with no resolvable ticket id",
+        "WAIVE009: %s (%s) reason promises follow-up work -- that is debt, "
+        "not a permanent exemption",
         site,
         rule_and_target,
     )
+    if ticket_ids:
+        cited = ", ".join(sorted(ticket_ids))
+        ticket_clause = (
+            f"it cites {cited} -- naming a ticket makes the promise "
+            f"accountable, it does not make `frob:waive` the correct "
+            f"directive for it"
+        )
+    else:
+        ticket_clause = "it cites no ticket id at all"
     return Violation(
         rule="WAIVE009",
         severity=Severity.ERROR,
@@ -1872,42 +1885,57 @@ def _waive009_violation(
         message=(
             f"WAIVE009: {site} waives {rule_and_target}, and its reason "
             f"promises deferred/future work (a follow-up ticket, 'once X "
-            f"clears', ...) but cites no ticket id that resolves in the "
-            f"queue -- file the ticket first (`frob ticket new`) and cite "
-            f"its real id in the reason, so the promised work is tracked "
-            f"somewhere other than inside the comment that suppresses the "
-            f"finding it defers"
+            f"clears', ...); {ticket_clause}. A reason that promises "
+            f"follow-up asserts the rule DOES apply and is UNFIXED -- that "
+            f"is the definition of debt: convert this to `frob:debt` "
+            f"(citing the ticket that will fix it, filing one first via "
+            f"`frob ticket new` if none exists) instead of `frob:waive`. A "
+            f"`frob:waive` reason should assert the rule does NOT apply "
+            f"here, permanently, with nothing left to do -- there is no "
+            f"'when' in a real waiver."
         ),
     )
 
 
 # frob:enforces CHK-GATE-WAIVE009
 # frob:ticket T-2606
+# frob:ticket T-3295
 # frob:doc docs/modules/gates.md#rule-catalog
 # frob:tests \
 # tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_no_ticket_id_errors
 # frob:tests \
-# tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_resolvable_ticket_id_passes  # noqa: E501
+# tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_resolvable_ticket_id_still_errors  # noqa: E501
 # frob:tests \
 # tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_unresolvable_ticket_id_errors  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_draft_ticket_id_still_errors  # noqa: E501
 # frob:tests \
 # tests/test_waive_gate.py::TestWaive009Violations.test_no_promise_phrase_untouched
 # frob:tests \
 # tests/test_waive_gate.py::TestWaive009Wiring.test_unresolvable_promise_fires_through_run_gates  # noqa: E501
 # frob:tests \
-# tests/test_waive_gate.py::TestWaive009Wiring.test_resolvable_promise_does_not_fire_through_run_gates  # noqa: E501
-def waive009_violations(
-    snapshot: GraphSnapshot, queue: TicketQueue
-) -> tuple[Violation, ...]:
-    """WAIVE009: a `frob:waive` reason that promises deferred/future work
-    (`_reason_promises_followup`) but names no ticket id that currently
-    resolves in `queue` (active or archive) -- either no id at all (the
-    T-2588 incident this closes) or an id that is a typo/unresolvable (the
-    same "verify it resolves" bar WAIVE007 applies to binding-phrase
-    refs, applied here to promise-phrase refs instead). A `T-draft-*` id
-    is treated as resolving (mirrors WAIVE007's own exemption -- a draft
-    minted inside the current worktree is real work-in-flight, not an
-    unfiled promise, even though it is not yet a real id in `queue`)."""
+# tests/test_waive_gate.py::TestWaive009Wiring.test_resolvable_promise_also_fires_through_run_gates  # noqa: E501
+def waive009_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """WAIVE009 (T-3295, correcting T-2606's original conclusion): a
+    `frob:waive` reason that promises deferred/future work
+    (`_reason_promises_followup`) is a MISCLASSIFICATION -- `frob:debt`
+    exists for exactly this, ticket cited or not. The owner's own framing
+    (T-3295's ticket body): a reason that needs to say WHEN a rule will
+    stop applying is describing debt, not a permanent exemption; naming a
+    ticket makes that promise accountable, it does not make the
+    `frob:waive`/`frob:debt` classification correct.
+
+    T-2606 originally treated a resolvable cited ticket id (real, or a
+    `T-draft-*` id, mirroring WAIVE007's in-flight-draft exemption) as
+    passing -- that read `frob:waive RULE reason="deferred, see T-1234"`
+    as clean. It is not: it still promises future work through a
+    directive that carries no ticket field and is never scanned by
+    `frob:debt`'s own T-0412 open-debt-at-release gate, so the promise is
+    invisible to every mechanism that actually tracks deferred work. This
+    no longer takes a `TicketQueue` at all (T-2606's `queue` parameter is
+    gone): ticket-RESOLUTION state is no longer part of this rule's
+    verdict, only `_reason_ticket_ids`' bare-mention extraction shapes
+    the message."""
     out: list[Violation] = []
     for edge in _waive_edges(snapshot):
         reason = edge.attrs.get("reason", "")
@@ -1917,11 +1945,6 @@ def waive009_violations(
         attr_ticket = edge.attrs.get("ticket", "")
         if attr_ticket:
             ticket_ids.add(attr_ticket)
-        resolvable = {
-            t for t in ticket_ids if t in queue.tickets or t.startswith("T-draft-")
-        }
-        if resolvable:
-            continue
         from frob.gates import _site_from_edge_origin  # local: avoids circularity
 
         file, line = _site_from_edge_origin(edge.origin)
@@ -1931,6 +1954,7 @@ def waive009_violations(
                 line=line,
                 site=edge.src,
                 rule_and_target=f"frob:waive {edge.target}",
+                ticket_ids=ticket_ids,
             )
         )
     return tuple(out)

@@ -1662,6 +1662,25 @@ a different call-site timing:
   matching T-1983's own "never treat unmeasurable as resolved" rule.
 - The measured cost of the one re-check is always logged.
 
+**T-2521: `measurement_note` and the shared completeness check.**
+`_maybe_drop_resolved_ticket`'s reason text now threads through a
+`measurement_note` string -- a human-readable disclosure of WHY a
+candidate's identities were (or were not) treated as resolved, so a drop
+decision's reasoning is visible in the ticket's own record rather than
+only inferable from re-running the check by hand. `revalidate_
+dispatchable_sweep_tickets` also gained the shared `_incomplete_tool_
+results` completeness check (via `_matching_error_diagnostics`) that
+`_close_resolved_sweep_tickets` already used -- a `frob check --json`
+run whose gate output is truncated/failed-but-silent (T-2521's own
+motivating incident: 7 tickets auto-dropped against an incomplete
+measurement, ~66 live findings lost) is now caught here too, at the
+same "drop nothing on an unmeasurable re-check" tier the bullet above
+already commits to for a spawn refusal/timeout. Neither change alters
+this function's own documented contract above (still: one scoped
+re-check, never a full sweep, unmeasurable drops nothing) -- they widen
+what counts as "unmeasurable" and make the reasoning behind a drop
+legible, not the drop mechanism itself.
+
 ## Automatic watermark drain (`rapid` only, T-2310)
 
 <!-- frob:describes src/frob/verify/_drain.py::spawn_deferred_drain -->

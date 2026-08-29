@@ -59,11 +59,6 @@ def _try_map_via_daemon(root: Path, cfg: AppConfig) -> bool:
 # frob:ticket T-2492
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/modules/render.md#exemplar-frob-map
-# frob:waive AFFECT001 reason="T-2492: docs/modules/app.md#runners and \
-# docs/modules/render.md#exemplar-frob-map one-line summaries are still accurate -- \
-# this change only adds an internal --json stdout-corruption guard, no user-visible \
-# contract change; filed T-2491 to sync the app.md note once its own lease clears, \
-# same precedent as T-2486"
 def run(cfg: AppConfig) -> None:
     """Render the `frob map` project structure summary; T-0448: migrated
     to `frob.render.Renderer` as the second FOUNDATION exemplar -- `--json`

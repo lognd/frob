@@ -17,15 +17,17 @@ default, matching every pre-T-1399 caller) is fully permissive, and a
 ticket with no gate-claim-shaped criterion at all is unaffected regardless
 of what a caller injects (T-1399's own hard rule: an ordinary criterion
 naming no rule id and no glob behaves exactly as it did before)."""
-# frob:waive SCOPE001 reason="this new test file cannot be added to T-1399's declared \
-# scope right now: T-1235 holds 'tests/**' in-progress (a real, disclosed concurrent \
-# lease named in T-1399's own dispatch brief, not a staleness artifact -- T-1235 is \
-# actively in-progress on main), so `frob ticket scope T-1399 --add` refuses with \
-# ScopeLeaseConflict; the file is committed under T-1399's own commits (SCOPE001's own \
-# `root`/`queue` same-branch-ownership exemption would otherwise cover this once the \
-# lease clears) and is real, evidence-bound test content, not an unaccounted-for touch \
-# (reviewed 2026-08-03, drain-to-zero WAIVE004 sweep: left in place -- SCOPE001 is a \
-# scope/lease-dependent rule, not a stale finding a full unscoped run can prove dead)"
+# frob:waive SCOPE001 reason="T-3295: reworded, PERMANENT provenance, not deferred \
+# work -- this file could not be added to T-1399's declared scope at land time (T-1235 \
+# held 'tests/**' in-progress, a real disclosed concurrent lease named in T-1399's own \
+# dispatch brief), so `frob ticket scope T-1399 --add` refused with \
+# ScopeLeaseConflict. T-1399 is done; the historical scope binding this waiver \
+# explains is fixed by git history and will never change -- there is no pending lease \
+# and nothing left to do, only an immutable record of why this file's scope citation \
+# looks the way it does. The file is committed under T-1399's own commits and is real, \
+# evidence-bound test content, not an unaccounted-for touch (reviewed 2026-08-03, \
+# drain-to-zero WAIVE004 sweep: left in place -- SCOPE001 is a scope/lease-dependent \
+# rule, not a stale finding a full unscoped run can prove dead)"
 
 from __future__ import annotations
 

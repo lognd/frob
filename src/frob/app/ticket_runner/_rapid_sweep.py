@@ -3078,14 +3078,7 @@ def _close_resolved_sweep_tickets(
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#doable-time-revalidation-of-sweep-filed-tickets-\
 # t-2006
-# frob:waive AFFECT001 reason="T-2521 only threads a measurement_note string through \
-# to _maybe_drop_resolved_ticket's reason text and gains the shared \
-# _incomplete_tool_results completeness check via _matching_error_diagnostics -- \
-# neither changes this function's own documented contract (still: one scoped re-check, \
-# never a full sweep, unmeasurable drops nothing). docs/modules/ \
-# tickets-verify-sweep.md is under another ticket's live lease (T-2374) for the \
-# duration of this land; the doc update belongs in a follow-up once that lease clears, \
-# not blocking this bug fix"
+# frob:ticket T-3349
 def revalidate_dispatchable_sweep_tickets(
     root: Path,
     tickets: Sequence,  # noqa: ANN401 -- Sequence[Ticket], deferred-import type

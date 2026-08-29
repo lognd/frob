@@ -6319,9 +6319,7 @@ def _load_graph_queue_lock(
         return Err(build.danger_err)
     queue_result = load_queue(root)
     if queue_result.is_err:
-        _log.error(
-            "run_gates: ticket queue load failed: %s", queue_result.danger_err
-        )
+        _log.error("run_gates: ticket queue load failed: %s", queue_result.danger_err)
         return Err(queue_result.danger_err)
     lock = _require(
         load_lock(root / "frob.lock"), "lock load", GateError.ConfigMalformed
@@ -8381,9 +8379,10 @@ def _assemble_gate_report(
         # other WAIVE00* self-checks rather than after job_violations.
         *_waive008_violations(st.snapshot),
         # T-2639: same dependency shape as WAIVE006/007 (snapshot waive
-        # edges + merged ticket queue only, no assembled violation set),
+        # edges only -- T-3295 dropped the ticket-queue parameter, since
+        # ticket-resolution state no longer decides this rule's verdict),
         # so it runs alongside them rather than after job_violations.
-        *waive009_violations(st.snapshot, st.queue),
+        *waive009_violations(st.snapshot),
         # T-3062: same dependency shape as WAIVE009 immediately above --
         # snapshot waive edges only (no ticket queue, see
         # waive010_violations's own docstring for why) -- runs alongside

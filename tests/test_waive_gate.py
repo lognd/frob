@@ -873,11 +873,15 @@ class TestWaive009TicketIdExtraction:
 
 
 class TestWaive009Violations:
-    """`waive009_violations` -- the assembled gate: a promise phrase with
-    no ticket id that resolves in the queue is an ERROR; a promise phrase
-    backed by a real (or in-flight draft) ticket id is silent; and a
-    reason with no promise phrase at all is untouched regardless of what
-    it says about tickets (WAIVE006/007's territory, not WAIVE009's)."""
+    """`waive009_violations` (T-3295): ANY reason that promises follow-up
+    work is an ERROR -- ticket cited or not, resolvable or not, draft or
+    real. Ticket-resolution state stopped being the discriminator (T-2606's
+    original conclusion, which read a resolvable-ticket citation as
+    "clean"); only the WORDING matters now, matching the owner's own
+    framing (a reason that says WHEN a rule stops applying is debt, not a
+    permanent exemption). A reason with no promise phrase at all remains
+    untouched regardless of what it says about tickets (WAIVE006/007's
+    territory, not WAIVE009's)."""
 
     def test_promise_with_no_ticket_id_errors(self, tmp_path: Path) -> None:
         source = (
@@ -888,12 +892,17 @@ class TestWaive009Violations:
         )
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
-        violations = waive009_violations(snap, TicketQueue(tickets={}))
+        violations = waive009_violations(snap)
         assert len(violations) == 1
         assert violations[0].rule == "WAIVE009"
         assert violations[0].severity == Severity.ERROR
 
-    def test_promise_with_resolvable_ticket_id_passes(self, tmp_path: Path) -> None:
+    def test_promise_with_resolvable_ticket_id_still_errors(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3295: naming a resolvable ticket no longer clears this --
+        `frob:waive RULE reason="deferred, see T-1234"` is exactly the
+        misclassification the owner's directive named."""
         source = (
             "def helper(x):\n"
             '    # frob:waive AFFECT001 reason="a follow-up ticket T-0010 '
@@ -902,9 +911,10 @@ class TestWaive009Violations:
         )
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
-        queue = TicketQueue(tickets={"T-0010": _ticket(state=TicketState.QUEUED)})
-        violations = waive009_violations(snap, queue)
-        assert violations == ()
+        violations = waive009_violations(snap)
+        assert len(violations) == 1
+        assert violations[0].rule == "WAIVE009"
+        assert "T-0010" in violations[0].message
 
     def test_promise_with_unresolvable_ticket_id_errors(self, tmp_path: Path) -> None:
         source = (
@@ -915,13 +925,14 @@ class TestWaive009Violations:
         )
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
-        violations = waive009_violations(snap, TicketQueue(tickets={}))
+        violations = waive009_violations(snap)
         assert len(violations) == 1
         assert violations[0].rule == "WAIVE009"
 
-    def test_draft_ticket_id_resolves(self, tmp_path: Path) -> None:
-        """A `T-draft-*` id is worktree-local work-in-flight, not an
-        unfiled promise -- mirrors WAIVE007's own exemption."""
+    def test_promise_with_draft_ticket_id_still_errors(self, tmp_path: Path) -> None:
+        """T-3295: a `T-draft-*` id no longer clears this either -- even
+        in-flight work-in-progress is still a promise of future work, the
+        definition of debt, not a permanent exemption."""
         source = (
             "def helper(x):\n"
             '    # frob:waive AFFECT001 reason="a follow-up ticket '
@@ -930,8 +941,9 @@ class TestWaive009Violations:
         )
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
-        violations = waive009_violations(snap, TicketQueue(tickets={}))
-        assert violations == ()
+        violations = waive009_violations(snap)
+        assert len(violations) == 1
+        assert violations[0].rule == "WAIVE009"
 
     def test_no_promise_phrase_untouched(self, tmp_path: Path) -> None:
         """A reason naming zero tickets and promising no future work is
@@ -943,7 +955,7 @@ class TestWaive009Violations:
         )
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
-        violations = waive009_violations(snap, TicketQueue(tickets={}))
+        violations = waive009_violations(snap)
         assert violations == ()
 
     def test_known_gate_rule_ids_includes_waive009(self) -> None:
@@ -1096,12 +1108,14 @@ class TestWaive009Wiring:
             "WAIVE009 did not fire through run_gates -- wiring regression"
         )
 
-    def test_resolvable_promise_does_not_fire_through_run_gates(
+    def test_resolvable_promise_also_fires_through_run_gates(
         self, tmp_path: Path
     ) -> None:
-        """The same promise phrasing backed by a real, resolvable ticket
-        id must stay silent through `run_gates` -- otherwise WAIVE009 is
-        indistinguishable from a rule that rejects every waiver."""
+        """T-3295: the same promise phrasing backed by a real, resolvable
+        ticket id must STILL fire through `run_gates` -- a resolvable
+        citation makes the promise accountable, it does not make
+        `frob:waive` the correct directive for it (T-2606's original
+        conclusion, reversed by this ticket)."""
         _write(
             tmp_path,
             "src/a.py",
@@ -1117,7 +1131,7 @@ class TestWaive009Wiring:
         write_ticket(tmp_path, queue_ticket).danger_ok
 
         report = run_gates(GateConfig(root=str(tmp_path))).danger_ok
-        assert not any(v.rule == "WAIVE009" for v in report.violations)
+        assert any(v.rule == "WAIVE009" for v in report.violations)
 
 
 class TestWaive011ProducerAbandoned:

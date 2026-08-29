@@ -51,11 +51,6 @@ def _print_report(r: Renderer, report, executed: bool) -> None:  # noqa: ANN001
 # frob:doc docs/modules/clean.md#public-api
 # frob:tests tests/unit/test_app_runners_t0875_leaf_collision.py::TestCleanRunnerRun.test_dry_run_reports_nothing_to_clean kind="unit"  # noqa: E501
 # frob:ticket T-2492
-# frob:waive AFFECT001 reason="T-2492: docs/modules/app.md#runners and \
-# docs/modules/clean.md#public-api one-line summaries are still accurate -- this \
-# change only adds an internal --json stdout-corruption guard, no user-visible \
-# contract change; filed T-2491 to sync the app.md note once its own lease clears, \
-# same precedent as T-2486"
 def run(cfg: AppConfig) -> None:
     """`frob clean`: tiered, artifact-only workspace cleanup. Defaults to a
     dry-run preview (`--dry-run` is implicit); pass `-y`/`--yes` to execute.

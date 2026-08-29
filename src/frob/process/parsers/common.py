@@ -20,11 +20,8 @@ from pydantic import BaseModel, computed_field
 #: required for the cases it covers (see `ToolResult.measurement`'s own
 #: docstring for exactly which cases those are, and which are NOT yet
 #: covered and were filed as follow-up tickets instead of guessed at).
-# frob:waive COV001 reason="docs/modules/process.md (this module's own doc home) was \
-# held by a LIVE cross-worktree lease (T-3191, in-progress) when this symbol was added \
-# -- filed T-3206 (renumbers on its own land, T-1999/T-2003's own precedent for this \
-# exact lease-collision shape) to add the frob:doc anchor once that lease clears; not \
-# silently dropped"
+# frob:doc docs/modules/process.md#public-api
+# frob:ticket T-3206
 Measurement = Literal["measured", "not_measured"]
 
 # frob:doc docs/modules/process.md#public-api
@@ -111,11 +108,7 @@ class TestCase(BaseModel):
 
 
 # frob:doc docs/modules/process.md#public-api
-# frob:waive AFFECT001 reason="T-2391 added measurement/measurement_reason computed \
-# fields to this class; docs/modules/process.md (this class's own affects()-closure \
-# doc) was held by a LIVE cross-worktree lease (T-3191, in-progress) at the time -- \
-# filed T-3206 (T-1999/T-2003's own precedent for this exact lease-collision shape) to \
-# update that doc once the lease clears; not silently dropped"
+# frob:ticket T-3206
 class ToolResult(BaseModel):
     """
     Parsed output of a single tool invocation.
@@ -153,11 +146,8 @@ class ToolResult(BaseModel):
         return [t for t in self.tests if not t.passed and not t.skipped]
 
     # frob:ticket T-2391
-    # frob:waive COV001 reason="docs/modules/process.md (this module's own doc home) \
-    # was held by a LIVE cross-worktree lease (T-3191, in-progress) when this symbol \
-    # was added -- filed T-3206 (renumbers on its own land, T-1999/T-2003's own \
-    # precedent for this exact lease-collision shape) to add the frob:doc anchor once \
-    # that lease clears; not silently dropped"
+    # frob:doc docs/modules/process.md#public-api
+    # frob:ticket T-3206
     # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_zero_diagnostics  # noqa: E501
     # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_measured_when_a_real_error_is_present  # noqa: E501
     # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_not_measured_when_every_diagnostic_is_unresolved_info  # noqa: E501
@@ -200,11 +190,8 @@ class ToolResult(BaseModel):
         return "measured"
 
     # frob:ticket T-2391
-    # frob:waive COV001 reason="docs/modules/process.md (this module's own doc home) \
-    # was held by a LIVE cross-worktree lease (T-3191, in-progress) when this symbol \
-    # was added -- filed T-3206 (renumbers on its own land, T-1999/T-2003's own \
-    # precedent for this exact lease-collision shape) to add the frob:doc anchor once \
-    # that lease clears; not silently dropped"
+    # frob:doc docs/modules/process.md#public-api
+    # frob:ticket T-3206
     # frob:tests tests/unit/test_process.py::TestToolResultMeasurement.test_not_measured_when_every_diagnostic_is_unresolved_info  # noqa: E501
     @computed_field  # type: ignore[prop-decorator]
     @property

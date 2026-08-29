@@ -76,10 +76,6 @@ def _report_mismatches(mismatches, as_json: bool, root: Path) -> None:
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
 # frob:ticket T-2492
-# frob:waive AFFECT001 reason="T-2492: docs/modules/app.md#runners one-line summary is \
-# still accurate -- this change only adds an internal --json stdout-corruption guard, \
-# no user-visible contract change; filed T-2491 to sync the doc note once its own \
-# lease clears, same precedent as T-2486"
 # frob:tests tests/unit/test_app_runners_batch5.py::TestBindRunner.test_mismatch_json_mode_no_exit  # noqa: E501
 def run(argv=None):
     """T-2492: `scan_bindings`/`scan_sources`/`check` all walk the tree via

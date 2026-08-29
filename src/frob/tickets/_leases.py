@@ -2963,11 +2963,10 @@ def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
 
 
 # frob:ticket T-1999
+# frob:doc \
+# docs/modules/tickets-landing.md#shared-land-path-liveness-authority-is_effectively_in\
+# _progress-t-1999
 # frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_live_lease_refuses_even_when_roots_ledger_still_reads_planned kind="unit"  # noqa: E501
-# frob:waive COV001 reason="docs/modules/tickets.md (this module's own doc home) was \
-# held by a LIVE cross-worktree lease (T-1696, in-progress) at fix time and could not \
-# be added to T-1999's own scope -- filed T-2003 (renumbers on its own land) to add \
-# the frob:doc anchor once that lease clears; not silently dropped"
 def is_effectively_in_progress(
     root: Path, ticket_id: str, ledger_state: object
 ) -> bool:

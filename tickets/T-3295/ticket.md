@@ -3,7 +3,7 @@ id: T-3295
 title: 'A waiver whose reason promises follow-up is debt, ticket or not: the discriminator
   already exists and WAIVE009 wires it to the wrong conclusion (2656 waive vs 124
   debt)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-28'
@@ -30,6 +30,8 @@ scope:
 - tests/test_waive_gate.py
 - tests/test_tickets_gate_claim_evidence.py
 - docs/modules/gates.md
+- docs/modules/process.md
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -111,6 +113,30 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: T-3295 corrects the WAIVE009 catalog row to describe the new always-fires
     behavior
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/process.md
+  reason: 'T-3295: discharging T-3206/T-3348/T-3349''s debt by actually doing the
+    doc syncs instead of leaving them open'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'T-3295: discharging T-3206/T-3348/T-3349''s debt by actually doing the
+    doc syncs instead of leaving them open'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/process.md
+  reason: 'T-3295: discharging T-3206/T-3348/T-3349''s debt by actually doing the
+    doc syncs instead of leaving them open'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'T-3295: discharging T-3206/T-3348/T-3349''s debt by actually doing the
+    doc syncs instead of leaving them open'
   actor: logan
   at: '2026-08-29'
 body_changes:

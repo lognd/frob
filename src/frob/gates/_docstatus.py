@@ -225,14 +225,7 @@ def _doc009_check_doc(root: Path, doc_rel: str) -> Violation | None:
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:waive AFFECT001 reason="T-1486: docstatus_gate's affects()-closure doc \
-# (docs/modules/gates.md#public-api) genuinely needs a DOC011 catalog row, matching \
-# the DOC009/DOC010 precedent immediately above it in that table -- but \
-# docs/modules/gates.md is leased by another in-progress ticket (T-1205) for the \
-# duration of this ticket's work, so frob ticket scope --add refuses it \
-# (ScopeLeaseConflict). Tracked in this ticket's own follow-up (fix 10 stale ticket-id \
-# citations DOC011 found...), which also touches docs/modules/gates.md; remove this \
-# waiver once that lands and the row exists."
+# frob:ticket T-3348
 # frob:ticket T-2843
 # frob:tests tests/test_gates.py::TestDocstatusGate.test_missing_status_header_fires_doc009  # noqa: E501
 # frob:tests tests/test_gates.py::TestDocstatusGate.test_dated_status_header_passes  # noqa: E501
@@ -564,7 +557,6 @@ def docseverity_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ..
         "docseverity: %d doc(s) scanned, %d violation(s)", len(docs), len(violations)
     )
     return violations
-
 
 
 __all__ = [
