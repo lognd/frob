@@ -2,7 +2,7 @@
 id: T-3276
 title: 'Missing external tools degrade quietly instead of failing loud: no central
   resolution, doctor checks one binary, xdist absence unaccounted'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/doctor.py
+- tests/unit/test_doctor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_doctor.py
+  reason: regression tests for the tool inventory/preflight
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
