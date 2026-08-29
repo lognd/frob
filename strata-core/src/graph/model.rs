@@ -11,17 +11,21 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 /// A node identity. Caller-supplied string, unique within one `Graph`.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
 pub type NodeId = String;
 
 /// A node or edge kind name. Caller-supplied data, not a Rust enum -- kinds
 /// are declared per-`GraphSchema`, not hardcoded per consumer domain.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
 pub type Kind = String;
 
 /// A level name (e.g. "requirement", "system-design", "component-unit-test").
 /// Caller-supplied; the kernel only enforces relations a schema declares.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
 pub type Level = String;
 
 /// Which endpoint of an edge a `WrongEndpointKind` refusal names.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize)]
 pub enum EndpointRole {
     /// The edge's source node.
@@ -33,6 +37,7 @@ pub enum EndpointRole {
 /// Every way construction can be refused. Recoverable, named, never a panic
 /// -- the repo's error doctrine (no bare exceptions for caller-facing
 /// mistakes; a value the caller inspects and handles).
+// frob:doc docs/strata/graph.md#construction-time-refusals-grapherror
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub enum GraphError {
     /// `add_node` was given a kind the schema never declared.
@@ -88,6 +93,7 @@ pub enum GraphError {
 /// not know what a "runnable" or a "code_ref" IS), only enforcing that
 /// whichever keys a schema requires are present -- the domain layer
 /// (`vmodel`) is what gives those keys meaning.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Node {
     pub id: NodeId,
@@ -99,6 +105,7 @@ pub struct Node {
 /// The level relationship an edge kind requires between its endpoints.
 /// Generic on purpose: the V-model pairing (T-3004 section 1) is ONE
 /// instance a caller builds from `Paired`, not a hardcoded rule here.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LevelRelation {
     /// No constraint: any levels (including none) are accepted.
@@ -114,6 +121,7 @@ pub enum LevelRelation {
 
 /// One edge kind's construction-time contract: which node kinds may sit at
 /// each endpoint, and what level relation must hold between them.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EdgeKindSchema {
     pub allowed_src_kinds: BTreeSet<Kind>,
@@ -130,6 +138,7 @@ impl EdgeKindSchema {
     /// level constraint -- the loosest possible edge kind (e.g. a plain
     /// `blocked_by` sequencing edge, T-3004 section 3: "survives as one
     /// edge kind among many", not exempt from the model, just unconstrained).
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn unconstrained() -> Self {
         EdgeKindSchema {
             allowed_src_kinds: BTreeSet::new(),
@@ -143,6 +152,7 @@ impl EdgeKindSchema {
     /// `EdgeKindSchema::unconstrained().require_attrs(["reason"])` is the
     /// `supersedes` case -- unconstrained on kind/level, but still typed
     /// and validated on payload.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn require_attrs(mut self, attrs: impl IntoIterator<Item = impl Into<String>>) -> Self {
         self.required_attrs = attrs.into_iter().map(Into::into).collect();
         self
@@ -152,6 +162,7 @@ impl EdgeKindSchema {
 /// One directed edge: a kind, the src/dst node ids it connects, and a
 /// caller-typed attribute payload (T-3044 H3), e.g. a `supersedes` edge's
 /// required `reason` attr -- the change justification it must carry.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Edge {
     pub kind: Kind,
@@ -165,6 +176,7 @@ pub struct Edge {
 /// the whole "generic, not spec-specific" design constraint made concrete --
 /// a ticket/architecture instance builds its OWN schema; the kernel does not
 /// name `requirement`/`test`/`decision` anywhere in its own code.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
 #[derive(Debug, Clone, Default)]
 pub struct GraphSchema {
     pub node_kinds: BTreeSet<Kind>,
@@ -180,6 +192,7 @@ impl GraphSchema {
     /// An empty schema: no node kinds, no levels, no edge kinds declared
     /// yet. Callers build one up via `declare_node_kind`/`declare_level`/
     /// `declare_edge_kind`.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn new() -> Self {
         GraphSchema::default()
     }
@@ -187,18 +200,21 @@ impl GraphSchema {
     /// Add a legal node kind. Idempotent: declaring the same kind twice is
     /// not an error (schema *declaration* is additive, unlike graph
     /// construction which refuses duplicates).
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn declare_node_kind(&mut self, kind: impl Into<Kind>) -> &mut Self {
         self.node_kinds.insert(kind.into());
         self
     }
 
     /// Add a legal level name.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn declare_level(&mut self, level: impl Into<Level>) -> &mut Self {
         self.levels.insert(level.into());
         self
     }
 
     /// Add or replace an edge kind's construction-time contract.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn declare_edge_kind(
         &mut self,
         kind: impl Into<Kind>,
@@ -211,6 +227,7 @@ impl GraphSchema {
     /// Require `attrs` to be present (via `add_node_with_attrs`) on every
     /// node of `kind` (T-3044 H3). Replaces any previously declared
     /// requirement for the same kind.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn declare_required_node_attrs(
         &mut self,
         kind: impl Into<Kind>,
@@ -226,6 +243,7 @@ impl GraphSchema {
 /// against it. Every mutation is refuse-or-commit -- there is no path to a
 /// graph value that holds a malformed edge (T-3004 section 4's "type
 /// checked" requirement, enforced here rather than left to a later pass).
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
 #[derive(Debug, Clone)]
 pub struct Graph {
     schema: GraphSchema,
@@ -235,6 +253,7 @@ pub struct Graph {
 
 impl Graph {
     /// Start an empty graph typed against `schema`.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn new(schema: GraphSchema) -> Self {
         Graph {
             schema,
@@ -245,21 +264,25 @@ impl Graph {
 
     /// This graph's schema (read-only: the schema is fixed for the life of
     /// the graph, so queries and later edge additions stay consistent).
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn schema(&self) -> &GraphSchema {
         &self.schema
     }
 
     /// All node ids currently in the graph, in id order.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn node_ids(&self) -> impl Iterator<Item = &NodeId> {
         self.nodes.keys()
     }
 
     /// Look up a node by id.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn node(&self, id: &str) -> Option<&Node> {
         self.nodes.get(id)
     }
 
     /// All edges currently in the graph, in insertion order.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn edges(&self) -> &[Edge] {
         &self.edges
     }
@@ -267,6 +290,7 @@ impl Graph {
     /// Add a typed node. Refuses (leaving the graph unchanged) if `kind` is
     /// not declared in the schema, if `level` is given but not declared, or
     /// if `id` already names a node.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn add_node(
         &mut self,
         id: impl Into<NodeId>,
@@ -283,6 +307,7 @@ impl Graph {
     /// kind with no required attrs behaves identically either way; a kind
     /// that DOES require attrs (`test`, `artifact` in the V-model schema)
     /// can only be constructed through this entry point.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn add_node_with_attrs(
         &mut self,
         id: impl Into<NodeId>,
@@ -330,6 +355,7 @@ impl Graph {
     /// endpoint whose node kind the edge kind's schema does not allow, or a
     /// level relationship the edge kind's schema requires but the
     /// endpoints' levels do not satisfy.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn add_edge(
         &mut self,
         kind: impl Into<Kind>,
@@ -344,6 +370,7 @@ impl Graph {
     /// `required_attrs` names a key absent from `attrs` -- this is what
     /// makes `supersedes` unable to be constructed without a `reason`.
     /// `add_edge` is a thin wrapper over this with an empty payload.
+// frob:doc docs/strata/graph.md#model-strata-coresrcgraphmodelrs
     pub fn add_edge_with_attrs(
         &mut self,
         kind: impl Into<Kind>,

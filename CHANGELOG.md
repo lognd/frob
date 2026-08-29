@@ -599,6 +599,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3305: _python_for_tree trusts a tree venv without checking frob is importable, breaking self-verification in every consumer repo
 - T-3316: warn_if_xdist_bound_missing does not detect the xdist plugin's absence, only an unset fleet bound
 - T-3344: Clear gate:DRIFT findings (53 errors) for release gate
+- T-3347: Fix gate:COV errors: strata-core graph doc anchors, COV003 evidence kind, COV007 private-anchor placement
 
 ## [0.530.0] - unreleased
 

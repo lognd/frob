@@ -113,8 +113,11 @@ def _hollow_done_report_exempt(ticket: Ticket, body: str, *, rapid: bool) -> boo
 
 
 # frob:ticket T-3266
-# frob:doc \
-# docs/modules/tickets-data-storage.md#stale-captured-claims-refused-at-close-t-3266
+# frob:waive COV007 reason="T-3266: no single public caller to hang this anchor on -- \
+# _stale_claims_reason is called only from the private \
+# _done_transition_structural_guard, itself an internal step of the close pipeline; \
+# docs/modules/tickets-data-storage.md's stale-claims section documents the guard at \
+# the ticket-close level, not this leaf helper"
 # frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_zero_claims_with_real_evidence_refused  # noqa: E501
 # frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_wrong_nonzero_claims_refused  # noqa: E501
 # frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_matching_claims_not_flagged  # noqa: E501

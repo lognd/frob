@@ -589,7 +589,6 @@ def _deny(reason: str) -> None:
     )
 
 
-# frob:doc docs/guides/claude-hooks.md#frob-suggestpy
 def _escalate(
     key: str, name: str, suggestion: str, acked: bool, first_hint: str, repeat_hint: str
 ) -> None:

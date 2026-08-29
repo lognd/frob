@@ -86,7 +86,6 @@ class CiStatusResult(BaseModel):
 _GhRunner = Callable[[tuple[str, ...]], tuple[int, str, str]]
 
 
-# frob:doc docs/guides/release.md#verify-ci-status
 # frob:tests tests/unit/test_verify_release_ci_status.py::TestRunGh.test_spawn_failure_reports_as_nonzero_with_stderr kind="unit"  # noqa: E501
 def _run_gh(argv: tuple[str, ...]) -> tuple[int, str, str]:
     """Run a `gh` CLI subprocess, returning `(returncode, stdout, stderr)`

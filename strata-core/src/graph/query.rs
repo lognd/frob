@@ -11,6 +11,7 @@ use std::collections::{BTreeSet, VecDeque};
 /// graph, or only edges whose kind is in the given set. Generic over kind
 /// names on purpose (same "caller supplies the vocabulary" rule as
 /// `GraphSchema`).
+// frob:doc docs/strata/graph.md#queries-strata-coresrcgraphqueryrs
 pub enum KindFilter<'a> {
     /// Follow every edge regardless of kind.
     Any,
@@ -40,6 +41,7 @@ impl Graph {
     /// only if a cycle routes back to it. Empty result (aside from
     /// unreached start) means nothing is reachable -- the negative case a
     /// closure query must be able to produce as readily as the positive one.
+// frob:doc docs/strata/graph.md#queries-strata-coresrcgraphqueryrs
     pub fn forward_closure(&self, start: &str, filter: &KindFilter) -> BTreeSet<NodeId> {
         self.closure(start, filter, true)
     }
@@ -48,6 +50,7 @@ impl Graph {
     /// BACKWARD (dst -> src), zero or more hops -- the other half of
     /// "bidirectional closure" (T-3004 section 2's closure rules are
     /// checked in both directions).
+// frob:doc docs/strata/graph.md#queries-strata-coresrcgraphqueryrs
     pub fn backward_closure(&self, start: &str, filter: &KindFilter) -> BTreeSet<NodeId> {
         self.closure(start, filter, false)
     }
@@ -77,6 +80,7 @@ impl Graph {
 
     /// True if `to` is reachable from `from` by following matching edges
     /// forward, zero or more hops (a node reaches itself trivially).
+// frob:doc docs/strata/graph.md#queries-strata-coresrcgraphqueryrs
     pub fn reachable(&self, from: &str, to: &str, filter: &KindFilter) -> bool {
         if from == to {
             return true;
@@ -93,6 +97,7 @@ impl Graph {
     /// the identical one in another (docs/guides/agent-playbook.md sec on
     /// positive controls) -- a witness path is checkable by a test, a bare
     /// bool is not.
+// frob:doc docs/strata/graph.md#queries-strata-coresrcgraphqueryrs
     pub fn find_cycle(&self, filter: &KindFilter) -> Option<Vec<NodeId>> {
         #[derive(Clone, Copy, PartialEq, Eq)]
         enum Mark {
@@ -158,6 +163,7 @@ impl Graph {
     // frob:ticket T-3120
     // frob:tests strata-core/src/graph/query.rs::tests.has_cycle_true_on_a_planted_cycle
     // frob:tests strata-core/src/graph/query.rs::tests.has_cycle_false_on_an_acyclic_graph
+// frob:doc docs/strata/graph.md#queries-strata-coresrcgraphqueryrs
     pub fn has_cycle(&self, filter: &KindFilter) -> bool {
         self.find_cycle(filter).is_some()
     }
