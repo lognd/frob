@@ -2,7 +2,7 @@
 id: T-3416
 title: Update design/frob.strata SYS100 fs.read capability for process/_reap split
   (T-3396)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
