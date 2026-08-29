@@ -9,30 +9,17 @@ ORIGINAL `SUITE-RESULT:` line coverage (T-1596/T-1673) this file extends."""
 
 from __future__ import annotations
 
-import importlib.util
-from pathlib import Path
-
-_CONFTEST_PATH = Path(__file__).resolve().parent.parent / "conftest.py"
+from tests.unit._conftest_test_helpers import load_conftest_module
 
 
 # frob:ticket T-3246
-# frob:debt DUP001 reason="95% similar to tests/unit/test_conftest_stackdump.py::\
-# _load_conftest -- that file was under a live T-3244 scope lease and could not be \
-# edited to share a helper. Consolidate once T-3244 releases the lease." \
-# ticket="T-3252"  # noqa: E501
 def _load_conftest():
-    """Import `tests/conftest.py` as a standalone module (not via pytest's
-    own plugin machinery, which already has it loaded once as a fixture
-    provider) so these tests can call its `pytest_sessionfinish`/
-    `pytest_internalerror` hooks directly, each against its own fresh
-    module instance so `_last_internal_error` never leaks between tests."""
-    spec = importlib.util.spec_from_file_location(
-        "_t3246_conftest_under_test", _CONFTEST_PATH
-    )
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    """T-3252: thin wrapper over the shared `load_conftest_module` helper
+    (DUP001 consolidation, T-3252) -- keeps this file's own call sites
+    (`_load_conftest()`) unchanged. Each call gets its OWN fresh module
+    instance (a new `spec_from_file_location` load), so `_last_internal_
+    error` never leaks between tests."""
+    return load_conftest_module("_t3246_conftest_under_test")
 
 
 # frob:ticket T-3246

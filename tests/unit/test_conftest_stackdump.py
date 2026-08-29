@@ -5,8 +5,6 @@ handler -- the between-tests/session-teardown wedge diagnostic the two
 
 from __future__ import annotations
 
-import importlib
-import importlib.util
 import os
 import signal
 import sys
@@ -14,24 +12,17 @@ from pathlib import Path
 
 import pytest
 
+from tests.unit._conftest_test_helpers import load_conftest_module
+
 if sys.platform == "win32":  # pragma: no cover - POSIX-only feature
     pytest.skip("SIGUSR1 is POSIX-only", allow_module_level=True)
 
-_CONFTEST_PATH = Path(__file__).resolve().parent.parent / "conftest.py"
-
 
 def _load_conftest():
-    """Import `tests/conftest.py` as a standalone module (not via pytest's
-    own plugin machinery, which already has it loaded once as a fixture
-    provider) so these tests can call its private stack-dump helpers
-    directly without depending on pytest's conftest-import identity."""
-    spec = importlib.util.spec_from_file_location(
-        "_t1433_conftest_under_test", _CONFTEST_PATH
-    )
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    """T-3252: thin wrapper over the shared `load_conftest_module` helper
+    (DUP001 consolidation) -- keeps this file's own call sites (`_load_
+    conftest()`) unchanged."""
+    return load_conftest_module("_t1433_conftest_under_test")
 
 
 class TestStackdumpHandler:

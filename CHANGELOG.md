@@ -581,6 +581,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3249: Unowned 11-failure cluster: frob check fires spurious REF001/PRE001/SCOPE001 only under concurrent load (T-2992 misattributed it to the already-landed T-3019)
 - T-3250: macOS CI hangs at 99% for 10m49s with ZERO diagnostics: T-3192 instrumented only ubuntu on a premise this run falsifies
 - T-3251: Release can be dispatched from a red main: nothing gates the PyPI upload on green CI for the released commit
+- T-3252: Consolidate duplicate _load_conftest test helper once T-3244's lease clears
 - T-3254: frob release check REFUSES 0.530.0 (BUMP REQUIRED, need >= 0.531.0): no documented release-cut procedure places the version bump
 - T-3255: Fix malformed directive false-positive in docarch001_violations wiring comment
 - T-3256: Six concurrent frob check runs drive the box to zero free memory: each sizes its pool against the whole machine, with no cross-process budget
