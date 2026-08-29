@@ -27,6 +27,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 53072158bb03f5191be1e3337a0de561be465a79
 ---
 gate:LARGE ER slice follow-up, previously deferred by a live T-3389 (Series EQ) lease which has since landed: LARGE001 in src/frob/__main__.py (tracked real-split follow-up T-3059) and PERF004 in .claude/hooks/frob-suggest.py (sort is not hoistable, files grows per iteration) both resolved via reasoned frob:waive.
