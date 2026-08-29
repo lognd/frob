@@ -95,6 +95,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 094546bc613c185b8908f250d5e72452d87a6421
 ---
 T-3276 built the doctor.py inventory/preflight side (ToolCategory, ExternalToolStatus, scan_external_tools, _EXTERNAL_TOOLS) but its declared scope was doctor.py only. The three divergent spawn conventions T-3276 measured are still live: sys.executable -m pytest (gates/_bug_repro.py, CORRECT), uv run pytest (app/ticket_runner/_verify.py), bare pytest --collect-only (refactor/_verify.py), and bare python (perf/_profile.py, T-3268's own fix target). Collapse these into one resolution helper (frob._EXTERNAL_TOOLS-aware, sys.executable-based per T-3268's adopted convention) that every spawn site calls, with a loud typed Result error on a REQUIRED tool's absence. Coordinate with T-3268 if still open.
