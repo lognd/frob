@@ -44,6 +44,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 55a6ad3ede0bc2992d305aaebebb05c1abf31197
 ---
 gate:LARGE ER slice: DOC011 (stale T-draft-ad5e921b citation in docs/modules/tickets.md, now T-3360), DOCENUM001 (docs/modules/gates.md rule-catalog enumerate list omitted TDD001/VERSION001/VMOD001), and two PERF004 sort-in-loop findings (.claude/hooks/frob-suggest.py, src/frob/lang/_support.py -- both waived with per-iteration-varies-input reasoning since a hoist is not correct there).
