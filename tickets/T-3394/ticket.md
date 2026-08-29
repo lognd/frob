@@ -1,7 +1,7 @@
 ---
 id: T-3394
 title: Reduce ARCH103 decision-point count in check_runner._apply_tier_a_and_reverify
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -19,6 +19,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_check_runner.py::TestApplyTierAAndReverify::test_unscoped_fix_refuses_without_fix_all
+- tests/test_check_runner.py::TestApplyTierAAndReverify::test_fix_all_still_runs_repo_wide_when_explicitly_requested
+- tests/test_check_runner.py::TestApplyTierAAndReverify::test_doc007_finding_fixed_and_reverified_clean
+- tests/test_check_runner.py::TestApplyTierAAndReverify::test_ticket_scoped_fix_never_touches_files_outside_declared_scope
 designated_repro_test: null
 threat: null
 component: null
