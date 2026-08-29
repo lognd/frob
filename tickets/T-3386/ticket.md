@@ -56,7 +56,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 541e91184b93e2590254f212057b7e74715e6932
 ---
 gate:SELFAUDIT reports 5 findings. Series EO diagnosed root cause fully:
 design/frob.strata's testsuite node's may "exec" via [...] list (around
