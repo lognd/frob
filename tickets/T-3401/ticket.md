@@ -16,7 +16,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_worktree_guard.py
 - Makefile
-- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +25,13 @@ scope_changes:
   glob: docs/modules/tickets-data-storage.md
   reason: T-3401's new symbols need a frob:doc anchor in this module's own docs file,
     matching every existing sibling symbol here
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'reverting: the doc anchor closure pulls in the whole tickets-data-storage
+    module''s unrelated symbols (107 warnings) -- too large for this ticket; documenting
+    the two new functions deferred to a follow-up'
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
