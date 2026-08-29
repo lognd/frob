@@ -101,6 +101,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5ee1404342bd522befdf00aa830e2d3c3816af4a
 ---
 T-3079's post-land sweep re-measurement confirmed strata-core/src/graph/vmodel.rs (992 lines) and strata-core/src/parse/grammar_core.rs (831 lines) are genuinely over the 800-line LARGE001 threshold, both grown past it by T-3044 (V-model H3). T-3079 waived both findings (frob:waive LARGE001) to unblock the sweep-regression ticket rather than doing a real split inline. This ticket is the deferred real fix: split vmodel.rs's closure-rule logic and grammar_core.rs's parse_vmodel_node/parse_vmodel_edge into their own modules, then remove the waivers.
