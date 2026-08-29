@@ -48,6 +48,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 39c496ff90dc3764f832a8638818e3fb042420e6
 ---
 LEXCHECK001 flags scan_cplace001_waive_reason_length and scan_cplace002_docs_narrative for deciding facts from regex/substring match with no symbol reference. Standing repo directive: checks must parse and compare SYMBOLS, not lexical text. Rework these two scanners to use the parser/AST instead of regex. Part of PyPI release error-floor burn (Series EQ slice).
