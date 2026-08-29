@@ -51,7 +51,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: dd155ff20bd3cfbc8d1e41828ed78e74437ab64d
 ---
 Sub-ticket of T-3343 (triage). Fixes the full gate:COV cluster (38 errors -> 0), measured via frob check --only coverage --json:
 - COV001 (33): strata-core/src/graph/model.rs and query.rs had zero frob:doc anchors on their public API despite docs/strata/graph.md already documenting every symbol in prose -- added frob:doc directives to model.rs (#model-strata-coresrcgraphmodelrs, GraphError -> #construction-time-refusals-grapherror) and query.rs (#queries-strata-coresrcgraphqueryrs).
