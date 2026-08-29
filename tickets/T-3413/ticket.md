@@ -2,7 +2,7 @@
 id: T-3413
 title: 'post-land sweep regression from T-3350: 9 new (rule, file) identit(ies), 10
   finding(s) (DOC006, OPAQUE001, SYS003, TEST001)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -15,15 +15,14 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/_cli_parsers/_ticket/_metadata.py
 - src/frob/gates/__init__.py
 - src/frob/lang/__init__.py
 - src/frob/lang/_extract.py
 - src/frob/nodeid.py
 - src/frob/tickets/_scope_coverage.py
 - tests/unit/test_nodeid.py
-- tickets/T-3410/ticket.md
-- tickets/T-3411/ticket.md
+- design/frob.strata
+- tests/unit/test_extract_import_edges.py
 findings:
 - - DOC006
   - tickets/T-3410/ticket.md
@@ -47,6 +46,52 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: 'narrowing to the T-3350-attributable subset: OPAQUE001 on _metadata.py
+    is already attributed to T-3404 (unrelated, already closed/dropped); the two DOC006
+    on tickets/T-3410 and T-3411 ticket docs are UNATTRIBUTED and unrelated to the
+    nodeid design-model gap this ticket fixes -- adding design/frob.strata (the design-model
+    fix itself) and the new unit-test file'
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: tickets/T-3410/ticket.md
+  reason: 'narrowing to the T-3350-attributable subset: OPAQUE001 on _metadata.py
+    is already attributed to T-3404 (unrelated, already closed/dropped); the two DOC006
+    on tickets/T-3410 and T-3411 ticket docs are UNATTRIBUTED and unrelated to the
+    nodeid design-model gap this ticket fixes -- adding design/frob.strata (the design-model
+    fix itself) and the new unit-test file'
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: tickets/T-3411/ticket.md
+  reason: 'narrowing to the T-3350-attributable subset: OPAQUE001 on _metadata.py
+    is already attributed to T-3404 (unrelated, already closed/dropped); the two DOC006
+    on tickets/T-3410 and T-3411 ticket docs are UNATTRIBUTED and unrelated to the
+    nodeid design-model gap this ticket fixes -- adding design/frob.strata (the design-model
+    fix itself) and the new unit-test file'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: design/frob.strata
+  reason: 'narrowing to the T-3350-attributable subset: OPAQUE001 on _metadata.py
+    is already attributed to T-3404 (unrelated, already closed/dropped); the two DOC006
+    on tickets/T-3410 and T-3411 ticket docs are UNATTRIBUTED and unrelated to the
+    nodeid design-model gap this ticket fixes -- adding design/frob.strata (the design-model
+    fix itself) and the new unit-test file'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/test_extract_import_edges.py
+  reason: 'narrowing to the T-3350-attributable subset: OPAQUE001 on _metadata.py
+    is already attributed to T-3404 (unrelated, already closed/dropped); the two DOC006
+    on tickets/T-3410 and T-3411 ticket docs are UNATTRIBUTED and unrelated to the
+    nodeid design-model gap this ticket fixes -- adding design/frob.strata (the design-model
+    fix itself) and the new unit-test file'
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
