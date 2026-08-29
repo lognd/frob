@@ -280,8 +280,8 @@ stamp is MAJOR-class, requiring `>= 0.531.0` from `0.530.0` (the
 bump would instead produce `0.530.1`, which does NOT satisfy
 `>= 0.531.0` -- the command would commit, push, build, and attempt to
 publish a version that fails its own repo's release gate. This is filed
-as **T-draft-13d00ebe** (out of this ticket's `docs/guides/release.md`-only scope;
-the fix belongs in `src/frob/release/_publish.py`). Until T-draft-13d00ebe closes,
+as **T-3337** (out of this ticket's `docs/guides/release.md`-only scope;
+the fix belongs in `src/frob/release/_publish.py`). Until T-3337 closes,
 follow the manual steps below instead of `make upload`.
 
 ### Ordered steps, main is green -> wheels uploaded
@@ -369,7 +369,7 @@ later tag both refer back to it):
 
 ### Follow-up filed alongside this ticket
 
-- **T-draft-13d00ebe** -- `frob release publish` / `make upload` always bumps only
+- **T-3337** -- `frob release publish` / `make upload` always bumps only
   the patch component and never consults `diff_class`/`required_version`,
   so it can commit, push, and attempt to publish a version that fails
   this repo's own REL001 gate (reproduced above against live state:

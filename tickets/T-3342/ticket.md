@@ -250,6 +250,9 @@ body_changes:
   at: '2026-08-29'
   old_length: 924
   new_length: 1120
+evidence:
+- cmd:bash /tmp/claude-1000/-home-logan-projects-frob/79c6402d-b401-4652-bea7-f81df1be9322/scratchpad/doc_evidence.sh
+  exit=0 sha256=5300ee49bc51
 kind_history:
 - 2026-08-29 bug->docs evidence=0 done_report=yes
 designated_repro_test: null

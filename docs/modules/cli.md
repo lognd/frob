@@ -560,6 +560,7 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob graph` | obligation graph: build cache, query symbols, explain drift |
 | `frob map` | show whole-project structural map (symbols + line counts) -- also available as `frob explore map` (T-1238) |
 | `frob mutate` | mutation testing: perturb a file, see which mutants survive |
+| `frob narrative` | migrate a T-#### narrative comment block |
 | `frob natives` | build declared [[native]] crates (T-0864: frob-owned maturin develop, shared CARGO_TARGET_DIR) |
 | `frob ops` | release/fleet/infra plumbing: release, natives, doctor, clean, fleet, deploy, scaffold, gitlog, stats (T-1569) |
 | `frob outline` | show structural skeleton of a file (classes, functions, line numbers) -- also available as `frob explore outline` (T-1238) |
@@ -568,6 +569,7 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob pool` | ratchet-pool baseline management (T-0569): warn-rule findings frozen as a tracked baseline, new findings error |
 | `frob profile` | development profile (rapid/standard/fortress) status and the one-way auto-ratchet's explicit downgrade (T-1575) |
 | `frob quality` | correctness/hygiene gates: check/test/dup/arch/bind/cycle/mutate/perf grouped under one verb (T-1567) |
+| `frob refactor` | transactional symbol move/rename/split |
 | `frob registry` | unified design-knowledge registry (T-0407) |
 | `frob release` | mechanical semver from the public-API graph (REL001) |
 | `frob scaffold` | scaffold a new project from a template |

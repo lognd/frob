@@ -195,6 +195,10 @@ obligation graph. Charter and component designs:
   independent of build (`entity`), one concrete realization bound to a
   module (`architecture`), and one deployment's choice of architecture
   per entity (`configuration`).
+- `docs/strata/graph.md` -- `strata-core::graph`, the generic typed-graph
+  kernel (T-3005): schema-checked nodes/edges that future
+  ticket/architecture/spec instances (T-3006/T-3007) share instead of
+  three bespoke stores.
 
 ## Per-command references
 
