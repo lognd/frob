@@ -61,6 +61,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a057c5e1c94eaac8538058ce55e57bd1c722ce0f
 ---
 Series ED CI-gate baseline (main SHA be9e767): unscoped frob check gate-summary=188 errors. T-3342 (DOC 50), T-3343 (COV/TICK/REL/REG/REF 58), T-3344 (DRIFT 53) cover 161/188. This ticket tracks the remaining 27: gate:ARCH 3, gate:SEC 6, gate:LARGE 5, gate:PII 4, gate:WIRE 2, gate:PERF 2, gate:LEXCHECK 2, gate:WAIVE 1, gate:FLAGCOV 1, gate:DEPR 1. Small, scattered, no single root cause found yet -- needs its own per-rule triage pass. Not scoped to source files pending that triage.
