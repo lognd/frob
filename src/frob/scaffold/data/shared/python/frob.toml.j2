@@ -22,3 +22,47 @@ language = "python"
 command = ["uv", "run", "pytest", "-q", "{ids}"]
 all_command = ["uv", "run", "pytest", "-q"]
 cwd = "."
+
+# T-3277: REF001/REF002 (anti-orphan gate) flags every one of these on a
+# freshly scaffolded, untouched repo -- each is read by something OUTSIDE
+# this project's own tracked-file graph (a human, GitHub Actions, a CI/CD
+# runner, or a packaging tool), never referenced by name from source the
+# way an import or a doc link would be. Declaring them here (the same
+# `[[refs.entrypoint]]` idiom frob's own frob.toml uses) is the correct
+# fix -- these are template bugs in the scaffold's OWN frob.toml, not a
+# gate bug and not something a per-project waiver belongs on.
+[[refs.entrypoint]]
+path = ".env.example"
+reason = "read by humans setting up their local .env, not referenced from tracked source"
+
+[[refs.entrypoint]]
+path = ".github/workflows/*.yml"
+reason = "read by GitHub Actions outside this repo's own tracked-file graph, never imported/referenced from source"
+
+[[refs.entrypoint]]
+path = "Makefile"
+reason = "read by `make` outside this repo's own tracked-file graph, not referenced from source"
+
+[[refs.entrypoint]]
+path = "invariants/.gitkeep"
+reason = "placeholder that keeps the empty invariants/ directory tracked by git; never referenced by name from source"
+
+[[refs.entrypoint]]
+path = "scripts/bump_version.py"
+reason = "release-time executable run by the `upload` Makefile target and CI, never imported by tracked source"
+
+[[refs.entrypoint]]
+path = "tests/conftest.py"
+reason = "pytest's own fixture-discovery entry point, loaded by path convention, never imported by tracked source"
+
+[[refs.entrypoint]]
+path = "README.md"
+reason = "read by humans/GitHub, a single pyproject.toml reference is expected, not fragile"
+
+[[refs.entrypoint]]
+path = "src/{{ project.name }}/__init__.py"
+reason = "the package's own root module, imported by convention rather than referenced by name from other tracked files"
+
+[[refs.entrypoint]]
+path = "uv.lock"
+reason = "read by `uv sync`/`uv run` outside this repo's own tracked-file graph, one CI workflow mention is expected, not fragile"

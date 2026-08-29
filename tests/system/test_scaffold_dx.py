@@ -55,6 +55,18 @@ def _subprocess_env() -> dict[str, str]:
     return env
 
 
+# T-3277: parametrized (not yet widened past one entry) so re-adding a
+# type is a one-line change once it is verified green. Excluded, each
+# with a reason (acceptance: "every type, or a stated reason"):
+# python-library has its OWN broken-on-its-own-merits findings, unrelated
+# to this ticket's fixes -- see the follow-up ticket filed from T-3277.
+# pybind11-library/pyo3-library/cpp-library/cpp-tool/web-app each need a
+# genuinely different pipeline (cargo/cmake/npm, not ruff/ty/pytest), not
+# a parametrization of this one. All still render without error --
+# see test_all_registered_types_render_without_error below.
+_PYTHON_TOOLCHAIN_TYPES = ("python-tool",)
+
+
 @pytest.mark.skipif(not _uv_available(), reason="uv not on PATH")
 # T-0742: measured ~24s warm-cache locally (uv sync already has every
 # wheel resolved+cached), well under the 120s global deadlock ceiling
@@ -66,14 +78,17 @@ def _subprocess_env() -> dict[str, str]:
 # silently raising the global default that catches genuine hangs
 # everywhere else.
 @pytest.mark.timeout(300)
-def test_python_tool_scaffold_passes_check_immediately(tmp_path: Path) -> None:
+@pytest.mark.parametrize("project_type", _PYTHON_TOOLCHAIN_TYPES)
+def test_python_toolchain_scaffold_passes_check_immediately(
+    project_type: str, tmp_path: Path
+) -> None:
     # frob:tests src/frob/scaffold kind="integration"
     # Renders a real project via render_project, commits it, then runs it
     # through git + the rest of the toolchain end to end.
     # T-3271: output_dir is the PARENT -- render_project writes under
     # tmp_path / "demo", so project_dir must match that, not tmp_path itself.
     project_dir = tmp_path / "demo"
-    result = render_project("python-tool", "demo", tmp_path)
+    result = render_project(project_type, "demo", tmp_path)
     assert result.is_ok, result
 
     subprocess.run(["git", "init", "-q", "-b", "main"], cwd=project_dir, check=True)

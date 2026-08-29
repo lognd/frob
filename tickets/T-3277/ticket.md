@@ -2,7 +2,7 @@
 id: T-3277
 title: 'A freshly scaffolded project fails its own make check with 16 errors: docs
   promise green immediately, nothing tests scaffold-then-check'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -226,7 +226,7 @@ FINDINGS, CATEGORIZED (as instructed, never blanket-waived):
   shared/python/frob.toml.j2 entirely. Editing only the shared file
   first produced zero effect on a python-tool render -- silent, no
   error. Had to apply the fix to BOTH files. Filed a follow-up
-  (scaffold-type parity, T-draft-b6ece14f) naming this shadowing trap
+  (scaffold-type parity, T-3335) naming this shadowing trap
   explicitly since the other three per-type overrides plausibly carry
   the same undetected gap.
 
@@ -266,23 +266,23 @@ over `_PYTHON_TOOLCHAIN_TYPES` (currently `("python-tool",)`) so
 widening is a one-line change per type once verified. NOT widened to:
   - python-library: renders, but has its OWN unrelated break
     (TEST001/TEST005/DOC001-shaped: no unit-test coverage matching its
-    own src/demo/logging/* tree) -- filed separately, T-draft-26ec5373.
+    own src/demo/logging/* tree) -- filed separately, T-3330.
   - pyo3-library/pybind11-library/cpp-library/cpp-tool/web-app: each
     needs a genuinely different toolchain (cargo/cmake/npm, not
     ruff/ty/pytest) -- not a parametrization of this test. All still
     verified to RENDER without error via the pre-existing
     test_all_registered_types_render_without_error. Follow-up filed:
-    T-draft-b6ece14f (scaffold-type parity, names the per-type-override
+    T-3335 (scaffold-type parity, names the per-type-override
     shadowing trap explicitly).
 
 OTHER TICKETS FILED (diax report items, not independently re-verified
 against gate source in this ticket -- filed per the brief's "file
 separately, do not fold in" instruction, each flagged as needing
 confirmation):
-  T-draft-27f5be95  F-008, FLAGCOV001 can only ever measure frob itself
-  T-draft-672af976  F-007, ROOT001's own remedy fires DSL001
-  T-draft-91ee9d1b  F-012, frob-suggest/--json UX gaps for consumers
-  T-draft-705a1652  F-009, REF001 on frob's own v2 ticket tree
+  T-3331  F-008, FLAGCOV001 can only ever measure frob itself
+  T-3332  F-007, ROOT001's own remedy fires DSL001
+  T-3334  F-012, frob-suggest/--json UX gaps for consumers
+  T-3333  F-009, REF001 on frob's own v2 ticket tree
 
 FORBIDDEN FIXES: not used. No known_keys tables pasted into any
 template (T-3273 stays the sole SCHEMA001 owner). No waivers added to
@@ -302,9 +302,9 @@ Evidence: tests/system/test_scaffold_dx.py::
   (both green: `uv run pytest tests/system/test_scaffold_dx.py -q` ->
   2 passed)
 
-Filed: T-draft-26ec5373 (python-library scaffold-check, distinct
-  findings), T-draft-27f5be95 (F-008), T-draft-672af976 (F-007),
-  T-draft-91ee9d1b (F-012), T-draft-705a1652 (F-009), T-draft-b6ece14f
+Filed: T-3330 (python-library scaffold-check, distinct
+  findings), T-3331 (F-008), T-3332 (F-007),
+  T-3334 (F-012), T-3333 (F-009), T-3335
   (scaffold-type parity across pyo3/pybind11/web-app/cpp, names the
   per-type frob.toml.j2 shadowing trap)
 

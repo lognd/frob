@@ -9,6 +9,10 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_cli_check.py
 - tests/system/test_scaffold_dx.py
@@ -16,6 +20,8 @@ scope:
 - tests/unit/test_check_tool_unavailable.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/unit/test_check_tool_unavailable.py
@@ -38,7 +44,7 @@ scope_changes:
   at: '2026-07-27'
 evidence:
 - tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
-- tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
+- tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]
 - tests/unit/test_check_tool_unavailable.py::TestTyHermeticRootResolution::test_extra_search_path_and_python_pin_to_root
 - tests/unit/test_check_tool_unavailable.py::TestTyHermeticRootResolution::test_no_src_or_venv_omits_the_pinning_flags
 designated_repro_test: null
@@ -46,10 +52,20 @@ acceptance:
 - text: given current main, when both named tests run in isolation, then both pass
   evidence:
   - tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
-  - tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
+  - tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]
   - tests/unit/test_check_tool_unavailable.py::TestTyHermeticRootResolution::test_extra_search_path_and_python_pin_to_root
   - tests/unit/test_check_tool_unavailable.py::TestTyHermeticRootResolution::test_no_src_or_venv_omits_the_pinning_flags
+evidence_changes:
+- old_node: tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
+  new_node: tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]
+  reason: T-3277 parametrized this test for multi-scaffold-type coverage; same test
+    content for python-tool, new node id
+  actor: logan
+  at: '2026-08-28'
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Surfaced by the coordinator coverage run and confirmed failing IN ISOLATION on current main (no longer the documented order-dependent flake): (1) tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root -- previously passed in isolation per multiple agent reports, so something recent regressed the gitless severity downgrade path or the test env; bisect against the last week of gate severity promotions (SEC110/PII/PERF/ARCH families, DUP003, DOC007) which are the likeliest suspects for a severity-behavior change. (2) tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately -- a freshly scaffolded python tool no longer passes check immediately; likely a newly promoted gate now fires on the scaffold template (the templates must be updated to satisfy whatever new error-tier rule hits them, or the gate must reasonably exempt fresh scaffolds). Fix both properly -- these two tests are the canary for downstream repo scaffolding UX.

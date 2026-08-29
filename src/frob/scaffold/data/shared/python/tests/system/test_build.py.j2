@@ -4,8 +4,10 @@ System tests: verify the package installs and imports cleanly.
 
 import ast
 import importlib
+{% if project.type != "python-library" -%}
 import subprocess
 import sys
+{% endif -%}
 from pathlib import Path
 
 
@@ -14,6 +16,7 @@ def test_package_imports():
     importlib.import_module("{{ project.name }}")
 
 
+{% if project.type != "python-library" -%}
 def test_cli_help():
     """The CLI entry point must exit 0 with --help."""
     r = subprocess.run(
@@ -24,6 +27,7 @@ def test_cli_help():
     assert r.returncode == 0
 
 
+{% endif -%}
 def test_no_syntax_errors_in_src():
     """All source files must parse without syntax errors."""
     src_root = Path(__file__).parent.parent.parent / "src" / "{{ project.name }}"

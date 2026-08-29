@@ -9,6 +9,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/check_runner.py
 - src/frob/app/config.py
@@ -64,6 +68,8 @@ scope:
 - src/frob/testing/_collect_cpp.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/
@@ -414,7 +420,7 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorScaffoldConformance::test_run_diagnosis_ignores_non_frob_directory
 - tests/system/test_cli_doctor.py::TestDoctorScaffoldConformance::test_run_diagnosis_unhealthy_when_scaffold_blocks_missing
 - tests/system/test_cli_doctor.py::TestDoctorStaleTicketLeases::test_run_diagnosis_healthy_with_no_stale_leases
-- tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
+- tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]
 - tests/test_gates.py::TestOptInGates::test_fuzz_gate_off_by_default
 - tests/test_gitio.py::TestWorkingDiff::test_covers_committed_staged_unstaged_and_untracked
 - tests/test_graph.py::TestBuildIncremental::test_fingerprint_bump_rebuilds
@@ -438,8 +444,18 @@ evidence:
 - tests/unit/test_dup.py::test_dup_end_to_end_scan_then_render
 - tests/unit/test_lang_primitives.py::test_resolve_local_import_maps_to_repo_relative
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
+  new_node: tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]
+  reason: T-3277 parametrized this test for multi-scaffold-type coverage; same test
+    content for python-tool, new node id
+  actor: logan
+  at: '2026-08-28'
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Follow-up to T-1056, which closed only the src/frob/gates/__init__.py
 slice (16 of 176 sites) of the EXHAUST001/002 turn-on debt burn-down.

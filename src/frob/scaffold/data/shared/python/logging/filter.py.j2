@@ -9,7 +9,12 @@ class BelowLevelFilter(logging.Filter):
 
     def __init__(self, below: str = "WARNING") -> None:
         super().__init__()
-        self._below = getattr(logging, below.upper(), logging.WARNING)
+        # T-3277: logging.getLevelNamesMapping() is a real dict lookup, not
+        # a runtime-resolved attribute indirection (OPAQUE001's
+        # python:runtime:getattr-dynamic-name pattern) -- `getattr(logging,
+        # below.upper(), ...)` reads as a dynamic capability probe even
+        # though `below` is always one of the fixed stdlib level names.
+        self._below = logging.getLevelNamesMapping().get(below.upper(), logging.WARNING)
 
     def filter(self, record: logging.LogRecord) -> bool:
         # frob:doc docs/index.md#public-api

@@ -59,7 +59,7 @@ FINDINGS, CATEGORIZED (as instructed, never blanket-waived):
   shared/python/frob.toml.j2 entirely. Editing only the shared file
   first produced zero effect on a python-tool render -- silent, no
   error. Had to apply the fix to BOTH files. Filed a follow-up
-  (scaffold-type parity, T-draft-b6ece14f) naming this shadowing trap
+  (scaffold-type parity, T-3335) naming this shadowing trap
   explicitly since the other three per-type overrides plausibly carry
   the same undetected gap.
 
@@ -99,23 +99,23 @@ over `_PYTHON_TOOLCHAIN_TYPES` (currently `("python-tool",)`) so
 widening is a one-line change per type once verified. NOT widened to:
   - python-library: renders, but has its OWN unrelated break
     (TEST001/TEST005/DOC001-shaped: no unit-test coverage matching its
-    own src/demo/logging/* tree) -- filed separately, T-draft-26ec5373.
+    own src/demo/logging/* tree) -- filed separately, T-3330.
   - pyo3-library/pybind11-library/cpp-library/cpp-tool/web-app: each
     needs a genuinely different toolchain (cargo/cmake/npm, not
     ruff/ty/pytest) -- not a parametrization of this test. All still
     verified to RENDER without error via the pre-existing
     test_all_registered_types_render_without_error. Follow-up filed:
-    T-draft-b6ece14f (scaffold-type parity, names the per-type-override
+    T-3335 (scaffold-type parity, names the per-type-override
     shadowing trap explicitly).
 
 OTHER TICKETS FILED (diax report items, not independently re-verified
 against gate source in this ticket -- filed per the brief's "file
 separately, do not fold in" instruction, each flagged as needing
 confirmation):
-  T-draft-27f5be95  F-008, FLAGCOV001 can only ever measure frob itself
-  T-draft-672af976  F-007, ROOT001's own remedy fires DSL001
-  T-draft-91ee9d1b  F-012, frob-suggest/--json UX gaps for consumers
-  T-draft-705a1652  F-009, REF001 on frob's own v2 ticket tree
+  T-3331  F-008, FLAGCOV001 can only ever measure frob itself
+  T-3332  F-007, ROOT001's own remedy fires DSL001
+  T-3334  F-012, frob-suggest/--json UX gaps for consumers
+  T-3333  F-009, REF001 on frob's own v2 ticket tree
 
 FORBIDDEN FIXES: not used. No known_keys tables pasted into any
 template (T-3273 stays the sole SCHEMA001 owner). No waivers added to
@@ -135,9 +135,9 @@ Evidence: tests/system/test_scaffold_dx.py::
   (both green: `uv run pytest tests/system/test_scaffold_dx.py -q` ->
   2 passed)
 
-Filed: T-draft-26ec5373 (python-library scaffold-check, distinct
-  findings), T-draft-27f5be95 (F-008), T-draft-672af976 (F-007),
-  T-draft-91ee9d1b (F-012), T-draft-705a1652 (F-009), T-draft-b6ece14f
+Filed: T-3330 (python-library scaffold-check, distinct
+  findings), T-3331 (F-008), T-3332 (F-007),
+  T-3334 (F-012), T-3333 (F-009), T-3335
   (scaffold-type parity across pyo3/pybind11/web-app/cpp, names the
   per-type frob.toml.j2 shadowing trap)
 
@@ -152,13 +152,28 @@ flagging per the coordinator's instruction rather than implying green.
 Retry before land if the box quiets.
 
 ### Changed
-(no changed files detected)
+```
+ docs/commands/scaffold.md                          |  41 ++++-
+ src/frob/scaffold/data/shared/python/frob.toml.j2  |  44 +++++
+ .../data/shared/python/logging/filter.py.j2        |   7 +-
+ .../shared/python/tests/system/test_build.py.j2    |   4 +
+ .../scaffold/data/types/python-tool/frob.toml.j2   |  44 +++++
+ tests/system/test_scaffold_dx.py                   |  19 +-
+ tickets/T-3277/ticket.md                           | 194 ++++++++++++++++++++-
+ tickets/T-3330/ticket.md                 |  60 +++++++
+ tickets/T-3331/ticket.md                 |  51 ++++++
+ tickets/T-3332/ticket.md                 |  54 ++++++
+ tickets/T-3333/ticket.md                 |  29 +++
+ tickets/T-3334/ticket.md                 |  48 +++++
+ tickets/T-3335/ticket.md                 |  80 +++++++++
+ 13 files changed, 667 insertions(+), 8 deletions(-)
+```
 
 ### Evidence
 - `tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]` (pytest node id, verified passing when recorded)
 - `tests/system/test_scaffold_dx.py::test_all_registered_types_render_without_error` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 1 passed (from 2 evidence id(s))
-- gates: 77 error(s), 3941 warning(s), 884 waived
-- error-findings: ARCH103@src/frob/app/_version_guard.py, ARCH103@src/frob/app/ticket_runner/_land_cmd.py, ARCH103@src/frob/refactor/_verify.py, COV001@strata-core/src/graph/model.rs, COV001@strata-core/src/graph/query.rs, COV003@tickets/T-3181, COV003@tickets/T-3223, COV007@.claude/hooks/frob-suggest.py, COV007@scripts/verify_release_ci_status.py, COV007@src/frob/tickets/_done_report.py, CYCLE001@src/frob/__init__.py, DEPR006@frob-deprecated-baseline.lock.json, DOC001@docs/strata/graph.md, DOC002@src/frob/tickets/_leases.py, DOC005@docs/modules/cli.md, DOC007@src/frob/app/check_runner.py, DOC007@src/frob/app/doctor_runner.py, DOC007@src/frob/ci_report.py, DOC007@src/frob/gates/_comment_placement.py, DOC007@src/frob/gates/_docstring_archaeology.py, DOC007@src/frob/ghio.py, DOC007@tests/unit/test_app_runners_batch6.py, DOC007@tests/unit/test_check.py, DOC007@tests/unit/test_close_blocked_by_guard.py, DOC007@tests/unit/test_doctor_runner_t1276.py, DOC007@tests/unit/test_logging_module.py, DOC007@tests/unit/test_reopen_ticket.py, DRIFT001@scripts/fleet_status.py, DRIFT001@src/frob/doctor.py, DRIFT001@src/frob/tickets/_land_squash.py, DRIFT002@docs/modules/gates.md, DRIFT002@src/frob/app/check_runner.py, DRIFT002@src/frob/app/doctor_runner.py, DRIFT002@src/frob/ci_report.py, DRIFT002@src/frob/gates/_comment_placement.py, DRIFT002@src/frob/gates/_docstring_archaeology.py, DRIFT002@src/frob/ghio.py, DRIFT002@tests/unit/test_app_runners_batch6.py, DRIFT002@tests/unit/test_check.py, DRIFT002@tests/unit/test_close_blocked_by_guard.py, DRIFT002@tests/unit/test_doctor_runner_t1276.py, DRIFT002@tests/unit/test_logging_module.py, DRIFT002@tests/unit/test_reopen_ticket.py, FLAGCOV001@frob.toml, LARGE001@src/frob/__main__.py, LARGE001@src/frob/process/_reap.py, LARGE001@src/frob/stats/_agentic.py, LARGE001@strata-core/src/graph/vmodel.rs, LARGE001@strata-core/src/parse/grammar_core.rs, LEXCHECK001@src/frob/gates/_comment_placement.py, PERF004@.claude/hooks/frob-suggest.py, PERF004@src/frob/lang/_support.py, PII012@src/frob/app/doctor_runner.py, PII012@src/frob/serve/_socketd.py, PII012@tests/unit/test_doctor_runner_t1276.py, PRE001@tickets/T-3277, REF002@docs/modules/ci_report.md, REF002@docs/modules/ci_validity.md, REF002@docs/modules/ghio.md, REG002@docs/design/registry/check-coverage.yaml, REL001@src/frob/__main__.py, REL001@src/frob/stats/_agentic.py, REL001@strata-core/src/graph/vmodel.rs, REL001@strata-core/src/parse/grammar_core.rs, REL001@tests/unit/test_conftest_suite_result_status.py, SEC110@.claude/hooks/frob-suggest.py, SEC110@src/frob/__main__.py, SEC110@src/frob/logging/logger.py, SEC110@tests/test_worktree_guard.py, TICK004@tickets.md, TICK006@tickets.md, TICK011@tickets.md, WAIVE011@frob-ratchet.lock.json, WIRE002@src/frob/gates/_tdd_order.py, WIRE002@tests/conftest.py, unknown-argument@tests/unit/test_app_runners_process.py, unknown-argument@tests/unit/test_pytest_spawn_env_wiring.py
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 83 error(s), 3938 warning(s), 885 waived
+- error-findings: ARCH103@src/frob/app/_version_guard.py, ARCH103@src/frob/app/ticket_runner/_land_cmd.py, ARCH103@src/frob/refactor/_verify.py, COV001@strata-core/src/graph/model.rs, COV001@strata-core/src/graph/query.rs, COV003@tickets/T-0089, COV003@tickets/T-0148, COV003@tickets/T-0720, COV003@tickets/T-0742, COV003@tickets/T-0996, COV003@tickets/T-1062, COV003@tickets/T-3181, COV003@tickets/T-3223, COV007@.claude/hooks/frob-suggest.py, COV007@scripts/verify_release_ci_status.py, CYCLE001@src/frob/__init__.py, DEPR006@frob-deprecated-baseline.lock.json, DOC001@docs/strata/graph.md, DOC002@src/frob/tickets/_leases.py, DOC005@docs/modules/cli.md, DOC006@tickets/T-3287/ticket.md, DOC007@src/frob/app/check_runner.py, DOC007@src/frob/app/doctor_runner.py, DOC007@src/frob/ci_report.py, DOC007@src/frob/gates/_comment_placement.py, DOC007@src/frob/gates/_docstring_archaeology.py, DOC007@src/frob/ghio.py, DOC007@tests/unit/test_app_runners_batch6.py, DOC007@tests/unit/test_check.py, DOC007@tests/unit/test_close_blocked_by_guard.py, DOC007@tests/unit/test_doctor_runner_t1276.py, DOC007@tests/unit/test_logging_module.py, DOC007@tests/unit/test_reopen_ticket.py, DRIFT001@scripts/fleet_status.py, DRIFT001@src/frob/tickets/_land_squash.py, DRIFT002@docs/modules/gates.md, DRIFT002@src/frob/app/check_runner.py, DRIFT002@src/frob/app/doctor_runner.py, DRIFT002@src/frob/ci_report.py, DRIFT002@src/frob/gates/_comment_placement.py, DRIFT002@src/frob/gates/_docstring_archaeology.py, DRIFT002@src/frob/ghio.py, DRIFT002@tests/unit/test_app_runners_batch6.py, DRIFT002@tests/unit/test_check.py, DRIFT002@tests/unit/test_close_blocked_by_guard.py, DRIFT002@tests/unit/test_doctor_runner_t1276.py, DRIFT002@tests/unit/test_logging_module.py, DRIFT002@tests/unit/test_reopen_ticket.py, FLAGCOV001@frob.toml, LARGE001@src/frob/__main__.py, LARGE001@src/frob/process/_reap.py, LARGE001@src/frob/stats/_agentic.py, LARGE001@strata-core/src/graph/vmodel.rs, LARGE001@strata-core/src/parse/grammar_core.rs, LEXCHECK001@src/frob/gates/_comment_placement.py, PERF004@.claude/hooks/frob-suggest.py, PERF004@src/frob/lang/_support.py, PII012@src/frob/app/doctor_runner.py, PII012@src/frob/serve/_socketd.py, PII012@tests/unit/test_doctor_runner_t1276.py, REF002@docs/modules/ci_report.md, REF002@docs/modules/ci_validity.md, REF002@docs/modules/ghio.md, REG002@docs/design/registry/check-coverage.yaml, REG008@docs/design/registry/check-coverage.yaml, REL001@src/frob/__main__.py, REL001@src/frob/stats/_agentic.py, REL001@strata-core/src/graph/vmodel.rs, REL001@strata-core/src/parse/grammar_core.rs, REL001@tests/unit/test_conftest_suite_result_status.py, SEC110@.claude/hooks/frob-suggest.py, SEC110@src/frob/__main__.py, SEC110@src/frob/logging/logger.py, SEC110@tests/test_worktree_guard.py, SELFAUDIT001@design, TICK004@tickets.md, TICK006@tickets.md, TICK011@tickets.md, WAIVE011@frob-ratchet.lock.json, WIRE002@src/frob/gates/_tdd_order.py, WIRE002@tests/conftest.py, unknown-argument@tests/unit/test_app_runners_process.py, unknown-argument@tests/unit/test_pytest_spawn_env_wiring.py

@@ -12,15 +12,31 @@ blocked_by:
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tests/system/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
-- tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
+- tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
+  new_node: tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]
+  reason: T-3277 parametrized this test for multi-scaffold-type coverage; same test
+    content for python-tool, new node id
+  actor: logan
+  at: '2026-08-28'
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately failed during a full uv run pytest -q but passes standalone; suspect shared graph cache or cwd contention between system tests. Found during T-0058 close-out. Also: pytest.mark.slow is unregistered (PytestUnknownMarkWarning).
 ## Done report

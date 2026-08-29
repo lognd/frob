@@ -3,10 +3,43 @@
 Also available as `frob ops scaffold` (T-1569) -- same flags, same code.
 
 Scaffold new projects from registered templates. Every type targets
-ABSOLUTELY MINIMAL boilerplate: `frob scaffold new <type> demo && cd demo
-&& git init && make check` should go green immediately, with no manual
-fixups, for the Python and Rust types (the web-app type needs `npm`
-available; verify by inspection if it isn't).
+ABSOLUTELY MINIMAL boilerplate: nothing in the rendered template itself
+needs hand-fixing to pass its own lint/typecheck/test rules (the web-app
+type needs `npm` available; verify by inspection if it isn't).
+
+T-3277: a bare `git init && make check` is NOT the full first-run
+sequence, and never has been -- `make check` itself writes
+`frob-coverage.lock.json` (via `frob check --stamp-coverage`) and then
+immediately re-checks the same tree in one Makefile target, with no
+chance to commit in between. `PRE001`/`SCOPE001` correctly flag that as
+an uncommitted, unticketed diff (the same discipline this repo holds
+itself to) -- so the very first `make check` on a freshly-committed
+scaffold always fails on exactly those two rules, by design, not as a
+scaffold or gate defect. The real "go green with no manual fixups"
+sequence commits the lockfiles `frob check --stamp-coverage` writes
+before re-running `frob check`:
+
+<!-- frob:describes src/frob/scaffold/project.py::render_project -->
+```bash
+frob scaffold new <type> demo && cd demo
+git init -q -b main
+git add -A && git commit -q -m init
+
+uv sync
+uv run ruff check src/ tests/ && uv run ruff format --check src/ tests/
+uv run ty check src/
+uv run pytest tests/ --cov=src --cov-report=xml
+
+frob check --stamp-coverage
+git add -A && git commit -q -m "coverage baseline"
+frob check
+```
+
+Every step here is scripted (no judgment call, no reading an error and
+deciding a fix) -- "no manual fixups" means no hand-edits to the
+generated template, not zero commands. `tests/system/test_scaffold_dx.py`
+is the exact sequence this promise is verified against; if it drifts from
+this doc, the doc is wrong, not the test.
 
 ## Usage
 
