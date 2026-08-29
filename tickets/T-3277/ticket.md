@@ -65,7 +65,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5816dffd4975ae40fa4e151038d6a3fcf3c02203
 ---
 REPORTED FROM REAL FIRST USE (../diax FROBLEMS.md F-005, frob 0.530.0,
 2026-08-28). This is the single most damaging bug for a new user, because it is
