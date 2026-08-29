@@ -8,7 +8,7 @@ Note: T-3237 is a byte-identical duplicate of this ticket (same rule, same file,
 
 Evidence node id tests/test_vet_capability.py::TestLeadingCommentDoesNotDefeatDocstringExclusion::test_leading_comment_then_docstring_prose_stays_quiet already exists and directly characterizes this exact fixture's exclusion behavior.
 
-Filed: T-draft-e1bca269 (close-time disclosure check false-positives on split done-report.md -- same tooling bug, already filed from T-3196)
+Filed: T-3285 (close-time disclosure check false-positives on split done-report.md -- same tooling bug, already filed from T-3196)
 
 ### Changed
 ```

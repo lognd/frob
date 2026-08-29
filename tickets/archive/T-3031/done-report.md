@@ -45,11 +45,14 @@ Evidence:
   this ticket's own diff, reran the 3 in isolation, identical failures)
   before this ticket's diff ever touched anything; two of the three
   (T-3028, T-3030) were already filed by T-3019's own land, the third
-  filed here as T-draft-36006d55 (gets a real id at land/renumber).
+  drafted here as "T-draft-36006d55" (never survived land/renumber,
+  T-0577 draft-loss class -- see the corrected Filed: line below).
 
-Filed: T-draft-36006d55 ("TestGitlessTargetGateSeverity::
+Filed: T-3091 ("TestGitlessTargetGateSeverity::
 test_render_lint_gate_warns_not_errors_on_gitless_root fails on main")
--- gets a real ticket id at land/renumber time.
+-- the close-time draft "T-draft-36006d55" never survived land/renumber
+(T-0577 draft-loss class); corrected here (TICK006) to name the real
+ticket id, verified by title match.
 
 Gates: `frob check --ticket T-3031 --only affect_drift --only fmt --only
 scope --only prework --only coverage` clean for this ticket's touched

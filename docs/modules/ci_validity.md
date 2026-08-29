@@ -1,3 +1,5 @@
+<!-- frob:waive REF002 reason="frob.ci_validity is a single, small support module (test-outcome-vs-affects-graph classification) with exactly one consumer by design (src/frob/ci_validity.py); a second consumer would not be genuine" -->
+
 # frob.ci_validity -- CI result validity against the affects graph
 
 One sentence: `frob.ci_validity` classifies each test outcome from a

@@ -1,3 +1,5 @@
+<!-- frob:waive REF002 reason="frob.ci_report is a single, small support module (typed pytest-output parsing) with exactly one consumer by design (src/frob/ci_report.py); a second consumer would not be genuine" -->
+
 # frob.ci_report -- structured CI failure reporting
 
 One sentence: `frob.ci_report` turns a `frob.ghio.JobLog`'s raw pytest

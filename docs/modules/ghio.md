@@ -1,3 +1,5 @@
+<!-- frob:waive REF002 reason="frob.ghio is a single, small support module (the one gh CLI subprocess seam) with exactly one consumer by design (src/frob/ghio.py); a second consumer would not be genuine" -->
+
 # frob.ghio -- the GitHub/CI subprocess seam
 
 One sentence: `frob.ghio` is the single, typed, Result-returning seam for

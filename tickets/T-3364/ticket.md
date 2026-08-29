@@ -2,7 +2,7 @@
 id: T-3364
 title: 'Fix gate:REG002/REF002 errors: register 3 missing gate rule ids, waive REF002
   on 3 single-consumer support-module docs'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'

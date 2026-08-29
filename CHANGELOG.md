@@ -606,6 +606,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3347: Fix gate:COV errors: strata-core graph doc anchors, COV003 evidence kind, COV007 private-anchor placement
 - T-3360: T-3266's stale-claims guard wrongly blocks reverify's own post-close evidence-add flow
 - T-3361: fix stale mock signature in test_ticket_close_bug002_t1427
+- T-3364: Fix gate:REG002/REF002 errors: register 3 missing gate rule ids, waive REF002 on 3 single-consumer support-module docs
 - T-3374: T-3191's multi-platform ty union triples SUPPRESS001 findings for a cross-platform diagnostic
 
 ## [0.530.0] - unreleased

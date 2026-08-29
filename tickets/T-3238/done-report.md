@@ -6,7 +6,7 @@ DRIFT002 src/frob/clean/_core.py -- LIVE: both findings confirmed (2 dangling fr
 
 Evidence: tests/test_clean.py::test_deep_clean_preserves_rapid_debt_jsonl (already covers the must-fire case the corrected directive now points to).
 
-Filed: T-draft-e1bca269 (close-time disclosure check false-positives on split done-report.md -- same tooling bug, already filed from T-3196)
+Filed: T-3285 (close-time disclosure check false-positives on split done-report.md -- same tooling bug, already filed from T-3196)
 
 ### Changed
 ```

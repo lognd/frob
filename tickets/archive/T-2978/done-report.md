@@ -1,6 +1,7 @@
 ## Done report
 
-SCOPE CUT DISCLOSED UP FRONT: this lands live per-task progress for `frob
+SCOPE CUT DISCLOSED UP FRONT (follow-up filed as T-2998, cited again
+below with full detail): this lands live per-task progress for `frob
 check`'s PYTHON stage only (the ticket's own most-measured example, 274s).
 `_dispatch_check_cpp`/`_dispatch_check_rust`/`_dispatch_check_ts` accept the
 new `progress` kwarg for call-site uniformity but do not yet forward it --
