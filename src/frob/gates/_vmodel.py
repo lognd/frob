@@ -87,6 +87,8 @@ def _strata_files(root: Path, design_dir: Path) -> list[Path]:
     return found
 
 
+# frob:ticket T-3264
+# frob:tests tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud.test_check_fails_loud_with_sys004_when_strata_present  # noqa: E501
 def _collect_vmodel_graph(
     paths: list[Path],
 ) -> tuple[
@@ -116,8 +118,27 @@ def _collect_vmodel_graph(
     grammar does not enforce this -- the kernel does) but will correctly
     surface here as a VMOD001 construction-error finding once
     `vmodel_check` refuses it, exactly the H3 behavior this ticket exists
-    to guarantee."""
-    import strata_core
+    to guarantee.
+
+    T-3264: `strata_core` may be genuinely absent (a standalone
+    `uv tool install frob` with no natives, T-0134) -- an unguarded
+    `import strata_core` here previously crashed the whole `frob check`
+    dispatch with a raw `ImportError` instead of degrading, even though
+    `sys_gate`'s SYS004 already reports the exact same native-missing
+    condition as a proper typed finding for every file in `paths`
+    (this docstring's own "SYS004 covers this" note, just not yet true
+    for the native-missing case specifically). Return empty rather than
+    raise: a VMOD001 finding would be redundant with SYS004 here too,
+    same as the per-file parse-failure skip below."""
+    try:
+        import strata_core
+    except ImportError as exc:
+        _log.warning(
+            "vmodel_gate: strata_core native extension unavailable (%s) -- "
+            "skipping (SYS004 covers this)",
+            exc,
+        )
+        return [], [], {}
 
     nodes: list[tuple[str, str, str | None, dict[str, str]]] = []
     edges: list[tuple[str, str, str, dict[str, str]]] = []

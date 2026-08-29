@@ -583,6 +583,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3255: Fix malformed directive false-positive in docarch001_violations wiring comment
 - T-3256: Six concurrent frob check runs drive the box to zero free memory: each sizes its pool against the whole machine, with no cross-process budget
 - T-3263: render_lint_gate git-ls-files WARNING log line loses its level prefix under pytest
+- T-3264: TestNativeMissingFailsLoud SYS004 test: unhandled NativeExtensionUnavailable crashes main instead of degrading to SYS004 finding
 - T-3268: frob perf spawns a hardcoded bare 'python' instead of sys.executable: wrong interpreter or outright SpawnFailed for real users
 - T-3271: frob scaffold new writes into the output dir, not <output>/<name>: contradicts its own quickstart and scattered a project across a user's home
 - T-3272: Ledger v2 must be the default for new repos: all six scaffold manifests still emit the v1 single-file tickets.md

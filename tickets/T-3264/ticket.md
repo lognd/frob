@@ -2,7 +2,7 @@
 id: T-3264
 title: 'TestNativeMissingFailsLoud SYS004 test: unhandled NativeExtensionUnavailable
   crashes main instead of degrading to SYS004 finding'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -36,6 +36,10 @@ scope_changes:
     already correct)
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_fails_loud_with_sys004_when_strata_present
+- tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files
+- tests/test_gates_vmodel.py::TestVmodelGate::test_noop_no_vmodel_declarations
 designated_repro_test: null
 threat: null
 component: null
