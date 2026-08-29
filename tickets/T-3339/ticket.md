@@ -1,7 +1,7 @@
 ---
 id: T-3339
 title: fix residual tests/unit failures (series EE)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -27,3 +27,6 @@ anchor_reason: null
 land_commit: null
 ---
 Re-measure tests/unit chunk1a/chunk1b failures after T-3268/T-3283/etc landed; fix remaining root causes.
+
+## Drop reason
+- 2026-08-28: premature scope before re-measure; will refile narrowly per root cause
