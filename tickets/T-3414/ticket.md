@@ -37,6 +37,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a9d9cd55f2023833fa01e222c3683ae2a1aeb61b
 ---
 docs/modules/tickets.md:99 cites 'T-draft-ad5e921b', a draft id that was renumbered to T-3360 once the ticket was persisted (drafts get a real T-#### id on the next reconcile) -- the doc anchor never got updated to follow the rename, so DOC011 fires. Fix: replace the stale 'T-draft-ad5e921b' citation with 'T-3360'.
