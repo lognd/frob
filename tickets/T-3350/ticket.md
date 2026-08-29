@@ -1,7 +1,7 @@
 ---
 id: T-3350
 title: Decompose the serve/tickets/testing/app CYCLE001 SCC (160 nodes, post-1.0.0)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-29'
@@ -38,6 +38,7 @@ scope:
 - tests/unit/test_rapid_sweep.py
 - tests/test_ticket_leases.py
 - tests/unit/test_unlanded_branch_work.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -289,7 +290,23 @@ scope_changes:
     through the removed frob.tickets._leases re-export
   actor: logan
   at: '2026-08-29'
-designated_repro_test: null
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'COV001: doc anchor for the extracted frob.nodeid.symref_to_nodeid'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'COV001: doc anchor for the extracted frob.nodeid.symref_to_nodeid'
+  actor: logan
+  at: '2026-08-29'
+evidence:
+- tests/system/test_cli_cycle.py::test_toplevel_two_module_cycle_fires
+- tests/system/test_cli_cycle.py::test_deferred_only_cycle_does_not_fire
+- tests/unit/test_nodeid.py::test_plain_dotted_qualname_becomes_double_colon
+- tests/unit/test_nodeid.py::test_bracketed_case_suffix_dots_pass_through_unchanged
+- tests/unit/test_nodeid.py::test_no_qualname_separator_is_a_noop_on_the_path_side
+designated_repro_test: tests/system/test_cli_cycle.py::test_deferred_only_cycle_does_not_fire
 threat: null
 component: null
 anchor: false

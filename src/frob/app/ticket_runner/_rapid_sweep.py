@@ -1164,7 +1164,7 @@ def sweep_stale_worktrees_after_land(root: Path) -> None:
     `Err`, e.g. `root` is not a git repository) is logged and swallowed --
     this runs in a detached child nobody is waiting on, and must never
     raise back into `_sweep_async`."""
-    from frob.tickets._leases import sweep_worktrees
+    from frob.tickets._worktree_sweep import sweep_worktrees
 
     result = sweep_worktrees(
         root, min_age_hours=_AUTO_SWEEP_MIN_AGE_HOURS, dry_run=False, force=False

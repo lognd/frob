@@ -60,6 +60,7 @@ from typani.result import Result
 from frob.lang._common import export_tree as _export_tree
 from frob.lang._common import flatten_tree
 from frob.lang._extract import COMMENT_TYPES, extract
+from frob.lang._extract import extract_import_edges as _extract_import_edges
 from frob.lang._extract import extract_imports as _extract_imports
 from frob.lang._extract import iter_identifiers as _iter_identifiers
 from frob.lang._models import (
@@ -1082,6 +1083,36 @@ def extract_imports(
     return Ok(specifiers)
 
 
+# frob:doc docs/modules/lang.md#public-api
+# frob:ticket T-3350
+# frob:tests tests/system/test_cli_cycle.py::test_toplevel_two_module_cycle_fires kind="e2e"  # noqa: E501
+# frob:tests tests/system/test_cli_cycle.py::test_deferred_only_cycle_does_not_fire kind="e2e"  # noqa: E501
+def extract_import_edges(
+    path: Path, *, expect_heterogeneous: bool = False
+) -> Result[tuple[tuple[str, bool], ...], LangError]:
+    """`extract_imports`, plus whether each specifier is import-time.
+
+    T-3350: `frob.check._python._build_import_graph` (CYCLE001) uses this
+    to build an import-TIME graph rather than an import-EVER graph -- a
+    function/method/class-body-local import or one inside
+    `if TYPE_CHECKING:` cannot deadlock a real import (deferring is the
+    standard remedy for a cycle, not a second occurrence of one), so those
+    edges come back tagged `import_time=False` instead of being
+    indistinguishable from a genuine module-level import. See
+    `frob.lang._extract.extract_import_edges` for the per-language walker
+    split.
+    """
+    parsed_result = _parse(
+        path, expect_heterogeneous=expect_heterogeneous, site="extract_import_edges"
+    )
+    if parsed_result.is_err:
+        return Err(parsed_result.danger_err)
+    tree, _source, language_label = parsed_result.danger_ok
+    edges = _extract_import_edges(tree, language_label)
+    _log.debug("extracted %d import edges from %s", len(edges), path)
+    return Ok(edges)
+
+
 # frob:doc docs/modules/graph.md#public-api
 def iter_identifiers(
     path: Path, *, expect_heterogeneous: bool = False
@@ -1178,6 +1209,7 @@ __all__ = [
     "declared_source_prefixes",
     "derive_capability_registry",
     "derive_language_registry",
+    "extract_import_edges",
     "extract_imports",
     "flatten_tree",
     "iter_identifiers",

@@ -216,6 +216,7 @@ The value shapes `frob.lang` hands to `frob.graph`, all frozen so a
 
 <!-- frob:describes src/frob/lang/_extract.py::extract -->
 <!-- frob:describes src/frob/lang/_extract.py::extract_imports -->
+<!-- frob:describes src/frob/lang/_extract.py::extract_import_edges -->
 <!-- frob:describes src/frob/lang/_extract.py::iter_identifiers -->
 
 The per-language walkers behind `parse_file`, also usable directly on an
@@ -225,6 +226,15 @@ already-parsed tree.
   so comments can bind to symbol spans).
 - `extract_imports(tree, language)` -- raw import/include specifiers, empty
   for a language with no registered import walker.
+- `extract_import_edges(tree, language)` -- `(spec, import_time)` for every
+  import (T-3350). `import_time=False` marks a python import that cannot
+  execute at module-load time -- inside a function/method/class body, or
+  inside `if TYPE_CHECKING:` -- so a cycle-detector reading this instead of
+  `extract_imports` does not count the standard deferred-import remedy for
+  an import cycle as a second occurrence of one. Every non-python language's
+  walker has no such deferred-import concept in frob's model today, so its
+  specifiers all come back `import_time=True`, matching `extract_imports`'s
+  existing behavior for those languages exactly.
 - `iter_identifiers(tree, language)` -- `(name, 1-based line)` for every
   identifier-like leaf, empty for an unsupported language.
 

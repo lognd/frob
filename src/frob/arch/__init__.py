@@ -18,18 +18,27 @@ from typing import cast
 
 from tree_sitter import Tree
 
-from frob.arch import (
-    _async_hazards,
-    _concurrency,
-    _concurrency_model,
-    _cpp,
-    _cpp_mayraise,
-    _lock_ordering,
-    _ocp,
-    _patterns,
-    _python,
-    _shared_state_race,
-)
+# T-3350: individual `import frob.arch.<submodule> as <submodule>`
+# statements rather than one `from frob.arch import (...)` -- the `from`
+# form's ambiguous-target handling (T-2211, `frob.lang._extract._python_
+# import_specifiers`) emits a BARE `frob.arch` candidate alongside each
+# dotted submodule one, and since this file IS `frob.arch.__init__`, that
+# bare candidate resolves to itself: a genuine (if harmless in practice)
+# 1-node self-cycle CYCLE001/`frob cycle` correctly flags. A plain `import
+# a.b.c as c` statement has no such bare-package reading -- it names only
+# the submodule -- so it carries the identical runtime binding with no
+# self-edge.
+import frob.arch._abstraction as _abstraction
+import frob.arch._async_hazards as _async_hazards
+import frob.arch._concurrency as _concurrency
+import frob.arch._concurrency_model as _concurrency_model
+import frob.arch._cpp as _cpp
+import frob.arch._cpp_mayraise as _cpp_mayraise
+import frob.arch._lock_ordering as _lock_ordering
+import frob.arch._ocp as _ocp
+import frob.arch._patterns as _patterns
+import frob.arch._python as _python
+import frob.arch._shared_state_race as _shared_state_race
 from frob.arch._exceptions import check_errors_as_values
 from frob.arch._fallibility import (
     check_over_broad_except,
@@ -534,9 +543,9 @@ def _run_python_checks(
     if not is_test:
         _python._check_long_functions(tree, rel, limits.max_function_lines, suggestions)
         _python._check_god_classes(tree, rel, limits.max_class_methods, suggestions)
-        all_py_sigs.extend(_python._extract_signatures(tree, rel))
+        all_py_sigs.extend(_abstraction._extract_signatures(tree, rel))
         if not _is_init_file(rel):
-            all_dispatch_refs[rel] = _python._collect_file_dispatch_refs(tree)
+            all_dispatch_refs[rel] = _abstraction._collect_file_dispatch_refs(tree)
         # T-1485: _check_type_switch/_check_state_field_chain/
         # _check_stringly_typed each independently walked the whole tree
         # for _find_if_statements before this -- compute it ONCE per file
@@ -701,7 +710,7 @@ def analyze_project(
                 except ValueError:
                     pass
 
-    _python._check_abstraction_opportunities(
+    _abstraction._check_abstraction_opportunities(
         all_py_sigs, all_dispatch_refs, suggestions
     )
     _patterns._check_scattered_construction(all_constructions, suggestions)

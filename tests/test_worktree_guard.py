@@ -19,7 +19,7 @@ from frob.app.agent_runner import run as agent_run
 from frob.gitio import GitError
 from frob.scaffold._managed import _apply_stash_guard
 from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
-from frob.tickets._leases import _LeaseRecord, leases_dir, sweep_worktrees
+from frob.tickets._leases import _LeaseRecord, leases_dir
 from frob.tickets._models import TicketError
 from frob.tickets._worktree_guard import (
     FROB_AGENT_ENV,
@@ -31,6 +31,7 @@ from frob.tickets._worktree_guard import (
     warn_if_xdist_bound_missing,
     warn_if_xdist_plugin_missing,
 )
+from frob.tickets._worktree_sweep import sweep_worktrees
 
 
 def _git(*args: str, cwd: Path) -> None:

@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from frob.gates import _symref_to_nodeid
 from frob.graph import EdgeKind, GraphSnapshot
+from frob.nodeid import symref_to_nodeid as _symref_to_nodeid
 from frob.tickets import Ticket
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,

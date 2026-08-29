@@ -600,6 +600,8 @@ def _should_skip_root_lease(root: Path, common_dir: Path) -> bool:
     same thing) must record leases exactly as before."""
     if common_dir.parent.resolve() != root.resolve():
         return False
+    from frob.tickets._worktree_sweep import _list_agent_worktrees
+
     siblings = _list_agent_worktrees(root)
     return siblings.is_ok and len(siblings.danger_ok) > 0
 
@@ -3213,29 +3215,21 @@ def _unlink_confirmed_stale_lease(leases_root: Path, record: "_LeaseRecord") -> 
 
 
 # frob:ticket T-2833
+# frob:ticket T-3350
 # The worktree-sweep family (sweep_worktrees/remove_worktree and their
-# shared verdict machinery) moved to `frob.tickets._worktree_sweep` -- the
-# two names are re-imported and re-exported here so this module's two
-# existing external importers (`frob.app.worktree_runner`, `frob.app.
-# ticket_runner._rapid_sweep`, both `from frob.tickets._leases import
-# sweep_worktrees`/`remove_worktree`) need no change (verified: `git grep`
-# for both import lines pre- and post-split resolves to the same path).
-# frob:ticket T-2833
-# `_should_skip_root_lease` (above, T-2007) also needs `_list_agent_
-# worktrees` -- imported here (rather than at the top of the file) to
-# avoid a load-time import cycle (`_worktree_sweep` imports several names
-# FROM this module already); Python resolves this fine since the names
-# are only looked up when the functions below actually run, well after
-# both modules have finished loading.
-from frob.tickets._worktree_sweep import (  # noqa: E402
-    _list_agent_worktrees as _list_agent_worktrees,
-)
-from frob.tickets._worktree_sweep import (  # noqa: E402
-    remove_worktree as remove_worktree,
-)
-from frob.tickets._worktree_sweep import (  # noqa: E402
-    sweep_worktrees as sweep_worktrees,
-)
+# shared verdict machinery) moved to `frob.tickets._worktree_sweep`.
+# T-3350: this module used to re-export them (plus `_list_agent_
+# worktrees`, used internally by `_should_skip_root_lease` above) back
+# under its own name -- that re-export was the ONE back-edge closing a
+# 2-node `frob.tickets._leases` <-> `frob.tickets._worktree_sweep`
+# CYCLE001 SCC. `_should_skip_root_lease` now imports `_list_agent_
+# worktrees` directly, function-local (deferred, same load-order reason
+# as before: `_worktree_sweep` imports several names FROM this module at
+# its own top level, so this module cannot import `_worktree_sweep` back
+# at ITS top level too). The two external callers that used to reach
+# `sweep_worktrees`/`remove_worktree` through this module now import them
+# directly from `frob.tickets._worktree_sweep`
+# (`frob.app.worktree_runner`, `frob.app.ticket_runner._rapid_sweep`).
 
 
 # frob:ticket T-0601

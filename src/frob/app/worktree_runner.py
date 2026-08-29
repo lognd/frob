@@ -21,9 +21,14 @@ from frob.tickets._leases import (
     force_release_lease,
     read_all_leases,
     release_orphaned_lease,
-    remove_worktree,
-    sweep_worktrees,
 )
+
+# T-3350: `remove_worktree`/`sweep_worktrees` come directly from their real
+# home (`frob.tickets._worktree_sweep`) rather than through `frob.tickets.
+# _leases`'s former re-export -- that re-export was the ONE back-edge
+# closing a 2-node `frob.tickets._leases` <-> `frob.tickets._worktree_
+# sweep` CYCLE001 SCC.
+from frob.tickets._worktree_sweep import remove_worktree, sweep_worktrees
 
 _log = get_logger(__name__)
 

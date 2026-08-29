@@ -5,7 +5,7 @@ from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.cycle.graph import DependencyGraph, find_cycles
-from frob.lang import extract_imports, resolve_local_import
+from frob.lang import extract_import_edges, resolve_local_import
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -15,11 +15,16 @@ _PY_EXTS = {".py"}
 # frob.lang's grammar table does not carry -- pre-existing behavior, kept
 # as-is rather than narrowed as part of T-0129).
 _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
-# extract_imports (called below) is a tree-sitter-only escape hatch with no
-# `.strata` analogue (frob.lang docstring), so cycle detection can only walk
-# import edges for languages tree-sitter actually parses (T-0129). `.strata`
-# files still become graph nodes via `graph.add_node` in `_process_path`
-# below -- they simply get no import edges, which is graceful, not a crash.
+# extract_import_edges (called below) is a tree-sitter-only escape hatch
+# with no `.strata` analogue (frob.lang docstring), so cycle detection can
+# only walk import edges for languages tree-sitter actually parses
+# (T-0129). `.strata` files still become graph nodes via `graph.add_node`
+# in `_process_path` below -- they simply get no import edges, which is
+# graceful, not a crash.
+# T-3350: only import_time=True edges are added -- a function/class-body-
+# local import or one inside `if TYPE_CHECKING:` cannot deadlock a real
+# import at module-load time (deferring is the standard remedy FOR a
+# cycle), so `frob cycle` must not fire on it either.
 
 
 # frob:doc docs/modules/app.md#runners
@@ -96,11 +101,15 @@ def _resolve_project_root(path: Path) -> Path | None:
 def _add_file_edges(
     graph: DependencyGraph, path: Path, rel: str, language: str, project_root: Path
 ) -> str | None:
-    """Add `path`'s import edges to `graph`; return a parse-error message, if any."""
-    result = extract_imports(path)
+    """Add `path`'s import-TIME edges to `graph`; return a parse-error
+    message, if any (T-3350: deferred imports -- function/class-body-local,
+    or inside `if TYPE_CHECKING:` -- are excluded, see module docstring)."""
+    result = extract_import_edges(path)
     if result.is_err:
         return f"parse error in {rel}: {result.danger_err}"
-    for spec in result.danger_ok:
+    for spec, import_time in result.danger_ok:
+        if not import_time:
+            continue
         resolved = resolve_local_import(
             spec, language, file_dir=path.parent, root=project_root
         )

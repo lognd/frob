@@ -7262,3 +7262,19 @@ ticket land`'s pre-land check path (mirroring BUG002's own
 `bug_repro_violations` call site in `frob.tickets._land`) is deferred to
 a follow-up ticket -- this ticket's scope is the check and its rule, not
 the waterfall gate T-3004 section 9 explicitly defers.
+
+## frob.nodeid (T-3350)
+
+<!-- frob:describes src/frob/nodeid.py::symref_to_nodeid -->
+
+A dependency-free leaf module holding `symref_to_nodeid(symref)`
+(`path::a.b` -> `path::a::b`, the pytest node id spelling of a qualname,
+T-0324's parametrize-case bracket-handling fix). Extracted out of
+`frob.gates` (T-3350) to collapse CYCLE001's 16-node `frob.gates` <->
+`frob.tickets` SCC -- `frob.tickets._scope_coverage`'s top-level import of
+this pure string-transform helper from `frob.gates` was the SCC's one
+genuine runtime back-edge. `frob.gates` still re-imports it under its old
+private name (`_symref_to_nodeid`) so every existing call site there is
+unchanged; see `frob.nodeid`'s own module docstring for why this home was
+chosen over `frob.gates` (its prior home) and `frob.testing` (the closer
+domain fit, since this produces pytest node ids, but not itself a leaf).

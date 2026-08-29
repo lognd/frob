@@ -13,41 +13,64 @@ dispatch table at import time.
 
 from __future__ import annotations
 
-# T-2363: this file is the representative (lowest-sorted) node of a live,
-# 160-node CYCLE001 import cycle spanning frob.serve/frob.stats/frob.tickets/
-# frob.testing/frob.app. Measured directly (frob.check._python._build_import_
-# graph + frob.cycle.graph.find_cycles against the real src/ tree, not
-# guessed).
+# T-3350 (superseding T-2363/T-2667's SUPERSEDED analysis below): the
+# 160/185/282-node CYCLE001 SCC every earlier investigation on this file
+# measured was a MEASUREMENT ARTIFACT, not a real import-time cycle --
+# `frob.check._python._build_import_graph` (and `frob cycle`'s own
+# `frob.app.cycle_runner`) were counting function/method/class-body-local
+# imports and `if TYPE_CHECKING:` imports as import-time edges, when
+# deferring an import is the STANDARD REMEDY for a cycle, not a second
+# occurrence of one. Fixed at the source (`frob.lang._extract.
+# extract_import_edges`, T-3350): both graph builders now add only
+# genuinely import-time edges. Re-measured with correct counting: the
+# real import-time graph has 6 small SCCs, largest 16 nodes -- not 160-282.
 #
-# CORRECTED PREMISE (T-2667, superseding T-2363's original claim below):
-# the owner picked candidate 2 (stats/__init__.py's `from frob.tickets
-# import TicketQueue, TicketState, load_queue`) and it landed -- but the
-# SCC did NOT collapse. Re-measurement after that land shows it is still
-# 160 nodes, still closed, now entirely by edges that never route through
-# frob.stats: at least five of them (serve/_tools.py:24 and :606,
-# tickets/_land.py, testing/_coverage_wait.py:163, and several
-# app/_daemon_proxy.py sites), full edge-by-edge breakdown in T-2667's
-# ticket body. T-2363's original claim -- that cutting only the smallest-
-# looking edge (stats -> tickets) would not collapse it -- is confirmed,
-# but its assumption that a SECOND cut would suffice was wrong; a second
-# cut has now also been measured insufficient. Of the five remaining
-# edges, exactly ONE (serve/_tools.py:24) is a top-level import that could
-# actually deadlock at import time -- the other four are function-local
-# and only make this graph-level SCC finding fire. Real decomposition
-# means choosing among these edges to invert or extract, each a different
-# package's public-surface change; per the repo owner's explicit standing
-# instruction ("if that decision is not obvious, stop and tell me rather
-# than guessing; I would rather own that call than have it made
-# implicitly"), that pick is deferred to a dedicated post-1.0.0 epic
-# rather than made unilaterally here.
+# That 16-node SCC (`frob.gates` <-> `frob.tickets`) had exactly ONE
+# genuine runtime back-edge: `frob.tickets._scope_coverage`'s top-level
+# `from frob.gates import _symref_to_nodeid`, a pure string-transform
+# helper with no real dependency on either package. Extracted to
+# `frob.nodeid` (a dependency-free leaf module) -- this SCC is gone.
 #
-# This is TRACKED DEBT, not a permanent exception: the cycle is real, it
-# is not a release blocker (not among the 213 CI-hard release-blocking
-# errors), and it WILL be fixed by the epic named below.
-# frob:debt CYCLE001 reason="160-node serve/tickets/testing/app SCC, corrected and \
-# re-measured by T-2667 after candidate 2 (stats->tickets) landed without collapsing \
-# it; real decomposition deferred to a dedicated post-1.0.0 epic, not a release \
-# blocker" ticket="T-3350"
+# Of the five further small SCCs correct counting exposed (2-3 nodes
+# each), four were the `package.__init__` importing/re-exporting its own
+# submodule(s) shape and are also gone: `frob.arch.__init__`'s self-
+# import of its own submodules, `frob.arch._abstraction` <->
+# `frob.arch._python`, `frob.tickets._leases` <-> `frob.tickets.
+# _worktree_sweep`, and `frob.serve` <-> `frob.serve._events` <->
+# `frob.serve._socketd` (all fixed T-3350: plain `import a.b as b`
+# statements or a redirected re-export, matching this ticket's own
+# established pattern for the shape).
+#
+# TWO SCCs remain, per the repo owner's explicit standing instruction
+# ("if that decision is not obvious, stop and tell me rather than
+# guessing; I would rather own that call than have it made implicitly")
+# -- both are a GENUINE mutual dependency an earlier, deliberate design
+# choice already worked around via import ORDERING rather than avoided,
+# and collapsing them means overriding that prior choice, not a
+# mechanical import-line rewrite:
+#   - `frob.graph` <-> `frob.graph.lock` (2 nodes): `lock.py` needs
+#     `resolve()`, which `frob.graph.__init__` defines directly and keeps
+#     WITH its build-graph pipeline under an existing ARCH102/LARGE001
+#     cohesion waiver (T-0362 already documents the load-order
+#     workaround this requires).
+#   - `frob.app.telemetry` <-> `frob.app.telemetry._footguns` <->
+#     `frob.app.telemetry._usage` (3 nodes): both submodules need
+#     `is_disabled`/`_telemetry_path` (plus `_footguns` needs
+#     `_home_config_state_hash`/`_external_path_arg_hash`), all defined
+#     in `__init__.py` itself; T-2694 already documents the deliberate
+#     bottom-of-file import ordering this requires.
+#
+# This is TRACKED DEBT, not a permanent exception: both remaining SCCs
+# are real (if small), not a release blocker on their own merits (2-3
+# nodes each, not 160), and will be fixed once the owner picks a
+# direction for each.
+# frob:debt CYCLE001 reason="two small (2-3 node) SCCs remain after T-3350's fix: \
+# frob.graph<->frob.graph.lock (resolve() needed by both, currently kept together \
+# under an ARCH102/LARGE001 cohesion waiver) and \
+# frob.app.telemetry<->._footguns<->._usage \
+# (is_disabled/_telemetry_path/_home_config_state_hash needed by both submodules, \
+# currently kept in __init__.py per T-2694's ordering workaround); each needs an owner \
+# pick on which side to extract/invert, not a mechanical fix" ticket="T-3411"
 from frob.ci_report import (
     FailureCluster,
     JobReport,

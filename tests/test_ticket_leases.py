@@ -46,7 +46,6 @@ from frob.tickets._leases import (
     LEASE_TTL_SECONDS,
     _lease_path,
     _LeaseRecord,
-    _list_agent_worktrees,
     lease_age_seconds,
     lease_staleness_reason,
     leases_dir,
@@ -55,11 +54,15 @@ from frob.tickets._leases import (
     release_lease,
     rename_lease,
     resolve_lease,
-    sweep_worktrees,
     warn_if_worktree_stale,
 )
 from frob.tickets._models import Origin, TicketKind, TicketSpec
 from frob.tickets._store import write_ticket
+
+# T-3350: _list_agent_worktrees/sweep_worktrees's real home (frob.tickets.
+# _leases no longer re-exports them -- see frob.tickets._worktree_sweep's
+# module docstring).
+from frob.tickets._worktree_sweep import _list_agent_worktrees, sweep_worktrees
 
 # frob:ticket T-2099
 #: Real git fixture repos and real lease files throughout (module docstring

@@ -393,9 +393,18 @@ def _merge_ty_results(
 
 
 def _build_import_graph(scan_root: Path):  # noqa: ANN202
-    """The intra-project import dependency graph rooted at `scan_root`."""
+    """The intra-project IMPORT-TIME dependency graph rooted at `scan_root`.
+
+    T-3350: uses `extract_import_edges` rather than `extract_imports` and
+    keeps only `import_time=True` edges -- a function/method/class-body-
+    local import or one inside `if TYPE_CHECKING:` cannot deadlock a real
+    import at module-load time (deferring is the standard remedy FOR a
+    cycle, not a second occurrence of one), so CYCLE001 must not fire on
+    it. A module-level import inside `try:`/`except ImportError:` or a
+    module-level `if sys.version_info:` guard is still import-time and is
+    still counted."""
     from frob.cycle.graph import DependencyGraph
-    from frob.lang import extract_imports, resolve_local_import
+    from frob.lang import extract_import_edges, resolve_local_import
 
     graph = DependencyGraph()
     resolved_scan = scan_root.resolve()
@@ -410,10 +419,12 @@ def _build_import_graph(scan_root: Path):  # noqa: ANN202
         try:
             rel = str(path.relative_to(scan_root))
             graph.add_node(rel)
-            result = extract_imports(path)
+            result = extract_import_edges(path)
             if result.is_err:
                 continue
-            for spec in result.danger_ok:
+            for spec, import_time in result.danger_ok:
+                if not import_time:
+                    continue
                 resolved = resolve_local_import(
                     spec, "python", file_dir=path.parent, root=scan_root
                 )

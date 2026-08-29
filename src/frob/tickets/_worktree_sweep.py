@@ -11,9 +11,12 @@ by a distinct CLI surface (`frob.app.worktree_runner`'s `frob worktree
 sweep`/`frob worktree remove`, `frob.app.ticket_runner._rapid_sweep`'s
 rapid-profile auto-sweep) than the lease-CRUD/ledger-commit machinery the
 rest of `_leases.py` serves (T-2822's own investigated-but-deferred
-finding). `_leases.py` re-imports and re-exports `sweep_worktrees`/
-`remove_worktree` so its two existing external importers (`from frob.
-tickets._leases import sweep_worktrees`/`remove_worktree`) need no change.
+finding). T-3350: `_leases.py` used to re-import and re-export
+`sweep_worktrees`/`remove_worktree` for its two external importers -- that
+re-export was the ONE back-edge closing a 2-node `frob.tickets._leases`
+<-> `frob.tickets._worktree_sweep` CYCLE001 SCC, so both callers
+(`frob.app.worktree_runner`, `frob.app.ticket_runner._rapid_sweep`) now
+import these two names directly from this module instead.
 
 Depends on `_leases.py` for its lease-side data (`_LeaseRecord`, `read_all_
 leases`, `is_lease_ttl_expired`, `lease_age_seconds`, `_live_lease_for_

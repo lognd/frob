@@ -1005,17 +1005,14 @@ def _annotation_text(node: Node) -> str:
 # T-1195 (LARGE001 residue split): the cross-file abstraction-opportunity
 # detection family (signature extraction, dispatch-ref collection, the
 # false-positive-family exclusions, near-duplicate clustering, and the
-# `_check_abstraction_opportunities` entry point) now lives in
-# `frob.arch._abstraction`. Re-exported here under their original names so
-# `frob.arch.__init__` (`_python._extract_signatures`, `_python.
-# _collect_file_dispatch_refs`, `_python._check_abstraction_opportunities`)
-# keeps working unchanged -- a pure module split, no behavior change.
-from frob.arch._abstraction import (  # noqa: E402
-    _check_abstraction_opportunities as _check_abstraction_opportunities,
-)
-from frob.arch._abstraction import (  # noqa: E402
-    _collect_file_dispatch_refs as _collect_file_dispatch_refs,
-)
-from frob.arch._abstraction import (  # noqa: E402
-    _extract_signatures as _extract_signatures,
-)
+# `_check_abstraction_opportunities` entry point) lives in
+# `frob.arch._abstraction`, which imports THIS module's normalized-function
+# helpers (`_iter_normalized_functions`/`_iter_py_functions`/
+# `_py_build_module`). T-3350: this module used to re-export
+# `_abstraction`'s three entry points back under its own name so
+# `frob.arch.__init__` could reach them as `_python.X` -- that re-export
+# was the ONE back-edge closing a 2-node `frob.arch._abstraction` <->
+# `frob.arch._python` CYCLE001 SCC. `frob.arch.__init__` now imports
+# `frob.arch._abstraction` directly instead (`_abstraction.X`), so this
+# module no longer imports `_abstraction` at all -- the dependency is
+# one-directional (`_abstraction` -> `_python`), not mutual.

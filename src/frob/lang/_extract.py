@@ -281,16 +281,64 @@ def _python_import_specifiers(n: Node) -> list[str]:
     return []
 
 
-def _imports_python(root: Node) -> tuple[str, ...]:
-    results: list[str] = []
+_PYTHON_DEFERRING_SCOPES = frozenset(
+    {"function_definition", "class_definition", "lambda"}
+)
 
-    def visit(n: Node) -> None:
-        results.extend(_python_import_specifiers(n))
+
+def _is_type_checking_condition(if_node: Node) -> bool:
+    """Whether `if_node`'s condition is (a bare or dotted) `TYPE_CHECKING`.
+
+    T-3350: `if TYPE_CHECKING:` is the standard typing-only guard -- its
+    body never executes at runtime, so imports inside it cannot deadlock an
+    import cycle. Matches the bare name (`TYPE_CHECKING`) and any dotted
+    form (`typing.TYPE_CHECKING`) by trailing identifier text, the same
+    tolerance CYCLE001's callers already need since imports are aliased
+    freely (`from typing import TYPE_CHECKING as TC` is NOT matched here --
+    an alias defeats this cheap textual check, same limitation as any
+    non-type-checked static walk)."""
+    condition = if_node.child_by_field_name("condition")
+    if condition is None:
+        return False
+    text = _child_text(condition) or ""
+    return text == "TYPE_CHECKING" or text.endswith(".TYPE_CHECKING")
+
+
+def _python_import_edges(root: Node) -> tuple[tuple[str, bool], ...]:
+    """(spec, import_time) for every python import, scope-depth aware.
+
+    T-3350: CYCLE001's import graph was conflating import-time edges with
+    deferred ones (function/method/class-body-local imports and
+    `if TYPE_CHECKING:` imports), which cannot deadlock an import at
+    module-load time by construction -- deferring an import is the
+    standard remedy FOR a cycle, not a second occurrence of one. A
+    module-level `try:`/`except ImportError:` or `if sys.version_info:`
+    import is still import-time (its body runs unconditionally, or
+    conditionally, at import time either way) -- only a function/class
+    body or a `TYPE_CHECKING` guard defers execution past import time."""
+    results: list[tuple[str, bool]] = []
+
+    def visit(n: Node, import_time: bool) -> None:
+        if n.type in _PYTHON_DEFERRING_SCOPES:
+            for child in n.children:
+                visit(child, False)
+            return
+        if n.type == "if_statement" and _is_type_checking_condition(n):
+            for child in n.children:
+                visit(child, False)
+            return
+        for spec in _python_import_specifiers(n):
+            results.append((spec, import_time))
         for child in n.children:
-            visit(child)
+            visit(child, import_time)
 
-    visit(root)
+    visit(root, True)
     return tuple(results)
+
+
+def _imports_python(root: Node) -> tuple[str, ...]:
+    """Raw python import specifiers, import-time and deferred alike."""
+    return tuple(spec for spec, _import_time in _python_import_edges(root))
 
 
 def _imports_c_family(root: Node) -> tuple[str, ...]:
@@ -481,6 +529,40 @@ def extract_imports(tree: Tree, language: str) -> tuple[str, ...]:
     if walker is None:
         return ()
     return walker(tree.root_node)
+
+
+# frob:doc docs/modules/lang.md#extraction-api
+# frob:ticket T-3350
+# frob:tests tests/system/test_cli_cycle.py::test_toplevel_two_module_cycle_fires kind="e2e"  # noqa: E501
+# frob:tests tests/system/test_cli_cycle.py::test_deferred_only_cycle_does_not_fire kind="e2e"  # noqa: E501
+def extract_import_edges(tree: Tree, language: str) -> tuple[tuple[str, bool], ...]:
+    """(spec, import_time) for every import in `language` (empty if unsupported).
+
+    T-3350: a sibling of `extract_imports` that keeps the scope-depth
+    information `extract_imports` discards -- CYCLE001's import graph
+    (`frob.check._python._build_import_graph`) needs to know which
+    specifiers are reachable at module-load time and which are deferred
+    (function/class-body-local, or inside `if TYPE_CHECKING:`) to avoid
+    counting a deferred import, the standard remedy FOR an import cycle, as
+    a second occurrence of one. Python is the only language with a real
+    scope-aware walker today (`_python_import_edges`); every other
+    supported language's walker has no concept of a deferred import in
+    frob's model (no language here has python's function/class-body-local
+    import idiom or an `if TYPE_CHECKING:` analogue), so every specifier
+    from those walkers is reported `import_time=True` -- degrading
+    gracefully to `extract_imports`'s own prior all-import-time behavior,
+    not a silent gap."""
+    if language == "python":
+        # tree_sitter's Node/Tree stub typing does not expose root_node's
+        # concrete return type precisely enough for mypy/ty to narrow the
+        # tuple-of-tuples shape below without a cast; unchanged from every
+        # other walker in this dispatch, all of which already lean on the
+        # same untyped `tree.root_node` access.
+        return _python_import_edges(tree.root_node)
+    walker = _IMPORT_WALKERS.get(language)
+    if walker is None:
+        return ()
+    return tuple((spec, True) for spec in walker(tree.root_node))
 
 
 # --------------------------------------------------------------- identifiers

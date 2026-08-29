@@ -4835,7 +4835,7 @@ class TestSweepStaleWorktreesAfterLand:
 
             return Ok(())
 
-        monkeypatch.setattr("frob.tickets._leases.sweep_worktrees", fake_sweep)
+        monkeypatch.setattr("frob.tickets._worktree_sweep.sweep_worktrees", fake_sweep)
         sweep_stale_worktrees_after_land(tmp_path)
         assert captured["force"] is False
         assert captured["dry_run"] is False
@@ -4877,7 +4877,7 @@ class TestSweepStaleWorktreesAfterLand:
         ):
             return Ok(verdicts)
 
-        monkeypatch.setattr("frob.tickets._leases.sweep_worktrees", fake_sweep)
+        monkeypatch.setattr("frob.tickets._worktree_sweep.sweep_worktrees", fake_sweep)
         with caplog.at_level("INFO"):
             sweep_stale_worktrees_after_land(tmp_path)
         out = caplog.text
@@ -4906,7 +4906,7 @@ class TestSweepStaleWorktreesAfterLand:
         ):
             return Err(_WorktreeSweepError.NotARepo)
 
-        monkeypatch.setattr("frob.tickets._leases.sweep_worktrees", fake_sweep)
+        monkeypatch.setattr("frob.tickets._worktree_sweep.sweep_worktrees", fake_sweep)
         with caplog.at_level("WARNING"):
             sweep_stale_worktrees_after_land(tmp_path)  # must not raise
         assert "worktree sweep failed" in caplog.text

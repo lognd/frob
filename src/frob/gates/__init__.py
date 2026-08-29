@@ -281,6 +281,7 @@ from frob.lang import SymbolKind
 from frob.lang._models import ParsedFile, RawSymbol
 from frob.lang._walk_rust import _MACRO_SYMBOL_SUFFIX
 from frob.logging import get_logger
+from frob.nodeid import symref_to_nodeid as _symref_to_nodeid
 
 # Import from frob.testing's submodules directly, not the frob.testing
 # package __init__ -- that __init__ imports frob.gates (via
@@ -390,25 +391,10 @@ def _touched_files(diff: Diff) -> set[str]:
     return {hunk.file for hunk in diff.hunks}
 
 
-def _symref_to_nodeid(symref: str) -> str:
-    """`path::a.b` -> `path::a::b`, the pytest node id spelling of a qualname.
-
-    frob:ticket T-0324
-    A parametrized test's `frob:tests`/evidence symref carries its case
-    suffix verbatim (`path::a.b[015-python-3.11.4]`) -- pytest node ids for
-    a `@pytest.mark.parametrize`-expanded case routinely contain their own
-    literal dots (version strings, floats, dotted module paths passed as
-    case values). A blanket `qualname.replace('.', '::')` over the WHOLE
-    qualname corrupted those in-bracket dots too (`3.11.4` ->`3::11::4`),
-    so a bracketed case id could never resolve against its real collected
-    node id even though the bracket-less base did (only the base's dots,
-    if any, sit outside a `[...]` suffix). Only the qualname portion before
-    the first `[` is a dotted Class.method path; the `[...]` suffix (if
-    any) is opaque pytest-generated case text and must pass through
-    unchanged."""
-    path, _, qualname = symref.partition("::")
-    head, bracket, tail = qualname.partition("[")
-    return f"{path}::{head.replace('.', '::')}{bracket}{tail}"
+# T-3350: relocated to frob.nodeid (a dependency-free leaf module, imported
+# above) -- this was the ONE genuine runtime back-edge closing CYCLE001's
+# 16-node frob.gates <-> frob.tickets SCC (frob.tickets._scope_coverage's
+# top-level `from frob.gates import _symref_to_nodeid`).
 
 
 # frob:ticket T-0949

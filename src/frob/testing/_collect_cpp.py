@@ -215,7 +215,7 @@ def _cpp_test_source(
 # evolving"
 def _cpp_node_id(source: str, name: str) -> str:
     """`source::name` with `name`'s dots (a gtest `TestSuite.TestCase` name)
-    normalized to `::`, mirroring `frob.gates._symref_to_nodeid`'s own
+    normalized to `::`, mirroring `frob.nodeid.symref_to_nodeid`'s own
     dot-to-`::` qualname transform on the `frob:tests` directive side --
     without this, a directive written `path::TestSuite::TestCase` could
     never match a collected id that still spelled it `TestSuite.TestCase`."""

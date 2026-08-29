@@ -509,7 +509,7 @@ class TestUnlandedBranchWork:
 
     def test_findings_for_one_branch_matches_the_aggregate(self, repo: Path) -> None:
         """`_unlanded_findings_for_branch` (the single-branch entry
-        `frob.tickets._leases.sweep_worktrees`'s new `kept:unlanded` gate
+        `frob.tickets._worktree_sweep.sweep_worktrees`'s new `kept:unlanded` gate
         calls) reports the same finding the all-branches scan does, for
         the branch it is pointed at."""
         # frob:tests \

@@ -72,8 +72,15 @@ from pydantic import BaseModel
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
+# T-3350: a plain `import a.b as b` rather than `from frob.serve import
+# _tools` -- the `from` form's ambiguous-target handling (T-2211) emits a
+# BARE `frob.serve` candidate alongside the dotted `frob.serve._tools`
+# one, and since `frob.serve.__init__` itself imports THIS module, that
+# bare candidate closed a genuine 3-node `frob.serve` <-> `frob.serve.
+# _events` <-> `frob.serve._socketd` CYCLE001 SCC. A plain `import`
+# statement has no such bare-package reading.
+import frob.serve._tools as _tools
 from frob.logging import get_logger
-from frob.serve import _tools
 from frob.serve._leases import DEFAULT_LEASE_CAPACITY, ResourceLeaseManager
 from frob.serve._watch import WatchThread
 

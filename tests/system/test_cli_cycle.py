@@ -142,3 +142,69 @@ def test_suggest_output_contains_suggest(cycle_dir):
 def test_suggest_no_cycle_exit_zero(no_cycle_dir):
     r = run("cycle", str(no_cycle_dir), "--suggest")
     assert r.returncode == 0
+
+
+# ---------------------------------------------------------------------------
+# T-3350: import-time vs. deferred edges -- positive control
+#
+# A deferred import (function/method/class-body-local, or inside
+# `if TYPE_CHECKING:`) cannot deadlock a real import at module-load time --
+# deferring is the standard remedy FOR a cycle, not a second occurrence of
+# one -- so `frob cycle` must NOT fire when the only edges closing a would-
+# be cycle are deferred, and must STILL fire on a genuine top-level cycle.
+# Both fixtures below are as close to identical as possible (same two
+# modules, same names) so the only variable is import placement.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def toplevel_two_module_cycle_dir(tmp_path):
+    """a <-> b, both imports at module level: a REAL import-time cycle."""
+    git_init_and_config(tmp_path)
+    (tmp_path / "a.py").write_text("from b import something\n\nsomething = 1\n")
+    (tmp_path / "b.py").write_text("from a import something\n\nsomething = 1\n")
+    _commit_all(tmp_path)
+    return tmp_path
+
+
+@pytest.fixture
+def deferred_only_two_module_cycle_dir(tmp_path):
+    """a <-> b, both imports deferred (function-local / TYPE_CHECKING):
+    NOT a real import-time cycle -- this is the exact deferred-import
+    remedy for the fixture above, applied to both sides."""
+    git_init_and_config(tmp_path)
+    (tmp_path / "a.py").write_text(
+        "from typing import TYPE_CHECKING\n\n"
+        "if TYPE_CHECKING:\n"
+        "    from b import something\n\n"
+        "def use_b():\n"
+        "    from b import something\n"
+        "    return something\n"
+    )
+    (tmp_path / "b.py").write_text(
+        "def use_a():\n    from a import use_b\n    return use_b\n"
+    )
+    _commit_all(tmp_path)
+    return tmp_path
+
+
+def test_toplevel_two_module_cycle_fires(toplevel_two_module_cycle_dir):
+    # frob:tests src/frob/app/cycle_runner.py::run kind="e2e"
+    # frob:tests src/frob/lang/_extract.py::extract_import_edges kind="e2e"
+    """A genuine top-level a<->b import cycle is still caught (CYCLE001's
+    positive control -- T-3350)."""
+    r = run("cycle", str(toplevel_two_module_cycle_dir))
+    assert r.returncode == 1
+    assert "cycle (" in r.stdout.lower()
+
+
+def test_deferred_only_cycle_does_not_fire(deferred_only_two_module_cycle_dir):
+    # frob:tests src/frob/app/cycle_runner.py::run kind="e2e"
+    # frob:tests src/frob/lang/_extract.py::extract_import_edges kind="e2e"
+    """The SAME shape of a<->b cycle, but every edge is deferred (function-
+    local or `if TYPE_CHECKING:`) -- CYCLE001 must not fire, because
+    deferring an import is the standard remedy FOR an import cycle, not a
+    second occurrence of one (T-3350's negative control)."""
+    r = run("cycle", str(deferred_only_two_module_cycle_dir))
+    assert r.returncode == 0
+    assert "no cycle" in r.stdout.lower()
