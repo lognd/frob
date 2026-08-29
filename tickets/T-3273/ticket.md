@@ -27,6 +27,16 @@ scope:
 - src/frob/gates/_testing_schema.py
 - src/frob/gates/_toplevel_scalar_schema.py
 - docs/modules/gates.md
+- tests/unit/test_arch_table_schema.py
+- tests/unit/test_docblocks_table_schema.py
+- tests/unit/test_dup_graph_table_schema.py
+- tests/unit/test_gates_table_schema.py
+- tests/unit/test_native_table_schema.py
+- tests/unit/test_profile_table_schema.py
+- tests/unit/test_refs_schema.py
+- tests/unit/test_test_table_schema.py
+- tests/unit/test_testing_table_schema.py
+- tests/unit/test_toplevel_scalar_schema.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -107,6 +117,66 @@ scope_changes:
   reason: 'T-3273''s actual fix: default each *_schema table''s known_keys internally
     when undeclared, resolved in the gate modules themselves, not just the scaffold
     template that references them'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_arch_table_schema.py
+  reason: existing 'no schema declared' fixtures assert UNRESOLVED, which T-3273 changes
+    to MEASURED-with-defaults; must update in the same change
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_docblocks_table_schema.py
+  reason: existing 'no schema declared' fixtures assert UNRESOLVED, which T-3273 changes
+    to MEASURED-with-defaults; must update in the same change
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_dup_graph_table_schema.py
+  reason: existing 'no schema declared' fixtures assert UNRESOLVED, which T-3273 changes
+    to MEASURED-with-defaults; must update in the same change
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_gates_table_schema.py
+  reason: existing 'no schema declared' fixtures assert UNRESOLVED, which T-3273 changes
+    to MEASURED-with-defaults; must update in the same change
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_native_table_schema.py
+  reason: existing 'no schema declared' fixtures assert UNRESOLVED, which T-3273 changes
+    to MEASURED-with-defaults; must update in the same change
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_profile_table_schema.py
+  reason: existing 'no schema declared' fixtures assert UNRESOLVED, which T-3273 changes
+    to MEASURED-with-defaults; must update in the same change
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_refs_schema.py
+  reason: existing 'no schema declared' fixtures assert UNRESOLVED, which T-3273 changes
+    to MEASURED-with-defaults; must update in the same change
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_test_table_schema.py
+  reason: existing 'no schema declared' fixtures assert UNRESOLVED, which T-3273 changes
+    to MEASURED-with-defaults; must update in the same change
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_testing_table_schema.py
+  reason: existing 'no schema declared' fixtures assert UNRESOLVED, which T-3273 changes
+    to MEASURED-with-defaults; must update in the same change
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/unit/test_toplevel_scalar_schema.py
+  reason: existing 'no schema declared' fixtures assert UNRESOLVED, which T-3273 changes
+    to MEASURED-with-defaults; must update in the same change
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
