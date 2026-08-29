@@ -96,7 +96,7 @@ attachments:
 
 ## Public API
 
-T-draft-ad5e921b: `reverify_close_guard`'s `_done_transition_guard` call
+T-3360: `reverify_close_guard`'s `_done_transition_guard` call
 now always passes `skip_stale_claims=True` to the shared structural
 guard -- T-3266's stale-Captured-claims check (`_stale_claims_reason`)
 otherwise refuses every `frob ticket reverify` that adds evidence, since

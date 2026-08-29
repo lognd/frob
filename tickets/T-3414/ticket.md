@@ -1,7 +1,7 @@
 ---
 id: T-3414
 title: 'DOC011: stale T-draft-ad5e921b citation in docs/modules/tickets.md'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-29'
@@ -29,6 +29,9 @@ triage_changes:
     fail-then-pass pytest node
   actor: logan
   at: '2026-08-29'
+evidence:
+- cmd:bash -c 'uv run frob check --only docstatus 2>&1 | tee /tmp/doc011check.log;
+  ! grep -q DOC011 /tmp/doc011check.log' exit=0 sha256=6f613c5c730e
 designated_repro_test: null
 threat: null
 component: null
