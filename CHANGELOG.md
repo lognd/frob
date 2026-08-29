@@ -603,6 +603,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3341: fix FROB_VERBOSE env leak in TestVerboseFlag (test isolation)
 - T-3344: Clear gate:DRIFT findings (53 errors) for release gate
 - T-3347: Fix gate:COV errors: strata-core graph doc anchors, COV003 evidence kind, COV007 private-anchor placement
+- T-3360: T-3266's stale-claims guard wrongly blocks reverify's own post-close evidence-add flow
 
 ## [0.530.0] - unreleased
 

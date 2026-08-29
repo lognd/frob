@@ -449,6 +449,24 @@ def _open_descendant_ids(ticket: Ticket, queue: dict[str, Ticket]) -> tuple[str,
 # hand-edited after evidence was recorded, or a cmd: entry can be
 # hand-pasted directly into the ledger, either of which would otherwise
 # slip a code-kind ticket through close on unverifiable evidence.
+# frob:ticket T-3266
+# frob:ticket T-3360
+def _stale_claims_guard(ticket: Ticket, skip: bool) -> TicketError | None:
+    """`_done_transition_structural_guard`'s T-3266 stale-claims check,
+    split out to keep that function under ARCH001's line threshold.
+    `skip=True` (only from `reverify_close_guard`) always passes -- see
+    T-3360 for why: `reverify` refreshes Captured-claims AFTER
+    this guard suite passes, so checking pre-refresh would refuse the
+    only scenario reverify exists for."""
+    if skip:
+        return None
+    reason = _stale_claims_reason(ticket, ticket.body)
+    if reason is None:
+        return None
+    _log.warning("tickets: %s cannot close, %s", ticket.id, reason)
+    return TicketError.StaleClaimsInDoneReport
+
+
 # frob:ticket T-0417
 # frob:ticket T-0976
 # frob:ticket T-1685
@@ -460,11 +478,14 @@ def _done_transition_structural_guard(
     covers_scope: bool | None,
     rapid: bool = False,
     debt_sink: Callable[[str, str], None] | None = None,
+    skip_stale_claims: bool = False,
 ) -> Result[None, TicketError]:
     """`_done_transition_guard`'s structural (non-diff-derived) checks:
     evidence + Done report present, open descendants, disallowed cmd:
     evidence, injected `covers_scope`, and unbound acceptance criteria --
-    split from its review/mutation/reverify/diff-derived checks."""
+    split from its review/mutation/reverify/diff-derived checks.
+    `skip_stale_claims`: only `reverify_close_guard` passes `True` --
+    see T-3360."""
     if not ticket.evidence or not _has_done_report(ticket.body):
         if rapid:
             _log.warning(
@@ -493,11 +514,9 @@ def _done_transition_structural_guard(
             ticket.id,
         )
         return Err(TicketError.HollowDoneReport)
-    # frob:ticket T-3266
-    stale_claims = _stale_claims_reason(ticket, ticket.body)
-    if stale_claims is not None:
-        _log.warning("tickets: %s cannot close, %s", ticket.id, stale_claims)
-        return Err(TicketError.StaleClaimsInDoneReport)
+    stale_claims_err = _stale_claims_guard(ticket, skip_stale_claims)
+    if stale_claims_err is not None:
+        return Err(stale_claims_err)
     if ticket.tier is not TicketTier.TICKET:
         open_descendants = _open_descendant_ids(ticket, queue)
         if open_descendants:
@@ -619,6 +638,7 @@ def _done_transition_guard(
     evidence_reverified: bool | None = None,
     own_obligations_clean: bool | None = None,
     gate_claims_verified: bool | None = None,
+    skip_stale_claims: bool = False,
 ) -> Result[None, TicketError]:
     """Enforce DONE-transition preconditions: evidence + substantive Done
     report present, no cmd: evidence on a kind that disallows it, (T-0715)
@@ -703,6 +723,7 @@ def _done_transition_guard(
         covers_scope=covers_scope,
         rapid=_is_rapid(root),
         debt_sink=lambda tid, what: record_rapid_debt(root, tid, what),
+        skip_stale_claims=skip_stale_claims,
     )
     if structural.is_err:
         return structural
@@ -989,7 +1010,10 @@ def reverify_close_guard(
     `frob.app.ticket_runner._reverify`, computes them via the identical
     `_close_guards_for_ticket` helper `_close` itself calls -- no
     duplicated guard-computation logic, only the write/transition step is
-    skipped here)."""
+    skipped here). Always passes `skip_stale_claims=True` -- see
+    T-3360: `_reverify` refreshes Captured-claims AFTER this
+    guard passes, so the raw T-3266 check would refuse the only scenario
+    reverify exists for."""
     from frob.tickets import _load_ticket_and_queue
 
     loaded = _load_ticket_and_queue(root, ticket_id)
@@ -1015,6 +1039,7 @@ def reverify_close_guard(
         evidence_reverified=evidence_reverified,
         own_obligations_clean=own_obligations_clean,
         gate_claims_verified=gate_claims_verified,
+        skip_stale_claims=True,
     )
     if guard.is_err:
         return Err(guard.danger_err)
@@ -1888,9 +1913,7 @@ def _check_cmd_evidence_kind(
     only ticket of ANY kind structurally has no other legitimate D-02
     route, matching `frob.gates.evidence_covers_scope`'s own identical
     widened check."""
-    if kind in CMD_EVIDENCE_ALLOWED_KINDS or not scope_has_python_surface(
-        root, scope
-    ):
+    if kind in CMD_EVIDENCE_ALLOWED_KINDS or not scope_has_python_surface(root, scope):
         return Ok(None)
     _log.warning(
         "tickets: %s is kind=%s with a Python-coverable scope, cmd "

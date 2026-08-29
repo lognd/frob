@@ -96,6 +96,17 @@ attachments:
 
 ## Public API
 
+T-draft-ad5e921b: `reverify_close_guard`'s `_done_transition_guard` call
+now always passes `skip_stale_claims=True` to the shared structural
+guard -- T-3266's stale-Captured-claims check (`_stale_claims_reason`)
+otherwise refuses every `frob ticket reverify` that adds evidence, since
+`_reverify` (the caller) only refreshes the Done report's Captured-claims
+section AFTER the guard suite passes, so the check would always see the
+pre-refresh count against the newly-bound evidence. `close`'s own path
+(via `transition`) never sets this flag, so T-3266's original protection
+against a stale claims count reaching a genuinely NEW `done` is
+unaffected.
+
 T-3104: `frob.gates.bug_repro_outcome_at_ref`/`designated_repro_test`
 (re-exported from `frob.gates._bug_repro`) gained an `env_absent`
 keyword-only parameter on `bug_repro_outcome_at_ref` -- variable names to
