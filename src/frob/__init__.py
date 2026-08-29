@@ -17,24 +17,37 @@ from __future__ import annotations
 # 160-node CYCLE001 import cycle spanning frob.serve/frob.stats/frob.tickets/
 # frob.testing/frob.app. Measured directly (frob.check._python._build_import_
 # graph + frob.cycle.graph.find_cycles against the real src/ tree, not
-# guessed): the cycle is bigger than T-2358's original 5-edge description --
-# serve/_tools.py has a SECOND, independent module-level edge into
-# frob.tickets (`from frob.tickets import doable, load_queue`) that bypasses
-# frob.stats entirely, so cutting only the smallest-looking edge (stats ->
-# tickets) would not collapse it. Untangling this for real means choosing ONE
-# of at least five candidate edges to invert or extract, each a different
-# package's public-surface change (full edge-by-edge breakdown in T-draft-
-# 4a262fb2's ticket body). Per the repo owner's explicit standing instruction
-# ("if that decision is not obvious, stop and tell me rather than guessing; I
-# would rather own that call than have it made implicitly"), that pick is
-# left to T-2583 rather than made unilaterally here.
+# guessed).
 #
-# This is a DECLARATION, not a suppression: `# frob:waive CYCLE001` was
-# tried here and does nothing -- `frob check --only cycle`'s frob-cycle tool
-# never consults the waiver pipeline at all (T-2584, filed
-# separately since fixing it means editing frob.check/frob.gates, outside
-# this file's owning ticket's scope). CYCLE001 stays a live, unwaived error
-# on `frob check` until either the wiring gap or the real cycle is fixed.
+# CORRECTED PREMISE (T-2667, superseding T-2363's original claim below):
+# the owner picked candidate 2 (stats/__init__.py's `from frob.tickets
+# import TicketQueue, TicketState, load_queue`) and it landed -- but the
+# SCC did NOT collapse. Re-measurement after that land shows it is still
+# 160 nodes, still closed, now entirely by edges that never route through
+# frob.stats: at least five of them (serve/_tools.py:24 and :606,
+# tickets/_land.py, testing/_coverage_wait.py:163, and several
+# app/_daemon_proxy.py sites), full edge-by-edge breakdown in T-2667's
+# ticket body. T-2363's original claim -- that cutting only the smallest-
+# looking edge (stats -> tickets) would not collapse it -- is confirmed,
+# but its assumption that a SECOND cut would suffice was wrong; a second
+# cut has now also been measured insufficient. Of the five remaining
+# edges, exactly ONE (serve/_tools.py:24) is a top-level import that could
+# actually deadlock at import time -- the other four are function-local
+# and only make this graph-level SCC finding fire. Real decomposition
+# means choosing among these edges to invert or extract, each a different
+# package's public-surface change; per the repo owner's explicit standing
+# instruction ("if that decision is not obvious, stop and tell me rather
+# than guessing; I would rather own that call than have it made
+# implicitly"), that pick is deferred to a dedicated post-1.0.0 epic
+# rather than made unilaterally here.
+#
+# This is TRACKED DEBT, not a permanent exception: the cycle is real, it
+# is not a release blocker (not among the 213 CI-hard release-blocking
+# errors), and it WILL be fixed by the epic named below.
+# frob:debt CYCLE001 reason="160-node serve/tickets/testing/app SCC, corrected and \
+# re-measured by T-2667 after candidate 2 (stats->tickets) landed without collapsing \
+# it; real decomposition deferred to a dedicated post-1.0.0 epic, not a release \
+# blocker" ticket="T-3350"
 from frob.ci_report import (
     FailureCluster,
     JobReport,

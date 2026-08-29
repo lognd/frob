@@ -2,7 +2,7 @@
 id: T-2667
 title: 'Owner decision needed: break the remaining stats-independent serve/tickets/testing/app
   import cycle (candidates 1/3/4/5 + a missed sixth edge)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -29,6 +29,17 @@ scope_changes:
     original serve/_tools.py scope did not cover
   actor: logan
   at: '2026-08-29'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): comment-only accounting fix (frob:waive prose
+    -> frob:debt directive, corrected premise) plus filing a follow-up decomposition
+    epic; no runtime behavior change'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 4268
+  new_length: 4462
+evidence:
+- tests/test_gates.py::TestDebtGate::test_debt002_open_ticket_is_silent
 designated_repro_test: null
 threat: null
 component: null
@@ -107,3 +118,5 @@ Per the repo owner's standing instruction on this SCC ("if that decision
 is not obvious, stop and tell me rather than guessing"): this ticket does
 NOT pick a candidate. It restates the problem with the corrected, measured
 set of remaining edges for the owner to decide from.
+
+frob:no-behavior-change reason="comment-only accounting fix (frob:waive prose -> frob:debt directive, corrected premise) plus filing a follow-up decomposition epic; no runtime behavior change"
