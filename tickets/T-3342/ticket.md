@@ -2,7 +2,7 @@
 id: T-3342
 title: Fix gate:DOC errors (DOC001-007 cluster)
 state: done
-kind: bug
+kind: docs
 origin: human
 created: '2026-08-29'
 priority: medium
@@ -207,6 +207,14 @@ scope_changes:
     a git reset --hard main, cleaning up now
   actor: logan
   at: '2026-08-29'
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: content is exclusively docs/guides/release.md, docs/index.md, docs/modules/cli.md
+    -- misclassified as bug at filing time before the T-3344 overlap was discovered
+  actor: logan
+  at: '2026-08-29'
 body_changes:
 - mode: append
   reason: 'BUG002 front door (T-2393): purely doc-directive/content fixes for gate:DOC
@@ -242,6 +250,8 @@ body_changes:
   at: '2026-08-29'
   old_length: 924
   new_length: 1120
+kind_history:
+- 2026-08-29 bug->docs evidence=0 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
