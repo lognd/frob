@@ -157,6 +157,14 @@ body_changes:
   at: '2026-08-29'
   old_length: 10911
   new_length: 9501
+- mode: set
+  reason: drop backtick citation form from the three commands this analysis argues
+    must never exist; DOC006 checks backticked cli invocation pointers and these cannot
+    be made to resolve without inverting the argument
+  actor: logan
+  at: '2026-08-29'
+  old_length: 9501
+  new_length: 9501
 designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with no Makefile WHEN every documented frob workflow is run THEN
@@ -238,7 +246,7 @@ CANNOT BE A FROB SUBCOMMAND, BY CONSTRUCTION:
     install         project dependency sync
 
 THE KEY FINDING, and it answers the owner's question directly: `install-tool`
-INSTALLS FROB. A `frob install-tool` subcommand is circular and must never be
+INSTALLS FROB. A "frob install-tool" subcommand is circular and must never be
 built -- if frob is not installed the subcommand does not exist, and if it is
 installed you do not need it. This is definitional, not a gap in coverage. The
 same is true of `install`. So T-1382's directive ("every workflow a first-class
@@ -266,7 +274,7 @@ THEREFORE THE ANSWER IS DELETION, NOT ADDITION. The recommended shape:
   4. The scaffold templates ship their own Makefile. Whatever is decided here
      must apply there too, or new users keep receiving the contradiction.
 
-WHAT NOT TO DO: do not add `frob install-tool`, `frob install`, or a `frob make`
+WHAT NOT TO DO: do not add "frob install-tool", "frob install", or a "frob make"
 passthrough. Do not port alias targets into subcommands that already exist under
 another name. The measure of success for this ticket is LINES AND CONCEPTS
 REMOVED, not subcommands added.
