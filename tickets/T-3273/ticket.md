@@ -2,7 +2,7 @@
 id: T-3273
 title: 'frob.toml boilerplate: seven *_schema tables exist only to name frob''s own
   internal constants, and omitting them silently reports UNMEASURED'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-28'
@@ -16,10 +16,99 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/scaffold/data/shared/python/frob.toml.j2
+- src/frob/gates/_arch_schema.py
+- src/frob/gates/_docblocks_schema.py
+- src/frob/gates/_dup_graph_schema.py
+- src/frob/gates/_gates_schema.py
+- src/frob/gates/_native_schema.py
+- src/frob/gates/_profile_schema.py
+- src/frob/gates/_refs_schema.py
+- src/frob/gates/_test_runner_schema.py
+- src/frob/gates/_testing_schema.py
+- src/frob/gates/_toplevel_scalar_schema.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_arch_schema.py
+  reason: 'T-3273''s actual fix: default each *_schema table''s known_keys internally
+    when undeclared, resolved in the gate modules themselves, not just the scaffold
+    template that references them'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_docblocks_schema.py
+  reason: 'T-3273''s actual fix: default each *_schema table''s known_keys internally
+    when undeclared, resolved in the gate modules themselves, not just the scaffold
+    template that references them'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_dup_graph_schema.py
+  reason: 'T-3273''s actual fix: default each *_schema table''s known_keys internally
+    when undeclared, resolved in the gate modules themselves, not just the scaffold
+    template that references them'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_gates_schema.py
+  reason: 'T-3273''s actual fix: default each *_schema table''s known_keys internally
+    when undeclared, resolved in the gate modules themselves, not just the scaffold
+    template that references them'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_native_schema.py
+  reason: 'T-3273''s actual fix: default each *_schema table''s known_keys internally
+    when undeclared, resolved in the gate modules themselves, not just the scaffold
+    template that references them'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_profile_schema.py
+  reason: 'T-3273''s actual fix: default each *_schema table''s known_keys internally
+    when undeclared, resolved in the gate modules themselves, not just the scaffold
+    template that references them'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_refs_schema.py
+  reason: 'T-3273''s actual fix: default each *_schema table''s known_keys internally
+    when undeclared, resolved in the gate modules themselves, not just the scaffold
+    template that references them'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_test_runner_schema.py
+  reason: 'T-3273''s actual fix: default each *_schema table''s known_keys internally
+    when undeclared, resolved in the gate modules themselves, not just the scaffold
+    template that references them'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_testing_schema.py
+  reason: 'T-3273''s actual fix: default each *_schema table''s known_keys internally
+    when undeclared, resolved in the gate modules themselves, not just the scaffold
+    template that references them'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/gates/_toplevel_scalar_schema.py
+  reason: 'T-3273''s actual fix: default each *_schema table''s known_keys internally
+    when undeclared, resolved in the gate modules themselves, not just the scaffold
+    template that references them'
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-3273''s actual fix: default each *_schema table''s known_keys internally
+    when undeclared, resolved in the gate modules themselves, not just the scaffold
+    template that references them'
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
