@@ -1,8 +1,8 @@
 ---
 id: T-3414
 title: 'DOC011: stale T-draft-ad5e921b citation in docs/modules/tickets.md'
-state: queued
-kind: bug
+state: in-progress
+kind: docs
 origin: human
 created: '2026-08-29'
 priority: medium
@@ -19,6 +19,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: the fix is a stale T-#### citation correction inside a documentation file
+    (docs/modules/tickets.md), not a code-behavior change -- re-triaging from bug
+    to docs so evidence can use the --evidence-cmd channel instead of forcing an artificial
+    fail-then-pass pytest node
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
