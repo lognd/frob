@@ -53,7 +53,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1f70f285ae37e4727b12216582b41fb75012c98e
 ---
 Series EO slice of self-gate zero drive: gate:DOC (5), gate:DRIFT (3), gate:SELFAUDIT (5). See T-3346/T-3343 for adjacent EM-owned gates (not touched here).
 
