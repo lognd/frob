@@ -46,7 +46,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d084b40852dd310f377836f33742c587aa3686fe
 ---
 TestVerboseFlag.test_dash_v_sets_debug_env_var and test_dash_dash_verbose_sets_debug_env_var call monkeypatch.delenv('FROB_VERBOSE', raising=False) on an already-absent key -- pytest's monkeypatch does not register an undo action for a delenv on a key that was not present, so the SUT's direct os.environ['FROB_VERBOSE']='1' write later in the test is never reverted at teardown. This leaks FROB_VERBOSE=1 into the worker process for the rest of the pytest session, corrupting every later subprocess-based test that asserts on frob CLI stdout (confirmed root cause of tests/unit/test_parse.py's 4 test_json_output failures under full-suite/xdist runs -- DEBUG-level doctor.native-extension log lines leak onto stdout ahead of the JSON payload once FROB_VERBOSE=1 raises the stdout handler back to DEBUG). Fix: explicitly clean up the leaked env var after invoking the SUT in both tests (assert then monkeypatch.delenv again now that the value exists, so pytest registers a proper undo).
 
