@@ -334,14 +334,40 @@ class TestVerboseFlag:
         monkeypatch.delenv("FROB_VERBOSE", raising=False)
         monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
         main_module._apply_verbose_env_override(["-v", "doctor"])
-        assert main_module.os.environ["FROB_VERBOSE"] == "1"
+        try:
+            assert main_module.os.environ["FROB_VERBOSE"] == "1"
+        finally:
+            # T-3341: `_apply_verbose_env_override` writes `FROB_VERBOSE`
+            # to `os.environ` DIRECTLY, not via `monkeypatch` -- the two
+            # `delenv(raising=False)` calls above ran while the var was
+            # already absent, so pytest's monkeypatch had nothing to
+            # register an undo for and cannot revert this write on its
+            # own. Left uncleaned, `FROB_VERBOSE=1` survives into every
+            # later test in this worker process, including subprocess-
+            # based CLI tests that assert on stdout being pure JSON
+            # (confirmed: corrupted tests/unit/test_parse.py's
+            # `test_json_output` cases under a full-suite/xdist run by
+            # raising the stdout log handler back to DEBUG, leaking
+            # `doctor: native extension ... available` lines ahead of
+            # the JSON payload). A plain `os.environ.pop` -- NOT
+            # `monkeypatch.delenv` -- is required here: calling
+            # `monkeypatch.delenv` on a key that currently HOLDS a value
+            # stages an undo that re-adds that exact value at teardown,
+            # which would silently put the leak right back.
+            main_module.os.environ.pop("FROB_VERBOSE", None)
 
     def test_dash_dash_verbose_sets_debug_env_var(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_dash_dash_verbose_sets_debug_env_var  # noqa: E501
         monkeypatch.delenv("FROB_VERBOSE", raising=False)
         monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
         main_module._apply_verbose_env_override(["doctor", "--verbose"])
-        assert main_module.os.environ["FROB_VERBOSE"] == "1"
+        try:
+            assert main_module.os.environ["FROB_VERBOSE"] == "1"
+        finally:
+            # T-3341: see test_dash_v_sets_debug_env_var's comment above --
+            # same direct os.environ write, same monkeypatch blind spot;
+            # `monkeypatch.delenv` here would stage a re-add at teardown.
+            main_module.os.environ.pop("FROB_VERBOSE", None)
 
     def test_no_verbose_flag_leaves_env_var_untouched(self, monkeypatch) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_no_verbose_flag_leaves_env_var_untouched  # noqa: E501
