@@ -93,3 +93,6 @@ ACCEPTANCE
   never present and the test asserted an unimplemented contract.
 - Sibling refusal messages in the same path enumerated, with a verdict on each.
 - Both fixtures present. Do not weaken the assertion to match current output.
+
+## Failure log
+- 2026-08-29 attempt 1: already fixed by T-3028 (landed): the described failure was a project-type MISDETECTION bug (a src/-layout Python repo with no root marker resolved to 'unknown', so CHECK001 fired before the lease-pin check ever ran), not a dropped remediation string -- git log -S 'run: frob ticket start %s' -- src/frob/app/check_runner.py shows exactly ONE commit (db7948d57, T-0787) ever introduced that string and it has never been removed since; _refuse_ticket_lease_mismatch still runs before project-type dispatch in check_runner.run() and still emits the frob-ticket-start remediation text. Re-ran tests/system/test_cli_check.py::TestCheckTicketLeasePinRefusal::test_ticket_lease_recorded_elsewhere_refuses 3x on a worktree built off current main (post T-3416/T-3409/T-3429): PASSED every time. No code change made; scope was never touched.
