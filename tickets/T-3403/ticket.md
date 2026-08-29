@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
 - tests/unit/test_fleet_status*.py
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,12 @@ scope_changes:
 - op: add
   glob: tests/unit/test_fleet_status*.py
   reason: the two required fixtures
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: 'scope closure: fleet_status.py symbols carry frob:doc targets into this
+    guide'
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
