@@ -30,6 +30,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f13e6c69d89524686246a74911861c3d872a7549
 ---
 Owner directive 1: frob scaffold ships a Makefile of one-line frob aliases and docs/commands/scaffold.md tells new users to run make check, contradicting the resolved global-instructions rule that frob <verb> is the interface in a frob-enabled repo (exceptions: bootstrap, real-logic Makefiles). Filed per T-3284 (frob-suggest make-target hook block). Audit all 7 scaffold manifest types (>=4 carry their own frob.toml.j2 shadowing the shared one per DZ's T-3277 trap) and make Makefile presence/absence and docs consistent across all of them. Do not touch this repo's own root Makefile (T-1382 out of scope).
