@@ -1,7 +1,7 @@
 ---
 id: T-3342
 title: Fix gate:DOC errors (DOC001-007 cluster)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -226,6 +226,22 @@ body_changes:
   at: '2026-08-29'
   old_length: 432
   new_length: 728
+- mode: append
+  reason: 'BUG002 front door (T-2393): doc-content-only fix (draft ticket citation
+    retargeted, orphaned doc linked into index, stale generated CLI table regenerated)
+    -- no executable code path changed'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 728
+  new_length: 924
+- mode: append
+  reason: 'BUG002 front door (T-2393): doc-content-only fix (draft ticket citation
+    retargeted, orphaned doc linked into index, stale generated CLI table regenerated)
+    -- no executable code path changed'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 924
+  new_length: 1120
 designated_repro_test: null
 threat: null
 component: null
@@ -238,3 +254,7 @@ Series EH: unscoped self-gate DOC cluster at 50 errors. Investigate root causes 
 frob:no-behavior-change reason="purely doc-directive/content fixes for gate:DOC findings (frob:tests target-form syntax, frob:doc anchor slug, dead ticket citation, stale generated table, orphaned doc link) -- no executable code path changed, confirmed via py_compile on every touched .py file"
 
 frob:no-behavior-change reason="purely doc-directive/content fixes for gate:DOC findings (frob:tests target-form syntax, frob:doc anchor slug, dead ticket citation, stale generated table, orphaned doc link) -- no executable code path changed, confirmed via py_compile on every touched .py file"
+
+frob:no-behavior-change reason="doc-content-only fix (draft ticket citation retargeted, orphaned doc linked into index, stale generated CLI table regenerated) -- no executable code path changed"
+
+frob:no-behavior-change reason="doc-content-only fix (draft ticket citation retargeted, orphaned doc linked into index, stale generated CLI table regenerated) -- no executable code path changed"
