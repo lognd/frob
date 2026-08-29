@@ -1,7 +1,7 @@
 ---
 id: T-3257
 title: AppConfig(command=...) unknown-argument ty finding, unrelated to platform work
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'

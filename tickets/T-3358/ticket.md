@@ -1,5 +1,5 @@
 ---
-id: T-draft-ad5e921b
+id: T-3358
 title: T-3266's stale-claims guard wrongly blocks reverify's own post-close evidence-add
   flow
 state: in-progress

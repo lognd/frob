@@ -25,7 +25,7 @@ import pytest
 from typani.result import Ok
 
 from frob.app import mutate_runner, perf_runner
-from frob.app.config import AppConfig
+from frob.app.config import AppConfig, Subcommand
 from frob.app.ticket_runner import _verify
 from frob.graph import GraphSnapshot
 from frob.testing import _collect, _coverage_refresh
@@ -179,7 +179,7 @@ class TestMutateRunnerWiring:
             return Err(MutateError.ParseFailed)
 
         cfg = AppConfig(
-            command="mutate",
+            subcommand=Subcommand.mutate,
             mutate_file=tmp_path / "x.py",
             mutate_path=tmp_path,
         )
@@ -220,7 +220,7 @@ class TestPerfRunnerProfileWiring:
             return Ok(SimpleNamespace(sha="deadbeef", total_s=0.1, exit_code=0))
 
         cfg = AppConfig(
-            command="perf",
+            subcommand=Subcommand.perf,
             perf_command="profile",
             perf_path=tmp_path,
             perf_tests=True,
@@ -253,7 +253,7 @@ class TestPerfRunnerProfileWiring:
             return Ok(SimpleNamespace(sha="deadbeef", total_s=0.1, exit_code=0))
 
         cfg = AppConfig(
-            command="perf",
+            subcommand=Subcommand.perf,
             perf_command="profile",
             perf_path=tmp_path,
             perf_tests=False,

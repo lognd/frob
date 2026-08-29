@@ -15,7 +15,7 @@ import pytest
 
 from frob.__main__ import _build_parser
 from frob.app import ops_runner, process_runner
-from frob.app.config import AppConfig
+from frob.app.config import AppConfig, Subcommand
 
 
 class TestProcessReapParser:
@@ -57,7 +57,9 @@ class TestOpsRunnerProcessDelegation:
     def test_process_subcommand_delegates_to_process_runner(self) -> None:
         """`ops_command="process"` calls `process_runner.run`, not any
         other branch."""
-        cfg = AppConfig(command="ops", ops_command="process", process_command="reap")
+        cfg = AppConfig(
+            subcommand=Subcommand.ops, ops_command="process", process_command="reap"
+        )
         with patch.object(process_runner, "run") as mock_run:
             ops_runner.run(cfg)
         mock_run.assert_called_once_with(cfg)
@@ -71,10 +73,10 @@ class TestProcessRunnerReap:
     def test_reap_reports_reaped_pids(self, capsys: pytest.CaptureFixture) -> None:
         """A non-empty reap result is reported by pid, human-readable
         mode."""
-        cfg = AppConfig(command="ops", ops_command="process", process_command="reap")
-        with patch(
-            "frob.process.reap_orphaned_forkservers", return_value=[1234, 5678]
-        ):
+        cfg = AppConfig(
+            subcommand=Subcommand.ops, ops_command="process", process_command="reap"
+        )
+        with patch("frob.process.reap_orphaned_forkservers", return_value=[1234, 5678]):
             process_runner.run(cfg)
         out = capsys.readouterr().out
         assert "1234" in out
@@ -87,7 +89,9 @@ class TestProcessRunnerReap:
         ancestry depth -- T-3072's own must-stay-quiet property, reused
         here rather than re-implemented) is reported as nothing to do,
         not an error."""
-        cfg = AppConfig(command="ops", ops_command="process", process_command="reap")
+        cfg = AppConfig(
+            subcommand=Subcommand.ops, ops_command="process", process_command="reap"
+        )
         with patch("frob.process.reap_orphaned_forkservers", return_value=[]):
             process_runner.run(cfg)
         out = capsys.readouterr().out
@@ -96,7 +100,7 @@ class TestProcessRunnerReap:
     def test_reap_json_mode_emits_json(self, capsys: pytest.CaptureFixture) -> None:
         """`--json` emits a machine-readable payload instead of prose."""
         cfg = AppConfig(
-            command="ops",
+            subcommand=Subcommand.ops,
             ops_command="process",
             process_command="reap",
             process_reap_json=True,
@@ -109,7 +113,9 @@ class TestProcessRunnerReap:
     def test_unknown_process_subcommand_exits_1(self) -> None:
         """An unrecognized `process_command` exits 1 rather than
         silently no-oping."""
-        cfg = AppConfig(command="ops", ops_command="process", process_command="bogus")
+        cfg = AppConfig(
+            subcommand=Subcommand.ops, ops_command="process", process_command="bogus"
+        )
         with pytest.raises(SystemExit) as exc:
             process_runner.run(cfg)
         assert exc.value.code == 1

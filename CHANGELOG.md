@@ -583,6 +583,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3254: frob release check REFUSES 0.530.0 (BUMP REQUIRED, need >= 0.531.0): no documented release-cut procedure places the version bump
 - T-3255: Fix malformed directive false-positive in docarch001_violations wiring comment
 - T-3256: Six concurrent frob check runs drive the box to zero free memory: each sizes its pool against the whole machine, with no cross-process budget
+- T-3257: AppConfig(command=...) unknown-argument ty finding, unrelated to platform work
 - T-3263: render_lint_gate git-ls-files WARNING log line loses its level prefix under pytest
 - T-3264: TestNativeMissingFailsLoud SYS004 test: unhandled NativeExtensionUnavailable crashes main instead of degrading to SYS004 finding
 - T-3266: 136 done-reports claim '0 passed (from 0 evidence id(s))' while their ticket carries real evidence (T-3244 has 47)
