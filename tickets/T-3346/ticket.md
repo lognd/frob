@@ -14,6 +14,10 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- tests/conftest.py
+- src/frob/gates/_tdd_order.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: measurement-first triage ticket, no source scope yet; will
   file/scope targeted sub-tickets per root cause found (same pattern as T-3343)
@@ -23,6 +27,24 @@ scope_changes:
 - op: remove
   glob: tickets/**/ticket.md
   reason: placeholder scope; will scope to actual files after triage measurement
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/conftest.py
+  reason: 'T-3346 residual-gate triage: WIRE002 follow_up fix + FLAGCOV001 _BOOL_FLAGS
+    fix'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/gates/_tdd_order.py
+  reason: 'T-3346 residual-gate triage: WIRE002 follow_up fix + FLAGCOV001 _BOOL_FLAGS
+    fix'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'T-3346 residual-gate triage: WIRE002 follow_up fix + FLAGCOV001 _BOOL_FLAGS
+    fix'
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
