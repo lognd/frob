@@ -2,7 +2,7 @@
 id: T-3404
 title: frob ticket scope applies the last --reason to every --add, silently mis-recording
   the scope audit trail
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -40,6 +40,10 @@ scope_changes:
     alongside TestScopeCli's existing real-argv-parsing precedent
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/test_tickets_scope_mutation.py::TestScopeCliRepeatedReasonRefused::test_two_reasons_with_two_adds_is_refused_not_silently_collapsed
+- tests/test_tickets_scope_mutation.py::TestScopeCliRepeatedReasonRefused::test_two_reason_files_is_also_refused
+- tests/test_tickets_scope_mutation.py::TestScopeCliRepeatedReasonRefused::test_single_add_single_reason_is_unchanged
 designated_repro_test: null
 threat: null
 component: null

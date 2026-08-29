@@ -630,6 +630,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3397: Reduce ARCH103 decision-point count in _land_cmd._assert_touched_files_lint_clean_pre_land
 - T-3398: Waive tracked LARGE001/PERF004 debt in __main__.py and frob-suggest.py
 - T-3400: Scaffold: remove Makefile/frob contradiction from templates
+- T-3404: frob ticket scope applies the last --reason to every --add, silently mis-recording the scope audit trail
 
 ## [0.530.0] - unreleased
 

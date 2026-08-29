@@ -553,6 +553,112 @@ class TestScopeCli:
         assert exc_info.value.code == 1
 
 
+# frob:ticket T-3404
+class TestScopeCliRepeatedReasonRefused:
+    """T-3404: `frob ticket scope --reason` (and `--reason-file`) is a
+    ONE-shared-reason-per-invocation flag, not a per-`--add` pairing --
+    real argv through the real parser (`TestScopeCliDeclareNoScope`'s own
+    precedent shape, `tests/test_tickets_no_scope.py`), because the bug
+    this closes lives in argparse's own Action, invisible to any test
+    that calls `_scope`/`AppConfig` directly with an already-collapsed
+    `ticket_scope_reason` string."""
+
+    # frob:tests \
+    # tests/test_tickets_scope_mutation.py::TestScopeCliRepeatedReasonRefused.test_two_\
+    # reasons_with_two_adds_is_refused_not_silently_collapsed
+    def test_two_reasons_with_two_adds_is_refused_not_silently_collapsed(
+        self,
+    ) -> None:
+        """MUST-FIRE: T-3403's own measured repro -- two `--add`s each
+        followed by their own `--reason`, exactly as an operator would
+        write it expecting per-glob pairing. Before T-3404, this
+        silently recorded BOTH globs under the SECOND reason; now it is
+        refused outright (exit 2, argparse usage-error shape), so the
+        wrong pairing can never reach the scope_changes audit trail."""
+        from frob.__main__ import _build_parser
+
+        parser = _build_parser()
+        with pytest.raises(SystemExit) as exc_info:
+            parser.parse_args(
+                [
+                    "ticket",
+                    "scope",
+                    "T-3403",
+                    "--add",
+                    "scripts/fleet_status.py",
+                    "--reason",
+                    "the disagreeing leak verdict and WORKTREES listing "
+                    "both live here",
+                    "--add",
+                    "tests/unit/test_fleet_status*.py",
+                    "--reason",
+                    "the two required fixtures",
+                ]
+            )
+        assert exc_info.value.code == 2
+
+    # frob:tests \
+    # tests/test_tickets_scope_mutation.py::TestScopeCliRepeatedReasonRefused.test_two_\
+    # reason_files_is_also_refused
+    def test_two_reason_files_is_also_refused(self, tmp_path: Path) -> None:
+        """The same silent-collapse risk applies identically to
+        `--reason-file` (same `_RefuseRepeatedOption` action, T-3404)."""
+        from frob.__main__ import _build_parser
+
+        reason_a = tmp_path / "a.txt"
+        reason_a.write_text("reason a", encoding="utf-8")
+        reason_b = tmp_path / "b.txt"
+        reason_b.write_text("reason b", encoding="utf-8")
+        parser = _build_parser()
+        with pytest.raises(SystemExit) as exc_info:
+            parser.parse_args(
+                [
+                    "ticket",
+                    "scope",
+                    "T-3403",
+                    "--add",
+                    "a.py",
+                    "--reason-file",
+                    str(reason_a),
+                    "--add",
+                    "b.py",
+                    "--reason-file",
+                    str(reason_b),
+                ]
+            )
+        assert exc_info.value.code == 2
+
+    # frob:tests \
+    # tests/test_tickets_scope_mutation.py::TestScopeCliRepeatedReasonRefused.test_sing\
+    # le_add_single_reason_is_unchanged
+    def test_single_add_single_reason_is_unchanged(self) -> None:
+        """MUST-STAY-QUIET: the ordinary, overwhelmingly common shape --
+        one `--reason` shared by however many `--add`/`--remove` globs
+        one invocation mutates -- parses exactly as before T-3404, with
+        no error and no warning."""
+        from frob.__main__ import _build_parser
+
+        parser = _build_parser()
+        ns = parser.parse_args(
+            [
+                "ticket",
+                "scope",
+                "T-3403",
+                "--add",
+                "scripts/fleet_status.py",
+                "--add",
+                "tests/unit/test_fleet_status*.py",
+                "--reason",
+                "the two required fixtures",
+            ]
+        )
+        assert ns.ticket_scope_reason == "the two required fixtures"
+        assert ns.ticket_scope_add == [
+            "scripts/fleet_status.py",
+            "tests/unit/test_fleet_status*.py",
+        ]
+
+
 # frob:ticket T-1484
 class TestSetScopeBreadthAck:
     """WAVE14-B's honest TICK009 acknowledged-broad channel:

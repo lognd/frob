@@ -7,6 +7,54 @@ argparse tree.
 
 from __future__ import annotations
 
+import argparse
+
+
+# frob:ticket T-3404
+class _RefuseRepeatedOption(argparse.Action):
+    """argparse `Action` that refuses a single-value option given more
+    than once (T-3404), instead of argparse's default `store` behavior
+    of silently keeping only the LAST occurrence.
+
+    `frob ticket scope`'s design (stated in `_add_ticket_scope_parser`'s
+    own docstring) is that ONE `--reason`/`--reason-file` applies to
+    EVERY `--add`/`--remove`/`--demote-to-evidence-only` glob a single
+    invocation mutates -- there is no per-glob pairing, by design (T-3404
+    weighed and rejected `--add GLOB:REASON` pair syntax and manual argv
+    -scanning as both more machinery than the fix needs; one invocation
+    per glob is the answer when a glob genuinely needs its own reason).
+    Measured live on T-3403 (T-3404's own filing): an operator passed TWO
+    `--reason` values expecting them to pair positionally with two
+    `--add`s, and the scope_changes audit trail silently recorded BOTH
+    globs under the SECOND reason, discarding the first with no warning
+    -- a wrong audit-trail entry read as authoritative, which is worse
+    than a missing one (scope is also a write-lease grant, so the
+    recorded justification is load-bearing when resolving a lease
+    conflict later). This action makes that exact case a loud, immediate
+    parse error instead: repeating the flag now means retrying with
+    separate `frob ticket scope` invocations, not silent data loss.
+    Applies only to `--reason`/`--reason-file` on `scope` itself, not the
+    single-purpose triage flags (`priority`/`kind`/`component`/`tier`)
+    that only ever set one value per invocation, where a duplicate flag
+    is an ordinary user typo, not a lost-pairing risk."""
+
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ANN001
+        """Raise `argparse.ArgumentError` (argparse turns this into the
+        same `error: ...` + exit(2) shape as any other CLI usage mistake)
+        if `self.dest` was already set by a prior occurrence of this same
+        flag; otherwise store `values` normally."""
+        if getattr(namespace, self.dest, None) is not None:
+            raise argparse.ArgumentError(
+                self,
+                f"{option_string} given more than once -- `frob ticket "
+                "scope`'s --reason/--reason-file applies to EVERY --add/"
+                "--remove/--demote-to-evidence-only glob this invocation "
+                "mutates (there is no per-glob pairing, T-3404); if "
+                "different globs need genuinely different reasons, run "
+                "`frob ticket scope` once per glob/reason pair instead",
+            )
+        setattr(namespace, self.dest, values)
+
 
 # frob:ticket T-2353
 def _add_triage_reason_flags(parser) -> None:  # noqa: ANN001
@@ -61,7 +109,13 @@ def _add_ticket_scope_parser(ticket_sub):
     (and, since the lease is derived live from it, its active tree-lease
     too), replacing the ad-hoc SCOPE001 waive dodge. `--add`/`--remove` may
     each be repeated and may be combined in one call; `--reason` applies to
-    every glob the call mutates and is always required."""
+    every glob the call mutates and is always required -- there is no
+    per-glob `--reason` pairing (T-3404): globs needing genuinely
+    different reasons need separate `frob ticket scope` invocations,
+    which `--reason`/`--reason-file`'s `_RefuseRepeatedOption` action
+    enforces by refusing a second occurrence outright rather than
+    silently keeping only the last (the exact silent-collapse T-3404
+    measured on T-3403)."""
     ticket_scope_p = ticket_sub.add_parser(
         "scope",
         help="formally expand/reduce a ticket's declared scope + tree-lease "
@@ -111,20 +165,31 @@ def _add_ticket_scope_parser(ticket_sub):
         "`frob ticket start` checks before refusing on an empty scope "
         "(T-2394); requires --reason/--reason-file, same as --add/--remove",
     )
+    # frob:ticket T-3404
     ticket_scope_p.add_argument(
         "--reason",
         dest="ticket_scope_reason",
+        action=_RefuseRepeatedOption,
         metavar="TEXT",
         help="why this scope change (recorded in the ticket's scope_changes "
-        "audit trail); required unless --reason-file is given",
+        "audit trail); required unless --reason-file is given. Applies to "
+        "EVERY --add/--remove/--demote-to-evidence-only glob this "
+        "invocation mutates -- there is no per-glob pairing (T-3404); for "
+        "globs needing distinct reasons, run this command once per glob. "
+        "Refused (not silently overwritten) if given more than once.",
     )
     # frob:ticket T-0737
+    # frob:ticket T-3404
     ticket_scope_p.add_argument(
         "--reason-file",
         dest="ticket_scope_reason_file",
+        action=_RefuseRepeatedOption,
         metavar="PATH",
         help="read the scope-change reason verbatim from PATH instead of "
-        "the shell (T-0737); mutually exclusive with --reason",
+        "the shell (T-0737); mutually exclusive with --reason. Same "
+        "one-shared-reason-per-invocation semantic as --reason, and "
+        "likewise refused (not silently overwritten) if given more than "
+        "once (T-3404).",
     )
     _add_no_commit_flag(ticket_scope_p)  # frob:ticket T-1615
     return ticket_scope_p
