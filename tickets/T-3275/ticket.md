@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/_detector_scope.py
 - src/frob/testing/_coverage_refresh.py
 - src/frob/gates/_port_selfcheck.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,12 @@ scope_changes:
   reason: PORT001's own scan-population call site must switch from DETECTOR_PACKAGE_ROOTS
     to the new repo-wide identity-hardcoding population; cannot widen PORT001 without
     editing its own call site
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/gates.md
+  reason: PORT001's scope-derivation docstring is frob:doc-anchored there; must update
+    to describe the new repo-wide population
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
