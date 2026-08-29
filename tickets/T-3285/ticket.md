@@ -5,7 +5,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-08-28'
-priority: medium
+priority: high
 parent: null
 tier: ticket
 sprint: null
@@ -19,6 +19,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: medium
+  new_value: high
+  reason: sequencing dependency on T-3272 (ledger v2 as default) plus the pending
+    PyPI release turns a repo-local annoyance into a first-hour bug for every new
+    user
+  actor: logan
+  at: '2026-08-28'
 body_changes:
 - mode: append
   reason: 'record the T-3272 ledger-v2-default sequencing: this bug is confined to
