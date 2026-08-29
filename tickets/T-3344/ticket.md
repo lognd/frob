@@ -172,7 +172,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f9e77b4181e635fa38ca70be214fdb699792d896
 ---
 Sprint task: reduce unscoped frob check DRIFT errors from 53 to 0. Investigate histogram of rule ids/files first; fix real doc drift, frob ack verified-correct docs, never mass-ack.
 
