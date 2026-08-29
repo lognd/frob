@@ -29,6 +29,7 @@ scope:
 - src/frob/app/test_runner.py
 - tests/test_waive_gate.py
 - tests/test_tickets_gate_claim_evidence.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -104,6 +105,12 @@ scope_changes:
   glob: tests/test_tickets_gate_claim_evidence.py
   reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
     to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-3295 corrects the WAIVE009 catalog row to describe the new always-fires
+    behavior
   actor: logan
   at: '2026-08-29'
 body_changes:
