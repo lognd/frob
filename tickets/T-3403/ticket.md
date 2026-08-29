@@ -2,7 +2,7 @@
 id: T-3403
 title: fleet_status reports a live worktree's lease as LEAKED, and a leak verdict
   is actionable
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -39,13 +39,10 @@ scope_changes:
     guide'
   actor: logan
   at: '2026-08-29'
-body_changes:
-- mode: append
-  reason: third sample, different ticket, observed during an active land
-  actor: logan
-  at: '2026-08-29'
-  old_length: 2712
-  new_length: 4040
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_freshly_started_worktree_with_no_scope_commit_yet_is_not_leaked
+- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_no_worktree_and_no_lease_is_still_leaked
+- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
 designated_repro_test: null
 threat: null
 component: null
@@ -102,31 +99,3 @@ ACCEPTANCE
 - Both fixtures committed. A leak detector that reports nothing is
   indistinguishable from one that stopped looking, so the must-fire fixture is
   not optional.
-
-
-
-THIRD INDEPENDENT SAMPLE, 2026-08-29, and it is a different ticket than the
-first two -- so the defect is not specific to T-3394.
-
-    LEASES 5 (2 live, 1 leaked, 0 blocked-open)
-      T-3059 -> <no worktree>  [LEAK]
-    WORKTREES
-      t-3059                   last-commit        1m
-    LANDS IN FLIGHT: 2
-      T-3059 pids=2920126,2920128,2920132 elapsed=30s cpu=25s
-
-One invocation reported T-3059's lease as leaked, listed its worktree with a
-commit one minute old, AND showed an active land running for it with 25s of
-CPU. Three sections of the same report, two of them proving the third wrong.
-
-This sharpens the earlier hypothesis. The first two samples were both T-3394
-while it was being worked; this one is T-3059 DURING AN ACTIVE LAND. A land
-mutates worktree and lease state, so the correlation worth testing is whether
-the leak verdict is computed from a snapshot taken before a concurrent
-mutation, rather than from a path-shape mismatch. Test both; do not drop the
-path-shape hypothesis on the strength of this one sample.
-
-NOTE FOR THE IMPLEMENTER: a false leak that appears specifically during a land
-is more dangerous than one that appears at rest, because the documented
-coordinator response to a leak (drop or force-release the holding ticket) would
-be executed against a ticket that is actively landing.

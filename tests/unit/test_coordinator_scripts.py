@@ -1434,6 +1434,84 @@ class TestInProgressTicketScopeLeasesLiveGit:
             }
         ]
 
+    # frob:ticket T-3403
+    def test_freshly_started_worktree_with_no_scope_commit_yet_is_not_leaked(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MUST-FIRE (T-3403's own measured shape): T-3394 was `in-
+        progress` with a real, live `git worktree` -- WORKTREES listed it
+        with a 7-minute-old commit -- but LEASES reported it `[LEAK]` in
+        the SAME invocation. Reproduced here with the two disagreeing
+        code paths named: `worktrees()` (line ~448) unconditionally lists
+        every directory under `WORKTREES`, with no ticket correlation at
+        all, so a worktree that has done nothing but `frob ticket start`
+        (one commit: the start-transition ledger commit,
+        `chore(tickets): record <id> start transition`) still appears.
+        `_resolve_worktree_for_in_progress_ticket` (line ~422), by
+        contrast, falls back to `worktrees_touching_ticket` (line ~1207)
+        when no lease file exists -- and THAT requires an unlanded commit
+        that touches the ticket's own declared SCOPE files, which a
+        just-started worktree with only its start-transition commit does
+        not have yet. The two paths disagree because one asks "does a
+        directory exist" and the other asks "has real implementation
+        work landed" -- a freshly-started, genuinely-live worktree
+        satisfies the first and fails the second, and only the second
+        drives the leak verdict."""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        _init_bare_repo(repo)
+        src = repo / "src"
+        src.mkdir()
+        (src / "a.py").write_text("def existing():\n    pass\n")
+        tdir = repo / "tickets" / "T-3394"
+        tdir.mkdir(parents=True)
+        (tdir / "ticket.md").write_text(
+            "---\nid: T-3394\nstate: in-progress\nscope:\n- src/a.py\n---\n"
+        )
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c1: existing() plus in-progress ticket"], repo)
+
+        worktree = tmp_path / "t-3394"
+        _run_git(["worktree", "add", "-q", "-b", "t-3394", str(worktree)], repo)
+        # The ONLY commit in this worktree so far is the start-transition
+        # commit `frob ticket start`/`work` writes unconditionally --
+        # T-3394's own measured state (7 minutes old, no scope-touching
+        # commit yet). Deliberately does NOT touch src/a.py.
+        _run_git(
+            [
+                "commit",
+                "-q",
+                "--allow-empty",
+                "-m",
+                "chore(tickets): record T-3394 start transition",
+            ],
+            worktree,
+        )
+
+        monkeypatch.setattr(fleet_status, "REPO", repo)
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", repo / "tickets")
+        monkeypatch.setattr(fleet_status, "WORKTREES", tmp_path)
+        # No lease file -- the common real-world case this repo's own
+        # LEASES section shows (most in-progress tickets right now have
+        # no lease file at all), and the shape that forces the fallback
+        # path this test targets.
+        monkeypatch.setattr(fleet_status, "LEASES", tmp_path / "no-leases")
+
+        entries = fleet_status.in_progress_ticket_scope_leases()
+        assert entries == [
+            {
+                "ticket_id": "T-3394",
+                "scope": ["src/a.py"],
+                "worktree": "t-3394",
+                "leaked": False,
+            }
+        ], (
+            "a worktree that has structurally STARTED this ticket (its "
+            "own start-transition commit) is unambiguous, genuinely-live "
+            "evidence and must not be reported as leaked merely because "
+            "no SCOPE-touching commit has landed yet"
+        )
+
 
 class TestWorktreeTicketId:
     """`fleet_status._worktree_ticket_id` (T-2599)."""

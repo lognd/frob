@@ -423,13 +423,23 @@ def _resolve_worktree_for_in_progress_ticket(
     ticket_id: str, scope: Sequence[str]
 ) -> str | None:
     """Best-effort worktree NAME for `ticket_id` (`in_progress_ticket_
-    scope_leases`'s own annotation half): prefer the recorded lease
-    file's own `worktree` field (`ticket_lease`) when it still exists AND
-    resolves to a directory that is still on disk, else fall back to a
-    scope-correlated scan (`worktrees_touching_ticket`) that finds a live
-    worktree with an unlanded commit actually implementing this ticket's
-    scope. `None` when neither source can name one -- the leak signature
-    `in_progress_ticket_scope_leases` reports."""
+    scope_leases`'s own annotation half), tried in order: (1) the
+    recorded lease file's own `worktree` field (`ticket_lease`), when it
+    still exists AND resolves to a directory still on disk; (2) T-3403:
+    any worktree whose own history structurally STARTED `ticket_id`
+    (`_worktree_started_ticket`'s start-transition-commit signal) --
+    unambiguous regardless of whether real implementation work has
+    landed there yet; (3) `worktrees_touching_ticket`'s stricter scope-
+    correlated scan, for a worktree whose start-transition commit already
+    landed onto `main` through a sibling ticket's squash (T-3128) and so
+    no longer appears in step (2)'s own `main..HEAD` scan. `None` only
+    when none of the three can name one -- the leak signature
+    `in_progress_ticket_scope_leases` reports. T-3403's own incident:
+    step (2) did not used to exist, so a freshly-started worktree with
+    only its start-transition commit (no scope-touching commit yet)
+    fell straight through to step (3), found no evidence, and was
+    reported LEAK despite `worktrees()` (WORKTREES section) listing the
+    exact same directory -- the two disagreeing paths this unifies."""
     lease = ticket_lease(ticket_id)
     if lease is not None:
         recorded = lease.get("worktree")
@@ -437,6 +447,28 @@ def _resolve_worktree_for_in_progress_ticket(
             recorded_path = Path(recorded)
             if recorded_path.is_dir():
                 return recorded_path.name
+    # T-3403: a worktree whose OWN unlanded history carries `ticket_id`'s
+    # start-transition commit (`_worktree_started_ticket`) is unambiguous
+    # structural evidence that IT is this ticket's worktree -- true the
+    # instant `frob ticket start`/`work` runs, regardless of whether any
+    # SCOPE-touching commit has landed there yet. Checked BEFORE the
+    # stricter `worktrees_touching_ticket` scope-correlation scan below:
+    # that scan exists to rule out MISATTRIBUTION when picking among
+    # several candidate worktrees for "has this ticket been implemented"
+    # queries (T-2114/T-2181), a different question than "which worktree
+    # is genuinely holding this lease" -- and demanding it here false-
+    # flagged a freshly-started, genuinely-live worktree as LEAKED before
+    # its first scope-touching commit (measured live on T-3394: WORKTREES
+    # listed it with a 7-minute-old commit -- its start-transition commit
+    # -- in the SAME invocation LEASES reported `[LEAK]`; the fallback
+    # below returned no hit purely because no scope file had been
+    # touched yet). Only engages when NO lease file resolved it above, so
+    # a lease-file hit (the common, cheaper, authoritative case) is
+    # unaffected.
+    if WORKTREES.is_dir():
+        for path in sorted(p for p in WORKTREES.iterdir() if p.is_dir()):
+            if _worktree_started_ticket(path, ticket_id):
+                return path.name
     hits = worktrees_touching_ticket(ticket_id, scope)
     return hits[0] if hits else None
 
