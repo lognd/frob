@@ -23,6 +23,7 @@ scope:
 - tests/unit/gates/test_port_selfcheck.py
 - tests/test_coverage.py
 - tests/unit/gates/test_detector_scope.py
+- tickets/T-draft-24c487c8/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -62,6 +63,12 @@ scope_changes:
   glob: tests/unit/gates/test_detector_scope.py
   reason: unit test for the new tracked_repo_python_files function cited in its frob:tests
     directive
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tickets/T-draft-24c487c8/ticket.md
+  reason: follow-up ticket filed from this ticket's own work, touched via frob ticket
+    new
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
