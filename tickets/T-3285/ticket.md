@@ -1,7 +1,7 @@
 ---
 id: T-3285
 title: close-time disclosure check false-positives on split done-report.md
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -15,10 +15,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reporting.py
+- tests/unit/test_reporting_t3285_fenced_subheadings.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_reporting_t3285_fenced_subheadings.py
+  reason: regression test for the fence-aware subheading fix
+  actor: logan
+  at: '2026-08-28'
 triage_changes:
 - field: priority
   old_value: medium
