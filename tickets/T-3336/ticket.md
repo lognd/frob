@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'second independent instance with the exact mechanism: land''s NotCloseable
+    requires pytest evidence regardless of profile or --no-behavior-change, while
+    close''s rapid-profile bypass covers it -- a second divergence point beyond the
+    Done-report heading'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 4130
+  new_length: 6691
 designated_repro_test: null
 threat: null
 component: null
@@ -105,3 +115,51 @@ ACCEPTANCE
   the point of use.
 - The heading collision between the append guard and the land gate is resolved.
 - All three fixtures present.
+
+
+SECOND INDEPENDENT INSTANCE, WITH THE EXACT MECHANISM. 2026-08-29, Series EJ,
+found while landing T-2667.
+
+The original filing described the symptom -- `frob ticket close` reports success
+on a ticket that `frob ticket land` then refuses as NotCloseable -- and named a
+contributing cause (a body-append that avoided the literal "## Done report"
+heading). This is a DIFFERENT path to the same divergence, and it names the
+code:
+
+    land's NotCloseable check:
+        if not ticket.evidence or not _has_done_report(...)
+
+    It requires a real pytest evidence id REGARDLESS of profile and REGARDLESS
+    of --no-behavior-change. Close's rapid-profile debt bypass covers that
+    requirement; LAND'S OWN GATE DOES NOT.
+
+So a `kind=bug` ticket closed legitimately under the rapid profile with
+`--no-behavior-change` -- a comment-only accounting change with no runtime delta
+and therefore no pytest node that can fail-then-pass -- passes close and is
+refused by land. The two verbs disagree about what "closeable" means, and the
+disagreement is in the evidence requirement, not only in the report heading.
+
+EJ's workaround was to bind an ACCURATE but incidental evidence id
+(tests/test_gates.py::TestDebtGate::test_debt002_open_ticket_is_silent -- real
+behaviour its directive relies on). That is the honest version of the
+workaround, but it is still a workaround: the ticket had no behaviour change to
+evidence, and the requirement pushed it toward binding something adjacent.
+
+WHY THIS SHARPENS THE FIX. The original body asked for close and land to agree,
+without saying where they diverge. There are now TWO measured divergence points:
+  1. The Done-report heading requirement (original instance).
+  2. The evidence requirement under rapid profile + --no-behavior-change (this
+     instance).
+Both are land demanding something close does not produce. A fix that only
+reconciles the heading leaves this one open.
+
+THE DESIGN QUESTION TO ANSWER EXPLICITLY: should a no-behaviour-change ticket
+be required to cite pytest evidence at all? There is a real argument either way.
+Requiring it means every accounting fix binds an incidental test, which dilutes
+what evidence means. Not requiring it means land trusts a close-time
+declaration, which is the trust boundary land exists to check. State the choice
+and the reasoning; do not just make the error go away.
+
+DO NOT fix this by removing land's evidence check. It is the guard that makes
+done-reports trustworthy, and this repo has a documented history of tickets
+reaching `state: done` with nothing behind them.
