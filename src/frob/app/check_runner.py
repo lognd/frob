@@ -1570,10 +1570,36 @@ def _run_stages_and_report(cfg: AppConfig, root: Path) -> None:
     _report_check_result(cfg, result, fix_report=fix_report)
 
 
+# frob:ticket T-3394
+def _refuse_unscoped_fix_pass(cfg: AppConfig) -> None:
+    """`frob check --fix`'s T-3326 scope guard, split out of
+    `_apply_tier_a_and_reverify` for ARCH103 (T-3394): `sys.exit(1)` when
+    neither `--ticket` nor `--fix-all` was given, so an unscoped
+    repo-wide Tier-A pass is never the silent default -- see
+    `_apply_tier_a_and_reverify`'s own docstring for the T-3326 incident
+    this guards against. Owns BOTH the decision and the exit/log I/O for
+    this one guard, so `_apply_tier_a_and_reverify` itself no longer has
+    any I/O call at all (its remaining decision points are pure dict/
+    list-building over already-fetched data), which is what actually
+    drops it below ARCH103's mixed-concern shape -- per T-3311's lesson,
+    moving code out only helps when the extraction takes a whole concern
+    (here, all of this function's I/O) with it, not just some branches.
+    """
+    if cfg.check_ticket is None and not cfg.check_fix_all:
+        _log.error(
+            "check --fix: refusing an UNSCOPED repo-wide Tier-A fix pass "
+            "-- pass --ticket <id> to scope --fix to one ticket's own "
+            "declared files (the common case), or pass --fix-all "
+            "alongside --fix if a genuine repo-wide fix pass is what you "
+            "want (T-3326: an unscoped --fix once rewrote ~15 unrelated "
+            "files before a killed run was caught and reverted by hand)"
+        )
+        sys.exit(1)
+
+
 # frob:ticket T-1260
 # frob:ticket T-1481
-# frob:debt ARCH103 reason="7 decision points, I/O + string-formatting; a safe fix needs a consolidating split (T-3311's lesson: a split only helps when it owns ALL the branching), not a blind extraction -- deferred as tracked follow-up" ticket="T-3394"  # noqa: E501
-# frob:waive ARCH103 reason="tracked real-split follow-up, T-3394 -- too large/risky to do as a drive-by in a mixed-gate cleanup slice"  # noqa: E501
+# frob:ticket T-3394
 def _apply_tier_a_and_reverify(
     cfg: AppConfig, root: Path, result: CheckResult
 ) -> tuple[CheckResult, dict]:
@@ -1610,16 +1636,7 @@ def _apply_tier_a_and_reverify(
     runs it in full, byte-identical to this function's pre-T-3326
     behavior.
     """
-    if cfg.check_ticket is None and not cfg.check_fix_all:
-        _log.error(
-            "check --fix: refusing an UNSCOPED repo-wide Tier-A fix pass "
-            "-- pass --ticket <id> to scope --fix to one ticket's own "
-            "declared files (the common case), or pass --fix-all "
-            "alongside --fix if a genuine repo-wide fix pass is what you "
-            "want (T-3326: an unscoped --fix once rewrote ~15 unrelated "
-            "files before a killed run was caught and reverted by hand)"
-        )
-        sys.exit(1)
+    _refuse_unscoped_fix_pass(cfg)
     from frob.app._snapshot import load_or_build_snapshot
     from frob.check._python import _run_gates
     from frob.gates import GateConfig

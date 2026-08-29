@@ -1,7 +1,7 @@
 ---
 id: T-3397
 title: Reduce ARCH103 decision-point count in _land_cmd._assert_touched_files_lint_clean_pre_land
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
