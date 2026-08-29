@@ -1,7 +1,7 @@
 ---
 id: T-3396
 title: Split src/frob/process/_reap.py under LARGE001's 800-line threshold
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
