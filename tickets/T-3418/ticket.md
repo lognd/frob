@@ -18,6 +18,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'the ticket documenting the DOC006 citation trap fell into it: de-backtick
+    the three commands it quotes while explaining them'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 3732
+  new_length: 3732
 designated_repro_test: null
 threat: null
 component: null
@@ -34,7 +42,7 @@ command and so produces MORE findings than it clears.
 MEASURED 2026-08-29, by attempting exactly that fix and failing.
 
 tickets/T-1382/ticket.md contains an owner-decision analysis whose conclusion is
-"do not add `frob install-tool`, `frob install`, or a `frob make` passthrough".
+"do not add "frob install-tool", "frob install", or a "frob make" passthrough".
 `install-tool` is circular by construction: it is the command that INSTALLS
 frob, so it can never be a frob subcommand. The analysis is correct and the
 citations are the point of it.
@@ -47,8 +55,8 @@ with a reason explaining the above. Result:
 
 Two independent failures in one attempt:
   1. The waive did not suppress the rule for those sites at all.
-  2. The waive's own reason text cited `frob install-tool` / `frob install` /
-     `frob make` while explaining why they must never be built, and DOC006
+  2. The waive's own reason text cited "frob install-tool" / "frob install" /
+     "frob make" while explaining why they must never be built, and DOC006
      counted those citations too -- four new findings at the waive's own lines.
 
 I reverted the append via `frob ticket body --set-file` (NOT by hand-editing
