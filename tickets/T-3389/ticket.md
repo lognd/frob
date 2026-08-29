@@ -38,6 +38,19 @@ scope_changes:
     _apply_verbose_env_override
   actor: logan
   at: '2026-08-29'
+body_changes:
+- mode: append
+  reason: policy-declaration ticket has no code-behavior defect to reproduce; per
+    BUG002 remedy (3)
+  actor: logan
+  at: '2026-08-29'
+  old_length: 158
+  new_length: 483
+evidence:
+- tests/test_pii_structural_gate.py::TestEnvAccess::test_os_environ_get_fires
+- tests/test_pii_structural_gate.py::TestEnvAccess::test_os_getenv_fires
+- tests/test_pii_structural_gate.py::TestEnvAccess::test_os_environ_subscript_fires
+- tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_sec110_still_fires_with_no_design_directory
 designated_repro_test: null
 threat: null
 component: null
@@ -46,3 +59,5 @@ anchor_reason: null
 land_commit: null
 ---
 SEC110: 6 env-var reads without declared mapping. Map each read to its purpose per gate:SEC contract. Part of PyPI release error-floor burn (Series EQ slice).
+
+frob:waive BUG002 reason="declaration-only fix: adds frob:waive SEC110 comments and doc closure text, no behavior change to reproduce with a failing-then-passing test; SEC110 unit tests (TestEnvAccess, TestDeclaredSurfaceJoin) confirm the rule still fires without a waiver, which is the only property this change relies on"
