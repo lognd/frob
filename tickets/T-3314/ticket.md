@@ -36,6 +36,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 69293de00308e1f9a6ee80646d744bd9eaff4e0c
 ---
 T-3276 found this while auditing tool-missing handling: all three scaffolded GitHub Actions CI templates guard the frob check step with 'if command -v frob >/dev/null 2>&1 && frob graph --help >/dev/null 2>&1; then ... else echo ::notice::...; fi' -- a failed preflight emits a GitHub Actions notice annotation and SKIPS the frob check step entirely, rather than failing the job. A skipped gate that only reports a notice is indistinguishable from a passing gate in a green CI build (the same silent-degrade class T-3276 fixed for frob doctor/coverage). Make the missing-frob case fail the job loudly, or at minimum make the skip visible as a non-green CI status, not just an easily-missed notice line.
