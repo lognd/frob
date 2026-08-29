@@ -14,10 +14,24 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- scripts/fleet_status.py
+- tests/unit/test_fleet_status*.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: scripts/fleet_status.py
+  reason: the two required fixtures
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/test_fleet_status*.py
+  reason: the two required fixtures
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
