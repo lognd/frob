@@ -56,7 +56,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c3f9c2cbeb2d557ef0af4edfc0f612f7e96cc129
 ---
 SEC110: 6 env-var reads without declared mapping. Map each read to its purpose per gate:SEC contract. Part of PyPI release error-floor burn (Series EQ slice).
 
