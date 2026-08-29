@@ -29,6 +29,7 @@ from frob.tickets._worktree_guard import (
     apply_agent_env,
     enforce_worktree_lease,
     warn_if_xdist_bound_missing,
+    warn_if_xdist_plugin_missing,
 )
 
 
@@ -293,6 +294,7 @@ class TestApplyAgentEnv:
         assert proc.stdout.strip() == expected
 
 
+# frob:ticket T-3316
 class TestWarnIfXdistBoundMissing:
     """T-3094: the loud half. A pytest spawned where a fleet-context bound
     SHOULD be in effect but is not silently falls back to xdist's plain
@@ -342,6 +344,74 @@ class TestWarnIfXdistBoundMissing:
         _init_repo(tmp_path)
         with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
             warn_if_xdist_bound_missing(tmp_path)
+        assert [r for r in caplog.records if r.levelname == "ERROR"] == []
+
+    # frob:ticket T-3316
+    def test_also_warns_on_plugin_absence_even_without_fleet_context(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_also_warns_on_plugin_absence_even_without_fleet_context  # noqa: E501
+        import frob.tickets._worktree_guard as guard_mod
+
+        monkeypatch.delenv(PYTEST_XDIST_AUTO_NUM_WORKERS_ENV, raising=False)
+        _init_repo(tmp_path)
+        # No leases written -> no fleet context, the condition that keeps
+        # the BOUND check silent (test_must_stay_quiet_no_fleet_context_no_log
+        # above). The PLUGIN check must still fire: it is unconditional.
+        monkeypatch.setattr(guard_mod, "_xdist_plugin_present", lambda: False)
+        with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
+            warn_if_xdist_bound_missing(tmp_path)
+        assert any(
+            "pytest-xdist" in record.message.lower()
+            and "not installed" in record.message.lower()
+            for record in caplog.records
+        )
+
+
+# frob:ticket T-3316
+class TestWarnIfXdistPluginMissing:
+    """T-3316: the plugin-ABSENCE half, distinct from `TestWarnIfXdistBoundMissing`
+    above (an unset BOUND). frob's own `-n auto` addopt makes any pytest
+    spawn fail with a usage error the moment the plugin is not importable,
+    regardless of fleet context."""
+
+    # frob:ticket T-3316
+    def test_must_fire_when_plugin_not_importable(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing.test_must_fire_when_plugin_not_importable  # noqa: E501
+        import frob.tickets._worktree_guard as guard_mod
+
+        _init_repo(tmp_path)
+        monkeypatch.setattr(guard_mod, "_xdist_plugin_present", lambda: False)
+        with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
+            warn_if_xdist_plugin_missing(tmp_path)
+        assert any(
+            "pytest-xdist" in record.message.lower()
+            and "not installed" in record.message.lower()
+            for record in caplog.records
+        )
+
+    # frob:ticket T-3316
+    def test_must_stay_quiet_when_plugin_importable(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing.test_must_stay_quiet_when_plugin_importable  # noqa: E501
+        import frob.tickets._worktree_guard as guard_mod
+
+        _init_repo(tmp_path)
+        monkeypatch.setattr(guard_mod, "_xdist_plugin_present", lambda: True)
+        with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
+            warn_if_xdist_plugin_missing(tmp_path)
         assert [r for r in caplog.records if r.levelname == "ERROR"] == []
 
 

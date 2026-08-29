@@ -596,6 +596,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3285: close-time disclosure check false-positives on split done-report.md
 - T-3303: frob ticket show auto-commits: NOT_TICKET_SCOPED verbs fall through to the generic commit path when ticket_id is set
 - T-3305: _python_for_tree trusts a tree venv without checking frob is importable, breaking self-verification in every consumer repo
+- T-3316: warn_if_xdist_bound_missing does not detect the xdist plugin's absence, only an unset fleet bound
 
 ## [0.530.0] - unreleased
 

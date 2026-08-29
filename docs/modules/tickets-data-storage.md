@@ -1396,6 +1396,42 @@ when a fleet context is detected but the bound never made it into the
 current environment, instead of that gap being discoverable only via a
 live `/proc/<pid>/environ` fleet scan after the fact.
 
+**T-3316: a missing BOUND and a missing PLUGIN are different conditions.**
+`warn_if_xdist_bound_missing` above only ever fires when a fleet context
+is detected (`_bounded_xdist_workers` is non-`None`) -- it presupposes
+`pytest-xdist` is even installed, since a bound is meaningless to a
+plugin that is not loaded. It never checked the plugin's actual
+presence. That matters because frob's own `pyproject.toml` sets `-n
+auto` in `addopts` UNCONDITIONALLY, so in ANY environment lacking
+`pytest-xdist` -- frob's own venv missing the dependency, or a consumer
+repo that scaffolded frob's pytest config without also depending on
+`pytest-xdist` -- every pytest invocation exits 4 (a usage error: `-n`
+is not a recognised option) before a single test runs, fleet context or
+not, single developer or not. `frob.doctor.scan_external_tools` (T-3276)
+already reports this absence when `frob doctor` is asked, but nothing
+preflighted an actual pytest spawn against it, so the failure only ever
+surfaced as an opaque exit 4 with no diagnosis pointing at the plugin.
+
+<!-- frob:describes src/frob/tickets/_worktree_guard.py::warn_if_xdist_plugin_missing -->
+
+`warn_if_xdist_plugin_missing(root)` is the new, unconditional preflight:
+`_xdist_plugin_present()` probes `importlib.metadata.version("pytest-
+xdist")` (the same distribution name `frob.doctor`'s own `_EXTERNAL_
+TOOLS` entry uses, T-3276) and, when absent, logs an ERROR naming the
+tool, the failure mode (exit 4, not a red suite), and the install
+command. `warn_if_xdist_bound_missing` now calls this unconditionally as
+its first statement, before its own fleet-context bound check -- since
+it is already the single function wired into every pytest-spawning call
+site in this codebase (T-3094's own delivery-gap fix: `frob.app.
+mutate_runner`, `frob.app.perf_runner`, `frob.app.ticket_runner._verify`,
+`frob.testing._collect`, `frob.testing._coverage_refresh`, `frob.testing.
+_runners`), extending it here reaches all of them without editing any
+call site again. The two checks are independent: a repo with the plugin
+installed but no fleet context logs nothing from either; a repo missing
+the plugin logs the new ERROR regardless of fleet context; a fleet
+context missing only the bound (plugin present) logs only the original
+ERROR.
+
 **Git hook (defense in depth).**
 `frob.scaffold.install_worktree_lease_hook(root, *, force=False)`
 (docs/commands/scaffold.md) installs `pre-commit` and `pre-merge-commit`

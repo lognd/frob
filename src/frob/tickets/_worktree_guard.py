@@ -17,6 +17,7 @@ onto main, or any other coordinator-run mutation, has no lease to violate.
 from __future__ import annotations
 
 import os
+from importlib import metadata
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
@@ -49,6 +50,13 @@ FROB_AGENT_ENV = "FROB_AGENT"
 #: override `addopts`) without duplicating the bound at each of the several
 #: places in this codebase that spawn pytest.
 PYTEST_XDIST_AUTO_NUM_WORKERS_ENV = "PYTEST_XDIST_AUTO_NUM_WORKERS"
+
+# frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
+#: T-3316: the distribution name `importlib.metadata` resolves for the
+#: `pytest-xdist` plugin -- reused verbatim as `frob.doctor`'s own
+#: `_EXTERNAL_TOOLS` entry name (T-3276), so both probes agree on what
+#: "pytest-xdist" means.
+PYTEST_XDIST_PACKAGE = "pytest-xdist"
 
 
 # frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
@@ -223,11 +231,72 @@ def apply_agent_env(root: Path) -> Result[dict[str, str], GitError]:
     return exports
 
 
+# frob:ticket T-3316
+# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing.test_must_fire_when_plugin_not_importable  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing.test_must_stay_quiet_when_plugin_importable  # noqa: E501
+def _xdist_plugin_present() -> bool:
+    """Whether the `pytest-xdist` distribution resolves via
+    `importlib.metadata` in the CURRENT interpreter (T-3316) -- the real
+    precondition for pytest's `-n auto`/`-n <N>` to work at all, entirely
+    independent of `PYTEST_XDIST_AUTO_NUM_WORKERS` (a bound is meaningless
+    if the plugin reading it is not even loaded). Mirrors `frob.doctor.
+    scan_external_tools`'s own `kind="package"` probe (T-3276) rather than
+    inventing a second detection method for the same fact."""
+    try:
+        metadata.version(PYTEST_XDIST_PACKAGE)
+    except metadata.PackageNotFoundError:
+        return False
+    return True
+
+
+# frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
+# frob:ticket T-3316
+# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing.test_must_fire_when_plugin_not_importable  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing.test_must_stay_quiet_when_plugin_importable  # noqa: E501
+def warn_if_xdist_plugin_missing(root: Path) -> None:
+    """LOUD check for T-3316: `pytest-xdist`'s ABSENCE, a condition
+    `warn_if_xdist_bound_missing` (T-3094) never covered -- that function
+    only fires when a fleet-bound env var is unset, which presupposes the
+    plugin reading it is even installed. This one is unconditional: frob's
+    own `pyproject.toml` sets `-n auto` in pytest `addopts`, so EVERY
+    pytest spawn in an environment lacking `pytest-xdist` -- fleet context
+    or not, single developer or not -- fails with a usage error (pytest
+    exit code 4) before a single test runs. That is the exact gap the
+    owner's directive named: frob's `frob.doctor.scan_external_tools`
+    (T-3276) reports the absence when asked, but nothing preflighted an
+    actual pytest spawn against it, so the failure only ever surfaced as
+    an opaque, unexplained exit 4.
+
+    Best-effort diagnostic, never raises: an unresolvable `root` (not a
+    git worktree) degrades to a DEBUG log and returns, matching every
+    other guard in this module's "cannot resolve a root" posture -- this
+    is not a gate, just a preflight warning."""
+    actual = repo_root(root)
+    if actual.is_err:
+        _log.debug(
+            "xdist-plugin check: %s unresolvable as a repo (%s), skipping",
+            root,
+            actual.danger_err,
+        )
+        return
+    if _xdist_plugin_present():
+        return
+    _log.error(
+        "xdist-plugin: pytest-xdist is NOT installed in this interpreter, "
+        "but pytest addopts sets `-n auto` -- a pytest spawn from here "
+        "exits 4 (usage error, not a red suite) before any test runs; "
+        "install it (pip install pytest-xdist, or: uv pip install "
+        "pytest-xdist) or drop -n auto from addopts for a serial run",
+    )
+
+
 # frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
 # frob:ticket T-3094
+# frob:ticket T-3316
 # frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_must_fire_fleet_context_with_bound_missing_logs_error  # noqa: E501
 # frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_must_stay_quiet_bound_present_no_log  # noqa: E501
 # frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_must_stay_quiet_no_fleet_context_no_log  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing.test_also_warns_on_plugin_absence_even_without_fleet_context  # noqa: E501
 def warn_if_xdist_bound_missing(root: Path) -> None:
     """LOUD half of the T-3094 fix: logs ERROR when `root` has a fleet
     context (`_bounded_xdist_workers` returns non-`None`) but this
@@ -235,6 +304,15 @@ def warn_if_xdist_bound_missing(root: Path) -> None:
     `PYTEST_XDIST_AUTO_NUM_WORKERS` -- the exact silent-fallback-to-`-n
     auto` condition T-3094 measured (0 of 40 running workers bounded
     despite 3 live leases).
+
+    T-3316: ALSO calls `warn_if_xdist_plugin_missing` unconditionally,
+    before the fleet-bound check -- a missing PLUGIN and an unset BOUND
+    are different conditions (the plugin question applies even with zero
+    fleet context; frob's own `-n auto` addopt is unconditional) and this
+    function is already wired into every pytest-spawning call site in
+    this codebase (T-3094's own delivery-gap fix), so extending it here
+    is what actually reaches all of them without touching each call site
+    again.
 
     Call this immediately before spawning a pytest subprocess so the gap
     is visible in THAT process's own log, rather than only discoverable
@@ -247,8 +325,11 @@ def warn_if_xdist_bound_missing(root: Path) -> None:
     git worktree) degrades to a DEBUG log and returns, matching
     `enforce_worktree_lease`'s "cannot resolve a root" posture -- this is
     not a gate. No fleet context (`_bounded_xdist_workers` is `None`) is
-    silent by design -- the must-still-pass single-developer control, the
-    same one `agent_env_exports` itself protects."""
+    silent by design for the BOUND check -- the must-still-pass
+    single-developer control, the same one `agent_env_exports` itself
+    protects; the plugin-absence check above is unaffected by this,
+    since it is not a fleet-context condition."""
+    warn_if_xdist_plugin_missing(root)
     actual = repo_root(root)
     if actual.is_err:
         _log.debug(
@@ -280,8 +361,10 @@ __all__ = [
     "FROB_AGENT_ENV",
     "FROB_WORKTREE_ENV",
     "PYTEST_XDIST_AUTO_NUM_WORKERS_ENV",
+    "PYTEST_XDIST_PACKAGE",
     "agent_env_exports",
     "apply_agent_env",
     "enforce_worktree_lease",
     "warn_if_xdist_bound_missing",
+    "warn_if_xdist_plugin_missing",
 ]

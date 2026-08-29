@@ -2,7 +2,7 @@
 id: T-3316
 title: warn_if_xdist_bound_missing does not detect the xdist plugin's absence, only
   an unset fleet bound
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -33,6 +33,13 @@ scope_changes:
   reason: T-3316 adds a new doc section for warn_if_xdist_plugin_missing
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing::test_must_fire_when_plugin_not_importable
+- tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing::test_must_stay_quiet_when_plugin_importable
+- tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing::test_also_warns_on_plugin_absence_even_without_fleet_context
+- tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing::test_must_fire_fleet_context_with_bound_missing_logs_error
+- tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing::test_must_stay_quiet_bound_present_no_log
+- tests/test_worktree_guard.py::TestWarnIfXdistBoundMissing::test_must_stay_quiet_no_fleet_context_no_log
 designated_repro_test: null
 threat: null
 component: null
