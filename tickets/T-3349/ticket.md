@@ -2,7 +2,7 @@
 id: T-3349
 title: sync docs/modules/tickets-verify-sweep.md for T-2521's measurement_note/completeness
   change
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-29'
