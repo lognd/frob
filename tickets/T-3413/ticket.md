@@ -106,7 +106,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a26ea5ce8aa2d888587d201df5684766b547b6ce
 ---
 The deferred post-land unscoped sweep (T-1684) for T-3350 at commit a07433b7215188fd5acd6985054978ec304c6eb6 found 9 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 
