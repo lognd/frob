@@ -1,7 +1,7 @@
 ---
 id: T-3394
 title: Reduce ARCH103 decision-point count in check_runner._apply_tier_a_and_reverify
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
