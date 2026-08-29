@@ -2,7 +2,7 @@
 id: T-3277
 title: 'A freshly scaffolded project fails its own make check with 16 errors: docs
   promise green immediately, nothing tests scaffold-then-check'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
