@@ -1,7 +1,7 @@
 ---
 id: T-3386
 title: 'Fix SELFAUDIT001: add test_check_runner.py to testsuite exec scope'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -27,6 +27,30 @@ scope_changes:
     count from 223 to 224; the SYS111 ratchet lock must be bumped in the same diff
   actor: logan
   at: '2026-08-29'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): T-3386 is a design/frob.strata + ratchet-lock
+    declaration sync: tests/test_check_runner.py''s _git_init fixture already called
+    subprocess.run before this ticket; this ticket only teaches the strata model and
+    its ratchet lock about pre-existing, unchanged runtime behavior. No src/frob code
+    path changes.'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 718
+  new_length: 1055
+- mode: append
+  reason: 'BUG002 front door (T-2393): T-3386 is a design/frob.strata + ratchet-lock
+    declaration sync: tests/test_check_runner.py''s _git_init fixture already called
+    subprocess.run before this ticket; this ticket only teaches the strata model and
+    its ratchet lock about pre-existing, unchanged runtime behavior. No src/frob code
+    path changes.'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 1055
+  new_length: 1392
+evidence:
+- tests/unit/gates/test_sys_selfaudit.py::TestSelfauditSeverity::test_sys107_defaults_to_warn
+- tests/unit/strata/test_selfconform.py::TestUndeclaredInterfaceCore::test_core_undeclared_interface_fires
 designated_repro_test: null
 threat: null
 component: null
@@ -47,3 +71,7 @@ EO was blocked by a lease held by T-3311, which has since landed at
 
 Third data point for T-3324 (live-repo conformance checks rot as
 unrelated work lands).
+
+frob:no-behavior-change reason="T-3386 is a design/frob.strata + ratchet-lock declaration sync: tests/test_check_runner.py's _git_init fixture already called subprocess.run before this ticket; this ticket only teaches the strata model and its ratchet lock about pre-existing, unchanged runtime behavior. No src/frob code path changes."
+
+frob:no-behavior-change reason="T-3386 is a design/frob.strata + ratchet-lock declaration sync: tests/test_check_runner.py's _git_init fixture already called subprocess.run before this ticket; this ticket only teaches the strata model and its ratchet lock about pre-existing, unchanged runtime behavior. No src/frob code path changes."

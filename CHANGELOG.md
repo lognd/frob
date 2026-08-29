@@ -616,6 +616,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3380: ruff format repo-wide sweep (81 files, no owning gate)
 - T-3382: Fix gate:REG002 errors: register VERSION001/TDD001/VMOD001 as known gate rules
 - T-3384: fix gate:DOC, gate:DRIFT, gate:SELFAUDIT residue (EO slice)
+- T-3386: Fix SELFAUDIT001: add test_check_runner.py to testsuite exec scope
 
 ## [0.530.0] - unreleased
 

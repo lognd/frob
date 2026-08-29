@@ -226,9 +226,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 223,
-      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 219 to 223 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 224,
+      "reason": "T-3386: SELFAUDIT001/T-3324 fix -- added tests/test_check_runner.py to testsuite exec via-list (its _git_init fixture already calls subprocess.run at lines 38/39/42/282/283, unaccounted since the strata node was last synced), growing exec on testsuite from 223 to 224 site(s)",
+      "ticket": "T-3386"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
