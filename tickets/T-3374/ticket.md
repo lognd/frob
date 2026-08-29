@@ -1,8 +1,8 @@
 ---
-id: T-3373
+id: T-3374
 title: T-3191's multi-platform ty union triples SUPPRESS001 findings for a cross-platform
   diagnostic
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -39,12 +39,16 @@ scope_changes:
   reason: same-branch sibling ticket filings, benign passenger, avoids SCOPE001
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/test_gates_suppress.py::TestSuppress001Gate::test_mypy_suppressed_ty_unsuppressed_fires
+- tests/test_gates_suppress.py::TestSuppress001Gate::test_ty_suppressed_mypy_unsuppressed_fires
 designated_repro_test: null
 acceptance:
 - text: given a mypy-suppressed line where ty reports the SAME unsuppressed diagnostic
     on all 3 target platforms, when suppress001_gate runs, then it reports exactly
     one SUPPRESS001 violation for that file:line:code, not one per platform
-  evidence: []
+  evidence:
+  - tests/test_gates_suppress.py::TestSuppress001Gate::test_mypy_suppressed_ty_unsuppressed_fires
 threat: null
 component: null
 anchor: false

@@ -192,19 +192,34 @@ def _relativize(file: str | None, root: Path) -> str | None:
 
 
 def _ty_diagnostics(root: Path) -> list[tuple[str, int, str]]:
-    """`(relfile, line, code)` for every `ty` diagnostic that carries both
-    a line and a rule code -- reuses `frob.check._python._run_ty`'s
-    existing hermetic invocation (T-0996) rather than re-deriving ty's
-    own extra-search-path/venv resolution here."""
+    """`(relfile, line, code)` for every DISTINCT `ty` diagnostic that
+    carries both a line and a rule code -- reuses `frob.check._python.
+    _run_ty`'s existing hermetic invocation (T-0996) rather than
+    re-deriving ty's own extra-search-path/venv resolution here.
+
+    T-3191 runs `ty` once per target platform and unions the results, so
+    a genuinely cross-platform diagnostic (the common case) now appears
+    up to len(platforms) times in `result.diagnostics`, differing only
+    in each entry's `[platform=<name>]` message tag -- deduplicated here
+    by `(rel, line, code)` since this function's one consumer,
+    `suppress001_gate`, asks a presence question ("does ty report this
+    unsuppressed here at all") not a per-platform count; without this,
+    a single mismatch fires once per platform instead of once
+    (frob:ticket T-3374)."""
     from frob.check._python import _run_ty
 
     result = _run_ty(root)
+    seen: set[tuple[str, int, str]] = set()
     out: list[tuple[str, int, str]] = []
     for diag in result.diagnostics:
         rel = _relativize(diag.file, root)
         if rel is None or diag.line is None or not diag.code:
             continue
-        out.append((rel, diag.line, diag.code))
+        key = (rel, diag.line, diag.code)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(key)
     return out
 
 
