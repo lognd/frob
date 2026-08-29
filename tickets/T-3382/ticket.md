@@ -1,7 +1,7 @@
 ---
 id: T-3382
 title: 'Fix gate:REG002 errors: register VERSION001/TDD001/VMOD001 as known gate rules'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -43,6 +43,8 @@ acceptance:
   - tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_skewed_core_version_fires
   - tests/gates/test_tdd_order.py::TestClassifyOrder::test_fires_when_implementation_precedes_test
   - tests/test_gates_vmodel.py::TestVmodelGate::test_fires_vmod001_on_construction_error
+  - tests/test_registry_exhaustiveness.py::TestDisposition::test_dangling_handled_by_fails
+  - tests/test_registry_exhaustiveness.py::TestDisposition::test_handled_by_real_rule_passes
 acceptance_amendments:
 - op: replace
   index: 0

@@ -466,6 +466,18 @@ _KNOWN_GATE_RULES = frozenset(
         # effective_profile/configured_profile outside the settings-
         # resolver layer T-2360/T-2361 built.
         "PROFILE001",
+        # T-3011: VERSION001 (frob.gates._version_coupling) -- a live,
+        # enforced gate rule (docs/design/registry/check-coverage.yaml's
+        # own CHK-GATE-VERSION001 entry already asserted this; it was
+        # simply missing from this frozenset, tripping REG002 on that
+        # entry's handled_by).
+        "VERSION001",
+        # T-3009 (T-3004 section 7): TDD001 (frob.gates._tdd_order) -- a
+        # live, enforced gate rule, same REG002 gap as VERSION001 above.
+        "TDD001",
+        # frob.gates._vmodel's VMOD001 -- a live, enforced gate rule,
+        # same REG002 gap as VERSION001/TDD001 above.
+        "VMOD001",
         # T-1087: `frob vet`'s own rule ids (src/frob/vet/**) -- a
         # different CLI surface (`frob vet`, not `frob check`'s gate
         # family), outside `_rule_id_scan.SCANNED_BASES` entirely, same
