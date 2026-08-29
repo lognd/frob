@@ -1793,3 +1793,43 @@ used for DOC012. This number is a point-in-time measurement like the
 (`frob.tickets.large_glob_warnings` over every open ticket, skipping
 `scope_breadth_ack=True` ones) to get the current count rather than
 trusting this one indefinitely.
+
+## Stale Captured claims refused at close (T-3266)
+
+<!-- frob:describes src/frob/tickets/_done_report.py::_stale_claims_reason -->
+
+MEASURED 2026-08-28: 206 of 1,934 done-reports on main (10.7%) render a
+`### Captured claims` evidence count that disagrees with the ticket's
+own `evidence:` list -- 145 claim zero against real evidence (worst
+case: T-3244, 47 evidence ids rendered as 0), 61 claim a wrong non-zero
+count (e.g. T-3230: 6 evidence ids, claims=3). Live, not historical: 6 of
+the 15 most-recently-written reports at measurement time were wrong.
+
+Root cause: `set_done_report` (`_reporting.py`) captures the Captured
+claims section from a ticket snapshot read at `done-report` call time.
+Nothing re-captures it if evidence is attached (`frob ticket evidence`)
+AFTER that narrative was last written -- the function's own docstring
+already named this as a possible race, but measurement showed it is the
+project's dominant wrong-record defect class, not a rare edge case.
+
+`_stale_claims_reason` (`_done_report.py`) is the structural sibling of
+the T-3195 hollow-report guard (`_is_hollow_done_report`): where that
+guard catches the ALL-zero placeholder-text shape, this one catches
+EVERY disagreement between the rendered claims evidence count and the
+ticket's actual evidence count, including the wrong-non-zero shape a
+hollow-only check cannot see. Both guards are wired into the same
+close-time structural check, `_evidence.py`'s
+`_done_transition_structural_guard` -- a ticket transitioning to `done`
+with a stale claims line is refused with `TicketError.
+StaleClaimsInDoneReport`, naming both numbers and pointing at `frob
+ticket done-report` as the fix (re-running it recaptures claims against
+the ticket's CURRENT evidence).
+
+**Decision on the 206 historical reports already on main:** left as-is,
+deliberately. Per this ticket's own explicit instruction, a landed Done
+report is a record of what happened; a mass rewrite of historical
+artifacts is the move that makes an incident unreconstructable (the same
+posture T-3195 already took for the 45 pre-existing hollow reports it
+found). This fix only prevents NEW stale-claims reports from reaching
+`done` on main going forward -- it does not, and is not intended to,
+correct the historical population.

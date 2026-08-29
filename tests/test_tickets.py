@@ -3459,3 +3459,105 @@ class TestHollowDoneReportGuard:
             debt_sink=lambda tid, what: None,
         )
         assert result.is_ok
+
+
+class TestStaleClaimsGuard:
+    """T-3266: a close whose Done report's `### Captured claims` evidence
+    count disagrees with the ticket's own recorded evidence is refused --
+    both the all-zero shape (measured 145 of 1,934 done reports on main)
+    and the wrong-non-zero shape (61 more) -- see
+    `frob.tickets._done_report._stale_claims_reason`."""
+
+    _CLAIMS_BODY = (
+        "## Description\nx\n\n## Done report\nsome narrative\n\n"
+        "### Changed\n- src/x.py\n\n"
+        "### Evidence\n- `tests/x.py::test_a` (pytest node id, verified "
+        "passing when recorded)\n\n"
+        "### Captured claims\n"
+        "- tests: {test_count} passed (from {evidence_count} evidence id(s))\n"
+        "- gates: unmeasured\n"
+    )
+
+    # frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_zero_claims_with_real_evidence_refused  # noqa: E501
+    def test_zero_claims_with_real_evidence_refused(self, tmp_path: Path) -> None:
+        """The dominant measured shape (T-3244: 47 evidence ids, claims=0)
+        -- a Done report claiming 0 evidence while the ticket carries 1
+        real evidence id is refused."""
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        body = self._CLAIMS_BODY.format(test_count=0, evidence_count=0)
+        ticket = _ticket(evidence=("tests/x.py::test_a",), body=body)
+        result = _done_transition_structural_guard(
+            tmp_path,
+            ticket,
+            {ticket.id: ticket},
+            covers_scope=None,
+            rapid=True,
+            debt_sink=lambda tid, what: None,
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.StaleClaimsInDoneReport
+
+    # frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_wrong_nonzero_claims_refused  # noqa: E501
+    def test_wrong_nonzero_claims_refused(self, tmp_path: Path) -> None:
+        """The partial-mismatch shape (T-3230: evidence=6, claims=3) -- a
+        non-zero but WRONG claims count is refused too, not just the
+        all-zero shape a hollow-report-style check alone would catch."""
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        body = self._CLAIMS_BODY.format(test_count=1, evidence_count=1)
+        ticket = _ticket(
+            evidence=("tests/x.py::test_a", "tests/x.py::test_b"), body=body
+        )
+        result = _done_transition_structural_guard(
+            tmp_path,
+            ticket,
+            {ticket.id: ticket},
+            covers_scope=None,
+            rapid=True,
+            debt_sink=lambda tid, what: None,
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.StaleClaimsInDoneReport
+
+    # frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_matching_claims_not_flagged  # noqa: E501
+    def test_matching_claims_not_flagged(self, tmp_path: Path) -> None:
+        """Must-stay-quiet: a claims line whose evidence count matches the
+        ticket's own evidence is never refused."""
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        body = self._CLAIMS_BODY.format(test_count=1, evidence_count=1)
+        ticket = _ticket(evidence=("tests/x.py::test_a",), body=body)
+        result = _done_transition_structural_guard(
+            tmp_path,
+            ticket,
+            {ticket.id: ticket},
+            covers_scope=None,
+            rapid=True,
+            debt_sink=lambda tid, what: None,
+        )
+        assert result.is_ok
+
+    # frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_no_claims_section_not_flagged  # noqa: E501
+    def test_no_claims_section_not_flagged(self, tmp_path: Path) -> None:
+        """A Done report with no `### Captured claims` section at all (an
+        older report, or a caller that opted claims capture out) is never
+        flagged -- there is nothing to compare against."""
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        body = (
+            "## Description\nx\n\n## Done report\nsome narrative\n\n"
+            "### Changed\n- src/x.py\n\n"
+            "### Evidence\n- `tests/x.py::test_a` (pytest node id, verified "
+            "passing when recorded)\n"
+        )
+        ticket = _ticket(evidence=("tests/x.py::test_a",), body=body)
+        result = _done_transition_structural_guard(
+            tmp_path,
+            ticket,
+            {ticket.id: ticket},
+            covers_scope=None,
+            rapid=True,
+            debt_sink=lambda tid, what: None,
+        )
+        assert result.is_ok

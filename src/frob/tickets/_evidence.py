@@ -67,6 +67,7 @@ from frob.process._guard import guarded_subprocess_run
 from frob.tickets._done_report import (
     _hollow_done_report_exempt,
     _is_hollow_done_report,
+    _stale_claims_reason,
 )
 from frob.tickets._live_tracker import live_tracker_citations
 from frob.tickets._models import (
@@ -492,6 +493,11 @@ def _done_transition_structural_guard(
             ticket.id,
         )
         return Err(TicketError.HollowDoneReport)
+    # frob:ticket T-3266
+    stale_claims = _stale_claims_reason(ticket, ticket.body)
+    if stale_claims is not None:
+        _log.warning("tickets: %s cannot close, %s", ticket.id, stale_claims)
+        return Err(TicketError.StaleClaimsInDoneReport)
     if ticket.tier is not TicketTier.TICKET:
         open_descendants = _open_descendant_ids(ticket, queue)
         if open_descendants:

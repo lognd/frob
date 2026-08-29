@@ -2320,6 +2320,12 @@ class TicketError(ErrorSet):
         "no-behaviour-change front door"
     )
     MalformedEvidence = "evidence entry failed schema validation"
+    # frob:ticket T-3266
+    StaleClaimsInDoneReport = (
+        "Done report's Captured claims evidence count does not match the "
+        "ticket's own recorded evidence -- re-run `frob ticket done-report` "
+        "to refresh it before closing"
+    )
     BlockerOpen = "Cannot start: blocked_by contains open tickets"
     # frob:ticket T-3087
     # T-3087: measured incident -- T-3064 reached `done` while still

@@ -24,7 +24,13 @@ forward."""
 
 from __future__ import annotations
 
-from frob.tickets._models import Ticket, TicketKind, _done_report_section_lines
+from frob.tickets._models import (
+    Ticket,
+    TicketKind,
+    _done_report_section_lines,
+    is_cmd_evidence,
+    parse_claims_from_done_report,
+)
 
 # Exact placeholder text `render_evidence_block`/`render_changed_block`
 # (frob.tickets._evidence) emit for the empty case -- the only strings
@@ -104,3 +110,57 @@ def _hollow_done_report_exempt(ticket: Ticket, body: str, *, rapid: bool) -> boo
     if ticket.kind is TicketKind.DOCS and rapid:
         return True
     return _NO_BEHAVIOUR_CHANGE_MARKER in body.lower()
+
+
+# frob:ticket T-3266
+# frob:doc \
+# docs/modules/tickets-data-storage.md#stale-captured-claims-refused-at-close-t-3266
+# frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_zero_claims_with_real_evidence_refused  # noqa: E501
+# frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_wrong_nonzero_claims_refused  # noqa: E501
+# frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_matching_claims_not_flagged  # noqa: E501
+# frob:tests tests/test_tickets.py::TestStaleClaimsGuard.test_no_claims_section_not_flagged  # noqa: E501
+def _stale_claims_reason(ticket: Ticket, body: str) -> str | None:
+    """`None` if `body`'s '### Captured claims' section (if any) has an
+    `evidence_count` matching `ticket`'s own recorded non-cmd evidence
+    count, else a human-readable reason string naming both numbers (T-3266).
+
+    MEASURED 2026-08-28 (T-3266): 206 of 1,934 done-reports on main (10.7%)
+    render a Captured-claims evidence count that disagrees with the
+    ticket's own `evidence:` list -- 145 claim zero against real evidence
+    (worst case: 47 ids rendered as 0), 61 claim a wrong non-zero count.
+    Root cause: `set_done_report` (`_reporting.py`) captures claims from a
+    ticket snapshot read once, and nothing re-captures them if evidence is
+    attached (`frob ticket evidence`) AFTER the Done report narrative was
+    last written -- the report's own docstring already flagged this
+    tradeoff as a rare race; measurement showed it is instead the
+    project's dominant wrong-record defect class, live on ~40% of recent
+    lands, not a historical artifact.
+
+    This is the T-3195 hollow-report guard's structural sibling: that
+    guard catches the ALL-zero placeholder-text shape
+    (`_is_hollow_done_report`); this one catches every OTHER disagreement
+    between the rendered claims number and the ticket's actual evidence,
+    including the "wrong non-zero" shape a hollow-only check can never see
+    (T-3230: evidence=6, claims=3). Wiring this into the same close-time
+    structural guard `_is_hollow_done_report` already sits in
+    (`_evidence.py::_done_transition_structural_guard`) means a NEW close
+    can never reach `done` on main carrying a stale claims line again --
+    the fix is enforcement at the write boundary, not a rewrite of the
+    206 historical reports already on main (deliberately left as-is, a
+    record of what happened, per this ticket's own explicit instruction
+    not to bulk-rewrite landed artifacts).
+
+    Returns `None` (never flags) when `body` carries no '### Captured
+    claims' section at all -- an older or claims-less Done report is a
+    different, pre-existing shape this guard does not police."""
+    claims = parse_claims_from_done_report(body)
+    if claims is None:
+        return None
+    actual = len([e for e in ticket.evidence if not is_cmd_evidence(e)])
+    if claims.evidence_count == actual:
+        return None
+    return (
+        f"Done report's Captured claims line says {claims.evidence_count} "
+        f"evidence id(s) but the ticket currently records {actual} -- "
+        "re-run `frob ticket done-report` to refresh it"
+    )

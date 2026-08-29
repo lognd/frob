@@ -2,7 +2,7 @@
 id: T-3266
 title: 136 done-reports claim '0 passed (from 0 evidence id(s))' while their ticket
   carries real evidence (T-3244 has 47)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -62,6 +62,11 @@ body_changes:
   at: '2026-08-28'
   old_length: 3442
   new_length: 6315
+evidence:
+- tests/test_tickets.py::TestStaleClaimsGuard::test_zero_claims_with_real_evidence_refused
+- tests/test_tickets.py::TestStaleClaimsGuard::test_wrong_nonzero_claims_refused
+- tests/test_tickets.py::TestStaleClaimsGuard::test_matching_claims_not_flagged
+- tests/test_tickets.py::TestStaleClaimsGuard::test_no_claims_section_not_flagged
 designated_repro_test: null
 threat: null
 component: null
