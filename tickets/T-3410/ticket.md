@@ -35,7 +35,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: db37454f368d7443cb3680421e718472ebcf54fc
 ---
 T-3400 trimmed `src/frob/scaffold/data/shared/python/Makefile.j2` down to
 install/clean/upload and correctly updated `README.md.j2` alongside it, but
