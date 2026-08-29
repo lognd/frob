@@ -14,10 +14,19 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/scaffold/data/shared/python/docs/index.md.j2
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/scaffold/data/shared/python/docs/index.md.j2
+  reason: 'T-3400 regression fix: docs/index.md.j2 in same directory still references
+    deleted make targets'
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
