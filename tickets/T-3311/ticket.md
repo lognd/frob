@@ -64,6 +64,12 @@ scope_changes:
     ledger
   actor: logan
   at: '2026-08-29'
+- op: add
+  glob: docs/modules/process.md
+  reason: 'resume T-3311: re-add process.md now that T-3295 has landed, per the pause
+    note'
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
