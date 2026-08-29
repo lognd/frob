@@ -311,7 +311,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a07433b7215188fd5acd6985054978ec304c6eb6
 ---
 Post-1.0.0 epic: decompose the serve/tickets/testing/app CYCLE001 SCC
 (160 nodes). Owner decision on T-2667 (2026-08-29) was accounting-now,
