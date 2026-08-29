@@ -2,7 +2,7 @@
 id: T-3346
 title: 'Residual gate errors outside T-3342/3343/3344: ARCH/SEC/LARGE/PII/WIRE/PERF/LEXCHECK/WAIVE/FLAGCOV/DEPR
   (27)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
