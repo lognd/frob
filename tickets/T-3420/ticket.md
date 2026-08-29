@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - pyproject.toml
+- tests/system/test_coverage_sigterm.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
   glob: pyproject.toml
   reason: disable coverage's own SIGTERM handler (sigterm=true) that deadlocks on
     repeated SIGTERM
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/system/test_coverage_sigterm.py
+  reason: must-fire/must-stay-quiet fixtures for the SIGTERM deadlock
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
