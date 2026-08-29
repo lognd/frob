@@ -2,7 +2,7 @@
 id: T-3196
 title: 'post-land sweep regression from T-2710: 2 new (rule, file) identit(ies) (DRIFT001,
   SYS003)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-27'
@@ -17,10 +17,14 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/_python.py
 - src/frob/gates/__init__.py
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_gates.py::TestDriftGate::test_no_drift_when_clean
 designated_repro_test: null
 threat: null
 component: null

@@ -558,6 +558,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3191: Local gate typechecks only the host platform: Windows/macOS ty diagnostics are unreachable before CI
 - T-3192: A hanging CI job produces no failure signal: turn ubuntu hangs into timed failures with stack dumps
 - T-3195: A done-report recording zero evidence and zero changed files reached main while the work sat unlanded
+- T-3196: post-land sweep regression from T-2710: 2 new (rule, file) identit(ies) (DRIFT001, SYS003)
 - T-3211: Burn down platform-unsafe code surfaced by multi-platform ty (T-3191)
 - T-3216: DirtyMain reports an unreadable git status as uncommitted work and tells the reader not to retry
 - T-3218: Gate: refuse over-long ticket-citing comment blocks in src, and ticket ids outside docs provenance sections

@@ -1835,6 +1835,42 @@
       "old_digest": "ed38327bc3a59742b8e17e4e1bbf0341f8a84da1bdc6b45a62dc7d74b63d5332",
       "reason": "T-3216: re-verified after ruff-format; describe_root_dirt's STATUS-UNREADABLE short-circuit still does not change docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684's documented contract",
       "ref": "src/frob/tickets/_land_git_ops.py::describe_root_dirt"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-28",
+      "facet": "body",
+      "new_digest": "d33f06a0a0a0cf26697478b225a7a9c723585c2590b6e13f4b42d656e3af5ee1",
+      "old_digest": "93fdb2a5fc44450c637b6e44cf1e83911dd5bed956d8e776d7c10ca46cb25fd6",
+      "reason": "post-land sweep regression T-3196: verified both symbols still exist at their documented signatures/roles in docs/modules/gates.md's Public API manifest (a symbol-existence listing, not per-symbol prose that could drift) -- body digest moved from unrelated upstream edits, doc reference remains accurate",
+      "ref": "src/frob/gates/__init__.py::coverage_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-28",
+      "facet": "sig",
+      "new_digest": "fbb174c7bb93a7836cf6d6e3b3881f8cabe9ee2cb07604bd57bc204683474300",
+      "old_digest": "fbb174c7bb93a7836cf6d6e3b3881f8cabe9ee2cb07604bd57bc204683474300",
+      "reason": "post-land sweep regression T-3196: verified both symbols still exist at their documented signatures/roles in docs/modules/gates.md's Public API manifest (a symbol-existence listing, not per-symbol prose that could drift) -- body digest moved from unrelated upstream edits, doc reference remains accurate",
+      "ref": "src/frob/gates/__init__.py::coverage_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-28",
+      "facet": "body",
+      "new_digest": "662577a1ab80f9e5f04cb2817567e42b2608febc5fbb71ec1158d803a3a597ce",
+      "old_digest": "662577a1ab80f9e5f04cb2817567e42b2608febc5fbb71ec1158d803a3a597ce",
+      "reason": "post-land sweep regression T-3196: verified both symbols still exist at their documented signatures/roles in docs/modules/gates.md's Public API manifest (a symbol-existence listing, not per-symbol prose that could drift) -- body digest moved from unrelated upstream edits, doc reference remains accurate",
+      "ref": "src/frob/gates/__init__.py::run_gates"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-28",
+      "facet": "sig",
+      "new_digest": "b320984cdd9e8b37f31851680dc741e3adb085fae17754f6c7fb515d3a370e6d",
+      "old_digest": "09fd1fa5e1ac00102c10809674530f47a75e8f11f6cc2f2ccf8b26a008d22eaa",
+      "reason": "post-land sweep regression T-3196: verified both symbols still exist at their documented signatures/roles in docs/modules/gates.md's Public API manifest (a symbol-existence listing, not per-symbol prose that could drift) -- body digest moved from unrelated upstream edits, doc reference remains accurate",
+      "ref": "src/frob/gates/__init__.py::run_gates"
     }
   ],
   "entries": [
@@ -2084,7 +2120,7 @@
       "ref": "src/frob/gates/__init__.py::active_ticket"
     },
     {
-      "digest": "93fdb2a5fc44450c637b6e44cf1e83911dd5bed956d8e776d7c10ca46cb25fd6",
+      "digest": "d33f06a0a0a0cf26697478b225a7a9c723585c2590b6e13f4b42d656e3af5ee1",
       "facet": "body",
       "ref": "src/frob/gates/__init__.py::coverage_gate"
     },
@@ -2114,7 +2150,7 @@
       "ref": "src/frob/gates/__init__.py::run_gates"
     },
     {
-      "digest": "09fd1fa5e1ac00102c10809674530f47a75e8f11f6cc2f2ccf8b26a008d22eaa",
+      "digest": "b320984cdd9e8b37f31851680dc741e3adb085fae17754f6c7fb515d3a370e6d",
       "facet": "sig",
       "ref": "src/frob/gates/__init__.py::run_gates"
     },
