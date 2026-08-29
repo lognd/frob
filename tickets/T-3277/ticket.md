@@ -16,10 +16,32 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_scaffold_dx.py
+- src/frob/scaffold/data/shared/python/**
+- src/frob/scaffold/data/types/python-library/**
+- docs/commands/scaffold.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/scaffold/data/shared/python/**
+  reason: template/doc fixes DV re-measurement showed still needed after T-3273/3271/3272
+    landed
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/scaffold/data/types/python-library/**
+  reason: template/doc fixes DV re-measurement showed still needed after T-3273/3271/3272
+    landed
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: template/doc fixes DV re-measurement showed still needed after T-3273/3271/3272
+    landed
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
