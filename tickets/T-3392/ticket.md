@@ -35,7 +35,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4ea3503e1ea8a9f159b868fa76337377b67437f2
 ---
 OPAQUE001: line 243 uses a runtime-resolved dynamic-key container call the capability scanner cannot statically resolve. Rework to a statically-resolvable call or declare the capability explicitly so the scanner can verify it. Part of PyPI release error-floor burn (Series EQ slice).
 
