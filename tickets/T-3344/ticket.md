@@ -30,6 +30,7 @@ scope:
 - scripts/fleet_status.py
 - src/frob/doctor.py
 - src/frob/tickets/_land_squash.py
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -135,6 +136,11 @@ scope_changes:
   glob: src/frob/tickets/_land_squash.py
   reason: narrow to actual touched files for T-3344 (gate:DRIFT cleanup); the doable/start
     command initially rejected **/* as over-broad
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: frob.lock
+  reason: frob ack writes to frob.lock
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
