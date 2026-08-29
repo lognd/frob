@@ -2422,6 +2422,27 @@ assume "weakness:CWE-78:verify" noflow registry -> verify owner logan review "20
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-78:serve" noflow registry -> serve owner logan review "2026-10-15"
 
+// T-3388: `refactor` has declared `may "exec"` via `_verify.py` since
+// T-3311 (pytest --collect-only, `frob check --delta`, and a per-module
+// `import <module>` sanity check, all via `guarded_subprocess_run`), but
+// the missing ratchet-lock entry this ticket also fixes left the DOC003
+// obligation this drags in undischarged until now. No flow exists from
+// `registry` INTO `refactor` in this graph -- refactor's only inbound
+// edges are f_testsuite_refactor/f_t2403_cli_refactor/f_t3029_gates_
+// refactor, none of which carry a path back to `registry` (registry's
+// only real outbound edge in this graph is `f_registry_fetch: registry
+// -> vet`, and `c_no_registry_ledger` already establishes that taint
+// stops at the `vet` boundary) -- the same graph-provable NoFlow case
+// core/checker/tickets_ledger/vet/fleet/mutate/natives/deploy/verify/
+// serve's assumes above already document; `assume` used for the same
+// uniformity reason. Every argv these three call sites build is either
+// fully hardcoded (`--collect-only`/`frob check --delta`) or a module
+// name derived from the touched-file set's OWN resolved import path
+// (`module_import`'s `f"import {module}"`) -- never registry response
+// bytes or other untrusted input.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:refactor" noflow registry -> refactor owner logan review "2026-10-15"
+
 // T-0401 (docs/audits/strata.md G3): `eval` used to be globally
 // `BenignCapability`-excused ("no CWE_CATALOG entry targets dynamic code
 // evaluation") -- false, CWE-94 IS that entry, it just was not joined to

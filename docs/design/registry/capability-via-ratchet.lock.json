@@ -160,6 +160,11 @@
       "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
       "ticket": "T-3029"
     },
+    "refactor::exec": {
+      "accepted_count": 1,
+      "reason": "T-3388: SELFAUDIT001 found refactor::exec (may \"exec\" via \"src/frob/refactor/_verify.py\" in design/frob.strata, T-3311) had no ratchet lock entry -- pre-existing drift, unrelated to T-3386s testsuite-node fix. Adding the missing entry at the current measured site count (1 file: _verify.py), not granting new capability.",
+      "ticket": "T-3388"
+    },
     "refactor::fs.read": {
       "accepted_count": 11,
       "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
