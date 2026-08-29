@@ -2,7 +2,7 @@
 id: T-3288
 title: 'frob ticket land --finish DELETED a worktree without merging: the T-2108 shortcut
   trusts main''s ledger state instead of branch ancestry'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
