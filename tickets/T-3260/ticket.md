@@ -14,12 +14,57 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- strata-core/src/graph/vmodel.rs
-- strata-core/src/parse/grammar_core.rs
+- strata-core/src/graph/vmodel/**
+- strata-core/src/parse/grammar_vmodel.rs
+- strata-core/src/parse/mod.rs
+- tests/unit/strata/test_vmodel_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: strata-core/src/graph/vmodel.rs
+  reason: 'T-3260 real split: vmodel.rs -> vmodel/{mod,closure}.rs, grammar_core.rs''s
+    vmodel productions -> new grammar_vmodel.rs (both spliced back via mod.rs''s existing
+    include! pattern), plus updated frob:tests path refs in test_vmodel_check.py'
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: strata-core/src/parse/grammar_core.rs
+  reason: 'T-3260 real split: vmodel.rs -> vmodel/{mod,closure}.rs, grammar_core.rs''s
+    vmodel productions -> new grammar_vmodel.rs (both spliced back via mod.rs''s existing
+    include! pattern), plus updated frob:tests path refs in test_vmodel_check.py'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: strata-core/src/graph/vmodel/**
+  reason: 'T-3260 real split: vmodel.rs -> vmodel/{mod,closure}.rs, grammar_core.rs''s
+    vmodel productions -> new grammar_vmodel.rs (both spliced back via mod.rs''s existing
+    include! pattern), plus updated frob:tests path refs in test_vmodel_check.py'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: strata-core/src/parse/grammar_vmodel.rs
+  reason: 'T-3260 real split: vmodel.rs -> vmodel/{mod,closure}.rs, grammar_core.rs''s
+    vmodel productions -> new grammar_vmodel.rs (both spliced back via mod.rs''s existing
+    include! pattern), plus updated frob:tests path refs in test_vmodel_check.py'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: strata-core/src/parse/mod.rs
+  reason: 'T-3260 real split: vmodel.rs -> vmodel/{mod,closure}.rs, grammar_core.rs''s
+    vmodel productions -> new grammar_vmodel.rs (both spliced back via mod.rs''s existing
+    include! pattern), plus updated frob:tests path refs in test_vmodel_check.py'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/strata/test_vmodel_check.py
+  reason: 'T-3260 real split: vmodel.rs -> vmodel/{mod,closure}.rs, grammar_core.rs''s
+    vmodel productions -> new grammar_vmodel.rs (both spliced back via mod.rs''s existing
+    include! pattern), plus updated frob:tests path refs in test_vmodel_check.py'
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
