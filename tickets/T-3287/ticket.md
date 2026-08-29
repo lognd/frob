@@ -30,6 +30,14 @@ body_changes:
   at: '2026-08-28'
   old_length: 3807
   new_length: 4265
+- mode: append
+  reason: observed a second agent fleet in ../diax holding 4.1GB on the same box;
+    records why the memory bound already covers cross-repo contention and the concurrency
+    divisor must stay per-repository, so nobody reaches for a global lock
+  actor: logan
+  at: '2026-08-28'
+  old_length: 4265
+  new_length: 6756
 designated_repro_test: null
 threat: null
 component: null
@@ -111,3 +119,48 @@ ACCEPTANCE
 - The measurement above re-run with several series live, showing markers > 1.
 - The memory bound still applies unchanged.
 - All three fixtures present.
+
+
+CLARIFICATION 2026-08-28, after observing a case the original body did not
+anticipate. This SHARPENS the "do not make the registry global" instruction
+rather than reversing it -- read both together before choosing an anchor.
+
+OBSERVED: the largest single memory consumer on this box right now is not a
+frob process at all. It is a process in a DIFFERENT repository's worktree:
+
+    4181756 KB  /home/logan/projects/diax/.claude/worktrees/t-0037/.venv/bin/python
+    1819064 KB  /home/logan/projects/frob/.claude/worktrees/t-3277/.venv/bin/python
+    1440952 KB  /home/logan/projects/frob/.claude/worktrees/t-3266/.venv/bin/python -m frob check
+
+The owner is running a second agent fleet in ../diax while this one runs in
+frob. Two unrelated repositories are genuinely contending for one machine's
+memory, and 4.1 GB of the pressure belongs to neither this repo nor any
+`frob check`.
+
+WHY THIS DOES NOT CONTRADICT THE ORIGINAL INSTRUCTION, and why the split
+matters:
+
+  MEMORY is a MACHINE resource. It is already handled correctly and globally:
+  `_compute_admitted_workers` reads `/proc/meminfo`'s `MemAvailable`, which
+  reflects the whole box including diax's 4.1 GB. A frob check starting now
+  already sees less available memory because of a process in another repo, and
+  sizes down accordingly. Do not change that. It is the half of T-3256 that
+  works, and it works precisely because it measures the machine rather than a
+  registry.
+
+  CONCURRENCY COUNT is a REPOSITORY question. "How many frob checks are running
+  against THIS repo" is what the divisor wants to know, and the answer should
+  not change because an unrelated project happens to be busy. A global registry
+  would make one repo's activity deflate another's worker budget twice -- once
+  through memory, which is correct, and again through the divisor, which is
+  double-counting the same contention.
+
+SO THE FIX IS EXACTLY WHAT THE ORIGINAL BODY SAID, no wider: move the anchor
+from the WORKTREE to the REPOSITORY. Per-worktree is too narrow (the fleet's
+checks never see each other); machine-global is too wide (double-counts, and
+adds a permissions and staleness surface). Repository-wide is the correct
+grain, and `git rev-parse --git-common-dir` remains the natural candidate.
+
+STATE THIS REASONING IN YOUR DONE REPORT. The next person to look at this will
+see two repos fighting over one box and reach for a global lock; the record
+should already explain why memory covers that case and the divisor must not.
