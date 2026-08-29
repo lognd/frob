@@ -260,7 +260,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9666c48621c3a3d35cdc7a84f456f3636c7d0133
 ---
 Series EH: unscoped self-gate DOC cluster at 50 errors. Investigate root causes (rule histogram, archived-ticket doc pointers) then fix.
 
