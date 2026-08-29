@@ -53,7 +53,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: dd5e19e9a2593ef7205a886671ae06902c61f340
 ---
 Sub-ticket of T-3343 (triage). Fixes gate:REG (3->0) and gate:REF (3->0), measured via frob check --only release --only registry --only refs --json:
 
