@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_mutate.py
 - src/frob/_cli_parsers/_ticket/_metadata.py
+- tests/test_tickets_scope_mutation.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,12 @@ scope_changes:
   glob: src/frob/_cli_parsers/_ticket/_metadata.py
   reason: the real defect is in argparse's --reason flag definition for the scope
     subcommand, not in _mutate.py which only consumes the already-collapsed value
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/test_tickets_scope_mutation.py
+  reason: must-fire/must-stay-quiet fixtures for the --reason-collapse fix go here,
+    alongside TestScopeCli's existing real-argv-parsing precedent
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
