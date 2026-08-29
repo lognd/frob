@@ -17,10 +17,95 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_waive.py
+- src/frob/gates/__init__.py
+- src/frob/gates/_docstatus.py
+- src/frob/process/parsers/common.py
+- src/frob/tickets/_leases.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- src/frob/app/bind_runner.py
+- src/frob/app/clean_runner.py
+- src/frob/app/fmt_runner.py
+- src/frob/app/map_runner.py
+- src/frob/app/test_runner.py
+- tests/test_waive_gate.py
+- tests/test_tickets_gate_claim_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
+    to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/gates/_docstatus.py
+  reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
+    to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/process/parsers/common.py
+  reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
+    to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
+    to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
+    to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/bind_runner.py
+  reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
+    to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/clean_runner.py
+  reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
+    to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/fmt_runner.py
+  reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
+    to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/map_runner.py
+  reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
+    to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/test_runner.py
+  reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
+    to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/test_waive_gate.py
+  reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
+    to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/test_tickets_gate_claim_evidence.py
+  reason: 'T-3295: fixing WAIVE009''s conclusion and converting the 13 tripped waivers
+    to frob:debt/deletion/reword requires touching every site the measurement found'
+  actor: logan
+  at: '2026-08-29'
 body_changes:
 - mode: append
   reason: 'correct the filing''s own measurement error: 2656 was a LINE count, not
