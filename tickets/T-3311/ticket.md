@@ -24,6 +24,7 @@ scope:
 - docs/modules/process.md
 - tests/unit/test_pytest_spawn.py
 - docs/commands/refactor.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -75,6 +76,12 @@ scope_changes:
   glob: docs/commands/refactor.md
   reason: 'AFFECT001: verify_pytest_collect''s argv-build now routes through resolve_pytest_argv,
     doc needs updating'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001: the ARCH001 split moved an existing (undeclared) exec call
+    site onto a fresh line; declaring it properly rather than waiving'
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
