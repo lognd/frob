@@ -63,7 +63,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fed4421146ce402860bf3cf957c9d0b09bcd975e
 ---
 LARGE001 fires on src/frob/process/_reap.py (952 lines, threshold 800). A real split (candidate: separate the reap/wait-loop mechanics from the process-tree/orphan-detection helpers) is real engineering, not a mechanical drive-by fix, so it is deferred here following the same disposition as T-3059/T-3260 for the other LARGE001 files.
 
