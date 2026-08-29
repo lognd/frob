@@ -15,10 +15,27 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_reap.py
+- src/frob/process/_proc_scan.py
+- tests/unit/test_process_reap.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/process/_proc_scan.py
+  reason: T-3396's LARGE001 split moved half of _reap.py's symbols into a new sibling
+    module (_proc_scan.py) and required repointing two frob:tests path directives
+    in the test file that cite the old location
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/test_process_reap.py
+  reason: T-3396's LARGE001 split moved half of _reap.py's symbols into a new sibling
+    module (_proc_scan.py) and required repointing two frob:tests path directives
+    in the test file that cite the old location
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
