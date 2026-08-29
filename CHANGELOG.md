@@ -614,6 +614,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3374: T-3191's multi-platform ty union triples SUPPRESS001 findings for a cross-platform diagnostic
 - T-3380: ruff format repo-wide sweep (81 files, no owning gate)
 - T-3382: Fix gate:REG002 errors: register VERSION001/TDD001/VMOD001 as known gate rules
+- T-3384: fix gate:DOC, gate:DRIFT, gate:SELFAUDIT residue (EO slice)
 
 ## [0.530.0] - unreleased
 

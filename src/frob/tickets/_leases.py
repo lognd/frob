@@ -2513,8 +2513,7 @@ def _finish_ledger_commit_marker(
 # check separately.
 # frob:ticket T-2937
 # frob:doc \
-# docs/modules/tickets-landing.md#frob-ticket-new-no-longer-waits-out-a-full-land-t-dra\
-# ft-fd8473d7
+# docs/modules/tickets-landing.md#frob-ticket-new-no-longer-waits-out-a-full-land-t-2937
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_rollback_on_land_in_progress_leaves_root_clean kind="unit"  # noqa: E501
 def _rollback_pathspecs(root: Path, ticket_id: str, pathspecs: tuple[str, ...]) -> None:
     """T-2937: best-effort UNDO of a

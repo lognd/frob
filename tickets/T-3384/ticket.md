@@ -1,7 +1,7 @@
 ---
 id: T-3384
 title: fix gate:DOC, gate:DRIFT, gate:SELFAUDIT residue (EO slice)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'

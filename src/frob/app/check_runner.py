@@ -349,11 +349,11 @@ def _dispatch_check_python(
 
 # frob:ticket T-2978
 # frob:tests \
-# tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback::test_none_progress_r\
-# eturns_none
+# tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_none_progress_re\
+# turns_none
 # frob:tests \
-# tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback::test_updates_progres\
-# s_with_language_qualified_label
+# tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback.test_updates_progress\
+# _with_language_qualified_label
 def _task_progress_callback(
     progress: Progress | None, project_type: str
 ) -> Callable[[str, int, int], None] | None:

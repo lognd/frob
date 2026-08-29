@@ -1925,6 +1925,42 @@
       "old_digest": "969d88b59bce1bfdd026b64229e5531ade6a38dce8d1127d8a4e88e81e7329f7",
       "reason": "verified: docs/design/ledger-v2.md section 5 (Merge story) still accurately walks this function's v2-mode squash-and-splice contract; digest moved from an unrelated local edit",
       "ref": "src/frob/tickets/_land_squash.py::_squash_and_splice_ledger_v2"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "2dd5ee9da88df0b9cb46ac91c7ea4117bfba9123ad889755c0df641b8973068b",
+      "old_digest": "d4d89ad5a1fc69624f90712e2d74ba5592418714e5f51f9fe91d90bd3ac51d08",
+      "reason": "Re-verified: docstring's T-3288 content-confirmation addendum and the current implementation (state None / content-unconfirmed / terminal-and-confirmed branches) still match; digest moved only because the docstring grew, not because behavior diverged",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "643df04561ab54e2a1680b6196481362fc6c923965c9974c6b5131111ff17e48",
+      "old_digest": "643df04561ab54e2a1680b6196481362fc6c923965c9974c6b5131111ff17e48",
+      "reason": "Re-verified: docstring's T-3288 content-confirmation addendum and the current implementation (state None / content-unconfirmed / terminal-and-confirmed branches) still match; digest moved only because the docstring grew, not because behavior diverged",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "2dd5ee9da88df0b9cb46ac91c7ea4117bfba9123ad889755c0df641b8973068b",
+      "old_digest": "2dd5ee9da88df0b9cb46ac91c7ea4117bfba9123ad889755c0df641b8973068b",
+      "reason": "Re-verified: docstring T-3288 content-confirmation addendum matches current implementation; digest moved because docstring grew, not because behavior diverged",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "643df04561ab54e2a1680b6196481362fc6c923965c9974c6b5131111ff17e48",
+      "old_digest": "643df04561ab54e2a1680b6196481362fc6c923965c9974c6b5131111ff17e48",
+      "reason": "Re-verified: docstring T-3288 content-confirmation addendum matches current implementation; digest moved because docstring grew, not because behavior diverged",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
     }
   ],
   "entries": [
@@ -1989,7 +2025,7 @@
       "ref": "src/frob/app/telemetry.py::usage_report"
     },
     {
-      "digest": "d4d89ad5a1fc69624f90712e2d74ba5592418714e5f51f9fe91d90bd3ac51d08",
+      "digest": "2dd5ee9da88df0b9cb46ac91c7ea4117bfba9123ad889755c0df641b8973068b",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
     },

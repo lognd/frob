@@ -221,6 +221,7 @@ directive, never touches `frob.toml` or ratchet state
 **T-3326: `--fix`'s blast radius depends on whether `--ticket` is also
 given.**
 
+<!-- frob:describes src/frob/app/check_runner.py::_apply_tier_a_and_reverify -->
 ```bash
 frob check --ticket T-1234 --fix   # scoped: only T-1234's declared files
 frob check --fix --fix-all         # deliberate repo-wide pass
