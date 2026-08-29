@@ -2,7 +2,7 @@
 id: T-3346
 title: 'Residual gate errors outside T-3342/3343/3344: ARCH/SEC/LARGE/PII/WIRE/PERF/LEXCHECK/WAIVE/FLAGCOV/DEPR
   (27)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -18,7 +18,7 @@ scope:
 - tests/conftest.py
 - src/frob/gates/_tdd_order.py
 - src/frob/app/_config_external.py
-- tickets/T-draft-4189a8b2/**
+- tickets/T-3385/**
 scope_breadth_ack: true
 scope_breadth_ack_reason: measurement-first triage ticket, no source scope yet; will
   file/scope targeted sub-tickets per root cause found (same pattern as T-3343)
@@ -49,7 +49,7 @@ scope_changes:
   actor: logan
   at: '2026-08-29'
 - op: add
-  glob: tickets/T-draft-4189a8b2/**
+  glob: tickets/T-3385/**
   reason: abandoned draft from a timed-out ticket-new call, dropped under T-3346;
     its own ledger write needs to be in scope
   actor: logan

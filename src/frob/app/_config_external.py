@@ -420,6 +420,8 @@ _BOOL_FLAGS = (
     "check_skip_ruff_check",
     "check_skip_ruff_format",
     "check_ruff_fix",
+    # frob:ticket T-3346
+    "check_fix_all",
     "check_skip_ty",
     "check_skip_arch",
     "check_skip_cycle",
@@ -488,6 +490,8 @@ _BOOL_FLAGS = (
     # frob:ticket T-2910
     "sys_init_check",
     "ticket_dry_run",
+    # frob:ticket T-3346
+    "ticket_migrate_fill_gaps",
     # frob:ticket T-1561
     "ticket_evidence_archived",
     # frob:ticket T-1381

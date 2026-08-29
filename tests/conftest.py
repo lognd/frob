@@ -258,7 +258,7 @@ value from an earlier in-process run can never leak into a later one."""
 # frob:waive WIRE001 reason="genuinely wired -- pytest calls pytest_internalerror via \
 # its plugin hook protocol (name-based discovery, like the pre-existing \
 # pytest_configure/pytest_sessionfinish hooks in this same file), not a direct in-repo \
-# call site"
+# call site" follow_up="T-3381"
 def pytest_internalerror(
     excrepr: object, excinfo: pytest.ExceptionInfo[BaseException]
 ) -> None:
