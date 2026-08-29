@@ -475,6 +475,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3052: Land H5: the rolling baseline is written before the outcome is decided, so an unfilable finding is silently certified green after one wake
 - T-3056: docs/strata/vmodel.md: update closure-rule prose for T-3043's path-reachability fix and new rule 5
 - T-3057: Wire TDD001 ordering check into frob ticket land pre-land path
+- T-3059: Split __main__.py and stats/_agentic.py under LARGE001's 800-line threshold
 - T-3060: override_ratchet disables the pre-commit sweep, so lands publish lint errors: two classes reached main this way today
 - T-3061: Put the 2.9s lint gate back on the rapid land path without re-enabling TEST016 mutation testing
 - T-3062: Lint for waive-vs-debt misuse: flag a frob:waive whose reason is temporary (cites a ticket, until, pending, once X lands)

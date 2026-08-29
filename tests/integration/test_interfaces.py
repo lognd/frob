@@ -57,7 +57,7 @@ class TestInterfaces:
         assert "greet" in result.stdout
 
     def test_version_flag_prints_version_and_exits_zero(self, project: Path) -> None:
-        # frob:tests src/frob/__main__.py::_frob_version kind="integration"
+        # frob:tests src/frob/_cli_parsers/_root.py::_frob_version kind="integration"
         # T-0231: `frob --version` used to be an argparse error (no such
         # flag registered); it must print a version string and exit 0.
         result = _frob(["--version"], cwd=project)

@@ -15,7 +15,7 @@ the CLI-facing seams; the actual logic lives in each library's own docs page
 frob <subcommand> [args...]
 ```
 
-See `frob <subcommand> --help` (via `src/frob/__main__.py::_build_parser`)
+See `frob <subcommand> --help` (via `src/frob/_cli_parsers/_root.py::_build_parser`)
 for the full flag catalog per subcommand.
 
 ## Entry point

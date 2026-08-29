@@ -6,9 +6,9 @@ of back-compat flag aliases for observed misuses.
 
 ## Did-you-mean
 
-<!-- frob:describes src/frob/__main__.py::_SuggestingArgumentParser -->
-<!-- frob:describes src/frob/__main__.py::_SuggestingArgumentParser.parse_known_args -->
-<!-- frob:describes src/frob/__main__.py::_did_you_mean -->
+<!-- frob:describes src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser -->
+<!-- frob:describes src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.parse_known_args -->
+<!-- frob:describes src/frob/_cli_parsers/_root.py::_did_you_mean -->
 <!-- frob:waive DOC004 reason="deliberate typo illustrating the did-you-mean suggestion itself, not a real subcommand reference" -->
 ```bash
 frob tikcet list

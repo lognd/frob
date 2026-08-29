@@ -157,10 +157,10 @@ which only ever covered `frob` subcommand invocations).
 <!-- frob:describes src/frob/stats/_agentic.py::ToolTokens -->
 <!-- frob:describes src/frob/stats/_agentic.py::ToolCallShape -->
 <!-- frob:describes src/frob/stats/_agentic.py::agentic_report -->
-<!-- frob:describes src/frob/stats/_agentic.py::DispatchRecord -->
-<!-- frob:describes src/frob/stats/_agentic.py::MarginalRunDelta -->
-<!-- frob:describes src/frob/stats/_agentic.py::DispatchCostReport -->
-<!-- frob:describes src/frob/stats/_agentic.py::dispatch_cost_report -->
+<!-- frob:describes src/frob/stats/_agentic_dispatch.py::DispatchRecord -->
+<!-- frob:describes src/frob/stats/_agentic_dispatch.py::MarginalRunDelta -->
+<!-- frob:describes src/frob/stats/_agentic_dispatch.py::DispatchCostReport -->
+<!-- frob:describes src/frob/stats/_agentic_dispatch.py::dispatch_cost_report -->
 <!-- frob:describes src/frob/app/telemetry/__init__.py::record_cli_event -->
 <!-- frob:describes src/frob/app/telemetry/__init__.py::record_ticket_event -->
 <!-- frob:describes src/frob/app/telemetry/__init__.py::record_dispatch_event -->

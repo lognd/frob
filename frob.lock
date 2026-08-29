@@ -1984,6 +1984,69 @@
       "actor": "logan",
       "at": "2026-08-29",
       "facet": "sig",
+      "new_digest": "e52ce8cf0088ab6d90024e6c1d1edb271cb515a9f426f2105671a0a888168ccf",
+      "old_digest": null,
+      "reason": "T-3059 code-move split: symbol relocated verbatim (behavior and docstring content unchanged) out of frob.__main__/frob.stats._agentic into a new sibling module; the affects()-closure doc anchor's content is still accurate, re-verified against the moved symbol's own docstring/body",
+      "ref": "src/frob/_cli_parsers/_root.py::_GroupedHelpFormatter"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "a29d41939b31f80d6f0081e463f3c1244d2f5ab7f541c0206c1d8603f125242f",
+      "old_digest": null,
+      "reason": "T-3059 code-move split: symbol relocated verbatim (behavior and docstring content unchanged) out of frob.__main__/frob.stats._agentic into a new sibling module; the affects()-closure doc anchor's content is still accurate, re-verified against the moved symbol's own docstring/body",
+      "ref": "src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.error"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "53b25f4073b9c9cce74e1dbecd2fa27854cbfb9f06a7345555c38af52dc33fb3",
+      "old_digest": null,
+      "reason": "T-3059 code-move split: symbol relocated verbatim (behavior and docstring content unchanged) out of frob.__main__/frob.stats._agentic into a new sibling module; the affects()-closure doc anchor's content is still accurate, re-verified against the moved symbol's own docstring/body",
+      "ref": "src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.error"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "eb0bdd10ff945fd4ccec9bde876b0043d63fd3d9d9f9e13b6e7dbb81341c6e2a",
+      "old_digest": null,
+      "reason": "T-3059 code-move split: symbol relocated verbatim (behavior and docstring content unchanged) out of frob.__main__/frob.stats._agentic into a new sibling module; the affects()-closure doc anchor's content is still accurate, re-verified against the moved symbol's own docstring/body",
+      "ref": "src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.parse_known_args"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "29a3b1567f8f4824daf1538e8ab1c038978e6f2b7334f2250cc9ebdd4ed87702",
+      "old_digest": null,
+      "reason": "T-3059 code-move split: symbol relocated verbatim (behavior and docstring content unchanged) out of frob.__main__/frob.stats._agentic into a new sibling module; the affects()-closure doc anchor's content is still accurate, re-verified against the moved symbol's own docstring/body",
+      "ref": "src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.parse_known_args"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "69585fea98b2f90f7815658ac06790488e39e006efd7510a6db439eebdbbd7f2",
+      "old_digest": null,
+      "reason": "T-3059 code-move split: symbol relocated verbatim (behavior and docstring content unchanged) out of frob.__main__/frob.stats._agentic into a new sibling module; the affects()-closure doc anchor's content is still accurate, re-verified against the moved symbol's own docstring/body",
+      "ref": "src/frob/stats/_agentic_shared.py::TELEMETRY_REL"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "e52ce8cf0088ab6d90024e6c1d1edb271cb515a9f426f2105671a0a888168ccf",
+      "old_digest": "e52ce8cf0088ab6d90024e6c1d1edb271cb515a9f426f2105671a0a888168ccf",
+      "reason": "T-3059 code-move split: symbol relocated verbatim (behavior/docstring unchanged) out of frob.__main__; added a frob:waive COV007 comment alongside its pre-existing frob:doc anchor (same reasoning this repo's other COV007 waivers already carry) -- the affects()-closure doc content itself is unchanged and re-verified accurate",
+      "ref": "src/frob/_cli_parsers/_root.py::_GroupedHelpFormatter"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
       "new_digest": "8147c727fc5fb63a32bf724caad7eabcd42fe46d7de42178f2b4debf92edacac",
       "old_digest": null,
       "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
@@ -2398,6 +2461,31 @@
       "digest": "7b521ddd18b0132927387ef0c01effe59bca2bb8b9ab08f436ec70a6def6b15e",
       "facet": "sig",
       "ref": "src/frob/__main__.py::_apply_verbose_env_override"
+    },
+    {
+      "digest": "e52ce8cf0088ab6d90024e6c1d1edb271cb515a9f426f2105671a0a888168ccf",
+      "facet": "sig",
+      "ref": "src/frob/_cli_parsers/_root.py::_GroupedHelpFormatter"
+    },
+    {
+      "digest": "a29d41939b31f80d6f0081e463f3c1244d2f5ab7f541c0206c1d8603f125242f",
+      "facet": "body",
+      "ref": "src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.error"
+    },
+    {
+      "digest": "53b25f4073b9c9cce74e1dbecd2fa27854cbfb9f06a7345555c38af52dc33fb3",
+      "facet": "sig",
+      "ref": "src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.error"
+    },
+    {
+      "digest": "eb0bdd10ff945fd4ccec9bde876b0043d63fd3d9d9f9e13b6e7dbb81341c6e2a",
+      "facet": "body",
+      "ref": "src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.parse_known_args"
+    },
+    {
+      "digest": "29a3b1567f8f4824daf1538e8ab1c038978e6f2b7334f2250cc9ebdd4ed87702",
+      "facet": "sig",
+      "ref": "src/frob/_cli_parsers/_root.py::_SuggestingArgumentParser.parse_known_args"
     },
     {
       "digest": "8b4839e124f77beed2ab03eb17366061cd1c715f584ce248c72d365ddcd492ec",
@@ -3160,6 +3248,11 @@
       "ref": "src/frob/serve/_events.py::subscribe_and_wait"
     },
     {
+      "digest": "69585fea98b2f90f7815658ac06790488e39e006efd7510a6db439eebdbbd7f2",
+      "facet": "sig",
+      "ref": "src/frob/stats/_agentic_shared.py::TELEMETRY_REL"
+    },
+    {
       "digest": "75617531edc5769001408e1b2744e0528bd889c0e19bbf5f4955a50977d5d4e1",
       "facet": "sig",
       "ref": "src/frob/strata/_selfconform.py::SYS107_FAIL_CLOSED_ATOMS"
@@ -3645,6 +3738,16 @@
       "ref": "src/frob/xref/__init__.py::xref"
     },
     {
+      "digest": "ccfcd694071ce0a085fb65118ac55cf1c4d9e19e78eb1207a961b2f8daac107b",
+      "facet": "body",
+      "ref": "tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token"
+    },
+    {
+      "digest": "23e41841ff29ef3e6c04dc6d927182dc23dfcb37761208faf7e7d6bc365fc50e",
+      "facet": "sig",
+      "ref": "tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token"
+    },
+    {
       "digest": "8147c727fc5fb63a32bf724caad7eabcd42fe46d7de42178f2b4debf92edacac",
       "facet": "sig",
       "ref": "strata-core/src/graph/vmodel/closure.rs::ClosureViolation"
@@ -3843,16 +3946,6 @@
       "digest": "fb86fd35647e71a9d7b41660808486139fd4d7331e4404ca37a2439fe082c583",
       "facet": "sig",
       "ref": "strata-core/src/graph/vmodel/mod.rs::v_pairing"
-    },
-    {
-      "digest": "ccfcd694071ce0a085fb65118ac55cf1c4d9e19e78eb1207a961b2f8daac107b",
-      "facet": "body",
-      "ref": "tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token"
-    },
-    {
-      "digest": "23e41841ff29ef3e6c04dc6d927182dc23dfcb37761208faf7e7d6bc365fc50e",
-      "facet": "sig",
-      "ref": "tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token"
     }
   ],
   "version": 1

@@ -281,13 +281,15 @@ def test_malformed_lines_are_skipped_not_raised(tmp_path: Path):
     assert report.event_count == 1
 
 
+# frob:ticket T-3059
 class TestDispatchCostReport:
     """T-1724: joining `kind="dispatch"` boundary events against
     `kind="tool"` cost and `kind="ticket"` delivery events in the same
     telemetry stream."""
 
     def test_empty_stream_yields_empty_report(self, tmp_path: Path):
-        # frob:tests src/frob/stats/_agentic.py::dispatch_cost_report
+        # frob:ticket T-3059
+        # frob:tests src/frob/stats/_agentic_dispatch.py::dispatch_cost_report
         report = dispatch_cost_report(tmp_path)
         assert report.dispatches == ()
         assert report.tokens_per_landed_ticket is None
@@ -298,7 +300,8 @@ class TestDispatchCostReport:
     def test_dispatch_with_no_tool_events_has_unmeasured_not_zero_tokens(
         self, tmp_path: Path
     ):
-        # frob:tests src/frob/stats/_agentic.py::dispatch_cost_report
+        # frob:ticket T-3059
+        # frob:tests src/frob/stats/_agentic_dispatch.py::dispatch_cost_report
         _write(
             tmp_path,
             [
@@ -327,7 +330,8 @@ class TestDispatchCostReport:
         assert d.cold_start is True
 
     def test_tool_events_join_by_window_and_sum_tokens(self, tmp_path: Path):
-        # frob:tests src/frob/stats/_agentic.py::dispatch_cost_report
+        # frob:ticket T-3059
+        # frob:tests src/frob/stats/_agentic_dispatch.py::dispatch_cost_report
         _write(
             tmp_path,
             [
@@ -371,7 +375,8 @@ class TestDispatchCostReport:
         assert d.tool_call_count == 2
 
     def test_delivered_tickets_join_by_window(self, tmp_path: Path):
-        # frob:tests src/frob/stats/_agentic.py::dispatch_cost_report
+        # frob:ticket T-3059
+        # frob:tests src/frob/stats/_agentic_dispatch.py::dispatch_cost_report
         _write(
             tmp_path,
             [
@@ -414,7 +419,8 @@ class TestDispatchCostReport:
     def test_zero_delivery_dispatch_flagged_only_when_measurably_costly(
         self, tmp_path: Path
     ):
-        # frob:tests src/frob/stats/_agentic.py::dispatch_cost_report
+        # frob:ticket T-3059
+        # frob:tests src/frob/stats/_agentic_dispatch.py::dispatch_cost_report
         _write(
             tmp_path,
             [
@@ -459,7 +465,8 @@ class TestDispatchCostReport:
         assert report.cold_start_floor_tokens == 500.0
 
     def test_tokens_per_landed_ticket(self, tmp_path: Path):
-        # frob:tests src/frob/stats/_agentic.py::dispatch_cost_report
+        # frob:ticket T-3059
+        # frob:tests src/frob/stats/_agentic_dispatch.py::dispatch_cost_report
         _write(
             tmp_path,
             [
@@ -503,7 +510,8 @@ class TestDispatchCostReport:
     def test_marginal_run_deltas_ordered_and_computed_per_worktree(
         self, tmp_path: Path
     ):
-        # frob:tests src/frob/stats/_agentic.py::dispatch_cost_report
+        # frob:ticket T-3059
+        # frob:tests src/frob/stats/_agentic_dispatch.py::dispatch_cost_report
         _write(
             tmp_path,
             [
@@ -560,7 +568,8 @@ class TestDispatchCostReport:
         assert deltas[1].marginal_tokens_delta == 250
 
     def test_dispatches_ordered_by_start_ts_missing_last(self, tmp_path: Path):
-        # frob:tests src/frob/stats/_agentic.py::dispatch_cost_report
+        # frob:ticket T-3059
+        # frob:tests src/frob/stats/_agentic_dispatch.py::dispatch_cost_report
         _write(
             tmp_path,
             [
@@ -591,7 +600,8 @@ class TestDispatchCostReport:
         assert ids == ["first", "second", "no-start"]
 
     def test_malformed_lines_skipped_not_raised(self, tmp_path: Path):
-        # frob:tests src/frob/stats/_agentic.py::dispatch_cost_report
+        # frob:ticket T-3059
+        # frob:tests src/frob/stats/_agentic_dispatch.py::dispatch_cost_report
         path = tmp_path / TELEMETRY_REL
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('{"kind": "dispatch", "dispatch_id": "d1"}\nnot json\n')
