@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/doctor.py
 - tests/unit/test_doctor.py
+- docs/guides/install.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,18 @@ scope_changes:
   reason: regression tests for the tool inventory/preflight
   actor: logan
   at: '2026-08-28'
+- op: add
+  glob: docs/guides/install.md
+  reason: COV001 doc anchor for the new tool-inventory public symbols
+  actor: logan
+  at: '2026-08-28'
+evidence:
+- tests/unit/test_doctor.py::TestScanExternalTools::test_present_binary_reports_version
+- tests/unit/test_doctor.py::TestScanExternalTools::test_missing_binary_reports_absent_with_install_hint
+- tests/unit/test_doctor.py::TestScanExternalTools::test_present_package_reports_version_via_importlib
+- tests/unit/test_doctor.py::TestScanExternalTools::test_missing_package_reports_absent
+- tests/unit/test_doctor.py::TestExternalToolsRemediation::test_missing_required_tool_names_it_and_the_install_command
+- tests/unit/test_doctor.py::TestExternalToolsRemediation::test_missing_optional_tool_is_silent
 designated_repro_test: null
 threat: null
 component: null
