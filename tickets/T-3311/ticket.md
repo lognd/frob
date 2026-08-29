@@ -2,7 +2,7 @@
 id: T-3311
 title: Collapse the three divergent external-tool spawn conventions into one resolution
   helper
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-28'
@@ -19,10 +19,25 @@ scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/refactor/_verify.py
 - src/frob/perf/_profile.py
+- src/frob/process/_pytest_spawn.py
+- src/frob/process/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/process/_pytest_spawn.py
+  reason: shared pytest-spawn resolution helper's natural home, importable without
+    inverting gates/refactor/app layering
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/process/__init__.py
+  reason: shared pytest-spawn resolution helper's natural home, importable without
+    inverting gates/refactor/app layering
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
