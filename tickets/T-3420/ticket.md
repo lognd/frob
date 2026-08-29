@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 344eba4dbafbca5c580b055c2fd2614dd32e825a
 ---
 A coverage-instrumented pytest run that receives SIGTERM can DEADLOCK inside
 coverage's own signal handler and then ignore the termination entirely, hanging
