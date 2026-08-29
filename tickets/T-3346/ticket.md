@@ -16,8 +16,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tickets/**/ticket.md
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: measurement-first triage ticket, no source scope yet; will
+  file/scope targeted sub-tickets per root cause found (same pattern as T-3343)
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
