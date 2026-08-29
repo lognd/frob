@@ -2,7 +2,7 @@
 id: T-2667
 title: 'Owner decision needed: break the remaining stats-independent serve/tickets/testing/app
   import cycle (candidates 1/3/4/5 + a missed sixth edge)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,10 +16,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/serve/_tools.py
+- src/frob/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/__init__.py
+  reason: T-2667's owner decision (accounting-now) requires converting the CYCLE001
+    frob:waive declaration at src/frob/__init__.py into frob:debt, which the ticket's
+    original serve/_tools.py scope did not cover
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
