@@ -22,12 +22,21 @@ frob scaffold new pyo3-library demo --force  # overwrite existing files
 
 | Type | Stack | Contents |
 |------|-------|---------|
-| `python-tool` | uv + setuptools | `pyproject.toml` (typani+pydantic, dev group), `src/<name>/` with the App/AppConfig/`__main__` pattern, house logging setup, `frob.toml` (strict gates), `tickets/`, `invariants/`, `.env.example`, `Makefile` (`install/format/lint/typecheck/test/coverage/check`), CI + release workflows |
+| `python-tool` | uv + setuptools | `pyproject.toml` (typani+pydantic, dev group), `src/<name>/` with the App/AppConfig/`__main__` pattern, house logging setup, `frob.toml` (strict gates), `invariants/`, `.env.example`, `Makefile` (`install/format/lint/typecheck/test/coverage/check`), CI + release workflows |
 | `python-library` | uv + setuptools | Same base as `python-tool` minus the CLI entry point/App layer |
 | `pyo3-library` | uv + maturin + cargo workspace | `crates/` (Rust, pyo3 extension) + `python/<name>/` layout (lithos-style), `rust-toolchain.toml`, `frob.toml` with both `python` and `rust` test runners, Makefile wiring `cargo fmt`/`clippy` into `check`, CI + release workflows |
 | `web-app` | Vite + React + TypeScript + Vitest | `src/`, `tests/unit/`, ESLint 9 flat config, Prettier, `frob.toml` (`typescript` test runner), CI |
 | `cpp-library` / `cpp-tool` | CMake + ctest | `src/`, `include/`, `tests/`, `frob.toml` (`cpp` test runner via ctest), CI + release + branch-protection workflows |
 | `pybind11-library` | CMake + scikit-build + pytest | `src/`, bindings, `tests/`, `frob.toml` (`python` test runner), CI |
+
+No type ships a `tickets.md` or `tickets/` seed (T-3272): the scaffold
+writes no ledger content at all, so every fresh project starts in ledger
+v2 mode (per-ticket files) the moment `frob ticket new` is first run there
+-- a repo with no ledger of either shape already defaults to v2
+(`frob.tickets._store._store_mode`, T-1553); shipping an empty `tickets.md`
+was what pinned new repos to v1 instead. A v1 repo (an existing `tickets.md`
+already on disk) is unaffected and keeps working exactly as before; migrate
+it with `frob ticket migrate --to v2`.
 
 Run `frob scaffold list` to see the current registry.
 

@@ -21,6 +21,10 @@ from frob.scaffold.project import (
     list_project_types,
     render_project,
 )
+from frob.tickets import TicketSpec, new_ticket
+from frob.tickets._models import Origin, TicketKind
+from frob.tickets._store import _store_mode
+from frob.tickets._store_migrate import migrate_v1_to_v2
 
 
 # frob:tests \
@@ -231,6 +235,72 @@ def test_render_project_bare_form_does_not_scatter_into_existing_project_root(
     # The pre-existing files at tmp_path's root are untouched.
     assert tmp_path.joinpath("README.md").read_text() == "pre-existing project readme\n"
     assert "diax" in tmp_path.joinpath("pyproject.toml").read_text()
+
+
+# frob:ticket T-3272
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_freshly_scaffolded_project_is_v2_must_fire
+def test_freshly_scaffolded_project_is_v2_must_fire(tmp_path: Path) -> None:
+    """MUST-FIRE (T-3272): a freshly scaffolded project ships no ledger
+    content of any shape, so it is detected as v2, and `frob ticket new`
+    in it writes `tickets/T-0001/ticket.md`, not a `tickets.md` monofile
+    entry -- the scaffold's fresh-repo default is now ledger v2
+    (`_store_mode`'s own T-1553 fresh-repo default, previously defeated
+    by the scaffold shipping an empty `tickets.md`)."""
+    result = render_project("python-tool", "demo", tmp_path)
+    assert result.is_ok
+    project_dir = tmp_path / "demo"
+    assert not (project_dir / "tickets.md").exists()
+    assert not (project_dir / "tickets").exists()
+    assert _store_mode(project_dir) == "v2"
+
+    spec = TicketSpec(title="probe", kind=TicketKind.DOCS, origin=Origin.HUMAN)
+    created = new_ticket(project_dir, spec)
+    assert created.is_ok
+    ticket_id = created.danger_ok.id
+    assert (project_dir / "tickets" / ticket_id / "ticket.md").exists()
+
+
+# frob:ticket T-3272
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_existing_v1_repo_unaffected_must_stay_quiet
+def test_existing_v1_repo_unaffected_must_stay_quiet(tmp_path: Path) -> None:
+    """MUST-STAY-QUIET (T-3272): an existing v1 repo (`tickets.md` present,
+    no `tickets/T-*/` tree) is unaffected by the scaffold change -- it is
+    still detected as v1 ('single') and behaves exactly as today. This
+    does not touch `render_project` at all; it directly proves the
+    detection this ticket relies on is unchanged for pre-existing repos."""
+    (tmp_path / "tickets.md").write_text(
+        "# Tickets\n\nCentral ledger managed by `frob ticket`.\n"
+    )
+    assert _store_mode(tmp_path) == "single"
+
+
+# frob:ticket T-3272
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_migrator_still_works_on_v1_repo_third_fixtu\
+# re
+def test_migrator_still_works_on_v1_repo_third_fixture(tmp_path: Path) -> None:
+    """THIRD FIXTURE (T-3272): the one-shot `migrate_v1_to_v2` migrator
+    still works on a genuine v1 repo (a monofile ledger with real ticket
+    content) after this change -- the scaffold no longer writing
+    `tickets.md` did not touch the migrator itself."""
+    (tmp_path / "tickets.md").write_text(
+        "# Tickets\n\nCentral ledger managed by `frob ticket`.\n"
+    )
+    spec = TicketSpec(title="probe", kind=TicketKind.DOCS, origin=Origin.HUMAN)
+    created = new_ticket(tmp_path, spec)
+    assert created.is_ok
+    ticket_id = created.danger_ok.id
+    assert _store_mode(tmp_path) == "single"
+
+    migrated = migrate_v1_to_v2(tmp_path)
+    assert migrated.is_ok
+    assert migrated.danger_ok == 1
+    assert (tmp_path / "tickets" / ticket_id / "ticket.md").exists()
+    assert _store_mode(tmp_path) == "v2"
+    # T-3272 (not T-3282): migrate is non-destructive, the monofile stays.
+    assert (tmp_path / "tickets.md").exists()
 
 
 def test_hooks_dir_kill_switch_refuses_without_spawning(

@@ -2,7 +2,7 @@
 id: T-3272
 title: 'Ledger v2 must be the default for new repos: all six scaffold manifests still
   emit the v1 single-file tickets.md'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-28'
@@ -73,6 +73,12 @@ scope_changes:
     plus unit fixtures and docs for the v2-default flip
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/unit/test_scaffold_project.py::test_freshly_scaffolded_project_is_v2_must_fire
+- tests/unit/test_scaffold_project.py::test_existing_v1_repo_unaffected_must_stay_quiet
+- tests/unit/test_scaffold_project.py::test_migrator_still_works_on_v1_repo_third_fixture
+- tests/unit/test_scaffold_project.py::test_render_project_all_registered_types_succeed
+- tests/unit/test_scaffold_project.py::test_render_project_all_types_default_to_rapid_profile
 designated_repro_test: null
 threat: null
 component: null

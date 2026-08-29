@@ -42,7 +42,6 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("shared/python/env.example.j2", ".env.example"),
         _ManifestEntry("shared/python/Makefile.j2", "Makefile"),
         _ManifestEntry("shared/python/frob.toml.j2", "frob.toml"),
-        _ManifestEntry("shared/python/tickets.md.j2", "tickets.md"),
         _ManifestEntry("shared/python/gitkeep.j2", "invariants/.gitkeep"),
         _ManifestEntry(
             "shared/python/scripts/bump_version.py.j2", "scripts/bump_version.py"
@@ -92,7 +91,6 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("shared/python/env.example.j2", ".env.example"),
         _ManifestEntry("shared/python/Makefile.j2", "Makefile"),
         _ManifestEntry("types/python-tool/frob.toml.j2", "frob.toml"),
-        _ManifestEntry("shared/python/tickets.md.j2", "tickets.md"),
         _ManifestEntry("shared/python/gitkeep.j2", "invariants/.gitkeep"),
         _ManifestEntry(
             "shared/python/scripts/bump_version.py.j2", "scripts/bump_version.py"
@@ -166,7 +164,6 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("shared/cpp/gitignore.j2", ".gitignore"),
         _ManifestEntry("shared/cpp/Makefile.j2", "Makefile"),
         _ManifestEntry("shared/cpp/frob.toml.j2", "frob.toml"),
-        _ManifestEntry("shared/python/tickets.md.j2", "tickets.md"),
         _ManifestEntry("shared/python/gitkeep.j2", "invariants/.gitkeep"),
         _ManifestEntry("shared/cpp/docs/index.md.j2", "docs/index.md"),
         _ManifestEntry("types/cpp-library/CMakeLists.txt.j2", "CMakeLists.txt"),
@@ -200,7 +197,6 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("shared/cpp/gitignore.j2", ".gitignore"),
         _ManifestEntry("shared/cpp/Makefile.j2", "Makefile"),
         _ManifestEntry("shared/cpp/frob.toml.j2", "frob.toml"),
-        _ManifestEntry("shared/python/tickets.md.j2", "tickets.md"),
         _ManifestEntry("shared/python/gitkeep.j2", "invariants/.gitkeep"),
         _ManifestEntry("shared/cpp/docs/index.md.j2", "docs/index.md"),
         _ManifestEntry("types/cpp-tool/CMakeLists.txt.j2", "CMakeLists.txt"),
@@ -229,7 +225,6 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("types/pybind11-library/pyproject.toml.j2", "pyproject.toml"),
         _ManifestEntry("types/pybind11-library/Makefile.j2", "Makefile"),
         _ManifestEntry("types/pybind11-library/frob.toml.j2", "frob.toml"),
-        _ManifestEntry("shared/python/tickets.md.j2", "tickets.md"),
         _ManifestEntry("shared/python/gitkeep.j2", "invariants/.gitkeep"),
         _ManifestEntry("shared/cpp/README.md.j2", "README.md"),
         _ManifestEntry("shared/cpp/docs/index.md.j2", "docs/index.md"),
@@ -262,7 +257,6 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         ),
         _ManifestEntry("types/pyo3-library/Makefile.j2", "Makefile"),
         _ManifestEntry("types/pyo3-library/frob.toml.j2", "frob.toml"),
-        _ManifestEntry("shared/python/tickets.md.j2", "tickets.md"),
         _ManifestEntry("shared/python/gitkeep.j2", "invariants/.gitkeep"),
         _ManifestEntry("types/pyo3-library/README.md.j2", "README.md"),
         _ManifestEntry("types/pyo3-library/docs/index.md.j2", "docs/index.md"),
@@ -293,7 +287,6 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("types/web-app/index.html.j2", "index.html"),
         _ManifestEntry("types/web-app/Makefile.j2", "Makefile"),
         _ManifestEntry("types/web-app/frob.toml.j2", "frob.toml"),
-        _ManifestEntry("shared/python/tickets.md.j2", "tickets.md"),
         _ManifestEntry("shared/python/gitkeep.j2", "invariants/.gitkeep"),
         _ManifestEntry("types/web-app/README.md.j2", "README.md"),
         _ManifestEntry("types/web-app/docs/index.md.j2", "docs/index.md"),

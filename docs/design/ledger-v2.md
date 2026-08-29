@@ -545,6 +545,16 @@ must deliver; it does not implement any of it.
    `tickets.md` before exercising v1-specific behavior) so the flip
    changed only the default, not what those tests actually verify.
 
+   **T-3272 (scaffold consumers):** the T-1553 default only helps a repo
+   that ships no ledger content at all. `frob scaffold new` used to write
+   an empty `tickets.md` into every fresh project, which `_store_mode`
+   correctly reads as v1 (the file exists, however little it contains) --
+   defeating the T-1553 default for every scaffolded repo. T-3272 removed
+   that seed file from all seven scaffold manifests: a freshly scaffolded
+   project now ships no `tickets.md`/`tickets/` at all and reaches this
+   v2 default the same way any from-scratch repo does, the instant
+   `frob ticket new` is first run there.
+
    **T-2356 correction, this repo's own cutover:** this step's ORIGINAL
    text named `_land_merge.py`/`_land_merge_zones.py` as "the monofile-
    mode code path" still owed a deletion follow-up. That was stale by
