@@ -44,7 +44,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: dbf327edcdd3d3a0648ee932fb65ae8af4910326
 ---
 T-3059 split src/frob/stats/_agentic.py's fs.read caller (_load_events) out into a new sibling module src/frob/stats/_agentic_shared.py. design/frob.strata's SYS100 fs.read capability list (line ~847) still names src/frob/stats/_agentic.py, which no longer performs any filesystem read directly -- it should be replaced with src/frob/stats/_agentic_shared.py. Could not fix directly under T-3059 because design/frob.strata was held by a live cross-worktree lease (T-3388) at the time; SELFAUDIT001 flags the drift (capability 'fs.read' observed at src/frob/stats/_agentic_shared.py:36 but not declared) until this lands.
 
