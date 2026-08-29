@@ -34,7 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2d2ea4b7a5eacef31cd8ff9744e25dbb83deb48a
 ---
 found while working T-3420: the new tests/system/test_coverage_sigterm.py fixture (subprocess spawn, tmp_path writes, os.environ reads for the T-3420 SIGTERM-deadlock repro) trips gate:SELFAUDIT001 (exec/fs.write/env.read observed but not declared on the testsuite node) because it is not listed in design/frob.strata's testsuite node 'may exec/fs.write/env.read via ...' lists. Could not fix directly: design/frob.strata is under a LIVE cross-worktree scope lease held by T-3416 (a different, pre-existing SELFAUDIT001 gap) at the time T-3420 landed. Add tests/system/test_coverage_sigterm.py to the three via-lists (may "exec", may "fs.write", may "env.read") on the testsuite node once T-3416 releases the lease.
 
