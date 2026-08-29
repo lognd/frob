@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b783d890109f455b8d6dcd28c851d737f4b2d044
 ---
 Found while root-causing T-3249's 11-failure cluster.
 tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_fails_loud_with_sys004_when_strata_present
