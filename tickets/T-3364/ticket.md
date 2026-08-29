@@ -38,6 +38,13 @@ body_changes:
   at: '2026-08-29'
   old_length: 1409
   new_length: 1675
+- mode: append
+  reason: 'BUG002: no genuine before/after repro exists for a doc-comment-only diff;
+    declaring no-behavior-change per BUG002 remedy (2)'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 1675
+  new_length: 1941
 evidence:
 - tests/test_refs_gate.py::TestMarkdownWaive::test_ref002_on_md_doc_suppressed_by_inline_waive
 - tests/test_refs_gate.py::TestMarkdownWaive::test_ref002_on_md_doc_without_waive_still_fires
@@ -55,5 +62,7 @@ REG002 (3): docs/design/registry/check-coverage.yaml's CHK-GATE-VERSION001/CHK-G
 REF002 (3): docs/modules/ci_report.md/ci_validity.md/ghio.md each document exactly one small, single-purpose support module with exactly one real consumer by design -- inventing a second consumer would be manufactured busywork, not a genuine fix. Added frob:waive REF002 with a reason to each, matching the existing precedent in docs/audits/branch-stranded-work-2026-08-25.md and docs/design/test005-ratchet-schedule.md (same 'deliberately singly-anchored, a second consumer would not be genuine' shape).
 
 gate:REL's 5 REL001 findings (frob:debt on open tickets T-3059/T-3260/T-3252) are separately reported: each names real, substantial implementation work (splitting oversized files, deduplicating a test helper) that should not be rushed as part of gate cleanup.
+
+frob:no-behavior-change reason="doc-only fix: adds a frob:waive REF002 HTML-comment directive to three docs, no code, gate logic, or test file touched. The cited evidence tests exercise the pre-existing frob:waive REF002 mechanism this fix relies on (unmodified)."
 
 frob:no-behavior-change reason="doc-only fix: adds a frob:waive REF002 HTML-comment directive to three docs, no code, gate logic, or test file touched. The cited evidence tests exercise the pre-existing frob:waive REF002 mechanism this fix relies on (unmodified)."
