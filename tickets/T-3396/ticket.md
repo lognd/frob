@@ -36,6 +36,13 @@ scope_changes:
     in the test file that cite the old location
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/unit/test_process_reap.py::TestReadUptimeAndClkTck::test_non_win32_still_reads_sysconf
+- tests/unit/test_process_reap.py::TestReadUptimeAndClkTck::test_win32_skips_sysconf_and_uses_fallback
+- tests/unit/test_process_reap.py::TestCountRunningChecks::test_counts_other_check_processes
+- tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_terminates_old_orphaned_forkservers
+- tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_arms_successfully_on_linux
+- tests/unit/test_process_reap.py::TestInstallSigtermReaper::test_installs_handler_once
 designated_repro_test: null
 threat: null
 component: null
