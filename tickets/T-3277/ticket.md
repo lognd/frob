@@ -19,6 +19,7 @@ scope:
 - src/frob/scaffold/data/shared/python/**
 - src/frob/scaffold/data/types/python-library/**
 - docs/commands/scaffold.md
+- src/frob/scaffold/data/types/python-tool/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +41,12 @@ scope_changes:
   glob: docs/commands/scaffold.md
   reason: template/doc fixes DV re-measurement showed still needed after T-3273/3271/3272
     landed
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/scaffold/data/types/python-tool/**
+  reason: python-tool type-specific frob.toml.j2 overrides the shared template DV's
+    SCHEMA001 fix lives in -- REF001/REF002 fixes must land here, not just shared/
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
