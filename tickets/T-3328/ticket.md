@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'record a confound I introduced: I reaped five worktrees while EK was measuring
+    these exact tests, and git worktree remove mutates the list that git worktree
+    list reads -- the current failure evidence is contaminated and needs re-measurement
+    under three stated controls'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 4369
+  new_length: 7151
 designated_repro_test: null
 threat: null
 component: null
@@ -104,3 +114,58 @@ ACCEPTANCE
   the tests.
 - The five named tests pass under contention, without being marked flaky.
 - A stated count for the sibling surface.
+
+
+CONFOUND WARNING FROM THE COORDINATOR, 2026-08-29. Read this before treating
+any current measurement of these five tests as evidence.
+
+INDEPENDENT CORROBORATION FIRST. Series EK re-measured on current main and
+reports all five TestArchive tests still failing, with a sharper root-cause
+observation than we had:
+
+    the TestArchive::* and gitio worker-lock failures all trace to
+    `git worktree list` returning 128 INSIDE PYTEST TMP DIRS
+
+That is a third independent sighting (Series DS's baseline, Series DX in
+passing, now Series EK), and the first to locate the failing call inside the
+tests' own temporary directories rather than against the real repo.
+
+NOW THE CONFOUND, AND IT IS MINE. While Series EK was mid-measurement I reaped
+five stale git worktrees from this repo:
+
+    t-3277, t-3283, t-3303, t-3305, t-3316   (all landed, clean, done)
+
+`git worktree remove` MUTATES the worktree list. A concurrent `git worktree
+list` -- which is exactly the call these five tests are failing on -- can
+plausibly fail or race while entries are being removed. I do not know whether
+the runs overlapped, and I did not check before reaping.
+
+SO: the current failure evidence for these five is CONTAMINATED and must not
+be used to conclude anything about the underlying cause. It may be:
+  (a) the T-3230 fail-closed path firing on a genuinely transient git failure
+      under host contention (the original hypothesis), or
+  (b) an artifact of my concurrent worktree removal, or
+  (c) both, or
+  (d) a real defect independent of either.
+
+WHAT THE RE-MEASUREMENT MUST CONTROL FOR, in this order:
+  1. A QUIET BOX. Load was 46-55 on 12 cores during EK's run with 13 concurrent
+     `frob check` processes and 61 forkservers. Series EF independently found it
+     had to drop to lower `-n` or `-p no:xdist` to get a signal it could believe
+     under this same load.
+  2. NO CONCURRENT WORKTREE MUTATION. No reaping, no `frob ticket work`, no
+     land creating or removing a worktree, for the duration of the run.
+  3. Run the five SERIALLY (`-p no:xdist`) so an xdist worker death cannot be
+     mistaken for a test failure -- that conflation has already produced a
+     false failure list once today.
+
+If they still fail under all three controls, the finding is real and the
+original hypothesis stands. If they pass, this ticket is a host-contention
+artifact and should be closed as such WITH the controls stated, not quietly
+dropped -- a test that only fails under concurrent worktree mutation is still
+worth knowing about, because this repo runs many concurrent worktrees by
+design.
+
+DO NOT mark these flaky, add retries, or skip them. A load-dependent product
+defect and a flaky test look identical from the outside, and this repo's whole
+argument is that the difference matters.
