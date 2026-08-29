@@ -39,7 +39,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 237d0780481e6632277869fc4ed7c665fbbda8a0
 ---
 ARCH103 fires on _assert_touched_files_lint_clean_pre_land (6 decision points, I/O + string-formatting). A safe fix needs a consolidating split (per T-3311's lesson: moving code around does not reduce the caller's own branch count unless the split owns ALL the branching) rather than a blind extraction, so it is deferred as tracked follow-up work rather than attempted as a drive-by in a mixed-gate cleanup slice.
 
