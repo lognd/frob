@@ -182,6 +182,50 @@ that made a `not_measured` result what it is (empty string when
 `as_text`'s reader could already see just by looking at the rendered
 lines.
 
+## pytest-spawn resolution (T-3311)
+
+<!-- frob:describes src/frob/process/_pytest_spawn.py::resolve_pytest_argv -->
+<!-- frob:describes src/frob/process/_pytest_spawn.py::pytest_importable -->
+<!-- frob:describes src/frob/process/_pytest_spawn.py::PytestSpawnError -->
+
+**Incident:** three call sites in this codebase each built a pytest-spawn
+argv their own way. `frob.gates._bug_repro` used `sys.executable, "-m",
+"pytest"` -- correct, per T-3268's own adopted fix for `frob.perf._profile`
+(spawn under the CALLING process's own interpreter, never a bare `python`/
+`python3` PATH lookup). `frob.app.ticket_runner._verify` hardcoded `"uv",
+"run", "pytest"`, assuming `uv` is on `PATH` and a `uv`-recognised
+`pyproject.toml` sits above `cwd` -- a dependency this repo does not
+otherwise require of a caller. `frob.refactor._verify` used a bare
+`"pytest"` PATH lookup, resolving to whichever `pytest` happens to be
+first on a caller's `PATH` -- in a consumer environment (an agent shell,
+a CI runner layering several venvs onto `PATH`) that is frequently NOT
+the project's own.
+
+`resolve_pytest_argv(*args, python=None)` is the one resolution helper
+all three sites now call: `[python or sys.executable, "-m", "pytest",
+*args]`, after `pytest_importable(python)` probes that pytest actually
+imports through the resolved interpreter (`<python> -c "import pytest"`,
+T-3305's probe-don't-assume principle -- `_python_for_tree` applied it to
+`frob` itself; this applies the identical principle to `pytest`).
+`Err(PytestSpawnError.NotImportable)` on a failed probe, caught before
+the argv is ever handed to a spawner, so the failure is an explicit,
+loud, typed value instead of pytest's own opaque "No module named
+pytest" surfacing several layers away from where the interpreter was
+chosen. `pytest` is `OPTIONAL_FOR_GATE` (T-3276's `ToolCategory`, `frob.
+doctor`), not `REQUIRED`: frob itself still runs with it absent, so this
+is a `Result` a caller decides how to react to (report a gate
+UNMEASURED, skip a verification step, log `NO_VERDICT`) -- never a hard
+crash.
+
+`frob.app.ticket_runner._verify._run_pytest_directly` passes `python=
+_python_for_tree(root)` (the worktree's OWN interpreter, T-0846/T-3305)
+rather than the default `sys.executable`, since it verifies a specific
+ticket worktree's node ids, not the calling coordinator process's own
+tree. `frob.gates._bug_repro._spawn_designated_test` and `frob.refactor.
+_verify.verify_pytest_collect` both use the default (`sys.executable`):
+the former spawns from inside an already-checked-out parent-commit
+worktree via `cwd=`, the latter verifies the CALLING process's own repo.
+
 ## Kill switch (T-0200)
 
 `frob.process._guard` is the real, checked-in kill-switch/feature-flag

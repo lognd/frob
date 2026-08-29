@@ -524,7 +524,12 @@ for the full rationale and the T-3122 defect this closes.
 **`verify_pytest_collect`**: Verify post-condition 2 -- `pytest
 --collect-only` succeeds with no new collection error. Non-`.py`
 touched files are filtered out before reaching pytest's argv (T-3136)
-and disclosed via `VerifyOutcome.skipped`.
+and disclosed via `VerifyOutcome.skipped`. The argv itself is built by
+`frob.process._pytest_spawn.resolve_pytest_argv` (T-3311), so this
+always spawns `sys.executable -m pytest` -- the CALLING process's own
+interpreter -- never a bare `pytest` PATH lookup; a `pytest` that is not
+importable through that interpreter is a loud `PytestSpawnError`, not an
+opaque collection failure several layers removed from the real cause.
 
 <a id="verify_check_delta"></a>
 <!-- frob:describes src/frob/refactor/_verify.py::verify_check_delta -->

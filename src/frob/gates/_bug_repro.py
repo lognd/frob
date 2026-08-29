@@ -45,7 +45,6 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 import tempfile
 from collections.abc import Sequence
 from enum import Enum, auto
@@ -57,6 +56,7 @@ from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.process._guard import ProcessGuardError, exec_enabled, guarded_subprocess_run
+from frob.process._pytest_spawn import resolve_pytest_argv
 from frob.tickets._models import Ticket
 
 _log = get_logger(__name__)
@@ -820,9 +820,16 @@ def _spawn_designated_test(
     env["PYTHONPATH"] = (
         src if not env.get("PYTHONPATH") else src + os.pathsep + env["PYTHONPATH"]
     )
-    argv = (sys.executable, "-m", "pytest", test_id, "-q", "-p", "no:cacheprovider")
+    resolved_argv = resolve_pytest_argv(test_id, "-q", "-p", "no:cacheprovider")
+    if resolved_argv.is_err:
+        _log.warning(
+            "BUG002: %s -- no verdict for %s",
+            resolved_argv.danger_err,
+            test_id,
+        )
+        return Err(_BugReproOutcome.NO_VERDICT)
     guarded = guarded_subprocess_run(
-        list(argv),
+        resolved_argv.danger_ok,
         cwd=str(worktree),
         capture_output=True,
         timeout=timeout_s,

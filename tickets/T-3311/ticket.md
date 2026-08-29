@@ -2,7 +2,7 @@
 id: T-3311
 title: Collapse the three divergent external-tool spawn conventions into one resolution
   helper
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-28'
@@ -84,6 +84,12 @@ scope_changes:
     site onto a fresh line; declaring it properly rather than waiving'
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/unit/test_pytest_spawn.py::TestPytestImportable::test_true_when_importable
+- tests/unit/test_pytest_spawn.py::TestPytestImportable::test_false_when_not_importable
+- tests/unit/test_pytest_spawn.py::TestResolvePytestArgv::test_ok_uses_sys_executable
+- tests/unit/test_pytest_spawn.py::TestResolvePytestArgv::test_appends_extra_args
+- tests/unit/test_pytest_spawn.py::TestResolvePytestArgv::test_err_when_not_importable
 designated_repro_test: null
 threat: null
 component: null

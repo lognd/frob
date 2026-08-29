@@ -35,6 +35,7 @@ from pydantic import BaseModel
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 from frob.process._guard import ProcessGuardError, guarded_subprocess_run
+from frob.process._pytest_spawn import resolve_pytest_argv
 from frob.tickets._worktree_guard import apply_agent_env, warn_if_xdist_bound_missing
 
 _log = get_logger("frob.app.ticket_runner")
@@ -1999,7 +2000,7 @@ def _verify_via_direct_pytest_fallback(
 ) -> dict[str, VerifyOutcome]:
     """`_verify_one_bucket_passing`'s no-`[[test.runner]]`-declared python
     fallback (ARCH001 split of that function, T-2569): a batched direct
-    `uv run pytest` invocation first, then `_reverify_direct_pytest_
+    direct pytest invocation first, then `_reverify_direct_pytest_
     individually`'s per-id attribution on a multi-id batch failure, same
     as before this split -- only extracted to its own function so
     `_verify_one_bucket_passing` itself stays under the 60-line ARCH001
@@ -2198,12 +2199,14 @@ section 1/3) that must never leak into a spawned verification pytest process
 
 # frob:ticket T-0884
 # frob:ticket T-3099
+# frob:ticket T-3311
 # frob:tests tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv.test_strips_worktree_and_agent_env  # noqa: E501
 # frob:tests tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv.test_missing_lease_env_is_fine  # noqa: E501
 # frob:tests tests/unit/test_pytest_spawn_env_wiring.py::TestVerifyRunPytestDirectlyWiring.test_must_fire_applies_and_warns_before_spawn  # noqa: E501
 def _run_pytest_directly(root: Path, node_ids) -> bool:  # noqa: ANN001
-    """`uv run pytest <node_ids> -q -o addopts=` in `root`, exit 0 == pass
-    -- the no-`[[test.runner]]`-declared fallback `_verify_ids_passing`
+    """`resolve_pytest_argv(<node_ids>, "-q", "-o", "addopts=",
+    python=_python_for_tree(root))` (T-3311) in `root`, exit 0 == pass --
+    the no-`[[test.runner]]`-declared fallback `_verify_ids_passing`
     uses so D-01 verification works even in a repo that never configured
     `frob.toml`'s test-runner registry (the same posture
     `collect_python_tests` already takes for collection).
@@ -2226,7 +2229,37 @@ def _run_pytest_directly(root: Path, node_ids) -> bool:  # noqa: ANN001
     # printed export, so 0 of 40 live workers ever saw the bound).
     apply_agent_env(root)
     warn_if_xdist_bound_missing(root)
-    argv = ("uv", "run", "pytest", *node_ids, "-q", "-o", "addopts=")
+    return _spawn_direct_pytest(root, node_ids)
+
+
+# frob:ticket T-3311
+def _spawn_direct_pytest(root: Path, node_ids) -> bool:  # noqa: ANN001
+    """`_run_pytest_directly`'s resolve-argv + spawn + classify body,
+    split out to keep that function itself at a single, low-branch-count
+    concern (T-3311, matching `_stamp_worker_stdout_log_level_env`'s own
+    ARCH103 precedent: a mixed-concern function is only flagged once it
+    combines I/O, string-formatting, AND 2+ of ITS OWN decision points --
+    moving the resolve/spawn/classify branching in here, rather than only
+    the resolve half, is what actually keeps `_run_pytest_directly`
+    itself at zero).
+
+    `resolve_pytest_argv(<node_ids>, "-q", "-o", "addopts=",
+    python=_python_for_tree(root))` (T-3311) builds the argv; a failed
+    probe, a spawn refusal/timeout, and a real nonzero exit are all
+    `False` here -- `_run_pytest_directly`'s own contract is a bare
+    pass/fail bool with no room for a typed error (T-2569's own docstring
+    on `_reverify_direct_pytest_individually`, below, already names this
+    as a known, separately-scoped ambiguity)."""
+    resolved_argv = resolve_pytest_argv(
+        *node_ids, "-q", "-o", "addopts=", python=_python_for_tree(root)
+    )
+    if resolved_argv.is_err:
+        _log.warning(
+            "ticket evidence: %s in %s -- cannot verify directly",
+            resolved_argv.danger_err,
+            root,
+        )
+        return False
     env = {
         key: value
         for key, value in os.environ.items()
@@ -2236,7 +2269,7 @@ def _run_pytest_directly(root: Path, node_ids) -> bool:  # noqa: ANN001
         from frob.app import ticket_runner as _ticket_runner
 
         guarded = _ticket_runner.guarded_subprocess_run(
-            list(argv),
+            resolved_argv.danger_ok,
             cwd=str(root),
             capture_output=True,
             timeout=300.0,
@@ -2262,7 +2295,7 @@ def _reverify_direct_pytest_individually(
     """T-0856's per-id attribution fix, for the no-`[[test.runner]]`-
     declared direct-pytest fallback path (`_run_pytest_directly`'s own
     batch call already failed): rerun each id on its own via the same
-    direct `uv run pytest` invocation, and consult the stability
+    direct pytest invocation, and consult the stability
     quarantine (`frob.testing._stability.quarantined_node_ids`, T-0575) the
     same way `_reverify_failing_bucket_individually` does for the runner-
     based path, so this fallback does not regress to the pre-T-0856 all-

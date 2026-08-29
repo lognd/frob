@@ -600,6 +600,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3295: A waiver whose reason promises follow-up is debt, ticket or not: the discriminator already exists and WAIVE009 wires it to the wrong conclusion (2656 waive vs 124 debt)
 - T-3303: frob ticket show auto-commits: NOT_TICKET_SCOPED verbs fall through to the generic commit path when ticket_id is set
 - T-3305: _python_for_tree trusts a tree venv without checking frob is importable, breaking self-verification in every consumer repo
+- T-3311: Collapse the three divergent external-tool spawn conventions into one resolution helper
 - T-3316: warn_if_xdist_bound_missing does not detect the xdist plugin's absence, only an unset fleet bound
 - T-3326: frob check --fix is repo-wide even from a targeted invocation, and a killed run leaves an unrecorded partial rewrite
 - T-3341: fix FROB_VERBOSE env leak in TestVerboseFlag (test isolation)

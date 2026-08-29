@@ -19,6 +19,11 @@ from frob.process._guard import (
     guarded_subprocess_run,
     net_enabled,
 )
+from frob.process._pytest_spawn import (
+    PytestSpawnError,
+    pytest_importable,
+    resolve_pytest_argv,
+)
 from frob.process._reap import (
     DEFAULT_ORPHAN_AGE_FLOOR_S,
     install_sigterm_reaper,
@@ -55,4 +60,7 @@ __all__ = [
     "install_sigterm_reaper",
     "reap_active_multiprocessing_children",
     "reap_orphaned_forkservers",
+    "PytestSpawnError",
+    "pytest_importable",
+    "resolve_pytest_argv",
 ]

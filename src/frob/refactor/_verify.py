@@ -11,11 +11,15 @@ from __future__ import annotations
 
 import ast
 import os
+import subprocess
 import sys
 from pathlib import Path
 
+from typani import Err, Ok, Result
+
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
+from frob.process._pytest_spawn import resolve_pytest_argv
 from frob.refactor._models import VerifyOutcome
 
 _log = get_logger(__name__)
@@ -405,8 +409,39 @@ def _filter_pytest_collect_targets(
     return filtered, skipped, None
 
 
+# frob:ticket T-3311
+def _spawn_pytest_collect(
+    repo_root: Path, filtered_targets: list[Path] | None, *, timeout: int
+) -> Result[subprocess.CompletedProcess[str], str]:
+    """`verify_pytest_collect`'s argv-resolution + spawn, split out to
+    keep that function under the ARCH001 line threshold (T-3311). Builds
+    the `--collect-only` argv via `resolve_pytest_argv` (the shared
+    pytest-spawn resolution helper) and spawns it; `Err(str)` carries a
+    ready-to-use `VerifyOutcome.detail` message for either failure mode
+    (could not resolve an interpreter with pytest importable, or the
+    resolved spawn itself failed) rather than a typed error the caller
+    would just stringify anyway."""
+    collect_args = ["--collect-only", "-q", "-p", "no:cacheprovider"]
+    if filtered_targets:
+        collect_args.extend(str(t) for t in filtered_targets)
+    resolved_argv = resolve_pytest_argv(*collect_args)
+    if resolved_argv.is_err:
+        return Err(f"could not resolve a pytest spawn: {resolved_argv.danger_err}")
+    result = guarded_subprocess_run(
+        resolved_argv.danger_ok,
+        cwd=str(repo_root),
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    if result.is_err:
+        return Err(f"could not run pytest --collect-only: {result.danger_err}")
+    return Ok(result.danger_ok)
+
+
 # frob:doc docs/commands/refactor.md#verify_pytest_collect
 # frob:ticket T-3136
+# frob:ticket T-3311
 # frob:tests tests/test_refactor.py::TestVerify.test_pytest_collect_reports_failure
 # frob:tests \
 #   tests/test_refactor.py::TestVerify.test_pytest_collect_skips_non_python_touched_files  # noqa: E501
@@ -437,24 +472,15 @@ def verify_pytest_collect(
     filtered_targets, skipped, early = _filter_pytest_collect_targets(targets)
     if early is not None:
         return early
-    args = ["pytest", "--collect-only", "-q", "-p", "no:cacheprovider"]
-    if filtered_targets:
-        args.extend(str(t) for t in filtered_targets)
-    result = guarded_subprocess_run(
-        args,
-        cwd=str(repo_root),
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-    )
-    if result.is_err:
+    spawned = _spawn_pytest_collect(repo_root, filtered_targets, timeout=timeout)
+    if spawned.is_err:
         return VerifyOutcome(
             name="pytest_collect",
             passed=False,
-            detail=f"could not run pytest --collect-only: {result.danger_err}",
+            detail=spawned.danger_err,
             skipped=tuple(skipped),
         )
-    proc = result.danger_ok
+    proc = spawned.danger_ok
     passed = proc.returncode == 0
     detail = (
         (proc.stdout or "")[-2000:] if passed else (proc.stdout + proc.stderr)[-4000:]

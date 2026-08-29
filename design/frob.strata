@@ -1029,6 +1029,14 @@ node refactor : trusted {
     // a `PYTHONPATH` for a subprocess interpreter via `os.environ.copy()`
     // -- a real, new env.read site.
     may "env.read" via "src/frob/refactor/_verify.py";
+    // T-3311: `_verify.py` has always spawned pytest/frob check
+    // subprocesses (verify_pytest_collect, verify_check_delta,
+    // verify_module_import) via `guarded_subprocess_run` -- never
+    // previously declared here. The refactor of `verify_pytest_collect`
+    // into `_spawn_pytest_collect` (ARCH001 split) put a fresh call site
+    // on a new line, which SELFAUDIT001's diff-scoped scan caught where
+    // the pre-existing call sites had not been.
+    may "exec" via "src/frob/refactor/_verify.py";
 }
 
 // T-0864: `frob natives build` -- frob-owned `maturin develop` per
