@@ -55,7 +55,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b6744b16397a1b4fa0784dab6a35a9d706ce7cc5
 ---
 REPORTED FROM REAL CONSUMER USE (../diax FROBLEMS.md F-014). Root cause was
 diagnosed by the REPORTER and independently CONFIRMED IN CODE here, precisely.
