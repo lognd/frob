@@ -2,7 +2,7 @@
 id: T-3363
 title: 'Fix gate:TICK006/TICK011 errors: correct phantom-draft citations and disclosure-window
   vicinity'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
