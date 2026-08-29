@@ -26,6 +26,7 @@ scope:
 - src/frob/gates/_empty_diff_close.py
 - tickets/T-3262/ticket.md
 - tickets/T-3287/ticket.md
+- tickets/T-3324/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -68,6 +69,19 @@ scope_changes:
     DOC006 half of the drift
   actor: logan
   at: '2026-08-28'
+- op: add
+  glob: tickets/T-3324/ticket.md
+  reason: T-3324 was filed from within this worktree as T-3283's own explicit ask
+    (record the structural landing-time-enforcement finding as a follow-up ticket)
+  actor: logan
+  at: '2026-08-28'
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+- tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+- tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch::test_real_repo_design_selfconform_has_no_eval_gap
+- tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
+- tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
 designated_repro_test: null
 threat: null
 component: null
