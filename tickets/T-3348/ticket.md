@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:grep -n docstatus_gate docs/modules/gates.md exit=0 sha256=7a6dcd0ea762
 designated_repro_test: null
 threat: null
 component: null
