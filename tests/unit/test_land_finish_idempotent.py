@@ -69,6 +69,11 @@ def _make_closeable(root: Path, ticket_id: str) -> None:
         update={
             "evidence": ("tests/test_x.py::test_ok",),
             "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+            # T-3288: a non-empty scope is required for
+            # `_worktree_content_already_on_main`'s own content-diff check
+            # (`_check_already_landed`) to ever confirm "already landed"
+            # rather than declining to judge a scope-less ticket.
+            "scope": ("src/example.py",),
         }
     )
     assert write_ticket(root, ticket).is_ok
@@ -208,6 +213,83 @@ class TestFinishOnlyIfAlreadyLanded:
         # No cleanup side effect either -- the caller proceeds to the
         # normal `_land_core` path exactly as before this fix.
         assert finish_calls == []
+
+    # frob:ticket T-3288
+    def test_done_on_main_but_content_not_confirmed_runs_the_normal_land(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded.test_done_on_main_but_content_not_confirmed_runs_the_normal_land  # noqa: E501
+        """T-3288's THIRD FIXTURE, and the F-034 incident shape itself: a
+        ticket whose ledger state on `main` is `done` (mirrored there by
+        `close`, F-033) but whose worktree branch's own scope content was
+        never actually merged onto `main` -- e.g. a fresh worktree
+        branched BEFORE the close ever happened, so it never even saw the
+        close commit, let alone a real land. The T-2108 shortcut must
+        treat this as NOT landed and fall through to the real land
+        pipeline, never as a pure-cleanup finish."""
+        created = new_ticket(repo, _spec("Closed on main, code never landed"))
+        tid = created.danger_ok.id
+
+        # Branch the worktree BEFORE the ticket closes on main -- it will
+        # never see the close commit, matching the incident's own "code
+        # stays on the branch until land" gap.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "solo-unlanded", str(wt)], repo)
+
+        # Give the ticket a real scope with actual unlanded content in the
+        # worktree, so the positive content-diff signal has something
+        # concrete to disagree with main about.
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[tid]
+        (wt / "src").mkdir(parents=True, exist_ok=True)
+        (wt / "src" / "example.py").write_text("# unlanded work\n")
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+                "scope": ("src/example.py",),
+            }
+        )
+        assert write_ticket(wt, ticket).is_ok
+        _commit_all(wt, "in-progress work, never landed onto main")
+
+        # Now mirror `state: done` directly onto MAIN -- F-033's own
+        # window -- WITHOUT the code ever reaching main.
+        assert transition(repo, tid, TicketState.PLANNED).is_ok
+        assert transition(repo, tid, TicketState.IN_PROGRESS).is_ok
+        main_loaded = load_all(repo)
+        main_ticket = main_loaded.danger_ok[tid]
+        main_ticket = main_ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": main_ticket.body + "\n## Done report\n\nevidence attached\n",
+                "scope": ("src/example.py",),
+            }
+        )
+        assert write_ticket(repo, main_ticket).is_ok
+        assert transition(repo, tid, TicketState.DONE).is_ok
+        _commit_all(repo, "close " + tid + " (mirrored, no code)")
+
+        import frob.app.ticket_runner._land_cmd as land_cmd_mod
+
+        finish_calls: list[Path] = []
+        monkeypatch.setattr(
+            land_cmd_mod,
+            "_finish_worktree",
+            lambda root, worktree, ticket_id, **kw: finish_calls.append(worktree),
+        )
+
+        cfg = AppConfig(ticket_id=tid, ticket_land_finish=True, ticket_dry_run=False)
+        handled = _finish_only_if_already_landed(repo, wt, cfg)
+
+        assert handled is False
+        # The whole point: even though main's LEDGER says 'done', the
+        # worktree is NEVER removed -- the shortcut must not trust the
+        # ledger state alone.
+        assert finish_calls == []
+        assert wt.exists()
 
 
 # frob:ticket T-2949

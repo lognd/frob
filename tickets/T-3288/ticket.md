@@ -2,7 +2,7 @@
 id: T-3288
 title: 'frob ticket land --finish DELETED a worktree without merging: the T-2108 shortcut
   trusts main''s ledger state instead of branch ancestry'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -42,7 +42,13 @@ scope_changes:
     coverage
   actor: logan
   at: '2026-08-28'
-designated_repro_test: null
+evidence:
+- tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded::test_terminal_on_main_skips_land_core_and_cleans_up
+- tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded::test_non_terminal_on_main_runs_the_normal_land
+- tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded::test_done_on_main_but_content_not_confirmed_runs_the_normal_land
+- tests/unit/test_land_finish_guard.py::TestFinishWorktree::test_removes_a_worktree_with_no_live_process
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_finish_removes_the_worktree
+designated_repro_test: tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded::test_done_on_main_but_content_not_confirmed_runs_the_normal_land
 threat: null
 component: null
 anchor: false

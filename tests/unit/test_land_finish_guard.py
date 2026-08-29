@@ -224,7 +224,7 @@ class TestFinishWorktree:
                     break
                 time.sleep(0.1)
             with pytest.raises(SystemExit) as excinfo:
-                _finish_worktree(repo, wt, "T-1715")
+                _finish_worktree(repo, wt, "T-1715", verified_landed=True)
             assert excinfo.value.code == 1
             assert wt.exists()
         finally:
@@ -234,7 +234,7 @@ class TestFinishWorktree:
     def test_removes_a_worktree_with_no_live_process(self, repo: Path) -> None:
         # frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_removes_a_worktree_with_no_live_process  # noqa: E501
         wt = _add_worktree(repo, "wt1")
-        _finish_worktree(repo, wt, "T-1715")
+        _finish_worktree(repo, wt, "T-1715", verified_landed=True)
         assert not wt.exists()
 
     def test_force_removes_despite_a_live_process(self, repo: Path) -> None:
@@ -252,6 +252,7 @@ class TestFinishWorktree:
                 repo,
                 wt,
                 "T-1715",
+                verified_landed=True,
                 force=True,
                 force_reason="T-1762 test: independently confirmed wedged",
             )
@@ -277,7 +278,7 @@ class TestFinishWorktree:
                     break
                 time.sleep(0.1)
             with pytest.raises(SystemExit) as excinfo:
-                _finish_worktree(repo, wt, "T-1715", force=True)
+                _finish_worktree(repo, wt, "T-1715", verified_landed=True, force=True)
             assert excinfo.value.code == 1
             assert wt.exists()
             assert not (repo / "force-overrides.jsonl").exists()
@@ -293,7 +294,7 @@ class TestFinishWorktree:
         have refused (nothing live) demands no reason -- nothing was
         actually bypassed."""
         wt = _add_worktree(repo, "wt1")
-        _finish_worktree(repo, wt, "T-1715", force=True)
+        _finish_worktree(repo, wt, "T-1715", verified_landed=True, force=True)
         assert not wt.exists()
 
 
@@ -455,7 +456,7 @@ def _t1845_child_finish(
         repo, ticket_id, commit_sha, retire_on_proof=False
     )
     try:
-        land_cmd_mod._finish_worktree(repo, worktree, ticket_id)
+        land_cmd_mod._finish_worktree(repo, worktree, ticket_id, verified_landed=True)
     finally:
         land_cmd_mod._clear_land_finish_pending_marker(repo, ticket_id)
 

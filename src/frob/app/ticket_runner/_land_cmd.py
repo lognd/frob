@@ -1899,6 +1899,7 @@ def _finish_worktree(
     worktree: Path,
     ticket_id: str,
     *,
+    verified_landed: bool,
     force: bool = False,
     force_reason: str | None = None,
     force_reason_file: Path | None = None,
@@ -1908,6 +1909,28 @@ def _finish_worktree(
     already verified the land -- this function itself does no re-
     verification of the LAND-PROOF, it trusts its caller (`_land`) to have
     gated on `ancestor_ok and state_ok` first.
+
+    T-3288: `verified_landed` is a REQUIRED keyword, not a default-True
+    convenience -- every call site must say explicitly whether it has
+    already confirmed this ticket's code actually reached `main` (the
+    genuine-land path, where `_finish_land_after_success`'s own
+    `ancestor_ok and state_ok` gate already ran) or is asking this
+    function to trust a SEPARATE inference (the `--finish`-on-an-already-
+    terminal-ticket shortcut, T-2108). `False` here REFUSES the removal
+    outright, logs at ERROR naming the worktree and its branch, and
+    leaves the worktree exactly as it was -- this is the backstop for the
+    F-034 incident (`../diax`, T-3288's own origin): `--finish` printed
+    success and deleted a worktree whose branch was never merged, because
+    the only thing gating that removal was a ledger read on `main`, not
+    any fact about the worktree's own content. A caller that turns out to
+    have been wrong about `verified_landed=True` is a bug in THAT
+    caller's own signal, not something this function can independently
+    catch after the fact -- but a caller that honestly says `False`, or
+    whose signal is itself absent/uncertain, must never reach the
+    destructive step at all. There is no bypass: this is deliberately not
+    overridable by `force`, which exists for a DIFFERENT refusal (a
+    worktree still in live use) and must not be repurposed to silence a
+    content-safety refusal it was never designed to reason about.
 
     T-1715: before removing anything, refuses (exits 1, worktree left in
     place) if `refuse_if_worktree_in_use` finds either a live process
@@ -1939,6 +1962,24 @@ def _finish_worktree(
     reported separately rather than unwinding anything (playbook section
     12b: never force-remove a worktree the mechanical way, surface it
     instead)."""
+    if not verified_landed:
+        branch = _worktree_branch_name(root, worktree)
+        _log.error(
+            "ticket land --finish: REFUSING to remove worktree %s for %s -- "
+            "its content is not confirmed to be on main (branch=%s). "
+            "Removing it now could destroy unlanded work (T-3288, the "
+            "../diax F-034 incident this refusal exists to prevent). "
+            "Run a full `frob ticket land %s --worktree %s` (without "
+            "--finish/--retire-on-proof shortcuts) to land it for real, or "
+            "investigate with `git merge-base --is-ancestor <branch-head> "
+            "main` by hand before removing anything.",
+            worktree,
+            ticket_id,
+            branch,
+            ticket_id,
+            worktree,
+        )
+        return
     if not force:
         _refuse_finish_if_worktree_in_use(root, worktree, ticket_id)
     elif refuse_if_worktree_in_use(root, worktree).is_err:
@@ -2087,6 +2128,54 @@ def _read_ticket_state_at_head(root: Path, ticket_id: str) -> str | None:
 # frob:ticket T-2108
 # frob:tests tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded.test_terminal_on_main_skips_land_core_and_cleans_up  # noqa: E501
 # frob:tests tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded.test_non_terminal_on_main_runs_the_normal_land  # noqa: E501
+def _worktree_content_already_on_main(
+    root: Path, worktree: Path, ticket_id: str
+) -> bool:
+    """T-3288: whether `ticket_id`'s own declared-scope content in
+    `worktree` is ALREADY present on `root`'s `main` -- the fact
+    `_finish_only_if_already_landed` must confirm before treating a
+    terminal ledger state as proof the code landed, and the fix for the
+    F-034 incident (`../diax` FROBLEMS.md, this ticket's own origin): a
+    `state: done` ledger read on `main` is NOT that fact, because `frob
+    ticket close` mirrors state+evidence onto `main` immediately while
+    the code stays on the branch until land (F-033, the enabling half of
+    the same incident) -- reading the mirrored state alone let `--finish`
+    remove a worktree whose branch had never actually merged.
+
+    Deliberately reuses `land()`'s OWN positive-signal check
+    (`_check_already_landed`, T-1618/T-1675) rather than a raw `git
+    merge-base --is-ancestor <branch-head> main` -- this repo's land
+    lands by SQUASH-APPLY (`_land_squash_apply`), not a merge commit, so
+    a worktree branch's own head commit is NEVER a graph ancestor of the
+    squash commit that actually carries its content onto `main`, even for
+    a completely genuine, successful land: the squash commit's tree
+    matches the worktree's tree, but its parent is `main`'s prior tip, not
+    the worktree branch at all. A literal ancestor-of-branch-head check
+    would therefore refuse cleanup for the T-2108 shortcut's own core
+    legitimate case (a land that died between its commit and worktree
+    removal) exactly as often as it would refuse the incident. Checking
+    CONTENT presence -- the same check `land()` itself already trusts to
+    decide the identical question mid-pipeline -- is the correct fix, not
+    a substitute for one.
+
+    `True` only for `_check_already_landed`'s own two positive signals: an
+    empty ticket-scope content diff between `worktree` and `main` PLUS
+    either `main`'s ledger already showing `done` or a `frob:ticket
+    <ticket_id>` directive already present in `main`'s tree (a sibling's
+    land carried it). `False` -- refuse to treat as landed -- for
+    anything else: a dirty worktree, a ticket with no declared scope, a
+    load failure, or (T-3288's own third fixture) a `done` ledger state on
+    `main` whose scope content genuinely differs, i.e. the F-034 shape
+    itself."""
+    from frob.tickets._land import _check_already_landed, _load_ticket_for_land
+
+    loaded = _load_ticket_for_land(worktree, ticket_id)
+    if loaded.is_err:
+        return False
+    result = _check_already_landed(worktree, loaded.danger_ok, "main")
+    return result.is_err
+
+
 def _finish_only_if_already_landed(root: Path, worktree: Path, cfg: AppConfig) -> bool:
     """T-2108: `frob ticket land <id> --finish` on a ticket ALREADY
     terminal on `main` (a prior invocation of this same worktree's own
@@ -2099,13 +2188,27 @@ def _finish_only_if_already_landed(root: Path, worktree: Path, cfg: AppConfig) -
     every single time, burning a full merge+verify cycle to rediscover
     what `_ticket_terminal_state_on_main` answers in one ledger read.
 
+    T-3288: a terminal ledger state ALONE is no longer sufficient --
+    `frob ticket close` mirrors `state`/evidence onto `main` before the
+    code itself ever lands (F-033), so `main` can legitimately read
+    `state: done` for a ticket whose content is nowhere on `main` (the
+    F-034 incident this fixes). This function now ALSO requires
+    `_worktree_content_already_on_main` to confirm the ticket's own scope
+    content is actually present on `main` before taking the pure-cleanup
+    path; a terminal state with unconfirmed content returns `False` (T-3288's
+    third fixture) so the caller falls through to the REAL `_land_core`
+    pipeline instead, which will either land the code for real or refuse
+    for a concrete, named reason -- never silently remove the worktree.
+
     Returns `True` (and has ALREADY performed the pure-cleanup finish:
-    worktree removal, plus branch deletion for `--retire-on-proof`) when
-    `cfg.ticket_id` is terminal on `main` -- the caller (`_land`) must
-    return immediately without calling `_land_core` at all. Returns
-    `False` (no side effect) for the ordinary case, a ticket that
-    genuinely still needs to land -- the caller proceeds exactly as
-    before this fix.
+    worktree removal, plus branch deletion for `--retire-on-proof`) only
+    when BOTH `cfg.ticket_id` is terminal on `main` AND its content is
+    confirmed present there -- the caller (`_land`) must return
+    immediately without calling `_land_core` at all. Returns `False` (no
+    side effect) otherwise -- either the ordinary case (a ticket that
+    genuinely still needs to land) or the unconfirmed-content case this
+    ticket adds -- the caller proceeds to the normal land pipeline exactly
+    as it would have before T-2108 existed.
 
     Deliberately does NOT reuse the T-1845 land-finish-pending marker
     machinery: that marker exists to make an INTERRUPTED mutation
@@ -2117,6 +2220,17 @@ def _finish_only_if_already_landed(root: Path, worktree: Path, cfg: AppConfig) -
     assert cfg.ticket_id is not None  # narrows for the type checker; caller enforces
     state = _ticket_terminal_state_on_main(root, cfg.ticket_id)
     if state is None:
+        return False
+    if not _worktree_content_already_on_main(root, worktree, cfg.ticket_id):
+        _log.info(
+            "ticket land --finish: %s reads '%s' on main's LEDGER, but its "
+            "scope content is not confirmed present on main (T-3288: the "
+            "F-033/F-034 mirrored-state-without-code window) -- treating "
+            "as NOT landed and proceeding to the real land pipeline instead "
+            "of a pure cleanup",
+            cfg.ticket_id,
+            state,
+        )
         return False
     _log.info(
         "ticket land --finish: %s is already '%s' on main -- skipping a "
@@ -2134,6 +2248,10 @@ def _finish_only_if_already_landed(root: Path, worktree: Path, cfg: AppConfig) -
         root,
         worktree,
         cfg.ticket_id,
+        # T-3288: reached only after _worktree_content_already_on_main's
+        # own positive confirmation above -- genuinely verified, not the
+        # bare ledger-state read this whole ticket exists to stop trusting.
+        verified_landed=True,
         force=cfg.ticket_force,
         force_reason=cfg.ticket_force_reason,
         force_reason_file=cfg.ticket_force_reason_file,
@@ -2266,6 +2384,11 @@ def _finish_land_after_success(
             root,
             worktree,
             cfg.ticket_id,
+            # T-3288: this call site's own comment above already
+            # establishes `verified` is unconditionally True here -- the
+            # unconditional `sys.exit(1)` earlier in this function handled
+            # every False case, for every caller, not only --finish's.
+            verified_landed=True,
             force=cfg.ticket_force,
             force_reason=cfg.ticket_force_reason,
             force_reason_file=cfg.ticket_force_reason_file,

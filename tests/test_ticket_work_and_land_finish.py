@@ -2257,7 +2257,7 @@ class TestLandProofAndFinish:
         tid, worktree, report = self._land_a_real_ticket(repo)
         assert _print_land_proof(repo, report) is True
 
-        _finish_worktree(repo, worktree, tid)
+        _finish_worktree(repo, worktree, tid, verified_landed=True)
 
         assert not worktree.exists()
         worktree_list = _run(["git", "worktree", "list"], repo).stdout
@@ -2276,7 +2276,7 @@ class TestLandProofAndFinish:
         branch = _worktree_branch_name(repo, worktree)
         assert branch is not None
 
-        _finish_worktree(repo, worktree, tid)
+        _finish_worktree(repo, worktree, tid, verified_landed=True)
         _delete_worktree_branch(repo, branch, tid)
 
         assert not worktree.exists()
