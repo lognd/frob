@@ -3,7 +3,7 @@ id: T-3295
 title: 'A waiver whose reason promises follow-up is debt, ticket or not: the discriminator
   already exists and WAIVE009 wires it to the wrong conclusion (2656 waive vs 124
   debt)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-28'
@@ -21,6 +21,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'correct the filing''s own measurement error: 2656 was a LINE count, not
+    a directive count'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 4604
+  new_length: 7665
 designated_repro_test: null
 threat: null
 component: null
@@ -119,3 +127,61 @@ ACCEPTANCE
 - A stated decision on WAIVE009's fate.
 - A severity and (if needed) a ratchet proposed with that count in hand.
 - All three fixtures present.
+
+
+MEASUREMENT CORRECTION 2026-08-29. THE NUMBERS IN THIS TICKET'S ORIGINAL BODY
+ARE WRONG. The conclusion survives; the sizing does not.
+
+WHAT I FILED: "2656 frob:waive against 124 frob:debt, a 21:1 ratio", produced by
+
+    git grep -c 'frob:waive' -- src/ tests/ docs/ | awk -F: '{s+=$2} END {print s}'
+
+That sums per-file counts of LINES CONTAINING the string. A single multi-line
+`reason=` continuation counts once per line, and prose mentions in docs count
+too. It is a LINE count presented as a DIRECTIVE count -- the denominator error
+this project has been finding all week, committed here in the filing itself.
+
+WHAT IS ACTUALLY TRUE, measured by Series EC through the exact mechanism
+WAIVE009 iterates (`_waive_edges(snapshot)`, graph-resolved directives bound to
+a real symbol):
+
+    frob:waive directives resolving to a real symbol/edge   1468
+    of those, tripping `_reason_promises_followup`            13   (0.9%)
+
+For reference, other methods on the same tree: a raw `git grep -c` over tracked
+files gives 5042; a naive single-line `reason=` grep gives 1082. None of them
+agree, and only the graph-resolved count answers the question, because that is
+the population the rule would actually act on.
+
+WHAT THIS CHANGES:
+  - The fix is an AFTERNOON, not a ratchet. 13 conversions (arguably 9 distinct
+    reasons after dedup) can be hand-converted, each citing its real ticket. No
+    burn-down machinery, no staged severity, no ratchet pool. The original
+    body's "if it is 900 it needs a ratchet" branch does not apply.
+  - The severity question resolves easily: a rule firing 13 times can ship at
+    ERROR without drowning anyone.
+
+WHAT DOES NOT CHANGE, and is the point of the ticket: the classification rule
+is still wrong. `frob:waive RULE reason="deferred, see T-1234"` still passes
+today, and it still asserts the rule DOES apply and is UNFIXED, which is debt.
+Naming a ticket makes a promise accountable, not a classification correct.
+
+THE CEILING, which MUST be stated in whatever closes this: 13 is a LOWER BOUND
+on misclassification, not the true count. `_reason_promises_followup` only
+recognises reasons whose PHRASING matches its pattern set. A waiver reading
+"this is wrong but out of scope here" is debt and may not trip it at all. So
+the honest summary is: the detector can see 13; the real number is unknown, and
+the detector is the limiting factor. Do not let a future reader take 13 as the
+size of the problem.
+
+The 13 sites (Series EC's measurement, verify before converting):
+  src/frob/app/bind_runner.py:79, clean_runner.py:54, fmt_runner.py:21,
+  map_runner.py:62, test_runner.py:461   -- all five share ONE boilerplate
+  T-2492 reason; check whether that reason is still TRUE before transcribing it
+  into debt, since a reason copied across five files is exactly the shape that
+  goes stale unnoticed.
+  src/frob/app/ticket_runner/_rapid_sweep.py:3081
+  src/frob/gates/_docstatus.py:228
+  src/frob/process/parsers/common.py:23, 114, 156
+  src/frob/tickets/_leases.py:2967
+  tests/test_tickets_gate_claim_evidence.py:20
