@@ -28,6 +28,13 @@ body_changes:
   at: '2026-08-29'
   old_length: 1946
   new_length: 5111
+- mode: append
+  reason: 'BUG002 waiver: fix is a declaratory design-model correction, one of two
+    companion fixes needed to turn the four SYS100 tests green'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 5111
+  new_length: 6242
 evidence:
 - tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbolsCorpusWide::test_every_tracked_strata_file_symbol_count_matches_grammar_declared_count
 designated_repro_test: null
@@ -133,3 +140,6 @@ confirmatory-only one. Run `frob ticket evidence --check-repro` to confirm.
 DO NOT declare `fs.read` on a broader node or widen an existing glob just to
 silence SYS100. The declaration should describe what the code actually does, at
 the granularity the model already uses for its siblings.
+
+
+frob:waive BUG002 reason="this ticket adds five src/frob/process/_proc_scan.py sites to core's existing may fs.read via declaration in design/frob.strata -- a declaratory design-model correction, not a code-behavior defect with its own fail-then-pass unit test. The four tests that DO fail-then-pass on the full fix (test_repo_design_and_declarations_are_self_conformant, test_repo_unrestricted_scan_is_clean, test_real_repo_design_selfconform_has_no_eval_gap, test_sys_gate_zero_violations) require BOTH this ticket and T-3409 (the src/frob/stats/_agentic_shared.py sixth site) landed together -- confirmed by direct re-run: after this fix alone, test_repo_design_and_declarations_are_self_conformant's violation list drops from 6 items to exactly the 1 remaining T-3409 item (src/frob/stats/_agentic_shared.py:42), so this fix cannot independently turn any of the four tests green. test_every_tracked_strata_file_symbol_count_matches_grammar_declared_count (bound as evidence) parses the real design/frob.strata this change edits and passes cleanly against the real repo, guarding against a malformed edit." follow_up="T-3409"
