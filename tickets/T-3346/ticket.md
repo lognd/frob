@@ -14,13 +14,17 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-scope:
-- tickets/**/ticket.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: measurement-first triage ticket, no source scope yet; will
   file/scope targeted sub-tickets per root cause found (same pattern as T-3343)
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tickets/**/ticket.md
+  reason: placeholder scope; will scope to actual files after triage measurement
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
