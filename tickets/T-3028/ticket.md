@@ -2,7 +2,7 @@
 id: T-3028
 title: frob check CHECK001 unknown-project-type fires before the lease-pin refusal
   in a git-worktree with no pyproject.toml
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -20,6 +20,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_check.py::TestDetectProjectType::test_nested_py_file_no_root_marker_is_python
+- tests/unit/test_check.py::TestDetectProjectType::test_nested_cpp_source_still_wins_over_absent_python
+- tests/system/test_cli_check.py::TestCheckTicketLeasePinRefusal::test_ticket_lease_recorded_elsewhere_refuses
 designated_repro_test: null
 threat: null
 component: null

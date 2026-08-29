@@ -1557,48 +1557,69 @@ def detect_project_type(root: Path) -> str:
         return "cpp"
     if list(root.glob("*.py")):
         return "python"
-    return _detect_nested_native_project_type(root)
+    return _detect_nested_project_type(root)
 
 
-#: Marker filenames `_detect_nested_native_project_type` recognizes when
-#: found anywhere under `root` (not just at the top level), mapped to the
+#: Marker filenames `_detect_nested_project_type` recognizes when found
+#: anywhere under `root` (not just at the top level), mapped to the
 #: language they signal.
-_NESTED_NATIVE_MARKER_FILES: dict[str, str] = {
+_NESTED_MARKER_FILES: dict[str, str] = {
     "Cargo.toml": "rust",
     "CMakeLists.txt": "cpp",
+    "pyproject.toml": "python",
+    "setup.py": "python",
 }
 
-#: Bare native-source suffixes `_detect_nested_native_project_type` treats
-#: as a C/C++ project when no marker file is found anywhere either.
-_NESTED_NATIVE_SOURCE_SUFFIXES = (".cpp", ".cc", ".c")
+#: Bare source suffixes `_detect_nested_project_type` falls back to when
+#: no marker file is found anywhere either.
+_NESTED_SOURCE_SUFFIXES: dict[str, str] = {
+    ".cpp": "cpp",
+    ".cc": "cpp",
+    ".c": "cpp",
+    ".py": "python",
+}
 
 
 # frob:ticket T-0551
-def _detect_nested_native_project_type(root: Path) -> str:
+# frob:ticket T-3028
+def _detect_nested_project_type(root: Path) -> str:
     """`detect_project_type`'s final fallback: a bounded, pruned recursive
-    scan for a native marker file or source, before finally admitting
-    'unknown' (T-0404 finding 7 / T-0551).
+    scan for a marker file or source file nested below `root`, before
+    finally admitting 'unknown' (T-0404 finding 7 / T-0551).
 
-    The root-level checks above return 'unknown' for a C/C++ or Rust
-    project whose sources/build files live only under a subdirectory (e.g.
-    `src/CMakeLists.txt`, no root `CMakeLists.txt`) -- which used to send
-    the whole repo to the Python check pipeline instead of the native
-    toolchain (finding 6/T-0546) with no native checks ever running.
-    Reuses `frob.excludes.iter_files` (the shared pruned-walk entry point,
-    `git ls-files` fast path when available) rather than a second raw
-    `rglob`, so this scan skips `.git`/`.venv`/`node_modules`/build output
-    the same way every other repo-wide walk in this codebase does.
+    The root-level checks above return 'unknown' for a project whose
+    sources/build files live only under a subdirectory (e.g.
+    `src/CMakeLists.txt`, no root `CMakeLists.txt`; or `src/feature.py`,
+    no root `*.py` and no `pyproject.toml`/`setup.py`) -- which used to
+    send the whole repo down the wrong pipeline (finding 6/T-0546 for
+    C/C++/Rust) or straight to a loud, wrong `CHECK001: unknown project
+    type` (T-3028 for Python: a `git worktree`'s own root rarely holds a
+    top-level `.py` file even for a perfectly ordinary `src/`-layout
+    Python project, so `detect_project_type`'s root-only `*.py` glob
+    above missed it entirely -- the ONLY reason this fell through to
+    'unknown' rather than 'python' at all, with every downstream
+    consequence, including gate:PREWORK/the ticket-lease-pin refusal,
+    never getting a chance to run, T-3028's own repro). Originally
+    native-language-only (T-0551); T-3028 folds Python's own nested
+    fallback into the SAME bounded walk rather than adding a second one,
+    since the two needs (a marker file, or a bare source suffix, found
+    anywhere under `root`) are identical in shape. Reuses `frob.excludes.
+    iter_files` (the shared pruned-walk entry point, `git ls-files` fast
+    path when available) rather than a second raw `rglob`, so this scan
+    skips `.git`/`.venv`/`node_modules`/build output the same way every
+    other repo-wide walk in this codebase does.
     """
     from frob.excludes import iter_files
 
     files = iter_files(root)
     for path in files:
-        marker = _NESTED_NATIVE_MARKER_FILES.get(path.name)
+        marker = _NESTED_MARKER_FILES.get(path.name)
         if marker is not None:
             return marker
     for path in files:
-        if path.suffix.lower() in _NESTED_NATIVE_SOURCE_SUFFIXES:
-            return "cpp"
+        suffix_type = _NESTED_SOURCE_SUFFIXES.get(path.suffix.lower())
+        if suffix_type is not None:
+            return suffix_type
     return "unknown"
 
 

@@ -454,6 +454,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3025: A single trivial unattributed finding disables fleet-wide landing: four occurrences today, ~90 minutes lost, no severity proportionality
 - T-3026: Post-land findings from the T-3006/T-2995/T-3014 batch: ARCH103, DOC001, E501, 2x LARGE001, REF001, REF002
 - T-3027: post-land sweep regression from an unattributed source (sweep spawned by T-3011): 1 new (rule, file) identit(ies), 3 finding(s) (E501)
+- T-3028: frob check CHECK001 unknown-project-type fires before the lease-pin refusal in a git-worktree with no pyproject.toml
 - T-3029: self-conformance (SYS100/SYS102/SYS107) red on main: ci_report.py/ci_validity.py/ghio.py unbound, env.read gaps
 - T-3030: _STAGE_GROUPS missing milestone/env_var_docs/root_asset_dirs/profile_boundary gates
 - T-3031: TestCheckTypescript::test_clean_ts_passes_tsc fails on main (REF001 on node_modules/package.json/tsconfig.json, MILE003 on real tickets.md)

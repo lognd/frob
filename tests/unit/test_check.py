@@ -595,6 +595,38 @@ class TestDetectProjectType:
         (tmp_path / "pkg.py").write_text("def f() -> None:\n    pass\n")
         assert detect_project_type(tmp_path) == "python"
 
+    # frob:ticket T-3028
+    def test_nested_py_file_no_root_marker_is_python(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/__init__.py::detect_project_type kind="unit"
+        """T-3028 must-fire: a `src/`-layout Python project with NO
+        top-level `.py` file and no `pyproject.toml`/`setup.py` (the
+        ordinary shape of a real project's own git worktree root) must
+        still detect as 'python', not 'unknown' -- the T-3028 incident:
+        `detect_project_type`'s root-only `*.py` glob missed this shape
+        entirely, sending `frob check --ticket ...` straight to a loud,
+        wrong `CHECK001: unknown project type` before the ticket-lease-
+        pin refusal (or any other gate) ever got a chance to run."""
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "feature.py").write_text(
+            "def add(x: int, y: int) -> int:\n    return x + y\n"
+        )
+        assert detect_project_type(tmp_path) == "python"
+
+    # frob:ticket T-3028
+    def test_nested_cpp_source_still_wins_over_absent_python(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::detect_project_type kind="unit"
+        """T-3028 must-stay-quiet: folding Python's nested fallback into
+        the same bounded walk `_detect_nested_project_type` already did
+        for C/C++/Rust must not regress THAT detection -- a repo with only
+        a nested `.cpp` file (no Python source anywhere) must still
+        detect as 'cpp', unaffected by the new `.py`/`pyproject.toml`/
+        `setup.py` entries added to the shared marker/suffix tables."""
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "main.cpp").write_text("int main() { return 0; }\n")
+        assert detect_project_type(tmp_path) == "cpp"
+
 
 class TestRunGatesQueueFailure:
     """T-0102: a malformed ticket queue must fail check loudly, not vanish."""
