@@ -2,7 +2,7 @@
 id: T-3404
 title: frob ticket scope applies the last --reason to every --add, silently mis-recording
   the scope audit trail
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_mutate.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +25,12 @@ scope_changes:
 - op: add
   glob: src/frob/app/ticket_runner/_mutate.py
   reason: the scope subcommand argv handling and its --reason pairing
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: the real defect is in argparse's --reason flag definition for the scope
+    subcommand, not in _mutate.py which only consumes the already-collapsed value
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
