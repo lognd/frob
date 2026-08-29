@@ -49,7 +49,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 99a36150086a9adf90bc1c804628429f5f8df90b
 ---
 MEASURED 2026-08-28. The repo's own release gate REFUSES the version the owner
 was told it would publish:
