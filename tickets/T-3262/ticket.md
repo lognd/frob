@@ -21,6 +21,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'T-3283: correct the CLI invocation shape in this ticket''s body -- ''frob
+    scaffold python-tool'' does not resolve to a subcommand (DOC006), the real shape
+    is ''frob scaffold new python-tool <name>'''
+  actor: logan
+  at: '2026-08-28'
+  old_length: 2870
+  new_length: 2881
 designated_repro_test: null
 threat: null
 component: null
@@ -36,7 +45,7 @@ T-0089/T-0122 fixed once before (a swallowed-summary log race) -- but
 this is a DIFFERENT defect, confirmed by direct repro: no swallowed
 summary, a full normal report with real findings.
 
-`frob scaffold python-tool` followed immediately by `frob check
+`frob scaffold new python-tool <name>` followed immediately by `frob check
 --skip-tests --skip-exports` on the freshly scaffolded, freshly
 committed project fails with:
 
