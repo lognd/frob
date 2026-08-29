@@ -13,15 +13,25 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-scope:
-- '**/*.py'
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'a repo-wide ruff format --check failure has no natural
   narrower scope -- gate:FMT only scans diff-touched frob: directive lines per its
   own scope-note and never catches this; the sweep itself is purely mechanical (ruff
   format .)'
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: mechanical ruff-format sweep across many files owned by
+  other in-progress tickets; scope enforced at land time via the sweep's own touched-file
+  diff, not a pre-declared write lease -- a repo-wide glob collides with every other
+  series' scope
+scope_changes:
+- op: remove
+  glob: '**/*.py'
+  reason: mechanical ruff-format sweep across many files owned by other in-progress
+    tickets; scope enforced at land time via the sweep's own touched-file diff, not
+    a pre-declared write lease -- a repo-wide glob collides with every other series'
+    scope
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
