@@ -1,7 +1,7 @@
 ---
 id: T-3400
 title: 'Scaffold: remove Makefile/frob contradiction from templates'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-29'
