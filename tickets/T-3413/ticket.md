@@ -2,7 +2,7 @@
 id: T-3413
 title: 'post-land sweep regression from T-3350: 9 new (rule, file) identit(ies), 10
   finding(s) (DOC006, OPAQUE001, SYS003, TEST001)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -92,6 +92,15 @@ scope_changes:
     fix itself) and the new unit-test file'
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/unit/test_extract_import_edges.py::test_module_level_import_is_import_time
+- tests/unit/test_extract_import_edges.py::test_function_local_import_is_deferred
+- tests/unit/test_extract_import_edges.py::test_class_body_import_is_deferred
+- tests/unit/test_extract_import_edges.py::test_type_checking_import_is_deferred
+- tests/unit/test_extract_import_edges.py::test_dotted_type_checking_import_is_deferred
+- tests/unit/test_extract_import_edges.py::test_try_except_import_error_is_import_time
+- tests/unit/test_extract_import_edges.py::test_sys_version_info_guarded_import_is_import_time
+- tests/unit/test_extract_import_edges.py::test_mixed_module_and_deferred_import_of_the_same_name
 designated_repro_test: null
 threat: null
 component: null

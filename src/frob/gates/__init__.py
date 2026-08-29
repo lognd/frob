@@ -281,7 +281,7 @@ from frob.lang import SymbolKind
 from frob.lang._models import ParsedFile, RawSymbol
 from frob.lang._walk_rust import _MACRO_SYMBOL_SUFFIX
 from frob.logging import get_logger
-from frob.nodeid import symref_to_nodeid as _symref_to_nodeid
+from frob.nodeid import symref_to_nodeid
 
 # Import from frob.testing's submodules directly, not the frob.testing
 # package __init__ -- that __init__ imports frob.gates (via
@@ -687,7 +687,7 @@ def _unit_test_edges(snapshot: GraphSnapshot, kind: str) -> dict[str, list[Edge]
 # itself lives in (T-0090). Rust was removed from this set by T-0092
 # (`collect_rust_tests` gives real execution evidence via `tests.
 # node_ids`), and TS was removed by T-0730 (`collect_ts_tests`'s vitest
-# node ids are `path::name` symrefs -- the exact shape `_symref_to_nodeid`
+# node ids are `path::name` symrefs -- the exact shape `symref_to_nodeid`
 # already produces from a TS `frob:tests` directive, so an exact/prefix
 # match in `_node_id_collected` just works, same as python/rust).
 #
@@ -741,13 +741,14 @@ def _is_native_test_symref(src: str) -> bool:
     return "tests" in parts[:-1] or leaf.startswith("test_") or leaf.endswith("_test")
 
 
+# frob:ticket T-3413
 def _valid_edges(
     edges: list[Edge],
     tests: CollectedTests,
     snapshot: GraphSnapshot | None = None,
 ) -> list[Edge]:
     """Edges whose `src` is a collected pytest, cargo, vitest, or ctest node id
-    (real execution evidence, `_symref_to_nodeid`), or -- for a language frob
+    (real execution evidence, `symref_to_nodeid`), or -- for a language frob
     still has no SOURCE-ACCURATE execution-based test collector for (c/cpp,
     T-0090/T-0730) -- a `src` that both looks like test code
     (`_is_native_test_symref`) and resolves to a real bound symbol in
@@ -777,6 +778,7 @@ def _valid_edges(
 
 
 # frob:ticket T-0361
+# frob:ticket T-3413
 def _edge_has_execution_evidence(
     e: Edge,
     tests: CollectedTests,
@@ -789,9 +791,9 @@ def _edge_has_execution_evidence(
     macro_file = _macro_symbol_file(e.src)
     if macro_file is not None:
         return _macro_file_collected(macro_file, tests.node_ids)
-    if _node_id_collected(_symref_to_nodeid(e.src), tests.node_ids):
+    if _node_id_collected(symref_to_nodeid(e.src), tests.node_ids):
         return True
-    if _node_id_collected(_symref_to_nodeid(e.target), tests.node_ids):
+    if _node_id_collected(symref_to_nodeid(e.target), tests.node_ids):
         return True
     return _edge_is_native_unverified(e, snapshot)
 
@@ -918,6 +920,7 @@ def _has_assertion_evidence(root: Path, base_node_id: str) -> bool:
 
 
 # frob:ticket T-0307
+# frob:ticket T-3413
 def _case_count(
     valid_edges: list[Edge], tests: CollectedTests, root: Path | None = None
 ) -> int:
@@ -969,7 +972,7 @@ def _case_count(
                 1 for node_id in tests.node_ids if node_id.startswith(file_prefix)
             )
             continue
-        base = _symref_to_nodeid(edge.src)
+        base = symref_to_nodeid(edge.src)
         # T-0949: `_case_ids_by_base` memoizes the base->case-ids grouping
         # once per `tests.node_ids` value instead of this re-scanning the
         # full node-id set with `startswith()` for every edge.
@@ -4165,6 +4168,7 @@ def _test015_vacuous_credit(
 
 
 # frob:ticket T-0598
+# frob:ticket T-3413
 def _test015_record_violation(
     root: Path,
     record: SymbolRecord,
@@ -4189,7 +4193,7 @@ def _test015_record_violation(
         # T-0949: same `_case_ids_by_base` memo `_node_id_collected`/
         # `_case_count` use, instead of a fresh full-`node_ids` scan per edge.
         for edge in _valid_edges(edges, tests, snapshot):
-            base = _symref_to_nodeid(edge.src)
+            base = symref_to_nodeid(edge.src)
             if base in tests.node_ids:
                 node_ids.add(base)
             node_ids.update(_case_ids_by_base(tests.node_ids).get(base, ()))
@@ -4432,6 +4436,7 @@ def _consumer_leaf(consumer: str) -> str:
     return leaf
 
 
+# frob:ticket T-3413
 def _pair_covered(
     consumer_leaf: str,
     provider: str,
@@ -4443,7 +4448,7 @@ def _pair_covered(
     for target, edge in all_pairs:
         if not (target == provider or target.startswith(prefix)):
             continue
-        if not _node_id_collected(_symref_to_nodeid(edge.src), tests.node_ids):
+        if not _node_id_collected(symref_to_nodeid(edge.src), tests.node_ids):
             continue
         test_path = edge.src.split("::", 1)[0]
         if consumer_leaf in PurePosixPath(test_path).parts or (

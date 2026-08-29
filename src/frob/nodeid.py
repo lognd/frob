@@ -22,14 +22,12 @@ from __future__ import annotations
 # frob:doc docs/modules/gates.md#frobnodeid-t-3350
 # frob:ticket T-0324
 # frob:ticket T-3350
-# frob:waive WIRE001 reason="already called at runtime from frob.gates.__init__ (7 \
-# sites) and frob.tickets._scope_coverage -- both import it aliased back to its \
-# pre-extraction name (`from frob.nodeid import symref_to_nodeid as \
-# _symref_to_nodeid`, T-3350) so every existing call site is unchanged, which is \
-# exactly the shape static call-graph analysis (keyed on the imported NAME) cannot \
-# trace through the alias for; genuinely wired, not dead -- verified by grep and by \
-# tests/unit/test_nodeid.py plus every existing frob.gates/frob. tickets test \
-# exercising the symref/node-id path."
+# T-3413: the WIRE001 alias-attribution gap this waiver used to
+# paper over is fixed at the source, not waived -- frob.gates.__init__ and
+# frob.tickets._scope_coverage now import `symref_to_nodeid` under its real
+# name (no more `as _symref_to_nodeid`), so static call-graph analysis sees
+# every real call site directly. A WIRE001 waiver was the wrong mechanism
+# for a permanent alias choice; removing the alias removed the need for one.
 # frob:tests tests/unit/test_nodeid.py::test_plain_dotted_qualname_becomes_double_colon kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_nodeid.py::test_bracketed_case_suffix_dots_pass_through_unchanged kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_nodeid.py::test_no_qualname_separator_is_a_noop_on_the_path_side kind="unit"  # noqa: E501

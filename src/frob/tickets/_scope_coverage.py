@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from frob.graph import EdgeKind, GraphSnapshot
-from frob.nodeid import symref_to_nodeid as _symref_to_nodeid
+from frob.nodeid import symref_to_nodeid
 from frob.tickets import Ticket
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
@@ -12,6 +12,11 @@ from frob.tickets._models import (
 
 
 # frob:ticket T-0398
+# frob:ticket T-3413
+# frob:waive AFFECT001 reason="T-3413: pure rename of the imported name \
+# (symref_to_nodeid instead of the old aliased _symref_to_nodeid, T-3350's WIRE001 \
+# fix) inside this function's body -- behavior, inputs, outputs, and the documented \
+# contract are all unchanged, so docs/modules/gates.md#public-api needs no edit"
 # frob:doc docs/modules/gates.md#public-api
 # frob:tests \
 # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true\
@@ -23,7 +28,7 @@ def evidence_covers_scope(ticket: Ticket, snapshot: GraphSnapshot) -> bool:
     1. A `TESTS` edge: walks the same `TESTS`-edge graph
        `frob.testing.select_tests` builds selections from, from the
        evidence side -- for each evidence id, find the `TESTS` edge whose
-       test-side symref maps (via `_symref_to_nodeid`, honoring T-0137's
+       test-side symref maps (via `symref_to_nodeid`, honoring T-0137's
        either-direction `frob:tests` convention) to that id, and check
        whether the OTHER (source) side's file falls under `ticket.scope`.
     2. The evidence id's OWN file is directly inside `ticket.scope` --
@@ -103,15 +108,16 @@ def _evidence_binds_to_scope(
 
 
 # frob:ticket T-1396
+# frob:ticket T-3413
 # frob:tests tests/gates/test_scope_symref_helpers.py::TestNodeIdMatchesSymref
 def _node_id_matches_symref(evidence: str, symref: str) -> bool:
     """Whether `evidence` (a pytest/cargo node id) is the test named by
-    `symref`: exact `_symref_to_nodeid` match (or its parametrize-expanded
+    `symref`: exact `symref_to_nodeid` match (or its parametrize-expanded
     form), or -- for a bare test FILE symref with no `::` -- the file
     itself (or a path under it)."""
     if "::" not in symref:
         return evidence == symref or evidence.startswith(symref.rstrip("/") + "/")
-    node_id = _symref_to_nodeid(symref)
+    node_id = symref_to_nodeid(symref)
     return evidence == node_id or evidence.startswith(node_id + "[")
 
 
