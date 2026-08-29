@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a5b80af0e8b8919eb712b2e437f32a5567a438eb
 ---
 T-3104 added a keyword-only env_absent param to frob.gates._bug_repro._bug_repro_outcome_at_ref. TestCloseRefusesBug002ShapeEndToEnd's two monkeypatch lambdas still have the OLD 3-positional-arg signature (root, test_id, base_ref), so the real call site (which now passes env_absent=...) raises TypeError: got an unexpected keyword argument 'env_absent'. Test-only drift, not a product defect -- widen the lambda signatures to accept the new kwarg.
 
