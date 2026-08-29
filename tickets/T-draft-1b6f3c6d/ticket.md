@@ -2,7 +2,7 @@
 id: T-draft-1b6f3c6d
 title: T-3191's multi-platform ty union triples SUPPRESS001 findings for a cross-platform
   diagnostic
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_suppress.py
 - tests/test_gates_suppress.py
+- tickets/T-draft-0259dd22/ticket.md
+- tickets/T-draft-ffaf100c/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +27,16 @@ scope_changes:
 - op: add
   glob: tests/test_gates_suppress.py
   reason: own test suite, evidence lives here
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tickets/T-draft-0259dd22/ticket.md
+  reason: same-branch sibling ticket filings, benign passenger, avoids SCOPE001
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tickets/T-draft-ffaf100c/ticket.md
+  reason: same-branch sibling ticket filings, benign passenger, avoids SCOPE001
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
