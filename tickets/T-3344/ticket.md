@@ -15,7 +15,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/gates.md
-- src/frob/app/check_runner.py
 - src/frob/app/doctor_runner.py
 - src/frob/ci_report.py
 - src/frob/gates/_comment_placement.py
@@ -141,6 +140,12 @@ scope_changes:
 - op: add
   glob: frob.lock
   reason: frob ack writes to frob.lock
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: src/frob/app/check_runner.py
+  reason: T-3326 holds an in-progress lease touching this file; deferred to avoid
+    CrossTicketLeakage
   actor: logan
   at: '2026-08-29'
 evidence:
