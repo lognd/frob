@@ -592,6 +592,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3276: Missing external tools degrade quietly instead of failing loud: no central resolution, doctor checks one binary, xdist absence unaccounted
 - T-3283: 6 of T-3041's 13 live-repo self-conformance tests fail again: genuine post-close drift, not a stale claim
 - T-3285: close-time disclosure check false-positives on split done-report.md
+- T-3305: _python_for_tree trusts a tree venv without checking frob is importable, breaking self-verification in every consumer repo
 
 ## [0.530.0] - unreleased
 

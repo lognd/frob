@@ -929,6 +929,7 @@ class TestBudgetDeferredGroupsFromStdout:
         assert deferred == ("gates-fast", "gates-native", "lint", "static")
 
 
+# frob:ticket T-3305
 class TestPythonForTree:
     """`_python_for_tree` resolution -- each method below carries its own
     `frob:tests` edge (T-1055: this class docstring used to itself be a
@@ -937,19 +938,56 @@ class TestPythonForTree:
     which already has its own directive)."""
 
     # frob:ticket T-0846
-    def test_uses_tree_venv_python_when_present(self, tmp_path: Path) -> None:
+    # frob:ticket T-3305
+    def test_uses_tree_venv_python_when_present(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree.test_uses_tree_venv_python_when_present  # noqa: E501
-        """T-0441 catch-22 fix: when `root/.venv/bin/python` exists, that
-        path is returned -- NOT `sys.executable` -- so a fresh `frob
-        check` spawn runs the CHECKED tree's own installed code (the
-        worktree's or root's own editable install), never whatever
-        interpreter the calling process happens to run under."""
+        """T-0441 catch-22 fix: when `root/.venv/bin/python` exists AND has
+        `frob` importable through it (T-3305's added probe), that path is
+        returned -- NOT `sys.executable` -- so a fresh `frob check` spawn
+        runs the CHECKED tree's own installed code (the worktree's or
+        root's own editable install), never whatever interpreter the
+        calling process happens to run under. MUST-STAY-QUIET fixture
+        (T-3305): this is frob's own repo's actual shape -- an editable
+        install in the tree venv -- and must keep preferring the tree
+        venv exactly as before T-3305."""
         venv_bin = tmp_path / ".venv" / "bin"
         venv_bin.mkdir(parents=True)
         venv_python = venv_bin / "python"
         venv_python.write_text("#!/bin/sh\n")
 
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            assert argv[-1] == "import frob"
+            return _FakeProc(0)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
         assert ticket_runner._python_for_tree(tmp_path) == str(venv_python)
+
+    # frob:ticket T-3305
+    def test_falls_back_when_tree_venv_lacks_frob_importable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree.test_falls_back_when_tree_venv_lacks_frob_importable  # noqa: E501
+        """MUST-FIRE fixture (T-3305): `root/.venv/bin/python` exists (the
+        normal state for any consumer repo's own `uv sync` venv) but
+        `frob` is NOT importable through it -- the normal state for a
+        consumer repo, since `frob` is always a global `uv tool install`,
+        never a project dependency. `_python_for_tree` must fall back to
+        `sys.executable` instead of trusting the file's mere existence,
+        so a done-report/close/land spawn through it produces a real
+        gate verdict instead of silently degrading to unmeasured."""
+        venv_bin = tmp_path / ".venv" / "bin"
+        venv_bin.mkdir(parents=True)
+        venv_python = venv_bin / "python"
+        venv_python.write_text("#!/bin/sh\n")
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            assert argv[-1] == "import frob"
+            return _FakeProc(1, stderr="ModuleNotFoundError: No module named 'frob'\n")
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        assert ticket_runner._python_for_tree(tmp_path) == sys.executable
 
     # frob:ticket T-0846
     def test_falls_back_to_sys_executable_when_no_tree_venv(
@@ -963,16 +1001,17 @@ class TestPythonForTree:
         assert ticket_runner._python_for_tree(tmp_path) == sys.executable
 
     # frob:ticket T-0846
+    # frob:ticket T-3305
     def test_check_gate_findings_fn_spawns_the_tree_venv_python(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree.test_check_gate_findings_fn_spawns_the_tree_venv_python  # noqa: E501
         """End-to-end within `_check_gate_findings_fn`: given a `root` with
-        its own `.venv/bin/python`, the spawned argv's interpreter is that
-        path, not `sys.executable` -- the concrete T-0441 reproduction is
-        exactly this: a root-checkout `land` re-verification must run
-        against the WORKTREE/root tree's own installed `frob`, not the
-        calling process's."""
+        its own `.venv/bin/python` that has `frob` importable, the spawned
+        argv's interpreter is that path, not `sys.executable` -- the
+        concrete T-0441 reproduction is exactly this: a root-checkout
+        `land` re-verification must run against the WORKTREE/root tree's
+        own installed `frob`, not the calling process's."""
         venv_bin = tmp_path / ".venv" / "bin"
         venv_bin.mkdir(parents=True)
         venv_python = venv_bin / "python"
@@ -981,6 +1020,8 @@ class TestPythonForTree:
         captured_argv: list[str] = []
 
         def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            if argv[-1] == "import frob":
+                return _FakeProc(0)
             captured_argv.extend(argv)
             return _FakeProc(1, stdout=_TWO_FINDINGS_STDOUT)
 
@@ -991,6 +1032,7 @@ class TestPythonForTree:
         assert captured_argv[0] != sys.executable
 
     # frob:ticket T-0846
+    # frob:ticket T-3305
     def test_check_gates_summary_fn_spawns_the_tree_venv_python(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1007,6 +1049,8 @@ class TestPythonForTree:
         captured_argv: list[str] = []
 
         def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            if argv[-1] == "import frob":
+                return _FakeProc(0)
             captured_argv.extend(argv)
             return _FakeProc(
                 0,

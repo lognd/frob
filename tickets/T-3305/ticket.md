@@ -2,7 +2,7 @@
 id: T-3305
 title: _python_for_tree trusts a tree venv without checking frob is importable, breaking
   self-verification in every consumer repo
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -44,7 +44,13 @@ triage_changes:
     does not work for anyone but frob''s own checkout, and a PyPI release ships that'
   actor: logan
   at: '2026-08-28'
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_uses_tree_venv_python_when_present
+- tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_falls_back_when_tree_venv_lacks_frob_importable
+- tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_falls_back_to_sys_executable_when_no_tree_venv
+- tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_check_gate_findings_fn_spawns_the_tree_venv_python
+- tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_check_gates_summary_fn_spawns_the_tree_venv_python
+designated_repro_test: tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_falls_back_when_tree_venv_lacks_frob_importable
 threat: null
 component: null
 anchor: false

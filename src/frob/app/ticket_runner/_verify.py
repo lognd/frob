@@ -34,7 +34,7 @@ from pydantic import BaseModel
 
 from frob.app.config import AppConfig
 from frob.logging import get_logger
-from frob.process._guard import ProcessGuardError
+from frob.process._guard import ProcessGuardError, guarded_subprocess_run
 from frob.tickets._worktree_guard import apply_agent_env, warn_if_xdist_bound_missing
 
 _log = get_logger("frob.app.ticket_runner")
@@ -731,14 +731,56 @@ _GATE_SUMMARY_COUNTS_ONLY_RE = re.compile(
 )
 
 
+# frob:ticket T-3305
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree \
+# kind="unit"
+def _venv_python_has_frob_importable(venv_python: Path) -> bool:
+    """T-3305: probe whether `frob` is actually importable through
+    `venv_python`, not merely whether that path exists as a file.
+
+    A consumer repo's `.venv` is created by `uv sync` from the project's
+    OWN dependency set -- `frob` is always installed globally (`uv tool
+    install frob`), never as a project dependency, so that venv's python
+    has no `frob` module at all even though the file at `.venv/bin/python`
+    is real and executable. `_python_for_tree`'s old file-existence-only
+    check trusted that path anyway, so `python -m frob check ...` through
+    it failed with "No module named frob" and every done-report/close/
+    land self-verification spawn through this path silently degraded to
+    "unmeasured" -- read by `close`/`land` as OwnObligationsUnclean even
+    though a direct `frob check` from the shell was clean. Runs `<venv_
+    python> -c "import frob"` with a short timeout and reports True only
+    on a clean exit 0; any refusal (`FROB_DISABLE_EXEC=1`), timeout, or
+    nonzero exit is treated as "not importable" -- this function never
+    raises, so a probe failure only ever routes the caller to the
+    `sys.executable` fallback, never crashes the interpreter-selection
+    path itself."""
+    guarded = guarded_subprocess_run(
+        [str(venv_python), "-c", "import frob"],
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
+    )
+    if guarded.is_err:
+        _log.warning(
+            "ticket runner: probe of %s for an importable `frob` refused "
+            "or failed to spawn (%s) -- treating as not importable",
+            venv_python,
+            guarded.danger_err,
+        )
+        return False
+    return guarded.danger_ok.returncode == 0
+
+
 # frob:ticket T-0846
+# frob:ticket T-3305
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree \
 # kind="unit"
 def _python_for_tree(root: Path) -> str:
     """The interpreter that runs `root`'s OWN installed code (T-0846): the
-    checked-out tree's `.venv/bin/python` when it exists there, else
-    `sys.executable` (the CALLING process's own interpreter) as a
-    fallback.
+    checked-out tree's `.venv/bin/python` when it exists there AND has
+    `frob` importable through it (T-3305), else `sys.executable` (the
+    CALLING process's own interpreter) as a fallback.
 
     T-0846: `_check_gates_summary_fn`/`_check_gate_findings_fn` used to
     spawn `sys.executable -m frob check` unconditionally -- whatever
@@ -762,12 +804,34 @@ def _python_for_tree(root: Path) -> str:
     the CHECKED tree's own installed code, matching what `uv run frob
     check` would do if invoked there directly.
 
+    T-3305: T-0846's preference for the tree's own venv is sound and
+    stays -- but ONLY when that venv can actually run `frob` at all. In
+    frob's own repo (and in any consumer repo that deliberately installs
+    `frob` as a project dependency) the tree venv carries a real `frob`
+    install, so `_venv_python_has_frob_importable` returns True and this
+    keeps preferring it exactly as before. In the ordinary consumer repo
+    -- `frob` installed only globally via `uv tool install`, never in the
+    project's own `.venv` -- the probe returns False and this falls back
+    to `sys.executable`, the interpreter of the CALLING process, i.e. the
+    globally-installed `frob` that is running this very code right now
+    and therefore always has `frob` importable by construction. That
+    fallback trades T-0846's "check the tree's own installed code"
+    guarantee for "check the globally-installed frob against the tree"
+    in exactly this one case -- the same trade the reporter's own
+    hand-built `.pth`-file workaround was making manually per worktree.
+    Either way the spawn now produces a real, parsable MEASURED (or
+    MEASURED-AND-FAILING) gate verdict instead of silently degrading to
+    unmeasured: `sys.executable` is the interpreter currently executing
+    `frob`'s own ticket-runner code, so it always has `frob` importable,
+    making this fallback self-certifying and never itself a source of a
+    silent COULD-NOT-MEASURE state.
+
     Falls back to `sys.executable` (never a hard error) when `root` has no
-    `.venv/bin/python` -- a bare checkout with no venv of its own yet, or a
-    non-uv-managed tree -- so this is strictly a refinement of the prior
-    unconditional `sys.executable`, never a new failure mode."""
+    `.venv/bin/python`, or has one without `frob` importable through it --
+    so this is strictly a refinement of the prior unconditional `sys.
+    executable`, never a new failure mode."""
     venv_python = root / ".venv" / "bin" / "python"
-    if venv_python.is_file():
+    if venv_python.is_file() and _venv_python_has_frob_importable(venv_python):
         return str(venv_python)
     return sys.executable
 
