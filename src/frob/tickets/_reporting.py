@@ -956,7 +956,43 @@ _TICKET_ID_RE = re.compile(r"T-(?:\d+|draft-[0-9a-fA-F]+)")
 # silent, but the heading itself never stopped existing, so this check
 # still fires on it.
 _DONE_REPORT_HEADING = "## Done report"
-_SUBHEADING_RE = re.compile(r"(?m)^#{2,6}[ \t]+(\S.*)$")
+_SUBHEADING_RE = re.compile(r"^#{2,6}[ \t]+(\S.*)$")
+_FENCE_MARKER_RE = re.compile(r"^\s*```")
+
+
+# frob:ticket T-3285
+def _subheading_titles_outside_fences(section: str) -> list[str]:
+    """Every markdown subheading (`##` through `######`) title found in
+    `section`, in order, EXCLUDING any line inside a fenced code block (a
+    ` ``` `-delimited span) -- T-3285: `compose_done_report`'s own
+    "### Changed" section fences `git --stat` output VERBATIM
+    (`render_changed_block`), and `_SUBHEADING_RE` used to scan that
+    fenced text line-by-line same as everything else. A `--stat` line (a
+    changed path, or free narrative text quoted elsewhere in the report)
+    that happens to start with 1-6 literal '#' characters is DATA inside
+    a code span, not a markdown heading the author added -- the exact
+    parsing gap `disclosure_shaped_language`'s structural signal 2 must
+    not have: it decides on markdown SYNTAX, and a line inside a fence is
+    not markdown structure at all, by the CommonMark grammar's own rule
+    that fenced content is never re-parsed as block-level markup. Tracks
+    fence state with a simple open/close toggle (CommonMark fences must
+    open and close in matched pairs within one document); an unterminated
+    trailing fence closes at EOF, matching how every markdown renderer
+    already treats it, and never causes true content after it to be
+    silently swallowed since a done-report section always ends before
+    another one begins."""
+    in_fence = False
+    titles: list[str] = []
+    for line in section.splitlines():
+        if _FENCE_MARKER_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        match = _SUBHEADING_RE.match(line)
+        if match:
+            titles.append(match.group(1).strip())
+    return titles
 
 # frob:ticket T-2718
 #: The EXACT, fixed subheading titles `compose_done_report` itself always
@@ -1007,6 +1043,12 @@ def _done_report_section(text: str) -> str:
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_renaming_a_generated_heading_still_fires  # noqa: E501
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_phrase_in_description_before_done_report_is_not_flagged  # noqa: E501
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_phrase_in_done_report_still_fires  # noqa: E501
+# frob:ticket T-3285
+# frob:tests tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences.test_hash_line_inside_fence_not_a_subheading  # noqa: E501
+# frob:tests tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences.test_real_subheading_after_a_fence_still_detected  # noqa: E501
+# frob:tests tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences.test_unterminated_trailing_fence_swallows_rest  # noqa: E501
+# frob:tests tests/unit/test_reporting_t3285_fenced_subheadings.py::TestDisclosureShapedLanguageFencedChanged.test_stat_line_starting_with_hash_inside_changed_block_not_flagged  # noqa: E501
+# frob:tests tests/unit/test_reporting_t3285_fenced_subheadings.py::TestDisclosureShapedLanguageFencedChanged.test_genuine_subheading_outside_fence_still_flagged  # noqa: E501
 def disclosure_shaped_language(text: str) -> str | None:
     """Non-`None` if `text` looks like it discloses unfinished/cut work,
     or `None` otherwise. Two independent signals, either one sufficient
@@ -1019,16 +1061,23 @@ def disclosure_shaped_language(text: str) -> str | None:
        with no heading at all. Kept as a widening hint, not the sole
        decision (T-2638: a phrase-only decision is exactly what a
        heading rename defeats).
-    2. A markdown subheading (`### ...` or deeper, `_SUBHEADING_RE`)
-       anywhere under the LAST `## Done report` heading
-       (`_done_report_section`), EXCLUDING the exact fixed titles
-       `compose_done_report` itself always writes
+    2. A markdown subheading (`### ...` or deeper) anywhere under the
+       LAST `## Done report` heading (`_done_report_section`), EXCLUDING
+       the exact fixed titles `compose_done_report` itself always writes
        (`_TIER_A_GENERATED_SUBHEADINGS`, T-2718) -- structural, and
        therefore immune to rewording: the author added a titled
        subsection beyond the plain Changed/Evidence/Filed/Gates
        template, whatever words end up in its title. A report carrying
        ONLY the tool's own routine Changed/Evidence/Captured-claims/
        Acceptance-amendments headings is not this shape at all.
+       T-3285: subheading detection is delegated to
+       `_subheading_titles_outside_fences`, which never treats a line
+       INSIDE a fenced code block (the "### Changed" section's own
+       fenced `git --stat` output, or any other verbatim-quoted text
+       elsewhere in the report) as a heading -- a `--stat` line or
+       quoted narrative line that happens to start with 1-6 '#'
+       characters is fenced DATA, not markdown structure, and treating
+       it as a subheading is exactly the reported false positive.
 
     T-2726: signal 1 used to scan the WHOLE `text` (ticket description
     and Plan sections included), while signal 2 was already scoped to
@@ -1067,8 +1116,7 @@ def disclosure_shaped_language(text: str) -> str | None:
     for phrase in _DISCLOSURE_PHRASES:
         if phrase in lowered:
             return phrase
-    for match in _SUBHEADING_RE.finditer(section):
-        title = match.group(1).strip()
+    for title in _subheading_titles_outside_fences(section):
         if title in _TIER_A_GENERATED_SUBHEADINGS:
             continue
         return f"non-standard Done-report subsection ({title!r})"

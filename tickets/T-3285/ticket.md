@@ -1,7 +1,7 @@
 ---
 id: T-3285
 title: close-time disclosure check false-positives on split done-report.md
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -44,6 +44,12 @@ body_changes:
   at: '2026-08-28'
   old_length: 568
   new_length: 2673
+evidence:
+- tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences::test_hash_line_inside_fence_not_a_subheading
+- tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences::test_real_subheading_after_a_fence_still_detected
+- tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences::test_unterminated_trailing_fence_swallows_rest
+- tests/unit/test_reporting_t3285_fenced_subheadings.py::TestDisclosureShapedLanguageFencedChanged::test_stat_line_starting_with_hash_inside_changed_block_not_flagged
+- tests/unit/test_reporting_t3285_fenced_subheadings.py::TestDisclosureShapedLanguageFencedChanged::test_genuine_subheading_outside_fence_still_flagged
 designated_repro_test: null
 threat: null
 component: null
