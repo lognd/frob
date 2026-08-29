@@ -1,7 +1,7 @@
 ---
 id: T-3400
 title: 'Scaffold: remove Makefile/frob contradiction from templates'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-29'
@@ -22,6 +22,9 @@ scope_breadth_ack_reason: 'genuine cross-manifest epic: directive requires consi
   not a single-file change'
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:pytest tests/unit/test_scaffold_project.py tests/unit/test_scaffold_managed.py
+  tests/system/test_scaffold_dx.py -q exit=0 sha256=f6f0a5c777f7
 designated_repro_test: null
 threat: null
 component: null

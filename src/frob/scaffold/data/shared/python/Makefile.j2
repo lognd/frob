@@ -1,53 +1,34 @@
 # Stamp file: uv sync runs only when pyproject.toml or uv.lock changes.
 STAMP := .venv/.install-stamp
 
-.PHONY: install format lint typecheck test coverage check clean upload
+.PHONY: install clean upload
 
 PYPI_NAME := {{ project.name }}
 SRC       := src
 TESTS     := tests
 
-# ---------- install (stamp-guarded) ----------
+# T-3400: this Makefile intentionally does NOT ship format/lint/typecheck/
+# test/coverage/check targets. This is a frob-enabled project (see
+# frob.toml) and frob IS the interface for those workflows, not a make
+# wrapper around it -- use the commands below directly:
+#
+#   frob format     ruff check --fix + ruff format
+#   frob check      the aggregate gate (ruff, ty, frob cycle/dup/arch/...)
+#   frob test       select and run tests for the touched set (or --all)
+#   frob coverage   refresh coverage.xml / the coverage stamp
+#
+# Only bootstrap (install, below) and build/publish (clean, upload) stay
+# here: bootstrap cannot be a frob subcommand because it installs frob's
+# own prerequisites, and clean/upload carry real project-specific logic
+# frob has no equivalent for.
+
+# ---------- install (stamp-guarded bootstrap) ----------
 
 $(STAMP): pyproject.toml
 	uv sync
 	@touch $(STAMP)
 
 install: $(STAMP)
-
-# ---------- formatting & linting ----------
-
-format: $(STAMP)
-	uv run ruff check $(SRC)/ $(TESTS)/ --fix
-	uv run ruff format $(SRC)/ $(TESTS)/
-
-lint: $(STAMP)
-	uv run ruff check $(SRC)/ $(TESTS)/
-	uv run ruff format --check $(SRC)/ $(TESTS)/
-
-typecheck: $(STAMP)
-	uv run ty check $(SRC)/
-
-# ---------- tests ----------
-
-test: $(STAMP)
-	uv run pytest $(TESTS)/
-
-coverage: $(STAMP)
-	uv run pytest $(TESTS)/ --cov=$(SRC) --cov-report=term-missing --cov-report=xml
-
-# ---------- the single gate: frob check ----------
-# frob is a global uv tool (see `frob scaffold`'s own README), not a
-# project dependency -- `make check` assumes it is already on PATH.
-# coverage.xml + the frob coverage stamp are regenerated first so TEST005/
-# TEST006 see current data, not a stale or missing stamp.
-check: $(STAMP)
-	uv run ruff check $(SRC)/ $(TESTS)/
-	uv run ruff format --check $(SRC)/ $(TESTS)/
-	uv run ty check $(SRC)/
-	uv run pytest $(TESTS)/ --cov=$(SRC) --cov-report=xml
-	frob check --stamp-coverage
-	frob check
 
 # ---------- build & publish ----------
 

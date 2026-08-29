@@ -625,6 +625,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3394: Reduce ARCH103 decision-point count in check_runner._apply_tier_a_and_reverify
 - T-3396: Split src/frob/process/_reap.py under LARGE001's 800-line threshold
 - T-3398: Waive tracked LARGE001/PERF004 debt in __main__.py and frob-suggest.py
+- T-3400: Scaffold: remove Makefile/frob contradiction from templates
 
 ## [0.530.0] - unreleased
 

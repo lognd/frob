@@ -55,7 +55,7 @@ frob scaffold new pyo3-library demo --force  # overwrite existing files
 
 | Type | Stack | Contents |
 |------|-------|---------|
-| `python-tool` | uv + setuptools | `pyproject.toml` (typani+pydantic, dev group), `src/<name>/` with the App/AppConfig/`__main__` pattern, house logging setup, `frob.toml` (strict gates), `invariants/`, `.env.example`, `Makefile` (`install/format/lint/typecheck/test/coverage/check`), CI + release workflows |
+| `python-tool` | uv + setuptools | `pyproject.toml` (typani+pydantic, dev group), `src/<name>/` with the App/AppConfig/`__main__` pattern, house logging setup, `frob.toml` (strict gates), `invariants/`, `.env.example`, `Makefile` (bootstrap/build only -- `install/clean/upload`; `frob format`/`frob check`/`frob test`/`frob coverage` are the interface, see T-3400), CI + release workflows |
 | `python-library` | uv + setuptools | Same base as `python-tool` minus the CLI entry point/App layer |
 | `pyo3-library` | uv + maturin + cargo workspace | `crates/` (Rust, pyo3 extension) + `python/<name>/` layout (lithos-style), `rust-toolchain.toml`, `frob.toml` with both `python` and `rust` test runners, Makefile wiring `cargo fmt`/`clippy` into `check`, CI + release workflows |
 | `web-app` | Vite + React + TypeScript + Vitest | `src/`, `tests/unit/`, ESLint 9 flat config, Prettier, `frob.toml` (`typescript` test runner), CI |
