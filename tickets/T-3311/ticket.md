@@ -21,6 +21,7 @@ scope:
 - src/frob/perf/_profile.py
 - src/frob/process/_pytest_spawn.py
 - src/frob/process/__init__.py
+- docs/modules/process.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,12 @@ scope_changes:
   glob: src/frob/process/__init__.py
   reason: shared pytest-spawn resolution helper's natural home, importable without
     inverting gates/refactor/app layering
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/process.md
+  reason: T-3311's new resolve_pytest_argv/pytest_importable public API needs its
+    frob:describes anchor
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
