@@ -2458,11 +2458,35 @@ def _file_regression_ticket(
     # a transient land-in-progress conflict, T-1841), so a dirty ledger
     # HERE is never the final, left-behind state a --no-commit warning
     # would correctly describe.
-    created = new_ticket(root, spec, no_commit=True, warn_if_dirty=False)
-    if created.is_err:
-        return _dispose_to_existing_duplicate_or_none(
-            root, spec, final_id, unfiled_pairs, created.danger_err
-        )
+    #
+    # T-3245: `new_ticket`'s own duplicate refusal (`_refuse_exact_
+    # duplicate`/`_refuse_finding_duplicate`, in `_validate_new_ticket_
+    # spec`) reads the ledger with a plain `load_all`, BEFORE the
+    # allocate-and-write step takes `allocator_lock`/`ledger_lock` --
+    # two detached sweep processes filing for the SAME (rule, file) can
+    # each run that duplicate check while neither has written yet (both
+    # see "no duplicate"), then each proceed to allocate-and-write in
+    # turn, producing two byte-identical tickets (the T-3236/T-3237,
+    # T-3158/T-3159, T-3022/T-3023 incidents this closes). The guard
+    # itself (`_dispose_to_existing_duplicate_or_none`, below) is
+    # correct; it just never got a chance to see the sibling's write.
+    # Taking BOTH locks here, around the duplicate check AND the write,
+    # closes that gap: they are the same cross-process, thread-reentrant
+    # `flock`s `new_ticket` re-acquires internally (`_flock_path`), so a
+    # second racing process now blocks until the first's write is
+    # already on disk -- its own `new_ticket` call then sees the sibling
+    # via a fresh `load_all` and correctly disposes to it instead of
+    # filing a duplicate, exactly as if the two calls had never
+    # overlapped at all.
+    from frob.tickets import ledger_lock
+    from frob.tickets._store import allocator_lock
+
+    with allocator_lock(root), ledger_lock(root):
+        created = new_ticket(root, spec, no_commit=True, warn_if_dirty=False)
+        if created.is_err:
+            return _dispose_to_existing_duplicate_or_none(
+                root, spec, final_id, unfiled_pairs, created.danger_err
+            )
     regression_id = created.danger_ok.id
     committed = _commit_regression_ticket(root, regression_id, attribution_label)
     if not committed:

@@ -3150,6 +3150,77 @@ class TestFileRegressionTicket:
         )
         assert filed is not None
 
+    # frob:ticket T-3245
+    def test_concurrent_sweeps_file_only_one_ticket(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_concurrent_sweeps_file_only_one_ticket  # noqa: E501
+        """T-3245 must-fire: two sweeps racing to file the SAME (rule,
+        file) identity for the same land must produce exactly ONE
+        ticket, not the byte-identical duplicate pair T-3236/T-3237
+        (also T-3158/T-3159, T-3022/T-3023) measured live. Both threads
+        open their own file descriptor onto the same `allocator_lock`/
+        `ledger_lock` paths -- a real cross-process-shaped `flock`
+        contention, not merely two calls in sequence -- so this exercises
+        the actual TOCTOU window the fix closes: `new_ticket`'s duplicate
+        check now runs only after the lock guarantees any sibling write
+        is already on disk."""
+        import threading
+
+        barrier = threading.Barrier(2)
+        results: list[str | None] = []
+        results_lock = threading.Lock()
+
+        def _worker() -> None:
+            barrier.wait()
+            filed = _file_regression_ticket(
+                tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+            )
+            with results_lock:
+                results.append(filed)
+
+        threads = [threading.Thread(target=_worker) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert len(results) == 2
+        assert None not in results
+        assert len(set(results)) == 1, f"expected one shared ticket id, got {results}"
+
+        from frob.tickets._store import load_all
+
+        tickets = load_all(tmp_path).danger_ok
+        assert tickets is not None
+        matching = [t for t in tickets.values() if ("RULE1", "a.py") in t.findings]
+        assert len(matching) == 1, f"expected exactly one ticket, found {matching}"
+
+    # frob:ticket T-3245
+    def test_reappearing_finding_after_closed_ticket_files_a_new_one(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_reappearing_finding_after_closed_ticket_files_a_new_one  # noqa: E501
+        """T-3245 must-stay-quiet: the SAME (rule, file) identity
+        reappearing at a LATER commit, after the ticket that owned it
+        closed, is legitimately a NEW regression, not a duplicate --
+        proof the T-3245 lock only serializes concurrent writers, it
+        does not change `_find_finding_duplicate`'s existing DONE/
+        DROPPED-exclusion identity logic (T-2760), which must keep
+        filing a fresh ticket here rather than silently suppressing it."""
+        from frob.tickets import drop_ticket
+
+        first = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert first is not None
+        dropped = drop_ticket(tmp_path, first, reason="fixed")
+        assert dropped.is_ok
+
+        second = _file_regression_ticket(
+            tmp_path, "T-9001", "c0ffee00", frozenset({("RULE1", "a.py")})
+        )
+        assert second is not None
+        assert second != first
+
     # frob:ticket T-3222
     def test_still_reproducing_finding_files_a_ticket(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

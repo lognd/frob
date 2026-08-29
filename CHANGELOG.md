@@ -577,6 +577,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3238: post-land sweep regression from T-3220: 1 new (rule, file) identit(ies), 2 finding(s) (DRIFT002)
 - T-3243: post-land sweep regression from T-3228: 4 new (rule, file) identit(ies), 6 finding(s) (ARCH102, DEPR006, REG005, WAIVE011)
 - T-3244: Burn down remaining platform-unsafe test-fixture code surfaced by multi-platform ty (T-3211 split)
+- T-3245: Post-land sweep files byte-identical duplicate tickets (T-3236/T-3237, third confirmed instance)
 - T-3246: SUITE-RESULT reports an ABORTED run (exitstatus=3) in the same shape as a completed one: failed=24 is a lower bound read as a count
 - T-3247: Whole-repo-scan tests exceed the 120s per-test cap, killing the xdist worker and aborting the whole suite (root cause of the ubuntu hang)
 - T-3249: Unowned 11-failure cluster: frob check fires spurious REF001/PRE001/SCOPE001 only under concurrent load (T-2992 misattributed it to the already-landed T-3019)

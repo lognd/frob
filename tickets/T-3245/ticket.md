@@ -2,7 +2,7 @@
 id: T-3245
 title: Post-land sweep files byte-identical duplicate tickets (T-3236/T-3237, third
   confirmed instance)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -28,6 +28,9 @@ body_changes:
   at: '2026-08-28'
   old_length: 3318
   new_length: 4342
+evidence:
+- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_concurrent_sweeps_file_only_one_ticket
+- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_reappearing_finding_after_closed_ticket_files_a_new_one
 designated_repro_test: null
 threat: null
 component: null
