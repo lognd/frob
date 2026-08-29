@@ -14,11 +14,40 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/gates
+- src/frob/gates/_pii_structural/**
+- src/frob/doctor_runner.py
+- src/frob/serve/_socketd.py
+- tests/unit/test_doctor_runner_t1276.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates
+  reason: narrow scope to actual PII012 detector + the 4 finding sites
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/gates/_pii_structural/**
+  reason: narrow scope to actual PII012 detector + the 4 finding sites
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/doctor_runner.py
+  reason: narrow scope to actual PII012 detector + the 4 finding sites
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/serve/_socketd.py
+  reason: narrow scope to actual PII012 detector + the 4 finding sites
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/test_doctor_runner_t1276.py
+  reason: narrow scope to actual PII012 detector + the 4 finding sites
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
