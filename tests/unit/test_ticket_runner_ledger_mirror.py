@@ -159,8 +159,7 @@ class TestLedgerMirrorReachesMain:
 
         path = worktree / "tickets" / "T-0001" / "ticket.md"
         path.write_text(
-            path.read_text().replace("in-progress", "queued")
-            + "requeue-marker-t2840\n"
+            path.read_text().replace("in-progress", "queued") + "requeue-marker-t2840\n"
         )
         _git("commit", "-q", "-am", "requeue edit", cwd=worktree)
 
@@ -437,6 +436,149 @@ class TestVerbStrategy:
         )
         assert "promote" in OWN_TRANSACTION_VERBS
         assert "promote" not in MIRRORED_LEDGER_VERBS
+
+
+# frob:ticket T-3303
+class TestAutoCommitDispatchCoversEveryStrategy:
+    """T-3303 (F-024): `_auto_commit_ledger_after_dispatch`'s own
+    dispatcher must have an explicit, early-returning branch for EVERY
+    `LedgerWriteStrategy` member -- keyed to the ENUM, never to a
+    hardcoded verb name -- so no strategy can ever fall through into the
+    generic `commit_ticket_ledger_change` path by accident.
+
+    Root cause this guards against: `NOT_TICKET_SCOPED` had no branch of
+    its own and instead relied on the generic `cfg.ticket_id is None`
+    check below it -- true for most `NOT_TICKET_SCOPED` verbs
+    (`list`/`doable`/`board`/...) but FALSE for `show <id>`, which takes
+    a ticket id while still being a pure read verb. `frob ticket show`
+    fell through and produced a real, silent
+    `chore(tickets): show <id>` commit (confirmed live, diax FROBLEMS.md
+    F-024).
+
+    Deliberately NOT scoped to `"show"`: these tests drive
+    `_auto_commit_ledger_after_dispatch` for a FAKE command whose
+    strategy is monkeypatched to each `LedgerWriteStrategy` member in
+    turn (never resolved by real verb name), with `cfg.ticket_id` always
+    set to a non-`None` value -- the exact condition that let `show`
+    slip through. A future `LedgerWriteStrategy` member with no matching
+    branch reopens this class's `test_every_strategy_member_is_covered`
+    on the day it is added, not only whichever verb happens to expose it
+    first."""
+
+    # frob:ticket T-3303
+    def test_every_strategy_member_is_covered(self) -> None:
+        """No `LedgerWriteStrategy` member may be silently unhandled:
+        every member is exercised below, so a new member added to the
+        enum without a matching branch in `_auto_commit_ledger_after_
+        dispatch` fails THIS assertion, not just an unlucky verb's own
+        regression test."""
+        from frob.app.ticket_runner._ledger_mirror import LedgerWriteStrategy
+
+        exercised = {
+            LedgerWriteStrategy.OWN_TRANSACTION,
+            LedgerWriteStrategy.OWN_TRANSACTION_LEDGER_MIRROR,
+            LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+            LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+            LedgerWriteStrategy.NOT_TICKET_SCOPED,
+        }
+        assert exercised == set(LedgerWriteStrategy)
+
+    # frob:ticket T-3303
+    @pytest.mark.parametrize(
+        "strategy",
+        [
+            LedgerWriteStrategy.OWN_TRANSACTION,
+            LedgerWriteStrategy.OWN_TRANSACTION_LEDGER_MIRROR,
+            LedgerWriteStrategy.NOT_TICKET_SCOPED,
+        ],
+    )
+    def test_never_reaches_generic_commit_regardless_of_ticket_id(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        strategy: LedgerWriteStrategy,
+    ) -> None:
+        """The three strategies that must NEVER reach the generic
+        `commit_ticket_ledger_change` path -- with `cfg.ticket_id` set
+        to a non-`None` value, the exact shape that let `show` (`NOT_
+        TICKET_SCOPED`, but takes an id) slip through when this
+        strategy had no branch of its own."""
+        from frob.app.config import AppConfig
+        from frob.app.ticket_runner import _auto_commit_ledger_after_dispatch
+        from frob.app.ticket_runner import _ledger_mirror as _lm
+
+        monkeypatch.setattr(_lm, "ledger_write_strategy_for", lambda _command: strategy)
+
+        committed_calls: list[object] = []
+        monkeypatch.setattr(
+            "frob.tickets._leases.commit_ticket_ledger_change",
+            lambda *a, **k: committed_calls.append((a, k)),
+        )
+        mirrored_calls: list[object] = []
+        monkeypatch.setattr(
+            _lm,
+            "mirror_ledger_change_to_primary",
+            lambda *a, **k: mirrored_calls.append((a, k)),
+        )
+        promoted_calls: list[object] = []
+        monkeypatch.setattr(
+            _lm,
+            "mirror_promote_to_primary",
+            lambda *a, **k: promoted_calls.append((a, k)),
+        )
+
+        cfg = AppConfig(ticket_command="fake-verb", ticket_id="T-0001")
+        _auto_commit_ledger_after_dispatch(tmp_path, cfg, "fake-verb")
+
+        assert committed_calls == []
+        assert mirrored_calls == []
+        # OWN_TRANSACTION_LEDGER_MIRROR is the sole exception that DOES
+        # call mirror_promote_to_primary -- everything else must call
+        # neither mirror function.
+        if strategy is _lm.LedgerWriteStrategy.OWN_TRANSACTION_LEDGER_MIRROR:
+            assert promoted_calls == [((tmp_path, "T-0001"), {})]
+        else:
+            assert promoted_calls == []
+
+    # frob:ticket T-3303
+    @pytest.mark.parametrize(
+        "strategy",
+        [
+            LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+            LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+        ],
+    )
+    def test_generic_strategies_still_reach_the_generic_commit(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        strategy: LedgerWriteStrategy,
+    ) -> None:
+        """The other side of the same invariant: a strategy that IS meant
+        to reach the generic commit path still does, so the new
+        `NOT_TICKET_SCOPED` branch above did not accidentally swallow
+        these two as well."""
+        from typani import Ok
+
+        from frob.app.config import AppConfig
+        from frob.app.ticket_runner import _auto_commit_ledger_after_dispatch
+        from frob.app.ticket_runner import _ledger_mirror as _lm
+
+        monkeypatch.setattr(_lm, "ledger_write_strategy_for", lambda _command: strategy)
+
+        committed_calls: list[object] = []
+        monkeypatch.setattr(
+            "frob.tickets._leases.commit_ticket_ledger_change",
+            lambda *a, **k: (committed_calls.append((a, k)), Ok(None))[1],
+        )
+        monkeypatch.setattr(
+            _lm, "mirror_ledger_change_to_primary", lambda *a, **k: None
+        )
+
+        cfg = AppConfig(ticket_command="fake-verb", ticket_id="T-0001")
+        _auto_commit_ledger_after_dispatch(tmp_path, cfg, "fake-verb")
+
+        assert len(committed_calls) == 1
 
 
 # frob:ticket T-2587

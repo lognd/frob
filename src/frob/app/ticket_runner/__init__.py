@@ -589,6 +589,7 @@ def _refuse_if_land_in_progress_for_dispatch(root: Path, command: str | None) ->
 
 
 # frob:ticket T-1615
+# frob:ticket T-3303
 def _auto_commit_ledger_after_dispatch(
     root: Path, cfg: AppConfig, command: str | None
 ) -> None:
@@ -627,10 +628,23 @@ def _auto_commit_ledger_after_dispatch(
     promote_to_primary` needs to find its own already-committed rename
     commit.
 
-    Best-effort against `cfg.ticket_id is None`: every `NOT_TICKET_
-    SCOPED` verb (`list`/`show`/`doable`/`board`/`epic`/`brief`/`flow`/
-    ...) either never sets it or never dirties the ledger either way, so
-    there is nothing to resolve a commit pathspec against."""
+    T-3303: `NOT_TICKET_SCOPED` gets its OWN explicit early-return branch,
+    symmetric with `OWN_TRANSACTION`/`OWN_TRANSACTION_LEDGER_MIRROR`
+    above -- it used to rely on the generic `cfg.ticket_id is None`
+    check below, which is only true for a `NOT_TICKET_SCOPED` verb that
+    never sets `cfg.ticket_id` at all (`list`/`doable`/`board`/...).
+    `show <id>` DOES set `cfg.ticket_id` (it takes an id positional) while
+    still being a pure read verb, so it fell through into the generic
+    commit path below and produced a real, silent
+    `chore(tickets): show <id>` commit -- confirmed live (F-024): a
+    `frob ticket show` after a batch of `--no-commit` ticket creations
+    committed them. The bug was structural, not `show`-specific: ANY
+    future `NOT_TICKET_SCOPED` verb that happens to take a ticket id
+    argument reopens the identical gap unless this branch, keyed to the
+    ENUM rather than to a hardcoded verb name, exists. `list`/`doable`/
+    `board`/`epic`/`brief`/`flow`/`migrate`/`waive-audit`'s `complete`/
+    ... never dirty the ledger through this mechanism either way, so
+    this early return is a no-op for them and a real fix for `show`."""
     from frob.app.ticket_runner._ledger_mirror import (
         LedgerWriteStrategy,
         ledger_write_strategy_for,
@@ -646,6 +660,8 @@ def _auto_commit_ledger_after_dispatch(
             mirror_promote_to_primary(root, cfg.ticket_id)
         return
     if strategy is LedgerWriteStrategy.OWN_TRANSACTION:
+        return
+    if strategy is LedgerWriteStrategy.NOT_TICKET_SCOPED:
         return
     if cfg.ticket_id is None:
         return

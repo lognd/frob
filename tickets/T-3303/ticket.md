@@ -2,7 +2,7 @@
 id: T-3303
 title: 'frob ticket show auto-commits: NOT_TICKET_SCOPED verbs fall through to the
   generic commit path when ticket_id is set'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -37,7 +37,11 @@ body_changes:
   at: '2026-08-28'
   old_length: 4124
   new_length: 5083
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestAutoCommitDispatchCoversEveryStrategy::test_every_strategy_member_is_covered
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestAutoCommitDispatchCoversEveryStrategy::test_never_reaches_generic_commit_regardless_of_ticket_id
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestAutoCommitDispatchCoversEveryStrategy::test_generic_strategies_still_reach_the_generic_commit
+designated_repro_test: tests/unit/test_ticket_runner_ledger_mirror.py::TestAutoCommitDispatchCoversEveryStrategy::test_never_reaches_generic_commit_regardless_of_ticket_id
 threat: null
 component: null
 anchor: false
