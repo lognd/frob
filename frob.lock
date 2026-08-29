@@ -1979,6 +1979,393 @@
       "old_digest": null,
       "reason": "SEC110 waiver comment added above the env-var check; behavior and docs/modules/logging.md#public-api description unchanged",
       "ref": "src/frob/__main__.py::_apply_verbose_env_override"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "8147c727fc5fb63a32bf724caad7eabcd42fe46d7de42178f2b4debf92edacac",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::ClosureViolation"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "3148d0975f7586bcad2f62afd01470d954857248490439dcbc765e86b01cb578",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_closure"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "c37b2419f1fb9a35daa0df20e0c3d05cef4f8dcc75d507e7dccd2994cc6a1851",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_closure"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "53ec31fa0d75e62f1f50f0b443939074fc889f3cbecc3d3cdd4e7b838a66082e",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_orphan_requirements"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "68221b80fe16ad40aa4c3132f37a6c425eb8aee18c38770a0b624ed8e0a0b46a",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_orphan_requirements"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "c5c692adfcbfbc21afb618c71cfecd9a0150603c701814fda7ac9cc07de6d9a6",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_orphan_test"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "f7ddfd936b6fee22812d8cd5d9362f6bdff24fec25d78e97fd5dad2f3433779d",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_orphan_test"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "7b2c7e2f21fe797549dcefbfbc525b9c0271e50e6cbc1f5cf012795e4d23087d",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_trace_cycle"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "50ffb2f66eff4c3fbb4df30f3cdeacbdd266563ef4db9997b382fc8afb81a777",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_trace_cycle"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "3b9d986a5c0877f05776eb9888b31e0c62327f878436bc4a7f3ccf62a290dfa6",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_unjustified_design"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "7a0ca223412147cbd3f899866763762edc847ee88741ce6a057689bce597bfb3",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_unjustified_design"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "1fae6b09ecf8b5563a810703d92915805d5c6bade1724d1770d4d8187382ac69",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_untested_artifact"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "4b52cb56269b76a619d832a47409ee150494cfe00ca559c3bb528057616cef8a",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_untested_artifact"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "37781735b3d344bc912fa45982e9d8ff94fc041b1be9928986f21969dbaf0c0a",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::ATTR_CODE_REF"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "2e4536f6112ee4be6ff01e7b4156e71a2860cc4bb5decd8eb1fdc3c893588cea",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::ATTR_REASON"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "1d59e5d835341dfa5f714f58a440803ab6ab7708def97dc7c2b0aff61906ca21",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::ATTR_RUNNABLE"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "fe1d1ebd5de0e40ece77f0a9ce2b013eac91c90d70814cf966dd5761a45e635f",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_ALLOCATES"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "b41ad50e66583262df1578b4f3128f0a3ed3d50d2393013d059f5f6582afa461",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_BLOCKED_BY"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "6e78c73da2745e4900be14c68f0764d58a790f7fc50ab66f38b5733270839ee1",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_DECIDES"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "7ed8cc9009f35f9491d6501b1393566f418184873a791f0f4fb2f274a7264a24",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_REFINES"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "648c3d84828dd5280b57da92402b3a252b21237f99b712dc0c5ce4b52f7bcd6a",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_SATISFIES"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "8fca7f49942c7d3e433cf831a23b729933bba3e9cb6a25c9f32779f95f64f29c",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_SUPERSEDES"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "cd8e9ae14a05b95fae0833530a195fcfc56e6dc22a06ce834978fdafa1f88563",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_VERIFIES"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "cc0acadcfd402d5f99dc3a2c8db5a1498e5c1404bb51d74e95ebaa83cb9b85fc",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::KIND_ARTIFACT"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "32b7105df2821755265c37eae56739b7141aa9736256c5c463d61ad2385ba869",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::KIND_DECISION"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "5476220d98a76f8eaab6ed8ece1756f12d7dc55a9cf65a0a8e4fabb5df11157c",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::KIND_TEST"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "4fa78c4a7081f39de3cbd6671996dd34ebb11a14f162b11013a77a0140d4218a",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_COMPONENT_DESIGN"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "6250cd91e731d136fb8ffee8a401589385b717a1e4edd07ab14caa05c1fff1ae",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_COMPONENT_UNIT_TEST"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "a23d4b18370b368176c3884c05236dbc2519b8c41f9a091fcab2f18497aff0d2",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_CUSTOMER_TEST"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "af375df80aaf6ea7a9811165f725fa77596c48cafc58ebcf07f3b740e5da5f34",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_CUSTOMER_TEST_PLAN"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "40960dfcc74fff80a65de164a77c0fcf85b80d6f7ef46566bab4aba156ce26cd",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_REQUIREMENTS"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "76669a5365f5627a724bb0d1a06a8755e97b64beebc885a61bc4baec5e6fb788",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_REQUIREMENT_SPEC"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "6f5e1c06615ff22af8789e24c3cc6256840a6cfc23b4088a26232f9778e284da",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "b9b4e84962950b70c25b94555aedbc06a1713de69fcef86b7bfbccff561288b2",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_SYSTEM_DESIGN"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "908f319edb37776b2e3fa96be1f53a4a578cc5f0c154d7230811011cf30651d3",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_SYSTEM_INTEGRATION_TEST_PLAN"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "dc6a73c7f8d27827841d53480b4dfcb9445e60bded12f119ff61f4dd1a588e3b",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_SYSTEM_SPEC"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "b5eb8e804755e5963dd74a0b64810bb0f7f5b4c182af5e3f283e3db67c9d8461",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::v_model_schema"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "775bcbc439aef163435220bde88aa614a492d25cd8a2ee4e8a641e75a83946e0",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::v_model_schema"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "0cb5b73fc6d28c2069345e7fb1e43d51b3fbbfb7cd41f755b326c682b3754b43",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::v_pairing"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "fb86fd35647e71a9d7b41660808486139fd4d7331e4404ca37a2439fe082c583",
+      "old_digest": null,
+      "reason": "T-3260 real split: this symbol relocated verbatim from vmodel.rs/grammar_core.rs into the new vmodel/{mod,closure}.rs (and closure.rs's/mod.rs's own module docs now state the split explicitly) -- docs/strata/vmodel.md's prose is unchanged and still accurate, only the file path moved, no behavior or documented contract changed",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::v_pairing"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "8147c727fc5fb63a32bf724caad7eabcd42fe46d7de42178f2b4debf92edacac",
+      "old_digest": "8147c727fc5fb63a32bf724caad7eabcd42fe46d7de42178f2b4debf92edacac",
+      "reason": "T-3260 real split: relocated verbatim from vmodel.rs into vmodel/closure.rs; docs/strata/vmodel.md's prose unchanged and still accurate, only file path moved",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::ClosureViolation"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "3148d0975f7586bcad2f62afd01470d954857248490439dcbc765e86b01cb578",
+      "old_digest": "3148d0975f7586bcad2f62afd01470d954857248490439dcbc765e86b01cb578",
+      "reason": "T-3260 real split: relocated verbatim from vmodel.rs into vmodel/closure.rs; docs/strata/vmodel.md's prose unchanged and still accurate, only file path moved",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_closure"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "c37b2419f1fb9a35daa0df20e0c3d05cef4f8dcc75d507e7dccd2994cc6a1851",
+      "old_digest": "c37b2419f1fb9a35daa0df20e0c3d05cef4f8dcc75d507e7dccd2994cc6a1851",
+      "reason": "T-3260 real split: relocated verbatim from vmodel.rs into vmodel/closure.rs; docs/strata/vmodel.md's prose unchanged and still accurate, only file path moved",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_closure"
     }
   ],
   "entries": [
@@ -3256,6 +3643,206 @@
       "digest": "3162432fa18da978a0c575e8728ca3e498a846f895cf8bb9abd29b008c550b2b",
       "facet": "sig",
       "ref": "src/frob/xref/__init__.py::xref"
+    },
+    {
+      "digest": "8147c727fc5fb63a32bf724caad7eabcd42fe46d7de42178f2b4debf92edacac",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::ClosureViolation"
+    },
+    {
+      "digest": "3148d0975f7586bcad2f62afd01470d954857248490439dcbc765e86b01cb578",
+      "facet": "body",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_closure"
+    },
+    {
+      "digest": "c37b2419f1fb9a35daa0df20e0c3d05cef4f8dcc75d507e7dccd2994cc6a1851",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_closure"
+    },
+    {
+      "digest": "53ec31fa0d75e62f1f50f0b443939074fc889f3cbecc3d3cdd4e7b838a66082e",
+      "facet": "body",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_orphan_requirements"
+    },
+    {
+      "digest": "68221b80fe16ad40aa4c3132f37a6c425eb8aee18c38770a0b624ed8e0a0b46a",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_orphan_requirements"
+    },
+    {
+      "digest": "c5c692adfcbfbc21afb618c71cfecd9a0150603c701814fda7ac9cc07de6d9a6",
+      "facet": "body",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_orphan_test"
+    },
+    {
+      "digest": "f7ddfd936b6fee22812d8cd5d9362f6bdff24fec25d78e97fd5dad2f3433779d",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_orphan_test"
+    },
+    {
+      "digest": "7b2c7e2f21fe797549dcefbfbc525b9c0271e50e6cbc1f5cf012795e4d23087d",
+      "facet": "body",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_trace_cycle"
+    },
+    {
+      "digest": "50ffb2f66eff4c3fbb4df30f3cdeacbdd266563ef4db9997b382fc8afb81a777",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_trace_cycle"
+    },
+    {
+      "digest": "3b9d986a5c0877f05776eb9888b31e0c62327f878436bc4a7f3ccf62a290dfa6",
+      "facet": "body",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_unjustified_design"
+    },
+    {
+      "digest": "7a0ca223412147cbd3f899866763762edc847ee88741ce6a057689bce597bfb3",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_unjustified_design"
+    },
+    {
+      "digest": "1fae6b09ecf8b5563a810703d92915805d5c6bade1724d1770d4d8187382ac69",
+      "facet": "body",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_untested_artifact"
+    },
+    {
+      "digest": "4b52cb56269b76a619d832a47409ee150494cfe00ca559c3bb528057616cef8a",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/closure.rs::check_no_untested_artifact"
+    },
+    {
+      "digest": "37781735b3d344bc912fa45982e9d8ff94fc041b1be9928986f21969dbaf0c0a",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::ATTR_CODE_REF"
+    },
+    {
+      "digest": "2e4536f6112ee4be6ff01e7b4156e71a2860cc4bb5decd8eb1fdc3c893588cea",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::ATTR_REASON"
+    },
+    {
+      "digest": "1d59e5d835341dfa5f714f58a440803ab6ab7708def97dc7c2b0aff61906ca21",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::ATTR_RUNNABLE"
+    },
+    {
+      "digest": "fe1d1ebd5de0e40ece77f0a9ce2b013eac91c90d70814cf966dd5761a45e635f",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_ALLOCATES"
+    },
+    {
+      "digest": "b41ad50e66583262df1578b4f3128f0a3ed3d50d2393013d059f5f6582afa461",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_BLOCKED_BY"
+    },
+    {
+      "digest": "6e78c73da2745e4900be14c68f0764d58a790f7fc50ab66f38b5733270839ee1",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_DECIDES"
+    },
+    {
+      "digest": "7ed8cc9009f35f9491d6501b1393566f418184873a791f0f4fb2f274a7264a24",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_REFINES"
+    },
+    {
+      "digest": "648c3d84828dd5280b57da92402b3a252b21237f99b712dc0c5ce4b52f7bcd6a",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_SATISFIES"
+    },
+    {
+      "digest": "8fca7f49942c7d3e433cf831a23b729933bba3e9cb6a25c9f32779f95f64f29c",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_SUPERSEDES"
+    },
+    {
+      "digest": "cd8e9ae14a05b95fae0833530a195fcfc56e6dc22a06ce834978fdafa1f88563",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::EDGE_VERIFIES"
+    },
+    {
+      "digest": "cc0acadcfd402d5f99dc3a2c8db5a1498e5c1404bb51d74e95ebaa83cb9b85fc",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::KIND_ARTIFACT"
+    },
+    {
+      "digest": "32b7105df2821755265c37eae56739b7141aa9736256c5c463d61ad2385ba869",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::KIND_DECISION"
+    },
+    {
+      "digest": "5476220d98a76f8eaab6ed8ece1756f12d7dc55a9cf65a0a8e4fabb5df11157c",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::KIND_TEST"
+    },
+    {
+      "digest": "4fa78c4a7081f39de3cbd6671996dd34ebb11a14f162b11013a77a0140d4218a",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_COMPONENT_DESIGN"
+    },
+    {
+      "digest": "6250cd91e731d136fb8ffee8a401589385b717a1e4edd07ab14caa05c1fff1ae",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_COMPONENT_UNIT_TEST"
+    },
+    {
+      "digest": "a23d4b18370b368176c3884c05236dbc2519b8c41f9a091fcab2f18497aff0d2",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_CUSTOMER_TEST"
+    },
+    {
+      "digest": "af375df80aaf6ea7a9811165f725fa77596c48cafc58ebcf07f3b740e5da5f34",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_CUSTOMER_TEST_PLAN"
+    },
+    {
+      "digest": "40960dfcc74fff80a65de164a77c0fcf85b80d6f7ef46566bab4aba156ce26cd",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_REQUIREMENTS"
+    },
+    {
+      "digest": "76669a5365f5627a724bb0d1a06a8755e97b64beebc885a61bc4baec5e6fb788",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_REQUIREMENT_SPEC"
+    },
+    {
+      "digest": "6f5e1c06615ff22af8789e24c3cc6256840a6cfc23b4088a26232f9778e284da",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN"
+    },
+    {
+      "digest": "b9b4e84962950b70c25b94555aedbc06a1713de69fcef86b7bfbccff561288b2",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_SYSTEM_DESIGN"
+    },
+    {
+      "digest": "908f319edb37776b2e3fa96be1f53a4a578cc5f0c154d7230811011cf30651d3",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_SYSTEM_INTEGRATION_TEST_PLAN"
+    },
+    {
+      "digest": "dc6a73c7f8d27827841d53480b4dfcb9445e60bded12f119ff61f4dd1a588e3b",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::LEVEL_SYSTEM_SPEC"
+    },
+    {
+      "digest": "b5eb8e804755e5963dd74a0b64810bb0f7f5b4c182af5e3f283e3db67c9d8461",
+      "facet": "body",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::v_model_schema"
+    },
+    {
+      "digest": "775bcbc439aef163435220bde88aa614a492d25cd8a2ee4e8a641e75a83946e0",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::v_model_schema"
+    },
+    {
+      "digest": "0cb5b73fc6d28c2069345e7fb1e43d51b3fbbfb7cd41f755b326c682b3754b43",
+      "facet": "body",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::v_pairing"
+    },
+    {
+      "digest": "fb86fd35647e71a9d7b41660808486139fd4d7331e4404ca37a2439fe082c583",
+      "facet": "sig",
+      "ref": "strata-core/src/graph/vmodel/mod.rs::v_pairing"
     },
     {
       "digest": "ccfcd694071ce0a085fb65118ac55cf1c4d9e19e78eb1207a961b2f8daac107b",

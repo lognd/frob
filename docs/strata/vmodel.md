@@ -19,6 +19,8 @@ the kernel.
 
 ## Node kinds
 
+(Constants below live in `strata-core/src/graph/vmodel/mod.rs`, T-3260.)
+
 - `artifact` -- a left-side V-model artifact at some level (requirement,
   requirement specification, system specification, system design,
   component design). REQUIRES a `code_ref` attr (below).
@@ -31,6 +33,9 @@ the kernel.
   schema, and this ticket deliberately does not invent a second one.
 
 ## Node/edge payload (T-3044 H3)
+
+(`ATTR_RUNNABLE`/`ATTR_CODE_REF`/`ATTR_REASON` live in
+`strata-core/src/graph/vmodel/mod.rs`, T-3260.)
 
 Before this ticket a `test` node was an id with nothing runnable behind
 it, an `artifact` node bound to no code, and a `supersedes` edge could not
@@ -60,6 +65,8 @@ these keys MEANING is entirely `graph::vmodel`'s job (this module).
 
 ## Levels: the V pairing (T-3004 section 1)
 
+(Level constants live in `strata-core/src/graph/vmodel/mod.rs`, T-3260.)
+
 | Left (artifact)              | Right (test), PAIRED           |
 |-------------------------------|---------------------------------|
 | `requirements`                 | `customer-test`                 |
@@ -78,6 +85,8 @@ never discovered later by a separate checker.
 
 ## Edge kinds
 
+(`EDGE_*` constants live in `strata-core/src/graph/vmodel/mod.rs`, T-3260.)
+
 - `satisfies` (artifact -> artifact): a design element traces up to the
   requirement it justifies. Walked by closure rules 1 and 2.
 - `verifies` (test -> artifact, level-paired): a test verifies an artifact
@@ -95,12 +104,14 @@ never discovered later by a separate checker.
 
 ### Schema assembly
 
-`v_model_schema()` assembles the node kinds, the ten levels, and all seven
-edge kinds above into one `GraphSchema` (`strata-core::graph::model`) --
-the single function a caller invokes to get a `Graph::new(...)`-ready V-model
-schema. `v_pairing()` is its building block: the five (left, right) level
-pairs in T-3004 section 1's order, reused both to declare every level and
-to build `verifies`'s `LevelRelation::Paired` map.
+`v_model_schema()` (`strata-core/src/graph/vmodel/mod.rs`, T-3260: the
+schema/constants half of the former combined `vmodel.rs`) assembles the
+node kinds, the ten levels, and all seven edge kinds above into one
+`GraphSchema` (`strata-core::graph::model`) -- the single function a
+caller invokes to get a `Graph::new(...)`-ready V-model schema.
+`v_pairing()` is its building block: the five (left, right) level pairs
+in T-3004 section 1's order, reused both to declare every level and to
+build `verifies`'s `LevelRelation::Paired` map.
 
 ## The five closure rules (T-3004 section 2)
 
@@ -146,7 +157,13 @@ brilliant-but-dangling one fails, by design (T-3004 section 2).
 concatenates their `ClosureViolation`s; an empty result means the graph is
 structurally closed.
 
-Every rule in `strata-core/src/graph/vmodel.rs` has both a must-fire fixture
+Every rule (T-3260: now in `strata-core/src/graph/vmodel/closure.rs`, split
+out of the combined `vmodel.rs` once it crossed the 800-line LARGE001
+threshold; `ClosureViolation`/`check_no_orphan_requirements`/
+`check_no_unjustified_design`/`check_no_untested_artifact`/
+`check_no_orphan_test`/`check_no_trace_cycle`/`check_closure` are
+re-exported from `vmodel::mod` so callers still see one flat `vmodel::`
+surface) has both a must-fire fixture
 (a graph genuinely violating it) and a must-stay-quiet fixture (a graph
 satisfying it) over comparable layouts, per the positive-control lesson
 already recorded for this kernel's cycle detector (docs/strata/graph.md).

@@ -11,6 +11,8 @@
 //! - `lexer`: tokenizer (`Token`/`TokKind`/`ParseError`/`lex`)
 //! - `grammar_core`: `Parser`/`ModuleAst` definitions and shared
 //!   token-stream primitives every grammar family builds on
+//! - `grammar_vmodel`: `vmodel_node`/`vmodel_edge` productions (T-3260:
+//!   split out of `grammar_core` once that file crossed LARGE001)
 //! - `grammar_node`: `node`/`secret`/`on_deploy` productions
 //! - `grammar_flow`: `flow`/`boundary`/`operation`/`refine` productions
 //! - `grammar_infra`: `store`/`cache`/`resource`/`queue`/`cdn`/`balancer`
@@ -38,6 +40,7 @@ use std::collections::BTreeSet;
 
 include!("lexer.rs");
 include!("grammar_core.rs");
+include!("grammar_vmodel.rs");
 include!("grammar_node.rs");
 include!("grammar_flow.rs");
 include!("grammar_infra.rs");
@@ -46,8 +49,8 @@ include!("grammar_policy.rs");
 // frob:waive LARGE001 reason="Rust-idiom, not a Python line-budget question: this file's own \
 // module doc documents it as the T-1099 residue of splitting a former 4346-line single-file \
 // parse.rs into a parser spine (this file) plus per-family grammar fragments spliced back in via \
-// include! (lexer/grammar_core/grammar_node/ grammar_flow/grammar_infra/grammar_policy) -- \
-// deliberately textual inclusion rather than real child mods, so \
+// include! (lexer/grammar_core/grammar_vmodel/grammar_node/ grammar_flow/grammar_infra/ \
+// grammar_policy) -- deliberately textual inclusion rather than real child mods, so \
 // Parser/ModuleAst/Token/ParseError and ~50 internal recursive-descent helpers stay exactly as \
 // private as the pre-split monolith, documented above as intentional (a real mod would force \
 // pub(crate) visibility and spuriously demand frob:doc/frob:tests edges on internal helpers). Of \

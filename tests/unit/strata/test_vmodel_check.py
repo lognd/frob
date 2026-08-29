@@ -19,9 +19,11 @@ strata_core = pytest.importorskip(
     reason="strata_core native extension not built -- run `make core`",
 )
 
-# frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements kind="unit"
-# frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design kind="unit"
-# frob:tests strata-core/src/graph/vmodel.rs::check_no_trace_cycle kind="unit"
+# frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_orphan_requirements \
+# kind="unit"
+# frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_unjustified_design \
+# kind="unit"
+# frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_trace_cycle kind="unit"
 # frob:tests strata-core/src/lib.rs::vmodel_check kind="unit"
 
 

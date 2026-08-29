@@ -1,229 +1,23 @@
-//! The V-model spec graph as a `graph::model` schema instance
-//! (docs/strata/vmodel.md, T-3004 sections 1-2).
-//!
-//! WHY here, not in `graph::model`: the kernel is generic by design (T-3005)
-//! and names no domain vocabulary. This module is the FIRST CONSUMER --
-//! it supplies node kinds, levels, edge kinds, and the paired-level
-//! relations that make the V pairing checkable, and layers the four
-//! closure rules on top of the kernel's `forward_closure`/`backward_closure`.
-//! Nothing here reaches back into `model`/`query` to add spec-specific
-//! knowledge to the kernel itself.
-// frob:waive REF002 reason="this ticket's own module doc (docs/strata/vmodel.md) is the single \
-// inbound reference by design -- T-3007 is the FIRST consumer of the generic graph kernel, so a \
-// second independent consumer does not exist yet; T-3008/T-3009/T-3010 (siblings blocked on this \
-// schema) are the intended second reference once they land"
+//! Structural closure rules for the V-model graph (T-3004 section 2,
+//! T-3044 H2/H3): the five rules that decide whether a `vmodel` graph is
+//! COMPLETE (every requirement traced and tested, no orphans, no trace
+//! cycle) -- split out of `vmodel`'s top-level module (T-3260) once the
+//! combined schema+closure file crossed the LARGE001 threshold. Depends
+//! on `super`'s node/edge kind constants and level pairing, so this
+//! module is only ever meaningful alongside `vmodel::v_model_schema`.
 
-// frob:debt LARGE001 reason="T-3044 (V-model H3: graph nodes carry no payload) added ~391 lines \
-// of closure-rule and node-payload logic, pushing this file from ~597 to 988 lines against the \
-// 800-line threshold" ticket="T-3260"
-// frob:waive LARGE001 reason="tracked real-split follow-up, T-3260 -- splitting closure-rule \
-// logic out is too large to do as a drive-by in a mixed-gate cleanup slice"
-use super::model::{EdgeKindSchema, Graph, GraphSchema, Level, LevelRelation, NodeId};
-use super::query::KindFilter;
-use std::collections::BTreeMap;
-
-/// Required node-attr key on every `KIND_TEST` node (T-3044 H3): the
-/// runnable evidence this test node BINDS TO, in the same
-/// `path::Class.method` (or `path::function`) qualname form
-/// `frob:tests`/pytest collection already use -- a test node is no longer
-/// an id with nothing runnable behind it.
-// frob:doc docs/strata/vmodel.md#nodeedge-payload-t-3044-h3
-pub const ATTR_RUNNABLE: &str = "runnable";
-/// Required node-attr key on every `KIND_ARTIFACT` node (T-3044 H3): the
-/// code this artifact node BINDS TO -- a `path[:symbol]` reference into the
-/// repo (e.g. `strata-core/src/graph/model.rs:Graph::add_node`, or a bare
-/// path for an artifact that is a whole file/module rather than one
-/// symbol). An artifact node is no longer an id binding to no code.
-// frob:doc docs/strata/vmodel.md#nodeedge-payload-t-3044-h3
-pub const ATTR_CODE_REF: &str = "code_ref";
-/// Required edge-attr key on every `EDGE_SUPERSEDES` edge (T-3044 H3): the
-/// change justification, free-text but MANDATORY -- construction refuses a
-/// `supersedes` edge with no `reason`, same as T-3004 section 8 already
-/// requires for `decides`-adjacent change records.
-// frob:doc docs/strata/vmodel.md#nodeedge-payload-t-3044-h3
-pub const ATTR_REASON: &str = "reason";
-
-/// Node kind: a left-side artifact at some V-model level (requirement,
-/// spec, system design, component design, decision, ...).
-// frob:doc docs/strata/vmodel.md#node-kinds
-pub const KIND_ARTIFACT: &str = "artifact";
-/// Node kind: a right-side verification artifact (customer test, test
-/// plan, integration test, unit test, ...).
-// frob:doc docs/strata/vmodel.md#node-kinds
-pub const KIND_TEST: &str = "test";
-/// Node kind: a decision record -- the target of a `decides`/`supersedes`
-/// edge (T-3004 section 8: change justification is a typed edge, not
-/// inline prose).
-// frob:doc docs/strata/vmodel.md#node-kinds
-pub const KIND_DECISION: &str = "decision";
-
-/// Left-side V-model levels, outermost (customer-facing) first. Exposed so
-/// callers building fixtures do not hand-type the strings.
-// frob:doc docs/strata/vmodel.md#levels-the-v-pairing-t-3004-section-1
-pub const LEVEL_REQUIREMENTS: &str = "requirements";
-// frob:doc docs/strata/vmodel.md#levels-the-v-pairing-t-3004-section-1
-pub const LEVEL_REQUIREMENT_SPEC: &str = "requirement-specification";
-// frob:doc docs/strata/vmodel.md#levels-the-v-pairing-t-3004-section-1
-pub const LEVEL_SYSTEM_SPEC: &str = "system-specification";
-// frob:doc docs/strata/vmodel.md#levels-the-v-pairing-t-3004-section-1
-pub const LEVEL_SYSTEM_DESIGN: &str = "system-design";
-// frob:doc docs/strata/vmodel.md#levels-the-v-pairing-t-3004-section-1
-pub const LEVEL_COMPONENT_DESIGN: &str = "component-design";
-
-/// Right-side (paired) V-model levels, in the same outermost-first order as
-/// their left-side counterparts above.
-// frob:doc docs/strata/vmodel.md#levels-the-v-pairing-t-3004-section-1
-pub const LEVEL_CUSTOMER_TEST: &str = "customer-test";
-// frob:doc docs/strata/vmodel.md#levels-the-v-pairing-t-3004-section-1
-pub const LEVEL_CUSTOMER_TEST_PLAN: &str = "customer-test-plan";
-// frob:doc docs/strata/vmodel.md#levels-the-v-pairing-t-3004-section-1
-pub const LEVEL_SYSTEM_INTEGRATION_TEST_PLAN: &str = "system-integration-test-plan";
-// frob:doc docs/strata/vmodel.md#levels-the-v-pairing-t-3004-section-1
-pub const LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN: &str = "subsystem-integration-test-plan";
-// frob:doc docs/strata/vmodel.md#levels-the-v-pairing-t-3004-section-1
-pub const LEVEL_COMPONENT_UNIT_TEST: &str = "component-unit-test";
-
-/// The five left-side levels paired with their right-side verification
-/// level, in the order T-3004 section 1 states them.
-// frob:doc docs/strata/vmodel.md#schema-assembly
-pub fn v_pairing() -> Vec<(Level, Level)> {
-    vec![
-        (LEVEL_REQUIREMENTS.into(), LEVEL_CUSTOMER_TEST.into()),
-        (
-            LEVEL_REQUIREMENT_SPEC.into(),
-            LEVEL_CUSTOMER_TEST_PLAN.into(),
-        ),
-        (
-            LEVEL_SYSTEM_SPEC.into(),
-            LEVEL_SYSTEM_INTEGRATION_TEST_PLAN.into(),
-        ),
-        (
-            LEVEL_SYSTEM_DESIGN.into(),
-            LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN.into(),
-        ),
-        (
-            LEVEL_COMPONENT_DESIGN.into(),
-            LEVEL_COMPONENT_UNIT_TEST.into(),
-        ),
-    ]
-}
-
-/// Edge kind: a design element traces UP to the requirement it justifies
-/// (design -> requirement). Closure rules 1/2 walk this edge kind.
-// frob:doc docs/strata/vmodel.md#edge-kinds
-pub const EDGE_SATISFIES: &str = "satisfies";
-/// Edge kind: a test verifies a left-side artifact, AT THAT ARTIFACT'S
-/// PAIRED LEVEL (test -> artifact). Closure rules 3/4 walk this edge kind.
-// frob:doc docs/strata/vmodel.md#edge-kinds
-pub const EDGE_VERIFIES: &str = "verifies";
-/// Edge kind: an artifact refines a coarser one one level up
-/// (finer -> coarser), e.g. requirement-specification -> requirements.
-// frob:doc docs/strata/vmodel.md#edge-kinds
-pub const EDGE_REFINES: &str = "refines";
-/// Edge kind: a system-level artifact allocates responsibility to a
-/// component-level one (system -> component).
-// frob:doc docs/strata/vmodel.md#edge-kinds
-pub const EDGE_ALLOCATES: &str = "allocates";
-/// Edge kind: a decision record resolves an open question about an
-/// artifact (decision -> artifact).
-// frob:doc docs/strata/vmodel.md#edge-kinds
-pub const EDGE_DECIDES: &str = "decides";
-/// Edge kind: a decision or artifact supersedes an earlier one, carrying
-/// the change justification T-3004 section 8 requires (new -> old).
-// frob:doc docs/strata/vmodel.md#edge-kinds
-pub const EDGE_SUPERSEDES: &str = "supersedes";
-/// Edge kind: pure scheduling fact, NOT the organising relation
-/// (T-3004 section 3) -- unconstrained on purpose.
-// frob:doc docs/strata/vmodel.md#edge-kinds
-pub const EDGE_BLOCKED_BY: &str = "blocked_by";
-
-/// Build the V-model `GraphSchema`: node kinds `artifact`/`test`/`decision`,
-/// the ten V-model levels (five paired left/right levels), and the six
-/// semantic edge kinds plus `blocked_by`. `verifies` is the only edge kind
-/// carrying a `LevelRelation::Paired` constraint -- that pairing map is
-/// exactly T-3004 section 1's table, keyed by src (test) level ->
-/// required dst (artifact) level, matching `graph::model`'s existing
-/// `verifies` convention (test -> requirement direction).
-// frob:doc docs/strata/vmodel.md#schema-assembly
-pub fn v_model_schema() -> GraphSchema {
-    let mut s = GraphSchema::new();
-    s.declare_node_kind(KIND_ARTIFACT)
-        .declare_node_kind(KIND_TEST)
-        .declare_node_kind(KIND_DECISION);
-    // T-3044 H3: a node kind is not fully typed until construction refuses
-    // one missing its payload -- `test` binds to something runnable,
-    // `artifact` binds to real code. `decision` carries no required attr
-    // here on purpose: T-3049 owns normalizing the decision/invariant/
-    // review-record SHAPE (title/rationale/status/etc) as one canonical
-    // schema, and a single ad hoc required key here would be exactly the
-    // per-author-prose duplication that ticket is meant to replace.
-    s.declare_required_node_attrs(KIND_TEST, [ATTR_RUNNABLE]);
-    s.declare_required_node_attrs(KIND_ARTIFACT, [ATTR_CODE_REF]);
-
-    let mut pairing: BTreeMap<Level, Level> = BTreeMap::new();
-    for (left, right) in v_pairing() {
-        s.declare_level(left.clone());
-        s.declare_level(right.clone());
-        pairing.insert(right, left);
-    }
-
-    s.declare_edge_kind(
-        EDGE_SATISFIES,
-        EdgeKindSchema {
-            allowed_src_kinds: [KIND_ARTIFACT.to_string()].into(),
-            allowed_dst_kinds: [KIND_ARTIFACT.to_string()].into(),
-            level_relation: LevelRelation::Any,
-            required_attrs: std::collections::BTreeSet::new(),
-        },
-    );
-    s.declare_edge_kind(
-        EDGE_VERIFIES,
-        EdgeKindSchema {
-            allowed_src_kinds: [KIND_TEST.to_string()].into(),
-            allowed_dst_kinds: [KIND_ARTIFACT.to_string()].into(),
-            level_relation: LevelRelation::Paired(pairing),
-            required_attrs: std::collections::BTreeSet::new(),
-        },
-    );
-    s.declare_edge_kind(
-        EDGE_REFINES,
-        EdgeKindSchema {
-            allowed_src_kinds: [KIND_ARTIFACT.to_string()].into(),
-            allowed_dst_kinds: [KIND_ARTIFACT.to_string()].into(),
-            level_relation: LevelRelation::Any,
-            required_attrs: std::collections::BTreeSet::new(),
-        },
-    );
-    s.declare_edge_kind(
-        EDGE_ALLOCATES,
-        EdgeKindSchema {
-            allowed_src_kinds: [KIND_ARTIFACT.to_string()].into(),
-            allowed_dst_kinds: [KIND_ARTIFACT.to_string()].into(),
-            level_relation: LevelRelation::Any,
-            required_attrs: std::collections::BTreeSet::new(),
-        },
-    );
-    s.declare_edge_kind(
-        EDGE_DECIDES,
-        EdgeKindSchema {
-            allowed_src_kinds: [KIND_DECISION.to_string()].into(),
-            allowed_dst_kinds: [KIND_ARTIFACT.to_string()].into(),
-            level_relation: LevelRelation::Any,
-            required_attrs: std::collections::BTreeSet::new(),
-        },
-    );
-    s.declare_edge_kind(
-        EDGE_SUPERSEDES,
-        EdgeKindSchema::unconstrained().require_attrs([ATTR_REASON]),
-    );
-    s.declare_edge_kind(EDGE_BLOCKED_BY, EdgeKindSchema::unconstrained());
-    s
-}
+use super::{
+    v_pairing, EDGE_ALLOCATES, EDGE_REFINES, EDGE_SATISFIES, EDGE_VERIFIES, KIND_ARTIFACT,
+    KIND_TEST,
+};
+use crate::graph::model::{Graph, Level, NodeId};
+use crate::graph::query::KindFilter;
 
 /// One closure-rule violation, named so a caller (CLI or PyO3 boundary)
 /// can render it without re-deriving which rule fired.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 // frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
+// frob:ticket T-3260
 pub enum ClosureViolation {
     /// Rule 1: this requirement/artifact node has no incoming `satisfies`
     /// edge from any design element -- an orphan requirement.
@@ -252,6 +46,7 @@ pub enum ClosureViolation {
 
 /// Every node of `kind` in `graph`, in id order -- shared by all four rules
 /// below so each only has to state its own edge-direction/edge-kind logic.
+// frob:ticket T-3260
 fn nodes_of_kind<'g>(graph: &'g Graph, kind: &str) -> Vec<&'g NodeId> {
     graph
         .node_ids()
@@ -264,6 +59,7 @@ fn nodes_of_kind<'g>(graph: &'g Graph, kind: &str) -> Vec<&'g NodeId> {
 /// can exempt the one boundary level that structurally cannot satisfy the
 /// rule (there is nothing more detailed than `component-design` to satisfy
 /// IT, and nothing above `requirements` for it to trace up to).
+// frob:ticket T-3260
 fn left_levels_outermost_first() -> Vec<Level> {
     v_pairing().into_iter().map(|(left, _right)| left).collect()
 }
@@ -272,12 +68,14 @@ fn left_levels_outermost_first() -> Vec<Level> {
 /// rule 2 exempts it, since a top-level requirement has nothing further up
 /// to trace to. A node with no level at all is never exempt (unknown
 /// position is the conservative default: still required to justify).
+// frob:ticket T-3260
 fn is_outermost_level(level: &Option<Level>) -> bool {
     matches!(level, Some(l) if left_levels_outermost_first().first() == Some(l))
 }
 
 /// True if `level` is the INNERMOST left-side level (`component-design`) --
 /// rule 1 exempts it, since nothing more detailed exists to satisfy IT.
+// frob:ticket T-3260
 fn is_innermost_level(level: &Option<Level>) -> bool {
     matches!(level, Some(l) if left_levels_outermost_first().last() == Some(l))
 }
@@ -287,6 +85,7 @@ fn is_innermost_level(level: &Option<Level>) -> bool {
 /// requirement) and rule 5 (is that relation even acyclic). T-3043: this
 /// set previously backed only an emptiness check; it now backs a real
 /// reachability-to-an-endpoint check for rules 1/2 as well.
+// frob:ticket T-3260
 fn trace_kinds() -> std::collections::BTreeSet<String> {
     [
         EDGE_SATISFIES.to_string(),
@@ -301,6 +100,7 @@ fn trace_kinds() -> std::collections::BTreeSet<String> {
 /// "does it actually contain the endpoint that makes the path meaningful"
 /// (T-3043 H2: a mutual-`satisfies` pair with no requirement anywhere in
 /// the graph has a non-empty closure but never reaches a requirement).
+// frob:ticket T-3260
 fn closure_reaches_level(
     graph: &Graph,
     closure: &std::collections::BTreeSet<NodeId>,
@@ -319,6 +119,7 @@ fn closure_reaches_level(
 /// must have >=1 incoming `satisfies` edge. Returns one
 /// `OrphanRequirement` per violating node, empty if none.
 // frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
+// frob:ticket T-3260
 pub fn check_no_orphan_requirements(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_SATISFIES.to_string()].into();
     let filter = KindFilter::Only(&filter_set);
@@ -346,6 +147,7 @@ pub fn check_no_orphan_requirements(graph: &Graph) -> Vec<ClosureViolation> {
 /// tracing it back up to a requirement. Catches unjustified code: a design
 /// element (or intermediate spec) tracing to nothing.
 // frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
+// frob:ticket T-3260
 pub fn check_no_unjustified_design(graph: &Graph) -> Vec<ClosureViolation> {
     let kinds = trace_kinds();
     let filter = KindFilter::Only(&kinds);
@@ -374,6 +176,7 @@ pub fn check_no_unjustified_design(graph: &Graph) -> Vec<ClosureViolation> {
 /// incoming `verifies` edge is necessarily at the paired level -- this
 /// rule only needs to check for the presence of at least one.
 // frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
+// frob:ticket T-3260
 pub fn check_no_untested_artifact(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_VERIFIES.to_string()].into();
     let filter = KindFilter::Only(&filter_set);
@@ -386,6 +189,7 @@ pub fn check_no_untested_artifact(graph: &Graph) -> Vec<ClosureViolation> {
 
 /// Rule 4: every test node must have >=1 outgoing `verifies` edge.
 // frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
+// frob:ticket T-3260
 pub fn check_no_orphan_test(graph: &Graph) -> Vec<ClosureViolation> {
     let filter_set = [EDGE_VERIFIES.to_string()].into();
     let filter = KindFilter::Only(&filter_set);
@@ -401,6 +205,7 @@ pub fn check_no_orphan_test(graph: &Graph) -> Vec<ClosureViolation> {
 /// witness path; T-3043 wires it in here since nothing previously called
 /// it from `check_closure`.
 // frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
+// frob:ticket T-3260
 pub fn check_no_trace_cycle(graph: &Graph) -> Vec<ClosureViolation> {
     let kinds = trace_kinds();
     let filter = KindFilter::Only(&kinds);
@@ -414,6 +219,7 @@ pub fn check_no_trace_cycle(graph: &Graph) -> Vec<ClosureViolation> {
 /// (1, 2, 3, 4, 5). Empty means the graph is structurally closed --
 /// T-3004 section 2's "bad-but-complete passes" bar, nothing about quality.
 // frob:doc docs/strata/vmodel.md#the-five-closure-rules-t-3004-section-2
+// frob:ticket T-3260
 pub fn check_closure(graph: &Graph) -> Vec<ClosureViolation> {
     let mut out = check_no_orphan_requirements(graph);
     out.extend(check_no_unjustified_design(graph));
@@ -426,6 +232,9 @@ pub fn check_closure(graph: &Graph) -> Vec<ClosureViolation> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::graph::model::{Graph, GraphError};
+    use crate::graph::vmodel::*;
+    use std::collections::BTreeMap;
 
     /// Test-only helper (T-3044 H3): every `artifact`/`test` node fixture
     /// needs its required attr populated with SOMETHING to construct at
@@ -435,73 +244,9 @@ mod tests {
     /// here -- see `payload_construction_refuses_test_missing_runnable`
     /// and `payload_construction_refuses_artifact_missing_code_ref` below
     /// for the refusal behavior this helper's presence would otherwise mask.
+    // frob:ticket T-3260
     fn attrs_with(key: &str, id: &str) -> BTreeMap<String, String> {
         BTreeMap::from([(key.to_string(), format!("fixture::{id}"))])
-    }
-
-    #[test]
-    // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::v_pairing kind="unit"
-    fn v_pairing_has_five_pairs_in_t3004_order() {
-        let pairs = v_pairing();
-        assert_eq!(
-            pairs,
-            vec![
-                (
-                    LEVEL_REQUIREMENTS.to_string(),
-                    LEVEL_CUSTOMER_TEST.to_string()
-                ),
-                (
-                    LEVEL_REQUIREMENT_SPEC.to_string(),
-                    LEVEL_CUSTOMER_TEST_PLAN.to_string()
-                ),
-                (
-                    LEVEL_SYSTEM_SPEC.to_string(),
-                    LEVEL_SYSTEM_INTEGRATION_TEST_PLAN.to_string()
-                ),
-                (
-                    LEVEL_SYSTEM_DESIGN.to_string(),
-                    LEVEL_SUBSYSTEM_INTEGRATION_TEST_PLAN.to_string()
-                ),
-                (
-                    LEVEL_COMPONENT_DESIGN.to_string(),
-                    LEVEL_COMPONENT_UNIT_TEST.to_string()
-                ),
-            ]
-        );
-    }
-
-    #[test]
-    // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::v_model_schema kind="unit"
-    fn v_model_schema_declares_every_kind_level_and_edge_kind() {
-        let s = v_model_schema();
-        assert_eq!(
-            s.node_kinds,
-            std::collections::BTreeSet::from([
-                KIND_ARTIFACT.to_string(),
-                KIND_TEST.to_string(),
-                KIND_DECISION.to_string(),
-            ])
-        );
-        assert_eq!(s.levels.len(), 10);
-        for kind in [
-            EDGE_SATISFIES,
-            EDGE_VERIFIES,
-            EDGE_REFINES,
-            EDGE_ALLOCATES,
-            EDGE_DECIDES,
-            EDGE_SUPERSEDES,
-            EDGE_BLOCKED_BY,
-        ] {
-            assert!(s.edge_kinds.contains_key(kind), "missing edge kind {kind}");
-        }
-        // `verifies` must carry the Paired relation -- this is what makes
-        // the V pairing checkable at construction time, T-3004 section 1.
-        assert!(matches!(
-            s.edge_kinds.get(EDGE_VERIFIES).unwrap().level_relation,
-            LevelRelation::Paired(_)
-        ));
     }
 
     // Shared fixture builder: a two-node chain spanning the OUTERMOST
@@ -513,6 +258,7 @@ mod tests {
     // -- so this fixture is fully closed for rules 1-2 with no further
     // nodes needed; tests add verifying tests at each node's OWN paired
     // level as needed for rules 3-4.
+    // frob:ticket T-3260
     fn base_graph() -> Graph {
         let mut g = Graph::new(v_model_schema());
         g.add_node_with_attrs(
@@ -535,7 +281,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_orphan_requirements kind="unit"
+    // frob:ticket T-3260
     fn rule1_must_fire_on_orphan_requirement() {
         let mut g = Graph::new(v_model_schema());
         // A requirement with nothing satisfying it.
@@ -557,7 +304,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_orphan_requirements kind="unit"
+    // frob:ticket T-3260
     fn rule1_must_stay_quiet_when_satisfied() {
         let g = base_graph();
         assert!(check_no_orphan_requirements(&g).is_empty());
@@ -565,7 +313,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_unjustified_design kind="unit"
+    // frob:ticket T-3260
     fn rule2_must_fire_on_unjustified_design() {
         let mut g = base_graph();
         // A design element tracing to nothing -- unjustified code.
@@ -587,7 +336,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_unjustified_design kind="unit"
+    // frob:ticket T-3260
     fn rule2_must_stay_quiet_when_traced() {
         let g = base_graph();
         // req-1 is a root requirement (no expectation it traces further);
@@ -597,7 +347,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_untested_artifact kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_untested_artifact kind="unit"
+    // frob:ticket T-3260
     fn rule3_must_fire_on_untested_requirement() {
         let g = base_graph();
         // req-1 and design-1 both exist; neither has any verifying test.
@@ -613,7 +364,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_untested_artifact kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_untested_artifact kind="unit"
+    // frob:ticket T-3260
     fn rule3_must_stay_quiet_when_verified_at_paired_level() {
         let mut g = base_graph();
         g.add_node_with_attrs(
@@ -637,7 +389,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_untested_artifact kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_untested_artifact kind="unit"
+    // frob:ticket T-3260
     fn rule3_wrong_level_test_is_refused_at_construction_not_silently_accepted() {
         // A customer-test (paired to `requirements`) cannot verify
         // `design-1` (paired to `component-design`) -- the kernel's
@@ -654,10 +407,7 @@ mod tests {
         let err = g
             .add_edge(EDGE_VERIFIES, "ctest-1", "design-1")
             .unwrap_err();
-        assert!(matches!(
-            err,
-            super::super::model::GraphError::LevelConstraintViolation { .. }
-        ));
+        assert!(matches!(err, GraphError::LevelConstraintViolation { .. }));
         let violations = check_no_untested_artifact(&g);
         assert!(violations.contains(&ClosureViolation::UntestedArtifact {
             node: "design-1".into()
@@ -666,7 +416,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_test kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_orphan_test kind="unit"
+    // frob:ticket T-3260
     fn rule4_must_fire_on_orphan_test() {
         let mut g = base_graph();
         g.add_node_with_attrs(
@@ -687,7 +438,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_test kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_orphan_test kind="unit"
+    // frob:ticket T-3260
     fn rule4_must_stay_quiet_when_verifying_something() {
         let mut g = base_graph();
         g.add_node_with_attrs(
@@ -703,7 +455,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_closure kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_closure kind="unit"
+    // frob:ticket T-3260
     fn check_closure_is_empty_on_a_fully_closed_two_level_graph() {
         let mut g = base_graph();
         g.add_node_with_attrs(
@@ -727,8 +480,9 @@ mod tests {
 
     #[test]
     // frob:ticket T-3043
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements kind="unit"
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_orphan_requirements kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_unjustified_design kind="unit"
+    // frob:ticket T-3260
     fn h2_mutual_satisfies_pair_with_zero_requirements_now_fires() {
         // T-3043 H2's exact escape: two system-design artifacts pointing
         // at each other via `satisfies`, each verified by a test at its
@@ -815,8 +569,9 @@ mod tests {
 
     #[test]
     // frob:ticket T-3043
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements kind="unit"
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_orphan_requirements kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_unjustified_design kind="unit"
+    // frob:ticket T-3260
     fn h2_genuine_four_level_chain_stays_quiet() {
         // The positive control for the H2 fix: a real chain from a
         // requirement all the way down to a component design, verified at
@@ -895,7 +650,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3043
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_trace_cycle kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_trace_cycle kind="unit"
+    // frob:ticket T-3260
     fn rule5_must_fire_on_a_satisfies_cycle_via_check_closure() {
         // T-3043 H2's second finding: find_cycle existed in the kernel but
         // nothing in check_closure ever called it. This plants a genuine
@@ -942,7 +698,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3043
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_trace_cycle kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_no_trace_cycle kind="unit"
+    // frob:ticket T-3260
     fn rule5_stays_quiet_on_the_genuine_chain() {
         // Must-quiet twin over the SAME node layout as the fire case above
         // minus the closing edge, per the positive-control lesson.
@@ -952,7 +709,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_closure kind="unit"
+    // frob:tests strata-core/src/graph/vmodel/closure.rs::check_closure kind="unit"
+    // frob:ticket T-3260
     fn check_closure_reports_all_four_rules_on_a_maximally_broken_graph() {
         let mut g = Graph::new(v_model_schema());
         g.add_node_with_attrs(

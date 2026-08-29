@@ -1,7 +1,7 @@
 ---
 id: T-3260
 title: Split oversized V-model files under LARGE001 (T-3044 growth)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
