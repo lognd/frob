@@ -38,7 +38,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6f26c00d159c21465eaa742449de8a8dda74fa48
 ---
 `TestFrobSelfModel::test_parses_and_elaborates` asserts hard-coded node, flow
 and claim counts for the design model, so every legitimate model change breaks
