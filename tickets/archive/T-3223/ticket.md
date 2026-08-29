@@ -20,9 +20,16 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- cmd:pytest tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
-  exit=0 sha256=9a0e857fdeb7
+- tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
 designated_repro_test: null
+evidence_changes:
+- old_node: cmd:pytest tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
+    exit=0 sha256=9a0e857fdeb7
+  new_node: tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
+  reason: 'COV003: kind=bug tickets may not cite cmd: evidence (docs/ux only); rebind
+    to the actual pytest node id the cmd wrapper ran'
+  actor: logan
+  at: '2026-08-29'
 threat: null
 component: null
 anchor: false
