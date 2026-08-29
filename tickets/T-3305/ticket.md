@@ -6,7 +6,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-08-28'
-priority: high
+priority: critical
 parent: null
 tier: ticket
 sprint: null
@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: high
+  new_value: critical
+  reason: 'verified in code: _python_for_tree tests only is_file() on <root>/.venv/bin/python
+    and never that frob is importable through it, so close/land gate-claim re-verification
+    is a SILENT no-op in every consumer repo -- frob''s central enforcement promise
+    does not work for anyone but frob''s own checkout, and a PyPI release ships that'
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
