@@ -42,7 +42,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9a1ddf9e9eed1b47f538f7edb9b13e06364ba80b
 ---
 `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations`
 fails on main independent of T-3350/T-3413's nodeid.py regression (measured after
