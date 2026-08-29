@@ -17,6 +17,7 @@ scope:
 - src/frob/gates/_comment_placement.py
 - tests/gates/test_comment_placement.py
 - src/frob/gates/_lexical_selfcheck.py
+- tests/unit/gates/test_lexical_selfcheck.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,11 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_lexical_selfcheck.py
   reason: LEXCHECK001 allowlist entry for CPLACE002's markdown-only scan
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/gates/test_lexical_selfcheck.py
+  reason: test coverage lives there for the touched gate
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
