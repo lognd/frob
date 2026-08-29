@@ -455,6 +455,17 @@ _PII012_REVIEWED_NON_PII: frozenset[tuple[str, str]] = frozenset(
         ("tests/unit/strata/test_obligation_proof.py", "test_matches_a_real_token"),
         ("tests/unit/strata/test_registry_cross_refs.py", "token"),
         ("tests/unit/strata/test_reliability.py", "token"),
+        # T-3390: "diagnosis" homonym -- `run_diagnosis` is frob's own
+        # doctor/health-check entry point (`frob.doctor.run_diagnosis`,
+        # `frob doctor`), never a medical diagnosis. Not value-gated
+        # (T-2069's mechanism) because this is a function reference, not
+        # an identifier bound to a literal value.
+        ("src/frob/app/doctor_runner.py", "run_diagnosis"),
+        ("tests/unit/test_doctor_runner_t1276.py", "_run_diagnosis_records_levels"),
+        # T-3390: "address" homonym -- `allow_reuse_address` is
+        # `socketserver.BaseServer`'s `SO_REUSEADDR` class attribute (a
+        # unix-socket bind option), never a postal/contact address.
+        ("src/frob/serve/_socketd.py", "allow_reuse_address"),
     }
 )
 

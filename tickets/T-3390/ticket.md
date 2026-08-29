@@ -1,7 +1,7 @@
 ---
 id: T-3390
 title: Narrow PII012 name-signature heuristic to avoid identifier false positives
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -60,6 +60,10 @@ scope_changes:
   reason: new regression tests for the two PII012 allowlist entries
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_reviewed_non_pii_diagnosis_homonym_stays_quiet_at_its_site
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_reviewed_non_pii_address_homonym_stays_quiet_at_its_site
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_identifier_keyword_fires_at_suggestion_severity
 designated_repro_test: null
 threat: null
 component: null

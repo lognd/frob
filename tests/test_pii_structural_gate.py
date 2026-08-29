@@ -430,6 +430,41 @@ class TestKeywordSweep:
         violations = _scan_python_keyword_sweep(tree, "example.py", src)
         assert any(v.rule == "PII012" for v in violations)
 
+    def test_reviewed_non_pii_diagnosis_homonym_stays_quiet_at_its_site(
+        self,
+    ) -> None:
+        # frob:tests \
+        # tests/test_pii_structural_gate.py::TestKeywordSweep.test_reviewed_non_pii_dia\
+        # gnosis_homonym_stays_quiet_at_its_site
+        """T-3390: `run_diagnosis` is `_PII012_REVIEWED_NON_PII`-exempted at
+        its one reviewed site (frob's own doctor entry point, not a
+        medical diagnosis) -- an identically-named symbol at an
+        UNREVIEWED site must still fire, proving the exemption is exact
+        (file, identifier) matching, not a blanket keyword mute."""
+        src = "def run_diagnosis():\n    return None\n"
+        tree = ast.parse(src)
+        exempted = _scan_python_keyword_sweep(
+            tree, "src/frob/app/doctor_runner.py", src
+        )
+        assert not any(v.rule == "PII012" for v in exempted)
+        elsewhere = _scan_python_keyword_sweep(tree, "src/frob/somewhere_else.py", src)
+        assert any(v.rule == "PII012" for v in elsewhere)
+
+    def test_reviewed_non_pii_address_homonym_stays_quiet_at_its_site(self) -> None:
+        # frob:tests \
+        # tests/test_pii_structural_gate.py::TestKeywordSweep.test_reviewed_non_pii_add\
+        # ress_homonym_stays_quiet_at_its_site
+        """T-3390: `allow_reuse_address` is `_PII012_REVIEWED_NON_PII`-
+        exempted at its one reviewed site (`socketserver.BaseServer`'s
+        `SO_REUSEADDR` class attribute, not a postal/contact address) --
+        same exactness proof as the diagnosis case above."""
+        src = "class S:\n    allow_reuse_address = True\n"
+        tree = ast.parse(src)
+        exempted = _scan_python_keyword_sweep(tree, "src/frob/serve/_socketd.py", src)
+        assert not any(v.rule == "PII012" for v in exempted)
+        elsewhere = _scan_python_keyword_sweep(tree, "src/frob/somewhere_else.py", src)
+        assert any(v.rule == "PII012" for v in elsewhere)
+
     def test_comment_keyword_fires(self) -> None:
         src = "x = 1  # stores the user ssn for lookup\n"
         tree = ast.parse(src)
