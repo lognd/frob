@@ -2,7 +2,7 @@
 id: T-3416
 title: Update design/frob.strata SYS100 fs.read capability for process/_reap split
   (T-3396)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -28,6 +28,8 @@ body_changes:
   at: '2026-08-29'
   old_length: 1946
   new_length: 5111
+evidence:
+- tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbolsCorpusWide::test_every_tracked_strata_file_symbol_count_matches_grammar_declared_count
 designated_repro_test: null
 threat: null
 component: null
