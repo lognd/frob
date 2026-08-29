@@ -149,6 +149,14 @@ body_changes:
   at: '2026-08-29'
   old_length: 9501
   new_length: 10911
+- mode: set
+  reason: 'revert my own DOC006 waive append: the waive did not suppress the rule
+    and its reason text cited the same non-resolving commands, taking DOC006 from
+    5 errors to 9'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 10911
+  new_length: 9501
 designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with no Makefile WHEN every documented frob workflow is run THEN
@@ -316,29 +324,3 @@ Both are references to the ROOT repo's own Makefile, which the five children
 never touched. They are valid today and break the moment the aliases are
 deleted. Python scaffold CI and branch-protection templates are clean of `make`.
 The cpp scaffold templates reference it legitimately and are out of scope.
-
-
-
-DOC006 DISPOSITION for this body's own text, added 2026-08-29 by the
-coordinator who wrote the analysis above.
-
-The breakdown above cites `frob install-tool`, `frob install` and `frob make`
-as subcommands. None of them resolve, and DOC006 is correct to say so -- it
-produced five errors against this file. But they are not broken references to
-be repaired: every one appears in a sentence arguing that those subcommands
-MUST NEVER EXIST. "do not add `frob install-tool`, `frob install`, or a `frob
-make` passthrough" is the conclusion of this ticket's analysis, and
-`install-tool` in particular is circular by construction, since it is the
-command that installs frob.
-
-Rewriting them to resolve would mean naming real subcommands, which would
-invert the argument. Deleting them would delete the finding. So this is
-exactly DOC006's documented "intentionally illustrative / future-facing"
-case, and it is waived as such rather than fixed.
-
-frob:waive DOC006 reason="this body's `frob install-tool`/`frob install`/`frob \
-make` citations are deliberately non-resolving: each appears inside an argument \
-that these subcommands must never be built (install-tool is circular by \
-construction -- it installs frob). Making them resolve would invert the \
-analysis; deleting them would delete the finding. Illustrative-by-design, per \
-DOC006's own external/illustrative/future-facing exemption." ticket="T-1382"
