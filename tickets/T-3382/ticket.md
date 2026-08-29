@@ -63,7 +63,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fe5485472fe72a1fc9b40b751b549bcade21303c
 ---
 Sub-ticket of T-3343 (triage). Fixes the remaining gate:REG002 3 errors, measured via frob check --only registry --json.
 
