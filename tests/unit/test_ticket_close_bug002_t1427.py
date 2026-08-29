@@ -121,7 +121,10 @@ class TestCloseRefusesBug002ShapeEndToEnd:
         _no_mutation_findings(monkeypatch)
         monkeypatch.setattr(
             "frob.gates._bug_repro._bug_repro_outcome_at_ref",
-            lambda root, test_id, base_ref: _BugReproOutcome.PASSED_AT_PARENT,
+            # T-3361: T-3104 added a keyword-only `env_absent` param to the
+            # real function -- `**_` absorbs it (and any future kwarg)
+            # instead of hardcoding the exact keyword-only set again.
+            lambda root, test_id, base_ref, **_: _BugReproOutcome.PASSED_AT_PARENT,
         )
         cfg = AppConfig(ticket_id="T-0901")
         with pytest.raises(SystemExit):
@@ -144,7 +147,9 @@ class TestCloseRefusesBug002ShapeEndToEnd:
         _no_mutation_findings(monkeypatch)
         monkeypatch.setattr(
             "frob.gates._bug_repro._bug_repro_outcome_at_ref",
-            lambda root, test_id, base_ref: _BugReproOutcome.FAILED_AT_PARENT,
+            # T-3361: see test_close_refuses_when_evidence_passes_at_parent's
+            # comment above -- same `env_absent` keyword-only drift.
+            lambda root, test_id, base_ref, **_: _BugReproOutcome.FAILED_AT_PARENT,
         )
         cfg = AppConfig(ticket_id="T-0901")
         ticket_runner._close(tmp_path, cfg)

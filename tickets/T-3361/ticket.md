@@ -1,7 +1,7 @@
 ---
 id: T-3361
 title: fix stale mock signature in test_ticket_close_bug002_t1427
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -35,6 +35,11 @@ body_changes:
   at: '2026-08-29'
   old_length: 448
   new_length: 744
+evidence:
+- tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd::test_close_refuses_when_evidence_passes_at_parent
+- tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd::test_close_succeeds_when_evidence_fails_at_parent
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_repro_timeout_s_is_forwarded
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_no_node_id_resolves_designated_test
 designated_repro_test: null
 threat: null
 component: null

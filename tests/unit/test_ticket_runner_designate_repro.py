@@ -19,7 +19,7 @@ CLI flag)."""
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 from typani import Ok
@@ -252,8 +252,16 @@ class TestEvidenceCheckRepro:
                 ticket_repro_timeout_s=300.0,
             )
             _evidence(tmp_path, cfg)
+        # T-3361: T-3104 added a keyword-only `env_absent` arg to the real
+        # call site -- matched here with ANY rather than hardcoding its
+        # exact value, since this test is about `timeout_s` forwarding,
+        # not `env_absent`.
         mocked.assert_called_once_with(
-            tmp_path, "tests/x.py::test_a", "deadbeef", timeout_s=300.0
+            tmp_path,
+            "tests/x.py::test_a",
+            "deadbeef",
+            timeout_s=300.0,
+            env_absent=ANY,
         )
 
     # frob:ticket T-2480
@@ -434,8 +442,14 @@ class TestEvidenceCheckRepro:
                 ticket_check_repro="",
             )
             _evidence(tmp_path, cfg)
+        # T-3361: see test_repro_timeout_s_is_forwarded's comment above --
+        # same `env_absent` keyword-only drift from T-3104.
         mocked.assert_called_once_with(
-            tmp_path, "tests/x.py::test_a", "deadbeef", timeout_s=_BUG_REPRO_TIMEOUT_S
+            tmp_path,
+            "tests/x.py::test_a",
+            "deadbeef",
+            timeout_s=_BUG_REPRO_TIMEOUT_S,
+            env_absent=ANY,
         )
 
 
