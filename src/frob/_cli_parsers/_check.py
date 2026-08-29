@@ -110,6 +110,22 @@ def _add_check_selection_args(check_p) -> None:
             "docs/design/check-fix-engine.md)"
         ),
     )
+    # frob:ticket T-3326
+    check_p.add_argument(
+        "--fix-all",
+        dest="check_fix_all",
+        action="store_true",
+        help=(
+            "required alongside a bare `--fix` (no --ticket) to apply "
+            "Tier-A fixes repo-wide -- without it, an unscoped `--fix` "
+            "REFUSES rather than silently rewriting every file its "
+            "handlers find (T-3326: a killed unscoped --fix once touched "
+            "~15 unrelated files before an agent noticed and reverted by "
+            "hand). `--ticket <id> --fix` never needs this: it is already "
+            "scoped to that ticket's declared files (T-2284) and always "
+            "runs. A no-op when --ticket is also given."
+        ),
+    )
     # frob:ticket T-2320
     check_p.add_argument(
         "--fix-ruff",

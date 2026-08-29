@@ -208,6 +208,48 @@ frob check src/ --skip-ruff-check     # skip lint, still run format --check
 frob check src/ --skip-ruff-format    # skip format --check, still run lint
 ```
 
+### Tier-A/B/C deterministic autofix (`--fix`)
+
+<!-- frob:describes src/frob/app/check_runner.py::_apply_tier_a_and_reverify -->
+`--fix` applies every registered Tier-A deterministic auto-fix
+(`frob.gates._fix_engine.apply_tier_a_fixes`) plus Tier-B's apply-verify-
+commit-or-rollback fixes, re-runs the affected gates once in the same
+invocation, then emits Tier-C fix-its -- never writes a `frob:waive`
+directive, never touches `frob.toml` or ratchet state
+(docs/design/check-fix-engine.md).
+
+**T-3326: `--fix`'s blast radius depends on whether `--ticket` is also
+given.**
+
+```bash
+frob check --ticket T-1234 --fix   # scoped: only T-1234's declared files
+frob check --fix --fix-all         # deliberate repo-wide pass
+frob check --fix                   # REFUSES -- neither given
+```
+
+- `--ticket <id> --fix` scopes every Tier-A/B fix to that ticket's own
+  declared `scope` (reusing the same `filter_fixes_by_scope_and_lease`
+  check `frob ticket land`'s own pre-land Tier-A pass has used since
+  T-2284) -- a fix a handler would have made outside that scope is
+  reverted on disk and reported skipped, never silently applied. This is
+  also already true of `frob ticket land`'s own pre-land Tier-A pass; it
+  is not a new hazard `--fix` introduces, only one the bare CLI command
+  did not share until T-3326.
+- A bare `--fix` with **neither** `--ticket` **nor** `--fix-all` now
+  **refuses** (exit 1) instead of silently rewriting every file its
+  handlers find repo-wide -- the fix for the incident that motivated
+  T-3326: an unscoped `--fix`, run to re-baseline one file, rewrote
+  roughly 15 unrelated files before a killed run was caught and reverted
+  by hand.
+- `--fix --fix-all` still runs the full repo-wide pass exactly as before
+  T-3326 -- the repo-wide case is gated behind an explicit opt-in, not
+  removed.
+
+A killed `--fix` run (any scope) is recoverable, not silent: `apply_tier_a_
+fixes` writes an autofix manifest under `.frob/` after every handler
+completes, naming every path a completed handler actually rewrote, and
+clears it only once the whole pass finishes (T-1348).
+
 ### Ruff autofix write mode
 
 <!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_selection_args -->

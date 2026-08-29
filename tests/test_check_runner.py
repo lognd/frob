@@ -10,7 +10,11 @@ emission format")."""
 from __future__ import annotations
 
 import json
+import subprocess
+from datetime import date
 from pathlib import Path
+
+import pytest
 
 import frob.gates as gates_module
 from frob.app.check_runner import (
@@ -23,6 +27,29 @@ from frob.app.config import AppConfig
 from frob.check import CheckResult
 from frob.gates._models import GateReport, GateStats, Severity, Violation
 from frob.process.parsers.common import Diagnostic, ToolResult
+from frob.tickets import Origin, Ticket, TicketKind, TicketState, write_ticket
+
+
+def _git_init(root: Path) -> None:
+    """A minimal real git repo -- T-3326's scoped-`--fix` fixtures need
+    `git checkout --`/`git status --porcelain` (via `frob.gates.
+    _fix_engine_scope`'s revert-on-disqualify path) to actually work, not
+    a bare directory."""
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "t@example.com"], cwd=root, check=True
+    )
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+
+
+def _write_ticket(root: Path, ticket: Ticket) -> None:
+    """Write `ticket` into `root`'s v1 monofile ledger (`tickets.md` must
+    already exist so `write_ticket` resolves to 'single' mode -- same
+    precedent as `tests/test_gates.py`'s own `_write_ticket`)."""
+    ledger = root / "tickets.md"
+    if not ledger.exists():
+        ledger.write_text("# Tickets\n", encoding="utf-8")
+    write_ticket(root, ticket).danger_ok
 
 
 def _doc007_repo(tmp_path: Path) -> Path:
@@ -51,7 +78,7 @@ class TestApplyTierAAndReverify:
         # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify \
         # kind="unit"
         root = _doc007_repo(tmp_path)
-        cfg = AppConfig(check_fix=True)
+        cfg = AppConfig(check_fix=True, check_fix_all=True)
         stale_gate_result = ToolResult(
             tool="gate:DOC",
             exit_code=1,
@@ -100,7 +127,7 @@ class TestApplyTierAAndReverify:
             encoding="utf-8",
         )
         (root / "tickets.md").write_text("", encoding="utf-8")
-        cfg = AppConfig(check_fix=True)
+        cfg = AppConfig(check_fix=True, check_fix_all=True)
         clean_result = CheckResult(path=str(root), results=[])
 
         updated, fix_report = _apply_tier_a_and_reverify(cfg, root, clean_result)
@@ -123,7 +150,7 @@ class TestApplyTierAAndReverify:
         other = root / "src" / "pkg" / "other.py"
         other_text = "# TODO: something undone\ndef g():\n    pass\n"
         other.write_text(other_text, encoding="utf-8")
-        cfg = AppConfig(check_fix=True)
+        cfg = AppConfig(check_fix=True, check_fix_all=True)
         result = CheckResult(path=str(root), results=[])
 
         _updated, fix_report = _apply_tier_a_and_reverify(cfg, root, result)
@@ -154,7 +181,7 @@ class TestApplyTierAAndReverify:
             encoding="utf-8",
         )
         (root / "tickets.md").write_text("", encoding="utf-8")
-        cfg = AppConfig(check_fix=True)
+        cfg = AppConfig(check_fix=True, check_fix_all=True)
         result = CheckResult(path=str(root), results=[])
 
         _updated, fix_report = _apply_tier_a_and_reverify(cfg, root, result)
@@ -187,7 +214,7 @@ class TestApplyTierAAndReverify:
         (root / "src" / "pkg").mkdir(parents=True)
         (root / "src" / "pkg" / "mod.py").write_text("def real():\n    pass\n")
         (root / "tickets.md").write_text("", encoding="utf-8")
-        cfg = AppConfig(check_fix=True)
+        cfg = AppConfig(check_fix=True, check_fix_all=True)
         result = CheckResult(path=str(root), results=[])
 
         todo_violation = Violation(
@@ -213,6 +240,93 @@ class TestApplyTierAAndReverify:
         assert len(fix_report["fixits"]) == 1
         assert fix_report["fixits"][0]["rule"] == "TODO001"
         assert fix_report["fixits"][0]["proposed_patch"] is None
+
+    # -- T-3326: --fix's blast radius is scoped to --ticket when given ------
+
+    def test_ticket_scoped_fix_never_touches_files_outside_declared_scope(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE fixture (T-3326): `frob check --ticket <id> --fix`
+        modifies no file outside that ticket's declared scope. Two files
+        both carry a live DOC007 finding; only `scoped/mod.py` is inside
+        T-9001's declared scope (`scoped/**`) -- `other/mod.py` must
+        be left byte-for-byte untouched and reported as skipped, not
+        fixed, even though its own handler call found and would have
+        fixed it too."""
+        # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify \
+        # kind="unit"
+        root = tmp_path / "repo"
+        root.mkdir()
+        _git_init(root)
+        (root / "scoped").mkdir()
+        (root / "other").mkdir()
+        directive = "# frob:tests tests/test_mod.py::TestX::test_y\ndef f():\n    pass\n"
+        (root / "scoped" / "mod.py").write_text(directive, encoding="utf-8")
+        (root / "other" / "mod.py").write_text(directive, encoding="utf-8")
+        (root / "tickets.md").write_text("# Tickets\n", encoding="utf-8")
+        _write_ticket(
+            root,
+            Ticket(
+                id="T-9001",
+                title="Scoped fix target",
+                state=TicketState.IN_PROGRESS,
+                kind=TicketKind.FEATURE,
+                origin=Origin.HUMAN,
+                created=date(2026, 1, 1),
+                scope=("scoped/**",),
+                body="## Description\nx\n",
+            ),
+        )
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "seed"], cwd=root, check=True
+        )
+        cfg = AppConfig(check_fix=True, check_ticket="T-9001")
+        result = CheckResult(path=str(root), results=[])
+
+        _updated, fix_report = _apply_tier_a_and_reverify(cfg, root, result)
+
+        fixed_files = {f["file"] for f in fix_report["fixed"]}
+        assert "scoped/mod.py" in fixed_files
+        assert "other/mod.py" not in fixed_files
+        assert (
+            (root / "other" / "mod.py").read_text(encoding="utf-8") == directive
+        ), "out-of-scope file must be byte-for-byte untouched"
+
+    def test_unscoped_fix_refuses_without_fix_all(self, tmp_path: Path) -> None:
+        """A bare `--fix` with neither `--ticket` nor `--fix-all` refuses
+        outright (`sys.exit(1)`) rather than silently applying a repo-wide
+        Tier-A pass -- the T-3326 incident's own accidental-default shape."""
+        # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify \
+        # kind="unit"
+        root = _doc007_repo(tmp_path)
+        cfg = AppConfig(check_fix=True)
+        result = CheckResult(path=str(root), results=[])
+
+        with pytest.raises(SystemExit) as excinfo:
+            _apply_tier_a_and_reverify(cfg, root, result)
+        assert excinfo.value.code == 1
+        # Nothing was touched -- the refusal happens before any handler runs.
+        mod = root / "src" / "pkg" / "mod.py"
+        assert "TestX::test_y" in mod.read_text(encoding="utf-8")
+
+    def test_fix_all_still_runs_repo_wide_when_explicitly_requested(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET fixture (T-3326): a deliberate repo-wide fix
+        pass (`--fix --fix-all`, no `--ticket`) still works exactly as
+        before this ticket -- the repo-wide case is gated behind an
+        explicit opt-in, not removed."""
+        # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify \
+        # kind="unit"
+        root = _doc007_repo(tmp_path)
+        cfg = AppConfig(check_fix=True, check_fix_all=True)
+        result = CheckResult(path=str(root), results=[])
+
+        _updated, fix_report = _apply_tier_a_and_reverify(cfg, root, result)
+
+        fixed_files = {f["file"] for f in fix_report["fixed"]}
+        assert "src/pkg/mod.py" in fixed_files
 
 
 class TestResultAsJsonWithFix:

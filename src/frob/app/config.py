@@ -340,6 +340,16 @@ class AppConfig(BaseModel):
     #: invocation. `False` (default) leaves `frob check` byte-identical to
     #: before this flag existed (T-1260 acceptance criterion 2).
     check_fix: bool = False
+    # frob:ticket T-3326
+    #: `frob check --fix --fix-all`: required opt-in to let an UNSCOPED
+    #: `--fix` (no `--ticket`) actually apply Tier-A fixes repo-wide.
+    #: `False` (default) makes a bare `--fix` REFUSE instead of silently
+    #: rewriting every file its handlers find (T-3326: the incident this
+    #: closes touched ~15 unrelated files before an agent noticed and
+    #: reverted by hand). Ignored (never checked) when `--ticket` is also
+    #: given -- that case is already scoped to the ticket's own declared
+    #: files (T-2284) and always runs.
+    check_fix_all: bool = False
     # frob:ticket T-1004
     #: `frob check --budget N`: self-select and order stage chunks (the same
     #: `available_stages()` groups the playbook's chunked `--only` loop

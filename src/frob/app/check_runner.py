@@ -1593,12 +1593,37 @@ def _apply_tier_a_and_reverify(
     ratchet state, and applies nothing but the registered Tier-A/B/C
     tables those three engines themselves call -- this function is a thin
     CLI-facing wrapper, it does not add any fix logic of its own.
+
+    T-3326: Tier-A fixes are now SCOPED to `cfg.check_ticket` when given
+    (threaded into `apply_tier_a_fixes` as `ticket_id`, the same parameter
+    `frob ticket land`'s own pre-land call already uses, T-2284) -- a
+    targeted `frob check --ticket <id> --fix` can no longer silently
+    rewrite files outside that ticket's declared scope. When `cfg.
+    check_ticket` is NOT given, this now REFUSES (`sys.exit(1)`) unless
+    `cfg.check_fix_all` was also passed -- an unscoped `--fix` used to be
+    the ACCIDENTAL default of any invocation that forgot `--ticket`,
+    which is exactly how a killed unscoped run once rewrote ~15 unrelated
+    files before an agent caught it by hand. The repo-wide pass is not
+    removed, only no longer silent-by-default: `--fix --fix-all` still
+    runs it in full, byte-identical to this function's pre-T-3326
+    behavior.
     """
+    if cfg.check_ticket is None and not cfg.check_fix_all:
+        _log.error(
+            "check --fix: refusing an UNSCOPED repo-wide Tier-A fix pass "
+            "-- pass --ticket <id> to scope --fix to one ticket's own "
+            "declared files (the common case), or pass --fix-all "
+            "alongside --fix if a genuine repo-wide fix pass is what you "
+            "want (T-3326: an unscoped --fix once rewrote ~15 unrelated "
+            "files before a killed run was caught and reverted by hand)"
+        )
+        sys.exit(1)
     from frob.app._snapshot import load_or_build_snapshot
     from frob.check._python import _run_gates
     from frob.gates import GateConfig
     from frob.gates import run_gates as _raw_run_gates
     from frob.gates._fix_engine import apply_tier_a_fixes
+    from frob.gates._fix_engine_scope import filter_fixes_by_scope_and_lease
     from frob.gates._fix_engine_tier_b import apply_tier_b_fixes
     from frob.gates._fix_engine_tier_c import apply_tier_c_fixits
     from frob.tickets import TicketQueue, load_queue
@@ -1616,8 +1641,22 @@ def _apply_tier_a_and_reverify(
     else:
         queue = queue_result.danger_ok
 
-    applied_a = apply_tier_a_fixes(root, snapshot, queue)
+    applied_a = apply_tier_a_fixes(root, snapshot, queue, ticket_id=cfg.check_ticket)
     committed_b, rolled_back_b = apply_tier_b_fixes(root, snapshot, queue)
+    # T-3326: Tier-B (`_fix_engine_tier_b`) has no ticket-scoping of its
+    # own -- it verifies each fix's SAFETY (gate/test re-run before
+    # commit) but never checks WHOSE declared scope the file it touched
+    # belongs to. Reusing the SAME scope/lease filter Tier-A's own
+    # `apply_tier_a_fixes` already trusts (T-2284) here, post-hoc, closes
+    # that gap for the scoped case without needing Tier-B's own engine to
+    # grow ticket-awareness -- `FixApplied` is the identical return shape
+    # for both tiers (T-1137's own "committed Tier-B is reported
+    # identically to Tier A" contract), so the filter needs no Tier-B-
+    # specific handling. A no-op, byte-identical list, whenever `cfg.
+    # check_ticket` is `None` (the `--fix-all` repo-wide case).
+    committed_b, _skipped_b = filter_fixes_by_scope_and_lease(
+        root, queue, cfg.check_ticket, committed_b
+    )
     applied = [*applied_a, *committed_b]
     fixed_rules = sorted({f.rule for f in applied})
     fix_report: dict = {
