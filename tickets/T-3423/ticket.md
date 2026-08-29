@@ -14,10 +14,18 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- tests/system/test_frob_self_model.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/system/test_frob_self_model.py
+  reason: declare scope on this test file before editing per T-3423's instructions
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
