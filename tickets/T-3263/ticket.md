@@ -28,7 +28,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 31751f0002047dbfe0fea23672d5496901f8b5ce
 ---
 Found while root-causing T-3249's 11-failure cluster.
 tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
