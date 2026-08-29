@@ -1,7 +1,7 @@
 ---
 id: T-3348
 title: add DOC011 catalog row for docstatus_gate to docs/modules/gates.md#public-api
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-29'
