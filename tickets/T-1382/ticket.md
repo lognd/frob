@@ -125,6 +125,16 @@ scope_changes:
     them.'
   actor: logan
   at: '2026-08-16'
+body_changes:
+- mode: append
+  reason: 'record the owner''s scheduling decision (pre-1.0.0, NOT required for the
+    incremental cut) and the requested analysis: 18 of ~24 targets are pure frob aliases,
+    install/install-tool cannot be frob subcommands because they install frob, so
+    the answer is deletion not addition'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 1836
+  new_length: 6671
 designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with no Makefile WHEN every documented frob workflow is run THEN
@@ -156,3 +166,90 @@ Suggested decomposition (leaves to be filed as children):
 5. Docs + agent-playbook rewrite so guidance names frob subcommands first; keep make targets as documented optional aliases for muscle memory.
 
 Related: the user's standing preference is still to SUGGEST 'make <target>' where one exists, so this is about removing the DEPENDENCY, not deleting the Makefile.
+
+OWNER DECISION 2026-08-29, plus the analysis it asked for.
+
+SCHEDULING: T-1382 is PRE-RELEASE FOR 1.0.0, and explicitly NOT required for the
+incremental release now being cut. Do not work it before the incremental cut; do
+not drop it. Its TICK004 age finding is a separate matter -- see T-3399, which
+addresses TICK004 erroring on healthy tickets; T-1382 is the one TICK004 finding
+that is genuinely correct, and it should keep firing until this is done.
+
+THE OWNER'S EXPLICIT STEER: "make sure whatever solution isn't just bloat;
+actually think through the tool's functionality, IF WE EVEN NEED IT AT ALL."
+
+MEASURED, so the eventual implementer does not have to re-derive it. The
+Makefile is 574 lines and ~24 targets. Sorted by what they actually run:
+
+ALREADY THIN `uv run frob ...` ALIASES -- these add a second name for an
+existing subcommand and nothing else:
+    format          frob format --select-imports-only
+    lint            frob check --only ruff --skip-ruff-format --only ty
+    lint-fix        frob format
+    typecheck       frob check --only ty
+    test            frob test --all
+    test-unit       frob test tests/unit
+    test-integration frob test tests/integration
+    test-system     frob test tests/system
+    sync-skills     frob sync-skills
+    clean           frob clean --all -y
+    core            frob natives build
+    coverage-fast   frob natives build
+    pool-warm       frob scaffold pool warm
+    pool-lease      frob scaffold pool lease
+    pool-status     frob scaffold pool status
+    deploy-audit    frob deploy audit
+    upload          frob release publish
+    playbook        cat docs/guides/agent-playbook.md
+
+REAL CONTENT, not a pure alias:
+    coverage        a 3-command sequence:
+                    frob ticket reconcile --apply && frob doctor
+                    && frob coverage --full
+    test-fast       uv run pytest tests/ -q --testmon   (raw pytest; `--testmon`
+                    incremental selection has no frob equivalent today)
+    all, check      composites over the above
+
+CANNOT BE A FROB SUBCOMMAND, BY CONSTRUCTION:
+    install-tool    uv tool install --force --reinstall ".[serve]"
+                    --with ./strata-core --with ./frob-core
+    install         project dependency sync
+
+THE KEY FINDING, and it answers the owner's question directly: `install-tool`
+INSTALLS FROB. A `frob install-tool` subcommand is circular and must never be
+built -- if frob is not installed the subcommand does not exist, and if it is
+installed you do not need it. This is definitional, not a gap in coverage. The
+same is true of `install`. So T-1382's directive ("every workflow a first-class
+cross-platform frob subcommand") CANNOT and SHOULD NOT apply to bootstrap.
+
+THEREFORE THE ANSWER IS DELETION, NOT ADDITION. The recommended shape:
+  1. DELETE the ~18 alias targets. They carry no logic. Their only effect is to
+     give every workflow two names, which is exactly what produced the live
+     contradiction this ticket is entangled with: the frob-suggest `make-target`
+     hook says "prefer the frob subcommand" while the global instruction says
+     "prefer make <target>", and the scaffold SHIPS a Makefile whose `make check`
+     the docs tell new users to run (see T-3284).
+  2. MOVE the two bootstrap commands into the install documentation as literal
+     `uv` invocations. They are two lines of prose, not a build system. This is
+     the opposite of bloat -- it removes 574 lines and a dependency on GNU make,
+     which is the portability point T-1382 was filed for.
+  3. RESOLVE the two real-content targets on their merits:
+     - `coverage`: either a `frob coverage --full` that does the reconcile and
+       doctor steps itself, or documentation of the three-command sequence. Do
+       NOT invent a subcommand whose only job is to run three other subcommands.
+     - `test-fast`: `--testmon` incremental selection is genuinely absent from
+       `frob test`. That is a real capability gap and the ONLY place in this
+       audit where adding something to frob is justified. Decide on its merits,
+       separately, and file it if wanted.
+  4. The scaffold templates ship their own Makefile. Whatever is decided here
+     must apply there too, or new users keep receiving the contradiction.
+
+WHAT NOT TO DO: do not add `frob install-tool`, `frob install`, or a `frob make`
+passthrough. Do not port alias targets into subcommands that already exist under
+another name. The measure of success for this ticket is LINES AND CONCEPTS
+REMOVED, not subcommands added.
+
+OPEN QUESTION FOR WHOEVER TAKES IT: does anything in CI, the scaffold templates,
+or the agent playbook depend on a specific `make` target by name? Grep and
+report before deleting -- the scaffold's own CI templates and docs reference
+`make check`, and T-3277 corrected those docs recently.
