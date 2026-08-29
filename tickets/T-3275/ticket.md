@@ -103,7 +103,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a7b7081157ef84fed1e72f4565d2fbfb75759f84
 ---
 OWNER QUESTION 2026-08-28: "frob coverage hardcodes 'src/frob'; how is our
 dogfooding not catching that?" This ticket is the answer and the fix.
