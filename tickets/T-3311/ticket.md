@@ -22,6 +22,7 @@ scope:
 - src/frob/process/_pytest_spawn.py
 - src/frob/process/__init__.py
 - docs/modules/process.md
+- tests/unit/test_pytest_spawn.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +44,24 @@ scope_changes:
   glob: docs/modules/process.md
   reason: T-3311's new resolve_pytest_argv/pytest_importable public API needs its
     frob:describes anchor
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: docs/modules/process.md
+  reason: T-3295 needs this file's lease to land first (coordinator sequencing); will
+    re-add and merge when T-3311 resumes
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/process.md
+  reason: re-add after rebase onto main dropped these from the worktree-local ticket
+    ledger
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/test_pytest_spawn.py
+  reason: re-add after rebase onto main dropped these from the worktree-local ticket
+    ledger
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
