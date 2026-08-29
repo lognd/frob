@@ -2,7 +2,7 @@
 id: T-draft-2b8e73e2
 title: 'T-3350''s land left frob.nodeid outside the design model: 3 SYS003, SYS102,
   2 TEST001, 1 WIRE002 all reproduce on main'
-state: in-progress
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -111,3 +111,6 @@ ACCEPTANCE
   REPLAY, with the before/after numbers stated.
 - The (a)-vs-(b) design choice stated with reasoning.
 - extract_import_edges unit tests covering all six import shapes listed above.
+
+## Drop reason
+- 2026-08-29: duplicate of T-3413, filed by the fleet's own post-land sweep before I filed this one; work continues under T-3413 (absorbed by T-3413) (absorbed by T-3413)
