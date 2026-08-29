@@ -18,6 +18,7 @@ scope:
 - strata-core/src/parse/grammar_vmodel.rs
 - strata-core/src/parse/mod.rs
 - tests/unit/strata/test_vmodel_check.py
+- strata-core/src/parse/grammar_core.rs
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -63,6 +64,12 @@ scope_changes:
   reason: 'T-3260 real split: vmodel.rs -> vmodel/{mod,closure}.rs, grammar_core.rs''s
     vmodel productions -> new grammar_vmodel.rs (both spliced back via mod.rs''s existing
     include! pattern), plus updated frob:tests path refs in test_vmodel_check.py'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: strata-core/src/parse/grammar_core.rs
+  reason: still modified (LARGE001 debt/waive header removed, doc-comment updated)
+    even though the moved code lives elsewhere
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
