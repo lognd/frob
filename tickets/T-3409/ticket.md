@@ -1,7 +1,7 @@
 ---
 id: T-3409
 title: Update design/frob.strata SYS100 fs.read capability for stats/_agentic split
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'

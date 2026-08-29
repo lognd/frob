@@ -639,6 +639,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3401: frob test: detect missing pytest-testmon like xdist bound check
 - T-3403: fleet_status reports a live worktree's lease as LEAKED, and a leak verdict is actionable
 - T-3404: frob ticket scope applies the last --reason to every --add, silently mis-recording the scope audit trail
+- T-3409: Update design/frob.strata SYS100 fs.read capability for stats/_agentic split
 - T-3410: scaffold docs/index.md.j2 documents four make targets T-3400 deleted, so every new python project ships broken instructions
 - T-3413: post-land sweep regression from T-3350: 9 new (rule, file) identit(ies), 10 finding(s) (DOC006, OPAQUE001, SYS003, TEST001)
 - T-3414: DOC011: stale T-draft-ad5e921b citation in docs/modules/tickets.md

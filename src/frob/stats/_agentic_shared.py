@@ -33,12 +33,6 @@ def _load_events(root: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     events: list[dict[str, Any]] = []
-    # frob:waive SELFAUDIT001 follow_up="T-3409" reason="T-3059 moved this fs.read \
-    # caller out of src/frob/stats/_agentic.py, which design/frob.strata's SYS100 \
-    # fs.read capability list already declared -- the same capability, just relocated. \
-    # design/frob.strata itself was under a live cross-worktree lease (T-3388) at \
-    # split time so the declaration could not be updated here; follow_up tracks \
-    # landing that one-line swap."
     for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         line = line.strip()
         if not line:
