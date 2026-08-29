@@ -36,10 +36,12 @@ jobs:
       # NOTE: frob is not yet on PyPI (pre-0.1.0). `uv tool install frob`
       # below installs whatever the latest published release is, which may
       # be older than the frob.toml/gates this project was scaffolded
-      # against. Rather than red-herring CI on a stale or missing frob,
-      # detect a working install and skip with a notice otherwise -- once
-      # frob 0.1.0 ships this step starts enforcing automatically, no
-      # workflow edit required.
+      # against. A missing/broken frob install here means the frob check
+      # gate genuinely could NOT run -- that must show up as a loud,
+      # non-green CI status (a GitHub Actions ::error:: plus a failed
+      # step), never as a quiet notice next to an otherwise-green build.
+      # A skipped gate that only prints a notice is indistinguishable
+      # from a passing one in a green build.
       - name: install frob
         run: uv tool install frob || true
 
@@ -48,5 +50,6 @@ jobs:
           if command -v frob >/dev/null 2>&1 && frob graph --help >/dev/null 2>&1; then
             frob check
           else
-            echo "::notice::frob is not installed or not working yet (pre-0.1.0 on PyPI) -- skipping frob check"
+            echo "::error::frob check could not run -- frob is not installed or not working (install: uv tool install frob). This gate is UNMEASURED, not clean; fix the install rather than ignoring this failure."
+            exit 1
           fi

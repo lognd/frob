@@ -333,3 +333,39 @@ def test_hooks_dir_kill_switch_refuses_without_spawning(
     assert not spawned
     assert result.is_err
     assert result.danger_err == ScaffoldError.NotAGitRepo
+
+
+# frob:ticket T-3314
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_ci_template_frob_check_gate_fails_loudly_no\
+# t_silently
+def test_ci_template_frob_check_gate_fails_loudly_not_silently(
+    tmp_path: Path,
+) -> None:
+    """T-3314: every scaffolded CI template's `frob check` step must fail
+    the job (non-green CI status, `::error::`) when frob is missing/not
+    working, never emit a quiet `::notice::` and continue with exit 0 --
+    a skipped gate that only prints a notice is indistinguishable from a
+    passing one in an otherwise-green build (T-3276's governing rule:
+    optional-but-needed-for-a-gate means the gate reports UNMEASURED
+    loudly, never CLEAN)."""
+    for project_type in ("python-tool", "pyo3-library", "web-app"):
+        result = render_project(project_type, "probe", tmp_path, force=True)
+        assert result.is_ok, f"{project_type}: {result.err}"
+        ci_paths = [p for p in result.danger_ok if p.name == "ci.yml"]
+        assert ci_paths, f"{project_type}: no rendered ci.yml"
+        text = ci_paths[0].read_text()
+        assert "::notice::" not in text, (
+            f"{project_type}: frob-missing case must not silently skip via "
+            "::notice::"
+        )
+        assert "::error::" in text, (
+            f"{project_type}: frob-missing case must emit a loud ::error::"
+        )
+        assert "exit 1" in text, (
+            f"{project_type}: frob-missing case must fail the job "
+            "(non-green CI status), not continue past the gate"
+        )
+        assert "uv tool install frob" in text, (
+            f"{project_type}: the error must name the install command"
+        )

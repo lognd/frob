@@ -1,7 +1,7 @@
 ---
 id: T-3314
 title: Scaffolded CI silently skips frob check when frob graph --help fails
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -29,6 +29,8 @@ scope_changes:
     loud-failure behavior across all three templates)
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/unit/test_scaffold_project.py::test_ci_template_frob_check_gate_fails_loudly_not_silently
 designated_repro_test: null
 threat: null
 component: null

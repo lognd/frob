@@ -601,6 +601,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3303: frob ticket show auto-commits: NOT_TICKET_SCOPED verbs fall through to the generic commit path when ticket_id is set
 - T-3305: _python_for_tree trusts a tree venv without checking frob is importable, breaking self-verification in every consumer repo
 - T-3311: Collapse the three divergent external-tool spawn conventions into one resolution helper
+- T-3314: Scaffolded CI silently skips frob check when frob graph --help fails
 - T-3316: warn_if_xdist_bound_missing does not detect the xdist plugin's absence, only an unset fleet bound
 - T-3326: frob check --fix is repo-wide even from a targeted invocation, and a killed run leaves an unrecorded partial rewrite
 - T-3341: fix FROB_VERBOSE env leak in TestVerboseFlag (test isolation)
