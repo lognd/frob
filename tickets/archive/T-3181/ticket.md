@@ -3,7 +3,7 @@ id: T-3181
 title: Tracked agent scratch file emits a permanent REF001 ERROR in the repo error
   floor
 state: done
-kind: bug
+kind: docs
 origin: human
 created: '2026-08-27'
 priority: medium
@@ -39,9 +39,21 @@ scope_changes:
     deletion-ownership check; add the literal path
   actor: logan
   at: '2026-08-28'
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: 'COV003: cmd: evidence (scratch-file tracked-count check) is only valid
+    for docs/ux kind tickets; this ticket''s fix was a repo-hygiene/config change
+    (gitignore + removing a tracked scratch file), not app-behavior code, so docs
+    is the accurate kind'
+  actor: logan
+  at: '2026-08-29'
 evidence:
 - cmd:sh -c 'echo tracked-scratch-count=$(git ls-files -- .claude-scratch/ | wc -l);
   test $(git ls-files -- .claude-scratch/ | wc -l) -eq 0' exit=0 sha256=2445dd9c006a
+kind_history:
+- 2026-08-29 bug->docs evidence=1 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
