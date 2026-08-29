@@ -2,7 +2,7 @@
 id: T-3275
 title: 'PORT001 cannot see project identity hardcoded outside the four detector packages:
   frob coverage''s src/frob target is invisible to dogfooding by construction'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -23,10 +23,10 @@ scope:
 - tests/unit/gates/test_port_selfcheck.py
 - tests/test_coverage.py
 - tests/unit/gates/test_detector_scope.py
-- tickets/T-draft-24c487c8/ticket.md
-- tickets/T-draft-8485751c/ticket.md
-- tickets/T-draft-ff0aed44/ticket.md
-- tickets/T-draft-2f89d4e1/ticket.md
+- tickets/T-3433/ticket.md
+- tickets/T-3435/ticket.md
+- tickets/T-3436/ticket.md
+- tickets/T-3434/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -69,28 +69,35 @@ scope_changes:
   actor: logan
   at: '2026-08-29'
 - op: add
-  glob: tickets/T-draft-24c487c8/ticket.md
+  glob: tickets/T-3433/ticket.md
   reason: follow-up ticket filed from this ticket's own work, touched via frob ticket
     new
   actor: logan
   at: '2026-08-29'
 - op: add
-  glob: tickets/T-draft-8485751c/ticket.md
+  glob: tickets/T-3435/ticket.md
   reason: follow-up ticket filed from this ticket's own work, touched via frob ticket
     new
   actor: logan
   at: '2026-08-29'
 - op: add
-  glob: tickets/T-draft-ff0aed44/ticket.md
+  glob: tickets/T-3436/ticket.md
   reason: dropped follow-up ticket filed then resolved directly within this ticket's
     own work
   actor: logan
   at: '2026-08-29'
 - op: add
-  glob: tickets/T-draft-2f89d4e1/ticket.md
+  glob: tickets/T-3434/ticket.md
   reason: follow-up ticket filed from this ticket's own work
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_non_detector_package_code_is_now_scanned_t3275
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_legitimate_self_reference_stays_quiet_t3275
+- tests/unit/gates/test_detector_scope.py::TestDetectorScope::test_tracked_repo_python_files_is_repo_wide_not_detector_scoped
+- tests/test_coverage.py::TestResolveCovTarget::test_non_frob_repo_resolves_its_own_package
+- tests/test_coverage.py::TestResolveCovTarget::test_frob_repo_still_resolves_src_frob
+- tests/test_coverage.py::TestResolveCovTarget::test_unresolvable_name_falls_back_to_default
 designated_repro_test: null
 threat: null
 component: null

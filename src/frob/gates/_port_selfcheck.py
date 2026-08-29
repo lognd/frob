@@ -163,7 +163,7 @@ import ast
 import tomllib
 from pathlib import Path
 
-from frob.gates._detector_scope import DETECTOR_PACKAGE_ROOTS, tracked_gate_files
+from frob.gates._detector_scope import tracked_repo_python_files
 from frob.gates._models import Severity, Violation
 from frob.gates._parse_failures import local_parse001_violation
 from frob.logging import get_logger
@@ -397,7 +397,8 @@ def _unresolved_project_name_violation(root: Path) -> Violation:
 # frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_allowlisted_self_match_file_is_silent  # noqa: E501
 # frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_unresolved_project_name_is_not_a_clean_pass  # noqa: E501
 # frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_unparseable_file_is_parse001_not_silent  # noqa: E501
-# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_non_detector_package_code_never_scanned  # noqa: E501
+# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_non_detector_package_code_is_now_scanned_t3275  # noqa: E501
+# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_legitimate_self_reference_stays_quiet_t3275  # noqa: E501
 # frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_strata_and_vet_are_scanned_since_t2405  # noqa: E501
 def port_selfcheck_gate(root: Path) -> tuple[Violation, ...]:
     """PORT001: every git-tracked `.py` file under one of
@@ -416,7 +417,7 @@ def port_selfcheck_gate(root: Path) -> tuple[Violation, ...]:
         return (_unresolved_project_name_violation(root),)
 
     violations: list[Violation] = []
-    scanned_files = tracked_gate_files(root, log_prefix="port_gate")
+    scanned_files = tracked_repo_python_files(root, log_prefix="port_gate")
     for rel_path in scanned_files:
         if rel_path in _SELF_EXCLUDED_FILES or rel_path in _ALLOWLIST:
             continue
@@ -434,11 +435,11 @@ def port_selfcheck_gate(root: Path) -> tuple[Violation, ...]:
         if ident_hit is not None:
             violations.append(_port001_ident_violation(rel_path, ident_hit.lineno, pkg))
     _log.warning(
-        "port_selfcheck_gate: scanned %d tracked file(s) under "
-        "DETECTOR_PACKAGE_ROOTS (%s) ONLY (not repo-wide -- see T-2389 "
-        "for the wider src/frob/**-and-beyond retarget), %d violation(s)",
+        "port_selfcheck_gate: scanned %d tracked src/frob/**/*.py file(s), "
+        "repo-wide (T-3275: not DETECTOR_PACKAGE_ROOTS-scoped -- see "
+        "tracked_repo_python_files's own docstring for why the two "
+        "populations differ), %d violation(s)",
         len(scanned_files),
-        ", ".join(DETECTOR_PACKAGE_ROOTS),
         len(violations),
     )
     return tuple(violations)

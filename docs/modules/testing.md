@@ -546,10 +546,10 @@ def update_file_cache(root: Path, data: CoverageData, *,
     # there -- a touched-set run's narrower coverage.xml never evicts an
     # unrelated file's still-valid cached percentage.
 
-# frob/testing/_coverage_refresh.py (T-1516)
+# frob/testing/_coverage_refresh.py (T-1516, T-3275)
 def native_coverage_refresh(root: Path, snapshot: GraphSnapshot, *,
                             base: str = "HEAD", full: bool = False,
-                            cov_target: str = "src/frob"
+                            cov_target: str | None = None
                             ) -> Result[Unit, CoverageRefreshError]
     # The frob-native, cross-platform (Linux/macOS/Windows) replacement
     # for `make coverage`/`make coverage-fast`'s shell recipe: decides
@@ -565,6 +565,19 @@ def native_coverage_refresh(root: Path, snapshot: GraphSnapshot, *,
     # function's own `frob coverage` CLI entrypoint, so it no longer has
     # xdist-crash-recovery of its own; only `make coverage`'s full-suite
     # target keeps that shell-side resilience).
+    #
+    # T-3275: `cov_target=None` (the new default, was the bare literal
+    # `"src/frob"`) resolves via `_resolve_cov_target(root)` -- the
+    # scanned repo's OWN `pyproject.toml` `[project].name`, normalized to
+    # its src-layout directory, falling back to `_DEFAULT_COV_TARGET`
+    # ("src/frob") only when that cannot be determined. Neither existing
+    # caller (`app/coverage_runner.py`, `testing/_coverage_wait.py`)
+    # passes `cov_target` explicitly, so both now measure the SCANNED
+    # repo's own package instead of unconditionally measuring frob's --
+    # this was the structural blind spot dogfooding could never surface
+    # (FROBLEMS.md F-011: "src/frob" is correct for frob by construction,
+    # wrong only in a repo this module never runs in). An explicit
+    # `cov_target=` still always wins over the resolved default.
 
 class CoverageRefreshError(ErrorSet):
     PytestRefused = "the pytest subprocess could not be spawned at all"

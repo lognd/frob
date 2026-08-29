@@ -76,6 +76,78 @@ def _commit(root: Path, message: str) -> None:
     _git(root, "commit", "-q", "-m", message)
 
 
+class TestResolveCovTarget:
+    """T-3275: `_resolve_cov_target` -- `frob coverage`'s dynamic
+    `cov_target` resolution, fixing FROBLEMS.md F-011 (a consumer repo's
+    `frob coverage` run measured frob's OWN `src/frob` package, got "No
+    data was collected", and was marked DEGRADED). THIRD FIXTURE: `frob
+    coverage` in a repo whose package is NOT `frob` measures that repo's
+    own package."""
+
+    def test_non_frob_repo_resolves_its_own_package(self, tmp_path: Path) -> None:
+        """A repo whose `pyproject.toml [project].name` is `lograder`
+        (src-layout, `src/lograder/`) resolves to `src/lograder`, not
+        the hardcoded `src/frob` literal -- the exact defect: before
+        T-3275 this repo's `frob coverage` run always measured `src/
+        frob`, a path that does not exist in this fixture at all."""
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "lograder"\n', encoding="utf-8"
+        )
+        (tmp_path / "src" / "lograder").mkdir(parents=True)
+
+        assert _refresh_mod._resolve_cov_target(tmp_path) == "src/lograder"
+
+    def test_frob_repo_still_resolves_src_frob(self, tmp_path: Path) -> None:
+        """MUST-STAY-QUIET: this repo's own shape (`name = "frob"`,
+        `src/frob/`) still resolves to `src/frob` -- the T-3275 change
+        does not regress the existing, correct-for-frob behavior."""
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "frob"\n', encoding="utf-8"
+        )
+        (tmp_path / "src" / "frob").mkdir(parents=True)
+
+        assert _refresh_mod._resolve_cov_target(tmp_path) == "src/frob"
+
+    def test_flat_layout_package_resolves_without_src_prefix(
+        self, tmp_path: Path
+    ) -> None:
+        """A non-src-layout repo (`<pkg>/` at the repo root, no `src/`)
+        still resolves correctly -- the fallback shape `_resolve_cov_
+        target` also checks."""
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "widgets"\n', encoding="utf-8"
+        )
+        (tmp_path / "widgets").mkdir(parents=True)
+
+        assert _refresh_mod._resolve_cov_target(tmp_path) == "widgets"
+
+    def test_unresolvable_name_falls_back_to_default(self, tmp_path: Path) -> None:
+        """No `pyproject.toml` at all: falls back to `_DEFAULT_COV_
+        TARGET` ("src/frob") rather than raising -- a best-effort
+        default an explicit `cov_target=` caller can always override,
+        not a T-2391-style gate finding."""
+        assert (
+            _refresh_mod._resolve_cov_target(tmp_path)
+            == _refresh_mod._DEFAULT_COV_TARGET
+        )
+
+    def test_declared_name_with_no_matching_directory_falls_back(
+        self, tmp_path: Path
+    ) -> None:
+        """`pyproject.toml` declares a name, but neither `src/<pkg>/` nor
+        `<pkg>/` exists on disk (e.g. a docs-only or not-yet-scaffolded
+        repo) -- falls back to the default rather than returning a path
+        that does not exist."""
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "nothing-here"\n', encoding="utf-8"
+        )
+
+        assert (
+            _refresh_mod._resolve_cov_target(tmp_path)
+            == _refresh_mod._DEFAULT_COV_TARGET
+        )
+
+
 class TestPythonCoverageTargets:
     def test_touched_source_selects_test(self, tmp_path: Path) -> None:
         """T-0484: a source file changed since `base` selects the test bound
@@ -960,8 +1032,12 @@ class TestPyprojectDeclaresCoverageConcurrency:
     # frob:ticket T-2527
     def test_pyproject_declares_concurrency_and_sigterm(self) -> None:
         """`[tool.coverage.run]` declares `concurrency = ["multiprocessing",
-        "thread"]` and `sigterm = true` so a `ProcessPoolExecutor` gate
-        worker's execution is recorded (T-1235's "Loss B" fix)."""
+        "thread"]` so a `ProcessPoolExecutor` gate worker's execution is
+        recorded (T-1235's "Loss B" fix), and `sigterm = false` (T-3420:
+        coverage's own SIGTERM handler can deadlock in its own re-entrant
+        signal handler on a second SIGTERM -- see that ticket's Done
+        report -- so it is deliberately OFF, not on, trading a killed
+        run's coverage data for `timeout`/CI staying a reliable kill)."""
         import tomllib
 
         repo_root = Path(__file__).resolve().parent.parent
@@ -970,7 +1046,7 @@ class TestPyprojectDeclaresCoverageConcurrency:
         )
         coverage_run = pyproject["tool"]["coverage"]["run"]
         assert set(coverage_run["concurrency"]) == {"multiprocessing", "thread"}
-        assert coverage_run["sigterm"] is True
+        assert coverage_run["sigterm"] is False
 
 
 # frob:ticket T-1677

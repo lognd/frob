@@ -106,4 +106,60 @@ def tracked_gate_files(root: Path, log_prefix: str) -> tuple[str, ...]:
     )
 
 
-__all__ = ["DETECTOR_PACKAGE_ROOTS", "is_detector_package_file", "tracked_gate_files"]
+# frob:doc docs/modules/gates.md#port001-t-2388
+# frob:tests tests/unit/gates/test_detector_scope.py::TestDetectorScope.test_tracked_repo_python_files_is_repo_wide_not_detector_scoped kind="unit"  # noqa: E501
+# frob:ticket T-3275
+def tracked_repo_python_files(root: Path, log_prefix: str) -> tuple[str, ...]:
+    """Every git-tracked `src/frob/**/*.py` file, UNFILTERED by
+    `DETECTOR_PACKAGE_ROOTS` (T-3275) -- the population PORT001 scans,
+    distinct from `tracked_gate_files`'s detector-scoped population.
+
+    WHY A SEPARATE POPULATION, MEASURED (T-3275), not guessed: this
+    module's own `DETECTOR_PACKAGE_ROOTS` answers "is this file a
+    gate-shaped DETECTOR" (does it construct `Violation(...)`).
+    PORT001's defect class asks a different question -- "can this file
+    embed THIS project's own identity as a literal instead of resolving
+    it from config" -- and the two sets are not the same. `git grep -c
+    '"src/frob' -- 'src/**/*.py'` (T-3275, 2026-08-29) found 31 files
+    across SEVEN top-level packages: `gates` (17), `strata` (6),
+    `tickets` (3), `app` (2), `testing` (1), `refactor` (1), `lang` (1).
+    Four of those seven -- `tickets/`, `app/`, `testing/`, `refactor/`,
+    `lang/` -- are NOT `DETECTOR_PACKAGE_ROOTS` members (T-2466 measured
+    zero `Violation(`-constructing modules in each); `testing/
+    _coverage_refresh.py`'s own hardcoded `_DEFAULT_COV_TARGET =
+    "src/frob"` (T-3275's own originating defect, FROBLEMS.md F-011) is
+    exactly this: identity hardcoded in a module that constructs no
+    Violation and detects nothing. Unlike T-2466's `arch/` exclusion
+    (measured zero on a structural, AST-detectable feature and excluded
+    ON that evidence), no package here can be proven safe the same way:
+    "does this module ever resolve a path or a project-scoped default"
+    is not a bounded, package-scoped property the way "does this module
+    construct a Violation" is -- any package could gain a hit tomorrow
+    with nothing today ruling it out. The population is therefore every
+    tracked `src/frob/**/*.py` file, the SAME unscoped set `tracked_
+    python_files_for_gate`'s own default `pathspec="src/frob"` already
+    returns unfiltered -- this function exists only to give PORT001 a
+    named, `frob:tests`-bound call site of its own (mirroring `tracked_
+    gate_files`'s shape) rather than calling the shared helper directly
+    with no declared population of its own. Also mirrors RENDER001/
+    WALK001's own already-unscoped "scanned N tracked src/frob .py
+    file(s)" convention (`_render_lint.py`/`_walk_lint.py`) -- PORT001's
+    widened population is not a novel shape in this codebase, just a
+    different existing one than `tracked_gate_files` used before T-3275.
+
+    T-2388's directive not to invent a second detector ARCHITECTURE
+    still holds: this is not a second scanning engine, only a second,
+    separately-derived POPULATION fed into the same AST-scanning
+    machinery `_port_selfcheck.py` already runs -- LEXCHECK001 keeps
+    `tracked_gate_files`/`DETECTOR_PACKAGE_ROOTS` unchanged, since its
+    own question ("is this a detector") is the one that tuple actually
+    answers."""
+    return tracked_python_files_for_gate(root, log_prefix=log_prefix)
+
+
+__all__ = [
+    "DETECTOR_PACKAGE_ROOTS",
+    "is_detector_package_file",
+    "tracked_gate_files",
+    "tracked_repo_python_files",
+]

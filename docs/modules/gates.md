@@ -3467,11 +3467,63 @@ after the widening (`app/` was measured as containing zero gate-shaped
 list) is allowlisted by exact relpath with a stated reason, same
 convention as LEXCHECK001's `_ALLOWLIST`.
 
+**Scope (T-3275 re-derivation, superseding T-2405's `DETECTOR_PACKAGE_
+ROOTS` reuse).** T-2405's widening reused LEXCHECK001's `DETECTOR_
+PACKAGE_ROOTS` on the theory that "which packages can contain a
+detector" also answers "which files can hardcode this project's own
+identity". T-3275 found that theory wrong from a real consumer defect:
+`frob.testing._coverage_refresh._DEFAULT_COV_TARGET = "src/frob"`
+hardcoded the target `frob coverage` measures, broke every consumer repo
+(FROBLEMS.md F-011), and sat in `testing/`, a package `DETECTOR_PACKAGE_
+ROOTS` excludes (T-2466 measured zero gate-shaped `Violation(`
+constructors there) -- so PORT001's OLD scope structurally could not
+have caught its own motivating bug. MEASURED (T-3275, 2026-08-29): `git
+grep -c '"src/frob' -- 'src/**/*.py'` found 31 files across SEVEN
+top-level packages (`gates` 17, `strata` 6, `tickets` 3, `app` 2,
+`testing` 1, `refactor` 1, `lang` 1); four of those seven are not
+`DETECTOR_PACKAGE_ROOTS` members. Unlike `arch/`'s T-2466 exclusion
+(measured zero on a bounded, package-scoped AST feature), no package
+here can be proven safe the same way -- "does this module ever hardcode
+a project-scoped default" is not bounded by "does it construct a
+Violation". PORT001 therefore now scans `frob.gates._detector_scope.
+tracked_repo_python_files` -- every tracked `src/frob/**/*.py` file,
+UNFILTERED by `DETECTOR_PACKAGE_ROOTS` -- while LEXCHECK001 keeps
+`tracked_gate_files`/`DETECTOR_PACKAGE_ROOTS` unchanged, since its own
+question ("is this a detector") genuinely is the one that tuple answers.
+This is still one shared scanning ARCHITECTURE (T-2388's own directive),
+just two separately-derived POPULATIONS fed into it.
+
+Measured against this repo at T-3275 time: 16 PORT001-IDENT hits, ZERO
+PORT001-PATH hits, widened from the prior 213-file `DETECTOR_PACKAGE_
+ROOTS` scan to 629 tracked files. Of the 16, 15 are legitimate self-
+reference (frob invoking its own `python -m frob` CLI, or maintainer-
+facing diagnostic message text naming a real file for a human reader --
+the same class PORT001-IDENT's own advisory tier already exists for) and
+1 (`src/frob/graph/cache.py`'s `_NON_LANGUAGE_FINGERPRINT_PACKAGES =
+("frob", "strata-core")`) is a genuine candidate, filed separately
+(T-3275 Done report names the ticket) rather than fixed inside this
+widening, per this ticket's own "report, do not fix here" instruction.
+Also disclosed: NEITHER of PORT001's two AST shapes
+(`.startswith(...)` argument; `Tuple`/`List`/f-string path segment)
+matches a bare string-constant assignment (`_DEFAULT_COV_TARGET =
+"src/frob"`, the exact shape that caused this ticket) -- the widened
+POPULATION now includes `testing/_coverage_refresh.py`, but PORT001's
+existing DETECTION SHAPES still would not have flagged that specific
+line even so. That is a distinct gap (detection shape, not population)
+and is out of this ticket's own scope; filed separately.
+
+`src/frob/repo_meta.py`'s `project.get("name") != "frob"`
+self-identification check matches neither AST shape and scans clean --
+no allowlist entry needed. `gates/_pii_structural/_self_match.py`
+(PORT001's own self-exclusion precedent for a PII scanner's identity
+list) stays allowlisted by exact relpath with a stated reason, same
+convention as LEXCHECK001's `_ALLOWLIST`.
+
 Every run logs its own scanned scope alongside its count, unconditionally
-(`port_selfcheck_gate: scanned N tracked file(s) under DETECTOR_PACKAGE_
-ROOTS (...) ONLY (not repo-wide ...), M violation(s)`) -- a count quoted
-without that line is a statement about the scanned subset, never the
-whole repo (the same silent-zero-denominator lesson T-2391 exists for).
+(`port_selfcheck_gate: scanned N tracked src/frob/**/*.py file(s),
+repo-wide (...), M violation(s)`) -- a count quoted without that line is
+a statement about the scanned subset, never the whole repo (the same
+silent-zero-denominator lesson T-2391 exists for).
 
 UNRESOLVED (not a clean pass) if the scanned repo's own `pyproject.toml`
 `[project].name` cannot be read -- PORT001 has no denominator to search

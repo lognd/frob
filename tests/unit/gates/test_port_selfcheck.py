@@ -109,23 +109,58 @@ class TestPort001:
             v for v in violations if v.rule in ("PORT001-PATH", "PORT001-IDENT")
         ] == []
 
-    def test_non_detector_package_code_never_scanned(self, tmp_path: Path) -> None:
-        """A file outside `DETECTOR_PACKAGE_ROOTS`
-        (`src/frob/{check,gates,strata,vet}/`, T-2405's widened scope,
-        T-2466's shared, MEASURED declaration) carrying the identical
-        offending literal is never scanned -- `app/_config_meta.py` is
-        the disclosed example: T-2466 measured `app/` as containing zero
-        gate-shaped `Violation(` constructors, so it stays out of
-        PORT001's scanned set even after the T-2405 widening, not
-        allowlisted for a scope it cannot enter."""
+    def test_non_detector_package_code_is_now_scanned_t3275(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE (T-3275): a `src/frob/testing/`-shaped module
+        hardcoding the package path is flagged, even though `testing/`
+        is NOT a `DETECTOR_PACKAGE_ROOTS` member (T-2466 measured zero
+        gate-shaped `Violation(` constructors there) -- T-3275's own
+        originating defect (`testing/_coverage_refresh.py`'s hardcoded
+        `_DEFAULT_COV_TARGET = "src/frob"`, FROBLEMS.md F-011) is exactly
+        this shape: identity hardcoded OUTSIDE the detector population.
+        Before T-3275, this was `test_non_detector_package_code_never_
+        scanned` and asserted the OPPOSITE (`app/` never scanned) --
+        that assertion is what let the real defect through undetected;
+        this test now asserts the fixed behavior."""
         _init_repo(tmp_path)
         (tmp_path / "pyproject.toml").write_text(_PYPROJECT_NAMED_FROB)
-        app_dir = tmp_path / "src" / "frob" / "app"
-        app_dir.mkdir(parents=True)
+        testing_dir = tmp_path / "src" / "frob" / "testing"
+        testing_dir.mkdir(parents=True)
         (tmp_path / "src" / "frob" / "__init__.py").write_text("")
-        (app_dir / "__init__.py").write_text("")
-        (app_dir / "_config_meta.py").write_text(
+        (testing_dir / "__init__.py").write_text("")
+        (testing_dir / "_offender.py").write_text(
             "def f(rel_path):\n    return rel_path.startswith('src/frob/')\n"
+        )
+        gates_dir = tmp_path / "src" / "frob" / "gates"
+        gates_dir.mkdir(parents=True)
+        (gates_dir / "__init__.py").write_text("")
+        _commit(tmp_path)
+
+        violations = port_selfcheck_gate(tmp_path)
+
+        hits = {
+            v.file for v in violations if v.rule in ("PORT001-PATH", "PORT001-IDENT")
+        }
+        assert "src/frob/testing/_offender.py" in hits
+
+    def test_legitimate_self_reference_stays_quiet_t3275(self, tmp_path: Path) -> None:
+        """MUST-STAY-QUIET (T-3275): a bare equality check naming this
+        repo's own package (`project.get("name") != "frob"`-shaped, the
+        `repo_meta.py::_declared_frob_version` self-identification
+        pattern PORT001 deliberately does not target) is not flagged --
+        neither AST shape PORT001 matches (`.startswith(...)` argument,
+        or a path-segment literal inside a Tuple/List/JoinedStr) is
+        present, so widening the scanned population to repo-wide does
+        NOT turn a legitimate self-reference into a false positive."""
+        _init_repo(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(_PYPROJECT_NAMED_FROB)
+        (tmp_path / "src" / "frob" / "__init__.py").parent.mkdir(
+            parents=True, exist_ok=True
+        )
+        (tmp_path / "src" / "frob" / "__init__.py").write_text("")
+        (tmp_path / "src" / "frob" / "repo_meta.py").write_text(
+            "def f(project):\n    return project.get('name') != 'frob'\n"
         )
         gates_dir = tmp_path / "src" / "frob" / "gates"
         gates_dir.mkdir(parents=True)

@@ -24,8 +24,17 @@ no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_strata_and_vet_are_scanned_since_t2405
-- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_non_detector_package_code_never_scanned
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_legitimate_self_reference_stays_quiet_t3275
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/gates/test_port_selfcheck.py::TestPort001::test_non_detector_package_code_never_scanned
+  new_node: tests/unit/gates/test_port_selfcheck.py::TestPort001::test_legitimate_self_reference_stays_quiet_t3275
+  reason: T-3275 widened PORT001's scan population repo-wide, so the old test's claim
+    ('a non-detector-package file is never scanned') is now false by design; T-2405's
+    real claim (a legitimate self-reference does not false-positive) is covered by
+    the new test instead
+  actor: logan
+  at: '2026-08-29'
 threat: null
 component: null
 anchor: false

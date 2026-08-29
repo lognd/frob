@@ -92,12 +92,55 @@ if TYPE_CHECKING:
 
 _log = get_logger(__name__)
 
-#: The package this repo's own coverage recipe measures (mirrors
-#: `Makefile`'s `--cov=src/frob`) -- the one repo-specific constant this
-#: module hardcodes; a caller measuring a different package passes its own
-#: `cov_target`.
+#: LAST-RESORT fallback only (T-3275): the package this repo's own
+#: coverage recipe measures (mirrors `Makefile`'s `--cov=src/frob`).
+#: `native_coverage_refresh`'s default now RESOLVES the real target from
+#: the scanned repo's own `pyproject.toml` `[project].name` via
+#: `_resolve_cov_target` below, so a consumer repo whose package is not
+#: literally `frob` measures its own code instead of silently measuring
+#: frob's (T-3275, FROBLEMS.md F-011: a consumer's `frob coverage` run
+#: measured `src/frob`, got "No data was collected", and was marked
+#: DEGRADED). This literal is now reached only when that resolution
+#: cannot determine an answer (missing/malformed pyproject.toml, or a
+#: declared name whose src-layout directory does not exist) -- an
+#: explicit `cov_target=` caller (both existing call sites pass none
+#: today) always wins over both.
 # frob:ticket T-1516
+# frob:ticket T-3275
 _DEFAULT_COV_TARGET = "src/frob"
+
+
+# frob:ticket T-3275
+# frob:tests tests/test_coverage.py::TestResolveCovTarget.test_non_frob_repo_resolves_its_own_package kind="unit"  # noqa: E501
+# frob:tests tests/test_coverage.py::TestResolveCovTarget.test_unresolvable_name_falls_back_to_default kind="unit"  # noqa: E501
+def _resolve_cov_target(root: Path) -> str:
+    """Resolve the coverage source target from `root`'s OWN
+    `pyproject.toml` `[project].name` (the same `import-path convention
+    `app/_config_meta.py`'s self-identification check already relies on:
+    a `-`-normalized-to-`_` package name under `src/<pkg>` or bare
+    `<pkg>`) instead of this module's own hardcoded `"src/frob"` --
+    T-3275's fix for the structural blind spot described in this
+    module's own docstring note: dogfooding this repo on itself can
+    never surface a wrong DEFAULT, because `"src/frob"` is correct for
+    frob by construction; the value is only wrong in a repo this module
+    never runs in. Falls back to `_DEFAULT_COV_TARGET` (unresolved, not
+    a raised error -- T-2391's fail-loudly doctrine applies to gate
+    findings, not to a best-effort default a caller can always override)
+    when `pyproject.toml` is missing/malformed or the declared name's
+    directory cannot be found."""
+    try:
+        pyproject_text = (root / "pyproject.toml").read_text(encoding="utf-8")
+        declared_name = tomllib.loads(pyproject_text).get("project", {}).get("name")
+    except (OSError, tomllib.TOMLDecodeError):
+        return _DEFAULT_COV_TARGET
+    if not isinstance(declared_name, str) or not declared_name:
+        return _DEFAULT_COV_TARGET
+    package_name = declared_name.replace("-", "_")
+    if (root / "src" / package_name).is_dir():
+        return f"src/{package_name}"
+    if (root / package_name).is_dir():
+        return package_name
+    return _DEFAULT_COV_TARGET
 
 
 #: T-1235/T-2527: relative path to the generated subprocess-coverage rc
@@ -1346,7 +1389,7 @@ def native_coverage_refresh(
     *,
     base: str = "HEAD",
     full: bool = False,
-    cov_target: str = _DEFAULT_COV_TARGET,
+    cov_target: str | None = None,
 ) -> Result[Unit, CoverageRefreshError]:
     """Refresh `root`'s coverage data and stamp, in pure Python (T-1516,
     T-1205 acceptance[3]/[4]) -- `subprocess` calls to `pytest`/`coverage`
@@ -1372,6 +1415,13 @@ def native_coverage_refresh(
     around) -- a caller never has to remember the separate stamp step.
     """
     from frob.gates._coverage import load_stamp, stamp_coverage
+
+    # T-3275: resolve the real coverage target from THIS repo's own
+    # pyproject.toml when the caller did not pass one explicitly --
+    # see `_resolve_cov_target`'s docstring for why the old bare literal
+    # default was a structural, dogfooding-proof blind spot.
+    if cov_target is None:
+        cov_target = _resolve_cov_target(root)
 
     # T-3099: apply the T-3094 fleet-aware xdist bound in-process before
     # `_run_pytest_pass` below spawns pytest (the `frob check`/`frob test`

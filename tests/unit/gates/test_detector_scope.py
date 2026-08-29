@@ -56,3 +56,26 @@ class TestDetectorScope:
         files = tracked_gate_files(root, log_prefix="test_tracked_gate_files")
         assert files
         assert all(is_detector_package_file(rel) for rel in files)
+
+    def test_tracked_repo_python_files_is_repo_wide_not_detector_scoped(self) -> None:
+        """T-3275: `tracked_repo_python_files` returns the UNFILTERED
+        `src/frob/**/*.py` population (PORT001's own scan population,
+        since the "can this embed project identity" question is not
+        bounded to `DETECTOR_PACKAGE_ROOTS`) -- unlike `tracked_gate_
+        files`, results are NOT required to satisfy `is_detector_package_
+        file`; a non-detector-package file (e.g. under `testing/` or
+        `app/`) is expected to appear."""
+        from pathlib import Path
+
+        from frob.gates._detector_scope import tracked_repo_python_files
+
+        root = Path(__file__).resolve().parents[3]
+        detector_files = set(tracked_gate_files(root, log_prefix="test_detector"))
+        repo_files = set(tracked_repo_python_files(root, log_prefix="test_repo_wide"))
+        assert repo_files
+        # every detector file is also in the repo-wide population
+        assert detector_files <= repo_files
+        # the repo-wide population is a strict superset (non-detector
+        # packages like testing/ carry tracked .py files too)
+        assert any(rel.startswith("src/frob/testing/") for rel in repo_files)
+        assert not all(is_detector_package_file(rel) for rel in repo_files)

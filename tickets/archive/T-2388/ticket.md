@@ -39,7 +39,7 @@ evidence:
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_hardcoded_path_prefix_is_flagged
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_hardcoded_identity_literal_in_tuple_is_flagged
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_allowlisted_self_match_file_is_silent
-- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_non_detector_package_code_never_scanned
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_legitimate_self_reference_stays_quiet_t3275
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_clean_gate_module_is_silent
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_search_literal_is_resolved_not_hardcoded
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_unresolved_project_name_is_not_a_clean_pass
@@ -52,6 +52,14 @@ evidence_changes:
     coverage'
   actor: logan
   at: '2026-08-18'
+- old_node: tests/unit/gates/test_port_selfcheck.py::TestPort001::test_non_detector_package_code_never_scanned
+  new_node: tests/unit/gates/test_port_selfcheck.py::TestPort001::test_legitimate_self_reference_stays_quiet_t3275
+  reason: T-3275 widened PORT001's scan population repo-wide, so the old test's claim
+    ('a non-detector-package file is never scanned') is now false by design; T-2388's
+    real claim (a legitimate self-reference does not false-positive) is covered by
+    the new test instead
+  actor: logan
+  at: '2026-08-29'
 threat: null
 component: null
 anchor: false
