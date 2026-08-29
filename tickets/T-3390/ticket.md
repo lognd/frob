@@ -1,7 +1,7 @@
 ---
 id: T-3390
 title: Narrow PII012 name-signature heuristic to avoid identifier false positives
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -19,6 +19,7 @@ scope:
 - src/frob/serve/_socketd.py
 - tests/unit/test_doctor_runner_t1276.py
 - docs/modules/gates.md
+- tests/test_pii_structural_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -52,6 +53,11 @@ scope_changes:
 - op: add
   glob: docs/modules/gates.md
   reason: doc anchor for pii_structural_gate touched by scope
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/test_pii_structural_gate.py
+  reason: new regression tests for the two PII012 allowlist entries
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
