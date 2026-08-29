@@ -2,7 +2,7 @@
 id: T-3261
 title: 'post-land sweep regression from T-3092, T-3079, T-3255: 4 new (rule, file)
   identit(ies), 4 finding(s) (DOCENUM001, REG008, REL001)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-28'
@@ -23,6 +23,25 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): doc-only fix: added rule-catalog table rows
+    for F401, I001, QUEUE001, TICK014, VERSION001, VMOD001 to docs/modules/gates.md
+    so the file''s own frob:enumerates directive resolves (DOCENUM001); no code changed'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 2284
+  new_length: 2525
+- mode: append
+  reason: 'BUG002 front door (T-2393): doc-only fix: added rule-catalog table rows
+    for F401, I001, QUEUE001, TICK014, VERSION001, VMOD001 to docs/modules/gates.md
+    so the file''s own frob:enumerates directive resolves (DOCENUM001); no code changed'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 2525
+  new_length: 2766
+evidence:
+- tests/test_docenum_gate.py::TestDocenum001UndocumentedMembers::test_claimed_member_with_doc_row_does_not_fire
 designated_repro_test: null
 threat: null
 component: null
@@ -51,3 +70,7 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - REL001  strata-core/src/parse/grammar_core.rs  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:no-behavior-change reason="doc-only fix: added rule-catalog table rows for F401, I001, QUEUE001, TICK014, VERSION001, VMOD001 to docs/modules/gates.md so the file's own frob:enumerates directive resolves (DOCENUM001); no code changed"
+
+frob:no-behavior-change reason="doc-only fix: added rule-catalog table rows for F401, I001, QUEUE001, TICK014, VERSION001, VMOD001 to docs/modules/gates.md so the file's own frob:enumerates directive resolves (DOCENUM001); no code changed"
