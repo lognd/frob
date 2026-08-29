@@ -31,6 +31,16 @@ gate's violation list is filtered through. Re-exported from
 call site keeps working.
 """
 
+# frob:waive ARCH102 reason="same cohesion this file's own LARGE001 waiver below \
+# already establishes: 32 exports split into 3 naming/usage clusters by the heuristic \
+# (directive validation WAIVE001-005/DSL001, the _match_waiver/_apply_waivers matching \
+# spine, and WAIVE009-011/ census helpers) are all facets of the ONE 'validate+apply a \
+# frob:waive directive' concern this module's docstring names -- the clustering \
+# heuristic groups by name prefix/direct calls, not by the shared directive-matching \
+# pipeline every export ultimately feeds or is fed by; splitting further would \
+# re-create the T-1081 extraction this file's docstring already says was deliberately \
+# drawn here"
+
 # frob:waive LARGE001 reason="T-1651: this file is already the product of two prior \
 # extractions (T-1072 split off frob.gates.__init__, T-1081 further split \
 # WAIVE006/007/PLACE001 into _waive_comments.py and the lease helpers into \

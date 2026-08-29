@@ -2,7 +2,7 @@
 id: T-3243
 title: 'post-land sweep regression from T-3228: 4 new (rule, file) identit(ies), 6
   finding(s) (ARCH102, DEPR006, REG005, WAIVE011)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-28'
@@ -19,16 +19,6 @@ scope:
 - frob-deprecated-baseline.lock.json
 - frob-ratchet.lock.json
 - src/frob/gates/_waive.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
-designated_repro_test: null
-threat: null
-component: null
-anchor: false
-anchor_reason: null
-land_commit: null
 findings:
 - - ARCH102
   - src/frob/gates/_waive.py
@@ -38,6 +28,18 @@ findings:
   - docs/design/registry/check-coverage.yaml
 - - WAIVE011
   - frob-ratchet.lock.json
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+evidence:
+- tests/test_registry_exhaustiveness.py::TestTotalDrift::test_total_mismatch_fails
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 The deferred post-land unscoped sweep (T-1684) for T-3228 at commit 3bc56e3a099c2311a279b0e6280e62063d37851f found 4 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 
