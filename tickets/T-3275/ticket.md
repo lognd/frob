@@ -22,6 +22,7 @@ scope:
 - docs/modules/testing.md
 - tests/unit/gates/test_port_selfcheck.py
 - tests/test_coverage.py
+- tests/unit/gates/test_detector_scope.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -55,6 +56,12 @@ scope_changes:
   glob: tests/test_coverage.py
   reason: 'third fixture: frob coverage in a non-frob-named repo measures that repo''s
     own package'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/gates/test_detector_scope.py
+  reason: unit test for the new tracked_repo_python_files function cited in its frob:tests
+    directive
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
