@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/guides/release.md
+evidence_scope:
+- tests/test_release.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,11 +37,13 @@ body_changes:
     (frob release check still reports the same BUMP REQUIRED as before this ticket);
     no tag created; no T-3011 gate touched. New must-fire/must-stay-quiet behavior
     would require test files outside this ticket''s declared scope -- filed as the
-    out-of-scope T-draft-13d00ebe follow-up instead of expanding scope.'
+    out-of-scope T-3337 follow-up instead of expanding scope.'
   actor: logan
   at: '2026-08-28'
   old_length: 8602
   new_length: 9244
+evidence:
+- tests/test_release.py::test_required_version_and_satisfies
 designated_repro_test: null
 threat: null
 component: null
@@ -161,7 +165,7 @@ Evidence (measurement, not code -- this is a docs-only ticket, scope=['docs/guid
     ticket's scope (docs/guides/release.md) -- confirmed no overlap, no
     second gate built here.
   - frob check --ticket T-3254 --only scope: 1 new-looking SCOPE001 on
-    tickets/T-draft-13d00ebe/ticket.md (filing the sibling out-of-scope
+    tickets/T-3337/ticket.md (filing the sibling out-of-scope
     ticket below) -- this is the standard, tested "sibling draft filed
     mid-ticket" pattern (tests/test_ticket_land.py::
     TestStandaloneSiblingDraftSurvivesLand confirms frob ticket land
@@ -178,7 +182,7 @@ Evidence (measurement, not code -- this is a docs-only ticket, scope=['docs/guid
     class as the already-closed T-3041); not meaningful evidence for a
     prose-only change and not re-run as a gate here.
 
-Filed: T-draft-13d00ebe -- "frob release publish always bumps patch only,
+Filed: T-3337 -- "frob release publish always bumps patch only,
 ignores REL001 required bump class" (bug, scope=
 src/frob/release/_publish.py, scripts/bump_version.py). Out of this
 ticket's docs-only scope; referenced by name in the new procedure section
@@ -197,4 +201,4 @@ still reports BUMP REQUIRED exactly as before this ticket). Did not touch
 (T-3251's scope). Did not create a git tag or any tagging automation.
 
 
-frob:no-behavior-change reason="docs-only deliverable, scope=['docs/guides/release.md']: an ordered release-cut procedure and a documented, existing mechanical check (frob check --only release, already-shipped REL001/REL002) placed correctly relative to freeze/tag/dispatch. No code, test, or workflow file touched; no version bumped (frob release check still reports the same BUMP REQUIRED as before this ticket); no tag created; no T-3011 gate touched. New must-fire/must-stay-quiet behavior would require test files outside this ticket's declared scope -- filed as the out-of-scope T-draft-13d00ebe follow-up instead of expanding scope."
+frob:no-behavior-change reason="docs-only deliverable, scope=['docs/guides/release.md']: an ordered release-cut procedure and a documented, existing mechanical check (frob check --only release, already-shipped REL001/REL002) placed correctly relative to freeze/tag/dispatch. No code, test, or workflow file touched; no version bumped (frob release check still reports the same BUMP REQUIRED as before this ticket); no tag created; no T-3011 gate touched. New must-fire/must-stay-quiet behavior would require test files outside this ticket's declared scope -- filed as the out-of-scope T-3337 follow-up instead of expanding scope."

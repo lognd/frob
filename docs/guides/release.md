@@ -224,18 +224,155 @@ separate approval mechanism was added for this, since `upload`'s own
 
 ## Sequencing: build now, first publish gated on green + consent
 
-As of this ticket there is no verified green CI run on any platform
-(Windows ~19 test failures across 7 files, macOS ~144 uncharacterised
-failures, Linux never producing a verified green full-suite baseline --
-see T-3003/T-2930/T-2971/T-2992). `release.yml` is ready to run today and
-will build and retain real wheels on a manual dispatch, but the FIRST
-actual publish requires BOTH of the following, independently:
+As of T-3254 (2026-08-28), Linux has a verified full-suite baseline
+(T-2992: 12,039 collected, 86 real failures, triaged into seven tickets --
+T-3019/T-3033/T-3034/T-3035/T-3037/T-3040/T-3041 -- all seven now `[done]`
+on main). Windows and macOS status has NOT been re-measured under this
+ticket; do not assume it matches the Linux number. Before a real cut,
+re-check the live CI runs for all three platforms rather than trusting
+this paragraph -- it is a snapshot, not a gate. (T-3251 is building the
+mechanical gate that refuses `upload` against a commit without a green
+per-SHA CI conclusion on every platform; until that lands, "green matrix"
+below is verified by a human reading the Actions UI.)
+
+`release.yml` is ready to run today and will build and retain real wheels
+on a manual dispatch, but the FIRST actual publish requires BOTH of the
+following, independently:
 
 1. a verified green CI run across the full matrix (Linux, macOS,
    Windows), and
 2. explicit owner approval recorded via the `pypi` environment's
    required-reviewer gate for that specific run.
 
-Neither gate substitutes for the other. This ticket builds the machinery
-and proves the consent gate is structural; it does not publish anything,
-and no PyPI or TestPyPI upload was performed as part of landing it.
+Neither gate substitutes for the other. T-3011 built the machinery and
+proved the consent gate is structural; it did not publish anything, and
+no PyPI or TestPyPI upload was performed as part of landing it. T-3254
+adds the ordered cut procedure below; it likewise does not publish
+anything and does not bump the version.
+
+## The release-cut procedure (T-3254)
+
+Two preconditions gate the FIRST publish (green matrix, owner approval,
+above). This section places the steps AROUND those two gates -- most
+importantly, where the version bump goes. `frob release check` reads the
+live public-API graph and compares it against the digest stamped in
+`.frob-release.json`, so **every land that touches the public API
+re-invalidates the stamp**. Bumping and stamping is therefore the LAST
+thing done before a cut, against the exact commit being released, never
+prep work done in advance. A version bumped early and then followed by
+more lands will be stale again by cut time, and `frob release check` will
+say so.
+
+<a id="do-not-use-release-publish-yet"></a>
+### Known gap: `frob release publish` / `make upload` bumps the wrong thing
+
+Do **not** run `frob release publish` (equivalently `make upload`) to
+perform a real cut yet. It unconditionally bumps only the PATCH
+component (`X.Y.Z -> X.Y.(Z+1)`, `next_patch_version` /
+`bump_patch_version`) and then stamps, syncs, commits, pushes, builds,
+and publishes against that patch-bumped version. It does not consult
+`diff_class`/`required_version` at all. Verified against this repo's own
+state (2026-08-28): `frob release check` says the change since the last
+stamp is MAJOR-class, requiring `>= 0.531.0` from `0.530.0` (the
+0.x-series MINOR-position bump semver-zero implies -- see
+[Decision 1](#version-coupling-t-3011) and `required_version` in
+`docs/modules/release.md`). `frob release publish`'s unconditional patch
+bump would instead produce `0.530.1`, which does NOT satisfy
+`>= 0.531.0` -- the command would commit, push, build, and attempt to
+publish a version that fails its own repo's release gate. This is filed
+as **T-draft-13d00ebe** (out of this ticket's `docs/guides/release.md`-only scope;
+the fix belongs in `src/frob/release/_publish.py`). Until T-draft-13d00ebe closes,
+follow the manual steps below instead of `make upload`.
+
+### Ordered steps, main is green -> wheels uploaded
+
+Run every command from the repo root, against the exact commit that will
+be released (note its SHA before starting -- step 8's dispatch and any
+later tag both refer back to it):
+
+1. **Freeze.** Stop landing tickets that touch the public API against
+   `main`. Record the commit SHA you are about to cut.
+2. **Confirm the two preconditions independently**: the CI matrix is
+   green on that SHA for Linux, macOS, and Windows (read the Actions UI
+   directly until T-3251's per-SHA gate exists), and the owner has agreed
+   this SHA should ship.
+3. **Compute the required version.**
+   ```
+   frob release check
+   ```
+   Reads `since <stamped>: <class> change -> need >= <X.Y.Z> (...)`. That
+   `<X.Y.Z>` (or higher) is the version you bump to -- never a smaller or
+   cosmetic number (see [Decision 1](#version-coupling-t-3011): the owner
+   already decided against renumbering).
+4. **Bump all three `version` fields to that number, by hand**, keeping
+   them identical (no tool currently writes an arbitrary target version
+   across all three -- see the gap above): `pyproject.toml`'s
+   `[project].version`, the `native` extra's two pins
+   (`frob-core==<X.Y.Z>`, `strata-core==<X.Y.Z>`), `frob-core/
+   pyproject.toml`'s `version`, and `strata-core/pyproject.toml`'s
+   `version`.
+5. **Stamp**, against the now-bumped `pyproject.toml` and the frozen
+   commit's live API graph:
+   ```
+   frob release stamp
+   ```
+   This writes `.frob-release.json`'s `version` (from the file you just
+   edited) and `api` (from the current graph) together -- doing this
+   before step 4 would stamp the OLD version.
+6. **Sync the derived artifacts**:
+   ```
+   frob release sync
+   ```
+   Regenerates `uv.lock` and inserts the `CHANGELOG.md` skeleton heading
+   for the new version if one is not already present (this repo already
+   carries a `## [0.531.0] - unreleased` heading pre-written -- confirm
+   its content is accurate rather than leaving it as a placeholder).
+7. **Verify all three version-bearing artifacts agree, mechanically**:
+   ```
+   frob check --only release
+   ```
+   This runs REL001 (declared version covers the API change AND
+   `CHANGELOG.md` names the current version) and REL002 (`.frob-
+   release.json`, `pyproject.toml`, and `uv.lock` agree) together. It
+   MUST exit 0 before continuing. Today (pre-bump) it does not -- that is
+   this ticket's own reproduction case, and is expected to still fail
+   until steps 3-6 are actually performed at a real cut.
+8. **Commit and push** `pyproject.toml`, `frob-core/pyproject.toml`,
+   `strata-core/pyproject.toml`, `uv.lock`, `CHANGELOG.md`, and
+   `.frob-release.json` together as one `chore(release): bump to
+   <X.Y.Z>` commit on `main`. This is now the commit that gets released;
+   if CI has to re-run on it, re-confirm precondition 2 before continuing
+   -- a version-bump commit is still a commit, and this repo does not
+   exempt release commits from the green-CI requirement.
+9. **Dispatch** `release.yml` (`workflow_dispatch`, manual, from the
+   Actions UI or `gh workflow run`) against that exact commit. The
+   `build` job runs unconditionally and retains wheels/sdists as CI
+   artifacts -- no approval needed for this half.
+10. **Owner approval.** The owner reviews the retained build artifacts
+    and approves the `pypi` environment's required-reviewer gate for
+    that specific run. `upload` then runs, publishing all three packages
+    via OIDC trusted publishing (no stored token).
+11. **Tag, after upload succeeds -- never before.** This repository has
+    never had a git tag (`git tag` returns nothing as of T-3254). The cut
+    DOES create one: after `upload` completes successfully, the owner
+    tags the released commit (`git tag v<X.Y.Z> <sha> && git push origin
+    v<X.Y.Z>`) as a historical marker of what shipped. This is a manual,
+    post-hoc, owner-run step -- it is never automated into `release.yml`
+    or any other workflow. `release.yml`'s `on:` block stays
+    `workflow_dispatch` only (T-3011's structural gate; see "Why this is
+    a structural gate, not a convention" above and
+    `tests/unit/test_release_workflow_gate.py`); tagging AFTER a
+    confirmed-successful publish, by a human, off of CI entirely, cannot
+    reach that trigger surface. Do not reorder this step earlier: a tag
+    pushed before `upload` succeeds would mark a commit as released that
+    might not be.
+
+### Follow-up filed alongside this ticket
+
+- **T-draft-13d00ebe** -- `frob release publish` / `make upload` always bumps only
+  the patch component and never consults `diff_class`/`required_version`,
+  so it can commit, push, and attempt to publish a version that fails
+  this repo's own REL001 gate (reproduced above against live state:
+  would produce `0.530.1` when `0.531.0` is required). Scope belongs in
+  `src/frob/release/_publish.py` / `scripts/bump_version.py`, outside
+  this ticket's `docs/guides/release.md`-only scope.
