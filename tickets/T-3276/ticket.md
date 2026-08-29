@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ea04086eb5161330b9114541878d693dbe1a551d
 ---
 OWNER DIRECTIVE 2026-08-28: account for xdist being missing; ensure every tool
 frob uses is present; a "tool not found" must be LOUD.
