@@ -143,6 +143,17 @@ scope_changes:
   reason: frob ack writes to frob.lock
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_open_blocker_names_the_open_ticket_not_the_terminal_one
+- tests/unit/test_logging_module.py::test_log_record_reported_via_exactly_one_channel_under_pytest
+- tests/unit/test_reopen_ticket.py::TestReopenTicket::test_reopen_requires_done
+- tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerHealthy::test_healthy_plain_prints_all_available_and_does_not_exit
+- tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback::test_none_progress_returns_none
+- tests/unit/test_check.py::TestCollectResultsProgressCallback::test_no_callback_matches_pre_t2978_behavior_exactly
+- tests/test_ghio.py::TestPreflight::test_no_gh_no_auth_no_remote_never_crashes
+- tests/test_ci_report.py::TestParsePytestLog::test_truncated_with_no_evidence_is_not_recoverable
+- tests/gates/test_comment_placement.py::TestCplace001::test_must_fire_long_waive_reason
+- tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_ticket_plus_narrative_wording_warns
 designated_repro_test: null
 threat: null
 component: null
