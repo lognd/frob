@@ -19,6 +19,7 @@ scope:
 - src/frob/app/check_runner.py
 - src/frob/_cli_parsers/_check.py
 - src/frob/app/config.py
+- docs/commands/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -76,6 +77,12 @@ scope_changes:
     wiring (check_runner.py's _apply_tier_a_and_reverify never threads ticket_id through
     to apply_tier_a_fixes despite cfg.check_ticket being available) plus a new --fix-all
     opt-in flag (cli parser + AppConfig)
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/commands/check.md
+  reason: will document the new --fix-all opt-in flag and the --ticket-scoped --fix
+    behavior here
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
