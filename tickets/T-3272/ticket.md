@@ -84,7 +84,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8ac6892fd9eff7cd389a3913f64b63e4d5410438
 ---
 OWNER DIRECTIVE 2026-08-28: ledger v2 must be the DEFAULT for new repos.
 
