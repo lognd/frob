@@ -1,7 +1,7 @@
 ---
 id: T-3059
 title: Split __main__.py and stats/_agentic.py under LARGE001's 800-line threshold
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-26'
