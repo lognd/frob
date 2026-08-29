@@ -18,6 +18,7 @@ scope:
 - tests/conftest.py
 - src/frob/gates/_tdd_order.py
 - src/frob/app/_config_external.py
+- tickets/T-draft-4189a8b2/**
 scope_breadth_ack: true
 scope_breadth_ack_reason: measurement-first triage ticket, no source scope yet; will
   file/scope targeted sub-tickets per root cause found (same pattern as T-3343)
@@ -47,6 +48,14 @@ scope_changes:
     fix'
   actor: logan
   at: '2026-08-29'
+- op: add
+  glob: tickets/T-draft-4189a8b2/**
+  reason: abandoned draft from a timed-out ticket-new call, dropped under T-3346;
+    its own ledger write needs to be in scope
+  actor: logan
+  at: '2026-08-29'
+evidence:
+- tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags::test_current_tree_has_zero_dropped_flags
 designated_repro_test: null
 threat: null
 component: null
