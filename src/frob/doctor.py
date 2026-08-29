@@ -79,6 +79,7 @@ from __future__ import annotations
 import importlib
 import json
 import shutil
+from enum import StrEnum
 from importlib.metadata import version
 from pathlib import Path
 
@@ -738,6 +739,202 @@ def _mutate_journal_remediation(stale: tuple[StaleJournal, ...]) -> str:
     )
 
 
+# frob:ticket T-3276
+# frob:doc docs/guides/install.md#external-tool-inventory-and-preflight-t-3276
+# frob:tests tests/unit/test_doctor.py::TestExternalToolsRemediation.test_missing_required_tool_names_it_and_the_install_command  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestExternalToolsRemediation.test_missing_optional_tool_is_silent  # noqa: E501
+class ToolCategory(StrEnum):
+    """T-3276: the three ways `frob doctor` treats a missing external
+    tool, per the owner's own stated rule -- REQUIRED (frob cannot
+    perform the operation at all without it: a loud, typed, install-
+    command-naming failure), OPTIONAL (frob never uses it unless the
+    repo opts in, e.g. a language toolchain for a language this repo
+    does not contain: silent when absent), and OPTIONAL_FOR_GATE (a
+    `frob check` gate needs it to MEASURE something: absence must report
+    that gate UNMEASURED, loudly, distinguishable from CLEAN, never
+    silently skipped or folded into a passing result)."""
+
+    REQUIRED = "required"
+    OPTIONAL = "optional"
+    OPTIONAL_FOR_GATE = "optional_for_gate"
+
+
+# frob:ticket T-3276
+# frob:doc docs/guides/install.md#external-tool-inventory-and-preflight-t-3276
+# frob:tests tests/unit/test_doctor.py::TestScanExternalTools.test_present_binary_reports_version  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestScanExternalTools.test_missing_binary_reports_absent_with_install_hint  # noqa: E501
+class ExternalToolStatus(BaseModel):
+    """One `_EXTERNAL_TOOLS` entry's measured presence (T-3276): `present`
+    is `shutil.which(name) is not None` for a binary, or the package
+    being importable/its distribution version resolvable for a Python
+    plugin (`kind="package"` entries in `_EXTERNAL_TOOLS`); `version` is
+    best-effort (`None` when unmeasurable, never itself a failure).
+    `frob doctor` reports one of these per inventory entry so "what tools
+    does frob spawn, and is each one here" is a single command's answer,
+    not tribal knowledge scattered across call sites (T-3276's own
+    measured finding: `shutil.which` in only 10 of `src/frob/`'s files,
+    `frob doctor` checking exactly one binary before this)."""
+
+    model_config = {}
+
+    name: str
+    category: ToolCategory
+    present: bool
+    version: str | None = None
+    install_hint: str
+
+
+# frob:ticket T-3276
+# T-3276: the stated inventory of every external tool frob spawns or
+# depends on for a gate to MEASURE something, with its category
+# (`ToolCategory`'s own docstring states the rule each category follows)
+# and install hint. `kind="binary"` entries are probed via `shutil.which`
+# + a best-effort `--version` spawn; `kind="package"` entries are probed
+# via `importlib.metadata.version` (they are Python plugins/libraries,
+# never spawned as a subprocess themselves -- pytest-xdist and pytest-cov
+# are pytest PLUGINS, loaded in-process by pytest, not separate binaries).
+# `git`/`uv`/`python`(sys.executable) are REQUIRED: frob cannot run at
+# all without a Python interpreter, cannot resolve a repo without git,
+# and every `uv run` spawn convention (T-3268's own fix target) needs
+# `uv`. `pytest`/`pytest-xdist`/`pytest-cov` are OPTIONAL_FOR_GATE: the
+# TEST gate and `frob coverage` need them to MEASURE, but frob itself
+# still runs and every other gate still reports normally without them --
+# this is the exact F-011 incident (`frob coverage --full` degrading
+# silently instead of reporting coverage UNMEASURED). `ruff`/`ty` are
+# REQUIRED for the gates that spawn them (T-0142 already gives these a
+# loud typed failure on absence; listed here so the inventory is
+# complete, not duplicating that fix). Per-language toolchains
+# (`cargo`/`npm`/`ctest`) are OPTIONAL: genuinely per-language, silent
+# when the repo does not use that language (LANG003 already reports
+# per-language gaps separately from tool presence).
+_EXTERNAL_TOOLS: tuple[tuple[str, str, ToolCategory, str], ...] = (
+    ("python", "binary", ToolCategory.REQUIRED, "install a Python 3.11+ interpreter"),
+    ("git", "binary", ToolCategory.REQUIRED, "install git (https://git-scm.com)"),
+    ("uv", "binary", ToolCategory.REQUIRED, "install uv: https://docs.astral.sh/uv/"),
+    (
+        "ruff",
+        "binary",
+        ToolCategory.REQUIRED,
+        "pip install ruff (or: uv pip install ruff)",
+    ),
+    ("ty", "binary", ToolCategory.REQUIRED, "pip install ty (or: uv pip install ty)"),
+    (
+        "pytest",
+        "binary",
+        ToolCategory.OPTIONAL_FOR_GATE,
+        "pip install pytest (or: uv pip install pytest)",
+    ),
+    (
+        "pytest-xdist",
+        "package",
+        ToolCategory.OPTIONAL_FOR_GATE,
+        "pip install pytest-xdist (or: uv pip install pytest-xdist) -- "
+        "without it, pytest addopts' `-n auto` fails with a usage error "
+        "(pytest exits 4) rather than running serially",
+    ),
+    (
+        "pytest-cov",
+        "package",
+        ToolCategory.OPTIONAL_FOR_GATE,
+        "pip install pytest-cov (or: uv pip install pytest-cov) -- "
+        "without it, `frob coverage` cannot produce coverage.xml and "
+        "TEST006 can never be measured",
+    ),
+    ("cargo", "binary", ToolCategory.OPTIONAL, "install rustup (https://rustup.rs)"),
+    ("npm", "binary", ToolCategory.OPTIONAL, "install Node.js (https://nodejs.org)"),
+    ("ctest", "binary", ToolCategory.OPTIONAL, "install CMake (https://cmake.org)"),
+)
+
+
+# frob:ticket T-3276
+def _probe_binary_version(binary: str) -> str | None:
+    """Best-effort `<binary> --version`'s first output line, or `None` on
+    any failure (missing binary, non-zero exit, no output, exec disabled
+    via `guarded_subprocess_run`) -- never raises, matching every other
+    doctor probe's fail-soft discipline; a version string is a diagnostic
+    nicety, never itself a presence/absence verdict."""
+    spawned = guarded_subprocess_run(
+        [binary, "--version"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if spawned.is_err:
+        return None
+    completed = spawned.danger_ok
+    if completed.returncode != 0:
+        return None
+    first_line = (completed.stdout or completed.stderr or "").strip().splitlines()
+    return first_line[0] if first_line else None
+
+
+# frob:ticket T-3276
+# frob:doc docs/guides/install.md#external-tool-inventory-and-preflight-t-3276
+# frob:tests tests/unit/test_doctor.py::TestScanExternalTools.test_present_binary_reports_version  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestScanExternalTools.test_missing_binary_reports_absent_with_install_hint  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestScanExternalTools.test_present_package_reports_version_via_importlib  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestScanExternalTools.test_missing_package_reports_absent  # noqa: E501
+def scan_external_tools() -> list[ExternalToolStatus]:
+    """Probe every `_EXTERNAL_TOOLS` entry and return its
+    `ExternalToolStatus` (T-3276) -- the MUST-STAY-QUIET fixture's
+    counterpart: when every tool is present this only measures (a
+    `shutil.which`/`importlib.metadata.version` call per entry, no
+    subprocess spawn beyond the cheap `--version` probe), it never warns
+    or slows the caller down; `run_diagnosis`/`_assemble_doctor_report`
+    decide what `healthy`/`remediation` do with a REQUIRED absence."""
+    statuses: list[ExternalToolStatus] = []
+    for name, kind, category, install_hint in _EXTERNAL_TOOLS:
+        if kind == "package":
+            try:
+                pkg_version = version(name)
+                present = True
+            except Exception:
+                pkg_version = None
+                present = False
+            statuses.append(
+                ExternalToolStatus(
+                    name=name,
+                    category=category,
+                    present=present,
+                    version=pkg_version,
+                    install_hint=install_hint,
+                )
+            )
+            continue
+        which = shutil.which(name)
+        present = which is not None
+        probed_version = _probe_binary_version(name) if present else None
+        statuses.append(
+            ExternalToolStatus(
+                name=name,
+                category=category,
+                present=present,
+                version=probed_version,
+                install_hint=install_hint,
+            )
+        )
+    return statuses
+
+
+# frob:ticket T-3276
+# frob:tests tests/unit/test_doctor.py::TestExternalToolsRemediation.test_missing_required_tool_names_it_and_the_install_command  # noqa: E501
+# frob:tests tests/unit/test_doctor.py::TestExternalToolsRemediation.test_missing_optional_tool_is_silent  # noqa: E501
+def _external_tools_remediation(statuses: list[ExternalToolStatus]) -> str | None:
+    """One clear remediation line per missing REQUIRED tool (T-3276) --
+    joined if more than one -- naming the tool and its install command;
+    `None` if every REQUIRED tool is present (a missing OPTIONAL or
+    OPTIONAL_FOR_GATE tool is never itself unhealthy, per `ToolCategory`'s
+    own docstring -- OPTIONAL_FOR_GATE's absence is a gate-level UNMEASURED
+    concern, not a `frob doctor` health failure)."""
+    missing_required = [
+        s for s in statuses if s.category == ToolCategory.REQUIRED and not s.present
+    ]
+    if not missing_required:
+        return None
+    lines = [f"{s.name} not found -- {s.install_hint}" for s in missing_required]
+    return "required tool(s) missing: " + "; ".join(lines)
+
+
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:ticket T-1501
 # frob:ticket T-1515
@@ -773,7 +970,14 @@ class DoctorReport(BaseModel):
     docstring. Only its `skewed=True` case makes `healthy` False; an
     unmeasurable comparison (no global `frob` on PATH) reports
     `global_binary` with `global_version=None, skewed=False` and never
-    counts against `healthy`."""
+    counts against `healthy`. `external_tools` (T-3276) is the stated
+    inventory of every external tool frob spawns or depends on for a gate
+    to measure something (`_EXTERNAL_TOOLS`/`ExternalToolStatus`); only a
+    missing `ToolCategory.REQUIRED` entry makes `healthy` False -- a
+    missing OPTIONAL entry is silent by design, and a missing
+    OPTIONAL_FOR_GATE entry is the affected gate's own UNMEASURED concern,
+    never a `frob doctor` health failure (`ToolCategory`'s own docstring
+    states the rule)."""
 
     model_config = {}
 
@@ -786,6 +990,7 @@ class DoctorReport(BaseModel):
     malformed_ticket_edges: list[MalformedTicketEdge] = []
     stale_ticket_leases: list[str] = []
     venv_shims: list[VenvShimDrift] = []
+    external_tools: list[ExternalToolStatus] = []
     stale_binary: str | None = None
     global_binary: GlobalBinarySkew | None = None
     live_land_process: LiveLandProcess | None = None
@@ -877,13 +1082,17 @@ def _combined_remediation(
     stale_binary: str | None = None,
     global_binary: GlobalBinarySkew | None = None,
     live_land_process: LiveLandProcess | None = None,
+    external_tools: tuple[ExternalToolStatus, ...] = (),
 ) -> str | None:
     """The full remediation text for a `DoctorReport`: natives hint,
     derived-state hint, scaffold-conformance hint (T-0736), stale mutate-
     journal hint (T-0857), malformed-ticket-edge hint (T-1132), stale-
     ticket-lease hint (T-1131), venv-shim hint (T-1161), stale-binary-
     floor hint (T-1218), global-binary-skew hint (T-1719), live-land-process
-    hint (T-1515), or all joined -- `None` only when every part is clean.
+    hint (T-1515), external-tools hint (T-3276, REQUIRED absences only --
+    `_external_tools_remediation`'s own docstring states why OPTIONAL/
+    OPTIONAL_FOR_GATE absences never appear here), or all joined -- `None`
+    only when every part is clean.
     T-1515: an ALIVE land process is
     informational, not unhealthy (a real, in-flight `land()` is normal).
     T-1634: a CONFIRMED-dead (orphaned) holder still contributes a
@@ -914,6 +1123,9 @@ def _combined_remediation(
         parts.append(_global_binary_skew_remediation(global_binary))
     if live_land_process is not None and live_land_process.alive is not True:
         parts.append(_live_land_process_remediation(live_land_process))
+    external_tools_hint = _external_tools_remediation(list(external_tools))
+    if external_tools_hint is not None:
+        parts.append(external_tools_hint)
     return " | ".join(parts) if parts else None
 
 
@@ -983,18 +1195,22 @@ def _log_doctor_diagnosis(
     stale_binary=None,
     live_land_process=None,
     global_binary=None,
+    external_tools=(),
 ) -> None:
     """T-1162: pure I/O -- emit `run_diagnosis`'s single summary log line.
     Extracted verbatim so the report-building logic above it stays
     decision/formatting only. `venv_shims` (T-1161) defaults to `()` so
     existing positional callers are unaffected. `stale_binary` (T-1218),
     `live_land_process` (T-1515), and `global_binary` (T-1719) default to
-    `None` for the same reason."""
+    `None` for the same reason. `external_tools` (T-3276) defaults to
+    `()` and logs only the REQUIRED entries that are missing -- the same
+    "only what matters" posture the rest of this line already has."""
     _log.info(
         "doctor: healthy=%s extensions=%s derived_state_corrupt=%s drift=%s "
         "scaffold_needs_apply=%s stale_mutate_journals=%s "
         "malformed_ticket_edges=%s stale_ticket_leases=%s venv_shims=%s "
-        "stale_binary=%s global_binary_skewed=%s live_land_process=%s",
+        "stale_binary=%s global_binary_skewed=%s live_land_process=%s "
+        "missing_required_tools=%s",
         healthy,
         extensions,
         [d.name for d in corrupt],
@@ -1007,11 +1223,49 @@ def _log_doctor_diagnosis(
         bool(stale_binary),
         global_binary.skewed if global_binary is not None else None,
         live_land_process.model_dump() if live_land_process is not None else None,
+        [
+            t.name
+            for t in external_tools
+            if t.category == ToolCategory.REQUIRED and not t.present
+        ],
     )
 
 
 # frob:ticket T-1501
 # frob:ticket T-1515
+# frob:ticket T-3276
+def _doctor_healthy(
+    natives_healthy: bool,
+    corrupt,
+    scaffold_needs_apply,
+    stale_mutate_journals,
+    malformed_ticket_edges,
+    stale_ticket_leases,
+    venv_shims,
+    stale_binary,
+    global_binary,
+    live_land_process,
+    missing_required_tools: list[ExternalToolStatus],
+) -> bool:
+    """`_assemble_doctor_report`'s own `healthy` boolean, split out
+    (T-3276) to keep that function under the ARCH001 threshold -- pure
+    decision logic, no I/O, matching every other doctor helper's split
+    shape (T-1501/T-1162 already established this pattern)."""
+    return (
+        natives_healthy
+        and not corrupt
+        and not scaffold_needs_apply
+        and not stale_mutate_journals
+        and not malformed_ticket_edges
+        and not stale_ticket_leases
+        and not venv_shims
+        and not stale_binary
+        and not (global_binary is not None and global_binary.skewed)
+        and not (live_land_process is not None and live_land_process.alive is None)
+        and not missing_required_tools
+    )
+
+
 def _assemble_doctor_report(
     resolved_root: Path,
     extensions: list,
@@ -1028,6 +1282,7 @@ def _assemble_doctor_report(
     stale_binary,
     live_land_process=None,
     global_binary=None,
+    external_tools: list[ExternalToolStatus] | None = None,
 ) -> DoctorReport:
     """`run_diagnosis`'s own `healthy`/`DoctorReport` decision and build,
     extracted (T-1501) to keep `run_diagnosis` itself under the ARCH001
@@ -1035,8 +1290,9 @@ def _assemble_doctor_report(
     check it documents. `healthy` is False if natives fail to import, the
     derived-state manifest is corrupt, or any of the scaffold/mutate-
     journal/ticket-edge/ticket-lease/venv-shim/stale-binary/global-binary-
-    skew scans found something -- see `DoctorReport`'s own docstring for
-    the per-field contract each of those checks documents. `live_land_process` (T-1515)
+    skew/external-tools scans found something -- see `DoctorReport`'s own
+    docstring for the per-field contract each of those checks documents.
+    `live_land_process` (T-1515)
     only affects `healthy` when its holder's liveness is AMBIGUOUS
     (`alive is None`) -- this repo genuinely cannot confirm the holder is
     gone, so it stays a human-actionable finding. T-1634: a CONFIRMED-dead
@@ -1046,18 +1302,25 @@ def _assemble_doctor_report(
     acquisition self-heals the file's stale content on its own (logging a
     WARNING when it does). A genuinely live `land()` in flight
     (`alive is True`) was already, and remains, informational, not
-    unhealthy."""
-    healthy = (
-        natives_healthy
-        and not corrupt
-        and not scaffold_needs_apply
-        and not stale_mutate_journals
-        and not malformed_ticket_edges
-        and not stale_ticket_leases
-        and not venv_shims
-        and not stale_binary
-        and not (global_binary is not None and global_binary.skewed)
-        and not (live_land_process is not None and live_land_process.alive is None)
+    unhealthy. `external_tools` (T-3276) only affects `healthy` via a
+    missing `ToolCategory.REQUIRED` entry -- see `ToolCategory`'s own
+    docstring for why OPTIONAL/OPTIONAL_FOR_GATE absences never do."""
+    tools = external_tools or []
+    missing_required_tools = [
+        t for t in tools if t.category == ToolCategory.REQUIRED and not t.present
+    ]
+    healthy = _doctor_healthy(
+        natives_healthy,
+        corrupt,
+        scaffold_needs_apply,
+        stale_mutate_journals,
+        malformed_ticket_edges,
+        stale_ticket_leases,
+        venv_shims,
+        stale_binary,
+        global_binary,
+        live_land_process,
+        missing_required_tools,
     )
     return DoctorReport(
         frob_version=_frob_version(),
@@ -1069,6 +1332,7 @@ def _assemble_doctor_report(
         malformed_ticket_edges=list(malformed_ticket_edges),
         stale_ticket_leases=list(stale_ticket_leases),
         venv_shims=list(venv_shims),
+        external_tools=tools,
         stale_binary=stale_binary,
         global_binary=global_binary,
         live_land_process=live_land_process,
@@ -1084,6 +1348,7 @@ def _assemble_doctor_report(
             stale_binary,
             global_binary,
             live_land_process,
+            tuple(tools),
         ),
     )
 
@@ -1148,6 +1413,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     ) = _collect_doctor_scans(resolved_root)
     stale_binary = stale_binary_warning(resolved_root)
     global_binary = global_binary_skew(f"frob {_frob_version()}")
+    external_tools = scan_external_tools()
 
     report = _assemble_doctor_report(
         resolved_root,
@@ -1165,6 +1431,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         stale_binary,
         live_land_process,
         global_binary,
+        external_tools,
     )
     _log_doctor_diagnosis(
         report.healthy,
@@ -1179,5 +1446,6 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         stale_binary,
         live_land_process,
         global_binary,
+        external_tools,
     )
     return report

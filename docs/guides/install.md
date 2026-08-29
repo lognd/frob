@@ -683,3 +683,52 @@ that detail into `coverage_gate`, which reports ONE `COV003` naming the
 real collection failure (with the stderr tail) instead of iterating every
 archived ticket's evidence ids and reporting each as independently
 unresolved.
+
+## External tool inventory and preflight (T-3276)
+
+<!-- frob:describes src/frob/doctor.py::ToolCategory -->
+<!-- frob:describes src/frob/doctor.py::ExternalToolStatus -->
+<!-- frob:describes src/frob/doctor.py::scan_external_tools -->
+
+Measured 2026-08-28: `shutil.which` appeared in only 10 files across
+`src/frob/`, `frob doctor` checked exactly one binary (`frob` itself, for
+`GlobalBinarySkew`), and at least three spawn conventions coexisted for
+the same tool (`sys.executable -m pytest`, `uv run pytest`, a bare
+`pytest`/`python` PATH lookup). A confirmed consumer incident (diax
+FROBLEMS.md F-011): `frob coverage --full` spawned a global pytest with
+neither `pytest-cov` nor `pytest-xdist` installed, exited 4 (usage
+error), and frob marked the run DEGRADED and continued -- so `TEST006`
+could never be satisfied through `frob coverage` at all, and the user
+bypassed frob entirely.
+
+`frob doctor` now enumerates and reports every external tool it can spawn
+or depends on for a gate to measure something, each tagged with one of
+three categories (`ToolCategory`):
+
+- **REQUIRED** -- frob cannot perform the operation at all without it
+  (`python`, `git`, `uv`, `ruff`, `ty`). Absence makes `frob doctor`
+  report `healthy=False` with a remediation line naming the tool and its
+  install command.
+- **OPTIONAL** -- frob never uses it unless the repo opts in, e.g. a
+  per-language toolchain for a language this repo does not contain
+  (`cargo`, `npm`, `ctest`). Absence is silent -- it never affects
+  `healthy` or produces a remediation line.
+- **OPTIONAL_FOR_GATE** -- a `frob check` gate needs it to MEASURE
+  something (`pytest`, `pytest-xdist`, `pytest-cov`). Absence must make
+  the affected gate report UNMEASURED, loudly, distinguishable from
+  CLEAN -- never a silent skip and never `frob doctor`-unhealthy on its
+  own (that per-gate wiring is tracked separately: see T-3311/T-3316 in
+  `tickets/archive/` for the call-site work this ticket's own scope,
+  `src/frob/doctor.py`, did not reach).
+
+`scan_external_tools()` probes each `_EXTERNAL_TOOLS` entry: a binary via
+`shutil.which` plus a best-effort `--version` spawn, a Python plugin
+(`pytest-xdist`, `pytest-cov` -- loaded in-process by pytest, never
+spawned as their own binary) via `importlib.metadata.version`. Every
+probe is fail-soft (never raises); `ExternalToolStatus.present=False`
+plus its `install_hint` is the reported outcome for a missing tool,
+matching the MUST-FIRE fixture this ticket's own acceptance criteria
+named: a missing REQUIRED tool's message names the tool and the install
+command. A fully-present environment produces no new output and no
+measurable slowdown beyond the cheap presence probes themselves (the
+MUST-STAY-QUIET fixture).

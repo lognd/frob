@@ -2,7 +2,7 @@
 id: T-3276
 title: 'Missing external tools degrade quietly instead of failing loud: no central
   resolution, doctor checks one binary, xdist absence unaccounted'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
