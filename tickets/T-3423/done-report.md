@@ -1,0 +1,22 @@
+## Done report
+
+DECISION: kept the existing hybrid (already the current state before this ticket, not something newly introduced) rather than switching wholesale to option (a). T-2109 (landed 2026-08-17, before this ticket was filed) had already replaced the node-count floor with option (c) specifically for node ids: an exact golden SET (_EXPECTED_NODE_IDS) plus _node_id_diff_message, which names every added/removed id and tells the reader to update the set in the same diff, rather than a bare integer bump. This ticket's failure (design/frob.strata gained the 'narrative' node, T-3029) is that mechanism catching a real, disclosed model addition for the first time since it was built -- NOT a fifth instance of the T-0440/T-0967/T-1079/T-2102 anti-pattern (those four silently transcribed opaque == integers with no signal of what changed). flows/boundaries/claims stay >= FLOORS (T-2102's option (a)) since no derivable-formula/golden-set case has been made for those three and a floor already satisfies this test's stated job (nonzero surface, not exact reproduction). Reasoning stated explicitly in the docstring rather than inherited. Fix: added 'narrative' to _EXPECTED_NODE_IDS with an inline comment (mirroring the existing per-addition comment style), appended a new docstring paragraph preserving all prior drift history verbatim and explaining why this is not the same anti-pattern, and added TestFrobSelfModelFailureModes with two synthetic (non-design/frob.strata-mutating) tests: test_unparseable_source_fails_to_parse (parse_module('') is Err) and test_empty_module_elaborates_but_fails_every_surface_assertion (a syntactically valid but empty 'module frob' elaborates to 0 nodes/flows/boundaries/claims, and every one of test_parses_and_elaborates's own assertions -- the node-id diff and each floor -- independently fails against it) -- these are the MUST-FIRE fixture. T-2109's own test_golden_node_id_set_catches_an_injected_node/test_golden_node_id_set_catches_a_removed_node/test_golden_node_id_set_passes_when_unchanged (already present, unmodified) remain the MUST-STAY-QUIET evidence: a legitimate node addition fails under option (c) with a message naming exactly what to update, never silently. Evidence: all 6 cited tests pass (test_parses_and_elaborates itself, both new failure-mode tests, and the three T-2109 positive controls). frob test (touched-set) could not complete within the 590s foreground budget -- this test file also contains several @pytest.mark.timeout(300)-marked whole-repo build_graph(_REPO_ROOT) scans (test_sys_gate_zero_violations and siblings), pre-existing and unrelated to this change, that make a full-file run exceed the available budget; targeted node-id evidence above was run directly with pytest instead.
+
+### Changed
+```
+ tickets/T-3423/ticket.md | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates` (pytest node id, verified passing when recorded)
+- `tests/system/test_frob_self_model.py::TestFrobSelfModelFailureModes::test_unparseable_source_fails_to_parse` (pytest node id, verified passing when recorded)
+- `tests/system/test_frob_self_model.py::TestFrobSelfModelFailureModes::test_empty_module_elaborates_but_fails_every_surface_assertion` (pytest node id, verified passing when recorded)
+- `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_golden_node_id_set_catches_an_injected_node` (pytest node id, verified passing when recorded)
+- `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_golden_node_id_set_catches_a_removed_node` (pytest node id, verified passing when recorded)
+- `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_golden_node_id_set_passes_when_unchanged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 12 error(s), 4007 warning(s), 856 waived
+- error-findings: COV003@tickets/T-3410, DEPR006@frob-deprecated-baseline.lock.json, DOC006@tickets/T-3411/ticket.md, DOC006@tickets/T-3424/ticket.md, DRIFT001@src/frob/app/ticket_runner/_rapid_sweep.py, OPAQUE001@src/frob/_cli_parsers/_ticket/_metadata.py, PRE001@tickets/T-3423, REL001@src/frob/__init__.py, SELFAUDIT001@design, TICK004@tickets.md, WAIVE011@frob-ratchet.lock.json, unresolved-attribute@tests/system/test_coverage_sigterm.py

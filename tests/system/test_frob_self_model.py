@@ -56,6 +56,7 @@ _EXPECTED_NODE_IDS = frozenset(
         "graph_cache",
         "graphlang",
         "mutate",
+        "narrative",
         "natives",
         "refactor",
         "registry",
@@ -248,6 +249,49 @@ class TestFrobSelfModel:
         this test first were either to happen. The floor values below
         are this ticket's own measured counts (2026-08-10), not the
         pre-ticket stale ones.
+
+        T-3423: `_EXPECTED_NODE_IDS` drifted a fourth time (this pass added
+        `narrative`, T-3029's ledger-migration CLI parser split, `code
+        "src/frob/narrative/**"` in design/frob.strata -- `fs.read`-only,
+        not on the cli-dispatch/component-import graph the `f_*` flows
+        model, so only the node-id set moves). Read closely, this is NOT
+        a repeat of the T-0440/T-0967/T-1079/T-2102 anti-pattern above:
+        those four each silently transcribed a bare `==` integer that
+        gave no signal WHAT changed or WHY updating it was safe. T-2109
+        (2026-08-17, already landed before this ticket was filed) had
+        already replaced the node-count floor with exactly this ticket's
+        own option (c) for nodes specifically: `_node_id_diff_message`
+        names every added/removed id and tells the reader to update
+        `_EXPECTED_NODE_IDS` "in the same diff as a deliberate, reviewable
+        edit" -- see that function's docstring. This failure is that
+        mechanism doing its job for the first time since it was built:
+        catching a real, disclosed model addition and demanding an
+        explicit, named acknowledgment rather than silently drifting.
+        DECISION (T-3423, stated explicitly per the ticket's own request,
+        not inherited): keep the existing hybrid rather than moving
+        everything to pure option (a). `_EXPECTED_NODE_IDS` stays an
+        exact golden SET (T-2109's option (c)) because a floor cannot
+        distinguish an intentional node addition from an unintended one
+        (T-2109's own reasoning, still correct) -- losing that would trade
+        a real signal for one fewer manual edit. `flows`/`boundaries`/
+        `claims` stay `>=` FLOORS (T-2102's option (a)) because no
+        derivable-formula or golden-set case has been made for those
+        three (same scope boundary T-2109 drew) and a plain floor already
+        satisfies this test's own stated job ("nonzero ... surface", not
+        exact reproduction) without the maintenance cost integer equality
+        had. What actually changes here: this paragraph documents the
+        pattern explicitly so the NEXT node addition is recognized as
+        T-2109's mechanism working as designed, not a fifth instance of
+        the anti-pattern the first four paragraphs describe -- and two
+        new tests below make both directions of the contract explicit
+        (`TestFrobSelfModelFailureModes`): an empty/unparseable model
+        still fails this sanity check (MUST-FIRE), and the golden-set/
+        floor combination already demonstrated above (T-2109's own
+        injected/removed-node positive controls) is this test's existing
+        MUST-STAY-QUIET evidence for a legitimate node addition under
+        option (c) -- it fails, but with a message naming exactly what to
+        update and why, never a silent pass and never an opaque count
+        mismatch.
         """
         # T-1329: +1 node = `refactor` (the T-1197 rewrite engine, modeled
         # after landing unbound; SYS102 fallout from the T-1320 coverage run).
@@ -277,6 +321,13 @@ class TestFrobSelfModel:
         # keep T-2102's floor: T-2109's scope is the node-count assertion
         # specifically (see the ticket body), and no derivable-formula/
         # golden-set case was made for those three.
+        # T-3423: +1 node = `narrative` (T-3029's ledger-migration CLI
+        # parser split, `node narrative : trusted` / `code
+        # "src/frob/narrative/**"` in design/frob.strata) -- declares only
+        # `may "fs.read"` and is not on the cli-dispatch/component-import
+        # graph the `f_*` flows model, so flows/boundaries/claims below are
+        # unaffected; only `_EXPECTED_NODE_IDS` moves (see module docstring
+        # above for the T-3423 decision this update follows).
         actual_node_ids = frozenset(node.id for node in _model.nodes)
         diff_message = _node_id_diff_message(actual_node_ids, _EXPECTED_NODE_IDS)
         assert diff_message is None, diff_message
@@ -588,3 +639,65 @@ class TestFrobSelfModel:
             f"checker/fleet/deploy/vet should have no declared-but-"
             f"never-observed fs.write SYS violation: {node_violations}"
         )
+
+
+# frob:ticket T-3423
+class TestFrobSelfModelFailureModes:
+    """T-3423: explicit positive controls for `test_parses_and_elaborates`'s
+    MUST-FIRE contract -- a model that fails to elaborate, or elaborates to
+    an empty surface, must still fail that sanity check. Exercised against a
+    synthetic, minimal `.strata` source string, same posture as T-2109's own
+    `_node_id_diff_message` positive controls above: never by mutating
+    `design/frob.strata` itself (out of this ticket's declared scope, this
+    test file only)."""
+
+    # frob:tests \
+    # tests/system/test_frob_self_model.py::TestFrobSelfModelFailureModes.test_unparsea\
+    # ble_source_fails_to_parse
+    def test_unparseable_source_fails_to_parse(self) -> None:
+        """Source text with no `module` statement at all -- the shape a
+        genuinely broken `design/frob.strata` (a bad merge, a truncated
+        write) would take -- fails `parse_module` outright, `Err`, never a
+        silent `Ok` of nothing. `_model`'s own fixture asserts exactly this
+        (`parsed.is_ok`) before `test_parses_and_elaborates` ever runs, so
+        this failure mode never reaches the node/flow/claim assertions at
+        all."""
+        result = parse_module("")
+        assert result.is_err
+
+    # frob:tests \
+    # tests/system/test_frob_self_model.py::TestFrobSelfModelFailureModes.test_empty_mo\
+    # dule_elaborates_but_fails_every_surface_assertion
+    def test_empty_module_elaborates_but_fails_every_surface_assertion(
+        self,
+    ) -> None:
+        """A syntactically valid but EMPTY module (`module frob\\n`, no
+        `node`/`flow`/`boundary`/`claim` declarations at all) parses and
+        elaborates cleanly (`elaborate` does not itself fail closed on
+        emptiness -- only on the corruption shapes `_validate_no_
+        duplicates` catches, per `test_parses_and_elaborates`'s own
+        docstring) to a genuinely empty surface. Proves the MUST-FIRE
+        contract structurally: every one of `test_parses_and_elaborates`'s
+        own assertions -- the golden node-id set diff, and each `>=` floor
+        -- independently fails against this empty model, so an elaboration
+        that silently loses its whole surface can never pass under either
+        the current node-id-set-plus-floors design or a future pure-floor
+        (option (a)) one."""
+        parsed = parse_module("module frob\n")
+        assert parsed.is_ok, f"minimal module failed to parse: {parsed.err}"
+        elaborated = elaborate(parsed.danger_ok)
+        assert elaborated.is_ok, f"minimal module failed to elaborate: {elaborated.err}"
+        empty = elaborated.danger_ok
+        assert len(empty.nodes) == 0
+        assert len(empty.flows) == 0
+        assert len(empty.boundaries) == 0
+        assert len(empty.claims) == 0
+        # The golden node-id set: an empty actual set diffs against every
+        # member of `_EXPECTED_NODE_IDS` as "missing" -- never `None`.
+        diff_message = _node_id_diff_message(frozenset(), _EXPECTED_NODE_IDS)
+        assert diff_message is not None
+        assert "missing" in diff_message
+        # The floors: 0 is below every one of them.
+        assert not (len(empty.flows) >= 44)
+        assert not (len(empty.boundaries) >= 1)
+        assert not (len(empty.claims) >= 31)

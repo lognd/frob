@@ -2,7 +2,7 @@
 id: T-3423
 title: test_parses_and_elaborates freezes model counts by hand and has now drifted
   a fourth time; its docstring records the prior three
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -26,6 +26,13 @@ scope_changes:
   reason: declare scope on this test file before editing per T-3423's instructions
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+- tests/system/test_frob_self_model.py::TestFrobSelfModelFailureModes::test_unparseable_source_fails_to_parse
+- tests/system/test_frob_self_model.py::TestFrobSelfModelFailureModes::test_empty_module_elaborates_but_fails_every_surface_assertion
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_golden_node_id_set_catches_an_injected_node
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_golden_node_id_set_catches_a_removed_node
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_golden_node_id_set_passes_when_unchanged
 designated_repro_test: null
 threat: null
 component: null
