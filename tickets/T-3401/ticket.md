@@ -42,6 +42,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4df4f063ede5f7af35026524c4bfe73a7f78aac9
 ---
 Owner directive 2: make test-fast runs pytest --testmon but frob test has no equivalent incremental selection or detection of whether pytest-testmon is actually installed. Mirror T-3316's warn_if_xdist_bound_missing fix pattern (landed c4d980968, src/frob/tickets/_worktree_guard.py): detect plugin ABSENCE, not just an unset flag/bound. Missing-but-requested must be a loud typed error naming the tool + install command (T-3276 category rule: required-missing=loud error, optional-and-unused=silent, optional-but-needed-for-gate=UNMEASURED loudly never CLEAN). Never silently degrade a fast/incremental run into a full run or vice versa. Also evaluate: should testmon be a declared optional dependency, and should scaffold's own test config mention it.
