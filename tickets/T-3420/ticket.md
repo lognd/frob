@@ -2,7 +2,7 @@
 id: T-3420
 title: 'coverage-instrumented pytest deadlocks in its own SIGTERM handler and survives
   timeout: likely cause of the CI and macOS hangs'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -33,6 +33,9 @@ scope_changes:
   reason: must-fire/must-stay-quiet fixtures for the SIGTERM deadlock
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/system/test_coverage_sigterm.py::TestCoverageSigtermDeadlock::test_repeated_sigterm_terminates_in_bounded_time
+- tests/system/test_coverage_sigterm.py::TestCoverageSigtermDeadlock::test_normal_run_writes_complete_coverage_data
 designated_repro_test: null
 threat: null
 component: null

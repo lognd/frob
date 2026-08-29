@@ -244,7 +244,25 @@ source = ["src/frob"]
 # execution is never recorded, deflating TEST005 (loss B of the 2026-07-29
 # attribution diagnosis).
 concurrency = ["multiprocessing", "thread"]
-sigterm = true
+# T-3420: sigterm=true (coverage's own SIGTERM handler, which saves partial
+# data on graceful termination) is OFF, not on. That handler takes
+# Collector.data_lock, a plain non-reentrant threading.Lock, while saving; a
+# SECOND SIGTERM arriving before it releases (as `timeout` sends on escalation,
+# or as CI runners send when a job is slow to die) re-enters the same handler
+# on the same thread and blocks on that lock FOREVER -- confirmed by direct
+# reproduction (see tests/system/test_coverage_sigterm.py), and matches the
+# open, unfixed upstream reports coveragepy#1101 and coveragepy#1340 (checked
+# 2026-08-29 against coverage 7.14.1, the version installed here -- still
+# open, no version floor available). A `timeout N` guarding a coverage run is
+# only a reliable kill if coverage does not intercept the signal at all.
+# TRADEOFF: with sigterm off, a run that is killed (timeout, CI cancellation)
+# loses that run's coverage data entirely instead of saving what it collected
+# so far. `parallel = true` already tolerates losing individual data files --
+# `coverage combine` merges whatever partial files exist -- so this trades an
+# already-partial, now-occasionally-poisoned data file for a kill that
+# actually works. A run that finishes normally (the overwhelming majority) is
+# unaffected: coverage saves via the normal atexit path, not the signal path.
+sigterm = false
 
 [tool.coverage.paths]
 source = ["src/frob", "*/src/frob"]

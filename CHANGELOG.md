@@ -643,6 +643,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3413: post-land sweep regression from T-3350: 9 new (rule, file) identit(ies), 10 finding(s) (DOC006, OPAQUE001, SYS003, TEST001)
 - T-3414: DOC011: stale T-draft-ad5e921b citation in docs/modules/tickets.md
 - T-3416: Update design/frob.strata SYS100 fs.read capability for process/_reap split (T-3396)
+- T-3420: coverage-instrumented pytest deadlocks in its own SIGTERM handler and survives timeout: likely cause of the CI and macOS hangs
 
 ## [0.530.0] - unreleased
 
