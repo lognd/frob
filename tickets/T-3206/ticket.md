@@ -1,7 +1,7 @@
 ---
 id: T-3206
 title: Add frob:doc anchor for ToolResult.measurement to process.md
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-28'
