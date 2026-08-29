@@ -1,7 +1,7 @@
 ---
 id: T-3429
 title: Declare testsuite exec/fs.write/env.read capabilities for tests/system/test_coverage_sigterm.py
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
