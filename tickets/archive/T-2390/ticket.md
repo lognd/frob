@@ -83,7 +83,7 @@ evidence:
 - tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_must_still_pass_this_repos_own_frob_toml
 - tests/unit/test_refs_schema.py::TestRefsSchemaGate::test_must_still_pass_this_repos_own_frob_toml
 - tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_must_now_fire_reports_the_undeclared_ratchet_key
-- tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_ratchet_schema_declared_is_unresolved_not_empty
+- tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_ratchet_schema_declared_defaults_to_frobs_own_keys_must_fire
 designated_repro_test: null
 acceptance:
 - text: Given a frob.toml containing a key no declared config schema claims, when
@@ -95,7 +95,7 @@ acceptance:
     then it reports that no configuration surface is declared and does not report
     a silent zero.
   evidence:
-  - tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_ratchet_schema_declared_is_unresolved_not_empty
+  - tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_ratchet_schema_declared_defaults_to_frobs_own_keys_must_fire
 - text: 'EPIC CLOSURE BAR (not any single child''s): once every child ticket below
     has landed, this repo''s own frob.toml -- all ~121 leaf values across its 12 top-level
     tables -- reports zero unknown keys under the union of every child''s declared
@@ -131,6 +131,13 @@ acceptance_amendments:
     to claim it'
   actor: logan
   at: '2026-08-18'
+evidence_changes:
+- old_node: tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_ratchet_schema_declared_is_unresolved_not_empty
+  new_node: tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_ratchet_schema_declared_defaults_to_frobs_own_keys_must_fire
+  reason: 'T-3273 renamed this fixture: undeclared known_keys now defaults internally
+    instead of reporting UNRESOLVED'
+  actor: logan
+  at: '2026-08-28'
 threat: null
 component: config
 anchor: false

@@ -120,14 +120,10 @@ def _resolve_known_keys(root: Path) -> tuple[frozenset[str] | None, Violation | 
 
     schema_dotted = doc.get("native_schema", {}).get("known_keys")
     if not isinstance(schema_dotted, str) or not schema_dotted:
-        return None, _unresolved(
-            "no [native_schema] known_keys declared in frob.toml -- "
-            "NATIVESCHEMA001 cannot determine this project's [[native]] "
-            "known-key set at all; this is an UNMEASURED project, not a "
-            'clean pass. Declare known_keys = "module:symbol" (a '
-            "frozenset[str], or a zero-arg callable returning one) to "
-            "enable this check"
-        )
+        # T-3273: no [native_schema] known_keys declared -- default to
+        # frob's own NATIVE_KNOWN_KEYS rather than UNMEASURED; nothing
+        # project-specific lives in this table.
+        return NATIVE_KNOWN_KEYS, None
 
     resolved = resolve_dotted_symbol(schema_dotted, log_prefix="nativeschema001")
     if resolved is None:

@@ -126,14 +126,12 @@ def _resolve_known_keys(root: Path) -> tuple[frozenset[str] | None, Violation | 
 
     schema_dotted = doc.get("refs", {}).get("entrypoint_schema")
     if not isinstance(schema_dotted, str) or not schema_dotted:
-        return None, _unresolved(
-            "no [refs] entrypoint_schema declared in frob.toml -- "
-            "REFSCHEMA001 cannot determine this project's "
-            "[[refs.entrypoint]] known-key set at all; this is an "
-            "UNMEASURED project, not a clean pass. Declare "
-            'entrypoint_schema = "module:symbol" (a frozenset[str], or '
-            "a zero-arg callable returning one) to enable this check"
-        )
+        # T-3273: no [refs] entrypoint_schema declared -- default to
+        # frob's own REFS_ENTRYPOINT_KNOWN_KEYS rather than UNMEASURED;
+        # nothing project-specific lives in this table (the {"path",
+        # "reason"} entry shape is frob's own [[refs.entrypoint]] schema,
+        # not a per-project decision).
+        return REFS_ENTRYPOINT_KNOWN_KEYS, None
 
     resolved = resolve_dotted_symbol(schema_dotted, log_prefix="refschema001")
     if resolved is None:

@@ -25,12 +25,21 @@ hardcoded as a literal tuple in this module rather than imported from
 declare its own known-key set for its own [arch]-shaped table without
 touching this module.
 
+DEFAULTED (T-3273): no `[arch_schema] known_keys` declared means "use
+frob's own [arch] key set" (`arch_known_keys` below), not UNMEASURED --
+there is no project-specific decision in this table, only a pointer to
+frob's own internal constant, so a project that wants frob's defaults
+(the overwhelming common case) now declares nothing at all and stays
+MEASURED.
+
 FAIL-LOUDLY (T-2391's doctrine, via the already-shipped `Severity.
-UNRESOLVED` mechanism, same posture as every other T-2390 child): no
-`[arch_schema] known_keys` declared, an unresolvable dotted path, or a
-resolved value that is neither a set nor a set-returning callable all
-report `Severity.UNRESOLVED` -- never a silently empty (and therefore
-falsely "clean") violation list.
+UNRESOLVED` mechanism, same posture as every other T-2390 child): a
+DECLARED `[arch_schema] known_keys` that is an unresolvable dotted path,
+or resolves to a value that is neither a set nor a set-returning
+callable, still reports `Severity.UNRESOLVED` -- never a silently empty
+(and therefore falsely "clean") violation list, and never a silent
+fallback to the default either (a broken declaration must never look
+indistinguishable from a correct one).
 
 
 NESTED SUB-TABLE EXCLUSION: `[arch.layering]` (T-0620's DIP layering
@@ -166,14 +175,14 @@ def _resolve_known_keys(root: Path) -> tuple[frozenset[str] | None, Violation | 
 
     schema_dotted = doc.get("arch_schema", {}).get("known_keys")
     if not isinstance(schema_dotted, str) or not schema_dotted:
-        return None, _unresolved(
-            "no [arch_schema] known_keys declared in frob.toml -- "
-            "ARCHSCHEMA001 cannot determine this project's [arch] "
-            "known-key set at all; this is an UNMEASURED project, not a "
-            'clean pass. Declare known_keys = "module:symbol" (a '
-            "frozenset[str], or a zero-arg callable returning one) to "
-            "enable this check"
-        )
+        # T-3273: no [arch_schema] known_keys declared -- default to
+        # frob's own [arch] key set (arch_known_keys, the exact names
+        # load_arch_config reads) rather than reporting UNMEASURED. A
+        # project only needs to declare this table at all if it wants a
+        # DIFFERENT key set than frob's own; the common case (frob's
+        # defaults are correct for this project too) now needs zero
+        # boilerplate to stay MEASURED.
+        return arch_known_keys(), None
 
     resolved = resolve_dotted_symbol(schema_dotted, log_prefix="archschema001")
     if resolved is None:

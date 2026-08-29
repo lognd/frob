@@ -108,12 +108,19 @@ evidence:
 - tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_testing_known_keys_reads_test_policy_model_fields
 - tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_must_now_fire_reports_the_undeclared_key
 - tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_must_still_pass_this_repos_own_frob_toml
-- tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_no_schema_declared_is_unresolved_not_empty
+- tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_no_schema_declared_defaults_to_frobs_own_keys_must_fire
 - tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_unresolvable_schema_dotted_path_is_unresolved
 - tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_non_set_non_callable_schema_value_is_unresolved
 - tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_no_frob_toml_is_unresolved
 - tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_no_testing_table_at_all_is_clean_not_error
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_no_schema_declared_is_unresolved_not_empty
+  new_node: tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_no_schema_declared_defaults_to_frobs_own_keys_must_fire
+  reason: 'T-3273 renamed this fixture: undeclared known_keys now defaults internally
+    instead of reporting UNRESOLVED'
+  actor: logan
+  at: '2026-08-28'
 threat: null
 component: null
 anchor: false

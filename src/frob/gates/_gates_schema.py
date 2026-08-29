@@ -175,15 +175,10 @@ def _resolve_ratchet_known_keys(
 
     schema_dotted = doc.get("gates_schema", {}).get("ratchet_known_keys")
     if not isinstance(schema_dotted, str) or not schema_dotted:
-        return None, _unresolved(
-            "no [gates_schema] ratchet_known_keys declared in frob.toml "
-            "-- GATESSCHEMA001 cannot determine this project's "
-            "[gates.ratchet] known-key set at all; this is an "
-            "UNMEASURED project, not a clean pass. Declare "
-            'ratchet_known_keys = "module:symbol" (a frozenset[str], or '
-            "a zero-arg callable returning one) to enable this half of "
-            "the check"
-        )
+        # T-3273: no [gates_schema] ratchet_known_keys declared --
+        # default to frob's own GATES_RATCHET_KNOWN_KEYS rather than
+        # UNMEASURED; nothing project-specific lives in this table.
+        return GATES_RATCHET_KNOWN_KEYS, None
 
     resolved = resolve_dotted_symbol(schema_dotted, log_prefix="gatesschema001")
     if resolved is None:

@@ -2,7 +2,7 @@
 id: T-3273
 title: 'frob.toml boilerplate: seven *_schema tables exist only to name frob''s own
   internal constants, and omitting them silently reports UNMEASURED'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-28'
@@ -179,6 +179,8 @@ scope_changes:
     to MEASURED-with-defaults; must update in the same change
   actor: logan
   at: '2026-08-28'
+evidence:
+- tests/unit/test_toplevel_scalar_schema.py::TestTopLevelScalarSchemaGate::test_no_schema_declared_defaults_to_frobs_own_keys_must_fire
 designated_repro_test: null
 threat: null
 component: null

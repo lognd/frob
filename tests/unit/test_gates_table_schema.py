@@ -74,18 +74,28 @@ class TestGatesSchemaGate:
         violations = gates_schema_gate(Path.cwd())
         assert violations == ()
 
+    # frob:ticket T-3273
     # frob:tests src/frob/gates/_gates_schema.py::gates_schema_gate kind="unit"
-    def test_no_ratchet_schema_declared_is_unresolved_not_empty(
+    def test_no_ratchet_schema_declared_defaults_to_frobs_own_keys_must_fire(
         self, tmp_path: Path
     ) -> None:
-        """No [gates_schema] ratchet_known_keys declared: the
-        [gates.ratchet] half is UNRESOLVED, never a silently empty
-        (falsely clean) list."""
+        """T-3273 MUST-FIRE: no [gates_schema] ratchet_known_keys
+        declared defaults to frob's own GATES_RATCHET_KNOWN_KEYS --
+        MEASURED, never UNRESOLVED."""
         (tmp_path / "frob.toml").write_text("[gates.ratchet]\nrules = []\n")
         violations = gates_schema_gate(tmp_path)
+        assert violations == ()
+
+    # frob:ticket T-3273
+    # frob:tests src/frob/gates/_gates_schema.py::gates_schema_gate kind="unit"
+    def test_no_ratchet_schema_declared_default_still_flags_unknown_keys(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3273: the default still flags a genuinely unknown key."""
+        (tmp_path / "frob.toml").write_text("[gates.ratchet]\nnot_a_real_key = 1\n")
+        violations = gates_schema_gate(tmp_path)
         assert len(violations) == 1
-        assert violations[0].severity == Severity.UNRESOLVED
-        assert "no [gates_schema] ratchet_known_keys" in violations[0].message
+        assert violations[0].severity != Severity.UNRESOLVED
 
     # frob:tests src/frob/gates/_gates_schema.py::gates_schema_gate kind="unit"
     def test_unresolvable_ratchet_schema_dotted_path_is_unresolved(

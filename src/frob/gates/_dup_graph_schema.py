@@ -84,12 +84,16 @@ def _unresolved(rule: str, message: str) -> Violation:
 
 # frob:ticket T-2437
 def _resolve_table_known_keys(
-    root: Path, schema_table: str, schema_key: str, rule: str
+    root: Path, schema_table: str, schema_key: str, rule: str, default: frozenset[str]
 ) -> tuple[frozenset[str] | None, Violation | None]:
     """Resolve `[<schema_table>] <schema_key>` to a real `frozenset[str]`,
     or return the `Violation` (tagged `rule`) explaining why not -- the
     one resolver both `[dup]` and `[graph]` share, parameterized by which
-    declaration table/rule each is checking."""
+    declaration table/rule each is checking. T-3273: no declaration at
+    all means "use frob's own `default`" (there is no project-specific
+    decision in either table), not UNMEASURED -- a DECLARED-but-broken
+    pointer still reports loudly, never silently falls back to
+    `default`."""
     toml_path = root / "frob.toml"
     if not toml_path.exists():
         return None, _unresolved(
@@ -103,14 +107,7 @@ def _resolve_table_known_keys(
 
     schema_dotted = doc.get(schema_table, {}).get(schema_key)
     if not isinstance(schema_dotted, str) or not schema_dotted:
-        return None, _unresolved(
-            rule,
-            f"no [{schema_table}] {schema_key} declared in frob.toml -- "
-            f"cannot determine this project's known-key set at all; this "
-            f"is an UNMEASURED project, not a clean pass. Declare "
-            f'{schema_key} = "module:symbol" (a frozenset[str], or a '
-            f"zero-arg callable returning one) to enable this check",
-        )
+        return default, None
 
     log_prefix = rule.lower()
     resolved = resolve_dotted_symbol(schema_dotted, log_prefix=log_prefix)
@@ -208,7 +205,7 @@ def dup_schema_gate(root: Path) -> tuple[Violation, ...]:
     ERROR per undeclared key found (no `[dup]` table at all is not
     itself an error -- the table is optional)."""
     known, violation = _resolve_table_known_keys(
-        root, "dup_schema", "known_keys", "DUPSCHEMA001"
+        root, "dup_schema", "known_keys", "DUPSCHEMA001", DUP_KNOWN_KEYS
     )
     if violation is not None:
         return (violation,)
@@ -250,7 +247,7 @@ def graph_schema_gate(root: Path) -> tuple[Violation, ...]:
     otherwise one ERROR per undeclared key found (no `[graph]` table at
     all is not itself an error -- the table is optional)."""
     known, violation = _resolve_table_known_keys(
-        root, "graph_schema", "known_keys", "GRAPHSCHEMA001"
+        root, "graph_schema", "known_keys", "GRAPHSCHEMA001", GRAPH_KNOWN_KEYS
     )
     if violation is not None:
         return (violation,)

@@ -95,15 +95,31 @@ class TestArchSchemaGate:
         violations = _arch_schema_gate(tmp_path)
         assert violations == ()
 
+    # frob:ticket T-3273
     # frob:tests src/frob/gates/_arch_schema.py::arch_schema_gate kind="unit"
-    def test_no_schema_declared_is_unresolved_not_empty(self, tmp_path: Path) -> None:
-        """No [arch_schema] known_keys declared: UNRESOLVED, never a
-        silently empty (falsely clean) list."""
+    def test_no_schema_declared_defaults_to_frobs_own_keys_must_fire(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3273 MUST-FIRE: no [arch_schema] known_keys declared defaults
+        to frob's own `arch_known_keys()` -- MEASURED (a clean pass for a
+        known key, zero violations), never UNRESOLVED. There is no
+        project-specific decision in this table."""
         (tmp_path / "frob.toml").write_text("[arch]\nmax_function_lines = 60\n")
         violations = _arch_schema_gate(tmp_path)
+        assert violations == ()
+
+    # frob:ticket T-3273
+    # frob:tests src/frob/gates/_arch_schema.py::arch_schema_gate kind="unit"
+    def test_no_schema_declared_default_still_flags_unknown_keys(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3273: the default isn't a silent pass-everything -- an
+        undeclared key still reports an error under the default key set,
+        exactly as it would under an explicitly declared one."""
+        (tmp_path / "frob.toml").write_text("[arch]\nnot_a_real_key = 1\n")
+        violations = _arch_schema_gate(tmp_path)
         assert len(violations) == 1
-        assert violations[0].severity == Severity.UNRESOLVED
-        assert "no [arch_schema] known_keys" in violations[0].message
+        assert violations[0].severity != Severity.UNRESOLVED
 
     # frob:tests src/frob/gates/_arch_schema.py::arch_schema_gate kind="unit"
     def test_unresolvable_schema_dotted_path_is_unresolved(

@@ -131,14 +131,10 @@ def _resolve_known_keys(root: Path) -> tuple[frozenset[str] | None, Violation | 
 
     schema_dotted = doc.get("testing_schema", {}).get("known_keys")
     if not isinstance(schema_dotted, str) or not schema_dotted:
-        return None, _unresolved(
-            "no [testing_schema] known_keys declared in frob.toml -- "
-            "TESTINGSCHEMA001 cannot determine this project's [testing] "
-            "known-key set at all; this is an UNMEASURED project, not a "
-            'clean pass. Declare known_keys = "module:symbol" (a '
-            "frozenset[str], or a zero-arg callable returning one) to "
-            "enable this check"
-        )
+        # T-3273: no [testing_schema] known_keys declared -- default to
+        # frob's own testing_known_keys() rather than UNMEASURED; nothing
+        # project-specific lives in this table.
+        return testing_known_keys(), None
 
     resolved = resolve_dotted_symbol(schema_dotted, log_prefix="testingschema001")
     if resolved is None:

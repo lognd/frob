@@ -89,11 +89,18 @@ evidence:
 - tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_must_now_fire_reports_the_undeclared_ratchet_key
 - tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_must_now_fire_reports_the_unregistered_severity_rule_id
 - tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_must_still_pass_this_repos_own_frob_toml
-- tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_ratchet_schema_declared_is_unresolved_not_empty
+- tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_ratchet_schema_declared_defaults_to_frobs_own_keys_must_fire
 - tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_unresolvable_ratchet_schema_dotted_path_is_unresolved
 - tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_frob_toml_is_unresolved
 - tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_gates_table_at_all_is_clean_not_error
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_ratchet_schema_declared_is_unresolved_not_empty
+  new_node: tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_ratchet_schema_declared_defaults_to_frobs_own_keys_must_fire
+  reason: 'T-3273 renamed this fixture: undeclared known_keys now defaults internally
+    instead of reporting UNRESOLVED'
+  actor: logan
+  at: '2026-08-28'
 threat: null
 component: null
 anchor: false

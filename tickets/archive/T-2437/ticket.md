@@ -96,13 +96,26 @@ body_changes:
 evidence:
 - tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_must_now_fire_reports_the_undeclared_key
 - tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_must_still_pass_this_repos_own_frob_toml
-- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_no_schema_declared_is_unresolved_not_empty
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_no_schema_declared_defaults_to_frobs_own_keys_must_fire
 - tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_no_frob_toml_is_unresolved
 - tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_must_now_fire_reports_the_undeclared_key
 - tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_must_still_pass_this_repos_own_frob_toml
-- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_no_schema_declared_is_unresolved_not_empty
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_no_schema_declared_defaults_to_frobs_own_keys_must_fire
 - tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_no_frob_toml_is_unresolved
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_no_schema_declared_is_unresolved_not_empty
+  new_node: tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_no_schema_declared_defaults_to_frobs_own_keys_must_fire
+  reason: 'T-3273 renamed these fixtures: undeclared known_keys now defaults internally
+    instead of reporting UNRESOLVED'
+  actor: logan
+  at: '2026-08-28'
+- old_node: tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_no_schema_declared_is_unresolved_not_empty
+  new_node: tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_no_schema_declared_defaults_to_frobs_own_keys_must_fire
+  reason: 'T-3273 renamed this fixture: undeclared known_keys now defaults internally
+    instead of reporting UNRESOLVED'
+  actor: logan
+  at: '2026-08-28'
 threat: null
 component: null
 anchor: false
