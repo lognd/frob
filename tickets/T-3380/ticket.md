@@ -594,7 +594,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6a7ac4e40e33394dfda8414fcfc8613a4a02f201
 ---
 ruff format --check . measured 81 files needing reformatting on current main. gate:FMT (FMT001) only scans frob: directive-comment lines touched by the current diff -- it never scans the whole tree -- so this drift was invisible to frob check and accumulated unowned. Fix: run ruff format . and land the 81-file diff as one standalone sweep, on its own commit, nothing batched with it. frob fmt --check (the repo's own directive-line formatter) separately flags 5 Rust files (frob-core/src/*.rs, strata-core/src/**/*.rs) -- disjoint from ruff format's 81 Python files, confirmed zero overlap, so the two tools cannot fight each other on this sweep.
 
