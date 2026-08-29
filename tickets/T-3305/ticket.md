@@ -2,7 +2,7 @@
 id: T-3305
 title: _python_for_tree trusts a tree venv without checking frob is importable, breaking
   self-verification in every consumer repo
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
