@@ -135,6 +135,13 @@ body_changes:
   at: '2026-08-29'
   old_length: 1836
   new_length: 6671
+- mode: append
+  reason: record the rollup-honesty measurement so the NEEDS CLOSE rot signal is not
+    acted on as a real rollup
+  actor: logan
+  at: '2026-08-29'
+  old_length: 6671
+  new_length: 9501
 designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with no Makefile WHEN every documented frob workflow is run THEN
@@ -253,3 +260,52 @@ OPEN QUESTION FOR WHOEVER TAKES IT: does anything in CI, the scaffold templates,
 or the agent playbook depend on a specific `make` target by name? Grep and
 report before deleting -- the scaffold's own CI templates and docs reference
 `make check`, and T-3277 corrected those docs recently.
+
+
+
+ROLLUP HONESTY CHECK, 2026-08-29. fleet_status lists T-1382 as NEEDS CLOSE --
+"every child ticket is terminal, write a rollup Done report and close it". DO
+NOT DO THAT. A rollup right now would be false, and here is the measurement.
+
+T-1382's real children today are five archived/done tickets: T-2240, T-2241,
+T-2242, T-2244, T-2245. All five WIRED Makefile targets to call `frob
+<subcommand>` or repointed docs to mention frob first. NONE of them scope the
+Makefile for deletion, and none touch the `install-tool`/`install` migration
+into install documentation.
+
+Confirmed against current main: the root Makefile is still 574 lines with all
+~24 targets present, including every one of the ~18 pure aliases listed in the
+breakdown above. So the analysis in this body is NOT stale -- it still matches
+main exactly.
+
+CONCLUSION: the decomposition never covered the real work. The children did the
+"make the frob subcommands exist" half; nobody ever filed the "delete the now-
+redundant aliases and move bootstrap into install docs" half, which is the half
+the owner's decision actually calls for. Closing T-1382 would report a
+Makefile-decoupling epic as done while the Makefile is undeleted and unchanged.
+
+RELATED PRIOR ART, so this is not re-investigated a third time: T-2959
+(archived) diagnosed a DIFFERENT false rollup on this same epic -- T-2384, an
+unrelated cross-repo-portability epic, had been mis-parented under T-1382 and
+inflated the descendant-walk. T-2959 re-parented it to T-2964, and that fix is
+confirmed still in place (tickets/archive/T-2384/ticket.md reads parent:
+T-2964). So the current five-child set is genuinely correct; the problem is no
+longer a parenting artifact, it is a coverage gap.
+
+WHAT THIS EPIC STILL NEEDS BEFORE IT CAN CLOSE: children covering the deletion
+work itself. Per the owner's scheduling decision above, that is PRE-1.0.0 and
+explicitly NOT required for the incremental cut -- so file them when that work
+is scheduled, not now.
+
+BY-NAME `make` DEPENDENCIES, measured 2026-08-29, for whoever does the deletion:
+  .github/workflows/ci.yml     line 50  `run: make core`
+                               line 218 `make coverage`
+                               lines 196, 241 error text instructing `make coverage`
+                               lines 268-269 comment referencing `make install-tool`
+  docs/guides/agent-playbook.md line 126 `make core`
+                               line 230 `make install-tool`
+                               lines 285, 370, 380 `make coverage`
+Both are references to the ROOT repo's own Makefile, which the five children
+never touched. They are valid today and break the moment the aliases are
+deleted. Python scaffold CI and branch-protection templates are clean of `make`.
+The cpp scaffold templates reference it legitimately and are out of scope.
