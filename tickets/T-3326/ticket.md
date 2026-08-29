@@ -95,7 +95,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f9878dcb9e4ff2e52d40d1279e52f6173192b7cd
 ---
 OBSERVED 2026-08-28 by Series DW while landing T-3283, and reported by it as a
 caution rather than swallowed -- which is the only reason we know.
