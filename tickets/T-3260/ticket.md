@@ -88,6 +88,14 @@ scope_changes:
     actually reflect the new file layout
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckClosureSemantics::test_mutual_satisfies_pair_with_zero_requirements_now_fires
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckClosureSemantics::test_genuine_four_level_chain_is_quiet
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckClosureSemantics::test_satisfies_cycle_fires_through_vmodel_check
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckNodePayload::test_artifact_node_missing_code_ref_is_a_construction_error
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckNodePayload::test_test_node_missing_runnable_is_a_construction_error
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckNodePayload::test_supersedes_edge_missing_reason_is_a_construction_error
+- tests/unit/strata/test_vmodel_check.py::TestVmodelCheckNodePayload::test_payload_present_on_every_kind_stays_quiet
 designated_repro_test: null
 threat: null
 component: null
