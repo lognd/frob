@@ -17,6 +17,11 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/_python.py
 - src/frob/gates/__init__.py
+findings:
+- - DRIFT001
+  - src/frob/gates/__init__.py
+- - SYS003
+  - src/frob/check/_python.py
 evidence_scope:
 - tests/test_gates.py
 scope_breadth_ack: false
@@ -30,12 +35,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
-findings:
-- - DRIFT001
-  - src/frob/gates/__init__.py
-- - SYS003
-  - src/frob/check/_python.py
+land_commit: 1428ead442602056bf1c5e8868300f01d978d386
 ---
 The deferred post-land unscoped sweep (T-1684) for T-2710 at commit 69fa1b0d9f94d7c99502ac70b9d069688bd9d93a found 2 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 
