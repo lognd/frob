@@ -41,7 +41,9 @@ class TestRecordRapidDebt:
         # an unrecorded relaxation is the one unrecoverable outcome.
         record_rapid_debt(tmp_path, "T-0003", "sweep")
         entry = json.loads(
-            (tmp_path / ".frob" / "rapid-debt.jsonl").read_text(encoding="utf-8").strip()
+            (tmp_path / ".frob" / "rapid-debt.jsonl")
+            .read_text(encoding="utf-8")
+            .strip()
         )
         assert entry["commit"] == "unknown"
 

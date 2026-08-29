@@ -736,7 +736,6 @@ class _DaemonServerLike(Protocol):
 # this module resolves on every platform, mirroring how `fcntl = None`
 # keeps that name bound rather than omitting it under `except ImportError`.
 if sys.platform != "win32":
-
     # frob:waive PII012 reason="T-2741: allow_reuse_address below is stdlib \
     # socketserver.BaseServer's own reuse-addr flag (SO_REUSEADDR); no relation to a \
     # person's contact address -- a name-only false-positive match on 'address'. \
@@ -772,9 +771,7 @@ if sys.platform != "win32":
             # T-1097: one ResourceLeaseManager per daemon process, shared
             # across every connection-handling thread.
             self.lease_manager = ResourceLeaseManager()
-            super().__init__(
-                str(sock_path), _RequestHandler, bind_and_activate=True
-            )
+            super().__init__(str(sock_path), _RequestHandler, bind_and_activate=True)
 
 else:  # pragma: no cover -- windows-only
 

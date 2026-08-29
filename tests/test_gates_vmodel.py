@@ -21,7 +21,9 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("strata_core", reason="strata_core native extension not built -- run `make core`")
+pytest.importorskip(
+    "strata_core", reason="strata_core native extension not built -- run `make core`"
+)
 
 from frob.gates._vmodel import vmodel_gate  # noqa: E402
 
@@ -41,7 +43,7 @@ class TestVmodelGate:
         vmodel_edge statements must stay silent -- frob has no V-model
         graph of its own yet, and this gate must not invent noise."""
         design_dir = tmp_path / "design"
-        _write(design_dir, "m.strata", 'module m\nnode n : trusted { }\n')
+        _write(design_dir, "m.strata", "module m\nnode n : trusted { }\n")
         assert vmodel_gate(tmp_path) == ()
 
     def test_fires_vmod001_on_construction_error(self, tmp_path: Path) -> None:
@@ -51,7 +53,7 @@ class TestVmodelGate:
         _write(
             design_dir,
             "m.strata",
-            'module m\n'
+            "module m\n"
             'vmodel_node req_1 kind "artifact" level "requirements" code_ref "req_1.rs";\n'
             'vmodel_edge kind "satisfies" src ghost_node dst req_1;\n',
         )
@@ -75,7 +77,7 @@ class TestVmodelGate:
         _write(
             design_dir,
             "m.strata",
-            'module m\n'
+            "module m\n"
             'vmodel_node design_a kind "artifact" level "system-design" code_ref "a.rs";\n'
             'vmodel_node design_b kind "artifact" level "system-design" code_ref "b.rs";\n'
             'vmodel_edge kind "satisfies" src design_a dst design_b;\n'
@@ -85,7 +87,9 @@ class TestVmodelGate:
         assert len(violations) > 0
         assert all(v.rule == "VMOD001" for v in violations)
         assert all(v.severity.value == "warn" for v in violations)
-        rule_names = {v.message.split("closure rule ")[1].split(" ")[0] for v in violations}
+        rule_names = {
+            v.message.split("closure rule ")[1].split(" ")[0] for v in violations
+        }
         assert "'orphan_requirement'" in rule_names
         assert "'unjustified_design'" in rule_names
 
@@ -97,7 +101,7 @@ class TestVmodelGate:
         _write(
             design_dir,
             "m.strata",
-            'module m\n'
+            "module m\n"
             'vmodel_node req_1 kind "artifact" level "requirements" code_ref "req_1.rs";\n'
             'vmodel_node design_1 kind "artifact" level "component-design" code_ref "design_1.rs";\n'
             'vmodel_edge kind "satisfies" src design_1 dst req_1;\n'
@@ -117,13 +121,13 @@ class TestVmodelGate:
         _write(
             design_dir,
             "requirement.strata",
-            'module req_module\n'
+            "module req_module\n"
             'vmodel_node req_1 kind "artifact" level "requirements" code_ref "req_1.rs";\n',
         )
         _write(
             design_dir,
             "test.strata",
-            'module test_module\n'
+            "module test_module\n"
             'vmodel_node ctest_1 kind "test" level "customer-test" runnable "t.py::ctest_1";\n'
             'vmodel_edge kind "verifies" src ctest_1 dst req_1;\n',
         )
@@ -143,8 +147,7 @@ class TestVmodelGate:
         _write(
             design_dir,
             "m.strata",
-            'module m\n'
-            'vmodel_node req_1 kind "artifact" level "requirements";\n',
+            'module m\nvmodel_node req_1 kind "artifact" level "requirements";\n',
         )
         violations = vmodel_gate(tmp_path)
         assert all(v.rule == "VMOD001" for v in violations)
@@ -163,7 +166,7 @@ class TestVmodelGate:
         _write(
             design_dir,
             "m.strata",
-            'module m\n'
+            "module m\n"
             'vmodel_node req_1 kind "artifact" level "requirements" code_ref "req_1.rs";\n',
         )
         violations = vmodel_gate(tmp_path)

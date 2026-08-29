@@ -260,7 +260,9 @@ class TestApplyTierAAndReverify:
         _git_init(root)
         (root / "scoped").mkdir()
         (root / "other").mkdir()
-        directive = "# frob:tests tests/test_mod.py::TestX::test_y\ndef f():\n    pass\n"
+        directive = (
+            "# frob:tests tests/test_mod.py::TestX::test_y\ndef f():\n    pass\n"
+        )
         (root / "scoped" / "mod.py").write_text(directive, encoding="utf-8")
         (root / "other" / "mod.py").write_text(directive, encoding="utf-8")
         (root / "tickets.md").write_text("# Tickets\n", encoding="utf-8")
@@ -278,9 +280,7 @@ class TestApplyTierAAndReverify:
             ),
         )
         subprocess.run(["git", "add", "-A"], cwd=root, check=True)
-        subprocess.run(
-            ["git", "commit", "-q", "-m", "seed"], cwd=root, check=True
-        )
+        subprocess.run(["git", "commit", "-q", "-m", "seed"], cwd=root, check=True)
         cfg = AppConfig(check_fix=True, check_ticket="T-9001")
         result = CheckResult(path=str(root), results=[])
 
@@ -289,9 +289,9 @@ class TestApplyTierAAndReverify:
         fixed_files = {f["file"] for f in fix_report["fixed"]}
         assert "scoped/mod.py" in fixed_files
         assert "other/mod.py" not in fixed_files
-        assert (
-            (root / "other" / "mod.py").read_text(encoding="utf-8") == directive
-        ), "out-of-scope file must be byte-for-byte untouched"
+        assert (root / "other" / "mod.py").read_text(encoding="utf-8") == directive, (
+            "out-of-scope file must be byte-for-byte untouched"
+        )
 
     def test_unscoped_fix_refuses_without_fix_all(self, tmp_path: Path) -> None:
         """A bare `--fix` with neither `--ticket` nor `--fix-all` refuses

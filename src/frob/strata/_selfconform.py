@@ -228,6 +228,7 @@ finish in one sweep. `_node_attr_values`/`_INTERFACE_PREFIX` (T-0668,
 survived T-1870's SYS104 deletion because SYS106/SYS108 also depend on
 them) are reused verbatim, so a node's declared set reads identically
 to how SYS108's duplicate-detection already reads it."""
+
 from __future__ import annotations
 
 from datetime import date
@@ -688,4 +689,3 @@ __all__ = [
     "SelfConformViolation",
     "check_self_conformance",
 ]
-

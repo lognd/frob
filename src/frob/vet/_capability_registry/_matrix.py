@@ -771,8 +771,7 @@ _NEW_ADAPTER_SUBSTANTIVE_EXCUSES: tuple[_MatrixExcuse, ...] = (
     _MatrixExcuse(
         capability_kind="sql",
         language="csharp",
-        reason="no ADO.NET/Entity Framework raw-SQL idiom has been "
-        "surveyed yet",
+        reason="no ADO.NET/Entity Framework raw-SQL idiom has been surveyed yet",
     ),
     _MatrixExcuse(
         capability_kind="client_storage",

@@ -431,9 +431,7 @@ def _resolves_under_primary(
 # frob:ticket T-2860
 #: T-2860: matches a `--worktree <path>` / `--worktree=<path>` flag anywhere
 #: in a command string, capturing the (possibly quoted) path in group 1.
-_WORKTREE_FLAG_RE = re.compile(
-    r"--worktree(?:=|\s+)(\"[^\"]+\"|'[^']+'|[^\s;&|><]+)"
-)
+_WORKTREE_FLAG_RE = re.compile(r"--worktree(?:=|\s+)(\"[^\"]+\"|'[^']+'|[^\s;&|><]+)")
 
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy

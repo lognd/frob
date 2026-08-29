@@ -219,10 +219,7 @@ class TestWaiveReasonUnescapedQuoteIsLoud:
         # e.g. docs/modules/tickets-verify-sweep.md) must NOT regress into
         # a new finding -- `\"` is treated as an escaped quote, not a
         # terminator.
-        text = (
-            '<!-- frob:waive DOC006 reason="cfg.x == \\"y\\" '
-            'is fine" -->\n'
-        )
+        text = '<!-- frob:waive DOC006 reason="cfg.x == \\"y\\" is fine" -->\n'
         edges, malformed = markdown_anchors("docs/x.md", text)
         assert edges == ()
         assert malformed == ()

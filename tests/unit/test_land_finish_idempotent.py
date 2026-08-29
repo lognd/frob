@@ -106,9 +106,7 @@ class TestTicketTerminalStateOnMain:
 
         assert _ticket_terminal_state_on_main(repo, tid) == "done"
 
-    def test_done_ticket_uncommitted_on_disk_returns_none(
-        self, repo: Path
-    ) -> None:
+    def test_done_ticket_uncommitted_on_disk_returns_none(self, repo: Path) -> None:
         # frob:tests \
         # tests/unit/test_land_finish_idempotent.py::TestTicketTerminalStateOnMain.test\
         # _done_ticket_uncommitted_on_disk_returns_none

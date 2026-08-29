@@ -315,7 +315,6 @@ def _observed_all_kinds_by_node(
     return _all_kinds_view(_observed_raw_kinds_by_node(binding, root))
 
 
-
 # frob:ticket T-0361
 # frob:waive DUP001 reason="T-1870: this 95%-similarity match against \
 # src/frob/testing/_collect_ts.py::_find_ts_test_files only became visible after this \
@@ -429,7 +428,6 @@ def _observed_kinds_for_files(
     return frozenset(observed)
 
 
-
 # frob:ticket T-2729
 def _node_attr_values(node, prefix: str) -> list[str]:  # noqa: ANN001
     """Every `node.attrs` entry's tail past `prefix`, in declaration order
@@ -437,4 +435,3 @@ def _node_attr_values(node, prefix: str) -> list[str]:  # noqa: ANN001
     _node_code_globs` reads for `code=`, generalized to `interface=`/
     `purpose=` so SYS104/SYS105 do not duplicate the split logic."""
     return [attr[len(prefix) :] for attr in node.attrs if attr.startswith(prefix)]
-

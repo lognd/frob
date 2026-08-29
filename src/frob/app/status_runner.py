@@ -307,9 +307,7 @@ def build_status_report(
     computation. Split out of `run` (ARCH001) so it is testable without
     an `AppConfig`/argparse round-trip."""
     findings = _findings_section(root, only)
-    watermark_commit, commits_since_watermark, quarantine_raised = _verify_section(
-        root
-    )
+    watermark_commit, commits_since_watermark, quarantine_raised = _verify_section(root)
     if include_tickets:
         open_count, landed_today, trailing_net_rate = _flow_section(root)
     else:
@@ -349,8 +347,7 @@ def _print_status_human(r: Renderer, report: StatusReport) -> None:
         r.line(f"  watermark: {report.verify_watermark_commit or '(none yet)'}")
         if report.verify_commits_since_watermark is not None:
             r.line(
-                f"  commits since watermark: "
-                f"{report.verify_commits_since_watermark}"
+                f"  commits since watermark: {report.verify_commits_since_watermark}"
             )
     if report.verify_quarantine_raised:
         r.line("  quarantine: RAISED")
@@ -381,8 +378,7 @@ def _print_status_human(r: Renderer, report: StatusReport) -> None:
             tail = f"PINNED -- {reason}"
         elif lock.verdict == "UNMEASURED":
             tail = (
-                "UNMEASURED -- no committed lock, or its git "
-                "history could not be read"
+                "UNMEASURED -- no committed lock, or its git history could not be read"
             )
         else:
             tail = f"fresh ({lock.code_commits_since} commit(s) since last stamp)"

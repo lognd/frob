@@ -26,7 +26,9 @@ from frob.ghio import (
 from frob.gitio import GitError, ProcResult
 
 
-def _ok(stdout: str = "", *, argv: tuple[str, ...] = ()) -> Result[ProcResult, GitError]:
+def _ok(
+    stdout: str = "", *, argv: tuple[str, ...] = ()
+) -> Result[ProcResult, GitError]:
     return Ok(ProcResult(argv=argv, returncode=0, stdout=stdout, stderr=""))
 
 
@@ -49,7 +51,9 @@ def _scripted(monkeypatch: pytest.MonkeyPatch, responses: dict[str, object]) -> 
 
 
 class TestPreflight:
-    def test_not_installed(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_not_installed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         # frob:tests src/frob/ghio.py::preflight
         monkeypatch.setattr(
             ghio_mod, "run_argv", lambda *a, **k: Err(GitError.GitFailed)
@@ -103,8 +107,7 @@ class TestPreflight:
                 "--version": _ok("gh version 2.40.0\n"),
                 "auth status": _ok("Logged in to github.com\n"),
                 "repo view": _fail(
-                    "no default remote repository has been set for this "
-                    "directory"
+                    "no default remote repository has been set for this directory"
                 ),
             },
         )
@@ -112,16 +115,16 @@ class TestPreflight:
         assert result.is_err
         assert result.danger_err == GhError.NoRemote
 
-    def test_rate_limited(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_rate_limited(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         # frob:tests src/frob/ghio.py::preflight
         _scripted(
             monkeypatch,
             {
                 "--version": _ok("gh version 2.40.0\n"),
                 "auth status": _ok("Logged in to github.com\n"),
-                "repo view": _fail(
-                    "HTTP 403: API rate limit exceeded for user ID."
-                ),
+                "repo view": _fail("HTTP 403: API rate limit exceeded for user ID."),
             },
         )
         result = preflight(tmp_path)
@@ -138,8 +141,7 @@ class TestPreflight:
                 "--version": _ok("gh version 2.40.0\n"),
                 "auth status": _ok("Logged in to github.com\n"),
                 "repo view": _fail(
-                    "dial tcp: lookup api.github.com: could not resolve "
-                    "host"
+                    "dial tcp: lookup api.github.com: could not resolve host"
                 ),
             },
         )
@@ -359,9 +361,7 @@ class TestJobLog:
             monkeypatch,
             {
                 "repo view": _ok(json.dumps({"nameWithOwner": "acme/frob"})),
-                "api repos/acme/frob/actions/jobs/7/logs": _fail(
-                    "HTTP 404: Not Found"
-                ),
+                "api repos/acme/frob/actions/jobs/7/logs": _fail("HTTP 404: Not Found"),
             },
         )
         result = job_log(tmp_path, "100", "7")
@@ -431,8 +431,7 @@ class TestJobLog:
             monkeypatch,
             {
                 "repo view": _fail(
-                    "no default remote repository has been set for this "
-                    "directory"
+                    "no default remote repository has been set for this directory"
                 )
             },
         )

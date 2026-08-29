@@ -413,9 +413,7 @@ def test_run_mutants_scores_a_timeout_as_killed_and_continues(
         calls.append("ok")
         return Ok(subprocess.CompletedProcess(args=args, returncode=0))
 
-    monkeypatch.setattr(
-        "frob.process._guard.guarded_subprocess_run", _fake_guarded_run
-    )
+    monkeypatch.setattr("frob.process._guard.guarded_subprocess_run", _fake_guarded_run)
 
     result = _run_mutants(
         tmp_path / "m.py", mutants, ("python", "-c", "pass"), tmp_path, 5.0

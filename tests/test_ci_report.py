@@ -100,7 +100,9 @@ class TestParsePytestLog:
 class TestBuildJobReport:
     def test_clean_job(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests src/frob/ci_report.py::build_job_report
-        job = JobSummary(job_id="j1", name="ubuntu", status="completed", conclusion="success")
+        job = JobSummary(
+            job_id="j1", name="ubuntu", status="completed", conclusion="success"
+        )
         monkeypatch.setattr(
             ci_report_mod,
             "job_log",
@@ -119,7 +121,9 @@ class TestBuildJobReport:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/ci_report.py::build_job_report
-        job = JobSummary(job_id="j2", name="macos", status="completed", conclusion="failure")
+        job = JobSummary(
+            job_id="j2", name="macos", status="completed", conclusion="failure"
+        )
         monkeypatch.setattr(
             ci_report_mod,
             "job_log",
@@ -141,7 +145,9 @@ class TestBuildJobReport:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/ci_report.py::build_job_report
-        job = JobSummary(job_id="j3", name="windows", status="completed", conclusion="failure")
+        job = JobSummary(
+            job_id="j3", name="windows", status="completed", conclusion="failure"
+        )
         monkeypatch.setattr(
             ci_report_mod, "job_log", lambda root, run_id, job_id: Err(GhError.EmptyLog)
         )
@@ -156,14 +162,20 @@ class TestBuildRunReport:
     ) -> None:
         # frob:tests src/frob/ci_report.py::build_run_report
         jobs = (
-            JobSummary(job_id="j1", name="ubuntu", status="completed", conclusion="success"),
-            JobSummary(job_id="j2", name="macos", status="completed", conclusion="failure"),
+            JobSummary(
+                job_id="j1", name="ubuntu", status="completed", conclusion="success"
+            ),
+            JobSummary(
+                job_id="j2", name="macos", status="completed", conclusion="failure"
+            ),
         )
         monkeypatch.setattr(
             ci_report_mod,
             "view_run",
             lambda root, run_id: Ok(
-                RunDetail(run_id=run_id, status="completed", conclusion="failure", jobs=jobs)
+                RunDetail(
+                    run_id=run_id, status="completed", conclusion="failure", jobs=jobs
+                )
             ),
         )
 
@@ -187,21 +199,29 @@ class TestBuildRunReport:
     ) -> None:
         # frob:tests src/frob/ci_report.py::build_run_report
         jobs = (
-            JobSummary(job_id="j1", name="ubuntu", status="completed", conclusion="cancelled"),
-            JobSummary(job_id="j2", name="macos", status="completed", conclusion="failure"),
+            JobSummary(
+                job_id="j1", name="ubuntu", status="completed", conclusion="cancelled"
+            ),
+            JobSummary(
+                job_id="j2", name="macos", status="completed", conclusion="failure"
+            ),
         )
         monkeypatch.setattr(
             ci_report_mod,
             "view_run",
             lambda root, run_id: Ok(
-                RunDetail(run_id=run_id, status="completed", conclusion="cancelled", jobs=jobs)
+                RunDetail(
+                    run_id=run_id, status="completed", conclusion="cancelled", jobs=jobs
+                )
             ),
         )
 
         def fake_job_log(root, run_id, job_id):  # noqa: ANN001, ANN201
             if job_id == "j1":
                 return Err(GhError.EmptyLog)
-            return Ok(JobLog(job_id=job_id, text=_FAILING_LOG, empty=False, truncated=False))
+            return Ok(
+                JobLog(job_id=job_id, text=_FAILING_LOG, empty=False, truncated=False)
+            )
 
         monkeypatch.setattr(ci_report_mod, "job_log", fake_job_log)
 
@@ -220,6 +240,8 @@ class TestBuildRunReport:
 
 def test_test_failure_model_is_frozen() -> None:
     # frob:tests src/frob/ci_report.py::TestFailure
-    failure = TestFailure(node_id="x::y", kind="failed", reason="boom", signature="failed:boom")
+    failure = TestFailure(
+        node_id="x::y", kind="failed", reason="boom", signature="failed:boom"
+    )
     with pytest.raises(Exception):
         failure.node_id = "changed"  # type: ignore[misc]

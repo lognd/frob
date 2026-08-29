@@ -150,9 +150,7 @@ class TestDisposableStageFlip:
     the T-1514 pre-commit sweep keeps the old in-root path rather than
     handing that sweep a checkout it cannot measure."""
 
-    def test_root_never_goes_dirty_during_the_squash_apply(
-        self, v2_main: Path
-    ) -> None:
+    def test_root_never_goes_dirty_during_the_squash_apply(self, v2_main: Path) -> None:
         # frob:tests tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.test_root_never_goes_dirty_during_the_squash_apply  # noqa: E501
         """MUST FIRE (acceptance 0): poll root's porcelain status
         continuously for the whole length of a real squash-apply and
@@ -263,7 +261,9 @@ class TestDisposableStageFlip:
         """MUST STAY QUIET (T-3135's own fallback): when the warm stage
         cannot be prepared at all, the sweep degrades to the pre-T-3135
         in-root path -- never a silently skipped sweep."""
-        monkeypatch.setattr(_land_mod, "_ensure_warm_sweep_stage", lambda root, tip: None)
+        monkeypatch.setattr(
+            _land_mod, "_ensure_warm_sweep_stage", lambda root, tip: None
+        )
         prepared = _prepare(v2_main, "15")
         seen: list[Path] = []
 
@@ -329,9 +329,12 @@ class TestPublishSquashApply:
         assert landed is not None
         parent = _run(["git", "rev-parse", f"{landed}^"], v2_main).stdout.strip()
         assert parent == pre_land_tip
-        assert _run(
-            ["git", "merge-base", "--is-ancestor", landed, "main"], v2_main
-        ).returncode == 0
+        assert (
+            _run(
+                ["git", "merge-base", "--is-ancestor", landed, "main"], v2_main
+            ).returncode
+            == 0
+        )
         assert (v2_main / "src" / "staged.py").read_text().startswith("# staged")
 
     def test_racing_publish_surfaces_dirtymain(self, v2_main: Path) -> None:

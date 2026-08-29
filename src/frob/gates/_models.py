@@ -31,12 +31,6 @@ __all__ = [
 ]
 
 
-
-
-
-
-
-
 # frob:doc docs/modules/gates.md#deprecated-gate-t-0576
 class DeprecatedEntry(BaseModel):
     """One outstanding `frob:deprecated` entry, as `frob.gates.list_deprecated`
@@ -50,8 +44,6 @@ class DeprecatedEntry(BaseModel):
     sunset: str
     ticket: str
     expired: bool
-
-
 
 
 # frob:doc docs/modules/gates.md#data-models
@@ -269,6 +261,7 @@ class CoverageError(ErrorSet):
 
     Missing = "No coverage.xml/stamp found; run make coverage"
     Malformed = "coverage.xml could not be parsed"
+
 
 from frob.findings import (  # noqa: E402,F401 -- T-1201 split, re-exported below
     DebtEntry,

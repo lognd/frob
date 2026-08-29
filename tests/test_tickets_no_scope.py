@@ -112,8 +112,7 @@ class TestTicketSpecFieldsSurviveNewTicket:
         ticket = reloaded.danger_ok.tickets[created.danger_ok.id]
         assert ticket.no_scope_declared is True
         assert (
-            ticket.no_scope_declared_reason
-            == "pure decision record, no files to scope"
+            ticket.no_scope_declared_reason == "pure decision record, no files to scope"
         )
 
     def test_runs_last_parallel_safe_round_trips_through_new_ticket(

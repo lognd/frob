@@ -711,9 +711,7 @@ class TestCapabilityScan:
         )
         assert "exec" in scan_file_capabilities(cs)
 
-    def test_csharp_binary_formatter_deserialize_detected(
-        self, tmp_path: Path
-    ) -> None:
+    def test_csharp_binary_formatter_deserialize_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
         # kind="unit"
         from frob.vet._capability import scan_file_capabilities

@@ -221,8 +221,10 @@ def _is_test_shaped(path: str) -> bool:
     exactly as vacuous as the bare file-membership shortcut this module
     replaces."""
     name = path.rsplit("/", 1)[-1]
-    return path.startswith("tests/") or name.startswith("test_") or name.endswith(
-        "_test.py"
+    return (
+        path.startswith("tests/")
+        or name.startswith("test_")
+        or name.endswith("_test.py")
     )
 
 

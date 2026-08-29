@@ -80,9 +80,7 @@ class TestApplyReleaseBumpOutOfTree:
         `scratch_repo`'s OWN checked-out pyproject.toml is never touched
         (acceptance: the shared tree stays invisible during the bump)."""
         composed = _composed_commit_with_extra_file(scratch_repo)
-        pre_land_tip = _run(
-            ["git", "rev-parse", "main~1"], scratch_repo
-        ).stdout.strip()
+        pre_land_tip = _run(["git", "rev-parse", "main~1"], scratch_repo).stdout.strip()
         before_text = (scratch_repo / "pyproject.toml").read_text()
         before_mtime = (scratch_repo / "pyproject.toml").stat().st_mtime_ns
 
@@ -113,9 +111,7 @@ class TestApplyReleaseBumpOutOfTree:
         the real squash-apply's own single-parent commit shape (see this
         function's docstring for why)."""
         composed = _composed_commit_with_extra_file(scratch_repo)
-        pre_land_tip = _run(
-            ["git", "rev-parse", "main~1"], scratch_repo
-        ).stdout.strip()
+        pre_land_tip = _run(["git", "rev-parse", "main~1"], scratch_repo).stdout.strip()
 
         def bump_version(root: Path, ticket, final_id: str):  # noqa: ANN001, ANN202
             (root / "pyproject.toml").write_text(
@@ -132,7 +128,7 @@ class TestApplyReleaseBumpOutOfTree:
         new_sha = result.danger_ok
         assert new_sha != composed
         show = _run(["git", "show", f"{new_sha}:pyproject.toml"], scratch_repo)
-        assert '0.2.0' in show.stdout
+        assert "0.2.0" in show.stdout
         # feature.txt from the composed commit must still be present --
         # the fold is additive, not a fresh tree from pre_land_tip.
         feature = _run(["git", "show", f"{new_sha}:feature.txt"], scratch_repo)
@@ -147,9 +143,7 @@ class TestApplyReleaseBumpOutOfTree:
         `composed_commit` itself, unchanged -- no new commit created for
         nothing to fold."""
         composed = _composed_commit_with_extra_file(scratch_repo)
-        pre_land_tip = _run(
-            ["git", "rev-parse", "main~1"], scratch_repo
-        ).stdout.strip()
+        pre_land_tip = _run(["git", "rev-parse", "main~1"], scratch_repo).stdout.strip()
 
         result = _apply_release_bump_out_of_tree(
             scratch_repo, _fake_ticket(), "T-3095", None, pre_land_tip, composed
@@ -165,9 +159,7 @@ class TestApplyReleaseBumpOutOfTree:
         `Err`, and `scratch_repo`'s own working tree/index stays clean --
         the failure path is just as isolated as the success path."""
         composed = _composed_commit_with_extra_file(scratch_repo)
-        pre_land_tip = _run(
-            ["git", "rev-parse", "main~1"], scratch_repo
-        ).stdout.strip()
+        pre_land_tip = _run(["git", "rev-parse", "main~1"], scratch_repo).stdout.strip()
 
         def bump_version(root: Path, ticket, final_id: str):  # noqa: ANN001, ANN202
             return Err(LandError.ReleaseBumpFailed)

@@ -1574,9 +1574,7 @@ def _migrate(root: Path, to: str | None = None, *, fill_gaps: bool = False) -> N
 
         gaps_result = migrate_missing_v2(root)
         if gaps_result.is_err:
-            _log.error(
-                "ticket migrate --fill-gaps failed: %s", gaps_result.danger_err
-            )
+            _log.error("ticket migrate --fill-gaps failed: %s", gaps_result.danger_err)
             sys.exit(1)
         gaps_n = gaps_result.danger_ok
         if gaps_n == 0:

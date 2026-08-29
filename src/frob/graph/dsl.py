@@ -575,7 +575,7 @@ def _md_waive_reason_tail_error(line: str) -> str | None:
         # alone rather than guess.
         return None
     leftover = tail.split("-->", 1)[0].strip()
-    return f"leftover text {leftover!r} before \"-->\" (unescaped `\"` in reason=?)"
+    return f'leftover text {leftover!r} before "-->" (unescaped `"` in reason=?)'
 
 
 # frob:ticket T-1968
@@ -635,7 +635,7 @@ def _unhandled_markdown_directive(
                 line=lineno,
                 reason=(
                     f"unhandled markdown directive (verb={verb!r}, rule={rule!r}): "
-                    f"reason=\"...\" does not close cleanly -- {tail_error}"
+                    f'reason="..." does not close cleanly -- {tail_error}'
                 ),
             )
         if rule in _MD_WAIVE_HONORED_RULES:

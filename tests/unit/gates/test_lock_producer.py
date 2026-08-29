@@ -48,7 +48,9 @@ class TestProducerStatusVerdicts:
         (tmp_path / "README.md").write_text("x")
         _git(tmp_path, "add", "-A")
         _git(tmp_path, "commit", "-q", "-m", "init")
-        lock = TrackedLock(name="x", path_rel="missing.lock.json", code_glob="src/**/*.py")
+        lock = TrackedLock(
+            name="x", path_rel="missing.lock.json", code_glob="src/**/*.py"
+        )
         status = producer_status(tmp_path, lock)
         assert status.verdict == "UNMEASURED"
         assert status.exists is False
@@ -91,7 +93,9 @@ class TestProducerStatusVerdicts:
         )
         _init_repo(tmp_path)
         (tmp_path / "x.lock.json").write_text(
-            json.dumps({"v": 1, "pin": {"reason": "frozen on purpose", "ticket": "T-1"}})
+            json.dumps(
+                {"v": 1, "pin": {"reason": "frozen on purpose", "ticket": "T-1"}}
+            )
         )
         (tmp_path / "src" / "pkg").mkdir(parents=True)
         (tmp_path / "src" / "pkg" / "a.py").write_text("x = 1\n")

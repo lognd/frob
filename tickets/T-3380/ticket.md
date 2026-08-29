@@ -1,7 +1,7 @@
 ---
 id: T-3380
 title: ruff format repo-wide sweep (81 files, no owning gate)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -579,6 +579,16 @@ scope_changes:
     ruff format .
   actor: logan
   at: '2026-08-29'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure ruff-format whitespace/style sweep, no
+    logic changes'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 648
+  new_length: 740
+evidence:
+- tests/test_ghio.py::TestPreflight::test_not_installed
 designated_repro_test: null
 threat: null
 component: null
@@ -587,3 +597,5 @@ anchor_reason: null
 land_commit: null
 ---
 ruff format --check . measured 81 files needing reformatting on current main. gate:FMT (FMT001) only scans frob: directive-comment lines touched by the current diff -- it never scans the whole tree -- so this drift was invisible to frob check and accumulated unowned. Fix: run ruff format . and land the 81-file diff as one standalone sweep, on its own commit, nothing batched with it. frob fmt --check (the repo's own directive-line formatter) separately flags 5 Rust files (frob-core/src/*.rs, strata-core/src/**/*.rs) -- disjoint from ruff format's 81 Python files, confirmed zero overlap, so the two tools cannot fight each other on this sweep.
+
+frob:no-behavior-change reason="pure ruff-format whitespace/style sweep, no logic changes"

@@ -1175,8 +1175,7 @@ def _print_shrink_report(report) -> bool:  # noqa: ANN001
         for drop in f.drops:
             any_drops = True
             _log.warning(
-                "shrink: %s node=%s kind=%r -- declared but never "
-                "observed, dropping",
+                "shrink: %s node=%s kind=%r -- declared but never observed, dropping",
                 f.path,
                 drop.node,
                 drop.kind,

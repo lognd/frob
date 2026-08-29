@@ -307,9 +307,7 @@ class TestRunEndToEnd:
     by the pure-function/integration tests above."""
 
     # frob:tests tests/test_status.py::TestRunEndToEnd.test_run_prints_human_text_by_default kind="unit"  # noqa: E501
-    def test_run_prints_human_text_by_default(
-        self, tmp_path: Path, capsys
-    ) -> None:
+    def test_run_prints_human_text_by_default(self, tmp_path: Path, capsys) -> None:
         """`run(cfg)` with no `--json` prints the human-readable sections,
         not a JSON blob."""
         import subprocess

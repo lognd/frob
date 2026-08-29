@@ -78,8 +78,7 @@ class TestVersionCouplingGate:
         )
         violations = version_coupling_gate(root)
         assert any(
-            v.rule == "VERSION001" and "not an exact" in v.message
-            for v in violations
+            v.rule == "VERSION001" and "not an exact" in v.message for v in violations
         )
 
     def test_missing_extra_fires(self, tmp_path: Path) -> None:

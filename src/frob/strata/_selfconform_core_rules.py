@@ -88,7 +88,6 @@ def _core_undeclared_violation(violation) -> SelfConformViolation:  # noqa: ANN0
     )
 
 
-
 # frob:ticket T-2729
 def _extended_kind_violations(
     model: KernelModel, observed_by_node: dict[str, frozenset[str]]

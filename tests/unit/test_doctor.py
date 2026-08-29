@@ -53,7 +53,9 @@ class TestNativeDegradeWarning:
         monkeypatch.setattr(
             doctor,
             "_extension_status",
-            lambda name: NativeExtensionStatus(name=name, available=True, version="0.1.0"),
+            lambda name: NativeExtensionStatus(
+                name=name, available=True, version="0.1.0"
+            ),
         )
         assert native_degrade_warning(tmp_path) is None
 

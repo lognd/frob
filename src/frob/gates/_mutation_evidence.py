@@ -388,7 +388,6 @@ def _is_quoted(pos: int, quoted_ranges: tuple[tuple[int, int], ...]) -> bool:
     return any(start <= pos < end for start, end in quoted_ranges)
 
 
-
 # T-2851: BUG002/must-still-pass repro-classification family moved to
 # frob.gates._bug_repro (see its own module doc); re-exported here so
 # frob.gates.__init__'s existing import line needs no change.
@@ -399,4 +398,3 @@ from frob.gates._bug_repro import (  # noqa: E402, F401 -- re-exported for frob.
     designated_repro_test,
     must_still_pass_violations,
 )
-

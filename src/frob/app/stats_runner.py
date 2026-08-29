@@ -86,7 +86,7 @@ def _agentic_tool_call_histogram_lines(report) -> list[str]:  # noqa: ANN001
     lines = ["", "tool-call histogram, by (tool, command shape) (T-2912):"]
     if not report.tool_call_histogram:
         lines.append(
-            "  (no kind=\"tool\" phase events recorded yet -- "
+            '  (no kind="tool" phase events recorded yet -- '
             ".claude/hooks/tool-call-telemetry.py wires PreToolUse/PostToolUse)"
         )
         return lines

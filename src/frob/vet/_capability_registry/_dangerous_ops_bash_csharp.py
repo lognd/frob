@@ -19,8 +19,7 @@ _BASH_CSHARP_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "builtins",
         "eval",
         "eval",
-        "executes a string as shell code, including any interpolated "
-        "untrusted input",
+        "executes a string as shell code, including any interpolated untrusted input",
         "never eval untrusted input; use an array and call the command "
         "directly instead of building a string to eval",
         "critical",
@@ -45,8 +44,7 @@ _BASH_CSHARP_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "curl / wget",
         "fetch_url",
         "fetches a remote URL",
-        "pin TLS verification on and avoid piping the response into a "
-        "shell",
+        "pin TLS verification on and avoid piping the response into a shell",
         "medium",
         ("curl ", "wget "),
         (),
@@ -57,8 +55,7 @@ _BASH_CSHARP_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "rm -rf",
         "fs-write",
         "recursively removes a file tree with no confirmation",
-        "scope the path narrowly and avoid unexpanded variables in the "
-        "target path",
+        "scope the path narrowly and avoid unexpanded variables in the target path",
         "high",
         ("rm -rf ", "rm -fr "),
         ("CWE-732",),
@@ -68,8 +65,7 @@ _BASH_CSHARP_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "builtins",
         "source / .",
         "fs-read",
-        "reads and executes another file's contents as shell code in the "
-        "current shell",
+        "reads and executes another file's contents as shell code in the current shell",
         "source only files this script itself controls, never a "
         "user-writable or downloaded path",
         "high",
@@ -83,8 +79,7 @@ _BASH_CSHARP_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "env-write",
         "mutates the process environment, visible to every child process "
         "spawned afterward",
-        "scope environment mutation to the minimum needed and avoid "
-        "exporting secrets",
+        "scope environment mutation to the minimum needed and avoid exporting secrets",
         "low",
         ("export ",),
         (),
@@ -143,8 +138,7 @@ _BASH_CSHARP_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "System.Diagnostics",
         "Process.Start",
         "exec",
-        "spawns an external process; a shell-invoking overload runs "
-        "through cmd.exe/sh",
+        "spawns an external process; a shell-invoking overload runs through cmd.exe/sh",
         "use ProcessStartInfo with UseShellExecute=false and an argument "
         "list, never a single interpolated command-line string",
         "high",

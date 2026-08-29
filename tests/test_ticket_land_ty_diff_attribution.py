@@ -101,9 +101,9 @@ class TestTyDiagnosticIdentity:
             code="invalid-return-type",
             message="expected `int`, found `str`",
         )
-        assert _ty_diagnostic_identity(
-            near.file, near
-        ) == _ty_diagnostic_identity(shifted.file, shifted)
+        assert _ty_diagnostic_identity(near.file, near) == _ty_diagnostic_identity(
+            shifted.file, shifted
+        )
 
 
 # frob:ticket T-3116

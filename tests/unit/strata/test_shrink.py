@@ -169,10 +169,7 @@ class TestShrinkNeverWidensOrBinds:
             tmp_path,
             "design",
             "api.strata",
-            "module api\n"
-            "node Api : trusted {\n"
-            '    code "api/**";\n'
-            "}\n",
+            'module api\nnode Api : trusted {\n    code "api/**";\n}\n',
         )
         before = design_path.read_text(encoding="utf-8")
 
@@ -208,10 +205,7 @@ class TestShrinkNeverWidensOrBinds:
             tmp_path,
             "design",
             "api.strata",
-            "module api\n"
-            "node Api : trusted {\n"
-            '    code "api/**";\n'
-            "}\n",
+            'module api\nnode Api : trusted {\n    code "api/**";\n}\n',
         )
         before = design_path.read_text(encoding="utf-8")
 
@@ -253,9 +247,7 @@ class TestNoWideningPath:
         names = [n for n in dir(shrink_mod) if not n.startswith("__")]
         forbidden_substrings = ("widen", "bind_file", "add_grant", "escalate")
         offending = [
-            n
-            for n in names
-            if any(bad in n.lower() for bad in forbidden_substrings)
+            n for n in names if any(bad in n.lower() for bad in forbidden_substrings)
         ]
         assert offending == []
 
@@ -371,7 +363,9 @@ class TestNoWideningPathRepoWide:
                 continue
             for node in ast.walk(tree):
                 name = None
-                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                if isinstance(
+                    node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+                ):
                     name = node.name
                 elif isinstance(node, ast.ImportFrom):
                     for alias in node.names:
@@ -383,6 +377,5 @@ class TestNoWideningPathRepoWide:
                 if name in forbidden:
                     offenders.append(f"{path.relative_to(repo_root)}: defines {name}")
         assert offenders == [], (
-            "a widening function was reintroduced somewhere in src/frob: "
-            f"{offenders}"
+            f"a widening function was reintroduced somewhere in src/frob: {offenders}"
         )

@@ -520,9 +520,7 @@ def _is_platform_string_guard_test(test: ast.expr) -> bool:
     if len(test.comparators) != 1:
         return False
     comparator = test.comparators[0]
-    if not (
-        isinstance(comparator, ast.Constant) and isinstance(comparator.value, str)
-    ):
+    if not (isinstance(comparator, ast.Constant) and isinstance(comparator.value, str)):
         return False
     return _is_platform_string_read(test.left)
 
@@ -907,7 +905,7 @@ def _platform001_violation(rel_path: str, site: _PlatformSite) -> Violation:
             f"platform available must either declare a real cross-platform "
             f"path (a second backend, an `elif` branch trying another "
             f"primitive) or refuse LOUDLY (`raise`, `sys.exit`), never "
-            f'warn-and-continue (T-2918); `frob:waive PLATFORM001 '
+            f"warn-and-continue (T-2918); `frob:waive PLATFORM001 "
             f'reason="..."` if this is a real structured-error return this '
             f"detector's AST scan cannot see (module docstring's disclosed "
             f"gap)"
@@ -943,9 +941,9 @@ def _platform001_import_time_violation(rel_path: str, site: _PlatformSite) -> Vi
             f"SIGKILL):` crashed the whole module's import on Windows "
             f"before any function-body guard ran), not lazily inside a "
             f"function body a caller might never invoke on the wrong "
-            f"platform. Guard it (`X if sys.platform != \"win32\" else "
+            f'platform. Guard it (`X if sys.platform != "win32" else '
             f"None`, or move the reference inside the function body "
-            f'behind a real guard), or `frob:waive PLATFORM001 '
+            f"behind a real guard), or `frob:waive PLATFORM001 "
             f'reason="..."` if this platform genuinely always provides '
             f"`{name}`"
         ),

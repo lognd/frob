@@ -57,5 +57,3 @@ class SelfConformReport(BaseModel):
 
     violations: tuple[SelfConformViolation, ...] = ()
     waived: tuple[SelfConformViolation, ...] = ()
-
-

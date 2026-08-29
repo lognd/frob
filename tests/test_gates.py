@@ -1423,9 +1423,7 @@ class TestCoverageGate:
         assert not any(v.rule == "COV003" for v in violations)
 
     # frob:ticket T-2688
-    def test_cov008_fires_when_diff_deletes_a_cited_test(
-        self, tmp_path: Path
-    ) -> None:
+    def test_cov008_fires_when_diff_deletes_a_cited_test(self, tmp_path: Path) -> None:
         """MUST-FIRE fixture (T-2688's own required positive control):
         deleting a test file some ticket's evidence still cites must be
         refused at diff time, not discovered later by an unrelated COV003
@@ -4467,9 +4465,7 @@ class TestWire001DiffScopingMissesPreExistingDeadSymbols:
             "def _dead_helper() -> int:\n    return 1\n",
         )
         snap = _snapshot(tmp_path)
-        record = next(
-            r for r in snap.symbols.values() if "_dead_helper" in r.symref
-        )
+        record = next(r for r in snap.symbols.values() if "_dead_helper" in r.symref)
         diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
@@ -12579,8 +12575,7 @@ class TestFixEngineTierA:
 
         applied = apply_tier_a_fixes(root, self._snap(root), TicketQueue(tickets={}))
         assert not [a for a in applied if a.rule == "SYS100"], (
-            "no Tier-A handler may silently insert a whole-node may= grant "
-            "any more"
+            "no Tier-A handler may silently insert a whole-node may= grant any more"
         )
         rewritten = (root / "design" / "m.strata").read_text(encoding="utf-8")
         assert rewritten == design_text, "the ceiling must be untouched"
@@ -18046,9 +18041,7 @@ class TestDoc004CsharpUsingDrift:
     tracked-file-existence posture: a `using X.Y` naming a dotted prefix of
     a tracked `.cs` file's path is treated as project-internal."""
 
-    def test_using_of_tracked_namespace_unanchored_warns(
-        self, tmp_path: Path
-    ) -> None:
+    def test_using_of_tracked_namespace_unanchored_warns(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         _write(
             tmp_path,
@@ -18069,9 +18062,7 @@ class TestDoc004CsharpUsingDrift:
         assert unbound
         assert all(v.severity == Severity.ERROR for v in unbound)
 
-    def test_using_of_tracked_namespace_anchored_passes(
-        self, tmp_path: Path
-    ) -> None:
+    def test_using_of_tracked_namespace_anchored_passes(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         _write(
             tmp_path,

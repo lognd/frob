@@ -234,8 +234,8 @@ class TestDefaultRootManifestExempt:
         self, tmp_path: Path
     ) -> None:
         _init_repo(tmp_path)
-        _write(tmp_path, "pyproject.toml", "[project]\nname = \"x\"\n")
-        _write(tmp_path, "frob.toml", "[project]\nname = \"x\"\n")
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\n')
+        _write(tmp_path, "frob.toml", '[project]\nname = "x"\n')
         _write(tmp_path, ".gitignore", ".frob/\ncoverage.xml\n")
         _write(tmp_path, "frob-coverage.lock.json", "{}\n")
         _git(tmp_path, "add", "-A")
@@ -255,7 +255,7 @@ class TestDefaultRootManifestExempt:
         # root path is exempt.
         _init_repo(tmp_path)
         (tmp_path / "somecrate").mkdir()
-        _write(tmp_path, "somecrate/pyproject.toml", "[project]\nname = \"y\"\n")
+        _write(tmp_path, "somecrate/pyproject.toml", '[project]\nname = "y"\n')
         _git(tmp_path, "add", "-A")
 
         violations = ref_gate(tmp_path)
@@ -274,7 +274,7 @@ class TestDefaultRootManifestExempt:
         tests/system/test_cli_native_missing.py's minimal fixtures, both
         of which failed REF001 on a freshly committed root tickets.md."""
         _init_repo(tmp_path)
-        _write(tmp_path, "pyproject.toml", "[project]\nname = \"x\"\n")
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\n')
         _write(tmp_path, "tickets.md", "# Tickets\n")
         _git(tmp_path, "add", "-A")
 
@@ -283,9 +283,7 @@ class TestDefaultRootManifestExempt:
         assert _rule_ids(violations, "tickets.md") == []
 
     # frob:ticket T-3249
-    def test_nested_tickets_md_still_subject_to_ref001(
-        self, tmp_path: Path
-    ) -> None:
+    def test_nested_tickets_md_still_subject_to_ref001(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         (tmp_path / "sub").mkdir()
         _write(tmp_path, "sub/tickets.md", "# Tickets\n")
@@ -701,9 +699,7 @@ class TestJsTsRootManifestExempt:
         assert _rule_ids(violations, "package.json") == []
         assert _rule_ids(violations, "tsconfig.json") == []
 
-    def test_nested_package_json_still_subject_to_ref001(
-        self, tmp_path: Path
-    ) -> None:
+    def test_nested_package_json_still_subject_to_ref001(self, tmp_path: Path) -> None:
         # frob:tests tests/test_refs_gate.py::TestJsTsRootManifestExempt.test_nested_package_json_still_subject_to_ref001 kind="unit"  # noqa: E501
         # A workspace-member manifest is not automatically read the way
         # the project ROOT's own manifest is -- only the exact literal

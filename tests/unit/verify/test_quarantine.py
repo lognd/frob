@@ -316,9 +316,7 @@ class TestRaiseQuarantine:
         result = raise_quarantine(
             tmp_path,
             batch_commit_shas=(),
-            findings=(
-                QuarantinedFinding(rule_id="F401", file="src/x.py", line=3),
-            ),
+            findings=(QuarantinedFinding(rule_id="F401", file="src/x.py", line=3),),
         )
         assert result.is_err
         assert result.danger_err is QuarantineError.EmptyFindings
@@ -344,9 +342,7 @@ class TestRaiseQuarantine:
         assert is_quarantined(tmp_path).danger_ok is True
 
     # frob:ticket T-3025
-    def test_an_attributed_trivial_finding_still_raises(
-        self, tmp_path: Path
-    ) -> None:
+    def test_an_attributed_trivial_finding_still_raises(self, tmp_path: Path) -> None:
         # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
         # MUST-FIRE fixture 1/2: the SAME trivial rule (I001), but this
         # time attributed to a real commit -- a real commit/ticket
@@ -381,9 +377,7 @@ class TestRaiseQuarantine:
         result = raise_quarantine(
             tmp_path,
             batch_commit_shas=("abc123",),
-            findings=(
-                QuarantinedFinding(rule_id="TEST001", file="src/z.py", line=4),
-            ),
+            findings=(QuarantinedFinding(rule_id="TEST001", file="src/z.py", line=4),),
         )
         assert result.is_ok
         assert is_quarantined(tmp_path).danger_ok is True

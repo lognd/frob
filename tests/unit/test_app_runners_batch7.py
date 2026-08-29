@@ -2078,9 +2078,7 @@ class TestSysInit:
     """`frob sys init` CLI dispatch: writes a fresh model, refuses over an
     existing one, and `--check` writes nothing."""
 
-    def test_writes_a_model_for_a_repo_with_none(
-        self, tmp_path: Path, caplog
-    ) -> None:
+    def test_writes_a_model_for_a_repo_with_none(self, tmp_path: Path, caplog) -> None:
         (tmp_path / "src" / "pkg" / "alpha").mkdir(parents=True)
         (tmp_path / "src" / "pkg" / "alpha" / "handler.py").write_text(
             "x = 1\n", encoding="utf-8"
@@ -2112,9 +2110,7 @@ class TestSysInit:
         out = capsys.readouterr().out
         assert "node pkg_alpha" in out
 
-    def test_refuses_when_a_model_already_exists(
-        self, tmp_path: Path, caplog
-    ) -> None:
+    def test_refuses_when_a_model_already_exists(self, tmp_path: Path, caplog) -> None:
         (tmp_path / "src" / "pkg").mkdir(parents=True)
         (tmp_path / "src" / "pkg" / "a.py").write_text("x = 1\n", encoding="utf-8")
         (tmp_path / "design").mkdir()

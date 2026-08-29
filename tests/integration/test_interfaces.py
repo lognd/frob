@@ -104,7 +104,7 @@ class TestInterfaces:
         # gap; reproduces identically on Linux), so root resolution fails
         # before import measurement ever runs. A `pyproject.toml` marker
         # is enough to resolve the root without needing a real git repo.
-        (project / "pyproject.toml").write_text("[project]\nname = \"pkg\"\n")
+        (project / "pyproject.toml").write_text('[project]\nname = "pkg"\n')
         result = _frob(["cycle", "src"], cwd=project)
         assert result.returncode == 0
 

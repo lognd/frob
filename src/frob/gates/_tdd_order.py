@@ -162,9 +162,7 @@ def _revisions_oldest_first(root: Path, path: str) -> list[str]:
     `resolve_symbol_introduction` scans forward over looking for the
     qualname's first real appearance. `git log` itself lists newest-
     first, so this just reverses it."""
-    spawned = run_argv(
-        ("git", "-C", str(root), "log", "--format=%H", "--", path)
-    )
+    spawned = run_argv(("git", "-C", str(root), "log", "--format=%H", "--", path))
     if spawned.is_err or spawned.danger_ok.returncode != 0:
         return []
     shas = [ln.strip() for ln in spawned.danger_ok.stdout.splitlines() if ln.strip()]

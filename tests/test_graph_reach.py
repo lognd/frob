@@ -44,9 +44,7 @@ class TestClassifyEvidenceReach:
     def test_reaches_via_call_graph_closure(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/reach.py::classify_evidence_reach
         (tmp_path / "pkg").mkdir()
-        (tmp_path / "pkg" / "impl.py").write_text(
-            "def _target():\n    return 1\n"
-        )
+        (tmp_path / "pkg" / "impl.py").write_text("def _target():\n    return 1\n")
         (tmp_path / "pkg" / "test_impl.py").write_text(
             "from pkg.impl import _target\n\n\ndef test_x():\n    _target()\n"
         )
@@ -76,9 +74,7 @@ class TestClassifyEvidenceReach:
     def test_does_not_reach_when_closure_misses_scope(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/reach.py::classify_evidence_reach
         (tmp_path / "pkg").mkdir()
-        (tmp_path / "pkg" / "impl.py").write_text(
-            "def _target():\n    return 1\n"
-        )
+        (tmp_path / "pkg" / "impl.py").write_text("def _target():\n    return 1\n")
         (tmp_path / "pkg" / "test_unrelated.py").write_text(
             "def _helper():\n    return 2\n\n\ndef test_y():\n    _helper()\n"
         )
@@ -95,9 +91,7 @@ class TestClassifyEvidenceReach:
         # frob:tests src/frob/graph/reach.py::classify_evidence_reach
         (tmp_path / "pkg").mkdir()
         (tmp_path / "pkg" / "impl.py").write_text("def _target():\n    return 1\n")
-        (tmp_path / "pkg" / "test_unrelated.py").write_text(
-            "def test_y():\n    pass\n"
-        )
+        (tmp_path / "pkg" / "test_unrelated.py").write_text("def test_y():\n    pass\n")
         snap = _snapshot(tmp_path, ("pkg/impl.py::_target",))
         result = classify_evidence_reach(
             tmp_path, snap, ("pkg/impl.py",), "pkg/test_unrelated.py::test_y"
@@ -133,9 +127,7 @@ class TestClassifyEvidenceReach:
         # reintroduces the exact laundering path it exists to close.
         (tmp_path / "pkg").mkdir()
         (tmp_path / "pkg" / "impl.py").write_text("def _target():\n    return 1\n")
-        (tmp_path / "pkg" / "test_unrelated.py").write_text(
-            "def test_y():\n    pass\n"
-        )
+        (tmp_path / "pkg" / "test_unrelated.py").write_text("def test_y():\n    pass\n")
         snap = _snapshot(
             tmp_path,
             ("pkg/impl.py::_target", "pkg/test_unrelated.py::test_y"),

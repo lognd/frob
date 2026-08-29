@@ -500,11 +500,7 @@ class TestPlatform001BareImport:
     #: Must-stay-quiet fixture: the standard guarded idiom this repo's
     #: other ~10 platform-optional call sites already use.
     _GUARDED_IMPORT_SRC = (
-        "fcntl = None\n"
-        "try:\n"
-        "    import fcntl\n"
-        "except ImportError:\n"
-        "    fcntl = None\n"
+        "fcntl = None\ntry:\n    import fcntl\nexcept ImportError:\n    fcntl = None\n"
     )
 
     # frob:ticket T-2944

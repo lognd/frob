@@ -57,9 +57,7 @@ def _section_body(lines: list[str], heading: str) -> str | None:
     check to the actual auto-filled section content, never to free
     narrative text that may happen to quote the marker strings (as this
     module's own docstring does)."""
-    start = next(
-        (i for i, line in enumerate(lines) if line.strip() == heading), None
-    )
+    start = next((i for i, line in enumerate(lines) if line.strip() == heading), None)
     if start is None:
         return None
     end = next(

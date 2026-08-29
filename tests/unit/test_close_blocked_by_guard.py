@@ -43,7 +43,9 @@ def _init_git_repo(root: Path) -> None:
     subprocess.run(["git", "config", "user.name", "t"], cwd=root, check=True)
 
 
-def _write_ticket(root: Path, ticket_id: str, state, body: str, *, blocked_by=()) -> None:  # noqa: ANN001, E501
+def _write_ticket(
+    root: Path, ticket_id: str, state, body: str, *, blocked_by=()
+) -> None:  # noqa: ANN001, E501
     from frob.tickets import Origin, Ticket, TicketKind
     from frob.tickets._store import _serialize_ticket
 

@@ -179,7 +179,7 @@ class TestWire001PropertyAttributeAccess:
             "from __future__ import annotations\n\n\n"
             "class Stamp:\n"
             "    def __init__(self) -> None:\n"
-            '        self._seconds = 1.0\n\n'
+            "        self._seconds = 1.0\n\n"
             "    @property\n"
             "    def seconds(self) -> float:\n"
             "        return self._seconds\n\n\n"

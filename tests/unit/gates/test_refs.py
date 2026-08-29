@@ -248,11 +248,7 @@ class TestRef002FileGranularityMissesDeadSymbols:
         _write(
             tmp_path,
             "pkg/walker.py",
-            "def _dead_helper():\n"
-            "    return 1\n\n"
-            "\n"
-            "def walk():\n"
-            "    return 2\n",
+            "def _dead_helper():\n    return 1\n\n\ndef walk():\n    return 2\n",
         )
         _write(tmp_path, "caller_one.py", "from pkg import walker\nwalker.walk()\n")
         _write(tmp_path, "caller_two.py", "from pkg import walker\nwalker.walk()\n")

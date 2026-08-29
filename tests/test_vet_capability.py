@@ -254,9 +254,7 @@ class TestLeadingCommentDoesNotDefeatDocstringExclusion:
 
     # frob:tests src/frob/vet/_capability_core.py::_non_executable_byte_spans \
     # kind="unit"
-    def test_leading_comment_then_real_call_still_fires(
-        self, tmp_path: Path
-    ) -> None:
+    def test_leading_comment_then_real_call_still_fires(self, tmp_path: Path) -> None:
         pkg = tmp_path / "leading_comment_real_call.py"
         pkg.write_text(_LEADING_COMMENT_THEN_REAL_OPAQUE_CALL)
         findings = _opaque_indirection_findings(pkg)

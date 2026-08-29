@@ -35,18 +35,20 @@ def _parse(text: str) -> dict:
 class TestVmodelAuthoringFormat:
     def test_vmodel_node_and_edge_round_trip_through_python(self) -> None:
         payload = _parse(
-            'module m\n'
+            "module m\n"
             'vmodel_node req_1 kind "artifact" level "requirements";\n'
             'vmodel_node design_1 kind "artifact" level "component-design";\n'
             'vmodel_edge kind "satisfies" src design_1 dst req_1;\n'
         )
         ast = payload["ok"]
         assert [n["name"] for n in ast["vmodel_nodes"]] == ["req_1", "design_1"]
-        assert ast["vmodel_edges"] == [{"kind": "satisfies", "src": "design_1", "dst": "req_1"}]
+        assert ast["vmodel_edges"] == [
+            {"kind": "satisfies", "src": "design_1", "dst": "req_1"}
+        ]
 
     def test_duplicate_vmodel_node_name_is_a_parse_error(self) -> None:
         payload = _parse(
-            'module m\n'
+            "module m\n"
             'vmodel_node req_1 kind "artifact" level "requirements";\n'
             'vmodel_node req_1 kind "artifact" level "requirements";\n'
         )

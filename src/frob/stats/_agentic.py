@@ -632,11 +632,7 @@ def _completed_tool_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]
     blocked/retried call is not double-counted as two calls' worth of cost
     -- `_tool_call_histogram` (below) is where `phase="pre"` events earn
     their keep, for retry/blocked detection specifically."""
-    return [
-        e
-        for e in events
-        if e.get("kind") == "tool" and e.get("phase") != "pre"
-    ]
+    return [e for e in events if e.get("kind") == "tool" and e.get("phase") != "pre"]
 
 
 def _tool_tokens(tool_events: list[dict[str, Any]]) -> tuple[ToolTokens, ...]:

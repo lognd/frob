@@ -994,6 +994,7 @@ def _subheading_titles_outside_fences(section: str) -> list[str]:
             titles.append(match.group(1).strip())
     return titles
 
+
 # frob:ticket T-2718
 #: The EXACT, fixed subheading titles `compose_done_report` itself always
 #: writes (T-1005/T-0754/T-1422's own literal strings: `"### Changed"`,

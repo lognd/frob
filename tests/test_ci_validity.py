@@ -43,7 +43,9 @@ def _record(symref: str, *, span: tuple[int, int] = (1, 3)) -> SymbolRecord:
     )
 
 
-def _snapshot(records: dict[str, tuple[int, int]], edges: tuple[Edge, ...]) -> GraphSnapshot:
+def _snapshot(
+    records: dict[str, tuple[int, int]], edges: tuple[Edge, ...]
+) -> GraphSnapshot:
     return GraphSnapshot(
         root="/repo",
         symbols={ref: _record(ref, span=span) for ref, span in records.items()},
@@ -83,7 +85,9 @@ class TestClassifyTest:
                 ),
             ),
         )
-        result = classify_test(snap, frozenset({"a.py::foo"}), "tests/test_a.py::test_foo")
+        result = classify_test(
+            snap, frozenset({"a.py::foo"}), "tests/test_a.py::test_foo"
+        )
         assert result.status == Validity.STALE
         assert "a.py::foo" in result.reason
 
@@ -153,7 +157,9 @@ class TestValidityForRunHeadSha:
             ci_validity_mod, "working_diff", lambda root, base: Err(GitError.GitFailed)
         )
         snap = _snapshot({}, ())
-        result = validity_for_run_head_sha(tmp_path, snap, "deadbeef", ("x.py::test_x",))
+        result = validity_for_run_head_sha(
+            tmp_path, snap, "deadbeef", ("x.py::test_x",)
+        )
         assert result.is_err
 
     def test_classifies_every_failing_node(
@@ -174,7 +180,9 @@ class TestValidityForRunHeadSha:
         monkeypatch.setattr(
             ci_validity_mod,
             "working_diff",
-            lambda root, base: Ok(Diff(base=base, hunks=(Hunk(file="a.py", span=(1, 3)),))),
+            lambda root, base: Ok(
+                Diff(base=base, hunks=(Hunk(file="a.py", span=(1, 3)),))
+            ),
         )
         result = validity_for_run_head_sha(
             tmp_path, snap, "deadbeef", ("tests/test_a.py::test_foo",)
@@ -197,7 +205,9 @@ class TestJobAndRunValidity:
             ),
         )
         monkeypatch.setattr(
-            ci_validity_mod, "working_diff", lambda root, base: Ok(Diff(base=base, hunks=()))
+            ci_validity_mod,
+            "working_diff",
+            lambda root, base: Ok(Diff(base=base, hunks=())),
         )
         return snap
 

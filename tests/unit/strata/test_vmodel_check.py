@@ -41,8 +41,18 @@ class TestVmodelCheckClosureSemantics:
         nodes = [
             ("design-a", "artifact", "system-design", {"code_ref": "design-a"}),
             ("design-b", "artifact", "system-design", {"code_ref": "design-b"}),
-            ("itest-a", "test", "subsystem-integration-test-plan", {"runnable": "itest-a"}),
-            ("itest-b", "test", "subsystem-integration-test-plan", {"runnable": "itest-b"}),
+            (
+                "itest-a",
+                "test",
+                "subsystem-integration-test-plan",
+                {"runnable": "itest-a"},
+            ),
+            (
+                "itest-b",
+                "test",
+                "subsystem-integration-test-plan",
+                {"runnable": "itest-b"},
+            ),
         ]
         edges = [
             ("satisfies", "design-a", "design-b", {}),
@@ -67,10 +77,20 @@ class TestVmodelCheckClosureSemantics:
             ("req-1", "artifact", "requirements", {"code_ref": "req-1"}),
             ("spec-1", "artifact", "requirement-specification", {"code_ref": "spec-1"}),
             ("design-1", "artifact", "system-design", {"code_ref": "design-1"}),
-            ("component-1", "artifact", "component-design", {"code_ref": "component-1"}),
+            (
+                "component-1",
+                "artifact",
+                "component-design",
+                {"code_ref": "component-1"},
+            ),
             ("ctest-1", "test", "customer-test", {"runnable": "ctest-1"}),
             ("ctp-1", "test", "customer-test-plan", {"runnable": "ctp-1"}),
-            ("sitp-1", "test", "subsystem-integration-test-plan", {"runnable": "sitp-1"}),
+            (
+                "sitp-1",
+                "test",
+                "subsystem-integration-test-plan",
+                {"runnable": "sitp-1"},
+            ),
             ("unittest-1", "test", "component-unit-test", {"runnable": "unittest-1"}),
         ]
         edges = [

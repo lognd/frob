@@ -1055,8 +1055,7 @@ def _apply_composed_diff_onto_scratch(
     diffed = run_argv(("git", "-C", str(repo), "diff", pre_land_tip, composed_commit))
     if diffed.is_err:
         _log.error(
-            "land: %s could not diff %s..%s for the out-of-tree release "
-            "bump",
+            "land: %s could not diff %s..%s for the out-of-tree release bump",
             final_id,
             pre_land_tip,
             composed_commit,
@@ -1070,8 +1069,7 @@ def _apply_composed_diff_onto_scratch(
     applied = run_argv(("git", "-C", scratch, "apply", "--index", str(patch_file)))
     if applied.is_err or applied.danger_ok.returncode != 0:
         _log.error(
-            "land: %s could not apply %s..%s onto the disposable "
-            "release-bump worktree",
+            "land: %s could not apply %s..%s onto the disposable release-bump worktree",
             final_id,
             pre_land_tip,
             composed_commit,
@@ -1118,8 +1116,7 @@ def _fold_scratch_worktree_into_commit(
     written = run_argv(("git", "-C", scratch, "write-tree"))
     if written.is_err or written.danger_ok.returncode != 0:
         _log.error(
-            "land: %s write-tree failed for the out-of-tree release bump "
-            "against %s",
+            "land: %s write-tree failed for the out-of-tree release bump against %s",
             final_id,
             composed_commit,
         )
@@ -1148,8 +1145,7 @@ def _fold_scratch_worktree_into_commit(
     )
     if committed.is_err or committed.danger_ok.returncode != 0:
         _log.error(
-            "land: %s commit-tree failed for the out-of-tree release bump "
-            "against %s",
+            "land: %s commit-tree failed for the out-of-tree release bump against %s",
             final_id,
             pre_land_tip,
         )

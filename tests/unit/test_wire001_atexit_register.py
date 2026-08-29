@@ -155,6 +155,4 @@ class TestWire001AtexitRegister:
         diff = Diff(base="x", hunks=(Hunk(file="src/c.py", span=record.span),))
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
-        assert any(
-            v.rule == "WIRE001" and "_Closer" in v.message for v in violations
-        )
+        assert any(v.rule == "WIRE001" and "_Closer" in v.message for v in violations)

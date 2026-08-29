@@ -177,9 +177,7 @@ class TestCheckOnlyPerf:
         # in the same adoption-baseline list `tests/system/test_cli_check.
         # py`'s `_make_project` already uses (T-3019) -- this test isolates
         # PERF001's own severity, not REF001's orphan-file discipline.
-        (tmp_path / "frob.toml").write_text(
-            '[gates.severity]\nREF001 = "warn"\n'
-        )
+        (tmp_path / "frob.toml").write_text('[gates.severity]\nREF001 = "warn"\n')
         (tmp_path / "pkg.py").write_text(
             "def scan(items):\n"
             "    data = [1, 2, 3]\n"

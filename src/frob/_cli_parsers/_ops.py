@@ -133,5 +133,5 @@ def _add_ops_parser(sub) -> None:
         "--json",
         dest="process_reap_json",
         action="store_true",
-        help="emit {\"reaped_pids\": [...]} instead of a human-readable line",
+        help='emit {"reaped_pids": [...]} instead of a human-readable line',
     )

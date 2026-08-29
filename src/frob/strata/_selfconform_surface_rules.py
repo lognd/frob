@@ -457,4 +457,3 @@ def _purpose_contract_violations(
                 )
             )
     return found
-

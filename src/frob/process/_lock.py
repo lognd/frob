@@ -105,6 +105,7 @@ def _msvcrt_release(fd: int) -> None:  # pragma: no cover -- windows-only
     os.lseek(fd, 0, os.SEEK_SET)
     msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
 
+
 #: The advisory lock file `derived_state_lock` holds, relative to a
 #: checkout's `root` -- distinct from `frob.tickets._store._LOCK_REL`
 #: (`.frob/tickets.lock`) so a ledger mutation and a derived-state check

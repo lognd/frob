@@ -30,10 +30,10 @@ class TestCplace001:
         """A `frob:waive` directive whose folded reason spans more than
         `CPLACE001_WAIVE_REASON_LIMIT_LINES` physical lines fires."""
         text = (
-            "# frob:waive SOME001 reason=\"this justification runs on for \\\n"
+            '# frob:waive SOME001 reason="this justification runs on for \\\n'
             "# quite a while, well past the compliant one-line summary \\\n"
             "# form, exactly the narrative-essay shape T-2987 flagged as \\\n"
-            "# bloat that belongs in the ticket instead of the source\"\n"
+            '# bloat that belongs in the ticket instead of the source"\n'
             "x = 1\n"
         )
         violations = scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text)
@@ -46,9 +46,7 @@ class TestCplace001:
         proving the narrowed exemption still lets a compliant waiver
         through."""
         text = '# frob:waive SOME001 reason="narrow, load-bearing reason"\nx = 1\n'
-        assert (
-            scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text) == ()
-        )
+        assert scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text) == ()
 
     def test_must_stay_quiet_frob_ticket_directive_any_length(self) -> None:
         """`frob:ticket`/`frob:tests`/`frob:doc` stay exempt at any
@@ -63,9 +61,7 @@ class TestCplace001:
             "# has nothing to say about it whatsoever\n"
             "x = 1\n"
         )
-        assert (
-            scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text) == ()
-        )
+        assert scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text) == ()
 
     def test_does_not_fire_on_prose_mentioning_frobwaive_by_name(self) -> None:
         """Regression: a long ordinary comment block that merely MENTIONS
@@ -81,28 +77,20 @@ class TestCplace001:
             "# happens to say the words\n"
             "x = 1\n"
         )
-        assert (
-            scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text) == ()
-        )
+        assert scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text) == ()
 
     def test_must_stay_quiet_exempt_path(self) -> None:
         """A provenance-exempt path (e.g. `tickets/**`) never fires even
         with an over-long `frob:waive` directive."""
         text = (
-            "# frob:waive SOME001 reason=\"line one \\\n"
-            "# line two \\\n"
-            "# line three\"\n"
+            '# frob:waive SOME001 reason="line one \\\n# line two \\\n# line three"\n'
         )
         assert scan_cplace001_waive_reason_length(Path("tickets/T-0001.md"), text) == ()
 
     def test_threshold_boundary_is_inclusive(self) -> None:
         """A directive at exactly `CPLACE001_WAIVE_REASON_LIMIT_LINES`
         physical lines stays quiet; one more line fires."""
-        at_limit = (
-            '# frob:waive SOME001 reason="first line \\\n'
-            '# second line"\n'
-            "x = 1\n"
-        )
+        at_limit = '# frob:waive SOME001 reason="first line \\\n# second line"\nx = 1\n'
         # Build directly against the limit constant so a future threshold
         # tune does not silently desync this test from the real constant.
         assert CPLACE001_WAIVE_REASON_LIMIT_LINES == 2
@@ -123,9 +111,7 @@ class TestCplace002:
             "the full history of how the team arrived at this decision "
             "over several long discussions and multiple false starts.\n"
         )
-        violations = scan_cplace002_docs_narrative(
-            Path("docs/modules/gates.md"), text
-        )
+        violations = scan_cplace002_docs_narrative(Path("docs/modules/gates.md"), text)
         assert _rule_ids(violations) == ["CPLACE002"]
 
     def test_must_stay_quiet_table_row_citation(self) -> None:
@@ -155,16 +141,16 @@ class TestCplace002:
             "wrong before that, which earlier policy it superseded, and "
             "the full history of how the team arrived at this decision.\n"
         )
-        assert (
-            scan_cplace002_docs_narrative(Path("docs/decisions/x.md"), text) == ()
-        )
+        assert scan_cplace002_docs_narrative(Path("docs/decisions/x.md"), text) == ()
 
     def test_word_limit_boundary(self) -> None:
         """A paragraph at exactly `CPLACE002_NARRATIVE_WORD_LIMIT` words
         stays quiet; one more word fires."""
         assert CPLACE002_NARRATIVE_WORD_LIMIT == 15
         words = " ".join(f"word{i}" for i in range(14)) + " T-1234"
-        assert scan_cplace002_docs_narrative(Path("docs/modules/x.md"), words + "\n") == ()
+        assert (
+            scan_cplace002_docs_narrative(Path("docs/modules/x.md"), words + "\n") == ()
+        )
         words_over = words + " extra"
         violations = scan_cplace002_docs_narrative(
             Path("docs/modules/x.md"), words_over + "\n"
@@ -192,9 +178,9 @@ class TestCommentPlacementGate:
         subprocess.run(["git", "config", "user.name", "t"], cwd=root, check=True)
 
         (root / "src" / "frob" / "x.py").write_text(
-            "# frob:waive SOME001 reason=\"line one \\\n"
+            '# frob:waive SOME001 reason="line one \\\n'
             "# line two \\\n"
-            "# line three\"\n"
+            '# line three"\n'
             "x = 1\n"
         )
         (root / "docs" / "modules" / "gates.md").write_text(
@@ -204,14 +190,10 @@ class TestCommentPlacementGate:
             "the full history of how the team arrived at this decision.\n"
         )
         (root / "tickets" / "T-0001.md").write_text(
-            "# frob:waive SOME001 reason=\"line one \\\n"
-            "# line two \\\n"
-            "# line three\"\n"
+            '# frob:waive SOME001 reason="line one \\\n# line two \\\n# line three"\n'
         )
         subprocess.run(["git", "add", "-A"], cwd=root, check=True)
-        subprocess.run(
-            ["git", "commit", "-q", "-m", "fixture"], cwd=root, check=True
-        )
+        subprocess.run(["git", "commit", "-q", "-m", "fixture"], cwd=root, check=True)
 
         violations = comment_placement_gate(root)
         assert sorted(_rule_ids(violations)) == ["CPLACE001", "CPLACE002"]

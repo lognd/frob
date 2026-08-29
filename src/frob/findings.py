@@ -34,6 +34,8 @@ class Severity(StrEnum):
     ERROR = "error"
     WARN = "warn"
     UNRESOLVED = "unresolved"
+
+
 # frob:doc docs/modules/gates.md#data-models
 # frob:ticket T-3086
 # frob:waive TEST001 reason="plain frozen data-shape model with no isolated   behavior \
@@ -47,6 +49,8 @@ class WaiverRef(BaseModel):
 
     site: str
     reason: str
+
+
 # frob:doc docs/modules/gates.md#debt-gate-t-0412
 # frob:ticket T-3086
 # frob:waive TEST001 reason="plain frozen data-shape model with no isolated   behavior \
@@ -65,6 +69,8 @@ class DebtEntry(BaseModel):
     ticket: str
     until: str
     expired: bool
+
+
 # frob:doc docs/modules/gates.md#data-models
 # frob:ticket T-3086
 # frob:waive TEST001 reason="plain frozen data-shape model with no isolated   behavior \

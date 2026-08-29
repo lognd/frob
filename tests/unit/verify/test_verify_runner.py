@@ -194,9 +194,7 @@ class TestDispose:
             tmp_path,
             batch_commit_shas=("c1",),
             findings=(
-                QuarantinedFinding(
-                    rule_id="E501", file=absolute_file, line=None
-                ),
+                QuarantinedFinding(rule_id="E501", file=absolute_file, line=None),
             ),
         ).is_ok
 

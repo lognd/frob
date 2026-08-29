@@ -371,8 +371,9 @@ def compose_squash_in_disposable_worktree(
     module (no cycle): `_store` sits below the land pipeline in this
     package's own layering, so a downward import here is safe.
     """
-    with ledger_lock(repo), tempfile.TemporaryDirectory(prefix="frob-land-squash-") as (
-        scratch
+    with (
+        ledger_lock(repo),
+        tempfile.TemporaryDirectory(prefix="frob-land-squash-") as (scratch),
     ):
         worktree = Path(scratch) / "wt"
         added = run_argv(

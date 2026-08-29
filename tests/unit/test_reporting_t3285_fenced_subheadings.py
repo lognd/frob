@@ -26,7 +26,9 @@ class TestSubheadingTitlesOutsideFences:
 
     def test_real_subheading_after_a_fence_still_detected(self) -> None:
         # frob:tests tests/unit/test_reporting_t3285_fenced_subheadings.py::TestSubheadingTitlesOutsideFences.test_real_subheading_after_a_fence_still_detected  # noqa: E501
-        section = "### Changed\n```\nfoo.py | 1 +\n```\n\n### Genuine extra section\nprose\n"
+        section = (
+            "### Changed\n```\nfoo.py | 1 +\n```\n\n### Genuine extra section\nprose\n"
+        )
         assert _subheading_titles_outside_fences(section) == [
             "Changed",
             "Genuine extra section",

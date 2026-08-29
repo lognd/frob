@@ -109,9 +109,9 @@ class TestRuffDiagnosticIdentity:
             code="F401",
             message="`os` imported but unused",
         )
-        assert _ruff_diagnostic_identity(
-            base, near
-        ) == _ruff_diagnostic_identity(base, shifted)
+        assert _ruff_diagnostic_identity(base, near) == _ruff_diagnostic_identity(
+            base, shifted
+        )
 
     def test_relative_to_base_not_absolute(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestRuffDiagnosticIdentity.test_relative_to_base_not_absolute  # noqa: E501

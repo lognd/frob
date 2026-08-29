@@ -149,6 +149,7 @@ def _msvcrt_release(fd: int) -> None:  # pragma: no cover -- windows-only
     os.lseek(fd, 0, os.SEEK_SET)
     msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
 
+
 _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n(.*)\Z", re.DOTALL)
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 

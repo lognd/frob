@@ -763,8 +763,7 @@ def _rewrite_restored_attachment_paths(
         text = ticket_md.read_text(encoding="utf-8")
     except OSError as exc:
         _log.error(
-            "tickets: restore: failed to read moved %s for attachment "
-            "path rewrite: %s",
+            "tickets: restore: failed to read moved %s for attachment path rewrite: %s",
             ticket_md,
             exc,
         )
@@ -780,9 +779,7 @@ def _rewrite_restored_attachment_paths(
     try:
         ticket_md.write_text(rewritten, encoding="utf-8")
     except OSError as exc:
-        _log.error(
-            "tickets: restore: failed to write rewritten %s: %s", ticket_md, exc
-        )
+        _log.error("tickets: restore: failed to write rewritten %s: %s", ticket_md, exc)
         return Err(TicketError.WriteFailed)
     _log.info(
         "tickets: restore: rewrote attachment path(s) for %s back to the "

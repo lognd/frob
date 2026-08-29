@@ -168,9 +168,7 @@ def version_coupling_gate(root: Path) -> tuple[Violation, ...]:
         return (_version001_violation(f"could not read/parse {_ROOT_PYPROJECT}"),)
     frob_version = root_doc.get("project", {}).get("version")
     if not frob_version:
-        return (
-            _version001_violation(f"{_ROOT_PYPROJECT} has no [project].version"),
-        )
+        return (_version001_violation(f"{_ROOT_PYPROJECT} has no [project].version"),)
 
     violations: list[Violation] = []
     for dep_name, crate_pyproject in (

@@ -108,7 +108,9 @@ class TestDeriveBootstrapModelComponentsAndFlows:
         assert globs["pkg_alpha"] == ("src/pkg/alpha/**",)
         assert globs["pkg_beta"] == ("src/pkg/beta/**",)
 
-    def test_real_import_edge_becomes_a_flow_in_the_right_direction(self, tmp_path: Path):
+    def test_real_import_edge_becomes_a_flow_in_the_right_direction(
+        self, tmp_path: Path
+    ):
         """`alpha` imports `beta` -> exactly one `flow alpha -> beta`, and
         no `beta -> alpha` flow (the import is one-directional)."""
         _write(tmp_path, "src/pkg/alpha/handler.py", "from pkg.beta import util\n")

@@ -45,7 +45,9 @@ class TestEntityArchitectureFixtures:
         assert arch["of_entity"] == "storage_component"
         assert arch["binds"] == "storage_fast"
 
-    def test_cheap_architecture_is_a_second_realization_of_the_same_entity(self) -> None:
+    def test_cheap_architecture_is_a_second_realization_of_the_same_entity(
+        self,
+    ) -> None:
         """`storage_cheap.strata` re-declares the same entity and offers a second, narrower architecture plus a configuration selecting it."""
         ast = _parse(FIXTURE_DIR / "storage_cheap.strata")
         assert [e["name"] for e in ast["entities"]] == ["storage_component"]

@@ -218,9 +218,7 @@ class TestKindGate:
         assert ticket.evidence[0].startswith("cmd:printf ok exit=0 sha256=")
 
     # frob:ticket T-3156
-    def test_bug_kind_with_no_python_surface_scope_closes(
-        self, tmp_path: Path
-    ) -> None:
+    def test_bug_kind_with_no_python_surface_scope_closes(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_evidence.py::_check_cmd_evidence_kind
         # A `bug`-kind ticket whose ENTIRE declared scope is a real,
         # existing non-Python file (docs/ledger-only investigation, the
@@ -631,9 +629,7 @@ class TestKindConsistencyAtClose:
         assert result.is_ok
 
     # frob:ticket T-3156
-    def test_land_validate_closeable_accepts_ux_cmd_entry(
-        self, tmp_path: Path
-    ) -> None:
+    def test_land_validate_closeable_accepts_ux_cmd_entry(self, tmp_path: Path) -> None:
         # T-3045: must-stay-quiet twin at the land-time guard layer too --
         # a UX ticket's cmd: entry must survive the SAME check a docs
         # ticket's does, and a non-UX/non-docs kind (SECURITY, above)

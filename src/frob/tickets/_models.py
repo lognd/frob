@@ -250,6 +250,7 @@ def scope_has_python_surface(root: Path, scope: Sequence[str]) -> bool:
     # accidental exemption for a scope this check cannot actually observe.
     return not matched_any_file
 
+
 # The exact shape `run_cmd_evidence` writes: `cmd:<command> exit=0
 # sha256=<12-hex>`. Single source of truth for "does this evidence string
 # look like a cmd: entry" -- `frob.gates`'s COV003 check and every

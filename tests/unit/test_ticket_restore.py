@@ -89,9 +89,7 @@ def _write_v2_archived_ticket(
     )
     archive_dir = root / "tickets" / "archive" / ticket_id
     archive_dir.mkdir(parents=True, exist_ok=True)
-    (archive_dir / "ticket.md").write_text(
-        _serialize_ticket(ticket), encoding="utf-8"
-    )
+    (archive_dir / "ticket.md").write_text(_serialize_ticket(ticket), encoding="utf-8")
     return archive_dir
 
 
@@ -307,9 +305,7 @@ class TestArchiveRefusesNonTerminal:
 class TestRestoreCli:
     """`_restore` -- the CLI dispatch wrapper (`frob ticket restore`)."""
 
-    def test_restore_cli_wiring_delegates_and_commits(
-        self, tmp_path: Path
-    ) -> None:
+    def test_restore_cli_wiring_delegates_and_commits(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_ticket_restore.py::TestRestoreCli.test_restore_cli_wiring_del\
         # egates_and_commits
@@ -336,9 +332,7 @@ class TestRestoreCli:
         # process's own untracked local cache dir, unrelated to whether
         # the restore's git-mv-plus-write left the LEDGER dirty.
         status = _run(["git", "status", "--porcelain", "--", "tickets"], root).stdout
-        assert status.strip() == "", (
-            f"restore CLI left tickets/ dirty: {status!r}"
-        )
+        assert status.strip() == "", f"restore CLI left tickets/ dirty: {status!r}"
 
     def test_restore_exits_when_ticket_id_missing(self, tmp_path: Path) -> None:
         # frob:tests \

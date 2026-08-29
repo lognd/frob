@@ -263,8 +263,6 @@ def _parse001_violation(rel_path: str, reason: str) -> Violation:
     )
 
 
-
-
 # frob:doc docs/modules/gates.md#lexcheck001-t-2344
 # frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_new_lexical_decider_is_flagged  # noqa: E501
 # frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_allowlisted_function_is_silent  # noqa: E501

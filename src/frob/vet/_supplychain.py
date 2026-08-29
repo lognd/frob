@@ -52,7 +52,6 @@ _log = get_logger(__name__)
 _UNPINNED_MARKERS = ("^", "~", "*", ">", "<", "x", "X")
 
 
-
 def _is_unpinned_spec(spec: str) -> bool:
     """A version spec with no exact pin: empty, or containing a range/
     wildcard marker instead of a single `==`/`=`-style exact version."""

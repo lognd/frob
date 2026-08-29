@@ -30,7 +30,10 @@ class TestMeasureEvidenceReachMain:
     """`scripts.measure_evidence_reach.measure_evidence_reach_main`."""
 
     def test_runs_clean_over_a_minimal_ticket_ledger(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
     ) -> None:
         # frob:tests scripts/measure_evidence_reach.py::measure_evidence_reach_main
         (tmp_path / "pkg").mkdir()
@@ -40,20 +43,22 @@ class TestMeasureEvidenceReachMain:
         )
         (tmp_path / "tickets" / "T-0001").mkdir(parents=True)
         (tmp_path / "tickets" / "T-0001" / "ticket.md").write_text(
-            '---\n'
-            'id: T-0001\n'
-            'title: minimal fixture ticket\n'
-            'state: done\n'
-            'kind: feature\n'
-            'origin: human\n'
+            "---\n"
+            "id: T-0001\n"
+            "title: minimal fixture ticket\n"
+            "state: done\n"
+            "kind: feature\n"
+            "origin: human\n"
             'created: "2026-01-01"\n'
-            'scope:\n'
-            '- pkg/impl.py\n'
-            'evidence:\n'
-            '- pkg/test_impl.py::test_x\n'
-            '---\n'
+            "scope:\n"
+            "- pkg/impl.py\n"
+            "evidence:\n"
+            "- pkg/test_impl.py::test_x\n"
+            "---\n"
         )
-        monkeypatch.setattr(sys, "argv", ["measure_evidence_reach.py", "--root", str(tmp_path)])
+        monkeypatch.setattr(
+            sys, "argv", ["measure_evidence_reach.py", "--root", str(tmp_path)]
+        )
         exit_code = measure_evidence_reach_main()
         assert exit_code == 0
         out = capsys.readouterr().out

@@ -251,9 +251,11 @@ def preflight(root: Path) -> Result[GhEnvironment, GhError]:
     version_result = _run_gh(("--version",), cwd=root)
     if version_result.is_err:
         return Err(version_result.danger_err)
-    version_line = version_result.danger_ok.stdout.splitlines()[0] if (
-        version_result.danger_ok.stdout.splitlines()
-    ) else ""
+    version_line = (
+        version_result.danger_ok.stdout.splitlines()[0]
+        if (version_result.danger_ok.stdout.splitlines())
+        else ""
+    )
 
     auth_result = _run_gh(("auth", "status"), cwd=root)
     if auth_result.is_err:

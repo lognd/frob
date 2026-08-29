@@ -1,5 +1,5 @@
 ---
-id: T-draft-88767e9b
+id: T-3382
 title: 'Fix gate:REG002 errors: register VERSION001/TDD001/VMOD001 as known gate rules'
 state: in-progress
 kind: bug

@@ -208,7 +208,6 @@ def _project_package_name(root: Path) -> str | None:
     return name if isinstance(name, str) and name else None
 
 
-
 def _path_prefix_hit(node: ast.AST, pkg: str) -> ast.Constant | None:
     """PORT001-PATH: a `"src/<pkg>/"`-shaped string constant passed as the
     argument of a `.startswith(...)` call anywhere in `node`'s subtree --
