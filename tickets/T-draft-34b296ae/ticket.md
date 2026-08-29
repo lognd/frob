@@ -14,7 +14,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- docs/modules/tickets.md
 - docs/modules/gates.md
 - .claude/hooks/frob-suggest.py
 - src/frob/lang/_support.py
@@ -22,6 +21,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/tickets.md
+  reason: T-3358 has an active in-progress lease on this file; DOC011 fix dropped
+    from this ticket's scope to avoid lease collision
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
