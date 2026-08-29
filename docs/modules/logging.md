@@ -22,6 +22,11 @@ are hidden from a default interactive run as a result. Nothing was deleted
 - `FROB_LOG_LEVEL=<name>` for an explicit level (e.g. `INFO`) rather than
   the `-v` default of full `DEBUG`
 
+`gate:SEC` (`SEC110`) treats these two `os.environ.get(...)` reads as
+env-var-read observations and requires each to be waived or declared;
+both are waived here (`frob:waive SEC110`) as boolean/level logging
+flags, never secret-bearing values.
+
 WARNING and above (gate findings, `[FAST_EXIT1]`/`[REDUNDANT_RERUN]`/
 `[REPEATED_FAILURE]` footgun tips, and every other warning/error) keep
 their current default prominence -- this only re-levels DEBUG-only

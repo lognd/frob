@@ -702,6 +702,8 @@ def _apply_verbose_env_override(argv: list[str]) -> None:
     reused deliberately -- see `frob.logging.logger`'s module docstring
     comment for why. Never overrides an already-set `FROB_VERBOSE`/
     `FROB_LOG_LEVEL` (an explicit env var from the caller wins)."""
+    # frob:waive SEC110 reason="FROB_VERBOSE/FROB_LOG_LEVEL are boolean/ level logging \
+    # flags, not secrets"
     if "FROB_VERBOSE" in os.environ or "FROB_LOG_LEVEL" in os.environ:
         return
     if "-v" in argv or "--verbose" in argv:

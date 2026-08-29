@@ -640,6 +640,8 @@ def _handle_edit(payload: dict) -> None:
     # is the same variable name so "FROB_SUGGEST_ACK=1" means one thing
     # across the whole hook (T-3069 acceptance: "consistent with the
     # existing hook").
+    # frob:waive SEC110 reason="FROB_SUGGEST_ACK is a boolean hook-escape-hatch flag, \
+    # not a secret"
     acked = os.environ.get("FROB_SUGGEST_ACK") == "1"
     _escalate(
         key,

@@ -246,6 +246,8 @@ class TestApplyAgentEnv:
         # not just the returned dict -- this is what a child subprocess.run
         # inherits automatically.
         assert (
+            # frob:waive SEC110 reason="PYTEST_XDIST_AUTO_NUM_WORKERS is a numeric \
+            # worker-count knob, not a secret"
             os.environ[PYTEST_XDIST_AUTO_NUM_WORKERS_ENV]
             == exports[PYTEST_XDIST_AUTO_NUM_WORKERS_ENV]
         )

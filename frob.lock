@@ -1961,6 +1961,24 @@
       "old_digest": "643df04561ab54e2a1680b6196481362fc6c923965c9974c6b5131111ff17e48",
       "reason": "Re-verified: docstring T-3288 content-confirmation addendum matches current implementation; digest moved because docstring grew, not because behavior diverged",
       "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "96c5ccaf099031b3c23fcb626a93ab412d1558df56b376a96ee0d813ea03ace7",
+      "old_digest": null,
+      "reason": "SEC110 waiver comment added above the env-var check; behavior and docs/modules/logging.md#public-api description unchanged",
+      "ref": "src/frob/__main__.py::_apply_verbose_env_override"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "7b521ddd18b0132927387ef0c01effe59bca2bb8b9ab08f436ec70a6def6b15e",
+      "old_digest": null,
+      "reason": "SEC110 waiver comment added above the env-var check; behavior and docs/modules/logging.md#public-api description unchanged",
+      "ref": "src/frob/__main__.py::_apply_verbose_env_override"
     }
   ],
   "entries": [
@@ -1983,6 +2001,16 @@
       "digest": "116652356addd9e2150b10fe77bc515e58fa8e51d423d5687e330a91a0ae2ac8",
       "facet": "sig",
       "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
+    },
+    {
+      "digest": "96c5ccaf099031b3c23fcb626a93ab412d1558df56b376a96ee0d813ea03ace7",
+      "facet": "body",
+      "ref": "src/frob/__main__.py::_apply_verbose_env_override"
+    },
+    {
+      "digest": "7b521ddd18b0132927387ef0c01effe59bca2bb8b9ab08f436ec70a6def6b15e",
+      "facet": "sig",
+      "ref": "src/frob/__main__.py::_apply_verbose_env_override"
     },
     {
       "digest": "8b4839e124f77beed2ab03eb17366061cd1c715f584ce248c72d365ddcd492ec",

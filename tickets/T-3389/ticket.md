@@ -2,7 +2,7 @@
 id: T-3389
 title: Declare SEC110 unmapped env-var reads (logger, main, frob-suggest hook, worktree_guard
   test)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'

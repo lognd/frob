@@ -56,8 +56,12 @@ def _resolve_stdout_level_override() -> int | None:
     directly here is the only ordering-independent source of truth."""
     if "-v" in sys.argv or "--verbose" in sys.argv:
         return logging.DEBUG
+    # frob:waive SEC110 reason="FROB_VERBOSE is a boolean logging-verbosity flag, not \
+    # a secret"
     if os.environ.get(_VERBOSE_ENV_VAR) == "1":
         return logging.DEBUG
+    # frob:waive SEC110 reason="FROB_LOG_LEVEL names a stdlib logging level \
+    # (DEBUG/INFO/...), not a secret"
     raw = os.environ.get(_LOG_LEVEL_ENV_VAR)
     if not raw:
         return None
@@ -87,6 +91,8 @@ def _init() -> None:
         return
     with _CONFIG_PATH.open("rb") as f:
         cfg = tomllib.load(f)
+    # frob:waive SEC110 reason="FROB_FORCE_LOG_HANDLERS is a boolean test-harness \
+    # opt-in, not a secret"
     if _under_pytest() and os.environ.get(_FORCE_HANDLERS_ENV_VAR) != "1":
         # T-1621: every record frob logs was appearing TWICE in pytest's
         # own report, in two different formats -- not two copies from one
