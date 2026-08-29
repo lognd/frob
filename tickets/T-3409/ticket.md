@@ -15,10 +15,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - design/frob.strata
+- src/frob/stats/_agentic_shared.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/stats/_agentic_shared.py
+  reason: must remove the now-obsolete frob:waive SELFAUDIT001 follow_up=T-3409 comment
+    this ticket's own design/frob.strata fix discharges -- land refused close while
+    the row still cites T-3409 as a live tracker
+  actor: logan
+  at: '2026-08-29'
 body_changes:
 - mode: append
   reason: 'BUG002 waiver: fix is a declaratory design-model correction; closes the
