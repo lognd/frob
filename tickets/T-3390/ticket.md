@@ -18,6 +18,7 @@ scope:
 - src/frob/doctor_runner.py
 - src/frob/serve/_socketd.py
 - tests/unit/test_doctor_runner_t1276.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_doctor_runner_t1276.py
   reason: narrow scope to actual PII012 detector + the 4 finding sites
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/gates.md
+  reason: doc anchor for pii_structural_gate touched by scope
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
