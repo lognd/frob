@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2a10609eb3e46292aaa7925159c62b749c0db4ae
 ---
 Follow-up to T-2583. The owner picked candidate 2 (`stats/__init__.py`'s
 `from frob.tickets import TicketQueue, TicketState, load_queue`) to break
