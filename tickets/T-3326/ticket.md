@@ -2,7 +2,7 @@
 id: T-3326
 title: frob check --fix is repo-wide even from a targeted invocation, and a killed
   run leaves an unrecorded partial rewrite
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -16,10 +16,68 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_fix_engine.py
+- src/frob/app/check_runner.py
+- src/frob/_cli_parsers/_check.py
+- src/frob/app/config.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: T-3326's own acceptance criteria requires --fix to honour --ticket scope
+    and gate the unscoped repo-wide case behind an opt-in -- both require the CLI
+    wiring (check_runner.py's _apply_tier_a_and_reverify never threads ticket_id through
+    to apply_tier_a_fixes despite cfg.check_ticket being available) plus a new --fix-all
+    opt-in flag (cli parser + AppConfig)
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/_cli_parsers/_check.py
+  reason: T-3326's own acceptance criteria requires --fix to honour --ticket scope
+    and gate the unscoped repo-wide case behind an opt-in -- both require the CLI
+    wiring (check_runner.py's _apply_tier_a_and_reverify never threads ticket_id through
+    to apply_tier_a_fixes despite cfg.check_ticket being available) plus a new --fix-all
+    opt-in flag (cli parser + AppConfig)
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/config.py
+  reason: T-3326's own acceptance criteria requires --fix to honour --ticket scope
+    and gate the unscoped repo-wide case behind an opt-in -- both require the CLI
+    wiring (check_runner.py's _apply_tier_a_and_reverify never threads ticket_id through
+    to apply_tier_a_fixes despite cfg.check_ticket being available) plus a new --fix-all
+    opt-in flag (cli parser + AppConfig)
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: T-3326's own acceptance criteria requires --fix to honour --ticket scope
+    and gate the unscoped repo-wide case behind an opt-in -- both require the CLI
+    wiring (check_runner.py's _apply_tier_a_and_reverify never threads ticket_id through
+    to apply_tier_a_fixes despite cfg.check_ticket being available) plus a new --fix-all
+    opt-in flag (cli parser + AppConfig)
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/_cli_parsers/_check.py
+  reason: T-3326's own acceptance criteria requires --fix to honour --ticket scope
+    and gate the unscoped repo-wide case behind an opt-in -- both require the CLI
+    wiring (check_runner.py's _apply_tier_a_and_reverify never threads ticket_id through
+    to apply_tier_a_fixes despite cfg.check_ticket being available) plus a new --fix-all
+    opt-in flag (cli parser + AppConfig)
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/config.py
+  reason: T-3326's own acceptance criteria requires --fix to honour --ticket scope
+    and gate the unscoped repo-wide case behind an opt-in -- both require the CLI
+    wiring (check_runner.py's _apply_tier_a_and_reverify never threads ticket_id through
+    to apply_tier_a_fixes despite cfg.check_ticket being available) plus a new --fix-all
+    opt-in flag (cli parser + AppConfig)
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
