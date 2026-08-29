@@ -2,7 +2,7 @@
 id: T-3264
 title: 'TestNativeMissingFailsLoud SYS004 test: unhandled NativeExtensionUnavailable
   crashes main instead of degrading to SYS004 finding'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
