@@ -72,7 +72,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 886eec89529a814eff0135f867d4dd9b76947085
 ---
 MEASURED 2026-08-28 across every `state: done` ticket carrying a done-report on
 main (2,590 of them):
