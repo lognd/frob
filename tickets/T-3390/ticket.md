@@ -69,6 +69,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c1e09c75fcf47f9473a13fff08b0850fe7064259
 ---
 PII012: 4 findings (run_diagnosis, allow_reuse_address, _run_diagnosis_records_levels x2) are identifier-name-shaped, not actual PII. Verify whether they are genuine false positives; if so, narrow the PII012 detector's name-signature heuristic (symbolic check per standing directive), not per-site waivers. Part of PyPI release error-floor burn (Series EQ slice).
