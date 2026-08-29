@@ -2,7 +2,7 @@
 id: T-3266
 title: 136 done-reports claim '0 passed (from 0 evidence id(s))' while their ticket
   carries real evidence (T-3244 has 47)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -16,10 +16,43 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_done_report.py
+- src/frob/tickets/_evidence.py
+- src/frob/tickets/_models.py
+- tests/test_tickets.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: wire the T-3266 stale-claims guard into the existing close-time structural
+    check (_evidence.py), add its TicketError variant (_models.py), and cite the doc
+    anchor + regression tests
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: wire the T-3266 stale-claims guard into the existing close-time structural
+    check (_evidence.py), add its TicketError variant (_models.py), and cite the doc
+    anchor + regression tests
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tests/test_tickets.py
+  reason: wire the T-3266 stale-claims guard into the existing close-time structural
+    check (_evidence.py), add its TicketError variant (_models.py), and cite the doc
+    anchor + regression tests
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: wire the T-3266 stale-claims guard into the existing close-time structural
+    check (_evidence.py), add its TicketError variant (_models.py), and cite the doc
+    anchor + regression tests
+  actor: logan
+  at: '2026-08-28'
 body_changes:
 - mode: append
   reason: 'scope correction: the class is stale-count not zero (61 wrong non-zero
