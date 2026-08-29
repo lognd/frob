@@ -46,7 +46,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b71bde242521d11980f5ed6f30a23c03d8815843
 ---
 MEASURED on GitHub Actions run 33277131782 (HEAD bb5c28203, 2026-08-29):
 the windows-latest job fails at ~2% of the suite with
