@@ -1,7 +1,7 @@
 ---
 id: T-3386
 title: 'Fix SELFAUDIT001: add test_check_runner.py to testsuite exec scope'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
