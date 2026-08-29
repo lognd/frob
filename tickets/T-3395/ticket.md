@@ -40,6 +40,9 @@ body_changes:
   at: '2026-08-29'
   old_length: 573
   new_length: 843
+evidence:
+- tests/unit/test_arch_srp.py::TestArch103WaiverStaysEffective::test_import_check_env_arch103_is_waived
+- tests/unit/test_arch_srp.py::TestArch103WaiverStaysEffective::test_git_head_sha_arch103_is_waived
 designated_repro_test: null
 threat: null
 component: null

@@ -628,6 +628,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3392: Resolve OPAQUE001 dynamic-key container call in test_land_finish_idempotent
 - T-3393: Fix DOC011/DOCENUM001 stale doc references and PERF004 loop-sort findings
 - T-3394: Reduce ARCH103 decision-point count in check_runner._apply_tier_a_and_reverify
+- T-3395: Reduce ARCH103 decision-point count in refactor._verify._import_check_env and app._version_guard._git_head_sha
 - T-3396: Split src/frob/process/_reap.py under LARGE001's 800-line threshold
 - T-3397: Reduce ARCH103 decision-point count in _land_cmd._assert_touched_files_lint_clean_pre_land
 - T-3398: Waive tracked LARGE001/PERF004 debt in __main__.py and frob-suggest.py

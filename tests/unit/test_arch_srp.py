@@ -588,3 +588,84 @@ class TestArchConfigThresholds:
             cfg["mixed_concern_min_decision_points"]
             == ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS
         )
+
+
+# frob:ticket T-3395
+class TestArch103WaiverStaysEffective:
+    """T-3395: `refactor._verify._import_check_env` and
+    `app._version_guard._git_head_sha` both genuinely trip the
+    `mixed-concern-function`/ARCH103 threshold (I/O plus 2+ decision
+    points), and both carry a `frob:waive ARCH103 reason="..."` comment
+    resolving it -- this pins that resolution against regressing silently
+    if either function's waiver comment is ever dropped or edited out of
+    sync with the code it targets."""
+
+    # frob:tests src/frob/refactor/_verify.py::_import_check_env
+    def test_import_check_env_arch103_is_waived(self, tmp_path: Path) -> None:
+        """`arch_gate` still finds the raw `ARCH103` condition in
+        `_import_check_env`'s real, on-disk source, but `_apply_waivers`
+        resolves it via the function's own `frob:waive ARCH103` comment --
+        proof the waiver stays bound to the exact symbol it targets."""
+        from frob.gates import _apply_waivers
+        from frob.gates._arch import arch_gate
+        from frob.graph import build_graph
+
+        real_source = Path("src/frob/refactor/_verify.py")
+        (tmp_path / "src" / "frob" / "refactor").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "refactor" / "_verify.py").write_text(
+            real_source.read_text()
+        )
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+        violations = arch_gate(tmp_path)
+        raw = [
+            v
+            for v in violations
+            if v.rule == "ARCH103" and "_import_check_env" in (v.symref or "")
+        ]
+        assert raw, "expected ARCH103 to still fire raw on _import_check_env"
+        kept, waived = _apply_waivers(violations, snap)
+        assert not [
+            v
+            for v in kept
+            if v.rule == "ARCH103" and "_import_check_env" in (v.symref or "")
+        ]
+        assert [
+            v
+            for v in waived
+            if v.rule == "ARCH103" and "_import_check_env" in (v.symref or "")
+        ]
+
+    # frob:tests src/frob/app/_version_guard.py::_git_head_sha
+    def test_git_head_sha_arch103_is_waived(self, tmp_path: Path) -> None:
+        """Same shape as `test_import_check_env_arch103_is_waived` for
+        `app._version_guard._git_head_sha`."""
+        from frob.gates import _apply_waivers
+        from frob.gates._arch import arch_gate
+        from frob.graph import build_graph
+
+        real_source = Path("src/frob/app/_version_guard.py")
+        (tmp_path / "src" / "frob" / "app").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "app" / "_version_guard.py").write_text(
+            real_source.read_text()
+        )
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+        violations = arch_gate(tmp_path)
+        raw = [
+            v
+            for v in violations
+            if v.rule == "ARCH103" and "_git_head_sha" in (v.symref or "")
+        ]
+        assert raw, "expected ARCH103 to still fire raw on _git_head_sha"
+        kept, waived = _apply_waivers(violations, snap)
+        assert not [
+            v
+            for v in kept
+            if v.rule == "ARCH103" and "_git_head_sha" in (v.symref or "")
+        ]
+        assert [
+            v
+            for v in waived
+            if v.rule == "ARCH103" and "_git_head_sha" in (v.symref or "")
+        ]
