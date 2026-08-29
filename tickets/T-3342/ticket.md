@@ -14,19 +14,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/app/check_runner.py
-- src/frob/app/doctor_runner.py
-- src/frob/ci_report.py
-- src/frob/gates/_comment_placement.py
-- src/frob/gates/_docstring_archaeology.py
-- src/frob/ghio.py
-- src/frob/tickets/_leases.py
-- tests/unit/test_app_runners_batch6.py
-- tests/unit/test_check.py
-- tests/unit/test_close_blocked_by_guard.py
-- tests/unit/test_doctor_runner_t1276.py
-- tests/unit/test_logging_module.py
-- tests/unit/test_reopen_ticket.py
 - docs/guides/release.md
 - docs/index.md
 - docs/modules/cli.md
@@ -128,6 +115,96 @@ scope_changes:
 - op: add
   glob: docs/modules/cli.md
   reason: narrow to the exact 16 files this ticket touched for the gate:DOC fix
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: src/frob/app/doctor_runner.py
+  reason: T-3344 already fixed these 11 files' DOC007 findings independently (re-measured
+    0 remain on main); _leases.py split to T-draft-b7982c97 (T-3295 lease collision).
+    T-3342 now scoped to exactly the 3 genuinely-unfixed doc files
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: src/frob/ci_report.py
+  reason: T-3344 already fixed these 11 files' DOC007 findings independently (re-measured
+    0 remain on main); _leases.py split to T-draft-b7982c97 (T-3295 lease collision).
+    T-3342 now scoped to exactly the 3 genuinely-unfixed doc files
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: src/frob/gates/_comment_placement.py
+  reason: T-3344 already fixed these 11 files' DOC007 findings independently (re-measured
+    0 remain on main); _leases.py split to T-draft-b7982c97 (T-3295 lease collision).
+    T-3342 now scoped to exactly the 3 genuinely-unfixed doc files
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: src/frob/gates/_docstring_archaeology.py
+  reason: T-3344 already fixed these 11 files' DOC007 findings independently (re-measured
+    0 remain on main); _leases.py split to T-draft-b7982c97 (T-3295 lease collision).
+    T-3342 now scoped to exactly the 3 genuinely-unfixed doc files
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: src/frob/ghio.py
+  reason: T-3344 already fixed these 11 files' DOC007 findings independently (re-measured
+    0 remain on main); _leases.py split to T-draft-b7982c97 (T-3295 lease collision).
+    T-3342 now scoped to exactly the 3 genuinely-unfixed doc files
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: src/frob/tickets/_leases.py
+  reason: T-3344 already fixed these 11 files' DOC007 findings independently (re-measured
+    0 remain on main); _leases.py split to T-draft-b7982c97 (T-3295 lease collision).
+    T-3342 now scoped to exactly the 3 genuinely-unfixed doc files
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: tests/unit/test_app_runners_batch6.py
+  reason: T-3344 already fixed these 11 files' DOC007 findings independently (re-measured
+    0 remain on main); _leases.py split to T-draft-b7982c97 (T-3295 lease collision).
+    T-3342 now scoped to exactly the 3 genuinely-unfixed doc files
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: tests/unit/test_check.py
+  reason: T-3344 already fixed these 11 files' DOC007 findings independently (re-measured
+    0 remain on main); _leases.py split to T-draft-b7982c97 (T-3295 lease collision).
+    T-3342 now scoped to exactly the 3 genuinely-unfixed doc files
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: tests/unit/test_close_blocked_by_guard.py
+  reason: T-3344 already fixed these 11 files' DOC007 findings independently (re-measured
+    0 remain on main); _leases.py split to T-draft-b7982c97 (T-3295 lease collision).
+    T-3342 now scoped to exactly the 3 genuinely-unfixed doc files
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: tests/unit/test_doctor_runner_t1276.py
+  reason: T-3344 already fixed these 11 files' DOC007 findings independently (re-measured
+    0 remain on main); _leases.py split to T-draft-b7982c97 (T-3295 lease collision).
+    T-3342 now scoped to exactly the 3 genuinely-unfixed doc files
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: tests/unit/test_logging_module.py
+  reason: T-3344 already fixed these 11 files' DOC007 findings independently (re-measured
+    0 remain on main); _leases.py split to T-draft-b7982c97 (T-3295 lease collision).
+    T-3342 now scoped to exactly the 3 genuinely-unfixed doc files
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: tests/unit/test_reopen_ticket.py
+  reason: T-3344 already fixed these 11 files' DOC007 findings independently (re-measured
+    0 remain on main); _leases.py split to T-draft-b7982c97 (T-3295 lease collision).
+    T-3342 now scoped to exactly the 3 genuinely-unfixed doc files
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: src/frob/app/check_runner.py
+  reason: content reverted earlier due to T-3326 lease collision; scope entry survived
+    a git reset --hard main, cleaning up now
   actor: logan
   at: '2026-08-29'
 body_changes:
