@@ -148,6 +148,14 @@ scope_changes:
     CrossTicketLeakage
   actor: logan
   at: '2026-08-29'
+body_changes:
+- mode: append
+  reason: 'BUG002 needs an explicit no-behavior-change marker: this ticket only touches
+    comments/directives and docs, never runtime logic'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 181
+  new_length: 386
 evidence:
 - tests/unit/test_close_blocked_by_guard.py::TestOpenBlockersAtClose::test_open_blocker_names_the_open_ticket_not_the_terminal_one
 - tests/unit/test_logging_module.py::test_log_record_reported_via_exactly_one_channel_under_pytest
@@ -167,3 +175,5 @@ anchor_reason: null
 land_commit: null
 ---
 Sprint task: reduce unscoped frob check DRIFT errors from 53 to 0. Investigate histogram of rule ids/files first; fix real doc drift, frob ack verified-correct docs, never mass-ack.
+
+frob:no-behavior-change reason="all changes are comment/directive text (frob:tests separator, frob:describes doc anchors) and re-acks of unchanged behavior verified above -- no runtime code path changed"
