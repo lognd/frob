@@ -16,7 +16,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/check_runner.py
 - src/frob/tickets/_leases.py
-- docs/modules/tickets.md
 - docs/commands/check.md
 - src/frob/app/ticket_runner/_land_cmd.py
 - tests/test_check_runner.py
@@ -24,6 +23,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/tickets.md
+  reason: T-3358 holds a live lease on tickets.md; DOC011 finding at tickets.md:99
+    deferred until that clears
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
