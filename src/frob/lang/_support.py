@@ -1359,6 +1359,8 @@ def unfaceted_packages(
         if package_name in registry:
             continue
         found_literal = False
+        # frob:ticket T-3393
+        # frob:waive PERF004 reason="each package_dir yields a DIFFERENT rglob() listing, not a hoistable repeated sort of the same input -- sorted for deterministic visit order"  # noqa: E501
         for py_file in sorted(package_dir.rglob("*.py")):
             try:
                 tree = ast.parse(py_file.read_text(encoding="utf-8"))

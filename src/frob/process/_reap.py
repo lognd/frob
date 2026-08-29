@@ -55,6 +55,9 @@ construction: nothing here changes how or how many workers a healthy run
 starts, only what happens to them if the run is killed.
 """
 
+# frob:debt LARGE001 reason="file has grown to 952 lines (threshold 800); a real split (candidate: separate the reap/wait-loop mechanics from the process-tree/orphan-detection helpers) is real engineering, deferred as tracked follow-up work" ticket="T-3396"  # noqa: E501
+# frob:waive LARGE001 reason="tracked real-split follow-up, T-3396 -- too large to do as a drive-by in a mixed-gate cleanup slice"  # noqa: E501
+
 from __future__ import annotations
 
 import ctypes

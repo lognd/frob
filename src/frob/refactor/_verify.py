@@ -142,6 +142,8 @@ def _path_to_module(repo_root: Path, path: Path) -> str | None:
     return ".".join(parts)
 
 
+# frob:ticket T-3395
+# frob:waive ARCH103 reason="single cohesive unit: builds one subprocess env dict, each branch a distinct env-var decision (PYTHONPATH prepend, bytecode-write suppression, coverage-var stripping) documented inline -- splitting it would scatter one env-construction concern across artificial helper boundaries with no real complexity reduction"  # noqa: E501
 def _import_check_env(repo_root: Path) -> dict[str, str]:
     """The subprocess `env` `verify_module_import` runs a real `import`
     under: the current environment plus this repo's own import root

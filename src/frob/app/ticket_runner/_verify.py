@@ -2233,6 +2233,7 @@ def _run_pytest_directly(root: Path, node_ids) -> bool:  # noqa: ANN001
 
 
 # frob:ticket T-3311
+# frob:waive ARCH103 reason="T-3311 already split resolve/spawn/classify branching into this dedicated helper specifically so the caller (_run_pytest_directly) stays at zero branches -- this IS the consolidated owner of that branching, matching its own docstring's ARCH103 precedent note; splitting further would re-scatter the branching T-3311 deliberately consolidated"  # noqa: E501
 def _spawn_direct_pytest(root: Path, node_ids) -> bool:  # noqa: ANN001
     """`_run_pytest_directly`'s resolve-argv + spawn + classify body,
     split out to keep that function itself at a single, low-branch-count

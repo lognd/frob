@@ -1572,6 +1572,8 @@ def _run_stages_and_report(cfg: AppConfig, root: Path) -> None:
 
 # frob:ticket T-1260
 # frob:ticket T-1481
+# frob:debt ARCH103 reason="7 decision points, I/O + string-formatting; a safe fix needs a consolidating split (T-3311's lesson: a split only helps when it owns ALL the branching), not a blind extraction -- deferred as tracked follow-up" ticket="T-3394"  # noqa: E501
+# frob:waive ARCH103 reason="tracked real-split follow-up, T-3394 -- too large/risky to do as a drive-by in a mixed-gate cleanup slice"  # noqa: E501
 def _apply_tier_a_and_reverify(
     cfg: AppConfig, root: Path, result: CheckResult
 ) -> tuple[CheckResult, dict]:

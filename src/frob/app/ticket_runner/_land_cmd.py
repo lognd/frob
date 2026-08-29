@@ -4281,6 +4281,8 @@ def _ruff_new_violations(
 # frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_genuinely_new_violation_still_refuses  # noqa: E501
 # frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_second_new_violation_sharing_identity_with_pre_existing_one_still_refuses  # noqa: E501
 # frob:tests tests/test_ticket_land_lint_diff_attribution.py::TestAssertTouchedFilesLintCleanPreLand.test_baseline_unmeasurable_falls_back_to_file_scoped_refusal  # noqa: E501
+# frob:debt ARCH103 reason="6 decision points, I/O + string-formatting; a safe fix needs a consolidating split (T-3311's lesson: a split only helps when it owns ALL the branching), not a blind extraction -- deferred as tracked follow-up" ticket="T-3397"  # noqa: E501
+# frob:waive ARCH103 reason="tracked real-split follow-up, T-3397 -- too large/risky to do as a drive-by in a mixed-gate cleanup slice"  # noqa: E501
 def _assert_touched_files_lint_clean_pre_land(
     worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
 ) -> None:

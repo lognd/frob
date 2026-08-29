@@ -36,6 +36,7 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-3129
+# frob:waive ARCH103 reason="single atomic unit: run one subprocess and classify its failure modes (no binary/not-a-worktree/timeout/nonzero-exit/empty-output) into the one None-vs-sha contract callers rely on -- splitting the subprocess call from its own failure classification would separate an operation from the branches that interpret it, not reduce real complexity"  # noqa: E501
 def _git_head_sha(git_root: Path) -> str | None:
     """`git rev-parse HEAD` run inside `git_root`, or `None` on any failure
     (no git binary, not a git worktree, detached/corrupt HEAD, timeout) --

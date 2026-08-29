@@ -1,7 +1,7 @@
 ---
-id: T-draft-34b296ae
+id: T-3393
 title: Fix DOC011/DOCENUM001 stale doc references and PERF004 loop-sort findings
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -33,6 +33,12 @@ scope_changes:
     fix here deferred to avoid a cross-ticket collision
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/test_lang_support.py::TestPackageAudit::test_every_measured_package_is_registered
+- tests/test_lang_support.py::TestPackageAudit::test_must_fire_unregistered_language_branching
+- tests/test_lang_support.py::TestPackageAudit::test_must_stay_quiet_agnostic_package
+- tests/test_lang_support.py::TestPackageAudit::test_registered_package_never_flagged_even_with_literals
+- tests/test_lang_support.py::TestPackageAudit::test_real_repo_source_tree_is_fully_registered
 designated_repro_test: null
 threat: null
 component: null

@@ -8,15 +8,16 @@
 //! closure rules on top of the kernel's `forward_closure`/`backward_closure`.
 //! Nothing here reaches back into `model`/`query` to add spec-specific
 //! knowledge to the kernel itself.
-// frob:waive REF002 reason="this ticket's own module doc (docs/strata/vmodel.md) is \
-// the single inbound reference by design -- T-3007 is the FIRST consumer of the \
-// generic graph kernel, so a second independent consumer does not exist yet; \
-// T-3008/T-3009/T-3010 (siblings blocked on this schema) are the intended second \
-// reference once they land"
+// frob:waive REF002 reason="this ticket's own module doc (docs/strata/vmodel.md) is the single \
+// inbound reference by design -- T-3007 is the FIRST consumer of the generic graph kernel, so a \
+// second independent consumer does not exist yet; T-3008/T-3009/T-3010 (siblings blocked on this \
+// schema) are the intended second reference once they land"
 
-// frob:debt LARGE001 reason="T-3044 (V-model H3: graph nodes carry no payload) added \
-// ~391 lines of closure-rule and node-payload logic, pushing this file from ~597 to \
-// 988 lines against the 800-line threshold" ticket="T-3260"
+// frob:debt LARGE001 reason="T-3044 (V-model H3: graph nodes carry no payload) added ~391 lines \
+// of closure-rule and node-payload logic, pushing this file from ~597 to 988 lines against the \
+// 800-line threshold" ticket="T-3260"
+// frob:waive LARGE001 reason="tracked real-split follow-up, T-3260 -- splitting closure-rule \
+// logic out is too large to do as a drive-by in a mixed-gate cleanup slice"
 use super::model::{EdgeKindSchema, Graph, GraphSchema, Level, LevelRelation, NodeId};
 use super::query::KindFilter;
 use std::collections::BTreeMap;
@@ -534,8 +535,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements \
-    // kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements kind="unit"
     fn rule1_must_fire_on_orphan_requirement() {
         let mut g = Graph::new(v_model_schema());
         // A requirement with nothing satisfying it.
@@ -557,8 +557,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements \
-    // kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements kind="unit"
     fn rule1_must_stay_quiet_when_satisfied() {
         let g = base_graph();
         assert!(check_no_orphan_requirements(&g).is_empty());
@@ -566,8 +565,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design \
-    // kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design kind="unit"
     fn rule2_must_fire_on_unjustified_design() {
         let mut g = base_graph();
         // A design element tracing to nothing -- unjustified code.
@@ -589,8 +587,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design \
-    // kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design kind="unit"
     fn rule2_must_stay_quiet_when_traced() {
         let g = base_graph();
         // req-1 is a root requirement (no expectation it traces further);
@@ -600,8 +597,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_untested_artifact \
-    // kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_untested_artifact kind="unit"
     fn rule3_must_fire_on_untested_requirement() {
         let g = base_graph();
         // req-1 and design-1 both exist; neither has any verifying test.
@@ -617,8 +613,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_untested_artifact \
-    // kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_untested_artifact kind="unit"
     fn rule3_must_stay_quiet_when_verified_at_paired_level() {
         let mut g = base_graph();
         g.add_node_with_attrs(
@@ -642,8 +637,7 @@ mod tests {
 
     #[test]
     // frob:ticket T-3007
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_untested_artifact \
-    // kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_untested_artifact kind="unit"
     fn rule3_wrong_level_test_is_refused_at_construction_not_silently_accepted() {
         // A customer-test (paired to `requirements`) cannot verify
         // `design-1` (paired to `component-design`) -- the kernel's
@@ -733,10 +727,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3043
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements \
-    // kind="unit"
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design \
-    // kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design kind="unit"
     fn h2_mutual_satisfies_pair_with_zero_requirements_now_fires() {
         // T-3043 H2's exact escape: two system-design artifacts pointing
         // at each other via `satisfies`, each verified by a test at its
@@ -823,10 +815,8 @@ mod tests {
 
     #[test]
     // frob:ticket T-3043
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements \
-    // kind="unit"
-    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design \
-    // kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_orphan_requirements kind="unit"
+    // frob:tests strata-core/src/graph/vmodel.rs::check_no_unjustified_design kind="unit"
     fn h2_genuine_four_level_chain_stays_quiet() {
         // The positive control for the H2 fix: a real chain from a
         // requirement all the way down to a component design, verified at
