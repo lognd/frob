@@ -13,12 +13,11 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-scope:
-- tickets/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: measurement-first triage ticket; will file/scope targeted
+  sub-tickets per root cause found
 scope_changes:
 - op: remove
   glob: docs/**
@@ -28,6 +27,12 @@ scope_changes:
 - op: remove
   glob: src/**
   reason: 'narrowing: measurement first, will add precise globs per fix'
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: tickets/**
+  reason: measurement-first triage ticket; will file/scope targeted sub-tickets per
+    root cause found
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
