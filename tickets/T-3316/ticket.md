@@ -2,7 +2,7 @@
 id: T-3316
 title: warn_if_xdist_bound_missing does not detect the xdist plugin's absence, only
   an unset fleet bound
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_worktree_guard.py
+- tests/test_worktree_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_worktree_guard.py
+  reason: T-3316's plugin-absence fix is only testable via the guard's own test module
+  actor: logan
+  at: '2026-08-28'
 designated_repro_test: null
 threat: null
 component: null
