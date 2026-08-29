@@ -126,7 +126,9 @@ def _is_ticket_bookkeeping(path: str) -> bool:
 
 # frob:doc \
 # docs/modules/tickets-data-storage.md#tick014----empty-code-diff-on-close-t-3092
+# frob:enforces CHK-GATE-TICK014
 # frob:ticket T-3092
+# frob:ticket T-3283
 # frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_bug_warns
 # frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_feature_warns
 # frob:tests tests/test_gates_empty_diff_close.py::TestTick014.test_docs_kind_quiet

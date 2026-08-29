@@ -21,6 +21,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'T-3283: waive the two DOC006 findings on this ticket''s own ephemeral worktree-path
+    illustrations (.claude/worktrees/t-3263, t-3264) -- inherently never tracked files,
+    per the established per-line frob:waive DOC006 idiom (T-1661/T-2886/T-2962 precedent)'
+  actor: logan
+  at: '2026-08-28'
+  old_length: 3807
+  new_length: 4265
 designated_repro_test: null
 threat: null
 component: null
@@ -39,8 +48,8 @@ THE MECHANISM, from the landed code:
             return root / ".frob" / _ADMISSION_DIR_NAME
 
 Every git worktree has its own `.frob/`. So a check running in
-`.claude/worktrees/t-3263` registers in that worktree's registry and CANNOT SEE
-a check running in `.claude/worktrees/t-3264`. Each one counts one live check --
+<!-- frob:waive DOC006 reason="ephemeral per-session agent worktree path under .claude/worktrees/, never a tracked file (T-3283) -- illustrating the per-worktree registry mechanism with two example worktrees live at filing time, not a live doc pointer" -->`.claude/worktrees/t-3263` registers in that worktree's registry and CANNOT SEE
+<!-- frob:waive DOC006 reason="ephemeral per-session agent worktree path under .claude/worktrees/, never a tracked file (T-3283) -- same illustrative mechanism reference as the t-3263 example above" -->a check running in `.claude/worktrees/t-3264`. Each one counts one live check --
 itself -- and takes the full machine budget.
 
 MEASURED 2026-08-28 with three agent series live:

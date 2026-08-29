@@ -589,6 +589,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3272: Ledger v2 must be the default for new repos: all six scaffold manifests still emit the v1 single-file tickets.md
 - T-3273: frob.toml boilerplate: seven *_schema tables exist only to name frob's own internal constants, and omitting them silently reports UNMEASURED
 - T-3276: Missing external tools degrade quietly instead of failing loud: no central resolution, doctor checks one binary, xdist absence unaccounted
+- T-3283: 6 of T-3041's 13 live-repo self-conformance tests fail again: genuine post-close drift, not a stale claim
 - T-3285: close-time disclosure check false-positives on split done-report.md
 
 ## [0.530.0] - unreleased
