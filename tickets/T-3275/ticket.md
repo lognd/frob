@@ -20,6 +20,7 @@ scope:
 - src/frob/gates/_port_selfcheck.py
 - docs/modules/gates.md
 - docs/modules/testing.md
+- tests/unit/gates/test_port_selfcheck.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,11 @@ scope_changes:
   glob: docs/modules/testing.md
   reason: native_coverage_refresh's cov_target resolution behavior is frob:doc-anchored
     there
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/gates/test_port_selfcheck.py
+  reason: must-fire/must-stay-quiet fixtures for the widened PORT001 scan population
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
