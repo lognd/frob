@@ -222,6 +222,8 @@ override is never the default, and the run's own log (via
 separate approval mechanism was added for this, since `upload`'s own
 `pypi` environment reviewer gate still runs afterward regardless.
 
+**What "green" means as of T-3425.** `ci.yml`'s `build` job runs `windows-latest` as an ADVISORY leg (`continue-on-error: true`) until T-3076's 278 Windows-only failures (five missing POSIX primitives) are drained -- see `docs/design/windows-portability.md`. The windows-latest job still runs and reports on every push (its signal is not discarded), but a windows-latest failure no longer flips `ci.yml`'s overall conclusion, and so no longer flips what `verify_release_ci_status.py` reads as GREEN for this workflow. GREEN as measured here is `ubuntu-latest` and `macos-latest` passing; a red windows-latest leg is a known, tracked gap, not silently ignored. Re-tighten this note (and `override_red_ci`'s framing above) once T-3076 reaches zero and the advisory flag is removed.
+
 ## Sequencing: build now, first publish gated on green + consent
 
 As of T-3254 (2026-08-28), Linux has a verified full-suite baseline

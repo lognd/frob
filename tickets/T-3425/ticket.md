@@ -2,7 +2,7 @@
 id: T-3425
 title: 'CI: windows-latest job is advisory (continue-on-error) until the T-3076 Windows-only
   failure set is drained'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -23,15 +23,25 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_continue_on_error_is_windows_only
+- tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_matrix_still_includes_all_three_platforms
+- tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_no_step_level_continue_on_error_smuggled_onto_other_legs
 designated_repro_test: null
 acceptance:
 - text: given a push to main where only windows-latest fails, when ci.yml completes,
     then the workflow conclusion is success and verify_release_ci_status.py resolves
     GREEN
-  evidence: []
+  evidence:
+  - tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_continue_on_error_is_windows_only
+  - tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_matrix_still_includes_all_three_platforms
+  - tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_no_step_level_continue_on_error_smuggled_onto_other_legs
 - text: given a push where ubuntu-latest or macos-latest fails, when ci.yml completes,
     then the workflow conclusion is failure
-  evidence: []
+  evidence:
+  - tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_continue_on_error_is_windows_only
+  - tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_matrix_still_includes_all_three_platforms
+  - tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_no_step_level_continue_on_error_smuggled_onto_other_legs
 threat: null
 component: null
 anchor: false

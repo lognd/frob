@@ -16,6 +16,19 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    # T-3425: windows-latest is ADVISORY ONLY (continue-on-error) until
+    # T-3076's 278 Windows-only failures (five missing POSIX primitives:
+    # fcntl, os.sysconf, AF_UNIX, fork context, charmap codec) are drained.
+    # Without this, ci.yml's overall conclusion is RED on every push
+    # regardless of ubuntu/macOS health, so scripts/verify_release_ci_status.py
+    # (T-3251) can never resolve GREEN and every release needs the
+    # override_red_ci escape hatch -- making the escape hatch the normal
+    # path instead of an exception (PLATFORM001 doctrine: declare the
+    # boundary, never silently degrade). The job still runs and reports on
+    # every push -- the signal is kept for measuring the T-3076 burn-down --
+    # it just no longer flips the workflow conclusion. Remove this flag
+    # when T-3076's failure set reaches zero.
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
     # T-3192: a hanging job used to produce NO failure signal at all -- the
     # owner cancelled run 33135896391 by hand after 54 minutes, and runs
     # 33032904841/32968539246 (2h40m) sit in history as `cancelled`, never

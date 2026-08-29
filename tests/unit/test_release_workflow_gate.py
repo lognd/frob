@@ -171,3 +171,50 @@ class TestCiStatusGate:
         existing at all."""
         doc = _load(_RELEASE_WORKFLOW)
         assert set(doc[_ON_KEY]) == {"workflow_dispatch"}
+
+
+class TestCiWindowsLegAdvisoryOnly:
+    """T-3425: only the windows-latest matrix leg may be advisory
+    (continue-on-error) in ci.yml's build job -- ubuntu-latest and
+    macos-latest must still fail the workflow on a test failure. See
+    docs/design/windows-portability.md."""
+
+    def test_build_job_continue_on_error_is_windows_only(self) -> None:
+        """MUST-FIRE: the job-level `continue-on-error` expression must
+        name matrix.os == 'windows-latest' and nothing broader (e.g. not
+        an unconditional `true`, which would silence ubuntu/macOS too)."""
+        doc = _load(_CI_WORKFLOW)
+        job = doc["jobs"]["build"]
+        assert "continue-on-error" in job, (
+            "expected T-3425's windows-latest advisory flag on the build "
+            "job -- see docs/design/windows-portability.md"
+        )
+        expr = job["continue-on-error"]
+        assert isinstance(expr, str)
+        assert "matrix.os" in expr and "windows-latest" in expr, (
+            f"continue-on-error must be conditioned on matrix.os == "
+            f"'windows-latest', got: {expr!r}"
+        )
+        assert "ubuntu-latest" not in expr and "macos-latest" not in expr, (
+            f"continue-on-error must not also cover ubuntu/macos: {expr!r}"
+        )
+
+    def test_matrix_still_includes_all_three_platforms(self) -> None:
+        """MUST-STAY-QUIET companion: the advisory flag must not have been
+        achieved by dropping windows-latest from the matrix instead --
+        the job must still run (and report) on all three platforms."""
+        doc = _load(_CI_WORKFLOW)
+        matrix_os = doc["jobs"]["build"]["strategy"]["matrix"]["os"]
+        assert set(matrix_os) == {"ubuntu-latest", "windows-latest", "macos-latest"}
+
+    def test_no_step_level_continue_on_error_smuggled_onto_other_legs(self) -> None:
+        """MUST-STAY-QUIET: no individual step in the build job may carry
+        its own unconditional continue-on-error -- the only advisory
+        surface is the single job-level expression asserted above."""
+        doc = _load(_CI_WORKFLOW)
+        for step in doc["jobs"]["build"].get("steps", []):
+            assert "continue-on-error" not in step, (
+                f"unexpected step-level continue-on-error on step "
+                f"{step.get('name', '<unnamed>')!r} -- the advisory "
+                f"boundary must stay job-level and windows-only"
+            )
