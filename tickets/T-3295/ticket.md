@@ -160,7 +160,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0975f3b1455b969a13b63b913a5d0255c120864b
 ---
 OWNER DIRECTIVE 2026-08-28: "I don't like how frob:waive is used when frob:debt
 should be used; can we think of a way to ensure that waive is MEANT and not
