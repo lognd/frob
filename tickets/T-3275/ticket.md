@@ -26,6 +26,7 @@ scope:
 - tickets/T-draft-24c487c8/ticket.md
 - tickets/T-draft-8485751c/ticket.md
 - tickets/T-draft-ff0aed44/ticket.md
+- tickets/T-draft-2f89d4e1/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -83,6 +84,11 @@ scope_changes:
   glob: tickets/T-draft-ff0aed44/ticket.md
   reason: dropped follow-up ticket filed then resolved directly within this ticket's
     own work
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tickets/T-draft-2f89d4e1/ticket.md
+  reason: follow-up ticket filed from this ticket's own work
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
