@@ -23,6 +23,7 @@ scope:
 - src/frob/process/__init__.py
 - docs/modules/process.md
 - tests/unit/test_pytest_spawn.py
+- docs/commands/refactor.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -68,6 +69,12 @@ scope_changes:
   glob: docs/modules/process.md
   reason: 'resume T-3311: re-add process.md now that T-3295 has landed, per the pause
     note'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/commands/refactor.md
+  reason: 'AFFECT001: verify_pytest_collect''s argv-build now routes through resolve_pytest_argv,
+    doc needs updating'
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
