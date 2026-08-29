@@ -2,7 +2,7 @@
 id: T-3283
 title: '6 of T-3041''s 13 live-repo self-conformance tests fail again: genuine post-close
   drift, not a stale claim'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
