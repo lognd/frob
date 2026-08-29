@@ -31,6 +31,11 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestDisposition::test_dangling_handled_by_fails
 - tests/test_registry_exhaustiveness.py::TestDisposition::test_handled_by_real_rule_passes
 designated_repro_test: null
+acceptance:
+- text: GIVEN VERSION001/TDD001/VMOD001 registered in _KNOWN_GATE_RULES WHEN their
+    producing gates run against a violating fixture THEN each rule fires through the
+    real production invocation (not a mocked/stubbed check)
+  evidence: []
 threat: null
 component: null
 anchor: false
