@@ -14,14 +14,281 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/serve/**
-- src/frob/tickets/**
-- src/frob/testing/**
-- src/frob/app/_daemon_proxy.py
+- src/frob/__init__.py
+- src/frob/nodeid.py
+- src/frob/gates/__init__.py
+- src/frob/tickets/_scope_coverage.py
+- src/frob/tickets/_leases.py
+- src/frob/tickets/_worktree_sweep.py
+- src/frob/tickets/__init__.py
+- src/frob/lang/_extract.py
+- src/frob/lang/__init__.py
+- src/frob/check/_python.py
+- src/frob/app/cycle_runner.py
+- src/frob/app/worktree_runner.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- src/frob/arch/__init__.py
+- src/frob/arch/_python.py
+- src/frob/serve/_socketd.py
+- src/frob/testing/_collect_cpp.py
+- docs/modules/lang.md
+- tests/unit/test_nodeid.py
+- tests/system/test_cli_cycle.py
+- tests/test_worktree_guard.py
+- tests/unit/test_rapid_sweep.py
+- tests/test_ticket_leases.py
+- tests/unit/test_unlanded_branch_work.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/serve/**
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: src/frob/tickets/**
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: src/frob/testing/**
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: src/frob/app/_daemon_proxy.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/__init__.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/nodeid.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/tickets/_scope_coverage.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/tickets/_worktree_sweep.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/lang/_extract.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/lang/__init__.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/cycle_runner.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/worktree_runner.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/arch/__init__.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/arch/_python.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/serve/_socketd.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/testing/_collect_cpp.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/lang.md
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/test_nodeid.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/system/test_cli_cycle.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/test_worktree_guard.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: T-3350 turned out to be a real, up-to-date CYCLE001 fix (measurement-artifact
+    detector bug plus 4/6 real small cycles collapsed), not the stale 160-node serve/tickets/testing/app
+    epic this ticket previously described -- narrowing scope to the exact files actually
+    touched; the two remaining small cycles (graph<->lock, telemetry) need an owner
+    design pick, see done report.
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: ty caught two more test files still importing sweep_worktrees/_list_agent_worktrees
+    through the removed frob.tickets._leases re-export
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/test_unlanded_branch_work.py
+  reason: ty caught two more test files still importing sweep_worktrees/_list_agent_worktrees
+    through the removed frob.tickets._leases re-export
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
