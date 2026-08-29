@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_worktree_guard.py
 - tests/test_worktree_guard.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
 - op: add
   glob: tests/test_worktree_guard.py
   reason: T-3316's plugin-absence fix is only testable via the guard's own test module
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: T-3316 adds a new doc section for warn_if_xdist_plugin_missing
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
