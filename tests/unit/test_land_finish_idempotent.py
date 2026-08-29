@@ -240,6 +240,14 @@ class TestFinishOnlyIfAlreadyLanded:
         assert transition(wt, tid, TicketState.PLANNED).is_ok
         assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
         loaded = load_all(wt)
+        # frob:waive OPAQUE001 reason="lexical false positive, not a real dynamic \
+        # dispatch: _SUBSCRIPT_CALL_RE (src/frob/vet/_capability_scan.py) matches \
+        # across a statement boundary here -- 'loaded.danger_ok[tid]' ends this line, \
+        # and the NEXT (unrelated) statement below happens to open with '(', so \
+        # '\\s*\\(' (whitespace including the newline, then an open paren) bridges the \
+        # two into what looks like 'container[key](...)'. This is a plain dict \
+        # __getitem__ read into a local, never called. Filed T-3405 for the detector's \
+        # own statement-boundary gap; this ticket's scope is this test file only."
         ticket = loaded.danger_ok[tid]
         (wt / "src").mkdir(parents=True, exist_ok=True)
         (wt / "src" / "example.py").write_text("# unlanded work\n")

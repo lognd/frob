@@ -622,6 +622,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3389: Declare SEC110 unmapped env-var reads (logger, main, frob-suggest hook, worktree_guard test)
 - T-3390: Narrow PII012 name-signature heuristic to avoid identifier false positives
 - T-3391: Make LEXCHECK001 detector check symbols, not regex/substring text
+- T-3392: Resolve OPAQUE001 dynamic-key container call in test_land_finish_idempotent
 - T-3393: Fix DOC011/DOCENUM001 stale doc references and PERF004 loop-sort findings
 - T-3394: Reduce ARCH103 decision-point count in check_runner._apply_tier_a_and_reverify
 - T-3396: Split src/frob/process/_reap.py under LARGE001's 800-line threshold

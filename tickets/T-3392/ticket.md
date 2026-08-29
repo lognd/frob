@@ -1,7 +1,7 @@
 ---
 id: T-3392
 title: Resolve OPAQUE001 dynamic-key container call in test_land_finish_idempotent
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
