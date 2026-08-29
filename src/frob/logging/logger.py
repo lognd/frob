@@ -26,6 +26,16 @@ _initialized = False
 # the `-v` default of full `DEBUG`.
 _VERBOSE_ENV_VAR = "FROB_VERBOSE"
 _LOG_LEVEL_ENV_VAR = "FROB_LOG_LEVEL"
+# T-3263: opt-in escape hatch for a test that deliberately wants frob's OWN
+# formatted stderr/stdout bytes even inside a pytest process (asserted via
+# `capsys`, not `caplog`) -- e.g. a formatter-level regression guard for the
+# "WARNING: " level prefix (docs/modules/logging.md's `_FrobFormatter`
+# contract). `_under_pytest()`'s handlers=[] (T-1621) stays the default for
+# every other test: this only flips when a test explicitly sets the env var
+# itself (via `monkeypatch`, so it is unset again for every other test in
+# the session), so the T-1621 double-reporting fix is untouched for the
+# suite at large.
+_FORCE_HANDLERS_ENV_VAR = "FROB_FORCE_LOG_HANDLERS"
 
 
 def _resolve_stdout_level_override() -> int | None:
@@ -69,13 +79,15 @@ def _under_pytest() -> bool:
     return "pytest" in sys.modules
 
 
+# frob:ticket T-3263
+# frob:tests tests/system/test_cli_check.py::TestGitlessTargetGateSeverity.test_render_lint_gate_warns_not_errors_on_gitless_root  # noqa: E501
 def _init() -> None:
     global _initialized
     if _initialized:
         return
     with _CONFIG_PATH.open("rb") as f:
         cfg = tomllib.load(f)
-    if _under_pytest():
+    if _under_pytest() and os.environ.get(_FORCE_HANDLERS_ENV_VAR) != "1":
         # T-1621: every record frob logs was appearing TWICE in pytest's
         # own report, in two different formats -- not two copies from one
         # handler, but ONE record reaching the terminal via two

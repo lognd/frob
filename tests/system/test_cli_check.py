@@ -934,7 +934,9 @@ class TestGitlessTargetGateSeverity:
         for gate in ("secrets_gate", "pii_structural_gate", "walk_lint_gate"):
             assert f"ERROR: {gate}: git ls-files" not in out, out
 
-    def test_render_lint_gate_warns_not_errors_on_gitless_root(self, capsys, tmp_path):
+    def test_render_lint_gate_warns_not_errors_on_gitless_root(
+        self, capsys, tmp_path, monkeypatch
+    ):
         """`render_lint_gate` only scans `src/frob` (frob's OWN package
         source, T-0459), so its ls-files call never fires on a plain
         project fixture -- exercise `_tracked_python_files` directly
@@ -942,6 +944,17 @@ class TestGitlessTargetGateSeverity:
         (via `frob.logging`'s stderr stream handler, not `caplog`: this
         package configures its own root handlers at import time, which
         `caplog`'s propagation capture does not observe).
+
+        T-3263: `frob.logging.logger._init()` unconditionally empties
+        root's handler list under pytest (`_under_pytest()`, T-1621) to
+        avoid double-reporting every record through both frob's own
+        stderr handler and pytest's own log-capture plugin. That means
+        frob's own `_FrobFormatter` ("LEVELNAME: " prefix) never actually
+        writes bytes to `sys.stderr` inside a pytest process by default --
+        this test wants exactly those formatted bytes, so it opts in via
+        `FROB_FORCE_LOG_HANDLERS=1` (set through `monkeypatch`, so it is
+        unset again for every other test in the session and the T-1621
+        double-reporting fix stays the default everywhere else).
 
         T-0818: `frob.logging.logger._init()` binds its `StreamHandler`s to
         whatever `sys.stdout`/`sys.stderr` objects are live AT THE MOMENT
@@ -969,6 +982,7 @@ class TestGitlessTargetGateSeverity:
         happened to import `_render_lint` first."""
         import frob.logging.logger as _logger_module
 
+        monkeypatch.setenv("FROB_FORCE_LOG_HANDLERS", "1")
         _logger_module._initialized = False
         _logger_module.get_logger(__name__)
         from frob.gates._render_lint import _tracked_python_files
@@ -978,6 +992,16 @@ class TestGitlessTargetGateSeverity:
         err = capsys.readouterr().err
         assert "WARNING: render_lint_gate: git ls-files exited" in err, err
         assert "ERROR: render_lint_gate" not in err, err
+
+        # T-3263: `monkeypatch` unsets FROB_FORCE_LOG_HANDLERS at teardown,
+        # but only AFTER this test function returns -- `_initialized`
+        # would otherwise stay True with the FORCED (handlers-attached)
+        # config baked in for the rest of the pytest session. Unset the
+        # env var here explicitly and re-run `_init()` now so later tests
+        # get the normal T-1621 handlers=[] behavior again.
+        monkeypatch.delenv("FROB_FORCE_LOG_HANDLERS", raising=False)
+        _logger_module._initialized = False
+        _logger_module.get_logger(__name__)
 
 
 # frob:ticket T-0787

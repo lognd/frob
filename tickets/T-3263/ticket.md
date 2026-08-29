@@ -2,7 +2,7 @@
 id: T-3263
 title: render_lint_gate git-ls-files WARNING log line loses its level prefix under
   pytest
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
