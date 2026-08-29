@@ -1,0 +1,29 @@
+---
+id: T-3390
+title: Narrow PII012 name-signature heuristic to avoid identifier false positives
+state: queued
+kind: bug
+origin: human
+created: '2026-08-29'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+PII012: 4 findings (run_diagnosis, allow_reuse_address, _run_diagnosis_records_levels x2) are identifier-name-shaped, not actual PII. Verify whether they are genuine false positives; if so, narrow the PII012 detector's name-signature heuristic (symbolic check per standing directive), not per-site waivers. Part of PyPI release error-floor burn (Series EQ slice).
