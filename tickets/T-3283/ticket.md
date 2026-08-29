@@ -24,6 +24,8 @@ scope:
 - design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
 - src/frob/gates/_empty_diff_close.py
+- tickets/T-3262/ticket.md
+- tickets/T-3287/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +50,22 @@ scope_changes:
   reason: T-3283's fix for the SYS gate/selfconform failures lives in design/frob.strata
     (7 undeclared SYS100 capability grants from ~9 unrelated post-T-3041 lands) plus
     its ratchet lock, and TICK014's missing frob:enforces directive in empty_diff_close.py
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tickets/T-3262/ticket.md
+  reason: T-3283's DOC006 fix corrected/waived the two false-positive doc pointers
+    found in these tickets' own bodies (T-3262's mis-typed scaffold invocation, T-3287's
+    ephemeral worktree-path illustrations) -- the two responsible tickets for the
+    DOC006 half of the drift
+  actor: logan
+  at: '2026-08-28'
+- op: add
+  glob: tickets/T-3287/ticket.md
+  reason: T-3283's DOC006 fix corrected/waived the two false-positive doc pointers
+    found in these tickets' own bodies (T-3262's mis-typed scaffold invocation, T-3287's
+    ephemeral worktree-path illustrations) -- the two responsible tickets for the
+    DOC006 half of the drift
   actor: logan
   at: '2026-08-28'
 designated_repro_test: null
