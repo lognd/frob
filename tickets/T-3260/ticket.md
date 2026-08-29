@@ -19,6 +19,8 @@ scope:
 - strata-core/src/parse/mod.rs
 - tests/unit/strata/test_vmodel_check.py
 - strata-core/src/parse/grammar_core.rs
+- frob.lock
+- docs/strata/vmodel.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -70,6 +72,20 @@ scope_changes:
   glob: strata-core/src/parse/grammar_core.rs
   reason: still modified (LARGE001 debt/waive header removed, doc-comment updated)
     even though the moved code lives elsewhere
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: frob.lock
+  reason: frob.lock records the T-3260 acks made during this ticket's split; docs/strata/vmodel.md
+    needed path-location notes added alongside the acks so the affects()-closure docs
+    actually reflect the new file layout
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/strata/vmodel.md
+  reason: frob.lock records the T-3260 acks made during this ticket's split; docs/strata/vmodel.md
+    needed path-location notes added alongside the acks so the affects()-closure docs
+    actually reflect the new file layout
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
