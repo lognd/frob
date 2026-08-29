@@ -19,6 +19,7 @@ scope:
 - docs/commands/check.md
 - src/frob/app/ticket_runner/_land_cmd.py
 - tests/test_check_runner.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,11 @@ scope_changes:
   glob: docs/modules/tickets.md
   reason: T-3358 holds a live lease on tickets.md; DOC011 finding at tickets.md:99
     deferred until that clears
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: DOC002 fix in _leases.py retargets an anchor in this doc
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
