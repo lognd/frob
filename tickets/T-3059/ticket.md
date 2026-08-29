@@ -90,15 +90,15 @@ scope_changes:
 - op: add
   glob: frob.lock
   reason: frob.lock is the append-only ack ledger frob ack writes to when re-verifying
-    doc anchors after the move; tickets/T-3409/ticket.md is the follow-up
-    ticket this ticket filed for the out-of-scope design/frob.strata SYS100 update
+    doc anchors after the move; tickets/T-3409/ticket.md is the follow-up ticket this
+    ticket filed for the out-of-scope design/frob.strata SYS100 update
   actor: logan
   at: '2026-08-29'
 - op: add
   glob: tickets/T-3409/ticket.md
   reason: frob.lock is the append-only ack ledger frob ack writes to when re-verifying
-    doc anchors after the move; tickets/T-3409/ticket.md is the follow-up
-    ticket this ticket filed for the out-of-scope design/frob.strata SYS100 update
+    doc anchors after the move; tickets/T-3409/ticket.md is the follow-up ticket this
+    ticket filed for the out-of-scope design/frob.strata SYS100 update
   actor: logan
   at: '2026-08-29'
 evidence:
@@ -111,7 +111,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f98887fd39e11d87370298ebc8d15356cdc75a53
 ---
 ## Problem
 
