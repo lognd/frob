@@ -2,7 +2,7 @@
 id: T-3303
 title: 'frob ticket show auto-commits: NOT_TICKET_SCOPED verbs fall through to the
   generic commit path when ticket_id is set'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -17,10 +17,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/__init__.py
 - src/frob/app/ticket_runner/_ledger_mirror.py
+- tests/unit/test_ticket_runner_ledger_mirror.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_runner_ledger_mirror.py
+  reason: T-3303's fix (an explicit NOT_TICKET_SCOPED branch) needs a structural test
+    over the whole LedgerWriteStrategy dispatch table, added to this file
+  actor: logan
+  at: '2026-08-28'
 body_changes:
 - mode: append
   reason: 'coordinator directive: require a structural fixture over the LedgerWriteStrategy
