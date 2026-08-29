@@ -1,7 +1,7 @@
 ---
 id: T-3388
 title: 'SELFAUDIT001: refactor node exec via-list has no ratchet lock entry'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -15,10 +15,21 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/design/registry/capability-via-ratchet.lock.json
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: DOC003 (docs/commands/sys.md THREAT003 CWE-78:refactor obligation) is discharged
+    in design/frob.strata itself, in the same assume-block pattern as core/checker/verify/serve
+    -- this obligation only became live because this ticket's own SELFAUDIT001 fix
+    (the refactor::exec ratchet entry) confirms the exec grant is real and current,
+    so it belongs with this fix rather than a separate ticket
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
