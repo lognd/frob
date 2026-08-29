@@ -172,7 +172,8 @@ class TestReadUptimeAndClkTck:
         # MUST-FIRE: on a win32 host, `os.sysconf` is never called at all
         # (it doesn't exist there) -- `clk_tck` must still come back as
         # the documented 100 fallback rather than raising.
-        # frob:tests src/frob/process/_reap.py::_read_uptime_and_clk_tck kind="unit"
+        # frob:tests src/frob/process/_proc_scan.py::_read_uptime_and_clk_tck \
+        # kind="unit"
         monkeypatch.setattr(_reap.sys, "platform", "win32")
 
         def _boom(*a, **kw):
@@ -189,7 +190,8 @@ class TestReadUptimeAndClkTck:
         # MUST-STAY-QUIET: on every other platform, behavior is unchanged
         # -- `os.sysconf` is still consulted (falling back to 100 only on
         # its own documented failure).
-        # frob:tests src/frob/process/_reap.py::_read_uptime_and_clk_tck kind="unit"
+        # frob:tests src/frob/process/_proc_scan.py::_read_uptime_and_clk_tck \
+        # kind="unit"
         monkeypatch.setattr(_reap.sys, "platform", "linux")
         monkeypatch.setattr(_reap.os, "sysconf", lambda name: 250, raising=False)
         _write_proc_entry(tmp_path, pid=1, cmdline=b"x\x00", ppid=0)

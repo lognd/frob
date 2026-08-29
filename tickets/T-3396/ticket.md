@@ -1,7 +1,7 @@
 ---
 id: T-3396
 title: Split src/frob/process/_reap.py under LARGE001's 800-line threshold
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -36,6 +36,21 @@ scope_changes:
     in the test file that cite the old location
   actor: logan
   at: '2026-08-29'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure code-motion split: symbols moved to _proc_scan.py
+    with a same-name facade re-export in _reap.py, no logic changed'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 335
+  new_length: 488
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure code-motion split: symbols moved to _proc_scan.py
+    with a same-name facade re-export in _reap.py, no logic changed'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 488
+  new_length: 641
 evidence:
 - tests/unit/test_process_reap.py::TestReadUptimeAndClkTck::test_non_win32_still_reads_sysconf
 - tests/unit/test_process_reap.py::TestReadUptimeAndClkTck::test_win32_skips_sysconf_and_uses_fallback
@@ -51,3 +66,7 @@ anchor_reason: null
 land_commit: null
 ---
 LARGE001 fires on src/frob/process/_reap.py (952 lines, threshold 800). A real split (candidate: separate the reap/wait-loop mechanics from the process-tree/orphan-detection helpers) is real engineering, not a mechanical drive-by fix, so it is deferred here following the same disposition as T-3059/T-3260 for the other LARGE001 files.
+
+frob:no-behavior-change reason="pure code-motion split: symbols moved to _proc_scan.py with a same-name facade re-export in _reap.py, no logic changed"
+
+frob:no-behavior-change reason="pure code-motion split: symbols moved to _proc_scan.py with a same-name facade re-export in _reap.py, no logic changed"
