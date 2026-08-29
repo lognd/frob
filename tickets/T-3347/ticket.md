@@ -2,7 +2,7 @@
 id: T-3347
 title: 'Fix gate:COV errors: strata-core graph doc anchors, COV003 evidence kind,
   COV007 private-anchor placement'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
