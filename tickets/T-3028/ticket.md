@@ -29,7 +29,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 93062a169f5c5925f03d9afd50271bb349b07830
 ---
 Found while root-causing T-3019 (spurious REF001/PRE001/SCOPE001 on a
 clean project). tests/system/test_cli_check.py::TestCheckTicketLeasePinRefusal::test_ticket_lease_recorded_elsewhere_refuses
