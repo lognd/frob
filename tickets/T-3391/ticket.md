@@ -1,7 +1,7 @@
 ---
 id: T-3391
 title: Make LEXCHECK001 detector check symbols, not regex/substring text
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_comment_placement.py
 - tests/gates/test_comment_placement.py
+- src/frob/gates/_lexical_selfcheck.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +25,11 @@ scope_changes:
 - op: add
   glob: tests/gates/test_comment_placement.py
   reason: test coverage for symbolic rework
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/gates/_lexical_selfcheck.py
+  reason: LEXCHECK001 allowlist entry for CPLACE002's markdown-only scan
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
