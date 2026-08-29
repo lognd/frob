@@ -17,6 +17,11 @@ is a record of what happened -- T-3195 explicitly does not delete or
 rewrite any of it. This module only refuses NEW hollow reports going
 forward."""
 
+# frob:waive REF002 reason="T-3195 split this guard into its own module on 2026-08-28; \
+# src/frob/tickets/_evidence.py is the sole intended caller by design (the guard fires \
+# from _evidence.py's close-path check) -- a second independent consumer is not \
+# expected, this is a leaf policy module, not a shared utility"
+
 from __future__ import annotations
 
 from frob.tickets._models import Ticket, TicketKind, _done_report_section_lines

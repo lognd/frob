@@ -2,7 +2,7 @@
 id: T-3219
 title: 'post-land sweep regression from T-3195: 23 new (rule, file) identit(ies) (COV003,
   DOC007, DRIFT002, REF002)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-28'
@@ -37,16 +37,6 @@ scope:
 - tests/unit/test_stackdump.py
 - tests/unit/test_ticket_store.py
 - tickets/T-3181
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
-designated_repro_test: null
-threat: null
-component: null
-anchor: false
-anchor_reason: null
-land_commit: null
 findings:
 - - COV003
   - tickets/T-3181
@@ -94,6 +84,20 @@ findings:
   - tests/unit/test_stackdump.py
 - - unresolved-attribute
   - tests/unit/test_ticket_store.py
+evidence_scope:
+- tests/unit/test_check.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+evidence:
+- tests/unit/test_check.py::TestRunTyMultiPlatform::test_default_platforms_all_run
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 The deferred post-land unscoped sweep (T-1684) for T-3195 at commit 46b172704c7008408feedb7624654e233336eae9 found 23 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 

@@ -244,16 +244,16 @@ _DEFAULT_TY_TARGET_PLATFORMS: tuple[str, ...] = ("linux", "win32", "darwin")
 # frob:ticket T-0996
 # frob:ticket T-3191
 # frob:tests \
-# tests/unit/test_check.py::TestRunTyMultiPlatform::test_default_platforms_all_run
+# tests/unit/test_check.py::TestRunTyMultiPlatform.test_default_platforms_all_run
 # frob:tests \
-# tests/unit/test_check.py::TestRunTyMultiPlatform::test_windows_only_diagnostic_is_rep\
-# orted_from_linux_host
+# tests/unit/test_check.py::TestRunTyMultiPlatform.test_windows_only_diagnostic_is_repo\
+# rted_from_linux_host
 # frob:tests \
-# tests/unit/test_check.py::TestRunTyMultiPlatform::test_ordinary_cross_platform_code_s\
-# tays_quiet
+# tests/unit/test_check.py::TestRunTyMultiPlatform.test_ordinary_cross_platform_code_st\
+# ays_quiet
 # frob:tests \
-# tests/unit/test_check.py::TestRunTyMultiPlatform::test_configured_target_platforms_ov\
-# erride_default
+# tests/unit/test_check.py::TestRunTyMultiPlatform.test_configured_target_platforms_ove\
+# rride_default
 def _run_ty(root: Path) -> ToolResult:
     """ty type-check, honouring a local ty.toml's extra-paths (T-0996), run
     ONCE PER TARGET PLATFORM (T-3191, see module docstring / docs/commands/
