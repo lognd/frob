@@ -46,7 +46,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 63bfb32ed8906479519750fb7f8025baafde2169
 ---
 REPORTED FROM REAL CONSUMER USE (../diax FROBLEMS.md F-019, F-024). Two
 separate read/no-op verbs that should never write the ledger.
