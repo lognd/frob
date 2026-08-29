@@ -12,14 +12,20 @@ TODO: one-sentence description of what this project does.
 
 ```bash
 uv sync
-make check
+frob check              # lint + typecheck + test + the full frob gate
 ```
 
 ## Development
 
+This is a frob-enabled project: `frob <verb>` is the interface, not a
+`make` wrapper around it.
+
 ```bash
-make test        # run tests
-make lint        # check style
-make typecheck   # check types
-make check       # all of the above
+frob test        # select and run tests for the touched set (or --all)
+frob format       # ruff check --fix + ruff format
+frob coverage     # refresh coverage.xml / the coverage stamp
+frob check        # the aggregate gate: ruff, ty, frob cycle/dup/arch/...
 ```
+
+`make install`/`make clean`/`make upload` remain (bootstrap and
+build/publish -- see the Makefile).

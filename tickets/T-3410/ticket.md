@@ -2,7 +2,7 @@
 id: T-3410
 title: scaffold docs/index.md.j2 documents four make targets T-3400 deleted, so every
   new python project ships broken instructions
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -27,6 +27,9 @@ scope_changes:
     deleted make targets'
   actor: logan
   at: '2026-08-29'
+evidence:
+- cmd:pytest tests/unit/test_scaffold_project.py tests/unit/test_scaffold_managed.py
+  tests/system/test_scaffold_dx.py -q exit=0 sha256=f6f0a5c777f7
 designated_repro_test: null
 threat: null
 component: null
