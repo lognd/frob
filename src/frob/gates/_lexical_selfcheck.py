@@ -151,6 +151,15 @@ _ALLOWLIST: frozenset[tuple[str, str]] = frozenset(
         # marker was silencing; the subject genuinely IS unstructured
         # text, same reasoning as SEC001's own entropy scan.
         ("src/frob/gates/_secrets.py", "_stale_fake_marker_violations"),
+        # T-3391: CPLACE002 scans `docs/modules/**/*.md` prose for a
+        # ticket-id-citing paragraph outside a provenance context -- the
+        # SUBJECT is markdown text with no Python AST at all (unlike
+        # CPLACE001's sibling scan over `src/**/*.py`, which this ticket
+        # gave a real `ast`-derived symref instead of allowlisting), so
+        # there is no code symbol this finding could ever bind to, same
+        # "whole-file/whole-doc, no AST substrate" class as INV003/INV004
+        # above.
+        ("src/frob/gates/_comment_placement.py", "scan_cplace002_docs_narrative"),
     }
 )
 

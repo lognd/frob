@@ -1,7 +1,7 @@
 ---
 id: T-3391
 title: Make LEXCHECK001 detector check symbols, not regex/substring text
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -38,6 +38,11 @@ scope_changes:
   reason: test coverage lives there for the touched gate
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/gates/test_comment_placement.py::TestCplace001::test_symref_binds_to_the_enclosing_function
+- tests/gates/test_comment_placement.py::TestCplace001::test_symref_is_none_at_module_level
+- tests/gates/test_comment_placement.py::TestCplace001::test_must_fire_long_waive_reason
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_allowlisted_function_is_silent
 designated_repro_test: null
 threat: null
 component: null

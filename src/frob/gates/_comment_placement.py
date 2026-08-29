@@ -57,6 +57,7 @@ guard against repeating that.
 
 from __future__ import annotations
 
+import ast
 import re
 from pathlib import Path
 
@@ -113,6 +114,42 @@ def _is_provenance_exempt(rel: str) -> bool:
     return any(rel.startswith(prefix) for prefix in _EXEMPT_PREFIXES)
 
 
+def _enclosing_symbol_qualname(text: str, line: int) -> str | None:
+    """T-3391: the tightest-spanning `ClassDef`/`FunctionDef`/
+    `AsyncFunctionDef`'s dotted qualname covering `line` in `text` (a
+    `src/**/*.py` file's own content), or `None` for a module-level site
+    or a file that fails to parse -- the same "bind a symref to the
+    comment's enclosing symbol" shape `frob.gates._pii_structural.
+    _node_index.enclosing_qualname` and `frob.gates._opaque.
+    _enclosing_qualname` already use, reimplemented here as a small
+    self-contained `ast.parse`/`ast.walk` pass over the already-in-memory
+    `text` (LEXCHECK001: gives CPLACE001's `frob:waive`-directive finding
+    a real symref instead of the file-wide fallback, rather than pulling
+    in either sibling module's own private `_NodeIndex`/`ParsedFile`
+    machinery for one lookup). A `SyntaxError` (a file this parser cannot
+    handle) degrades to `None`, same as no enclosing symbol at all --
+    CPLACE001 itself does not require a parseable file to find its
+    `frob:waive` directives (a plain line/comment scan), so a parse
+    failure here should not suppress the finding, only its symref
+    precision."""
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return None
+    candidates = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.lineno <= line <= (node.end_lineno or node.lineno)
+    ]
+    if not candidates:
+        return None
+    candidates.sort(
+        key=lambda node: (node.end_lineno or node.lineno) - node.lineno, reverse=True
+    )
+    return ".".join(node.name for node in candidates)
+
+
 # frob:doc docs/guides/agent-playbook.md#7b-comment-placement-t-3218
 # frob:tests \
 # tests/gates/test_comment_placement.py::TestCplace001.test_must_fire_long_waive_reason
@@ -158,12 +195,14 @@ def scan_cplace001_waive_reason_length(
             continue
         if count <= limit:
             continue
+        symbol = _enclosing_symbol_qualname(text, lineno + 1)
         violations.append(
             Violation(
                 rule="CPLACE001",
                 severity=Severity.WARN,
                 file=rel,
                 line=lineno + 1,
+                symref=f"{rel}::{symbol}" if symbol is not None else None,
                 message=(
                     f"CPLACE001: {count}-line frob:waive directive (over "
                     f"the {limit}-line cap) -- move the justification into "

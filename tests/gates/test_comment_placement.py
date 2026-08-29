@@ -40,6 +40,43 @@ class TestCplace001:
         assert _rule_ids(violations) == ["CPLACE001"]
         assert violations[0].line == 1
 
+    def test_symref_binds_to_the_enclosing_function(self) -> None:
+        # frob:tests \
+        # tests/gates/test_comment_placement.py::TestCplace001.test_symref_binds_to_the\
+        # _enclosing_function
+        """T-3391 (LEXCHECK001): a `frob:waive` directive inside a function
+        body gets that function's dotted qualname as its `symref`, not the
+        file-wide `None` fallback -- lets `_match_waiver` require an exact
+        `path::qualname` match the same way PII012/OPAQUE001 already do."""
+        text = (
+            "def handler():\n"
+            '    # frob:waive SOME001 reason="this justification runs on \\\n'
+            "    # for quite a while, well past the compliant one-line \\\n"
+            "    # summary form, exactly the narrative-essay shape T-2987 \\\n"
+            '    # flagged as bloat that belongs in the ticket instead"\n'
+            "    return 1\n"
+        )
+        violations = scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text)
+        assert _rule_ids(violations) == ["CPLACE001"]
+        assert violations[0].symref == "src/frob/x.py::handler"
+
+    def test_symref_is_none_at_module_level(self) -> None:
+        # frob:tests \
+        # tests/gates/test_comment_placement.py::TestCplace001.test_symref_is_none_at_m\
+        # odule_level
+        """The module-level case (no enclosing function/class) keeps
+        `symref=None`, matching `Violation.symref`'s documented contract
+        for a file/module-scoped finding."""
+        text = (
+            '# frob:waive SOME001 reason="this justification runs on for \\\n'
+            "# quite a while, well past the compliant one-line summary \\\n"
+            "# form, exactly the narrative-essay shape T-2987 flagged as \\\n"
+            '# bloat that belongs in the ticket instead of the source"\n'
+            "x = 1\n"
+        )
+        violations = scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text)
+        assert violations[0].symref is None
+
     def test_must_stay_quiet_ordinary_one_line_waive(self) -> None:
         """An ordinary compliant one-line `frob:waive ... reason="..."`
         must never fire -- T-3218's own must-stay-quiet requirement,
