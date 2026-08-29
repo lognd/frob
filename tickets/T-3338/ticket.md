@@ -15,8 +15,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tickets/**
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: repo-wide full-suite baseline measurement and triage report;
+  touches ticket ledger broadly by design, no source code scope
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
