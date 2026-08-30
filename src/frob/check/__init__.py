@@ -60,6 +60,7 @@ from frob.check._python import (
 )
 from frob.check._ts import _run_eslint, _run_prettier, _run_tsc, _run_vitest
 from frob.derived_state import verify_derived_state
+from frob.gitio import git_common_dir
 from frob.lang import reset_parse_cache
 from frob.logging import get_logger
 from frob.logging.quiet import _stdout_stream_handlers as _stdout_log_handlers
@@ -185,10 +186,69 @@ def _pid_alive(pid: int) -> bool:
     return True
 
 
+# frob:ticket T-3287
+# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_non_git_root_falls_back_to_itself kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_primary_checkout_anchors_to_itself kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_worktrees_of_one_repo_share_one_anchor kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_unrelated_repos_do_not_throttle_each_other kind="unit"  # noqa: E501
+def _admission_registry_anchor(root: Path) -> Path:
+    """T-3287: the REPOSITORY-wide anchor for the admission registry --
+    `git rev-parse --git-common-dir`'s PARENT directory (`frob.gitio.
+    git_common_dir`, already memoized per-process), which resolves to
+    the SAME primary-checkout path from inside any linked worktree of
+    one repo. Falls back to `root` itself (T-3256's original, per-
+    worktree behavior) if `root` is not inside a git work tree or the
+    `git` call fails -- degrade, never refuse.
+
+    WHY THE COMMON DIR, NOT `root` (T-3256's original choice) OR A
+    MACHINE-GLOBAL PATH: T-3256 registered under `root / ".frob"`, and
+    every git worktree has its own `.frob/` -- so two agents checking
+    the SAME repo from two DIFFERENT worktrees (`frob ticket work`'s own
+    normal shape, `.claude/worktrees/<id>`) never saw each other's
+    marker at all; each one measured a concurrency of 1 and took the
+    full machine budget while genuinely contending with siblings
+    (MEASURED 2026-08-28: 11 live `frob check` processes, only 1 marker
+    in the primary root's registry, the other worktrees' registries all
+    empty). A machine-global path (e.g. under `/tmp`) was explicitly
+    ruled out: it would double-count contention already captured by
+    `_available_memory_mb` (a REAL machine resource, correctly measured
+    process-count-agnostic) and would throttle two unrelated repos'
+    checks against each other, plus add a permissions/staleness surface
+    a world-writable path invites. The git common dir is the narrowest
+    anchor that is still shared: identical across every worktree of ONE
+    repo, distinct across different repos, and never a `/tmp` path.
+    Confirmed stable against this repo's own unusual layout (worktrees
+    live under `.claude/worktrees/` INSIDE the primary checkout) because
+    `git rev-parse --git-common-dir` is git's own resolution, not a
+    naive parent-directory walk -- the nesting is invisible to it.
+
+    Checks `(root / ".git").exists()` FIRST and skips `git_common_dir`
+    entirely when it is absent: `git_common_dir` logs a WARNING on a
+    failed `git` call (correct for its OTHER callers, where "not a git
+    repo" is an unexpected condition worth surfacing), but here it is
+    the NORMAL degrade path (`root` genuinely is not a git checkout, or
+    is a bare/unusual layout `frob check` still runs against) -- calling
+    it unconditionally would turn every such run noisy, breaking this
+    function's own MUST-STAY-QUIET contract."""
+    if not (root / ".git").exists():
+        return root
+    common = git_common_dir(root)
+    if common.is_err:
+        return root
+    return common.danger_ok.parent
+
+
+# frob:ticket T-3287
+# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_two_worktrees_see_each_others_markers kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor.test_stale_marker_from_dead_pid_does_not_permanently_deflate_shared_budget kind="unit"  # noqa: E501
 def _admission_dir(root: Path) -> Path:
-    """`.frob/check-admission/` under `root` -- the cross-process registry
-    directory `_register_admission`/`_live_concurrent_checks` share."""
-    return root / ".frob" / _ADMISSION_DIR_NAME
+    """`<repo-root>/.frob/check-admission/` (T-3287: `<repo-root>` is
+    `_admission_registry_anchor(root)` -- the git common dir's parent,
+    SHARED across every linked worktree of one repo -- not `root` itself,
+    which is per-worktree and the reason T-3256's divisor never saw
+    cross-worktree siblings) -- the cross-process registry directory
+    `_register_admission`/`_live_concurrent_checks` share."""
+    return _admission_registry_anchor(root) / ".frob" / _ADMISSION_DIR_NAME
 
 
 def _register_admission(root: Path) -> Path:

@@ -358,3 +358,161 @@ class TestAvailableMemoryMb:
 
         monkeypatch.setattr(coverage_refresh_mod, "_available_memory_mb", lambda: 12345)
         assert check_mod._available_memory_mb() == 12345
+
+
+class TestAdmissionRegistryAnchor:
+    """T-3287: the admission registry is anchored to the REPOSITORY (the
+    git common dir's parent), shared across every linked worktree of one
+    repo, not per-worktree (T-3256's original, inert-for-the-fleet
+    choice)."""
+
+    @staticmethod
+    def _init_repo(root: Path) -> None:
+        import subprocess
+
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(["git", "config", "user.email", "t@t"], cwd=root, check=True)
+        subprocess.run(["git", "config", "user.name", "t"], cwd=root, check=True)
+        (root / "README.md").write_text("x", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-qm", "c"], cwd=root, check=True)
+
+    def test_non_git_root_falls_back_to_itself(self, tmp_path: Path) -> None:
+        """MUST-STAY-QUIET half: a plain (non-git) directory anchors to
+        itself, exactly T-3256's original per-`root` behavior -- and
+        does so WITHOUT emitting `git_common_dir`'s own failed-lookup
+        WARNING (that warning is correct for its other callers, but
+        would make every non-git `frob check` invocation noisy here)."""
+        assert check_mod._admission_registry_anchor(tmp_path) == tmp_path
+
+    def test_primary_checkout_anchors_to_itself(self, tmp_path: Path) -> None:
+        """A plain (non-worktree) git checkout anchors to its own root --
+        the single-repo case is unaffected by the T-3287 change."""
+        self._init_repo(tmp_path)
+        assert check_mod._admission_registry_anchor(tmp_path) == tmp_path.resolve()
+
+    def test_two_worktrees_of_one_repo_share_one_anchor(self, tmp_path: Path) -> None:
+        """MUST-FIRE: two DIFFERENT linked worktrees of the SAME repo
+        resolve to the IDENTICAL anchor -- so two `frob check` runs, one
+        per worktree (`frob ticket work`'s own normal shape), register
+        in and see ONE shared registry instead of two empty ones."""
+        import subprocess
+
+        primary = tmp_path / "primary"
+        primary.mkdir()
+        self._init_repo(primary)
+        wt_a = tmp_path / "wt-a"
+        wt_b = tmp_path / "wt-b"
+        subprocess.run(
+            ["git", "worktree", "add", "-b", "wt-a", str(wt_a)],
+            cwd=primary,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "worktree", "add", "-b", "wt-b", str(wt_b)],
+            cwd=primary,
+            check=True,
+            capture_output=True,
+        )
+
+        anchor_a = check_mod._admission_registry_anchor(wt_a)
+        anchor_b = check_mod._admission_registry_anchor(wt_b)
+
+        assert anchor_a == anchor_b == primary.resolve()
+
+    def test_two_worktrees_see_each_others_markers(self, tmp_path: Path) -> None:
+        """MUST-FIRE, end to end: registering from two different linked
+        worktrees, `_live_concurrent_checks` called from EITHER worktree
+        counts BOTH -- the concrete fix for T-3256's inert divisor."""
+        import subprocess
+
+        primary = tmp_path / "primary"
+        primary.mkdir()
+        self._init_repo(primary)
+        wt_a = tmp_path / "wt-a"
+        wt_b = tmp_path / "wt-b"
+        subprocess.run(
+            ["git", "worktree", "add", "-b", "wt-a", str(wt_a)],
+            cwd=primary,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "worktree", "add", "-b", "wt-b", str(wt_b)],
+            cwd=primary,
+            check=True,
+            capture_output=True,
+        )
+
+        # Two DISTINCT pids -- this process's own real pid (registered
+        # from wt_a) plus PID 1 (init: exists on any normal Linux box,
+        # and `_pid_alive` treats a permission-denied kill(0) as alive
+        # too, so this is reliable regardless of the sandbox's
+        # permissions) written directly as a second worktree's marker,
+        # since a single test process cannot literally BE two pids at
+        # once.
+        check_mod._register_admission(wt_a)
+        (check_mod._admission_dir(wt_b) / "1.json").write_text("{}", encoding="utf-8")
+
+        assert check_mod._live_concurrent_checks(wt_a) == 2
+        assert check_mod._live_concurrent_checks(wt_b) == 2
+        # T-3256's original per-worktree registries stay UNUSED now --
+        # nothing is written directly under either worktree's own .frob/.
+        assert not (wt_a / ".frob" / "check-admission").exists()
+        assert not (wt_b / ".frob" / "check-admission").exists()
+
+    def test_two_unrelated_repos_do_not_throttle_each_other(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET: two SEPARATE repos (not worktrees of one
+        another) anchor to two DIFFERENT paths, so a check registered in
+        one is invisible to the other -- the fix must not become a
+        machine-global registry."""
+        repo_a = tmp_path / "repo-a"
+        repo_b = tmp_path / "repo-b"
+        repo_a.mkdir()
+        repo_b.mkdir()
+        self._init_repo(repo_a)
+        self._init_repo(repo_b)
+
+        check_mod._register_admission(repo_a)
+
+        assert check_mod._live_concurrent_checks(repo_a) == 1
+        assert check_mod._live_concurrent_checks(repo_b) == 0
+
+    def test_stale_marker_from_dead_pid_does_not_permanently_deflate_shared_budget(
+        self, tmp_path: Path
+    ) -> None:
+        """THIRD FIXTURE: a marker left by a PID that died without
+        cleanup (a killed `frob check`, the field history this repo has
+        already paid for) is reaped, not permanently counted, in the
+        SHARED (repository-wide) registry -- the same liveness/reaping
+        path `_live_concurrent_checks` already ran per-worktree, now
+        exercised against the wider shared anchor two worktrees write
+        into."""
+        import subprocess
+
+        primary = tmp_path / "primary"
+        primary.mkdir()
+        self._init_repo(primary)
+        wt_a = tmp_path / "wt-a"
+        subprocess.run(
+            ["git", "worktree", "add", "-b", "wt-a", str(wt_a)],
+            cwd=primary,
+            check=True,
+            capture_output=True,
+        )
+
+        # A live registration from wt-a...
+        check_mod._register_admission(wt_a)
+        # ...plus a stale marker from a PID that no longer exists, written
+        # directly into the SHARED registry (simulating a killed check
+        # that never reached its own `finally: marker.unlink()`).
+        shared_dir = check_mod._admission_dir(wt_a)
+        (shared_dir / "999999999.json").write_text("{}", encoding="utf-8")
+
+        # The stale marker is reaped, not counted -- a live check
+        # elsewhere in the repo sees only the genuinely live one.
+        assert check_mod._live_concurrent_checks(primary) == 1
+        assert not (shared_dir / "999999999.json").exists()

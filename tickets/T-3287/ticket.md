@@ -3,7 +3,7 @@ id: T-3287
 title: 'T-3256''s admission registry is per-worktree, so the fleet''s cross-worktree
   checks never see each other: the concurrency divisor is inert exactly where it was
   needed'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -17,10 +17,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/__init__.py
+- tests/unit/test_check_admission.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_check_admission.py
+  reason: must-fire/must-stay-quiet/third fixture tests for the shared cross-worktree
+    admission registry
+  actor: logan
+  at: '2026-08-29'
 body_changes:
 - mode: set
   reason: 'T-3283: waive the two DOC006 findings on this ticket''s own ephemeral worktree-path
@@ -38,6 +46,13 @@ body_changes:
   at: '2026-08-28'
   old_length: 4265
   new_length: 6756
+evidence:
+- tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor::test_two_worktrees_of_one_repo_share_one_anchor
+- tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor::test_two_worktrees_see_each_others_markers
+- tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor::test_non_git_root_falls_back_to_itself
+- tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor::test_two_unrelated_repos_do_not_throttle_each_other
+- tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor::test_stale_marker_from_dead_pid_does_not_permanently_deflate_shared_budget
+- tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor::test_primary_checkout_anchors_to_itself
 designated_repro_test: null
 threat: null
 component: null
