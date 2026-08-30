@@ -23,6 +23,7 @@ scope:
 - src/frob/lang/_extract.py
 - src/frob/lang/__init__.py
 - src/frob/lang/_support.py
+- src/frob/gates/_lang_conformance.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -129,6 +130,12 @@ scope_changes:
 - op: add
   glob: src/frob/lang/_support.py
   reason: adapter capability/conformance registry needs a java LanguageSupport entry,
+    same as T-1600/T-1604
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_lang_conformance.py
+  reason: LANG004 capability-conformance fixture + gate wiring for the new java adapter,
     same as T-1600/T-1604
   actor: logan
   at: '2026-08-30'
