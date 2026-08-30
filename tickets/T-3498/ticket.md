@@ -44,7 +44,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 33f7a0c81abb9b69b1feb273d340c8ac5f4b984d
 ---
 Found while characterizing T-3488's macOS-only CI set (bucket E, 3 tests).
 
