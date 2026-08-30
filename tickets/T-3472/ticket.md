@@ -29,6 +29,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 18927378b8a2964f92f324026cb6ec190824f6a5
 ---
 follow-up split off T-2730: T-2730's scope named only migrate_to_ledger/migrate_v1_to_v2/_migrate_one_v2/_split_done_report's 4 tickets-data-storage.md anchors and their AFFECT001 waivers. migrate_missing_v2's own AFFECT001 waiver (src/frob/tickets/_store_migrate.py, cites the same T-2718 lease-conflict reason) targets docs/design/ledger-v2.md instead, a different doc not named in T-2730's scope -- verify that doc's content is still accurate post-extraction and remove the waiver if so.
