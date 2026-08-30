@@ -18,6 +18,7 @@ scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/verify/_worker.py
 - tests/unit/verify/test_worker.py
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,12 @@ scope_changes:
 - op: add
   glob: tests/unit/verify/test_worker.py
   reason: T-3464's own new regression tests live here
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'AFFECT001: WorkerOutcome''s affects()-closure doc lives here; updated the
+    ''Five possible outcomes'' list and added a T-3464 subsection'
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
