@@ -2,7 +2,7 @@
 id: T-3322
 title: frob ticket new hung indefinitely in a WSL2 9p RPC after writing the ticket
   file
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_new.py
+- tests/unit/test_app_runners_batch7.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: existing clipboard-prompt tests must set the new FROB_TICKET_NEW_CLIPBOARD
+    opt-in env var to keep exercising the interactive path after T-3322's second gate
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
