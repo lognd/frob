@@ -1216,6 +1216,26 @@ class TestDoc004Doc006ZeroOnFrobsOwnRepo:
         offenders = [v for v in kept if v.rule in ("DOC004", "DOC006")]
         assert offenders == [], f"unexpected DOC004/DOC006 finding(s): {offenders}"
 
+    # frob:ticket T-3485
+    def test_changelog_d_fragment_doc006_zero(self, tmp_path: Path) -> None:
+        """T-3485: a targeted pin on changelog.d/T-2691.md's own DOC006
+        result, independent of the whole-repo assertion above -- that
+        assertion can fail for an UNRELATED reason elsewhere in the tree
+        (e.g. a still-open sibling regression on a different file), which
+        would make this ticket's own fix un-evidenceable via the repo-
+        wide test alone. Filters to this one fragment's findings so this
+        test passes exactly when T-3485's own fix (repairing the mid-
+        word-wrapped symbol pointer and the intentionally-nonexistent
+        `frob ticket land-status` CLI pointer) is in place, regardless of
+        any other file's independent state."""
+        from frob.gates._docptr import doc006_gate
+
+        repo_root = Path(__file__).resolve().parents[1]
+        snapshot = build_graph(repo_root, tmp_path / "cache.db").danger_ok
+        violations = doc006_gate(repo_root, snapshot)
+        offenders = [v for v in violations if v.file == "changelog.d/T-2691.md"]
+        assert offenders == [], f"unexpected DOC006 finding(s): {offenders}"
+
     def test_doc004_doc006_are_error_severity(self, tmp_path: Path) -> None:
         """The other half of T-2374: a zero that leaves the gate advisory
         lets the debt silently reaccumulate, so the severity freeze is

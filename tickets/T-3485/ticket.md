@@ -2,7 +2,7 @@
 id: T-3485
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2691):
   1 new (rule, file) identit(ies), 1 finding(s) (DOC006)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -31,6 +31,8 @@ scope_changes:
     independent of unrelated repo-wide findings
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_changelog_d_fragment_doc006_zero
 designated_repro_test: null
 threat: null
 component: null
