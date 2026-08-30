@@ -14,10 +14,82 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_walk_lint.py
+- src/frob/tickets/_land_git_ops.py
+- src/frob/_cli_parsers/_misc.py
+- src/frob/tickets/_setters.py
+- src/frob/deploy/_generate_windows.py
+- src/frob/strata/_mode_conformance.py
+- src/frob/gates/_wire.py
+- src/frob/lang/_walk_bash.py
+- src/frob/tickets/_store.py
+- src/frob/app/check_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_walk_lint.py
+  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
+    helpers for same-file duplicate blocks
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
+    helpers for same-file duplicate blocks
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
+    helpers for same-file duplicate blocks
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/tickets/_setters.py
+  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
+    helpers for same-file duplicate blocks
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/deploy/_generate_windows.py
+  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
+    helpers for same-file duplicate blocks
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/strata/_mode_conformance.py
+  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
+    helpers for same-file duplicate blocks
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_wire.py
+  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
+    helpers for same-file duplicate blocks
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/lang/_walk_bash.py
+  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
+    helpers for same-file duplicate blocks
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
+    helpers for same-file duplicate blocks
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
+    helpers for same-file duplicate blocks
+  actor: logan
+  at: '2026-08-30'
 triage_changes:
 - field: parent
   old_value: null
