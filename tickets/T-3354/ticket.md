@@ -47,3 +47,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TICK002  tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Failure log
+- 2026-08-30 attempt 1: no repo code change applies: CLAUDE001 was live environment drift (managed ~/.claude/hooks/root-write-guard.py copy stale vs .claude/hooks/root-write-guard.py source) reconciled via 'frob claude sync' (writes only to ~/.claude, outside the repo); re-verified clean with frob check --only gates-fast --ticket T-3354 (no CLAUDE001 in the result set)
