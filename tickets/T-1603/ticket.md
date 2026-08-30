@@ -1,7 +1,7 @@
 ---
 id: T-1603
 title: 'Language support: Zig'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -111,6 +111,21 @@ scope_changes:
     specific walker file already, the umbrella glob was a leftover'
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/test_lang.py::TestZig::test_walks_top_level_function
+- tests/test_lang.py::TestZig::test_function_without_pub_is_not_public
+- tests/test_lang.py::TestZig::test_struct_and_method
+- tests/test_lang.py::TestZig::test_enum_is_a_type_symbol
+- tests/test_lang.py::TestZig::test_top_level_const_is_a_const_symbol
+- tests/test_lang.py::TestZig::test_error_union_return_type_is_captured_in_signature
+- tests/test_lang.py::TestZig::test_triple_slash_doc_comment_binds_as_doc_text
+- tests/test_lang.py::TestZig::test_plain_comment_does_not_bind_as_doc_text
+- tests/test_lang.py::TestZig::test_comptime_block_is_not_walked_for_symbols
+- tests/test_lang.py::TestZig::test_zig_two_comment_node_types
+- tests/test_lang.py::TestZig::test_import_builtin_is_extracted
+- tests/test_lang_conformance_gate.py::TestZigCapabilityConformance::test_zig_registered_capabilities_pass
+- tests/test_lang_conformance_gate.py::TestZigCapabilityConformance::test_zig_broken_continuation_fixture_is_caught_not_rubber_stamped
+- tests/test_lang_conformance_gate.py::TestZigCapabilityConformance::test_zig_no_symbols_fixture_is_caught_not_rubber_stamped
 designated_repro_test: null
 threat: null
 component: null

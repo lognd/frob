@@ -28,6 +28,7 @@ from frob.lang._walk_kotlin import _walk_kotlin
 from frob.lang._walk_python import _walk_python, _walk_python_docstring_comments
 from frob.lang._walk_rust import _walk_rust
 from frob.lang._walk_typescript import _walk_typescript
+from frob.lang._walk_zig import _walk_zig
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -59,6 +60,11 @@ COMMENT_TYPES: dict[str, frozenset[str]] = {
     # CUDA's single comment node type -- identical to C/C++, see
     # `_walk_cuda.COMMENT_TYPES`'s own docstring.
     "cuda": frozenset({"comment"}),
+    # frob:ticket T-1603
+    # Zig's two comment node types -- see `_walk_zig.COMMENT_TYPES`'s own
+    # docstring for the doc-comment-vs-ordinary-comment decision (`///`
+    # is its own `doc_comment` node type, distinct from `line_comment`).
+    "zig": frozenset({"line_comment", "doc_comment"}),
 }
 
 
@@ -89,6 +95,7 @@ _WALKERS = {
     "csharp": _walk_csharp,
     "java": _walk_java,
     "cuda": _walk_cuda,
+    "zig": _walk_zig,
 }
 
 # frob:ticket T-0342
@@ -548,6 +555,44 @@ def _imports_java(root: Node) -> tuple[str, ...]:
     return tuple(results)
 
 
+# frob:ticket T-1603
+def _imports_zig(root: Node) -> tuple[str, ...]:
+    """Every `@import("...")` builtin call's string argument (T-1603) --
+    Zig's only module-dependency-declaring construct (verified
+    interactively, `_walk_zig.py`'s module docstring's own exploration:
+    `@import`'s `FnCallArguments` always wraps exactly one string-literal
+    argument in practice, so the first `STRINGLITERALSINGLE` descendant
+    found is the target), quotes stripped the same way every other
+    walker's string-literal import target is."""
+    results: list[str] = []
+
+    def visit(n: Node) -> None:
+        if n.type == "SuffixExpr" and n.children:
+            first = n.children[0]
+            if first.type == "BUILTINIDENTIFIER" and _child_text(first) == "@import":
+                target = _find_string_literal(n)
+                if target is not None:
+                    text = _child_text(target)
+                    if len(text) >= 2:
+                        results.append(text[1:-1])
+        for child in n.children:
+            visit(child)
+
+    visit(root)
+    return tuple(results)
+
+
+def _find_string_literal(node: Node) -> Node | None:
+    """The first `STRINGLITERALSINGLE` descendant of `node`, or `None`."""
+    for c in node.children:
+        if c.type == "STRINGLITERALSINGLE":
+            return c
+        found = _find_string_literal(c)
+        if found is not None:
+            return found
+    return None
+
+
 _IMPORT_WALKERS = {
     "python": _imports_python,
     "c": _imports_c_family,
@@ -564,6 +609,7 @@ _IMPORT_WALKERS = {
     # decision, `_walk_cuda.py`'s module docstring) -- reuse the SAME
     # walker rather than a redundant copy.
     "cuda": _imports_c_family,
+    "zig": _imports_zig,
 }
 
 

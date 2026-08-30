@@ -1057,6 +1057,111 @@ class TestCuda:
         assert any("cuda_runtime.h" in spec for spec in imports)
 
 
+# frob:ticket T-1603
+class TestZig:
+    """Zig walker (`frob.lang._walk_zig`) -- positional/type-based (no
+    named fields, mirrors `_walk_kotlin.py`'s grammar shape), `pub`-only
+    publicness (default private, the opposite of kotlin's default), and
+    the doc-comment-vs-ordinary-comment decision the ticket named
+    (`///` only, never `//`/`//!`)."""
+
+    # frob:ticket T-1603
+    def test_walks_top_level_function(self) -> None:
+        # frob:tests src/frob/lang/_walk_zig.py::_walk_zig
+        pf = parse_file(_FIXTURES / "sample.zig").danger_ok
+        assert pf.language == "zig"
+        fn = _symbol(pf, "add")
+        assert fn.kind == SymbolKind.FUNCTION
+        assert fn.public is True
+        assert fn.doc_text == "Adds two numbers."
+
+    # frob:ticket T-1603
+    def test_function_without_pub_is_not_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_zig.py::_zig_visit
+        pf = parse_file(_FIXTURES / "sample.zig").danger_ok
+        hidden = _symbol(pf, "hidden")
+        assert hidden.kind == SymbolKind.FUNCTION
+        assert hidden.public is False
+
+    # frob:ticket T-1603
+    def test_struct_and_method(self) -> None:
+        # frob:tests src/frob/lang/_walk_zig.py::_zig_container_symbol
+        pf = parse_file(_FIXTURES / "sample.zig").danger_ok
+        widget = _symbol(pf, "Widget")
+        assert widget.kind == SymbolKind.CLASS
+        assert widget.public is False
+        init = _symbol(pf, "Widget.init")
+        assert init.kind == SymbolKind.METHOD
+        assert init.public is True
+        assert init.doc_text == "Initializes a Widget."
+        helper = _symbol(pf, "Widget.helper")
+        assert helper.public is False
+
+    # frob:ticket T-1603
+    def test_enum_is_a_type_symbol(self) -> None:
+        # frob:tests src/frob/lang/_walk_zig.py::_zig_container_symbol
+        pf = parse_file(_FIXTURES / "sample.zig").danger_ok
+        color = _symbol(pf, "Color")
+        assert color.kind == SymbolKind.TYPE
+        assert color.public is True
+
+    # frob:ticket T-1603
+    def test_top_level_const_is_a_const_symbol(self) -> None:
+        # frob:tests src/frob/lang/_walk_zig.py::_zig_const_symbol
+        pf = parse_file(_FIXTURES / "sample.zig").danger_ok
+        max_const = _symbol(pf, "MAX")
+        assert max_const.kind == SymbolKind.CONST
+        assert max_const.public is True
+
+    # frob:ticket T-1603
+    def test_error_union_return_type_is_captured_in_signature(self) -> None:
+        # frob:tests src/frob/lang/_walk_zig.py::_zig_function_symbol
+        pf = parse_file(_FIXTURES / "sample.zig").danger_ok
+        may_fail = _symbol(pf, "mayFail")
+        add = _symbol(pf, "add")
+        assert may_fail.public is True
+        assert "!" in may_fail.sig_tokens
+        assert "!" not in add.sig_tokens
+
+    # frob:ticket T-1603
+    def test_triple_slash_doc_comment_binds_as_doc_text(self) -> None:
+        # frob:tests src/frob/lang/_walk_zig.py::_zig_leading_doc
+        pf = parse_file(_FIXTURES / "sample.zig").danger_ok
+        assert _symbol(pf, "add").doc_text == "Adds two numbers."
+
+    # frob:ticket T-1603
+    def test_plain_comment_does_not_bind_as_doc_text(self) -> None:
+        # frob:tests src/frob/lang/_walk_zig.py::_zig_leading_doc
+        pf = parse_file(_FIXTURES / "sample.zig").danger_ok
+        after = _symbol(pf, "afterPlainComment")
+        assert after.doc_text == ""
+        assert any(
+            "plain comment, not a doc comment" in c.text for c in pf.comments
+        )
+
+    # frob:ticket T-1603
+    def test_comptime_block_is_not_walked_for_symbols(self) -> None:
+        # frob:tests src/frob/lang/_walk_zig.py::_zig_visit
+        pf = parse_file(_FIXTURES / "sample.zig").danger_ok
+        names = {s.qualname for s in pf.symbols}
+        assert "x" not in names
+
+    # frob:ticket T-1603
+    def test_zig_two_comment_node_types(self) -> None:
+        # frob:tests src/frob/lang/_walk_zig.py::COMMENT_TYPES
+        from frob.lang._walk_zig import COMMENT_TYPES
+
+        assert COMMENT_TYPES == frozenset({"line_comment", "doc_comment"})
+
+    # frob:ticket T-1603
+    def test_import_builtin_is_extracted(self) -> None:
+        # frob:tests src/frob/lang/_extract.py::_imports_zig
+        from frob.lang import extract_imports
+
+        imports = extract_imports(_FIXTURES / "sample.zig").danger_ok
+        assert "std" in imports
+
+
 # frob:ticket T-2575
 class TestErrors:
     def test_unsupported_extension(self, tmp_path: Path) -> None:

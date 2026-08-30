@@ -109,6 +109,7 @@ the whole declaration and `body_tokens` is always `()`.
 | csharp | the literal `public` keyword only -- both silent defaults (top-level `internal`, member `private`) and every other explicit modifier are NOT public; an interface member with no modifier of its own is implicitly public (the language's own rule), overridden only by an explicit non-public modifier (T-1600) |
 | java | the literal `public` keyword only -- the package-private default (no modifier at all) is NOT public, the trap this language names explicitly; an interface member with no modifier of its own is implicitly public (the language's own rule), overridden only by an explicit `private`/`protected` modifier (T-1601) |
 | cuda | a C++ DIALECT (not a distinct walker, `_walk_cuda.py`'s own docstring) layering one override on `_walk_c.py`'s existing static-based rule: a `__global__` kernel is always public (the ticket's own "kernel entry point is the analog of a public symbol" framing) regardless of `static`; a `__device__`-only function (no `__host__` alongside it) is always private, since it can never be called from outside the file the way frob's public/private axis means; every other case (plain host function, `__host__` alone, `__host__ __device__`) defers unchanged to C++'s own rule (T-1602) |
+| zig | `pub` is the explicit, opt-in visibility marker -- ABSENT means private (the same "enumerate the public set" shape rust's `pub` takes, the opposite of kotlin's default-public rule); this is the ticket's own named decision (T-1603) |
 
 ## Comment extraction and binding
 
@@ -135,7 +136,8 @@ names the walker treats as comment-typed leaves.
 Each language has its own recursive-descent walker (`_walk_python.py`,
 `_walk_typescript.py`, `_walk_rust.py`, `_walk_c.py`'s `_walk_c_family`
 shared by c/cpp, `_walk_kotlin.py`, `_walk_bash.py`, `_walk_csharp.py`,
-`_walk_java.py`, `_walk_cuda.py` (a thin C++-dialect wrapper), `_walk_strata.py`) built on the shared
+`_walk_java.py`, `_walk_cuda.py` (a thin C++-dialect wrapper), `_walk_zig.py`,
+`_walk_strata.py`) built on the shared
 `_common.py` primitives (`_leaf_tokens`, `_leading_doc_comment`,
 `_strip_comment_delims`, `_span_of`).
 Notable per-language handling:
@@ -253,6 +255,42 @@ Notable per-language handling:
   T-1601's java precedent) is a disclosed `KNOWN_GAP` tracked by a
   follow-up ticket filed while working T-1602 -- see the Language Support
   Contract section below.
+- **zig** (T-1603): POSITIONAL/type-based, no named fields at all
+  (`tree-sitter-language-pack`'s "zig" grammar, mirrors kotlin's shape,
+  not csharp/java's field-based one -- verified interactively). A
+  Zig-specific quirk neither kotlin nor any prior adapter has: `pub` is a
+  bare SIBLING token immediately preceding the `Decl` it marks, never a
+  child of that `Decl` -- publicness is tracked while iterating a
+  container's children (`_zig_visit`'s `pending_pub` state), not read off
+  one node in isolation. `pub` is the explicit, opt-in visibility marker
+  (absent means private -- rust's "enumerate the public set" shape, the
+  opposite of kotlin's public-by-default rule, the ticket's own named
+  decision). A `struct`/`union` type definition is `CLASS`-shaped, an
+  `enum` is `TYPE`-shaped (mirrors `_walk_c.py`'s own struct-vs-enum
+  split); both are found by walking a `VarDecl`'s value-expression
+  wrapper chain (`ErrorUnionExpr` -> `SuffixExpr`) down to a
+  `ContainerDecl`. A top-level `comptime { ... }` block is a bare,
+  unnamed side-effecting block with no declaration name of its own, so it
+  is never walked for symbols -- the ticket's own named decision, a
+  disclosed limitation mirroring how `_walk_python.py` never walks a
+  function body's nested closures. A fallible function's `!ReturnType`
+  error-union marker needs no special handling at all: it is an ordinary
+  positional child of `FnProto`, so it is captured in `sig_tokens`
+  uniformly, correctly making `mayFail() !i32` and a plain `() i32`
+  function produce different signatures (the ticket's own named
+  decision). `///` doc comments get their OWN node type, `doc_comment`,
+  genuinely distinct from `line_comment` (`//`/`//!`) -- unlike every
+  prior C-style-comment adapter, where `///`/`//`/`/* */` collapse onto
+  one or two SHARED types; `doc_text` binding uses a narrower internal
+  set covering only `doc_comment`, so a plain `//`/`//!` comment
+  immediately above a declaration never counts as its doc text (the
+  ticket's own named decision, verified with a positive AND a negative
+  control). `@import("...")`'s string argument is the import/module-
+  dependency statement. `capability`/`dup`/`docblock` facet-registry
+  wiring for zig (mirrors T-2906's bash/csharp and T-1601/T-1602's java/
+  cuda precedent) is a disclosed `KNOWN_GAP` tracked by a follow-up
+  ticket filed while working T-1603 -- see the Language Support Contract
+  section below.
 
 ## Data models
 
@@ -688,15 +726,16 @@ than leaving the citation in place -- both languages now read
 `IMPLEMENTED` on all three facets, `arch` remaining the one genuine,
 already-tracked T-0329 gap every other non-python/cpp language shares.
 
-T-1601/T-1602: java and cuda each landed the same way bash/csharp
-originally did -- only the `grammar` facet real at land time.
+T-1601/T-1602/T-1603: java, cuda, and zig each landed the same way
+bash/csharp originally did -- only the `grammar` facet real at land time.
 `capability`/`dup`/`docblock` read as `KNOWN_GAP` citing a follow-up
 ticket filed while working each one (`frob.lang._support.
 _PENDING_FACET_WIRING_TICKETS`, a language -> ticket mapping, widened
-from T-1601's single-language set once cuda needed its own distinct
-citation), the same disclosed-not-yet-closed shape T-2906 established for
-bash/csharp; a future pass should do the real subsystem integration and
-remove each citation the same way T-2906 did.
+from T-1601's single-language set once a second and third pending
+adapter each needed their own distinct citation), the same disclosed-
+not-yet-closed shape T-2906 established for bash/csharp; a future pass
+should do the real subsystem integration and remove each citation the
+same way T-2906 did.
 
 T-2996: `refactor` joined `FACETS` after the audit found `frob.refactor`
 was Python-only with ZERO language-literal branching to find -- a

@@ -478,6 +478,11 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # capability/dup/docblock FACETS -- same shared
     # `_PENDING_FACET_WIRING_TICKETS` mapping.
     "T-3493": True,
+    # T-1603's own filed finding, identical shape: zig gets a real
+    # frob.lang grammar/walker but is not yet wired into the
+    # capability/dup/docblock FACETS -- same shared
+    # `_PENDING_FACET_WIRING_TICKETS` mapping.
+    "T-3513": True,
 }
 
 
@@ -531,6 +536,7 @@ _CAPABILITY_C_CPP_MEMBERS = frozenset({"c", "cpp"})
 _PENDING_FACET_WIRING_TICKETS: dict[str, str] = {
     "java": "T-3492",
     "cuda": "T-3493",
+    "zig": "T-3513",
 }
 
 

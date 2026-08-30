@@ -166,6 +166,11 @@ _EXTENSION_TABLE: dict[str, tuple[str, str]] = {
     # decision and its kernel-qualifier publicness override.
     ".cu": ("cuda", "cuda"),
     ".cuh": ("cuda", "cuda"),
+    # frob:ticket T-1603
+    # tree-sitter-language-pack bundles the "zig" grammar under that
+    # name -- see `frob.lang._walk_zig` for the positional-walk (no
+    # named fields) shape and its pub-visibility/doc-comment decisions.
+    ".zig": ("zig", "zig"),
 }
 
 # `.strata` has no tree-sitter grammar (`_parse`/`_EXTENSION_TABLE` below

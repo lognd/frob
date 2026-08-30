@@ -103,6 +103,7 @@ _CAPABILITY_FIXTURE_EXTENSIONS: dict[str, str] = {
     "csharp": ".cs",
     "java": ".java",
     "cuda": ".cu",
+    "zig": ".zig",
 }
 
 _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
@@ -265,6 +266,19 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
         "}\n\n"
         f"// frob:tests {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
         "__device__ void privateFn() {\n"
+        "}\n"
+    ),
+    # T-1603: pub is zig's explicit, opt-in publicness marker (absent
+    # means private); @import is the module-dependency statement.
+    "zig": (
+        "// Capability fixture module doc.\n\n"
+        'const std = @import("std");\n\n'
+        "pub fn publicFn() void {\n"
+        "    privateFn();\n"
+        "}\n\n"
+        "// frob:tests \\\n"
+        f"// {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+        "fn privateFn() void {\n"
         "}\n"
     ),
 }
