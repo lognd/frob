@@ -18,6 +18,7 @@ scope:
 - src/frob/serve/_daemon.py
 - src/frob/vet/_capability_core.py
 - src/frob/gates/_pii_structural/_keywords.py
+- tickets/T-draft-68252dc0/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,12 @@ scope_changes:
   glob: src/frob/gates/_pii_structural/_keywords.py
   reason: 'T-2379 frob-arch burn-down: unguarded-shared-write x2 (daemon.py), lock-order-cycle
     (capability_core.py), type-dispatch-smell (keywords.py)'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tickets/T-draft-68252dc0/**
+  reason: T-2379's own out-of-scope discovery filed as a new ticket; the ticket file
+    lands with this ticket
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
