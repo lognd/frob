@@ -71,6 +71,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f21e301c722ba015d94db1d3020dcdb028515274
 ---
 Same mechanism as T-3457 (strata-core); see that ticket and tests/unit/strata/test_strata_core_gil.py for the fix shape and evidence.
