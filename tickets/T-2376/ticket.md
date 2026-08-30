@@ -1,7 +1,7 @@
 ---
 id: T-2376
 title: Burn PERF005/PERF008/PERF014 WARN gates to zero, then promote to error
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -73,7 +73,7 @@ acceptance:
   - tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion
 - text: 'severity promotion is deferred: the family (PERF005/PERF008/PERF014) is not
     at a genuine zero repo-wide, so frob.toml''s PERF005/PERF008/PERF014 severities
-    remain WARNING; promote only once T-draft-ca72d87a''s remaining findings are also
+    remain WARNING; promote only once T-3477''s remaining findings are also
     cleared'
   evidence:
   - tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion
@@ -88,7 +88,7 @@ acceptance_amendments:
   reason: 'T-2376: measured 76 WARN findings (up from the body''s stale 51), too large
     to burn down to a genuine family-wide zero in one pass; narrowed the acceptance
     criterion to what was actually closed (all 9 Python-file PERF005 sites) and filed
-    T-draft-ca72d87a for the rest, per the ticket''s own ''land the burn-down and
+    T-3477 for the rest, per the ticket''s own ''land the burn-down and
     file a follow-up'' instruction'
   actor: logan
   at: '2026-08-30'
@@ -98,7 +98,7 @@ acceptance_amendments:
     ERROR not WARNING
   new_text: 'severity promotion is deferred: the family (PERF005/PERF008/PERF014)
     is not at a genuine zero repo-wide, so frob.toml''s PERF005/PERF008/PERF014 severities
-    remain WARNING; promote only once T-draft-ca72d87a''s remaining findings are also
+    remain WARNING; promote only once T-3477''s remaining findings are also
     cleared'
   reason: same measured-scope narrowing as acceptance[0] -- promoting severity to
     error now would redden the repo on the 6 remaining Rust PERF005 sites plus PERF008/PERF014,

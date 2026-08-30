@@ -845,6 +845,12 @@ def _is_relative_safe_literal(node: ast.expr) -> bool:
     return ".." not in Path(value).parts
 
 
+# frob:ticket T-2376
+# frob:invariant terminates reason="every recursive call is passed a sub-expression \
+# one level below the parent ast.expr (a BinOp operand, a call argument, ...) -- \
+# Python's ast module produces a finite, non-self-referential tree for any real source \
+# file, so recursion bottoms out at the tree's leaves" measure="AST node depth \
+# strictly decreases with each recursive call"
 def _classify_expr(
     expr: ast.expr, locals_: Mapping[str, _LocalState], params: frozenset[str]
 ) -> _LocalState:
@@ -906,6 +912,12 @@ def _classify_expr(
     return ConfinementState.UNKNOWN
 
 
+# frob:ticket T-2376
+# frob:invariant terminates reason="_classify_call/_classify_expr's mutual recursion \
+# always descends into a sub-expression one level below the parent ast.expr (a call \
+# argument, an attribute's own .value, ...) -- Python's ast module produces a finite, \
+# non-self-referential tree for any real source file, so recursion bottoms out at the \
+# tree's leaves" measure="AST node depth strictly decreases with each recursive call"
 def _classify_call(
     expr: ast.Call, locals_: Mapping[str, _LocalState], params: frozenset[str]
 ) -> _LocalState:

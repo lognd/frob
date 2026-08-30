@@ -313,6 +313,14 @@ def _python_install_artifact_violations(project_root: Path) -> list[Violation]:
     return violations
 
 
+# frob:ticket T-2376
+# frob:invariant terminates reason="each recursive call is passed a dict value or list \
+# item one level below the parent node; a GitHub Actions workflow document has no \
+# schema construct that is itself recursive (jobs/steps/uses are a fixed-depth object \
+# shape), and this walk is applied only to workflow files this repo itself parses, \
+# never to untrusted external YAML, so a hand-crafted self-referencing anchor is not a \
+# realistic input here" measure="nesting depth of the parsed YAML document strictly \
+# decreases with each recursive call for every real workflow document"
 def _iter_workflow_uses_values(node: object) -> list[str]:
     """Every `uses:` string value anywhere in a parsed GitHub Actions
     workflow document (T-2469) -- a real recursive walk of the `yaml.

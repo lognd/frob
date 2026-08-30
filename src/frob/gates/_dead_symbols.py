@@ -230,6 +230,13 @@ def _declared_referenced_symrefs(snapshot: GraphSnapshot) -> frozenset[str]:
 _NESTED_SCOPE_KINDS = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)
 
 
+# frob:ticket T-2376
+# frob:invariant terminates reason="each recursive call is passed the body statements \
+# of a nested control-flow node (If/Try/With/For/While) one level inside the parent \
+# ast.stmt list -- Python's ast module produces a finite, non-self-referential tree \
+# for any real source file (a node can never be its own descendant), so recursion \
+# bottoms out at the tree's leaves" measure="AST node depth strictly decreases with \
+# each recursive call"
 def _collect_returns_skip_nested(stmts: list[ast.stmt], out: list[ast.Return]) -> bool:
     """Collect every `ast.Return` reachable from `stmts` into `out`,
     recursing into control-flow statements (`If`/`Try`/`With`/`For`/
@@ -461,6 +468,12 @@ def _track_assign_locals(
             bool_locals[target] = folded_value
 
 
+# frob:ticket T-2376
+# frob:invariant terminates reason="_fold_if_branch/_walk_dead_ranges's mutual \
+# recursion always descends into an ast.If node's own body/orelse statement lists one \
+# level below the parent stmts list -- Python's ast module produces a finite, \
+# non-self-referential tree for any real source file, so recursion bottoms out at the \
+# tree's leaves" measure="AST node depth strictly decreases with each recursive call"
 def _fold_if_branch(
     stmt: ast.If,
     index: int,
@@ -502,6 +515,12 @@ def _fold_if_branch(
 _TRANSPARENT_BLOCK_KINDS = (ast.With, ast.AsyncWith)
 
 
+# frob:ticket T-2376
+# frob:invariant terminates reason="_walk_dead_ranges/_fold_if_branch's mutual \
+# recursion always descends into an ast.If node's own body/orelse statement lists one \
+# level below the parent stmts list -- Python's ast module produces a finite, \
+# non-self-referential tree for any real source file, so recursion bottoms out at the \
+# tree's leaves" measure="AST node depth strictly decreases with each recursive call"
 def _walk_dead_ranges(
     stmts: list[ast.stmt],
     const_funcs: dict[str, object],

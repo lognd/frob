@@ -690,6 +690,12 @@ def _restricted_attrs_unguarded(expr: ast.expr) -> tuple[str, ...]:
 
 
 # frob:ticket T-2951
+# frob:ticket T-2376
+# frob:invariant terminates reason="the recursive call is passed a nested ClassDef's \
+# own .body, one level below the parent body list -- Python's ast module produces a \
+# finite, non-self-referential tree for any real source file (a class can never be its \
+# own ancestor), so recursion bottoms out at the tree's leaves" measure="AST node \
+# depth strictly decreases with each recursive call"
 def _unconditional_body_blocks(body: list[ast.stmt]) -> list[list[ast.stmt]]:
     """`body` itself, plus the `.body` of every `ClassDef` reachable from
     it WITHOUT passing through an `if`/`try`/function boundary -- the set
@@ -743,6 +749,12 @@ def _scan_import_time_platform_evals(tree: ast.Module) -> tuple[_PlatformSite, .
     return tuple(sites)
 
 
+# frob:ticket T-2376
+# frob:invariant terminates reason="the recursive call is passed one element of \
+# test.values, a BoolOp's own operand list one level below the parent ast.expr -- \
+# Python's ast module produces a finite, non-self-referential tree for any real source \
+# file, so recursion bottoms out at the tree's leaves" measure="AST node depth \
+# strictly decreases with each recursive call"
 def _is_none_names(test: ast.expr, guard_names: frozenset[str]) -> frozenset[str]:
     """The subset of `guard_names` that `test` compares to `None` --
     handles a single `X is None` as well as an `X is None and Y is
