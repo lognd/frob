@@ -231,9 +231,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 230,
-      "reason": "T-3481: declaring a genuinely-new exec site in tests/unit/test_frob_core_gil.py (subprocess.run in the must-fire pytest-timeout-preemption test) grows this pair's via-list count by one -- bumping the ceiling to the current measured count, not a fresh unscoped grant.",
-      "ticket": "T-3481"
+      "accepted_count": 234,
+      "reason": "T-3484: tests/unit/verify/test_bisect.py (T-1691, real git repos + worktree snapshots) added 4 exec site(s); measured on CI run 33308245923",
+      "ticket": "T-3484"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -246,9 +246,9 @@
       "ticket": "T-1628"
     },
     "testsuite::fs.read": {
-      "accepted_count": 173,
-      "reason": "T-3465: declaring the SELFAUDIT001/SYS100 undeclared capability sites found live on main (src/frob/gates/_land_parity.py, src/frob/gates/_policy_weakening_gate.py, tests/unit/strata/test_strata_core_gil.py, tests/unit/test_land_parity_gate.py, tests/unit/test_sync_claude_config_stale_guard_t3408.py, tests/unit/verify/test_worker.py) grows this pair's via-list count as a direct consequence -- these are genuinely-observed, already-existing capability sites this ticket is declaring honestly (frob.vet._capability_scan measured them), not a fresh capability grant; bumping the ceiling to the current measured count.",
-      "ticket": "T-3465"
+      "accepted_count": 174,
+      "reason": "T-3484: tests/unit/verify/test_bisect.py (T-1691, real git repos + worktree snapshots) added 1 fs.read site(s); measured on CI run 33308245923",
+      "ticket": "T-3484"
     },
     "testsuite::fs.write": {
       "accepted_count": 413,

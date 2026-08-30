@@ -2,7 +2,7 @@
 id: T-3484
 title: 'SYS100: tests/unit/verify/test_bisect.py (T-1691) undeclared fs.read/exec
   re-breaks the four live-repo self-conformance tests'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -21,6 +21,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 designated_repro_test: null
 threat: null
 component: null
