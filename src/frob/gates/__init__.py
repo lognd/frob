@@ -143,6 +143,10 @@ from frob.gates._inv import (
     inv004_gate,
     invariant_gate,
 )
+from frob.gates._land_parity import (
+    land_parity_doc_test_gate,
+    land_parity_long_function_gate,
+)
 from frob.gates._lang_conformance import (
     capability_conformance_gate,
     lang_conformance_gate,
@@ -6024,6 +6028,10 @@ _ALL_GATES = frozenset(
         # (frob.gates._vmodel.vmodel_gate) -- the reachability half of the
         # V-model epic's H1 fix (vmodel_check previously had zero callers).
         "vmodel",
+        # T-3456: LANDPARITY001/LANDPARITY002 -- diff-scoped land-parity
+        # rules, immediately after "vmodel" (same position as its own
+        # dispatch-dict entry below).
+        "land_parity",
         "archgate",
         # T-0665: OPAQUE001, fail-closed runtime-resolved capability-
         # indirection obligation (frob.gates._opaque.opaque_gate).
@@ -6499,6 +6507,9 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     # T-3042: VMOD001, immediately after "milestone" -- same position as
     # its _ALL_GATES entry above.
     "vmodel",
+    # T-3456: LANDPARITY001/LANDPARITY002, same position as its own
+    # _ALL_GATES entry above.
+    "land_parity",
     "archgate",
     "pii_structural",
     "refs",
@@ -6975,6 +6986,15 @@ def _build_thread_jobs(
         # vmodel_gate walks `.strata` files under the SAME design dir
         # `sys_gate` resolves its own opt-in check against.
         "vmodel": lambda: vmodel_gate(st.root),
+        # T-3456: LANDPARITY001/LANDPARITY002, same `st.root` as "vmodel"/
+        # "milestone" above -- both reuse land's own diff-scoped land-time
+        # checks (frob.gates._land_parity), so `frob check --ticket <id>`
+        # in a ticket's own worktree sees the identical findings the
+        # eventual `frob ticket land` would refuse on, instead of 0.
+        "land_parity": lambda: (
+            *land_parity_doc_test_gate(st.root),
+            *land_parity_long_function_gate(st.root),
+        ),
         # T-0788: COMPLIANCE005, always against repo_root (never the
         # possibly-scoped st.root) -- docs/design/registry/compliance.yaml
         # is a repo-wide manifest, same reasoning as "registry" below.
@@ -8535,6 +8555,8 @@ __all__ = [
     "inv007_violations",
     "inv008_violations",
     "policy_weakening_gate",
+    "land_parity_doc_test_gate",
+    "land_parity_long_function_gate",
     "invariant_gate",
     "known_gate_rule_ids",
     "_UNWAIVABLE_RULES",

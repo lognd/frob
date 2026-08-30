@@ -2,7 +2,7 @@
 id: T-3456
 title: Promote T-2114 (frob:tests directive)/diff-scoped ARCH001/CrossTicketLeakage
   from land-only assertions to real frob check/close gate rules
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -85,6 +85,13 @@ body_changes:
   at: '2026-08-29'
   old_length: 0
   new_length: 3600
+evidence:
+- tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate::test_new_public_symbol_missing_both_directives_fires
+- tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate::test_new_public_symbol_with_both_directives_is_quiet
+- tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate::test_no_diff_is_quiet
+- tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate::test_new_over_threshold_function_fires
+- tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate::test_pre_existing_over_threshold_function_merely_touched_is_quiet
+- tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate::test_no_diff_is_quiet
 designated_repro_test: null
 threat: null
 component: null

@@ -687,6 +687,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3450: SYS100 undeclared capability: tests/unit/test_check_admission.py exec sites missing from testsuite via-list
 - T-3454: post-land sweep regression from T-3438: 2 new (rule, file) identit(ies), 8 finding(s) (DOC007, DRIFT002)
 - T-3455: test_without_serial_pools_worker_is_unattributed asserts an absolute wall-clock bound that CI runners miss
+- T-3456: Promote T-2114 (frob:tests directive)/diff-scoped ARCH001/CrossTicketLeakage from land-only assertions to real frob check/close gate rules
 - T-3457: strata_core Rust extensions never release the GIL, so pytest-timeout's thread watchdog cannot preempt a long native call
 - T-3458: SYS101/SYS111 self-conformance scan cost scales with design/frob.strata's largest via-list x repo file count
 - T-3460: INV051 also collapses to one identity: no real-file token in its message for T-3419's extraction to use

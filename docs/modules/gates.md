@@ -10,7 +10,7 @@ declaration).
 
 ## Rule catalog
 
-<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,ARCHSCHEMA001,BUDGET001,BUG002,BUG003,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,COV008,CPLACE001,CPLACE002,CPPTHROW001,CVEFP001,CYCLE001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DEPR006,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOC012,DOC013,DOCARCH001,DOCBLOCKSSCHEMA001,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,DUPSCHEMA001,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,EXHAUST004,F401,FFI001,FFI002,FLAGCOV001,FMT001,FUZZ001,FUZZ002,FUZZ003,GATERULE001,GATESSCHEMA001,GRAPHSCHEMA001,HOST-BLAST,HOST001,HOST002,I001,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LANG004,LARGE001,LEDGERV1001,LEXCHECK001,LINT001,LINT002,LINT003,LINT004,LINT005,MILE001,MILE002,MILE003,MILE004,NARR001,NATIVE001,NATIVESCHEMA001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PLATFORM001,PORT001,PORT001-DEFAULT,PORT001-IDENT,PORT001-PATH,PRE001,PROFILE001,PROFILESCHEMA001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,QUEUE001,REF001,REF002,REF003,REFSCHEMA001,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS112,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TDD001,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,TESTINGSCHEMA001,TESTRUNNERSCHEMA001,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TICK012,TICK013,TICK014,TODO001,TODO002,TODO003,TOPSCALARSCHEMA001,VERSION001,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,VMOD001,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WAIVE009,WAIVE010,WAIVE011,WALK001,WIRE001,WIRE002,WIRE003" -->
+<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,ARCHSCHEMA001,BUDGET001,BUG002,BUG003,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,COV008,CPLACE001,CPLACE002,CPPTHROW001,CVEFP001,CYCLE001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DEPR006,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOC012,DOC013,DOCARCH001,DOCBLOCKSSCHEMA001,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,DUPSCHEMA001,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,EXHAUST004,F401,FFI001,FFI002,FLAGCOV001,FMT001,FUZZ001,FUZZ002,FUZZ003,GATERULE001,GATESSCHEMA001,GRAPHSCHEMA001,HOST-BLAST,HOST001,HOST002,I001,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANDPARITY001,LANDPARITY002,LANG001,LANG002,LANG003,LANG004,LARGE001,LEDGERV1001,LEXCHECK001,LINT001,LINT002,LINT003,LINT004,LINT005,MILE001,MILE002,MILE003,MILE004,NARR001,NATIVE001,NATIVESCHEMA001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PLATFORM001,PORT001,PORT001-DEFAULT,PORT001-IDENT,PORT001-PATH,PRE001,PROFILE001,PROFILESCHEMA001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,QUEUE001,REF001,REF002,REF003,REFSCHEMA001,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS112,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TDD001,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,TESTINGSCHEMA001,TESTRUNNERSCHEMA001,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TICK012,TICK013,TICK014,TODO001,TODO002,TODO003,TOPSCALARSCHEMA001,VERSION001,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,VMOD001,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WAIVE009,WAIVE010,WAIVE011,WALK001,WIRE001,WIRE002,WIRE003" -->
 
 | Rule | Gate | Fails when |
 |---|---|---|
@@ -156,6 +156,8 @@ declaration).
 | KRB002 | sys | (error) a node declares an `spn` (service principal name) -- every declared SPN is presumed roastable (Kerberoasting exposure); `std.krb` has no vocabulary distinguishing a gMSA/machine-account principal from a human-memorable one, so this fires until re-declared or waived with a written attestation (`frob.strata._krb_movement`) |
 | KRB003 | sys | (error) a `delegation constrained` node's transitive closure of `target` SPNs (S4U2Proxy chaining) reaches a node whose trust is strictly higher than the delegating node's own -- constrained-delegation blast-radius proof (`frob.strata._krb_movement`) |
 | KRB004 | sys | (error) a node in a lower-trust realm reaches a higher-trust node's realm purely via a domain-trust edge -- cross-realm-containment proof over `_krb.py::krb_trust_flows` synthesized flows (`frob.strata._krb_movement`) |
+| LANDPARITY001 | land_parity | (T-3456) a new public top-level symbol in this diff has no `frob:doc`/`frob:tests` directive (or matching `frob:waive`) directly above it -- the SAME check `frob ticket land`'s own T-2114 pre-land assertion already refuses on, now visible to `frob check --ticket <id>`/`frob ticket close` too instead of only surfacing at land time (`frob.gates._land_parity`, reuses `frob.app.ticket_runner._land_cmd._new_public_symbols_missing_doc_or_test_edge` unchanged) |
+| LANDPARITY002 | land_parity | (T-3456) a function this diff adds or modifies now crosses ARCH001's long-AND-complex threshold and was NOT already over it at merge-base -- the SAME diff-scoped check `frob ticket land`'s own T-2214 pre-land assertion already refuses on. A deliberately distinct rule id from plain ARCH001 (that rule reports every over-threshold function an unscoped walk finds, new or pre-existing; this one reports only what THIS diff newly pushed over the line) (`frob.gates._land_parity`, reuses `frob.app.ticket_runner._land_cmd._new_or_worsened_long_functions_in_diff` unchanged) |
 | LANG001 | lang_conformance | a language-conformance finding fired for `std.lang` (see `frob.gates._lang_conformance`) |
 | LANG002 | lang_conformance | a language-conformance finding fired for `std.lang` (see `frob.gates._lang_conformance`) |
 | LANG003 | lang_conformance | a language-conformance finding fired for `std.lang` (see `frob.gates._lang_conformance`) |
@@ -819,6 +821,54 @@ reddens frob's own self-audit now fails the same way landing a change that
 reddens any other ERROR-severity gate already does. No `frob.tickets`/
 `frob.app` code needed to change to wire this in; the fix was making the
 surface a gate at all.
+
+### Land parity (LANDPARITY001/LANDPARITY002, T-3456)
+
+T-3302's investigation (F-032/F-051) found three land-only checks with no
+`frob.gates` rule behind them at all: the T-2114 new-public-symbol doc/
+test-edge check, the diff-scoped ARCH001 (new-or-worsened long function)
+check, and CrossTicketLeakage -- each an ad-hoc CLI-side assertion in
+`frob.app.ticket_runner._land_cmd`/`frob.tickets._land` that logs and
+calls `sys.exit(1)`, never a `Violation`-producing gate function
+`run_gates` dispatches. `frob check --ticket <id>`/`frob ticket close`
+structurally could not see any of the three: a ticket could pass `frob
+check` clean and still get refused at land time for a finding it had no
+way to see coming.
+
+T-3456 wires the first two into `frob check` as `land_parity`
+(`frob.gates._land_parity`): **LANDPARITY001** (T-2114's own doc/test-
+edge check) and **LANDPARITY002** (T-2214's own diff-scoped ARCH001
+variant, a distinct rule id from plain ARCH001 -- see LANDPARITY002's own
+catalog row above for why collapsing the two would be wrong). Both reuse
+`frob.app.ticket_runner._land_cmd`'s existing pure functions unchanged
+(`_new_public_symbols_missing_doc_or_test_edge`/`_new_or_worsened_long_
+functions_in_diff`) -- this ticket adds a `frob check`-callable wrapper
+around logic that already existed and was already tested, not a second
+implementation of it. The land-time assertions
+(`_assert_new_public_symbols_have_doc_and_test_edge_pre_land`/
+`_assert_diff_does_not_worsen_long_functions_pre_land`) remain the
+ENFORCING call site (still `sys.exit(1)` on refusal, unconditional across
+every profile including rapid) -- `land_parity`'s job is making the same
+finding visible EARLIER, in a ticket's own worktree via plain `frob
+check`/`frob ticket close`, not replacing land's own refusal.
+
+CrossTicketLeakage is deliberately NOT covered here:
+`frob.tickets._land._check_cross_ticket_leakage` needs `worktree`/
+`base_ref` context specific to the LAND being performed (which other
+ticket's lease overlaps THIS one's touched files), not a property of
+`root`'s tree alone the way every other `frob.gates` rule is -- exposing
+it needs `frob check` to thread worktree-vs-main comparison context
+through generically, which it does not do today. Filed as a follow-up
+ticket rather than forced here.
+
+`frob.gates._land_parity` importing from `frob.app.ticket_runner.
+_land_cmd` (deferred, call-time only) is the wrong long-term layering
+direction -- `[arch.layering]` (`frob.toml`) is declared but not yet
+wired into `frob check` (T-0620), so this trips no live enforcement
+today, but a follow-up ticket (once `_land_cmd.py`'s own scope lease is
+free -- it was held by a concurrent ticket for this entire session) should
+MOVE the reused pure functions into `frob.gates._land_parity` for real,
+so `_land_cmd.py` imports FROM the gates layer instead of the reverse.
 
 ### SCOPE002 (T-0998)
 

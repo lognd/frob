@@ -478,6 +478,11 @@ _KNOWN_GATE_RULES = frozenset(
         # frob.gates._vmodel's VMOD001 -- a live, enforced gate rule,
         # same REG002 gap as VERSION001/TDD001 above.
         "VMOD001",
+        # T-3456: LANDPARITY001/LANDPARITY002 (frob.gates._land_parity) --
+        # newly wired gate rules, same "add to the frozenset" step every
+        # rule above this comment already needed.
+        "LANDPARITY001",
+        "LANDPARITY002",
         # T-1087: `frob vet`'s own rule ids (src/frob/vet/**) -- a
         # different CLI surface (`frob vet`, not `frob check`'s gate
         # family), outside `_rule_id_scan.SCANNED_BASES` entirely, same
