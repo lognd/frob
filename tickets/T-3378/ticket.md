@@ -2,7 +2,7 @@
 id: T-3378
 title: 'TICK002 re-raise self-deadlocks the fleet: draft-id quarantine only clears
   via a land it blocks'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -18,10 +18,25 @@ scope:
 - src/frob/verify/**
 - src/frob/tickets/_draft_finalize.py
 - src/frob/gates/_tick_directives.py
+- tests/unit/verify/test_quarantine.py
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/verify/test_quarantine.py
+  reason: T-3378 adds unit tests for the new TICK002/draft-owner exemption filter,
+    and frob ack writes frob.lock as part of acknowledging the resulting DRIFT001
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: frob.lock
+  reason: T-3378 adds unit tests for the new TICK002/draft-owner exemption filter,
+    and frob ack writes frob.lock as part of acknowledging the resulting DRIFT001
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
