@@ -1620,7 +1620,59 @@ def _collect_error_findings(
     return frozenset(findings)
 
 
+#: T-3419: a repo-relative path TOKEN embedded in a diagnostic message --
+#: at least one `/`-separated directory component plus a dotted extension
+#: (`src/frob/nodeid.py`, never a bare `nodeid.py` or a version-looking
+#: `3.10`). Deliberately conservative: a false NEGATIVE here just falls
+#: back to the pre-T-3419 behavior (the shared anchor, unchanged), while a
+#: false POSITIVE would corrupt an identity -- so this only ever fires on
+#: an unambiguous path shape, never a bare word.
+_MESSAGE_PATH_RE = re.compile(r"\b(?:[\w.-]+/)+[\w.-]+\.[A-Za-z0-9]{1,8}\b")
+
+
+def _looks_like_shared_anchor(file: str) -> bool:
+    """`True` when `file` has the SHAPE of a repo-wide anchor (a bare
+    directory name/prefix such as `"design"` or `"decisions/"`) rather
+    than a single real file -- T-3419: no extension on its final
+    component, or a trailing `/`. Purely a text-shape test (no
+    filesystem access -- `root` is not threaded down this call chain,
+    T-2345's own split), so it is necessarily a heuristic: it flags any
+    rule's anchor-shaped `file` value generically, not one rule id's
+    literal string, which is the actual fix this ticket requires (a
+    per-rule list here would just move T-3419's hole to the next rule
+    that reports the same way, exactly what its own ticket forbids). A
+    false positive here (a genuine single-file anchor with no extension,
+    e.g. `.frob/coverage-stamp`) is harmless: `_real_file_from_message`
+    below only ever REPLACES `file` when it finds an unambiguous path
+    token in the message, and leaves `file` unchanged otherwise -- so at
+    worst this is a no-op extraction attempt, never a wrong identity."""
+    if not file or file.endswith("/"):
+        return True
+    tail = file.rsplit("/", 1)[-1]
+    return "." not in tail
+
+
+def _real_file_from_message(message: str) -> str | None:
+    """The first repo-relative path token `_MESSAGE_PATH_RE` finds in
+    `message`, or `None` -- T-3419: SELFAUDIT001's own message shape
+    (`"SELFAUDIT001: self-audit family SYS102 node=src/frob/nodeid.py:
+    src/frob/nodeid.py has no node's code= glob binding it"`) always
+    names the real offending file this way, even though `Violation.file`
+    itself is the constant `design_dir` shared by every SELFAUDIT001/
+    INV051 finding repo-wide (`frob.gates._sys_selfaudit.
+    _selfaudit_violation`, `frob.gates._policy_weakening_gate.
+    check_policy_weakening` -- see docs/modules/gates.md's SELFAUDIT001/
+    INV051 rows). `VMOD001` already solved the identical shape ONE rule
+    at a time (`frob.gates._vmodel._vmodel_violations`'s own `node_file`
+    map, T-3264) -- this is the identity-model-level fix T-3419 asks
+    for instead, so the next rule with this shape does not need its own
+    gate-side patch."""
+    match = _MESSAGE_PATH_RE.search(message)
+    return match.group(0) if match else None
+
+
 # frob:ticket T-2345
+# frob:ticket T-3419
 def _error_finding_identity(
     ticket_id: str, tool_name: str, diagnostic: dict
 ) -> tuple[str, str] | None:
@@ -1629,6 +1681,22 @@ def _error_finding_identity(
     `_parse_error_findings_from_json`'s own loop (T-2345, T-2214's
     ARCH001 long-function budget) so that function stays under the
     line-count threshold.
+
+    T-3419: when `file` LOOKS like a repo-wide shared anchor
+    (`_looks_like_shared_anchor`, e.g. SELFAUDIT001's constant
+    `design_dir`) rather than a real per-finding file, and the
+    diagnostic's own `message` names a real file path
+    (`_real_file_from_message`), the identity uses that extracted path
+    instead -- otherwise every SELFAUDIT001/INV051-shaped finding in the
+    whole repo collapses onto ONE `(rule, file)` identity, and the sweep's
+    `frozenset` comparison (new landed finding vs. an unrelated
+    pre-existing one at that SAME shared anchor) silently dedupes them:
+    the actual T-3419 incident (a real SELFAUDIT001/SYS102 regression
+    `frob.tickets._sweep`'s post-land run did not file, while SYS003/
+    TEST001/WIRE002 findings from the identical land WERE filed). This is
+    a general identity-model fix keyed on the ANCHOR's shape, not a
+    per-rule-id list (T-3419's own body: 'a per-rule patch leaves the
+    same hole for the next rule that violates that assumption').
 
     A both-empty diagnostic is malformed at its own SOURCE (the `tool`
     that emitted it), not a real `(rule, file)` identity -- this was the
@@ -1639,6 +1707,11 @@ def _error_finding_identity(
     silently, so the real defect stays traceable back to its source."""
     code = diagnostic.get("code") or ""
     file = diagnostic.get("file") or ""
+    if file and _looks_like_shared_anchor(file):
+        message = diagnostic.get("message") or ""
+        real_file = _real_file_from_message(message)
+        if real_file is not None:
+            file = real_file
     if not code and not file:
         _log.warning(
             "ticket %s: dropping an error-severity diagnostic with BOTH "

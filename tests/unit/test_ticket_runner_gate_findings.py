@@ -1373,3 +1373,159 @@ class TestParseErrorFindingsFromJsonDropsBlankIdentity:
         }
         findings = _parse_error_findings_from_json("T-0001", data)
         assert findings == frozenset({("", "only_file.py")})
+
+
+# frob:ticket T-3419
+class TestErrorFindingIdentityOffFileAnchors:
+    """T-3419: SELFAUDIT001 (and any other rule whose `Violation.file` is
+    a repo-wide constant anchor rather than a per-finding path --
+    `frob.gates._sys_selfaudit._selfaudit_violation`'s `file=design_dir`)
+    used to collapse EVERY such finding repo-wide onto one `(rule,
+    "design")` identity. The post-land sweep's `frozenset` comparison
+    then silently deduped a real newly-introduced finding against an
+    unrelated pre-existing one sharing that same anchor -- the actual
+    T-3419 incident (a real SELFAUDIT001/SYS102 regression the sweep did
+    not file, while SYS003/TEST001/WIRE002 findings from the identical
+    land WERE filed). `_error_finding_identity` now extracts the real
+    file named in the message when `file` looks anchor-shaped."""
+
+    # frob:ticket T-3419
+    # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestErrorFindingIdentityOffFileAnchors.test_must_fire_new_selfaudit001_finding_not_deduped_against_unrelated_one  # noqa: E501
+    def test_must_fire_new_selfaudit001_finding_not_deduped_against_unrelated_one(
+        self,
+    ) -> None:
+        """MUST-FIRE fixture (T-3419's own acceptance): a land that newly
+        introduces a SELFAUDIT001 finding about one file must be reported
+        as a NEW identity distinct from an unrelated pre-existing
+        SELFAUDIT001 about a different file -- both used to collapse onto
+        the single `("SELFAUDIT001", "design")` identity, so the new one
+        was indistinguishable from (and got deduped against) the old one.
+        This MUST FAIL on main."""
+        from frob.app.ticket_runner._verify import _parse_error_findings_from_json
+
+        baseline = _parse_error_findings_from_json(
+            "T-0001",
+            {
+                "results": [
+                    {
+                        "tool": "gates",
+                        "diagnostics": [
+                            {
+                                "severity": "error",
+                                "code": "SELFAUDIT001",
+                                "file": "design",
+                                "line": 1,
+                                "message": (
+                                    "SELFAUDIT001: self-audit family SYS102 "
+                                    "node=src/frob/existing_offender.py: "
+                                    "src/frob/existing_offender.py has no "
+                                    "node's code= glob binding it"
+                                ),
+                            }
+                        ],
+                    },
+                    {"tool": "gate-summary", "diagnostics": []},
+                ]
+            },
+        )
+        after_land = _parse_error_findings_from_json(
+            "T-0002",
+            {
+                "results": [
+                    {
+                        "tool": "gates",
+                        "diagnostics": [
+                            {
+                                "severity": "error",
+                                "code": "SELFAUDIT001",
+                                "file": "design",
+                                "line": 1,
+                                "message": (
+                                    "SELFAUDIT001: self-audit family SYS102 "
+                                    "node=src/frob/nodeid.py: "
+                                    "src/frob/nodeid.py has no node's "
+                                    "code= glob binding it"
+                                ),
+                            }
+                        ],
+                    },
+                    {"tool": "gate-summary", "diagnostics": []},
+                ]
+            },
+        )
+        assert baseline is not None
+        assert after_land is not None
+        new_identities = after_land - baseline
+        assert new_identities == frozenset(
+            {("SELFAUDIT001", "src/frob/nodeid.py")}
+        ), (
+            "the land's real new SELFAUDIT001 finding must survive the "
+            "frozenset diff against the unrelated pre-existing one, not "
+            "collapse onto the shared 'design' anchor and vanish"
+        )
+
+    # frob:ticket T-3419
+    # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestErrorFindingIdentityOffFileAnchors.test_must_stay_quiet_no_message_path_falls_back_to_shared_anchor  # noqa: E501
+    def test_must_stay_quiet_no_message_path_falls_back_to_shared_anchor(
+        self,
+    ) -> None:
+        """MUST-STAY-QUIET fixture: an identical rerun with no new finding
+        (same message, same anchor) still yields an EMPTY diff -- the
+        extraction must not manufacture spurious new identities on its
+        own, and a message with no extractable path degrades to the
+        pre-T-3419 shared-anchor identity unchanged rather than raising
+        or dropping the finding."""
+        from frob.app.ticket_runner._verify import _parse_error_findings_from_json
+
+        payload = {
+            "results": [
+                {
+                    "tool": "gates",
+                    "diagnostics": [
+                        {
+                            "severity": "error",
+                            "code": "INV051",
+                            "file": "design",
+                            "line": 0,
+                            "message": (
+                                "INV051: policy 'child' weakens parent "
+                                "policy 'parent''s fs.write rule"
+                            ),
+                        }
+                    ],
+                },
+                {"tool": "gate-summary", "diagnostics": []},
+            ]
+        }
+        first = _parse_error_findings_from_json("T-0003", payload)
+        second = _parse_error_findings_from_json("T-0003", payload)
+        assert first == second == frozenset({("INV051", "design")})
+        assert (second or frozenset()) - (first or frozenset()) == frozenset()
+
+    # frob:ticket T-3419
+    # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestErrorFindingIdentityOffFileAnchors.test_ordinary_per_file_finding_is_unaffected  # noqa: E501
+    def test_ordinary_per_file_finding_is_unaffected(self) -> None:
+        """Must-still-pass control: a normal diagnostic whose `file` is
+        already a real per-finding path (has an extension) is never
+        rewritten by the message-extraction path, even if its message
+        happens to contain other path-shaped tokens."""
+        from frob.app.ticket_runner._verify import _parse_error_findings_from_json
+
+        data = {
+            "results": [
+                {
+                    "tool": "ruff",
+                    "diagnostics": [
+                        {
+                            "severity": "error",
+                            "code": "F401",
+                            "file": "src/frob/y.py",
+                            "message": "unused import (see src/frob/other.py)",
+                        }
+                    ],
+                },
+                {"tool": "gate-summary", "diagnostics": []},
+            ]
+        }
+        findings = _parse_error_findings_from_json("T-0004", data)
+        assert findings == frozenset({("F401", "src/frob/y.py")})

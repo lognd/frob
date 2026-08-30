@@ -2,7 +2,7 @@
 id: T-3419
 title: 'post-land sweep did not file a real SELFAUDIT001 regression it should have
   caught: findings anchored off-file may be invisible to its identity model'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
