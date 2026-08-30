@@ -1,7 +1,7 @@
 ---
 id: T-3506
 title: 'Portable process lock: share the msvcrt/fcntl dual-path beyond derived_state_lock'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -36,6 +36,7 @@ scope:
 - tests/test_hook_root_write_guard.py
 - tests/test_tickets_leases.py
 - tests/unit/test_coordinator_scripts.py
+- tests/unit/test_ticket_store.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: one shared lock primitive genuinely fans out to every fcntl
   call site plus its lease/land/gate test files; T-3076's own by-file breakdown is
@@ -50,6 +51,22 @@ scope_changes:
     tests exercising src/frob/gates/_narrative_blocks.py and _walk_lint.py (both in
     scope), which will pass once those modules stop importing fcntl directly, with
     no edit to the test file itself required
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: ledger_lock/_flock_path's own platform-backend tests monkeypatch fcntl/msvcrt
+    as module-local attributes on frob.tickets._store, which now delegates to frob.process._lock's
+    shared primitive -- must retarget the monkeypatch to keep exercising the real
+    dual-path
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: ledger_lock/_flock_path's own platform-backend tests monkeypatch fcntl/msvcrt
+    as module-local attributes on frob.tickets._store, which now delegates to frob.process._lock's
+    shared primitive -- must retarget the monkeypatch to keep exercising the real
+    dual-path
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
