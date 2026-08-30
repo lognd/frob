@@ -2,7 +2,7 @@
 id: T-3445
 title: strata tmLanguage grammar missing V-model keywords (architecture, configuration,
   entity, code_ref, obligation, runnable)
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -22,6 +22,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
+- tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
 designated_repro_test: null
 threat: null
 component: null
