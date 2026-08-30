@@ -2,7 +2,7 @@
 id: T-3322
 title: frob ticket new hung indefinitely in a WSL2 9p RPC after writing the ticket
   file
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -28,7 +28,13 @@ scope_changes:
     opt-in env var to keep exercising the interactive path after T-3322's second gate
   actor: logan
   at: '2026-08-30'
-designated_repro_test: null
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_no_clipboard_image_skips
+- tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_declined_answer_skips_attach
+- tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_accepted_answer_attaches
+- tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_env_var_unset_never_calls_clipboard_has_image_even_on_a_tty
+- tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_env_var_set_but_not_a_tty_never_calls_clipboard_has_image
+designated_repro_test: tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_env_var_unset_never_calls_clipboard_has_image_even_on_a_tty
 threat: null
 component: null
 anchor: false

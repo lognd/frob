@@ -1281,12 +1281,16 @@ class TestTicketReconcileCli:
 
 class TestClipboardAttachOnNew:
     """`_maybe_attach_clipboard_image`, exercised via `frob ticket new` on a
-    monkeypatched TTY + clipboard."""
+    monkeypatched TTY + clipboard. T-3322: the interactive offer now also
+    requires the `FROB_TICKET_NEW_CLIPBOARD` opt-in env var (isatty alone
+    is no longer sufficient, T-3322's second gate) -- every test below
+    that wants the prompt reachable sets it explicitly."""
 
     def test_no_clipboard_image_skips(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+        monkeypatch.setenv("FROB_TICKET_NEW_CLIPBOARD", "1")
         import frob.tickets.clipboard as clipboard_mod
 
         monkeypatch.setattr(clipboard_mod, "clipboard_has_image", lambda: False)
@@ -1302,6 +1306,7 @@ class TestClipboardAttachOnNew:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+        monkeypatch.setenv("FROB_TICKET_NEW_CLIPBOARD", "1")
         import frob.tickets.clipboard as clipboard_mod
 
         monkeypatch.setattr(clipboard_mod, "clipboard_has_image", lambda: True)
@@ -1318,6 +1323,7 @@ class TestClipboardAttachOnNew:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+        monkeypatch.setenv("FROB_TICKET_NEW_CLIPBOARD", "1")
         import frob.tickets.clipboard as clipboard_mod
 
         monkeypatch.setattr(clipboard_mod, "clipboard_has_image", lambda: True)
@@ -1346,6 +1352,65 @@ class TestClipboardAttachOnNew:
         with caplog.at_level("INFO"):
             ticket_run(cfg)
         assert "attached clipboard image" in caplog.text
+
+    # frob:tests tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew.test_env_var_unset_never_calls_clipboard_has_image_even_on_a_tty  # noqa: E501
+    def test_env_var_unset_never_calls_clipboard_has_image_even_on_a_tty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3322 must-fire: F-023's own reported shape (a TTY-looking
+        stdin per whatever made `isatty` misbehave) must still never reach
+        `clipboard_has_image` -- the WSL2 9p hang's own call site -- when
+        `FROB_TICKET_NEW_CLIPBOARD` is unset. `monkeypatch.delenv` with
+        `raising=False` guarantees this test is independent of the
+        ambient shell's own env."""
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+        monkeypatch.delenv("FROB_TICKET_NEW_CLIPBOARD", raising=False)
+        import frob.tickets.clipboard as clipboard_mod
+
+        called = False
+
+        def _fail_if_called() -> bool:
+            nonlocal called
+            called = True
+            return True
+
+        monkeypatch.setattr(clipboard_mod, "clipboard_has_image", _fail_if_called)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="clip me env unset",
+            ticket_kind="bug",
+        )
+        ticket_run(cfg)
+        assert called is False
+
+    # frob:tests tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew.test_env_var_set_but_not_a_tty_never_calls_clipboard_has_image  # noqa: E501
+    def test_env_var_set_but_not_a_tty_never_calls_clipboard_has_image(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3322 must-stay-quiet: the env var alone is not enough either
+        -- a non-interactive stdin (the scripted-batch shape F-023 itself
+        hit) must still skip the probe even with the opt-in set."""
+        monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+        monkeypatch.setenv("FROB_TICKET_NEW_CLIPBOARD", "1")
+        import frob.tickets.clipboard as clipboard_mod
+
+        called = False
+
+        def _fail_if_called() -> bool:
+            nonlocal called
+            called = True
+            return True
+
+        monkeypatch.setattr(clipboard_mod, "clipboard_has_image", _fail_if_called)
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="clip me not a tty",
+            ticket_kind="bug",
+        )
+        ticket_run(cfg)
+        assert called is False
 
 
 class TestTicketAttach:

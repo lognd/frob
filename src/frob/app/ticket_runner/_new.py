@@ -844,9 +844,52 @@ def _refuse_unacknowledged_related_tickets(
     sys.exit(1)
 
 
+#: T-3322: the interactive clipboard-image offer is now gated on BOTH
+#: `isatty(stdin)` AND this explicit opt-in env var, never `isatty` alone.
+#: F-023 (REPORTED FROM REAL CONSUMER USE): a 51-call scripted `frob
+#: ticket new` batch with `stdin=/dev/null` hung indefinitely in a WSL2
+#: 9p RPC (`/proc/<pid>/wchan` showed `p9_client_rpc`) right after this
+#: function's own call site -- `clipboard_has_image()`'s WSL backend
+#: (`frob.tickets.clipboard._wsl_has_image`) shells out to
+#: `powershell.exe`, which on WSL2 resolves via a `PATH` that commonly
+#: includes Windows-side (9p-mounted) directories; a stuck 9p mount can
+#: hang the exec's own PATH-search stat() calls before `subprocess.run`'s
+#: `timeout=` parameter ever starts its clock (the timeout only bounds
+#: waiting on an already-spawned child, not the spawn itself). `isatty
+#: (stdin)` alone was reported as the ONLY gate at the time of the
+#: incident and, per the reporter, apparently did not prevent it (stdin
+#: was genuinely `/dev/null` in that run) -- rather than trust a single
+#: TTY-detection primitive whose failure mode is exactly this severe, an
+#: explicit second opt-in closes the class regardless of whatever made
+#: `isatty` misbehave: a scripted/batch/CI invocation that never sets
+#: this var can never reach the clipboard probe, full stop.
+_CLIPBOARD_PROMPT_ENV = "FROB_TICKET_NEW_CLIPBOARD"
+
+
+def _clipboard_prompt_enabled() -> bool:
+    """Whether `_maybe_attach_clipboard_image`'s interactive offer may run
+    at all (T-3322) -- `True` only when the caller has explicitly opted
+    in via `FROB_TICKET_NEW_CLIPBOARD` (any of `1`/`true`/`yes`/`on`,
+    case-insensitively; unset or any other value is `False`), matching
+    this module's own `FROB_SCOPE_CLOSURE_VERBOSE` env-toggle precedent."""
+    return os.environ.get(_CLIPBOARD_PROMPT_ENV, "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+# frob:ticket T-3322
+# frob:tests tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew.test_env_var_unset_never_calls_clipboard_has_image_even_on_a_tty  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew.test_env_var_set_but_not_a_tty_never_calls_clipboard_has_image  # noqa: E501
 def _maybe_attach_clipboard_image(root: Path, ticket_id: str) -> None:
-    """Interactively (TTY only) offer to attach a clipboard image to `ticket_id`."""
+    """Interactively (TTY only, AND only when `FROB_TICKET_NEW_CLIPBOARD`
+    is explicitly set, T-3322) offer to attach a clipboard image to
+    `ticket_id`."""
     if not sys.stdin.isatty():
+        return
+    if not _clipboard_prompt_enabled():
         return
     from frob.tickets import AttachmentSource, attach
     from frob.tickets.clipboard import clipboard_has_image
