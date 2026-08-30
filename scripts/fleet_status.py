@@ -2207,7 +2207,13 @@ def _true_flock_holder_pid(
         return (False, None)
     matches = _flock_holders_matching(lines, lock_stat)
     if len(matches) == 1:
-        return (True, next(iter(matches)))
+        # T-3475: pass an explicit default so `next()` cannot raise
+        # `StopIteration` -- the `len(matches) == 1` guard above already
+        # proves the set is non-empty (the resolver cannot see that
+        # arithmetic fact, hence the prior EXHAUST002 leak), but the
+        # default makes the call itself provably safe rather than relying
+        # on the gate to trust an invisible invariant.
+        return (True, next(iter(matches), None))
     return (True, None)
 
 

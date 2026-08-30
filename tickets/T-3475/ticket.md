@@ -1,7 +1,7 @@
 ---
 id: T-3475
 title: triage two new EXHAUST002 findings unrelated to the isdigit-guard class
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
