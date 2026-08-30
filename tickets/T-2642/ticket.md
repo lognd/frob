@@ -28,7 +28,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ce2f8a92ba0fc2e5b385b1467d84ee4bbe1af6d9
 ---
 `frob.release._fragments.write_changelog_fragment` writes a CHANGELOG.md
 bullet using the ticket TITLE (`f"{ticket_id}: {ticket.title}"`), and
