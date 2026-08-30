@@ -3443,6 +3443,121 @@ class TestForkserverSwapHeldKb:
         assert fleet_status.forkserver_swap_held_kb(tmp_path / "no-proc") is None
 
 
+# frob:ticket T-3407
+class TestForkserverRssHeldKb:
+    """`fleet_status.forkserver_rss_held_kb` (T-3407): summed VmRSS across
+    every live forkserver -- the reading T-2517's swap-only measurement
+    structurally could not produce, and the one the ticket's own
+    incident (12.5GB RSS, 0 orphaned, 0 stale, 0 swap) needed."""
+
+    @staticmethod
+    def _write_entry(
+        proc: Path, pid: int, *, cmdline: bytes, vmrss_kb: int | None
+    ) -> None:
+        entry = proc / str(pid)
+        entry.mkdir(parents=True)
+        (entry / "cmdline").write_bytes(cmdline)
+        (entry / "stat").write_text(f"{pid} (python3) S 999 {pid} 0 0 -1 0\n")
+        if vmrss_kb is not None:
+            (entry / "status").write_text(
+                f"Name:\tpython3\nVmRSS:\t{vmrss_kb} kB\nVmSwap:\t     0 kB\n",
+                encoding="utf-8",
+            )
+
+    def test_sums_vmrss_across_every_forkserver(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverRssHeldKb.test_sums_vmrss_across_every_forkserver  # noqa: E501
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        fs_cmdline = b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00"
+        self._write_entry(proc, 100, cmdline=fs_cmdline, vmrss_kb=1_800_000)
+        self._write_entry(proc, 101, cmdline=fs_cmdline, vmrss_kb=1_900_000)
+        self._write_entry(proc, 102, cmdline=b"sleep\x00600\x00", vmrss_kb=500_000)
+        assert fleet_status.forkserver_rss_held_kb(proc) == 3_700_000
+
+    def test_missing_status_file_degrades_that_entry_to_zero_not_a_crash(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverRssHeldKb.test_missing_status_file_degrades_that_entry_to_zero_not_a_crash  # noqa: E501
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        fs_cmdline = b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00"
+        self._write_entry(proc, 100, cmdline=fs_cmdline, vmrss_kb=None)
+        self._write_entry(proc, 101, cmdline=fs_cmdline, vmrss_kb=300_000)
+        assert fleet_status.forkserver_rss_held_kb(proc) == 300_000
+
+    def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverRssHeldKb.test_missing_proc_returns_none  # noqa: E501
+        assert fleet_status.forkserver_rss_held_kb(tmp_path / "no-proc") is None
+
+
+# frob:ticket T-3407
+class TestForkserverCount:
+    """`fleet_status.forkserver_count` (T-3407): total live forkserver
+    count -- the denominator `_forkserver_rss_headline` attributes
+    aggregate RSS across."""
+
+    def test_counts_every_live_forkserver(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverCount.test_counts_every_live_forkserver  # noqa: E501
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        fs_cmdline = b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00"
+        for pid in (100, 101, 102):
+            entry = proc / str(pid)
+            entry.mkdir()
+            (entry / "cmdline").write_bytes(fs_cmdline)
+            (entry / "stat").write_text(f"{pid} (python3) S 999 {pid} 0 0 -1 0\n")
+        non_fs = proc / "200"
+        non_fs.mkdir()
+        (non_fs / "cmdline").write_bytes(b"sleep\x00600\x00")
+        (non_fs / "stat").write_text("200 (sleep) S 999 200 0 0 -1 0\n")
+        assert fleet_status.forkserver_count(proc) == 3
+
+    def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverCount.test_missing_proc_returns_none  # noqa: E501
+        assert fleet_status.forkserver_count(tmp_path / "no-proc") is None
+
+
+# frob:ticket T-3407
+class TestForkserverRssHeadline:
+    """`fleet_status._forkserver_rss_headline` (T-3407): the always-
+    printed, LEADING line of the forkserver section -- T-3407's own
+    root-cause fix (the aggregate must outrank, not merely join, the
+    three reassuring orphan/stale/swap lines)."""
+
+    def test_large_rss_produces_a_visible_warning(self) -> None:
+        """MUST-FIRE: healthy, live-parented, non-swapping forkservers
+        holding large RSS produce a visible warning (T-3407's own
+        fixture)."""
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline.test_large_rss_produces_a_visible_warning  # noqa: E501
+        headline = fleet_status._forkserver_rss_headline(7, 13_107_200, 7)
+        assert "WARNING" in headline
+        assert "12.5GB" in headline
+        assert "7 forkserver(s)" in headline
+        assert "7 concurrent check(s)" in headline
+
+    def test_small_rss_stays_quiet(self) -> None:
+        """MUST-STAY-QUIET: a small number of forkservers on an idle host
+        does not produce a warning (T-3407's own fixture) -- the real
+        numbers are still reported, just without the alarm framing."""
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline.test_small_rss_stays_quiet  # noqa: E501
+        headline = fleet_status._forkserver_rss_headline(1, 200_000, 0)
+        assert "WARNING" not in headline
+        assert "1 forkserver(s)" in headline
+        assert "0 concurrent check(s)" in headline
+
+    def test_unknown_inputs_degrade_to_unknown_not_zero(self) -> None:
+        """MUST-STILL-PASS: an unreadable `/proc` must read as 'unknown',
+        never a clean 0 -- matching every other best-effort line in this
+        module."""
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline.test_unknown_inputs_degrade_to_unknown_not_zero  # noqa: E501
+        assert fleet_status._forkserver_rss_headline(None, 100, 1) == (
+            "FORKSERVER RSS: unknown (/proc unreadable)"
+        )
+        assert fleet_status._forkserver_rss_headline(1, None, 1) == (
+            "FORKSERVER RSS: unknown (/proc unreadable)"
+        )
+
+
 # frob:ticket T-2818
 class TestForkserverContradictionLine:
     """`fleet_status._forkserver_contradiction_line` (T-2818): the loud

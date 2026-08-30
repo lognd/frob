@@ -1125,6 +1125,34 @@ while still holding real memory, which is exactly the reading that let
 the ticket's own 12GB incident hide behind a clean-looking `ORPHANED
 FORKSERVERS: 0`. Returns `None` only when `/proc` itself is unreadable.
 
+### `forkserver_rss_held_kb`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#forkserver_rss_held_kb -->
+
+T-3407. Sum of `VmRSS` (kb) across every live `multiprocessing.
+forkserver` helper on the host, orphaned or not, stale or not, swapped
+or not -- the number `forkserver_swap_held_kb` structurally cannot see:
+a fleet of HEALTHY, live-parented, non-swapping forkservers is invisible
+to orphaned/stale/swap alike (all read 0 by construction), while still
+consuming the host's actual RAM. The measured incident: 12.5GB of
+forkserver RSS while `ORPHANED FORKSERVERS: 0`, `STALE FORKSERVERS: 0`,
+and `SWAP HELD BY FORKSERVERS: 0.0GB` all read clean, with 1.2GB
+available on the host. VmSwap and VmRSS answer different questions --
+"what got swapped out" vs "what is resident right now" -- both are now
+read and reported on separate lines. Returns `None` only when `/proc`
+itself is unreadable.
+
+### `forkserver_count`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#forkserver_count -->
+
+T-3407. How many live `multiprocessing.forkserver` helper processes
+exist on this host right now, orphaned/stale/healthy alike -- the
+denominator `_forkserver_rss_headline` attributes aggregate RSS across,
+and, together with `concurrent_check_count`, the causal chain a
+coordinator needs (N checks -> M forkservers -> X GB). Returns `None`
+only when `/proc` itself is unreadable.
+
 ### `concurrent_check_count`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#concurrent_check_count -->
@@ -1150,6 +1178,41 @@ T-2818: now `len(_live_check_pids(proc))` -- `_live_check_pids` is the
 same cmdline scan split out so `orphaned_forkserver_count`'s ancestry
 walk can test ancestor-pid membership without a second `/proc` scan
 (DUP001); behavior is unchanged, the scan is shared.
+
+### `_forkserver_rss_headline`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_forkserver_rss_headline -->
+
+T-3407. The ALWAYS-PRINTED, LEADING line of the forkserver section --
+the fix for the ticket's own root-cause finding: three reassuring
+sub-lines (`ORPHANED FORKSERVERS: 0`, `STALE FORKSERVERS: 0`, `SWAP HELD
+BY FORKSERVERS: 0.0GB`, all legitimately zero for a healthy, busy fleet)
+structurally outrank a fourth alarming one appended after them, so the
+fix is not a fourth line, it is which line leads. States the full
+causal chain -- `N concurrent check(s) -> M forkserver(s) -> X.XGB
+resident` -- not the RSS number alone, per the ticket's explicit
+"attribute RSS to concurrent checks" requirement. Appends a `WARNING:`
+clause only when the aggregate RSS is at or above
+`_FORKSERVER_RSS_WARNING_FLOOR_KB` (2GB, chosen well below the 12.5GB
+measured incident and comfortably above a small idle fleet's ordinary
+resident footprint) -- the MUST-FIRE fixture. Below that floor the line
+still reports the real numbers, just without the alarm framing -- the
+MUST-STAY-QUIET fixture. `None` inputs (an unreadable `/proc`) render as
+an explicit `unknown`, never a clean 0.
+
+ADVISORY-VS-CAP (T-3407's own acceptance criterion: answer this
+explicitly). `CONCURRENT CHECKS` stays advisory, not a hard cap. A hard
+cap would refuse a coordinator's own `frob check` at the exact moment
+they need one most (verifying a land, or a ticket close) just because
+the fleet happens to be busy -- T-2473 chose advisory for exactly this
+reason, and nothing about T-3407's incident changes it: the incident was
+a coordinator not SEEING the RSS consequence of dispatching further, not
+a coordinator being unable to stop dispatching once warned. The fix
+this ticket makes is exactly that -- the RSS headline now carries the
+consequence the bare `CONCURRENT CHECKS: N` count alone could not, and
+that line itself now points back at the headline for its own cost. A
+coordinator reading both together sees the causal chain, then decides,
+still advisory.
 
 ### `_land_status_lines`
 
@@ -1209,6 +1272,10 @@ readings that hid a 92-forkserver leak for 45 minutes: an operator read
 Never fires when any of the three inputs is `None` (unknown) -- a
 contradiction claim needs all three readings to be real.
 
+T-3407: `_forkserver_rss_headline` is now printed FIRST, ahead of even
+the T-2818 contradiction line -- see that symbol's own doc entry above
+for the root-cause reasoning and the advisory-vs-cap answer.
+
 ### `_print_land_status`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_print_land_status -->
@@ -1226,6 +1293,10 @@ already runs -- not behind a separate command (the
 rule). Six concurrent agents against the documented cap went unnoticed
 on this host until someone
 checked `ps`/`free` by hand; this line is where that check now lives.
+T-3407: also computes `forkserver_count`/`forkserver_rss_held_kb` and
+passes them through so the forkserver section leads with the
+`FORKSERVER RSS` headline (`_forkserver_rss_headline`) rather than
+appending it as a fourth sub-line.
 
 ### `_rot_day_thresholds`
 

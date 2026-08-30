@@ -2,7 +2,7 @@
 id: T-3407
 title: 'fleet_status reports forkservers healthy while they hold 12.5GB RSS: it measures
   orphan status and swap, never resident memory'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -43,7 +43,16 @@ scope_changes:
     test file
   actor: logan
   at: '2026-08-30'
-designated_repro_test: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestForkserverRssHeldKb::test_sums_vmrss_across_every_forkserver
+- tests/unit/test_coordinator_scripts.py::TestForkserverRssHeldKb::test_missing_status_file_degrades_that_entry_to_zero_not_a_crash
+- tests/unit/test_coordinator_scripts.py::TestForkserverRssHeldKb::test_missing_proc_returns_none
+- tests/unit/test_coordinator_scripts.py::TestForkserverCount::test_counts_every_live_forkserver
+- tests/unit/test_coordinator_scripts.py::TestForkserverCount::test_missing_proc_returns_none
+- tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline::test_large_rss_produces_a_visible_warning
+- tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline::test_small_rss_stays_quiet
+- tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline::test_unknown_inputs_degrade_to_unknown_not_zero
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline::test_large_rss_produces_a_visible_warning
 threat: null
 component: null
 anchor: false

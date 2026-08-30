@@ -2511,6 +2511,39 @@ def _forkserver_vmswap_kb(entry: Path) -> int:
     return 0
 
 
+# frob:ticket T-3407
+# frob:waive DUP001 reason="a deliberate twin of _forkserver_vmswap_kb -- same \
+# read-one-status-file-line shape, different field name (VmRSS vs VmSwap) and \
+# different meaning (resident vs swapped-out memory, see this function's own docstring \
+# for why they are not interchangeable). T-2517 already established this \
+# per-status-line-field reader shape as this module's own idiom (matches the existing \
+# precedent one function up); a shared helper parameterized on the field name would \
+# save a few lines at the cost of one more indirection for two 6-line functions that \
+# will not grow a third sibling"
+def _forkserver_vmrss_kb(entry: Path) -> int:
+    """`VmRSS:` (kb) from `<entry>/status`, or `0` if the file is
+    missing/unparseable -- degrades that ONE process's contribution,
+    never raises. Sibling of `_forkserver_vmswap_kb` (T-3407): T-2517
+    deliberately measured only VmSwap ("RSS is deliberately never read
+    for this: a swapped-out process reports near-zero RSS while still
+    holding real memory") -- correct for THAT incident (orphaned/stale
+    pools that had already been swapped out), but it left a live-parented,
+    non-swapping fleet's RESIDENT memory completely unmeasured, which is
+    T-3407's own incident (12.5GB RSS, 0GB swap, host had 1.2GB
+    available). VmSwap and VmRSS answer different questions -- "what got
+    swapped out" vs "what is actually held in RAM right now" -- and a
+    healthy, busy fleet is dominated by the second, not the first; both
+    are read and reported, on separate lines, same posture T-2517 already
+    established for orphaned/stale/swap."""
+    try:
+        for line in (entry / "status").read_text(encoding="utf-8").splitlines():
+            if line.startswith("VmRSS:"):
+                return int(line.split()[1])
+    except (OSError, ValueError, IndexError):
+        pass
+    return 0
+
+
 # frob:ticket T-2818
 def _stat_fields_after_comm(stat_text: str) -> list[str] | None:
     """`/proc/<pid>/stat`'s own fields AFTER the `") "` that closes the
@@ -2583,6 +2616,8 @@ def _parse_forkserver_entry(
         "ppid": ppid,
         "age_s": _forkserver_age_s(fields, uptime_s, clk_tck),
         "vmswap_kb": _forkserver_vmswap_kb(entry),
+        # frob:ticket T-3407
+        "vmrss_kb": _forkserver_vmrss_kb(entry),
     }
 
 
@@ -2590,13 +2625,15 @@ def _forkserver_snapshot(
     proc: Path = Path("/proc"),
 ) -> list[dict[str, int | float | None]] | None:
     """One `/proc` walk collecting every live `multiprocessing.forkserver`
-    helper's `pid`/`ppid`/`age_s`/`vmswap_kb` (via `_parse_forkserver_
-    entry`), shared by `orphaned_forkserver_count`, `stale_forkserver_
-    count`, and `forkserver_swap_held_kb` (T-2517) so reporting all three
-    numbers costs one scan, not three. `age_s`/`vmswap_kb` degrade to
-    `None`/`0` per-entry on a missing/unparseable file, never abort the
-    whole scan -- see `_forkserver_age_s`/`_forkserver_vmswap_kb`'s own
-    docstrings for exactly which reads those are. Returns `None` only
+    helper's `pid`/`ppid`/`age_s`/`vmswap_kb`/`vmrss_kb` (via `_parse_
+    forkserver_entry`), shared by `orphaned_forkserver_count`, `stale_
+    forkserver_count`, `forkserver_swap_held_kb`, and `forkserver_rss_
+    held_kb` (T-2517, `vmrss_kb` added T-3407) so reporting all four
+    numbers costs one scan, not four. `age_s`/`vmswap_kb`/`vmrss_kb`
+    degrade to `None`/`0`/`0` per-entry on a missing/unparseable file,
+    never abort the whole scan -- see `_forkserver_age_s`/`_forkserver_
+    vmswap_kb`/`_forkserver_vmrss_kb`'s own docstrings for exactly which
+    reads those are. Returns `None` only
     when `/proc` itself is missing/unreadable, mirroring every other
     best-effort `/proc`-scanning function in this module. Motivating
     incident (T-2517): `ORPHANED FORKSERVERS: 0` while 82 stale pools
@@ -2984,6 +3021,60 @@ def forkserver_swap_held_kb(proc: Path = Path("/proc")) -> int | None:
     if snapshot is None:
         return None
     return sum(int(p["vmswap_kb"] or 0) for p in snapshot)
+
+
+# frob:doc docs/guides/coordinator-scripts.md#forkserver_rss_held_kb
+# frob:ticket T-3407
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestForkserverRssHeldKb.test_sums_vmrss_acros\
+# s_every_forkserver
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestForkserverRssHeldKb.test_missing_status_f\
+# ile_degrades_that_entry_to_zero_not_a_crash
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestForkserverRssHeldKb.test_missing_proc_ret\
+# urns_none
+def forkserver_rss_held_kb(proc: Path = Path("/proc")) -> int | None:
+    """Sum of `VmRSS` (kb) across every live `multiprocessing.forkserver`
+    helper on the host, orphaned or not, stale or not, swapped or not
+    (T-3407) -- the number T-2517's own three (orphaned/stale/swap) could
+    not see: a fleet of HEALTHY, live-parented, non-swapping forkservers
+    is invisible to all three of those (0 orphaned, 0 stale by
+    construction while a check is running, 0 swap because nothing has
+    been pushed out), while still consuming the host's actual RAM. See
+    `_forkserver_vmrss_kb`'s own docstring for why this is a genuinely
+    different question from `forkserver_swap_held_kb`, not a duplicate of
+    it. Returns `None` only when `/proc` itself is unreadable; a
+    per-process `status` file that cannot be read degrades THAT process's
+    contribution to 0kb (a partial reading, not a crash), matching
+    `forkserver_swap_held_kb`'s own contract exactly."""
+    snapshot = _forkserver_snapshot(proc)
+    if snapshot is None:
+        return None
+    return sum(int(p["vmrss_kb"] or 0) for p in snapshot)
+
+
+# frob:doc docs/guides/coordinator-scripts.md#forkserver_count
+# frob:ticket T-3407
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestForkserverCount.test_counts_every_live_fo\
+# rkserver
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestForkserverCount.test_missing_proc_returns\
+# _none
+def forkserver_count(proc: Path = Path("/proc")) -> int | None:
+    """How many live `multiprocessing.forkserver` helper processes exist
+    on this host right now, orphaned/stale/healthy alike (T-3407) -- the
+    denominator `_forkserver_rss_headline` needs to attribute aggregate
+    RSS to a per-forkserver figure and, together with `concurrent_check_
+    count`, to the causal chain a coordinator actually needs (N checks ->
+    M forkservers -> X GB). Returns `None` only when `/proc` itself is
+    unreadable, matching every other best-effort function in this
+    module."""
+    snapshot = _forkserver_snapshot(proc)
+    if snapshot is None:
+        return None
+    return len(snapshot)
 
 
 # frob:doc docs/guides/coordinator-scripts.md#concurrent_check_count
@@ -3859,6 +3950,8 @@ def _land_status_lines(
     forkserver_swap_kb: int | None = None,
     true_holder_determinable: bool | None = None,
     true_holder_pid: int | None = None,
+    forkserver_count_: int | None = None,
+    forkserver_rss_kb: int | None = None,
 ) -> list[str]:
     """Render the LANDS/LAND LOCK/LOAD block as plain text lines from
     already-computed inputs -- the PURE-COMPUTE half of the ARCH103 split
@@ -3985,6 +4078,8 @@ def _land_status_lines(
             stale_forkservers,
             forkserver_swap_kb,
             concurrent_checks,
+            forkserver_count_,
+            forkserver_rss_kb,
         )
     )
     return lines
@@ -4028,23 +4123,121 @@ def _forkserver_contradiction_line(
     return None
 
 
+#: T-3407: measured basis. The incident this ticket fixes had 12.5GB of
+#: forkserver RSS on a host with 1.2GB available, while ORPHANED/STALE/
+#: SWAP all read a reassuring 0 -- every forkserver was healthy, live-
+#: parented, and non-swapping, exactly the case those three numbers were
+#: never designed to catch. 2GB (2,097,152 KB) is set well below that
+#: measured incident (so it still fires) and comfortably above the
+#: handful of hundred-MB a small, idle, single-check fleet routinely
+#: holds resident (so the MUST-STAY-QUIET fixture -- a small number of
+#: forkservers on an idle host -- does not false-positive into a
+#: WARNING). This gates only the WARNING wording; the aggregate RSS
+#: figure itself is always reported (T-3407's own acceptance: "RSS
+#: reported and attributed to concurrent checks", not "RSS reported only
+#: when high").
+_FORKSERVER_RSS_WARNING_FLOOR_KB = 2 * 1024 * 1024
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_forkserver_rss_headline
+# frob:ticket T-3407
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline.test_large_rss_prod\
+# uces_a_visible_warning
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline.test_small_rss_stay\
+# s_quiet
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline.test_unknown_inputs\
+# _degrade_to_unknown_not_zero
+def _forkserver_rss_headline(
+    forkserver_count: int | None,
+    forkserver_rss_kb: int | None,
+    concurrent_checks: int | None,
+) -> str:
+    """The ALWAYS-PRINTED, LEADING line of the forkserver section (T-3407)
+    -- the fix for the ticket's own root-cause finding: "the problem is
+    that three reassuring lines outrank one alarming one", so the
+    aggregate now comes FIRST, not as a fourth sub-line appended after
+    three lines that already read as healthy. States the full causal
+    chain a coordinator needs (concurrent checks -> forkservers -> RSS),
+    not just the RSS number alone, per the ticket's explicit "attribute
+    RSS to concurrent checks" requirement. Appends a `WARNING:` clause
+    (the MUST-FIRE fixture) only when `forkserver_rss_kb` is at or above
+    `_FORKSERVER_RSS_WARNING_FLOOR_KB`; below that floor (the MUST-STAY-
+    QUIET fixture) the line still reports the real numbers, just without
+    the alarm framing. `None` inputs (an unreadable `/proc`) degrade to
+    an explicit 'unknown', matching every other best-effort line in this
+    module -- NEVER read as a clean 0."""
+    if forkserver_count is None or forkserver_rss_kb is None:
+        return "FORKSERVER RSS: unknown (/proc unreadable)"
+    checks_desc = (
+        "? concurrent check(s)"
+        if concurrent_checks is None
+        else f"{concurrent_checks} concurrent check(s)"
+    )
+    rss_gb = forkserver_rss_kb / (1024 * 1024)
+    headline = (
+        f"FORKSERVER RSS: {checks_desc} -> {forkserver_count} forkserver(s) "
+        f"-> {rss_gb:.1f}GB resident"
+    )
+    if forkserver_rss_kb >= _FORKSERVER_RSS_WARNING_FLOOR_KB:
+        headline += (
+            " -- WARNING: this is real resident memory, not swap or an "
+            "orphan/stale leak (T-3407); a healthy, live-parented, "
+            "non-swapping fleet reads clean on ORPHANED/STALE/SWAP below "
+            "while still holding this much RAM -- treat CONCURRENT CHECKS "
+            "as the lever to pull, not those three lines"
+        )
+    return headline
+
+
 def _forkserver_status_lines(
     orphaned_forkservers: int | None,
     stale_forkservers: int | None,
     forkserver_swap_kb: int | None,
     concurrent_checks: int | None,
+    forkserver_count_: int | None = None,
+    forkserver_rss_kb: int | None = None,
 ) -> list[str]:
-    """The forkserver/check lines (`ORPHANED FORKSERVERS`, `STALE
-    FORKSERVERS`, `SWAP HELD BY FORKSERVERS`, `CONCURRENT CHECKS`, and a
-    `CONTRADICTION:` line when warranted) -- ARCH001 split of `_land_
-    status_lines` (T-2517), pure formatting, no behavior change from
-    inlining. T-2517: the three forkserver numbers stay on THREE separate
-    lines, never collapsed into one -- see `_land_status_lines`'s own
-    docstring for why. T-2818: `_forkserver_contradiction_line` is
-    checked FIRST and printed BEFORE the individual number lines when it
-    fires, so the loudest signal is not buried after three lines that
-    each look clean in isolation."""
-    lines: list[str] = []
+    """The forkserver/check lines (`FORKSERVER RSS` headline, `ORPHANED
+    FORKSERVERS`, `STALE FORKSERVERS`, `SWAP HELD BY FORKSERVERS`,
+    `CONCURRENT CHECKS`, and a `CONTRADICTION:` line when warranted) --
+    ARCH001 split of `_land_status_lines` (T-2517), pure formatting, no
+    behavior change from inlining. T-2517: the three forkserver numbers
+    stay on THREE separate lines, never collapsed into one -- see
+    `_land_status_lines`'s own docstring for why.
+
+    T-3407: `_forkserver_rss_headline` is now printed FIRST, ahead of
+    even the T-2818 contradiction line -- the ticket's own root-cause
+    finding was that three reassuring sub-lines (orphaned/stale/swap, all
+    legitimately 0/0/0 for a healthy fleet) structurally outrank a fourth
+    alarming one, so the fix is not a fourth line, it is which line leads.
+    `forkserver_count_`/`forkserver_rss_kb` default to `None` (rendering
+    as 'unknown') so this function stays backward-source-compatible with
+    any caller that has not yet threaded T-3407's two new readings
+    through -- same optional-trailing-parameter precedent
+    `true_holder_determinable`/`true_holder_pid` already set on
+    `_land_status_lines` for the T-3093 addition.
+
+    ADVISORY-VS-CAP (T-3407 acceptance: answer this explicitly, either
+    way): CONCURRENT CHECKS stays advisory, not a hard cap. A hard cap
+    would refuse a coordinator's own `frob check` at the exact moment
+    they need one most (verifying a land, or a ticket close) just because
+    the fleet happens to be busy -- T-2473 chose advisory for this reason
+    and nothing about T-3407's incident changes it: the incident was a
+    coordinator not SEEING the RSS consequence of dispatching further,
+    not a coordinator being unable to stop dispatching once warned. The
+    fix this ticket makes is exactly that: the RSS headline above now
+    carries the consequence the CONCURRENT CHECKS line alone could not
+    (a bare count, unitless, with no cost attached) -- a coordinator
+    reading both together sees the causal chain, then decides, still
+    advisory."""
+    lines: list[str] = [
+        _forkserver_rss_headline(
+            forkserver_count_, forkserver_rss_kb, concurrent_checks
+        )
+    ]
     contradiction = _forkserver_contradiction_line(
         orphaned_forkservers, stale_forkservers, forkserver_swap_kb
     )
@@ -4083,7 +4276,11 @@ def _forkserver_status_lines(
     if concurrent_checks is None:
         lines.append("CONCURRENT CHECKS: unknown (/proc unreadable)")
     else:
-        lines.append(f"CONCURRENT CHECKS: {concurrent_checks} (T-2473, advisory)")
+        lines.append(
+            f"CONCURRENT CHECKS: {concurrent_checks} (T-2473/T-3407, "
+            "advisory, not a hard cap -- see FORKSERVER RSS above for "
+            "this number's own memory cost)"
+        )
     return lines
 
 
@@ -4119,9 +4316,13 @@ def _print_land_status() -> None:
     running" precondition needs that exact reading, not a re-measured
     one) alongside `forkserver_swap_held_kb` -- three separate forkserver
     numbers (orphaned/stale/swap-held), never collapsed into one, per the
-    ticket's own explicit requirement. ARCH103 (T-2172 precedent): all
-    formatting/branching lives in `_land_status_lines`; this function only
-    gathers inputs and prints."""
+    ticket's own explicit requirement. T-3407: also computes `forkserver_
+    count`/`forkserver_rss_held_kb` and passes them through so the
+    forkserver section's leading `FORKSERVER RSS` headline (`_forkserver_
+    rss_headline`) can attribute the aggregate to concurrent checks --
+    see that function's own docstring for the advisory-vs-cap reasoning.
+    ARCH103 (T-2172 precedent): all formatting/branching lives in
+    `_land_status_lines`; this function only gathers inputs and prints."""
     invocations = land_invocations()
     holder_pids = land_lock_holder_pids(REPO)
     lock_path = REPO / ".frob" / "land.lock"
@@ -4144,6 +4345,8 @@ def _print_land_status() -> None:
         forkserver_swap_held_kb(),
         true_holder_determinable,
         true_holder_pid,
+        forkserver_count(),
+        forkserver_rss_held_kb(),
     ):
         print(line)
 
