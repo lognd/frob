@@ -2,7 +2,7 @@
 id: T-3450
 title: 'SYS100 undeclared capability: tests/unit/test_check_admission.py exec sites
   missing from testsuite via-list'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-29'
