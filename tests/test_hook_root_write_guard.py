@@ -623,3 +623,155 @@ def test_env_var_alone_still_works_when_genuinely_inherited(tmp_path):
         env={"FROB_COORDINATOR": "1"},
     )
     assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3421
+def test_bash_quoted_redirect_text_is_allowed(tmp_path):
+    """MUST-STAY-QUIET (T-3421): a numeric comparison operator inside
+    SINGLE quotes -- the minimal positive control T-3421 measured (`echo
+    'x > y'`) -- is allowed. The quoted `>` is part of a literal word
+    token once tokenized, never a separate redirect operator token."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="echo 'x > y'",
+        env={},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3421
+def test_bash_double_quoted_redirect_text_is_allowed(tmp_path):
+    """MUST-STAY-QUIET (T-3421): the same character sequence inside DOUBLE
+    quotes is allowed too -- both quoting styles must resolve to a literal
+    word token, not just single quotes."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command='echo "x > y"',
+        env={},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3421
+def test_bash_heredoc_body_mentioning_redirect_is_allowed(tmp_path):
+    """MUST-STAY-QUIET (T-3421): a heredoc BODY that merely quotes an
+    example redirect -- T-3421's own sharpest incident, case 4, a ticket
+    body about this very bug refused for describing it -- is allowed. The
+    heredoc body is blanked before tokenizing, so its own `>` is never
+    seen as an operator token at all."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    command = (
+        "cat > /tmp/example-not-checkout.md <<'EOF'\n"
+        "the guard refused an echo of a quoted redirect example\n"
+        "EOF\n"
+    )
+    result = _run_bash_hook(cwd=primary, command=command, env={})
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3421
+def test_bash_fd_duplication_redirect_is_allowed(tmp_path):
+    """MUST-STAY-QUIET (T-3421): a file-descriptor redirect (`2>&1`) is
+    allowed -- the fd-dup operator token (`>&`) never yields a filesystem
+    write-target candidate, even though it sits right next to a real `>`-
+    shaped substring."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="some-command 2>&1 | cat",
+        env={},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3421
+def test_bash_truncating_redirect_into_checkout_is_still_refused(tmp_path):
+    """MUST-FIRE (T-3421): a genuine `>` redirect into the checkout is
+    still refused after tokenizing -- the primary acceptance criterion,
+    proving the fix did not also let real writes through."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="echo hi > notes.txt",
+        env={},
+    )
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3421
+def test_bash_appending_redirect_into_checkout_is_still_refused(tmp_path):
+    """MUST-FIRE (T-3421): an appending `>>` redirect into the checkout is
+    still refused."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="echo hi >> notes.txt",
+        env={},
+    )
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3421
+def test_bash_variable_redirect_target_into_checkout_is_still_refused(tmp_path):
+    """MUST-FIRE (T-3421): a redirect whose target comes from a variable
+    assigned earlier in the SAME command, to a path inside the checkout,
+    is still refused -- `_resolve_var_ref` traces the simple straight-
+    line assignment."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="TARGET=notes.txt; echo hi > $TARGET",
+        env={},
+    )
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3421
+def test_bash_tee_into_checkout_is_still_refused(tmp_path):
+    """MUST-FIRE (T-3421): `tee` writing into the checkout is still
+    refused, tokenized the same way redirects are."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="echo hi | tee notes.txt",
+        env={},
+    )
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3421
+def test_bash_heredoc_redirected_into_checkout_is_still_refused(tmp_path):
+    """MUST-FIRE (T-3421): a heredoc redirected INTO a checkout path is
+    still refused -- the heredoc BODY is blanked (never a real write
+    target), but the `cat > notes.txt` operator/target pair right before
+    it is a real, untouched token pair the walk still sees."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    command = "cat > notes.txt <<'EOF'\nhello\nEOF\n"
+    result = _run_bash_hook(cwd=primary, command=command, env={})
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3421
+def test_bash_relative_redirect_into_checkout_is_still_refused(tmp_path):
+    """MUST-FIRE (T-3421): a relative-path redirect that resolves into the
+    checkout (via a nested subdirectory) is still refused."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    (primary / "sub").mkdir()
+    result = _run_bash_hook(
+        cwd=primary,
+        command="echo hi > sub/notes.txt",
+        env={},
+    )
+    assert _denial_reason(result) is not None

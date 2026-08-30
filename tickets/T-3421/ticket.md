@@ -2,7 +2,7 @@
 id: T-3421
 title: root-write guard matches redirects lexically, refusing read-only commands and
   any text that merely mentions a redirect
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -41,6 +41,17 @@ scope_changes:
     fix and its fixtures
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/test_hook_root_write_guard.py::test_bash_quoted_redirect_text_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_double_quoted_redirect_text_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_heredoc_body_mentioning_redirect_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_fd_duplication_redirect_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_truncating_redirect_into_checkout_is_still_refused
+- tests/test_hook_root_write_guard.py::test_bash_appending_redirect_into_checkout_is_still_refused
+- tests/test_hook_root_write_guard.py::test_bash_variable_redirect_target_into_checkout_is_still_refused
+- tests/test_hook_root_write_guard.py::test_bash_tee_into_checkout_is_still_refused
+- tests/test_hook_root_write_guard.py::test_bash_heredoc_redirected_into_checkout_is_still_refused
+- tests/test_hook_root_write_guard.py::test_bash_relative_redirect_into_checkout_is_still_refused
 designated_repro_test: null
 threat: null
 component: null

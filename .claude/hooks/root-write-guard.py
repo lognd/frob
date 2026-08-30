@@ -109,6 +109,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 
@@ -218,15 +219,146 @@ _TICKET_VERB_RE = re.compile(
 _LEADING_CD_RE = re.compile(r"^\s*cd\s+(\"[^\"]+\"|'[^']+'|\S+)\s*(?:&&|;)")
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
-# frob:ticket T-2481
-#: T-2481: redirect/in-place-edit targets this hook is willing to infer --
-#: deliberately narrow (see module docstring). Each pattern captures ONE
-#: candidate target path in group 1.
-_REDIRECT_TARGET_RES = (
-    re.compile(r">>?\s*(\"[^\"]+\"|'[^']+'|[^\s;&|><]+)"),
-    re.compile(r"\btee\b(?:\s+-a)?\s+(\"[^\"]+\"|'[^']+'|[^\s;&|><]+)"),
-    re.compile(r"\bsed\s+-i\S*\s+.*?\s(\"[^\"]+\"|'[^']+'|[^\s;&|><]+)\s*$"),
-)
+# frob:ticket T-3421
+#: T-3421: heredoc BODY text is data the shell never executes -- blanked
+#: to a space before tokenizing so an unquoted `>`/`>>` inside a heredoc
+#: body (e.g. a Python heredoc printing example shell syntax) can never
+#: be mistaken for a real redirect operator token. Mirrors the identical
+#: heredoc alternative in `_shellscan._QUOTED`, applied here because this
+#: module's own tokenizer (unlike `_shellscan.strip_quoted`) must keep
+#: quote characters' CONTENT intact, not blank it -- see `_shell_tokens`.
+_HEREDOC_BODY_RE = re.compile(r"<<-?\s*'?(\w+)'?.*?^\1\b", re.S | re.M)
+
+#: T-3421: real filesystem-write redirect operators, as TOKENS (never raw
+#: text) -- the next token is the candidate write target.
+_WRITE_REDIRECT_OPS = frozenset({">", ">>", "&>", "&>>"})
+#: T-3421: file-descriptor-duplication operators (`cmd 2>&1`, `cmd >&2`) --
+#: NEVER a filesystem write; shlex separates the leading fd digit (if any)
+#: from this operator, so this check does not need to see it.
+_FD_DUP_REDIRECT_OPS = frozenset({">&"})
+
+#: T-3421: a simple `NAME=value` assignment token, so a later `$NAME`/
+#: `${NAME}` redirect target can be resolved against it -- the "redirect
+#: whose target comes from a variable" must-fire fixture. One level only,
+#: no recursive/command-substitution expansion attempted.
+_VAR_ASSIGN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)=(.*)$", re.S)
+_VAR_REF_RE = re.compile(r"^\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?$")
+
+
+# frob:doc docs/guides/claude-hooks.md#root-write-guardpy
+# frob:ticket T-3421
+def _shell_tokens(command: str) -> list[str] | None:
+    """`command` split into shell tokens via `shlex` (POSIX quoting rules,
+    `punctuation_chars=True` so `>`/`>>`/`&>`/`;`/`|`/`&`/`(`/`)` are their
+    own tokens whenever the shell would treat them as operators) -- the
+    actual fix this ticket is about. A character sequence that LOOKS like
+    a redirect but sits inside a quoted string or a heredoc body is,
+    after `shlex`, just part of an ordinary word token, never a separate
+    operator token -- so the walk below only ever sees redirects the
+    shell itself would parse as redirects. Heredoc bodies are blanked
+    first (`_HEREDOC_BODY_RE`): `shlex` has no concept of heredoc syntax,
+    so without this a body's own unquoted `>` would still misparse as a
+    real operator. Returns `None` on anything `shlex` cannot tokenize at
+    all (unbalanced quotes) -- ambiguous, so callers must allow rather
+    than guess, same posture as `_unambiguous_target`."""
+    without_heredocs = _HEREDOC_BODY_RE.sub(" ", command)
+    lexer = shlex.shlex(without_heredocs, posix=True, punctuation_chars=True)
+    lexer.whitespace_split = True
+    try:
+        return list(lexer)
+    except ValueError:
+        return None
+
+
+# frob:doc docs/guides/claude-hooks.md#root-write-guardpy
+# frob:ticket T-3421
+def _simple_var_assignments(tokens: list[str]) -> dict[str, str]:
+    """Every `NAME=value`-shaped token in `tokens`, as a `{NAME: value}`
+    map -- the last assignment to a given name wins, matching shell
+    semantics for straight-line (non-branching) assignment sequences."""
+    assignments: dict[str, str] = {}
+    for token in tokens:
+        match = _VAR_ASSIGN_RE.match(token)
+        if match:
+            assignments[match.group(1)] = match.group(2)
+    return assignments
+
+
+# frob:doc docs/guides/claude-hooks.md#root-write-guardpy
+# frob:ticket T-3421
+def _resolve_var_ref(raw_target: str, assignments: dict[str, str]) -> str:
+    """`raw_target` unchanged, UNLESS it is exactly a `$NAME`/`${NAME}`
+    reference to a name `assignments` actually captured earlier in the
+    SAME command -- then the assigned value, substituted once. A `$NAME`
+    with no matching assignment (an inherited/ambient env var) is left
+    as-is, so it still falls through to `_unambiguous_target`'s existing
+    `$`-is-ambiguous-so-allow rule -- this only ever ADDS detection for a
+    same-command traced value, never removes the existing fail-safe."""
+    match = _VAR_REF_RE.match(raw_target)
+    if not match:
+        return raw_target
+    return assignments.get(match.group(1), raw_target)
+
+
+#: T-3421: tokens that start a new pipeline segment -- used to find
+#: `tee`/`sed -i`'s COMMAND-POSITION token, mirroring `_shellscan.POS`'s
+#: connector set (this module cannot import that hook-local module
+#: across the two hooks' separate materialized copies, so the equivalent
+#: connector set is declared locally here instead).
+_SEGMENT_CONNECTORS = frozenset({";", "&&", "||", "&", "|", "(", ")"})
+
+
+# frob:doc docs/guides/claude-hooks.md#root-write-guardpy
+# frob:ticket T-3421
+def _segments(tokens: list[str]) -> list[list[str]]:
+    """`tokens` split into pipeline segments at `_SEGMENT_CONNECTORS`
+    tokens (the connectors themselves dropped) -- each segment is one
+    simple command's own token run, the unit `tee`/`sed -i` detection
+    below reasons about."""
+    segments: list[list[str]] = [[]]
+    for token in tokens:
+        if token in _SEGMENT_CONNECTORS:
+            segments.append([])
+        else:
+            segments[-1].append(token)
+    return [seg for seg in segments if seg]
+
+
+# frob:doc docs/guides/claude-hooks.md#root-write-guardpy
+# frob:ticket T-3421
+def _redirect_targets(tokens: list[str]) -> list[str]:
+    """Every candidate write-target TOKEN in `tokens`: the argument right
+    after a `>`/`>>`/`&>`/`&>>` operator token (never after a `>&` fd-dup
+    operator, and never when the following token itself starts with `&`
+    -- a fd-duplication target, not a path), plus `tee`'s non-flag
+    argument(s) and `sed -i`'s last non-flag argument, each found in
+    COMMAND POSITION within one pipeline segment (`_segments`). Scans
+    EVERY occurrence, not just the first -- a command with two redirects
+    must not let an early, harmless one hide a later one that targets the
+    checkout."""
+    targets: list[str] = []
+    for i, token in enumerate(tokens):
+        if token in _FD_DUP_REDIRECT_OPS:
+            continue
+        if token in _WRITE_REDIRECT_OPS and i + 1 < len(tokens):
+            candidate = tokens[i + 1]
+            if not candidate.startswith("&"):
+                targets.append(candidate)
+    for segment in _segments(tokens):
+        if not segment:
+            continue
+        head = segment[0]
+        if head == "tee":
+            for arg in segment[1:]:
+                if not arg.startswith("-"):
+                    targets.append(arg)
+        elif head == "sed" and any(
+            flag == "-i" or flag.startswith("-i") for flag in segment[1:]
+        ):
+            non_flags = [arg for arg in segment[1:] if not arg.startswith("-")]
+            if non_flags:
+                targets.append(non_flags[-1])
+    return targets
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
@@ -512,15 +644,28 @@ def _bash_ticket_verb_targets_root(
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
+# frob:ticket T-3421
 def _bash_redirect_targets_root(
     command: str, effective_cwd: str, primary_real: str, worktree_reals: list[str]
 ) -> bool:
-    """Shape 2: a `>`/`>>`/`tee`/`sed -i` whose FIRST matched target
-    resolves under the primary checkout (`_resolves_under_primary`)."""
-    for pattern in _REDIRECT_TARGET_RES:
-        match = pattern.search(command)
-        if match and _resolves_under_primary(
-            match.group(1), effective_cwd, primary_real, worktree_reals
+    """Shape 2: a `>`/`>>`/`&>`/`&>>`/`tee`/`sed -i` whose target resolves
+    under the primary checkout. T-3421: tokenized (`_shell_tokens`), not
+    matched against raw text -- a redirect-looking character sequence
+    inside a quoted string or a heredoc body is never a token the walk in
+    `_redirect_targets` can see, so it can no longer trip this shape the
+    way the pre-fix regex scan did. `command` failing to tokenize at all
+    (`_shell_tokens` returns `None`, e.g. unbalanced quoting) is
+    ambiguous -- allow, never guess. Checks EVERY candidate target, not
+    just the first, so an early harmless redirect can never mask a later
+    one that targets the checkout."""
+    tokens = _shell_tokens(command)
+    if tokens is None:
+        return False
+    assignments = _simple_var_assignments(tokens)
+    for raw_target in _redirect_targets(tokens):
+        resolved_target = _resolve_var_ref(raw_target, assignments)
+        if _resolves_under_primary(
+            resolved_target, effective_cwd, primary_real, worktree_reals
         ):
             return True
     return False

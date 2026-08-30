@@ -656,6 +656,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3414: DOC011: stale T-draft-ad5e921b citation in docs/modules/tickets.md
 - T-3416: Update design/frob.strata SYS100 fs.read capability for process/_reap split (T-3396)
 - T-3420: coverage-instrumented pytest deadlocks in its own SIGTERM handler and survives timeout: likely cause of the CI and macOS hangs
+- T-3421: root-write guard matches redirects lexically, refusing read-only commands and any text that merely mentions a redirect
 - T-3423: test_parses_and_elaborates freezes model counts by hand and has now drifted a fourth time; its docstring records the prior three
 - T-3424: T-3260's vmodel split changed the FFI edge payload shape: edges gained an attrs field, breaking the round-trip assertion
 - T-3425: CI: windows-latest job is advisory (continue-on-error) until the T-3076 Windows-only failure set is drained
