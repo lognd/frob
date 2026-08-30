@@ -606,7 +606,6 @@ class TestVetHookSuppressesStartupWarnings:
     interactive `frob vet` (or any other subcommand) must still get them
     unchanged."""
 
-    # frob:tests tests/unit/test_main_entry.py::TestVetHookSuppressesStartupWarnings::test_vet_hook_suppresses_startup_warnings  # noqa: E501
     def test_vet_hook_suppresses_startup_warnings(self, monkeypatch) -> None:
         """MUST-FIRE: `vet --hook ...` never calls
         `_print_startup_warnings`."""
@@ -621,7 +620,6 @@ class TestVetHookSuppressesStartupWarnings:
         main_module._dispatch(["vet", ".", "--hook", "git status"])
         assert calls == []
 
-    # frob:tests tests/unit/test_main_entry.py::TestVetHookSuppressesStartupWarnings::test_vet_without_hook_still_warns  # noqa: E501
     def test_vet_without_hook_still_warns(self, monkeypatch) -> None:
         """MUST-STAY-QUIET (i.e. the suppression must not over-fire): a
         plain interactive `frob vet` (no `--hook`) still calls
