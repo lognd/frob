@@ -116,7 +116,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6ffa815cf2dfa7a16e4910d55d35ccfee56876e6
 ---
 Add CUDA to frob's supported languages, meeting the full adapter contract defined by the contract ticket -- not merely parsing.
 
