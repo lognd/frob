@@ -60,3 +60,6 @@ MUST-STAY-QUIET
 
 SCOPE GROUPING: scope-disjoint from the fcntl, AF_UNIX, fork-context
 and charmap leaves -- dispatchable in parallel with all four.
+
+## Failure log
+- 2026-08-30 attempt 1: already resolved on main: _read_uptime_and_clk_tck already guards os.sysconf with sys.platform != win32, Windows takes the 100-tick fallback directly, AttributeError cannot occur. No code change needed.
