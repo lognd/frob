@@ -18,6 +18,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - frob-ratchet.lock.json
 - docs/design/registry/capability-via-ratchet.lock.json
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +46,12 @@ scope_changes:
     T-3447's own diff never edits this file, only docs/design/registry/capability-via-ratchet.lock.json,
     so releasing is safe -- T-3447 will re-verify with the shared node id directly
     at land time without needing to hold a write lease on it
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: design/frob.strata
+  reason: T-3450 landed and released the lease -- restoring for re-measuring the SYS111
+    ratchet counts, which shifted after T-3450's own via-list addition
   actor: logan
   at: '2026-08-29'
 body_changes:
