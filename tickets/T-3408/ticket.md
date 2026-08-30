@@ -52,7 +52,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fcd61039d608373ae5d8138ed4bb0532653c62c2
 ---
 `sync-claude-config.py`, run from inside an agent worktree, overwrites the
 SHARED global `~/.claude/` copies with that worktree's version -- silently
