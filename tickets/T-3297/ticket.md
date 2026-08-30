@@ -2,7 +2,7 @@
 id: T-3297
 title: Missing merge driver for frob-managed ledger files causes MergeConflict at
   land
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -38,6 +38,13 @@ scope_changes:
     in _merge_driver, per the ticket's own MUST-FIRE/MUST-STAY-QUIET fixture requirements
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch::test_single_ticket_file_conflict_resolves_by_state_precedence_must_fire
+- tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch::test_single_ticket_file_dropped_beats_queued_must_fire
+- tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch::test_coverage_lock_shaped_conflict_merges_elementwise_max
+- tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch::test_whole_ledger_shape_still_falls_back_to_splice_ledger_must_stay_quiet
+- tests/test_ticket_merge_driver.py::TestMergeDriverV2TicketFileViaRealGit::test_ordinary_land_with_no_divergence_merges_cleanly_must_stay_quiet
+- tests/test_ticket_merge_driver.py::TestMergeDriverV2TicketFileViaRealGit::test_diverged_ticket_state_merges_cleanly_via_registered_driver
 designated_repro_test: null
 threat: null
 component: null

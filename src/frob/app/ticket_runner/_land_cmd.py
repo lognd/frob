@@ -6212,8 +6212,39 @@ def _merge_driver(root: Path, cfg: AppConfig) -> None:
     defect this closes (a ticket archived on `main` after a worktree
     branched used to get resurrected into `tickets.md` on the worktree's
     next `git merge main`, because the disk read could never see the
-    new archive content mid-merge)."""
+    new archive content mid-merge).
+
+    T-3297: this SAME driver (one `merge=frob-ledger` .gitattributes name,
+    one `merge.frob-ledger.driver` git config entry) is now also
+    registered for `tickets/<id>/ticket.md` (v2 per-ticket files) and
+    `frob-coverage.lock.json`, closing the gap where neither had ANY
+    merge driver registered at all and a genuine divergence on either
+    (F-038/F-045-first) fell through to git's raw textual 3-way merge,
+    which cannot resolve them and can commit literal conflict markers
+    into `ticket.md` if a caller blindly `git add -A`s past the failure.
+    Git's merge-driver protocol hands this %O/%A/%B temp files, never the
+    real path, so dispatch is by CONTENT SHAPE, tried in order, each
+    independent of the others:
+      1. `frob-coverage.lock.json`'s JSON shape (`_merged_lock_doc`,
+         reusing the exact T-1434 elementwise-max-per-module merge `land`'s
+         own internal out-of-scope conflict resolution already applies --
+         never a textual merge, since both sides having re-stamped it is
+         normal and neither's raw numbers should just replace the other's).
+      2. A single ticket's frontmatter+body shape (`_parse_ticket_text`,
+         the same parser a v2 `tickets/<id>/ticket.md` blob already uses
+         elsewhere in this module) on BOTH sides -- resolved by the same
+         LEDGER STATE PRECEDENCE the whole-ledger splice below already
+         uses per-ticket (`_newer`: done/dropped beats queued/in-progress,
+         a state transition is monotonic), covering exactly the F-038
+         shape (a sibling ticket genuinely dropped on one side, still
+         queued on the other) without guessing "ours"/"theirs" blindly.
+      3. Neither: falls through to the existing whole-ledger `splice_
+         ledger` path below, unchanged -- the legacy v1 monofile
+         `tickets.md` shape this driver originally targeted."""
     from frob.tickets import splice_ledger
+    from frob.tickets._land_git_ops import _merged_lock_doc
+    from frob.tickets._land_ledger_merge import _newer
+    from frob.tickets._store import _parse_ticket_text, _serialize_ticket
 
     _require_merge_driver_args(cfg)
     assert cfg.ticket_merge_ours is not None  # narrows for the type checker
@@ -6235,6 +6266,36 @@ def _merge_driver(root: Path, cfg: AppConfig) -> None:
         )
         base_text = None
 
+    # T-3297 dispatch step 1: frob-coverage.lock.json's JSON shape.
+    coverage_merged = _merged_lock_doc(ours_text, theirs_text)
+    if coverage_merged is not None:
+        ours_path.write_text(
+            json.dumps(coverage_merged, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        _log.info(
+            "ticket merge-driver: merged a frob-coverage.lock.json-shaped "
+            "conflict via the T-1434 elementwise-max merge (%s + %s -> %s)",
+            ours_path,
+            theirs_path,
+            ours_path,
+        )
+        return
+
+    # T-3297 dispatch step 2: a single tickets/<id>/ticket.md's shape.
+    ours_ticket = _parse_ticket_text(ours_text, "ours")
+    theirs_ticket = _parse_ticket_text(theirs_text, "theirs")
+    if ours_ticket.is_ok and theirs_ticket.is_ok:
+        winner = _newer(ours_ticket.danger_ok, theirs_ticket.danger_ok)
+        ours_path.write_text(_serialize_ticket(winner), encoding="utf-8")
+        _log.info(
+            "ticket merge-driver: resolved a single-ticket-file conflict "
+            "by state precedence (winner=%s, T-3297) -- never a textual merge",
+            winner.state.value,
+        )
+        return
+
+    # T-3297 dispatch step 3 (fallback): the legacy whole-ledger shape.
     spliced = splice_ledger(
         ours_text,
         theirs_text,

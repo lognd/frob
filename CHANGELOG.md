@@ -608,6 +608,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3288: frob ticket land --finish DELETED a worktree without merging: the T-2108 shortcut trusts main's ledger state instead of branch ancestry
 - T-3295: A waiver whose reason promises follow-up is debt, ticket or not: the discriminator already exists and WAIVE009 wires it to the wrong conclusion (2656 waive vs 124 debt)
 - T-3296: frob-coverage.lock.json scope-lease deadlock blocks TEST006 for every ticket but one
+- T-3297: Missing merge driver for frob-managed ledger files causes MergeConflict at land
 - T-3298: SCOPE001 has no exemption for paths frob itself writes as a side effect
 - T-3301: PRE001/TEST006 gate-cache staleness survives sweep; REPLAY annotation may break gate-summary parse
 - T-3303: frob ticket show auto-commits: NOT_TICKET_SCOPED verbs fall through to the generic commit path when ticket_id is set

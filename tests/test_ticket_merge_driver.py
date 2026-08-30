@@ -530,3 +530,313 @@ class TestMergeDriverViaRealGit:
         # purely to get a real MERGE_HEAD -- never leave it dangling for
         # git's own working-tree assertions elsewhere in this test class.
         subprocess.run(["git", "merge", "--abort"], cwd=str(repo), capture_output=True)
+
+
+# frob:ticket T-3297
+class TestMergeDriverContentShapeDispatch:
+    """T-3297: `_merge_driver` is now ALSO registered (via `.gitattributes`,
+    see that file's own T-3297 note) for `tickets/<id>/ticket.md` (v2
+    per-ticket files) and `frob-coverage.lock.json`, neither of which had
+    any merge driver before -- git's raw textual 3-way merge cannot
+    resolve either shape and, per the reported incident, can commit
+    literal conflict markers into `ticket.md`. Since git's merge-driver
+    protocol hands `_merge_driver` %O/%A/%B temp files, never the real
+    path, dispatch is by CONTENT SHAPE -- these tests exercise that
+    dispatch directly against synthetic files, no git subprocess."""
+
+    # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch.test_single_ticket_file_conflict_resolves_by_state_precedence_must_fire  # noqa: E501
+    def test_single_ticket_file_conflict_resolves_by_state_precedence_must_fire(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE fixture (the ticket's own acceptance test): two
+        branches each independently mutated the SAME ticket's state -- one
+        to `done`, one still `in-progress` -- merged through the driver.
+        The result must be the terminal (`done`) state, never conflict
+        markers written into the committed file."""
+        from frob.tickets._store import _parse_ticket_text, _serialize_ticket
+
+        root = tmp_path / "root"
+        root.mkdir()
+        created = new_ticket(root, _spec("Racing ticket"))
+        assert created.is_ok
+        ticket = created.danger_ok
+
+        in_progress = ticket.model_copy(update={"state": TicketState.IN_PROGRESS})
+        done = ticket.model_copy(
+            update={
+                "state": TicketState.DONE,
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+            }
+        )
+
+        base = tmp_path / "base.md"
+        ours = tmp_path / "ours.md"
+        theirs = tmp_path / "theirs.md"
+        base.write_text(_serialize_ticket(ticket))
+        ours.write_text(_serialize_ticket(in_progress))
+        theirs.write_text(_serialize_ticket(done))
+
+        _merge_driver(root, _cfg(base, ours, theirs, path=root))
+
+        result_text = ours.read_text()
+        assert "<<<<<<<" not in result_text and ">>>>>>>" not in result_text, (
+            "conflict markers were written into the merged ticket file -- "
+            "exactly the incident this ticket exists to prevent"
+        )
+        resolved = _parse_ticket_text(result_text, "merged")
+        assert resolved.is_ok, f"merged ticket file failed to re-parse: {result_text!r}"
+        assert resolved.danger_ok.state == TicketState.DONE, (
+            "terminal state (done) must win over in-progress regardless of "
+            "which side is 'ours'/'theirs' -- got "
+            f"{resolved.danger_ok.state!r}"
+        )
+
+    # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch.test_single_ticket_file_dropped_beats_queued_must_fire  # noqa: E501
+    def test_single_ticket_file_dropped_beats_queued_must_fire(
+        self, tmp_path: Path
+    ) -> None:
+        """F-038's exact reported shape: a ticket filed from a worktree
+        (still `queued` there) and dropped on main -- merged through the
+        driver, `dropped` (terminal) must win, never a conflict."""
+        from frob.tickets._store import _parse_ticket_text, _serialize_ticket
+
+        root = tmp_path / "root"
+        root.mkdir()
+        created = new_ticket(root, _spec("Out-of-scope discovery"))
+        assert created.is_ok
+        ticket = created.danger_ok
+        dropped = ticket.model_copy(update={"state": TicketState.DROPPED})
+
+        base = tmp_path / "base.md"
+        ours = tmp_path / "ours.md"
+        theirs = tmp_path / "theirs.md"
+        base.write_text(_serialize_ticket(ticket))
+        ours.write_text(_serialize_ticket(ticket))  # worktree: still queued
+        theirs.write_text(_serialize_ticket(dropped))  # main: dropped
+
+        _merge_driver(root, _cfg(base, ours, theirs, path=root))
+
+        result_text = ours.read_text()
+        assert "<<<<<<<" not in result_text
+        resolved = _parse_ticket_text(result_text, "merged")
+        assert resolved.is_ok
+        assert resolved.danger_ok.state == TicketState.DROPPED
+
+    # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch.test_coverage_lock_shaped_conflict_merges_elementwise_max  # noqa: E501
+    def test_coverage_lock_shaped_conflict_merges_elementwise_max(
+        self, tmp_path: Path
+    ) -> None:
+        """`frob-coverage.lock.json`'s JSON shape is recognized and merged
+        via the T-1434 elementwise-max-per-module strategy, never a
+        textual merge that could silently drop one side's freshly stamped
+        numbers."""
+        import json
+
+        root = tmp_path / "root"
+        root.mkdir()
+
+        base = tmp_path / "base.json"
+        ours = tmp_path / "ours.json"
+        theirs = tmp_path / "theirs.json"
+        base.write_text(
+            json.dumps({"source_sha": "base", "module_line": {"a": 50.0}})
+        )
+        ours.write_text(
+            json.dumps(
+                {"source_sha": "ours", "module_line": {"a": 60.0, "b": 40.0}}
+            )
+        )
+        theirs.write_text(
+            json.dumps(
+                {"source_sha": "theirs", "module_line": {"a": 55.0, "b": 70.0}}
+            )
+        )
+
+        _merge_driver(root, _cfg(base, ours, theirs, path=root))
+
+        merged = json.loads(ours.read_text())
+        assert merged["module_line"] == {"a": 60.0, "b": 70.0}, (
+            "expected the higher of both sides' per-module percentage, "
+            f"got {merged['module_line']!r}"
+        )
+
+    # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverContentShapeDispatch.test_whole_ledger_shape_still_falls_back_to_splice_ledger_must_stay_quiet  # noqa: E501
+    def test_whole_ledger_shape_still_falls_back_to_splice_ledger_must_stay_quiet(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET (regression guard): the legacy whole-ledger
+        `tickets.md` shape -- neither a single ticket file nor a
+        coverage-lock JSON doc -- must still route through the ORIGINAL
+        `splice_ledger` path unchanged; the new content-shape dispatch
+        added by T-3297 must not intercept or otherwise disturb it."""
+        root = tmp_path / "root"
+        root.mkdir()
+        atomic_write(ledger_path(root), "# Tickets\n\n")
+
+        ours_created = new_ticket(root, _spec("Ours-side ticket"))
+        assert ours_created.is_ok
+        ours_text = ledger_path(root).read_text()
+
+        theirs_root = tmp_path / "theirs"
+        theirs_root.mkdir()
+        theirs_ticket = ours_created.danger_ok.model_copy(
+            update={"id": "T-0002", "title": "Theirs-side ticket"}
+        )
+        atomic_write(ledger_path(theirs_root), "# Tickets\n\n")
+        assert write_ticket(theirs_root, theirs_ticket).is_ok
+        theirs_text = ledger_path(theirs_root).read_text()
+
+        base = tmp_path / "base.md"
+        ours = tmp_path / "ours.md"
+        theirs = tmp_path / "theirs.md"
+        base.write_text("# Tickets\n\n")
+        ours.write_text(ours_text)
+        theirs.write_text(theirs_text)
+
+        _merge_driver(root, _cfg(base, ours, theirs, path=root))
+
+        result_text = ours.read_text()
+        assert "Ours-side ticket" in result_text
+        assert "Theirs-side ticket" in result_text
+
+
+# frob:ticket T-3297
+class TestMergeDriverV2TicketFileViaRealGit:
+    """T-3297 end-to-end: real `git merge` exercising the NEW
+    `tickets/*/ticket.md merge=frob-ledger` and `frob-coverage.lock.json
+    merge=frob-ledger` `.gitattributes` registrations this ticket adds --
+    without them, git never even invokes the driver for these paths, no
+    matter how correct its content-shape dispatch is."""
+
+    @pytest.fixture
+    def v2_repo(self, tmp_path: Path) -> tuple[Path, str]:
+        """A main checkout with BOTH the v1 `tickets.md` line (existing,
+        unrelated to this ticket) and the new v2/coverage-lock lines
+        registered, one shared `merge.frob-ledger.driver` git config
+        entry (matching the real `.gitattributes` this ticket adds)."""
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        (main_repo / ".gitignore").write_text(".frob/\n.coverage*\n")
+        (main_repo / ".gitattributes").write_text(
+            "tickets/*/ticket.md merge=frob-ledger\n"
+            "frob-coverage.lock.json merge=frob-ledger\n"
+        )
+        _run(
+            ["git", "config", "merge.frob-ledger.name", "frob ticket ledger splice"],
+            main_repo,
+        )
+        _run(
+            [
+                "git",
+                "config",
+                "merge.frob-ledger.driver",
+                "uv run frob ticket merge-driver %O %A %B",
+            ],
+            main_repo,
+        )
+        from frob.tickets._store import _serialize_ticket
+
+        spec_created = new_ticket(main_repo, _spec("v2 ticket"), no_commit=True)
+        assert spec_created.is_ok
+        tid = spec_created.danger_ok.id
+        ticket_dir = main_repo / "tickets" / tid
+        ticket_dir.mkdir(parents=True, exist_ok=True)
+        (ticket_dir / "ticket.md").write_text(
+            _serialize_ticket(spec_created.danger_ok)
+        )
+        # T-0323/T-1758's `new_ticket` writes the v1 monofile by default;
+        # this fixture only needs a v2-shaped file on disk to register the
+        # NEW attribute against, so its own monofile write is harmless
+        # noise here -- remove it so this fixture is unambiguously v2-shaped.
+        if ledger_path(main_repo).exists():
+            ledger_path(main_repo).unlink()
+        _commit_all(main_repo, "init")
+        return main_repo, tid
+
+    # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverV2TicketFileViaRealGit.test_ordinary_land_with_no_divergence_merges_cleanly_must_stay_quiet  # noqa: E501
+    def test_ordinary_land_with_no_divergence_merges_cleanly_must_stay_quiet(
+        self, v2_repo: tuple[Path, str]
+    ) -> None:
+        """MUST-STAY-QUIET fixture (the ticket's own acceptance test): an
+        ordinary land where the v2 ticket file did NOT diverge between
+        main and the worktree branch -- registering the new merge=
+        attribute must not introduce any new conflict, prompt, or content
+        change on this common path."""
+        repo, tid = v2_repo
+        _run(["git", "checkout", "-q", "-b", "feature"], repo)
+        (repo / "unrelated.txt").write_text("feature work\n")
+        _commit_all(repo, "feature: unrelated change")
+
+        _run(["git", "checkout", "-q", "main"], repo)
+        (repo / "other.txt").write_text("main work\n")
+        _commit_all(repo, "main: unrelated change")
+
+        merge = subprocess.run(
+            ["git", "merge", "-q", "--no-edit", "feature"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+        )
+        assert merge.returncode == 0, (
+            f"expected a clean merge with no divergence on the v2 ticket "
+            f"file: stdout={merge.stdout!r} stderr={merge.stderr!r}"
+        )
+        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+        assert (repo / "tickets" / tid / "ticket.md").exists()
+
+    # frob:tests tests/test_ticket_merge_driver.py::TestMergeDriverV2TicketFileViaRealGit.test_diverged_ticket_state_merges_cleanly_via_registered_driver  # noqa: E501
+    def test_diverged_ticket_state_merges_cleanly_via_registered_driver(
+        self, v2_repo: tuple[Path, str]
+    ) -> None:
+        """MUST-FIRE, end-to-end: with the `.gitattributes` registration
+        this ticket adds in place, a REAL `git merge` where both branches
+        mutated the same v2 ticket file's state resolves cleanly (no
+        conflict, no markers) via the driver's new dispatch, keeping the
+        terminal state."""
+        from frob.tickets._store import _parse_ticket_text
+
+        repo, tid = v2_repo
+        ticket_path = repo / "tickets" / tid / "ticket.md"
+
+        _run(["git", "checkout", "-q", "-b", "feature"], repo)
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        in_progress = loaded.danger_ok[tid].model_copy(
+            update={"state": TicketState.IN_PROGRESS}
+        )
+        from frob.tickets._store import _serialize_ticket
+
+        ticket_path.write_text(_serialize_ticket(in_progress))
+        _commit_all(repo, "feature: start work")
+
+        _run(["git", "checkout", "-q", "main"], repo)
+        done = loaded.danger_ok[tid].model_copy(
+            update={
+                "state": TicketState.DONE,
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": loaded.danger_ok[tid].body
+                + "\n## Done report\n\nevidence attached\n",
+            }
+        )
+        ticket_path.write_text(_serialize_ticket(done))
+        _commit_all(repo, "main: close it directly")
+
+        merge = subprocess.run(
+            ["git", "merge", "-q", "--no-edit", "feature"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+        )
+        assert merge.returncode == 0, (
+            f"expected the registered frob-ledger driver to auto-resolve "
+            f"the diverged ticket state, got a real conflict instead: "
+            f"stdout={merge.stdout!r} stderr={merge.stderr!r}"
+        )
+        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+
+        merged_text = ticket_path.read_text()
+        assert "<<<<<<<" not in merged_text and ">>>>>>>" not in merged_text
+        resolved = _parse_ticket_text(merged_text, "merged")
+        assert resolved.is_ok
+        assert resolved.danger_ok.state == TicketState.DONE

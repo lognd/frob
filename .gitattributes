@@ -82,3 +82,21 @@
 # attachments/T-1433/...) and must not regress.
 tickets/attachments/** -text
 tickets/*/attachments/** -text
+
+# T-3297: neither `tickets/<id>/ticket.md` (v2 per-ticket files) nor
+# `frob-coverage.lock.json` was ever registered to ANY merge driver here --
+# the v1 monofile `tickets.md merge=frob-ledger` line was retired at the
+# ledger-v2 cutover (see the T-1258/T-2356 note above), but no replacement
+# line was ever added for what replaced it, so a genuine divergence on
+# either file (main and a landing worktree both mutating the same ticket's
+# state, or both re-stamping the coverage lock) fell through to git's raw
+# textual 3-way merge -- which cannot resolve either shape and, per a real
+# incident report, can commit literal conflict markers into ticket.md if a
+# caller works around the refusal with a blind `git add -A`. The SAME
+# `merge.frob-ledger.driver` git config entry the retired tickets.md line
+# used already exists (docs/modules/tickets-merge-driver.md's one-time
+# per-clone setup) and its driver (`frob ticket merge-driver`) now
+# dispatches by content shape -- see that function's docstring -- so no
+# new git config registration is needed, only these two glob lines.
+tickets/*/ticket.md merge=frob-ledger
+frob-coverage.lock.json merge=frob-ledger
