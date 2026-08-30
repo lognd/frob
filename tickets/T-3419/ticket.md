@@ -14,10 +14,44 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_land_finish_idempotent.py
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: identity extraction (_error_finding_identity/_collect_error_findings) that
+    collapses SELFAUDIT001/off-file-anchored findings lives in _verify.py, not _rapid_sweep.py;
+    sweep consumes the already-collapsed tuple unchanged
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: identity extraction (_error_finding_identity/_collect_error_findings) that
+    collapses SELFAUDIT001/off-file-anchored findings lives in _verify.py, not _rapid_sweep.py;
+    sweep consumes the already-collapsed tuple unchanged
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_land_finish_idempotent.py
+  reason: identity extraction (_error_finding_identity/_collect_error_findings) that
+    collapses SELFAUDIT001/off-file-anchored findings lives in _verify.py, not _rapid_sweep.py;
+    sweep consumes the already-collapsed tuple unchanged
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: identity extraction (_error_finding_identity/_collect_error_findings) that
+    collapses SELFAUDIT001/off-file-anchored findings lives in _verify.py, not _rapid_sweep.py;
+    sweep consumes the already-collapsed tuple unchanged
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
