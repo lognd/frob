@@ -55,7 +55,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c7cb175d5312ed4348c3ec411c0f1c652d605b58
 ---
 T-3283 fixed 6 of T-3041's 13 live-repo self-conformance tests
 (test_sys_gate_zero_violations, test_repo_unrestricted_scan_is_clean,
