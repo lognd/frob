@@ -2,7 +2,7 @@
 id: T-3301
 title: PRE001/TEST006 gate-cache staleness survives sweep; REPLAY annotation may break
   gate-summary parse
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -45,7 +45,13 @@ scope_changes:
     Done report covers, not a separate scope'
   actor: logan
   at: '2026-08-29'
-designated_repro_test: null
+evidence:
+- tests/test_gate_cache.py::TestRunReplay::test_sweep_write_invalidates_a_ticket_scoped_replay
+- tests/test_gate_cache.py::TestRunReplay::test_unrelated_lookup_survives_unchanged
+- tests/test_gates.py::TestScopePrework::test_pre001_missing_sweep
+- tests/test_gates.py::TestScopePrework::test_pre001_stale_sweep
+- tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn::test_replay_annotated_summary_still_parses
+designated_repro_test: tests/test_gate_cache.py::TestRunReplay::test_sweep_write_invalidates_a_ticket_scoped_replay
 threat: null
 component: null
 anchor: false

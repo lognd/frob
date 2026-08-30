@@ -832,6 +832,99 @@ class TestRunReplay:
         )
         assert scoped is not None
 
+    # frob:ticket T-3301
+    def test_sweep_write_invalidates_a_ticket_scoped_replay(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE (T-3301, F-026/F-031/F-043/F-048): a ticket-scoped
+        replay stored while PRE001's own `.frob/prework/<id>.json` sweep
+        record is missing/stale must MISS once a fresh `frob ticket sweep
+        <id>` writes a NEW sweep record for that ticket -- even though
+        that write is gitignored and never touches `root_content_key`'s
+        tracked-file walk. Reproduced directly against the real CLI
+        before this fix: `scope --add` + `sweep` (both untracked-only
+        after the scope commit) followed by two `frob check --ticket
+        <id>` calls replayed the PRE-sweep PRE001 verdict on both.
+        frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay
+        frob:tests src/frob/gates/_gate_cache.py::store_gate_run_replay
+        frob:tests src/frob/gates/_gate_cache.py::_replay_fingerprint"""
+        from frob.gates._gate_cache import load_gate_run_replay, store_gate_run_replay
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        store_gate_run_replay(
+            tmp_path,
+            gates=frozenset(),
+            ticket="T-0001",
+            base=None,
+            delta=False,
+            results=self._fake_result(),
+        )
+        assert (
+            load_gate_run_replay(
+                tmp_path, gates=frozenset(), ticket="T-0001", base=None, delta=False
+            )
+            is not None
+        )
+        # The sweep write itself: gitignored, no tracked file touched.
+        prework_dir = tmp_path / ".frob" / "prework"
+        prework_dir.mkdir(parents=True)
+        (prework_dir / "T-0001.json").write_text('{"digest": "abc123"}')
+        assert (
+            load_gate_run_replay(
+                tmp_path, gates=frozenset(), ticket="T-0001", base=None, delta=False
+            )
+            is None
+        ), "a fresh sweep write must invalidate the stale ticket-scoped replay"
+        # An UNSCOPED lookup (never reads this ticket's sweep state) is
+        # unaffected -- proves the fold is per-ticket, not a blanket
+        # cache-buster that would blunt REPLAY for every other caller.
+        store_gate_run_replay(
+            tmp_path,
+            gates=frozenset(),
+            ticket=None,
+            base=None,
+            delta=False,
+            results=self._fake_result(),
+        )
+        assert (
+            load_gate_run_replay(
+                tmp_path, gates=frozenset(), ticket=None, base=None, delta=False
+            )
+            is not None
+        )
+
+    # frob:ticket T-3301
+    def test_unrelated_lookup_survives_unchanged(self, tmp_path: Path) -> None:
+        """MUST-STAY-QUIET (T-3301): a stored replay that is genuinely
+        still valid (no tracked edit, no coverage-stamp write, no sweep
+        write for THIS ticket) must keep replaying -- the T-3301 fold
+        must not blunt REPLAY into a permanent miss for the common,
+        nothing-changed case.
+        frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay
+        frob:tests src/frob/gates/_gate_cache.py::store_gate_run_replay"""
+        from frob.gates._gate_cache import load_gate_run_replay, store_gate_run_replay
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        store_gate_run_replay(
+            tmp_path,
+            gates=frozenset(),
+            ticket="T-0001",
+            base=None,
+            delta=False,
+            results=self._fake_result(),
+        )
+        first = load_gate_run_replay(
+            tmp_path, gates=frozenset(), ticket="T-0001", base=None, delta=False
+        )
+        second = load_gate_run_replay(
+            tmp_path, gates=frozenset(), ticket="T-0001", base=None, delta=False
+        )
+        assert first is not None
+        assert second is not None
+        assert [r.summary for r in first.results] == [r.summary for r in second.results]
+
 
 # frob:ticket T-2723
 class TestGateBuildFingerprint:

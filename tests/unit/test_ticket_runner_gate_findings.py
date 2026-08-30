@@ -656,6 +656,41 @@ class TestCheckGatesSummaryFn:
         errors, warnings, waived = result
         assert (errors, warnings, waived) == (1, 0, 0)
 
+    # frob:ticket T-3301
+    def test_replay_annotated_summary_still_parses(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn.test_replay_annotated_summary_still_parses  # noqa: E501
+        """MUST-STAY-QUIET (T-3301 BUG 1 re-measurement, F-026): a second
+        `frob check` on an unchanged tree prints a REPLAY-annotated
+        gate-summary line ("[REPLAY age=Ns, unchanged tree]  N errors, M
+        warnings, K unresolved, W waived  [...]") -- confirmed ALREADY
+        FIXED by T-2668's `_GATE_SUMMARY_COUNTS_ONLY_RE` split
+        (`.search()`, no leading anchor), so this closure must still
+        return a real measured count rather than treating the annotated
+        line as unparsable and refusing a subsequent `frob ticket close`
+        with OwnObligationsUnclean."""
+        replay_stdout = _check_result_json(
+            errors=(("gate:PRE", "PRE001", "tickets/T-0001"),),
+            gate_summary=(
+                "[REPLAY age=210.5s, unchanged tree]  1 errors, 0 warnings, "
+                "0 unresolved, 0 waived  [archgate=0.00s]"
+            ),
+        )
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            return _FakeProc(1, stdout=replay_stdout)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        fn = ticket_runner._check_gates_summary_fn(tmp_path, "T-0001")
+        result = fn()
+        assert result is not None, (
+            "a REPLAY-annotated gate-summary line must still parse -- an "
+            "unmeasured result here is exactly F-026's reported bug"
+        )
+        errors, warnings, waived = result
+        assert (errors, warnings, waived) == (1, 0, 0)
+
 
 class TestParseErrorFindingsFromJson:
     """T-1703: the highest-integrity fix in this file -- a truncated/

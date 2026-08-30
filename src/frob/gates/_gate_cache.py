@@ -897,23 +897,47 @@ def _replay_signature(
 
 # frob:ticket T-2585
 # frob:ticket T-2723
-def _replay_fingerprint(root: Path) -> str | None:
+def _replay_fingerprint(root: Path, *, ticket: str | None = None) -> str | None:
     """The tree state a stored replay is valid against (T-2585):
     `root_content_key` (T-1445, tracked-file content digest) folded with a
     digest of `.frob/baseline`'s own bytes, PLUS the running build's own
-    fingerprint (T-2723, `_gate_build_fingerprint`). `.frob/baseline` is
-    gitignored -- outside `root_content_key`'s `git ls-files` walk
-    entirely -- but `--delta` mode reads it directly (`_apply_delta`), so
-    a re-stamped baseline against an otherwise-unchanged tracked tree must
-    still invalidate a stored delta-mode replay; folding its digest in
-    here closes that gap without a second, independently-maintained key.
-    The build fingerprint closes a second, distinct gap T-2723 measured
-    directly: this whole-run replay cache is keyed purely on tree content
-    like the two per-gate caches above it, so an upgraded frob build with
-    no tree edit at all replayed a PRE-FIX verdict indefinitely -- see
-    `_gate_build_fingerprint`'s docstring for the incident. Returns `None`
-    (never replayable) whenever `root_content_key` itself is unavailable
-    -- an unverifiable tree state must never serve, or accept, a replay."""
+    fingerprint (T-2723, `_gate_build_fingerprint`), PLUS (T-3301) a
+    digest of `ticket`'s own gitignored derived state when this is a
+    `--ticket`-scoped signature, PLUS the gitignored coverage stamp's own
+    bytes unconditionally. `.frob/baseline` is gitignored -- outside
+    `root_content_key`'s `git ls-files` walk entirely -- but `--delta`
+    mode reads it directly (`_apply_delta`), so a re-stamped baseline
+    against an otherwise-unchanged tracked tree must still invalidate a
+    stored delta-mode replay; folding its digest in here closes that gap
+    without a second, independently-maintained key. The build fingerprint
+    closes a second, distinct gap T-2723 measured directly: this
+    whole-run replay cache is keyed purely on tree content like the two
+    per-gate caches above it, so an upgraded frob build with no tree edit
+    at all replayed a PRE-FIX verdict indefinitely -- see
+    `_gate_build_fingerprint`'s docstring for the incident.
+
+    T-3301 (MEASURED, F-026/F-031/F-043/F-048): a THIRD gap of the exact
+    same shape -- `frob ticket sweep <id>` (PRE001's own remediation)
+    writes ONLY `.frob/prework/<id>.json`, itself gitignored and outside
+    `root_content_key`'s walk exactly like `.frob/baseline`; `frob check
+    --stamp-coverage` (TEST006's own remediation) writes ONLY the
+    gitignored `.frob/coverage-stamp`. Neither write moved this
+    fingerprint before this fix, so a `--ticket`-scoped replay entry
+    stored with a stale PRE001/TEST006 finding kept matching (tracked
+    tree genuinely unchanged) and reprinting that stale finding
+    indefinitely after the real defect was already fixed -- reproduced
+    directly: `scope --add` (tracked ticket.md edit, correctly busts this
+    already) followed by `sweep` (untracked-only) then two `frob check
+    --ticket <id>` calls replayed the PRE-sweep PRE001 verdict on both.
+    Folded in the same no-second-key-to-maintain way baseline already is:
+    read-if-present, hash, fold; a missing file (never swept, never
+    stamped) still produces a stable, real digest of `b""`, never a
+    special-cased skip that would just recreate a smaller version of the
+    original gap.
+
+    Returns `None` (never replayable) whenever `root_content_key` itself
+    is unavailable -- an unverifiable tree state must never serve, or
+    accept, a replay."""
     tree_key = root_content_key(root)
     if tree_key is None:
         return None
@@ -921,9 +945,22 @@ def _replay_fingerprint(root: Path) -> str | None:
         baseline_bytes = (root / ".frob" / "baseline").read_bytes()
     except OSError:
         baseline_bytes = b""
+    try:
+        coverage_stamp_bytes = (root / ".frob" / "coverage-stamp").read_bytes()
+    except OSError:
+        coverage_stamp_bytes = b""
+    if ticket is not None:
+        try:
+            prework_bytes = (root / ".frob" / "prework" / f"{ticket}.json").read_bytes()
+        except OSError:
+            prework_bytes = b""
+    else:
+        prework_bytes = b""
     return (
         f"{tree_key}:{hashlib.sha256(baseline_bytes).hexdigest()}"
         f":{_gate_build_fingerprint()}"
+        f":{hashlib.sha256(coverage_stamp_bytes).hexdigest()}"
+        f":{hashlib.sha256(prework_bytes).hexdigest()}"
     )
 
 
@@ -993,7 +1030,7 @@ def load_gate_run_replay(
     (2) `_replay_fingerprint` matches the CURRENT tree -- any tracked file
     edit, or a re-stamped `.frob/baseline` under `--delta`, changes the
     fingerprint and forces a real run."""
-    fingerprint = _replay_fingerprint(root)
+    fingerprint = _replay_fingerprint(root, ticket=ticket)
     if fingerprint is None:
         return None
     sig = _replay_signature(gates=gates, ticket=ticket, base=base, delta=delta)
@@ -1051,7 +1088,7 @@ def store_gate_run_replay(
     labelled partial for any caller that inspects it directly. A no-op
     when the tree fingerprint is unavailable -- an unverifiable tree state
     must never be cached."""
-    fingerprint = _replay_fingerprint(root)
+    fingerprint = _replay_fingerprint(root, ticket=ticket)
     if fingerprint is None:
         _log.debug("gate-replay: not storing (fingerprint unavailable)")
         return

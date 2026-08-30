@@ -6631,7 +6631,13 @@ class TestScopePrework:
         ticket = _ticket(state=TicketState.IN_PROGRESS)
         violations = prework_gate(ticket, snap, Nothing())
         assert any(v.rule == "PRE001" for v in violations)
-        assert "frob ticket start" in violations[0].message
+        # T-3301 (F-031): the remediation must name a verb that does not
+        # itself refuse -- `frob ticket start <id>` REFUSES on a ticket
+        # that is already in-progress (which prework_gate only ever
+        # fires against, see the IN_PROGRESS state check it opens with),
+        # so the message must point at `sweep` instead.
+        assert "frob ticket sweep" in violations[0].message
+        assert "frob ticket start" not in violations[0].message
 
     def test_pre001_passes_with_current_sweep(self, tmp_path: Path) -> None:
         from typani.option import Some
@@ -6660,6 +6666,10 @@ class TestScopePrework:
         )
         violations = prework_gate(ticket, snap, Some(sweep))
         assert any(v.rule == "PRE001" for v in violations)
+        # T-3301 (F-031): same "start refuses on an in-progress ticket"
+        # fix as test_pre001_missing_sweep above.
+        assert "frob ticket sweep" in violations[0].message
+        assert "frob ticket start" not in violations[0].message
 
     # frob:ticket T-0584
     def test_pre001_passes_with_partial_sweep_matching_digest(

@@ -3539,9 +3539,7 @@ def _commit_exempts_file(
             # SCOPE001 false positive on tickets/B/ticket.md against A,
             # because only B's DECLARED scope (empty, for a fresh ticket)
             # was checked, never B's own implicit bookkeeping-shard scope.
-            if scope_matches(
-                file, other.scope, kind=other.kind, ticket_id=other.id
-            ):
+            if scope_matches(file, other.scope, kind=other.kind, ticket_id=other.id):
                 return True
     return False
 
@@ -3820,7 +3818,12 @@ def prework_gate(
         return _pre001(
             ticket,
             f"PRE001: {ticket.id} is in-progress with no recorded pre-work "
-            f"sweep; run: frob ticket start {ticket.id}",
+            # T-3301 (F-031): `prework_gate` only ever fires for an
+            # IN_PROGRESS ticket (see the state check above) -- `frob
+            # ticket start <id>` REFUSES on one of those ("<id> is
+            # already in-progress -- run sweep instead"), the same
+            # verb `start` itself names on that exact refusal.
+            f"sweep; run: frob ticket sweep {ticket.id}",
         )
     current_digest = _scope_digest(ticket, snapshot)
     if sweep.danger_some.digest != current_digest:
@@ -3828,7 +3831,10 @@ def prework_gate(
         return _pre001(
             ticket,
             f"PRE001: {ticket.id}'s recorded pre-work sweep is stale against "
-            f"the current scope; run: frob ticket start {ticket.id} again",
+            # T-3301 (F-031): same fix as the no-sweep-at-all branch
+            # above -- `start` refuses on an already-in-progress
+            # ticket, which this branch always is.
+            f"the current scope; run: frob ticket sweep {ticket.id}",
         )
     # T-0584: a PARTIAL sweep (one that ran out of its bounded budget before
     # finishing every scope pattern -- gates/_prework.py's sweep_ticket) is
