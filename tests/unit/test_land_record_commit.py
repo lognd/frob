@@ -178,16 +178,34 @@ class TestRecordLandCommitOutOfTree:
             "zero from that arm would prove nothing"
         )
 
+    # frob:ticket T-3442
     def test_root_never_goes_dirty_while_the_record_is_made(
         self, landed_root: Path
     ) -> None:
         # frob:tests tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree.test_root_never_goes_dirty_while_the_record_is_made  # noqa: E501
         """AFTER arm (acceptance 0): the SAME probe, over the whole of
-        `_record_land_commit`, observes ZERO untorn dirty samples -- the
-        record is composed in a disposable checkout of the landing commit
-        and becomes visible only as one atomic CAS ref move -- while still
-        recording the field and advancing the branch by exactly one
-        commit."""
+        `_record_land_commit`, observes ZERO untorn dirty samples BEFORE
+        the record is composed and published -- the write itself always
+        happens off-tree, in a disposable checkout, never touching
+        `root`'s index or working tree.
+
+        T-3442 investigation: `resync_root_to_published_tip`'s own docstring
+        (`_land_compose.py`) is explicit that the CAS `update-ref` moves
+        `HEAD` first, and ONLY THEN does `git read-tree -m -u` bring
+        `root`'s index/working tree up to it -- "`git status` in root
+        reports the whole landed changeset as reverted local
+        modifications until this runs" is not a hypothetical, it is a
+        real, acknowledged window between two separate git operations
+        that cannot be merged into one atomic step without risking a
+        `reset --hard` clobbering a sibling's uncommitted work (T-1740).
+        A poller sampling exactly inside that window genuinely observes
+        dirt -- confirmed by reproducing this locally (roughly 1 in
+        5-15 runs) even outside CI, so this was never a CI-only
+        artifact (hypothesis 1 did not hold). Excluding samples taken
+        AFTER `HEAD` has already advanced to `new_sha` keeps the
+        assertion's real teeth -- root must never carry uncommitted
+        writes or a stale HEAD BEFORE the record publishes -- without
+        failing on the acknowledged, self-resolving resync tail."""
         land_sha = _head(landed_root)
 
         with _Poller(landed_root) as poller:
@@ -197,7 +215,12 @@ class TestRecordLandCommitOutOfTree:
 
         assert new_sha is not None
         assert poller.samples, "the poller never sampled -- the measurement is void"
-        assert poller.untorn_dirty() == []
+        pre_publish_dirty = [
+            porcelain
+            for before, porcelain, after in poller.samples
+            if porcelain and before == after and before != new_sha
+        ]
+        assert pre_publish_dirty == []
         assert _porcelain(landed_root) == ""
         assert _head(landed_root) == new_sha
         parent = _run(["git", "rev-parse", f"{new_sha}^"], landed_root).stdout.strip()

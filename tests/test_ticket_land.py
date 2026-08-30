@@ -4974,6 +4974,15 @@ class TestPreCommitUnscopedSweep:
         # frob:tests \
         # tests/test_ticket_land.py::TestPreCommitUnscopedSweep.test_true_verdict_lands\
         # _normally
+        # frob:ticket T-3442
+        # T-3135 flipped `pre_commit_sweep`'s handed tree from `root` to
+        # the persistent warm-sweep-stage worktree
+        # (`root/.frob/warm-sweep-stage`) so the sweep measures a tree
+        # that actually holds the staged changeset -- see
+        # tests/unit/test_land_stage_flip.py::TestDisposableStageFlip.
+        # test_pre_commit_sweep_engages_the_warm_stage_not_root, the
+        # dedicated coverage for this exact contract. This assertion is
+        # updated to match; it is not re-testing the flip itself.
         tid, wt = self._land_one(repo, "feature-sweep-ok", "sweepok.py")
         calls: list[tuple[Path, str]] = []
 
@@ -4984,7 +4993,7 @@ class TestPreCommitUnscopedSweep:
         result = land(repo, tid, wt, dry_run=False, pre_commit_sweep=sweep)
         assert result.is_ok, result.err
         assert len(calls) == 1
-        assert calls[0][0] == repo
+        assert calls[0][0] == repo / ".frob" / "warm-sweep-stage"
 
     # frob:ticket T-1514
     def test_none_verdict_is_a_skip_lands_normally(self, repo: Path) -> None:

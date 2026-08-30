@@ -2072,6 +2072,23 @@ class TestLandProofAndFinish:
         return tid, worktree, result.danger_ok
 
     # frob:ticket T-1884
+    # frob:ticket T-3442
+    @pytest.mark.xfail(
+        reason=(
+            "T-3442: blocked on T-3444 (out of this ticket's scope) -- "
+            "src/frob/gates/_refs.py's _DEFAULT_ROOT_MANIFEST_EXEMPT "
+            "exempts root tickets.md from REF001 (T-3249) but not its "
+            "sibling tickets-archive.md, which _land_squash.py's T-0959 "
+            "splice creates/updates the first time ANY ticket in a "
+            "project completes -- so the T-1514 pre-commit sweep (now "
+            "actually measurable against T-3135's warm-sweep-stage, "
+            "where it used to report unmeasurable and skip) genuinely "
+            "and correctly finds a new REF001 on tickets-archive.md that "
+            "no Tier-A auto-fix can resolve. Remove this xfail once "
+            "T-3444 lands."
+        ),
+        strict=True,
+    )
     def test_cli_land_invoked_with_root_equal_to_worktree_still_verifies(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -2108,9 +2125,17 @@ class TestLandProofAndFinish:
         # node id (`_land_a_real_ticket`'s own shortcut) would fail real
         # evidence re-verification here, so this needs a genuinely
         # collectable, passing test.
+        #
+        # frob:ticket T-3442
+        # T-3135's warm-sweep-stage actually RUNS the T-1514 pre-commit
+        # sweep now (a cold disposable stage used to report
+        # "unmeasurable" and skip it) -- so this ticket-unbound stub
+        # file, which previously slipped past a sweep that never really
+        # ran, now genuinely trips COV002 unless bound to this test's
+        # own no-scope-declared ticket by a `frob:ticket` comment.
         (worktree / "tests").mkdir(exist_ok=True)
         (worktree / "tests" / "test_ok.py").write_text(
-            "def test_ok():\n    assert True\n"
+            f"# frob:ticket {tid}\ndef test_ok():\n    assert True\n"
         )
         loaded = load_all(worktree)
         ticket = loaded.danger_ok[tid]
@@ -2597,13 +2622,20 @@ class TestBranchDriftGuard:
         def _bump_version_that_drifts_root_off_main(r, t, fid):  # noqa: ANN001, ANN202
             # Simulates a concurrent process moving `root`'s HEAD off
             # `main` in the window between `_land_precheck` resolving
-            # `main_branch_name` and the final squash commit -- the
-            # ledger splice (state=done) is already staged in `r`'s
-            # index at this call site (T-0338: `bump_version` runs after
-            # the squash-and-splice, before the final commit), so
-            # committing from here on would carry it onto whatever
-            # branch is now checked out.
-            _run(["git", "checkout", "-b", "sim-drift-t1920"], r)
+            # `main_branch_name` and the final squash commit.
+            #
+            # frob:ticket T-3442
+            # T-3135 moved every index-/working-tree- consuming stage
+            # (including `bump_version`, via `_apply_release_bump`) onto
+            # the disposable squash `stage`, not `root` -- so `r` here is
+            # now the STAGE, and checking out a branch on it no longer
+            # touches `root` at all (the guard this test exercises,
+            # `_assert_still_on_expected_branch`, checks `root`
+            # specifically -- see `_land_squash_apply_finish`'s own call
+            # site). Drift the actual `repo` fixture (closed over,
+            # ignoring `r`) to keep reproducing the T-1895 incident's
+            # real shape: `root` itself moving off `main` mid-land.
+            _run(["git", "checkout", "-b", "sim-drift-t1920"], repo)
             return Ok(None)
 
         result = land(

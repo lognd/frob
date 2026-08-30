@@ -2,7 +2,7 @@
 id: T-3442
 title: 'Five out-of-tree land pipeline tests fail on CI: warm-sweep-stage path, T-1920
   drift guard inert, record-commit probe'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
