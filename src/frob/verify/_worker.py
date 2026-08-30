@@ -702,9 +702,18 @@ def _resolve_verification_outcome(
 
     new_findings = fresh - baseline
     if new_findings:
-        filed = _file_regression_ticket(
-            root, tip.ticket_id, tip.commit_sha, new_findings
-        )
+        # T-3379: filing/self-absorb writes against `root` (this
+        # worker's own resolved root, never trusted to `FROB_WORKTREE`)
+        # must not be refused just because a dispatched agent's leased
+        # worktree happens to be ambient in this process's environment
+        # -- see `unleased_root_env`'s own docstring for the measured
+        # incident this closes.
+        from frob.tickets._worktree_guard import unleased_root_env
+
+        with unleased_root_env():
+            filed = _file_regression_ticket(
+                root, tip.ticket_id, tip.commit_sha, new_findings
+            )
         if filed is None:
             # T-2324/T-3052: the ONE case that must still pin the
             # watermark -- a finding with no durable owner at all

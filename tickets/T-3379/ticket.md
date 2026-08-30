@@ -2,7 +2,7 @@
 id: T-3379
 title: Rapid-sweep self-absorb (record-as-debt) path is blocked by the worktree-guard
   it always runs under
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'

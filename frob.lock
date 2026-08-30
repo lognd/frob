@@ -2465,6 +2465,42 @@
       "old_digest": "e72cb77e91e74e24ba2ceb91e2c4d173e95dd3be174b5b322bed0ad8518875f4",
       "reason": "T-3441: re-verified against current code and updated docs/modules/tickets-lifecycle.md's Public API narrative for scope_lease_conflict to document T-3296's FROB_MANAGED_SIDE_EFFECT_PATHS skip-before-collision-check behavior, which the paragraph was missing; the rest of the paragraph (shared entrypoint, own_scope semantics, call sites) is still accurate",
       "ref": "src/frob/tickets/_scope.py::scope_lease_conflict"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "body",
+      "new_digest": "1cd64a856d1e3a0a70015d8e127932be47032bac0462f80d916b6d296a972535",
+      "old_digest": null,
+      "reason": "T-3379: wrapped the regression-ticket-filing call in _unleased_root_env to stop enforce_worktree_lease from refusing this worker's own legitimate write against root",
+      "ref": "src/frob/verify/_worker.py::run_coalesced_verification"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "713a0cf7723f83a2f9a3edd7766b13241036c29f8c861613652c9e3efe68b76f",
+      "old_digest": null,
+      "reason": "T-3379: wrapped the regression-ticket-filing call in _unleased_root_env to stop enforce_worktree_lease from refusing this worker's own legitimate write against root",
+      "ref": "src/frob/verify/_worker.py::run_coalesced_verification"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "body",
+      "new_digest": "1cd64a856d1e3a0a70015d8e127932be47032bac0462f80d916b6d296a972535",
+      "old_digest": "1cd64a856d1e3a0a70015d8e127932be47032bac0462f80d916b6d296a972535",
+      "reason": "T-3379: filing/self-absorb write now goes through frob.tickets._worktree_guard.unleased_root_env instead of a local os.environ strip, so the SELFAUDIT001 env-capability finding lands on the tickets_ledger component (which already declares it) rather than verify",
+      "ref": "src/frob/verify/_worker.py::run_coalesced_verification"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "713a0cf7723f83a2f9a3edd7766b13241036c29f8c861613652c9e3efe68b76f",
+      "old_digest": "713a0cf7723f83a2f9a3edd7766b13241036c29f8c861613652c9e3efe68b76f",
+      "reason": "T-3379: filing/self-absorb write now goes through frob.tickets._worktree_guard.unleased_root_env instead of a local os.environ strip, so the SELFAUDIT001 env-capability finding lands on the tickets_ledger component (which already declares it) rather than verify",
+      "ref": "src/frob/verify/_worker.py::run_coalesced_verification"
     }
   ],
   "entries": [
@@ -3762,6 +3798,16 @@
       "digest": "a9bed1f11b71cda9b657d1a11a57fa4fdfdbe46950c2154faa6f6a97763bd4b5",
       "facet": "sig",
       "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
+    },
+    {
+      "digest": "1cd64a856d1e3a0a70015d8e127932be47032bac0462f80d916b6d296a972535",
+      "facet": "body",
+      "ref": "src/frob/verify/_worker.py::run_coalesced_verification"
+    },
+    {
+      "digest": "713a0cf7723f83a2f9a3edd7766b13241036c29f8c861613652c9e3efe68b76f",
+      "facet": "sig",
+      "ref": "src/frob/verify/_worker.py::run_coalesced_verification"
     },
     {
       "digest": "26b10e66c50a8a0654663f81127109c966e9048d9ff89fc725b10b004a904ed3",

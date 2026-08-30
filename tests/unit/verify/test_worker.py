@@ -270,6 +270,114 @@ class TestRunCoalescedVerification:
         assert result.danger_err is WorkerError.QueueUnreadable
 
 
+# frob:ticket T-3379
+class TestUnleasedRootEnv:
+    """T-3379: `_file_regression_ticket` must not be refused by
+    `frob.tickets._worktree_guard.enforce_worktree_lease` just because
+    this process's ambient environment happens to carry a `FROB_WORKTREE`
+    naming a dispatched agent's leased worktree, distinct from `root`."""
+
+    # frob:ticket T-3379
+    def test_filing_call_sees_no_worktree_lease_env(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"  # noqa: E501
+        # MUST-FIRE: T-3379's own measured incident -- a WorktreeLeaseViolation
+        # on `_file_regression_ticket` mid-land, because the ambient
+        # FROB_WORKTREE/FROB_AGENT this process inherited named a
+        # DIFFERENT path than `root`. Asserts the filing call itself
+        # observes neither var set, regardless of what was ambient before.
+        from frob.app.ticket_runner import _rapid_sweep
+
+        monkeypatch.setenv("FROB_WORKTREE", "/some/other/leased/worktree")
+        monkeypatch.setenv("FROB_AGENT", "1")
+
+        _enqueue_n(tmp_path, 1)
+        _rapid_sweep._write_baseline(tmp_path, frozenset({("RULE1", "a.py")}), "c0")
+
+        seen_worktree: list[str | None] = []
+        seen_agent: list[str | None] = []
+
+        def fake_file_ticket(root, final_id, commit_sha, new_findings):  # noqa: ANN001
+            seen_worktree.append(_worker_mod.os.environ.get("FROB_WORKTREE"))
+            seen_agent.append(_worker_mod.os.environ.get("FROB_AGENT"))
+            return "T-9999"
+
+        monkeypatch.setattr(_rapid_sweep, "_file_regression_ticket", fake_file_ticket)
+        result = run_coalesced_verification(
+            tmp_path,
+            verify_fn=lambda root, sha: frozenset(
+                {("RULE1", "a.py"), ("RULE2", "b.py")}
+            ),
+        )
+
+        assert result.is_ok
+        assert seen_worktree == [None]
+        assert seen_agent == [None]
+
+    # frob:ticket T-3379
+    def test_ambient_lease_env_is_restored_after_filing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"  # noqa: E501
+        # MUST-STAY-QUIET: the strip is scoped to the filing call only --
+        # this process's own ambient lease must come back afterward, never
+        # leak stripped for the rest of the process's life.
+        from frob.app.ticket_runner import _rapid_sweep
+
+        monkeypatch.setenv("FROB_WORKTREE", "/some/other/leased/worktree")
+        monkeypatch.setenv("FROB_AGENT", "1")
+
+        _enqueue_n(tmp_path, 1)
+        _rapid_sweep._write_baseline(tmp_path, frozenset({("RULE1", "a.py")}), "c0")
+
+        monkeypatch.setattr(
+            _rapid_sweep, "_file_regression_ticket", lambda *a, **k: "T-9999"
+        )
+        result = run_coalesced_verification(
+            tmp_path,
+            verify_fn=lambda root, sha: frozenset(
+                {("RULE1", "a.py"), ("RULE2", "b.py")}
+            ),
+        )
+
+        assert result.is_ok
+        assert _worker_mod.os.environ.get("FROB_WORKTREE") == (
+            "/some/other/leased/worktree"
+        )
+        assert _worker_mod.os.environ.get("FROB_AGENT") == "1"
+
+    # frob:ticket T-3379
+    def test_no_ambient_lease_stays_unset_after_filing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"  # noqa: E501
+        # MUST-STAY-QUIET: the single-developer control -- no ambient
+        # lease env to begin with must not somehow leave one SET
+        # afterward.
+        from frob.app.ticket_runner import _rapid_sweep
+
+        monkeypatch.delenv("FROB_WORKTREE", raising=False)
+        monkeypatch.delenv("FROB_AGENT", raising=False)
+
+        _enqueue_n(tmp_path, 1)
+        _rapid_sweep._write_baseline(tmp_path, frozenset({("RULE1", "a.py")}), "c0")
+
+        monkeypatch.setattr(
+            _rapid_sweep, "_file_regression_ticket", lambda *a, **k: "T-9999"
+        )
+        result = run_coalesced_verification(
+            tmp_path,
+            verify_fn=lambda root, sha: frozenset(
+                {("RULE1", "a.py"), ("RULE2", "b.py")}
+            ),
+        )
+
+        assert result.is_ok
+        assert "FROB_WORKTREE" not in _worker_mod.os.environ
+        assert "FROB_AGENT" not in _worker_mod.os.environ
+
+
 class TestCoalescingWorker:
     """The trailing-edge debounce/periodic-floor decision logic, driven by
     an injectable clock -- never a real sleep."""

@@ -17,6 +17,8 @@ onto main, or any other coordinator-run mutation, has no lease to violate.
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
+from contextlib import contextmanager
 from importlib import metadata
 from pathlib import Path
 
@@ -114,6 +116,62 @@ def enforce_worktree_lease(root: Path) -> Result[None, TicketError]:
         )
         return Err(TicketError.WorktreeLeaseViolation)
     return Ok(None)
+
+
+# frob:ticket T-3379
+# frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
+# frob:tests tests/unit/verify/test_worker.py::TestUnleasedRootEnv.test_filing_call_sees_no_worktree_lease_env kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestUnleasedRootEnv.test_ambient_lease_env_is_restored_after_filing kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestUnleasedRootEnv.test_no_ambient_lease_stays_unset_after_filing kind="unit"  # noqa: E501
+# frob:waive SEC110 reason="FROB_WORKTREE/FROB_AGENT are worktree-lease path markers, never secrets -- same posture as this module's other FROB_WORKTREE_ENV reads above"  # noqa: E501
+@contextmanager
+def unleased_root_env() -> Iterator[None]:
+    """T-3379: strip `FROB_WORKTREE`/`FROB_AGENT` from `os.environ` for the
+    duration of the wrapped block, restoring whatever was there
+    afterward -- the same precedent `frob.app.ticket_runner._rapid_sweep.
+    _detached_sweep_env` already established for its own subprocess `env=`
+    (T-2030's own docstring: "a detached sweep against the resolved land
+    root is not 'a dispatched worktree agent' and must not inherit
+    whichever worktree the LANDING process happened to be leased to").
+
+    Measured incident this closes: `frob.verify._worker.run_coalesced_
+    verification` resolves its own `root` explicitly (never trusts
+    `FROB_WORKTREE`/`cwd` for that) and can run IN-PROCESS inside a
+    dispatched agent's own shell (e.g. synchronously during that agent's
+    `frob ticket land`) -- so `os.environ` can carry a `FROB_WORKTREE`
+    naming that agent's leased WORKTREE even while the worker operates
+    against the shared ROOT on its own behalf. `enforce_worktree_lease`
+    cannot tell those two things apart (by design -- T-0431 exists to
+    catch a mistaken direct mutation) and refuses every mutation to
+    `root` in that state, including the one self-absorb/regression-
+    ticket-filing write the worker legitimately needs to make against
+    `root` itself (`WorktreeLeaseViolation` on `_file_regression_
+    ticket`, mid-land, twice in one measured session, against the exact
+    `root` the worker had already resolved correctly).
+
+    A narrow, explicitly-scoped context manager -- wrap only the one
+    write that legitimately needs it, never the whole caller -- keeps
+    this from silently widening the guard everywhere else the wrapping
+    process might still legitimately be a leased dispatched agent for;
+    unlike `_detached_sweep_env`, which strips the env for an entire
+    spawned subprocess's lifetime, this restores the ambient value
+    immediately on exit so nothing the caller does afterward is ever
+    affected."""
+    prior_worktree = os.environ.get(FROB_WORKTREE_ENV)
+    prior_agent = os.environ.get(FROB_AGENT_ENV)
+    os.environ.pop(FROB_WORKTREE_ENV, None)
+    os.environ.pop(FROB_AGENT_ENV, None)
+    try:
+        yield
+    finally:
+        if prior_worktree is None:
+            os.environ.pop(FROB_WORKTREE_ENV, None)
+        else:
+            os.environ[FROB_WORKTREE_ENV] = prior_worktree
+        if prior_agent is None:
+            os.environ.pop(FROB_AGENT_ENV, None)
+        else:
+            os.environ[FROB_AGENT_ENV] = prior_agent
 
 
 # frob:ticket T-2221
@@ -433,6 +491,7 @@ __all__ = [
     "agent_env_exports",
     "apply_agent_env",
     "enforce_worktree_lease",
+    "unleased_root_env",
     "warn_if_testmon_plugin_missing",
     "warn_if_xdist_bound_missing",
     "warn_if_xdist_plugin_missing",

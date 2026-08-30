@@ -1327,6 +1327,25 @@ T-0973: `enforce_worktree_lease`'s `FROB_WORKTREE_ENV` read carries a
 `frob:waive SEC110 reason="..."` -- it is a worktree-lease path marker,
 not a secret.
 
+**`unleased_root_env` (T-3379): a narrow escape hatch for a process
+that legitimately writes against its OWN resolved root, not the
+dispatched agent's leased worktree.** `frob.verify._worker.
+run_coalesced_verification` can run in-process inside a dispatched
+agent's shell (e.g. synchronously during that agent's `frob ticket
+land`), so `os.environ` still carries that agent's `FROB_WORKTREE`
+even while the worker's regression-ticket-filing/self-absorb write
+targets the shared root it already resolved correctly --
+`enforce_worktree_lease` cannot tell that apart from a mistaken direct
+mutation and refuses it (the measured T-3379 incident:
+`WorktreeLeaseViolation` on `_file_regression_ticket`, mid-land, twice
+in one session). `unleased_root_env()` is a context manager that
+strips `FROB_WORKTREE`/`FROB_AGENT` for the duration of ONE wrapped
+write and restores them immediately after, mirroring `frob.app.
+ticket_runner._rapid_sweep._detached_sweep_env`'s identical precedent
+for its own subprocess `env=`. Callers wrap only the specific write
+that needs it, never their whole body, so the guard stays effective
+for everything else that process does.
+
 **`frob agent env` also bounds pytest-xdist under a fleet (T-2221).**
 
 <!-- frob:describes src/frob/tickets/_worktree_guard.py::agent_env_exports -->
