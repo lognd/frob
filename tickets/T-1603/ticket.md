@@ -131,7 +131,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c3a205aca5063d45c85a3cb2fcd9f94524471a13
 ---
 Add Zig to frob's supported languages, meeting the full adapter contract defined by the contract ticket -- not merely parsing.
 
