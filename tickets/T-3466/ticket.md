@@ -2,7 +2,7 @@
 id: T-3466
 title: Expose CrossTicketLeakage as a real frob check gate rule (needs worktree/base_ref
   plumbing)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-30'
@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: wire cross_ticket_leakage_gate into frob check's gate dispatch (_ALL_GATES/_CANONICAL_GATE_ORDER/dispatch
+    dict), the only place a new gate can be registered
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
