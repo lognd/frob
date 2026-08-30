@@ -17,7 +17,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - frob-ratchet.lock.json
-- tests/system/test_frob_self_model.py
 - docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -37,6 +36,15 @@ scope_changes:
     (the SYS111 ratchet ceilings) -- it never edits design/frob.strata itself, so
     releasing this lease frees it for T-3450's SYS100 fix, which does need to edit
     design/frob.strata
+  actor: logan
+  at: '2026-08-29'
+- op: remove
+  glob: tests/system/test_frob_self_model.py
+  reason: T-3450 needs a brief lease on this file to add a narrow SYS100 regression
+    test (existing test_fragments_module_fs_read_is_declared_not_selfaudit001 precedent);
+    T-3447's own diff never edits this file, only docs/design/registry/capability-via-ratchet.lock.json,
+    so releasing is safe -- T-3447 will re-verify with the shared node id directly
+    at land time without needing to hold a write lease on it
   actor: logan
   at: '2026-08-29'
 body_changes:
