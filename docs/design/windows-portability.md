@@ -55,8 +55,11 @@ T-3076's own burn-down, not this ticket:
 
 - `tests/gates/test_comment_placement.py::TestCplace001::test_symref_binds_to_the_enclosing_function`
   and `test_must_stay_quiet_exempt_path` -- both assert a POSIX-style
-  symref path (`src/frob/x.py::handler`) but Windows produces
-  `src\frob\x.py::handler` (`os.sep`-shaped, not normalized to posix).
+  symref path (illustrative shape:
+  <!-- frob:waive DOC006 reason="path.py::symbol_name here is an illustrative placeholder shape, not a real tracked file" -->
+  a forward-slash `path.py::symbol_name` pair) but Windows produces the
+  same pair joined with a backslash instead (`os.sep`-shaped, not
+  normalized to posix).
 - `tests/system/test_ci_hang_guard_positive_control.py::...::test_ordinary_fast_test_is_unaffected`
   -- shells to `timeout`, which resolves to `timeout.exe` on Windows
   (`Invalid syntax. Default option is not allowed more than '1' time(s)`),
