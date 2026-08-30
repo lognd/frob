@@ -19,6 +19,7 @@ scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - tests/unit/test_land_finish_idempotent.py
 - tests/test_ticket_work_and_land_finish.py
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,6 +51,12 @@ scope_changes:
   reason: identity extraction (_error_finding_identity/_collect_error_findings) that
     collapses SELFAUDIT001/off-file-anchored findings lives in _verify.py, not _rapid_sweep.py;
     sweep consumes the already-collapsed tuple unchanged
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'scope-closure: _rapid_sweep.py symbols already in scope doc-edge into this
+    file'
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
