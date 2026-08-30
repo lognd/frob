@@ -1,7 +1,7 @@
 ---
 id: T-3376
 title: Recovered from T-3374's phantom TICK006 citation of T-3365
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -43,3 +43,6 @@ left untouched, no collision.
 
 ## Failure log
 - 2026-08-30 attempt 1: already resolved on main: T-3374's underlying claim (REG002: VERSION001/TDD001/VMOD001 missing from _KNOWN_GATE_RULES) is false against current main -- all three rule ids are present in src/frob/gates/_waive.py::_KNOWN_GATE_RULES, and frob check --only registry --ticket T-3376 finds zero REG002 findings at all. T-3365 (the ticket the phantom citation named as already fixing this) never existed. No code change needed.
+
+## Drop reason
+- 2026-08-30: False premise on current main: VERSION001/TDD001/VMOD001 are all present in _KNOWN_GATE_RULES and frob check --only registry finds zero REG002 (series K, 2026-08-30).
