@@ -14,10 +14,180 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_docstatus.py
+- src/frob/gates/_gate_cache.py
+- src/frob/lang/_support.py
+- src/frob/refactor/_prose.py
+- src/frob/tickets/_models.py
+- src/frob/app/ticket_runner/_new.py
+- src/frob/clean/_core.py
+- src/frob/gates/_docblocks.py
+- src/frob/gates/_rule_id_scan.py
+- src/frob/cve/_parser.py
+- src/frob/gates/_doclink_docanchor.py
+- src/frob/vet/_lifecycle.py
+- src/frob/vet/_source.py
+- src/frob/graph/__init__.py
+- src/frob/strata/_bootstrap.py
+- src/frob/strata/_selfconform_kinds.py
+- src/frob/strata/_shrink.py
+- src/frob/testing/_collect.py
+- src/frob/testing/_collect_cpp.py
+- src/frob/testing/_collect_kotlin.py
+- src/frob/testing/_collect_rust.py
+- src/frob/testing/_collect_ts.py
+- src/frob/tickets/_brief.py
+- src/frob/tickets/_renumber_v2.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_docstatus.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_gate_cache.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/lang/_support.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/refactor/_prose.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/clean/_core.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_docblocks.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_rule_id_scan.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/cve/_parser.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_doclink_docanchor.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/vet/_lifecycle.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/vet/_source.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/graph/__init__.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/strata/_bootstrap.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/strata/_selfconform_kinds.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/strata/_shrink.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/testing/_collect.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/testing/_collect_cpp.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/testing/_collect_kotlin.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/testing/_collect_rust.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/testing/_collect_ts.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/tickets/_brief.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/tickets/_renumber_v2.py
+  reason: 'WALK001 burn-down: reviewed per-site, file(s) touched by the T-3483 WALK001
+    remainder'
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
