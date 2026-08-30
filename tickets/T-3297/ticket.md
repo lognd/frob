@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_land_git_ops.py
 - src/frob/app/ticket_runner/_land_cmd.py
 - .gitattributes
+- tests/test_ticket_merge_driver.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +30,12 @@ scope_changes:
   reason: the actual bug is that tickets/*/ticket.md and frob-coverage.lock.json were
     never registered to any merge driver in .gitattributes -- fixing the driver alone
     does nothing without this
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/test_ticket_merge_driver.py
+  reason: adding must-fire/must-stay-quiet coverage for the new content-shape dispatch
+    in _merge_driver, per the ticket's own MUST-FIRE/MUST-STAY-QUIET fixture requirements
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
