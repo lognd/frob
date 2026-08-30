@@ -2,7 +2,7 @@
 id: T-3481
 title: 'frob-core #[pyfunction]s hold the GIL for O(n) work, defeating pytest-timeout
   like T-3457'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-30'
