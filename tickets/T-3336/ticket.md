@@ -140,7 +140,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ac40184dc4e7f148de301c4627975f5b7224552e
 ---
 MEASURED 2026-08-28 landing T-3277. Two defects in the same seam, both found
 because a land refused for a reason its own close had reported success for.
