@@ -2,11 +2,13 @@
 id: T-3383
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3382):
   2 new (rule, file) identit(ies), 2 finding(s) (DOCENUM001, REL001)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-29'
 priority: high
+blocked_by:
+- T-3411
 parent: null
 tier: ticket
 sprint: null
