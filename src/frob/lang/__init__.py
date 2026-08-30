@@ -79,6 +79,9 @@ from frob.lang._nodes import (
     node_text,
     resolve_local_import,
 )
+
+# frob:ticket T-3443
+# frob:tests tests/unit/test_exports.py::TestFrobExportsPolicyResidue.test_all_nine_packages_report_zero_missing_symbols kind="unit"  # noqa: E501
 from frob.lang._support import (
     FACETS,
     AdapterCapabilitySupport,
@@ -87,10 +90,13 @@ from frob.lang._support import (
     FacetState,
     FacetStatus,
     LanguageSupport,
+    PackageAudit,
+    PackageLanguageAxis,
     capability_conformance_violations,
     conformance_violations,
     derive_capability_registry,
     derive_language_registry,
+    unfaceted_packages,
 )
 from frob.lang._walk_strata import NATIVE_UNAVAILABLE_MESSAGE as _NATIVE_UNAVAIL_MSG
 from frob.lang._walk_strata import walk_strata as _walk_strata
@@ -1197,6 +1203,8 @@ __all__ = [
     "GRAMMAR_FINGERPRINT_PACKAGES",
     "LangError",
     "LanguageSupport",
+    "PackageAudit",
+    "PackageLanguageAxis",
     "ParsedFile",
     "RawComment",
     "RawSymbol",
@@ -1223,4 +1231,5 @@ __all__ = [
     "supported_languages",
     "symbol_tree",
     "TreeNode",
+    "unfaceted_packages",
 ]

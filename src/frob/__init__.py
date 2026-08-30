@@ -91,17 +91,23 @@ from frob.ci_validity import (
     run_validity,
     validity_for_run_head_sha,
 )
+
+# frob:ticket T-3443
+# frob:tests tests/unit/test_exports.py::TestFrobExportsPolicyResidue.test_all_nine_packages_report_zero_missing_symbols kind="unit"  # noqa: E501
 from frob.doctor import (
     DerivedArtifactStatus,
     DoctorReport,
+    ExternalToolStatus,
     GlobalBinarySkew,
     LiveLandProcess,
     MalformedTicketEdge,
     NativeExtensionStatus,
+    ToolCategory,
     VenvShimDrift,
     global_binary_skew,
     native_degrade_warning,
     run_diagnosis,
+    scan_external_tools,
     scan_live_land_processes,
     scan_malformed_ticket_edges,
     scan_stale_ticket_leases,
@@ -167,6 +173,7 @@ __all__ = [
     "DerivedArtifactStatus",
     "Diff",
     "DoctorReport",
+    "ExternalToolStatus",
     "FailureCluster",
     "GhEnvironment",
     "GhError",
@@ -189,6 +196,7 @@ __all__ = [
     "SpawnRecorder",
     "TestFailure",
     "TestValidity",
+    "ToolCategory",
     "Validity",
     "ValidityError",
     "VenvShimDrift",
@@ -227,6 +235,7 @@ __all__ = [
     "fast_yaml_loader",
     "stale_binary_warning",
     "stale_install_warning",
+    "scan_external_tools",
     "scan_live_land_processes",
     "scan_malformed_ticket_edges",
     "scan_stale_ticket_leases",

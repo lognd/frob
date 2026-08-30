@@ -1,7 +1,7 @@
 ---
 id: T-3443
 title: frob-exports reports missing public symbols in frob.doctor and frob.lang._support
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
