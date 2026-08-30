@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_tickets_gate.py
 - tests/test_tickets_priority.py
+- tickets/T-draft-5bd6334f/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,12 @@ scope_changes:
 - op: add
   glob: tests/test_tickets_priority.py
   reason: T-3399 adds unit tests for the new decomposed-epic severity cap in TICK004
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tickets/T-draft-5bd6334f/**
+  reason: filing the T-3399 body's required children's-progress follow-up ticket writes
+    its own ticket.md
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
