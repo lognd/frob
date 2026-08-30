@@ -31,7 +31,6 @@ scope:
 - src/frob/gates/_walk_lint.py
 - src/frob/testing/_coverage_wait.py
 - tests/test_ticket_leases.py
-- tests/test_gates.py
 - tests/test_ticket_leases_cross_worktree.py
 - tests/test_ticket_land.py
 - tests/test_hook_root_write_guard.py
@@ -43,6 +42,16 @@ scope_breadth_ack_reason: one shared lock primitive genuinely fans out to every 
   the evidence for this exact file set
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/test_gates.py
+  reason: T-3495 holds a live lease on this file; no new test needed here anyway --
+    the 27 windows-only failures this ticket's brief cites in test_gates.py are gate
+    tests exercising src/frob/gates/_narrative_blocks.py and _walk_lint.py (both in
+    scope), which will pass once those modules stop importing fcntl directly, with
+    no edit to the test file itself required
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
