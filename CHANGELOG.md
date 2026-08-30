@@ -656,6 +656,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3426: CI: ubuntu Test budget 25m kills a passing suite in its slow self-scan tail (99% at 20m, aborted at 25m)
 - T-3429: Declare testsuite exec/fs.write/env.read capabilities for tests/system/test_coverage_sigterm.py
 - T-3430: SYS100: testsuite fs.read undeclared for tests/unit/test_arch_srp.py
+- T-3431: post-land sweep regression from T-3420: 1 new (rule, file) identit(ies), 1 finding(s) (unresolved-attribute)
 - T-3437: T-3420 follow-up: test_coverage.py still asserts sigterm is True, and the SIGTERM must-fire fixture fails on macOS
 
 ## [0.530.0] - unreleased

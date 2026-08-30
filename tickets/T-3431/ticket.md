@@ -2,7 +2,7 @@
 id: T-3431
 title: 'post-land sweep regression from T-3420: 1 new (rule, file) identit(ies), 1
   finding(s) (unresolved-attribute)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -23,6 +23,19 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): static-analysis-only fix: guards a signal.SIGKILL
+    reference behind getattr so ty''s cross-platform win32 check stops flagging unresolved-attribute;
+    the test class is already skipif(win32)''d at runtime and both tests pass identically
+    before and after on Linux -- no runtime behavior change'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 1266
+  new_length: 1588
+evidence:
+- tests/system/test_coverage_sigterm.py::TestCoverageSigtermDeadlock::test_repeated_sigterm_terminates_in_bounded_time
+- tests/system/test_coverage_sigterm.py::TestCoverageSigtermDeadlock::test_normal_run_writes_complete_coverage_data
 designated_repro_test: null
 threat: null
 component: null
@@ -43,3 +56,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - unresolved-attribute  tests/system/test_coverage_sigterm.py  -> attributed to T-3420 (commit 344eba4dbafb, already closed/dropped -- filed below) via tests/system/test_coverage_sigterm.py::TestCoverageSigtermDeadlock
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:no-behavior-change reason="static-analysis-only fix: guards a signal.SIGKILL reference behind getattr so ty's cross-platform win32 check stops flagging unresolved-attribute; the test class is already skipif(win32)'d at runtime and both tests pass identically before and after on Linux -- no runtime behavior change"

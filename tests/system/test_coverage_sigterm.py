@@ -114,6 +114,17 @@ def _send_signal_to_group(pid: int, sig: int) -> None:
         pass  # already exited -- the process group is gone, which is fine
 
 
+# T-3431/T-3434: `signal.SIGKILL` genuinely does not exist on win32 (unlike
+# SIGTERM, which does) -- the whole test class below is already
+# skipif(win32)'d at runtime, but `ty`'s cross-platform static check still
+# evaluates the win32 branch for a direct `signal.SIGKILL` reference. Guard
+# it the same way `_send_signal_to_group`'s `os.killpg` reference is
+# guarded above: a dynamic `getattr` lookup, never a static attribute
+# access, so a multi-platform check does not flag a member that is
+# genuinely absent on that platform.
+_SIGKILL: int = getattr(signal, "SIGKILL", signal.SIGTERM)
+
+
 def _spawn_coverage_run(test_file: Path, cwd: Path) -> subprocess.Popen:
     """Start a coverage-instrumented pytest subprocess against test_file,
     pointed at this repo's own pyproject.toml via --cov-config (so
@@ -186,7 +197,7 @@ class TestCoverageSigtermDeadlock:
             # that path is asserted above.
         finally:
             if proc.poll() is None:
-                _send_signal_to_group(proc.pid, signal.SIGKILL)  # cleanup only
+                _send_signal_to_group(proc.pid, _SIGKILL)  # cleanup only
                 try:
                     proc.wait(timeout=10)
                 except subprocess.TimeoutExpired:
