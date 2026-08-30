@@ -1205,6 +1205,15 @@ class TestCommitTicketLedgerChange:
         fake_home.mkdir()
         monkeypatch.setenv("HOME", str(fake_home))
         monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+        # T-3488: the macOS CI runner image ships a global user.name/
+        # user.email (e.g. "Anka <runner@...92399F.local>") that HOME
+        # alone does not shadow -- git also consults GIT_CONFIG_GLOBAL
+        # (and, when unset, XDG_CONFIG_HOME/.config/git/config) before
+        # falling back to $HOME/.gitconfig, so a real global file outside
+        # fake_home can still be read. Pin GIT_CONFIG_GLOBAL to /dev/null
+        # so this test is hermetic to the runner's own identity on any
+        # platform, not just ones where HOME happens to be authoritative.
+        monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
         for var in (
             "GIT_AUTHOR_NAME",
             "GIT_AUTHOR_EMAIL",

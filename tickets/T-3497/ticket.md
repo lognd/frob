@@ -1,0 +1,43 @@
+---
+id: T-3497
+title: 'macOS-only: pre-existing-violation shifted-lines attribution raises (bucket
+  H, T-3488)'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-30'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- tests/test_ticket_land_lint_diff_attribution.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Found while characterizing T-3488's macOS-only CI set (bucket H, 1 test).
+
+MEASURED (GitHub Actions run 33311990183, macos-latest):
+tests/test_ticket_land_lint_diff_attribution.py::...::test_pre_existing_violation_that_merely_shifted_lines_does_not_refuse
+fails with SystemExit: 1. Root cause not yet measured -- the parent
+ticket (T-3488) explicitly left this "unknown, measure" and scoped
+characterization of buckets C-H as follow-up work, of which this is the
+last unclaimed bucket.
+
+Needs: reproduce locally or read the macOS CI log with -vv for this
+node id to see what diff/lint-attribution step raised SystemExit(1) that
+does not raise on Linux -- likely a line-ending (CRLF) or path-separator
+difference in how the "shifted lines" diff is computed/attributed on
+macOS's git/diff toolchain vs Linux's.

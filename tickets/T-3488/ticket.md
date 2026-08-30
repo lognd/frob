@@ -3,7 +3,7 @@ id: T-3488
 title: 'macOS-only CI failures: characterize the 32-test set (GNU timeout, runner
   git identity, /proc live-process scans, citation scans returning 0, scope ; validation)
   and fix the mechanical buckets'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'

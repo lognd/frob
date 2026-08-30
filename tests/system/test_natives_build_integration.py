@@ -27,6 +27,7 @@ headroom under the generous timeout below.
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import sys
@@ -37,6 +38,12 @@ import pytest
 from frob.natives import build_natives
 
 pytestmark = pytest.mark.slow
+
+# T-3488: strips cargo's ANSI-colored progress output (e.g. "Updating
+# crates.io index") so a failure message stays legible, and mirrors the
+# CARGO_TERM_COLOR=never fix below -- both target the same macOS-CI
+# bucket-G root cause (bucket G, T-3488 ticket body).
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 # frob:ticket T-0993
 _CARGO_TOML = """\
@@ -110,8 +117,19 @@ def _write_mincrate(root: Path) -> None:
 # module's docstring explains this test deliberately avoids.
 @pytest.mark.timeout(180)
 # frob:ticket T-0993
-def test_build_natives_compiles_and_imports_real_crate(tmp_path: Path) -> None:
+def test_build_natives_compiles_and_imports_real_crate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     # frob:tests src/frob/natives/_build.py::build_natives kind="integration"
+    # T-3488 bucket G: `build_natives` inherits this process's environment
+    # into the `maturin develop`/cargo subprocess (`_build_one_crate`'s
+    # `env = os.environ.copy()`). On macOS CI, cargo emits ANSI-colored
+    # progress lines ("Updating crates.io index") on stderr; pin
+    # CARGO_TERM_COLOR=never so the build's captured stderr is plain text
+    # on every platform, hermetic to whatever color-forcing env the
+    # runner/shell happens to export (same class of fix as T-1586's
+    # FORCE_COLOR/NO_COLOR neutralization in tests/conftest.py).
+    monkeypatch.setenv("CARGO_TERM_COLOR", "never")
     _init_git_repo(tmp_path)
     _write_mincrate(tmp_path)
 
@@ -119,7 +137,7 @@ def test_build_natives_compiles_and_imports_real_crate(tmp_path: Path) -> None:
 
     assert result.is_ok, result
     report = result.danger_ok
-    assert report.ok, [r.stderr for r in report.results if not r.ok]
+    assert report.ok, [_ANSI.sub("", r.stderr) for r in report.results if not r.ok]
     assert {r.name for r in report.results} == {"mincrate"}
 
     # The crate is installed editable into THIS test process's own venv
