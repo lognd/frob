@@ -14,10 +14,26 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/tickets/_setters.py
+- tickets/T-draft-0e88662f/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_setters.py
+  reason: 'real de-duplication burn-down: extracted _set_reasoned_field from set_priority/set_tier/set_component;
+    filed the src/ residue triage follow-up under this ticket''s own tickets dir'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tickets/T-draft-0e88662f/**
+  reason: 'real de-duplication burn-down: extracted _set_reasoned_field from set_priority/set_tier/set_component;
+    filed the src/ residue triage follow-up under this ticket''s own tickets dir'
+  actor: logan
+  at: '2026-08-30'
 triage_changes:
 - field: parent
   old_value: null
