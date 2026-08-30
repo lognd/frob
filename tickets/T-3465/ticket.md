@@ -46,7 +46,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 28a0917c8d88d4a669dd4d29404d0ac68ec69f46
 ---
 found while working T-3449 (post T-3458 re-measurement).
 
