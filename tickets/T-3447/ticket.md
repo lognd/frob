@@ -6,8 +6,6 @@ kind: bug
 origin: agent
 created: '2026-08-29'
 priority: critical
-blocked_by:
-- T-3450
 parent: null
 tier: ticket
 sprint: null
@@ -95,3 +93,6 @@ docs/design/registry/capability-via-ratchet.lock.json added for the SYS111
 fix itself) -- fixing it here would be silent scope expansion onto an
 unrelated finding. Filed T-3450 for it and blocking this ticket on it rather
 than force-closing against a red acceptance test.
+
+## Unblock log
+- 2026-08-29: unblocked by T-3450 -- T-3450 landed at a58cacf5d656db852617e2d2dd132f019b77cac0 (SYS100 fix); merged main into this worktree, re-measured SYS111 ratchet counts (testsuite::exec now 226, +1 from T-3450's own via-list addition), bumped the ceiling accordingly, and confirmed test_sys_gate_zero_violations now passes
