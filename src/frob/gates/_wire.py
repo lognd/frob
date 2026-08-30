@@ -773,8 +773,19 @@ def _reached_in_file(
 def _base_name_match_paths(root: Path, base: str, short: str) -> frozenset[str]:
     """Paths at revision `base` whose text defines a `def`/`class` named
     `short`, via one `git grep -l` (cheap, no parse) -- empty on grep
-    failure or no match (rc=1 is git grep's "no match", not an error)."""
-    pattern = rf"^[[:space:]]*(async[[:space:]]+def|def|class)[[:space:]]+{short}\b"
+    failure or no match (rc=1 is git grep's "no match", not an error).
+
+    T-3496: the trailing `\b` word-boundary is a GNU regex extension, not
+    part of POSIX ERE -- `git grep -lE` on macOS links a regex backend
+    that silently does not honor it (the pattern just never matches, no
+    compile error), which is `TestWireGate`'s own share of T-3488 bucket
+    D's macOS-only "0 hits" failures. Spelled out as an explicit
+    not-an-identifier-char-or-end-of-line alternation instead, portable to
+    any `git grep -E` backend."""
+    pattern = (
+        rf"^[[:space:]]*(async[[:space:]]+def|def|class)[[:space:]]+{short}"
+        r"([^A-Za-z0-9_]|$)"
+    )
     grep = run_argv(
         ("git", "-C", str(root), "grep", "-lE", pattern, base, "--", "*.py")
     )

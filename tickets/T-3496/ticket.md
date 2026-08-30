@@ -1,7 +1,7 @@
 ---
 id: T-3496
 title: 'macOS-only: text/citation scans return 0 hits (bucket D, T-3488)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'

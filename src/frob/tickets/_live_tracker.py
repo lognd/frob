@@ -92,11 +92,27 @@ _REGISTRY_LIVE_KINDS = ("deferred", "tracked_by")
 # matched inside any longer identifier ending in it -- `active_ticket=T-1582`
 # in ordinary Done-report prose read as a live-tracker citation and refused a
 # land.
+#
+# T-3496: the trailing boundary is RIGHT-ANCHORED the same explicit way, and
+# `\s` is spelled `[ \t]` -- both `\b` and `\s` are GNU regex extensions,
+# not part of POSIX ERE. `git grep -E` on macOS links a regex backend that
+# does not honor them (silently: the compile does not error, the pattern
+# just never matches), which is why this scan found 13 macOS-only "0
+# citations found" failures (T-3488 bucket D) while the identical pattern
+# worked on Linux's glibc-backed git. `_LEFT`/`_RIGHT` reproduce the same
+# "not part of a longer identifier" boundary check using only a plain
+# bracket expression, portable to any `git grep -E` backend -- and, per
+# `_drop_escaped_mentions`'s own docstring, this module's patterns are
+# ALSO re-run through Python's `re` module, which does not understand
+# POSIX `[[:space:]]` bracket-class syntax at all (silently misparses it
+# as a nested literal-character set, `FutureWarning: Possible nested
+# set`); `[ \t]` is valid, identical syntax in both engines.
 _LEFT = r"(^|[^A-Za-z0-9_.-])"
+_RIGHT = r"([^A-Za-z0-9_]|$)"
 _WAIVER_TICKET_PATTERN = (
-    _LEFT + r'ticket="?{id}"?\b'
-    r"|" + _LEFT + r'ticket\s+"{id}"'
-    r"|" + _LEFT + r'follow_up="?{id}"?\b'
+    _LEFT + r'ticket="?{id}"?' + _RIGHT
+    + r"|" + _LEFT + r'ticket[ \t]+"{id}"'
+    + r"|" + _LEFT + r'follow_up="?{id}"?' + _RIGHT
 )
 
 # frob:ticket T-1633
@@ -122,10 +138,17 @@ _REGISTRY_PATHSPEC = "docs/design/registry/*.yaml"
 
 
 def _registry_pattern(ticket_id: str) -> str:
-    """The `git grep -E` pattern for a registry `disposition:` value
-    naming `ticket_id` under any of `_REGISTRY_LIVE_KINDS`."""
+    r"""The `git grep -E` pattern for a registry `disposition:` value
+    naming `ticket_id` under any of `_REGISTRY_LIVE_KINDS`. T-3496: uses
+    `[ 	]` and `_RIGHT` instead of `\s`/`` -- see `_LEFT`'s docstring
+    comment above for why (GNU regex extensions, not POSIX ERE, silently
+    unmatched by macOS's `git grep -E` backend, AND not valid Python `re`
+    bracket-class syntax either)."""
     kinds = "|".join(_REGISTRY_LIVE_KINDS)
-    return rf'disposition:\s*["\']?({kinds}):{re.escape(ticket_id)}\b'
+    return (
+        rf'disposition:[ \t]*["\']?({kinds}):{re.escape(ticket_id)}'
+        + _RIGHT
+    )
 
 
 # frob:ticket T-1559
