@@ -1,7 +1,7 @@
 ---
 id: T-3434
 title: 'test_coverage_sigterm.py: signal.SIGKILL does not exist on win32'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -30,3 +30,6 @@ found while working T-3275 (unrelated ticket): ty flags tests/system/test_covera
 
 ## Failure log
 - 2026-08-29 attempt 1: already resolved on main by T-3431: signal.SIGKILL at tests/system/test_coverage_sigterm.py is now routed through a getattr guard (_SIGKILL: int = getattr(signal, 'SIGKILL', signal.SIGTERM)), the exact fix this ticket describes. frob check --only ty shows 0 unresolved-attribute findings against this file
+
+## Drop reason
+- 2026-08-29: Identical SIGKILL getattr guard already landed by T-3431 (23f0e3e4d); frob check --only ty shows 0 findings against tests/system/test_coverage_sigterm.py.
