@@ -2,7 +2,7 @@
 id: T-3467
 title: Move T-2114/ARCH001-diff pure logic into frob.gates._land_parity for real (fix
   the layering direction)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-30'
