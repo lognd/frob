@@ -18,6 +18,7 @@ scope:
 - frob-core/src/**
 - tests/unit/test_frob_core_gil.py
 - docs/modules/dup.md
+- docs/modules/arch.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,11 @@ scope_changes:
   glob: docs/modules/dup.md
   reason: T-3481 GIL-release note required by AFFECT001 for the frob-core kernels
     doc section
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/arch.md
+  reason: 'AFFECT001: py_function_metrics doc cross-reference'
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
