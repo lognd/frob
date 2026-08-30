@@ -22,6 +22,7 @@ scope:
 - docs/modules/lang.md
 - src/frob/lang/_extract.py
 - src/frob/lang/__init__.py
+- src/frob/lang/_support.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -123,6 +124,12 @@ scope_changes:
   glob: src/frob/lang/__init__.py
   reason: extension table must map .java to the java grammar, same as every prior
     adapter
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/lang/_support.py
+  reason: adapter capability/conformance registry needs a java LanguageSupport entry,
+    same as T-1600/T-1604
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
