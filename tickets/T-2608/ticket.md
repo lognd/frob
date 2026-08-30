@@ -2,7 +2,7 @@
 id: T-2608
 title: 'gate:SCOPE002 closure debt: narrow-scope tickets touching _gate_cache.py/_python.py
   trip 850+ pre-existing cross-file doc/test scope warnings'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -17,10 +17,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/_python.py
 - src/frob/gates/_gate_cache.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: SCOPE002's implementation lives here; grouping fix requires editing it
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
