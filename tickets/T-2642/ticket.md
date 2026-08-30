@@ -1,7 +1,7 @@
 ---
 id: T-2642
 title: changelog entries read as bug reports, not release notes
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-19'
