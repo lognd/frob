@@ -27,6 +27,18 @@ scope_changes:
     the function tests/test_tickets.py::TestScopeGlobValidation exercises'
   actor: logan
   at: '2026-08-30'
+body_changes:
+- mode: append
+  reason: 'T-3498: BUG002 waiver -- test already passes at main on this host''s Python
+    3.10'
+  actor: logan
+  at: '2026-08-30'
+  old_length: 1111
+  new_length: 1853
+evidence:
+- tests/test_tickets.py::TestScopeGlobValidation::test_semicolon_joined_entry_is_invalid
+- tests/test_tickets.py::TestScopeGlobValidation::test_new_ticket_refuses_a_semicolon_joined_scope
+- tests/test_tickets.py::TestScopeGlobValidation::test_every_existing_valid_form_still_passes
 designated_repro_test: null
 threat: null
 component: null
@@ -55,3 +67,5 @@ identically on every platform (a scope glob containing ";" is not a
 valid single glob and should never silently split/accept) -- this is a
 correctness bug, not a genuine platform difference to declare a
 boundary around.
+
+frob:waive BUG002 reason="T-3498 fixes a macOS-only defect (T-3488 bucket E): _first_invalid_scope_glob relied solely on pathlib.Path.glob's version-dependent ValueError to reject a ';'-joined scope entry, which raises on this host's Python 3.10 but was measured NOT to raise on macOS CI's own Python (run 33311990183). The designated repro test therefore already passes at main on this Linux/Python-3.10 host and can only genuinely fail-then-pass on the macOS/Python build that exhibits the gap, which this implementer cannot dispatch from a Linux worktree. Evidence is confirmatory-only on this host by the nature of the defect (a version-dependent stdlib validator), not a weak test -- same shape as T-3488/T-3496's own BUG002 waivers."
