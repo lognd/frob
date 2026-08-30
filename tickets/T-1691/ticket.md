@@ -1,7 +1,7 @@
 ---
 id: T-1691
 title: Bisect the unattributable residue of a red batch
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-08-06'
@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/verify/_bisect.py
 - docs/modules/tickets-verify-sweep.md
+- tests/unit/verify/test_bisect.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,11 @@ scope_changes:
     instead of the monofile every other unrelated ticket also held a lease on'
   actor: logan
   at: '2026-08-16'
+- op: add
+  glob: tests/unit/verify/test_bisect.py
+  reason: unit tests for the new bisect module this ticket adds
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: verification
