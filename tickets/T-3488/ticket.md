@@ -24,6 +24,19 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-3488: BUG002 waiver -- macOS-only defect cannot fail-then-pass on this
+    Linux worktree host'
+  actor: logan
+  at: '2026-08-30'
+  old_length: 3980
+  new_length: 4657
+evidence:
+- tests/system/test_ci_hang_guard_positive_control.py::TestCiHangGuardPositiveControl::test_planted_hang_is_killed_and_stack_named
+- tests/system/test_ci_hang_guard_positive_control.py::TestCiHangGuardPositiveControl::test_ordinary_fast_test_is_unaffected
+- tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_identity_less_environment_falls_back_to_throwaway_git_identity
+- tests/system/test_natives_build_integration.py::test_build_natives_compiles_and_imports_real_crate
 designated_repro_test: null
 threat: null
 component: null
@@ -87,3 +100,5 @@ declared boundary); one follow-up ticket filed per remaining bucket (C, D,
 E, F, H) with the measured root cause; docs/design/macos-portability.md
 created mirroring docs/design/windows-portability.md. The macOS leg stays
 REQUIRED (not advisory): unlike Windows its set is small and mechanical.
+
+frob:waive BUG002 reason="T-3488 fixes macOS-only CI failures (buckets A/B/G); none of the 3 designated repro tests can fail at main on this (Linux) host by construction -- bucket A's GNU timeout exists on Linux so the old code path already passed here, bucket B's git-identity fallback only breaks on a runner image with a preset global identity (not this host), and bucket G's cargo ANSI-stderr issue is a macOS-CI-only cargo behavior. The only environment that can genuinely fail-then-pass is macos-latest CI itself, which this implementer cannot dispatch from a Linux worktree. Evidence is confirmatory-only on this host by the nature of the defect, not by a weak test."
