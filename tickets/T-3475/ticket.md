@@ -39,7 +39,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 04b9eb6d9d466a12849c95704c05a1cfbd58d8db
 ---
 found while working T-2568 (may-raise resolver isdigit-guard discharge). Two EXHAUST002 findings appeared in the corpus since T-2568 was filed that are NOT guard-predicate cases at all -- a different bug class, out of T-2568's scope: scripts/fleet_status.py::_true_flock_holder_pid (T-3093) leaks StopIteration uncaught; src/frob/tickets/_new_renumber.py::_open_and_lock_counter_file (T-3026/T-2952) leaks TicketLockUnavailable uncaught. Triage each: catch/declare/frob:raises as appropriate, or waive with a specific reason if intentional propagation.
 
