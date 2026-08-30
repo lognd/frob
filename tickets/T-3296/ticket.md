@@ -2,7 +2,7 @@
 id: T-3296
 title: frob-coverage.lock.json scope-lease deadlock blocks TEST006 for every ticket
   but one
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -18,10 +18,25 @@ scope:
 - src/frob/tickets/_scope.py
 - src/frob/gates/_coverage.py
 - src/frob/gates/__init__.py
+- tests/test_tickets_scope_mutation.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_scope_mutation.py
+  reason: must-fire/must-stay-quiet tests for the frob-coverage.lock.json scope-lease/SCOPE001
+    exemption this ticket adds
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/test_gates.py
+  reason: must-fire/must-stay-quiet tests for the frob-coverage.lock.json scope-lease/SCOPE001
+    exemption this ticket adds
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
