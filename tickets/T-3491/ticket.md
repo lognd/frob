@@ -43,3 +43,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DOC006  tickets/T-3489/ticket.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Failure log
+- 2026-08-30 attempt 1: resolved on main by T-3489 landing: T-3489's own ticket.md is a queued-ticket body while open, and DOC006's frob.app.telemetry._state pointer fired then; T-3489 landed (state=done), and DOC006's existing _is_historical_ticket_doc/_terminal_ticket_ids exemption (T-2505/T-2374) already treats a DONE ticket's body as an immutable historical record, so the finding cleared automatically once state flipped -- no code change needed. Proof: pytest tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo -p no:xdist -- 1 passed, 0 failed (run from t-3491 worktree at main tip after T-3489's land).
