@@ -2,7 +2,7 @@
 id: T-3406
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3391):
   1 new (rule, file) identit(ies) (DEBT002)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -46,3 +46,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 
 ## Failure log
 - 2026-08-30 attempt 1: already resolved on main: frob check --only debt --ticket T-3406 zero-matches DEBT002 in src/frob/app/check_runner.py (code absent from the scoped diagnostics set)
+
+## Drop reason
+- 2026-08-30: Already resolved on main: the owning gate's scoped run zero-matches every cited identity (series K measurement, 2026-08-30; T-3354's CLAUDE001 was ~/.claude materialization drift fixed by frob claude sync, no repo diff).
