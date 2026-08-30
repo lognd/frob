@@ -14,10 +14,33 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/serve/_daemon.py
+- src/frob/vet/_capability_core.py
+- src/frob/gates/_pii_structural/_keywords.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/serve/_daemon.py
+  reason: 'T-2379 frob-arch burn-down: unguarded-shared-write x2 (daemon.py), lock-order-cycle
+    (capability_core.py), type-dispatch-smell (keywords.py)'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/vet/_capability_core.py
+  reason: 'T-2379 frob-arch burn-down: unguarded-shared-write x2 (daemon.py), lock-order-cycle
+    (capability_core.py), type-dispatch-smell (keywords.py)'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_pii_structural/_keywords.py
+  reason: 'T-2379 frob-arch burn-down: unguarded-shared-write x2 (daemon.py), lock-order-cycle
+    (capability_core.py), type-dispatch-smell (keywords.py)'
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 acceptance:
 - text: given the family's WARN codes, when frob check --json runs, then zero findings
