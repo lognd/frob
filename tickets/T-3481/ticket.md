@@ -21,6 +21,7 @@ scope:
 - docs/modules/arch.md
 - docs/modules/vet.md
 - docs/modules/lang.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +46,12 @@ scope_changes:
 - op: add
   glob: docs/modules/lang.md
   reason: 'AFFECT001: extract_tree_* doc cross-reference'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001/SYS111 fs.write+exec via-list declarations for the new test
+    file
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
