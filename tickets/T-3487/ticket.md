@@ -2,7 +2,7 @@
 id: T-3487
 title: 'test_with_serial_pools_worker_is_majority_attributed: relative assertion from
   T-3455 rejects 0.998 vs 0.504'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
