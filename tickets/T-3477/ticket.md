@@ -2,7 +2,7 @@
 id: T-3477
 title: 'PERF005/PERF008/PERF014: burn down remaining findings after T-2376''s partial
   pass'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -19,10 +19,18 @@ scope:
 - strata-core/src/graph/model.rs
 - src/frob/gates/_rule_id_scan.py
 - src/frob/vet/_capability_scan.py
+- tickets/T-draft-d3863270/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-draft-d3863270/**
+  reason: T-3477's own out-of-scope discovery filed as a new ticket via frob ticket
+    new from this worktree; the ticket file itself lands with this ticket
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
