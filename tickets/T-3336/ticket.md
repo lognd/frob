@@ -2,7 +2,7 @@
 id: T-3336
 title: frob ticket close reports success on a ticket land then refuses as NotCloseable,
   and done-report does not mirror like its sibling verbs
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -16,10 +16,21 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_done_report.py
+- src/frob/tickets/_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: T-3336's actual defect 1 code (close's rapid-profile bypass covering the
+    missing-evidence/Done-report check that land's own NotCloseable gate never relaxes)
+    lives in _evidence.py::_done_transition_structural_guard, not in _done_report.py
+    -- the ticket's declared scope names only the hollow-report/stale-claims leaf
+    module, which does not contain the divergence being fixed
+  actor: logan
+  at: '2026-08-30'
 body_changes:
 - mode: append
   reason: 'second independent instance with the exact mechanism: land''s NotCloseable
