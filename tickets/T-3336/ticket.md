@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_done_report.py
 - src/frob/tickets/_evidence.py
+- tests/test_tickets.py
+- tickets/T-draft-4de2fe57/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +31,20 @@ scope_changes:
     lives in _evidence.py::_done_transition_structural_guard, not in _done_report.py
     -- the ticket's declared scope names only the hollow-report/stale-claims leaf
     module, which does not contain the divergence being fixed
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_tickets.py
+  reason: T-3336 updates the existing rapid-leniency/hollow-report tests in test_tickets.py
+    for the new unconditional evidence gate, and files the required defect-2/defect-3
+    follow-up ticket whose ticket.md write needs to be in scope
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tickets/T-draft-4de2fe57/**
+  reason: T-3336 updates the existing rapid-leniency/hollow-report tests in test_tickets.py
+    for the new unconditional evidence gate, and files the required defect-2/defect-3
+    follow-up ticket whose ticket.md write needs to be in scope
   actor: logan
   at: '2026-08-30'
 body_changes:
