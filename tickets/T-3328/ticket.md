@@ -2,7 +2,7 @@
 id: T-3328
 title: TestArchive's 5 baseline failures are git worktree list exit 128 under load
   hitting T-3230's new fail-closed path
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
