@@ -205,14 +205,26 @@ fn merge_diagonals(
 /// honest signal, never a silent drop (the T-0193-recall-bug lesson):
 /// callers are expected to surface it (e.g. a WARN log) rather than treat
 /// the result as exhaustive when `truncated` is set.
+// frob:ticket T-3481
 #[pyfunction]
 #[pyo3(signature = (documents, min_len, max_run_size=200))]
 pub fn exact_regions(
+    py: Python<'_>,
     documents: Vec<Vec<String>>,
     min_len: usize,
     max_run_size: usize,
 ) -> (Vec<(usize, usize, usize, usize, usize)>, bool) {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // T-3481: release the GIL for the suffix-array build + run scan below.
+    py.allow_threads(|| exact_regions_impl(documents, min_len, max_run_size))
+}
+
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+pub fn exact_regions_impl(
+    documents: Vec<Vec<String>>,
+    min_len: usize,
+    max_run_size: usize,
+) -> (Vec<(usize, usize, usize, usize, usize)>, bool) {
     if documents.is_empty() || min_len == 0 {
         return (Vec::new(), false);
     }

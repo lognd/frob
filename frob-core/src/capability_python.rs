@@ -878,9 +878,12 @@ fn scan_python_source(
 /// empty lists rather than a `PyErr`.
 // frob:doc docs/modules/vet.md#public-api
 // frob:ticket T-1221
+// frob:ticket T-3481
 #[pyfunction]
 pub fn scan_python_capabilities(
+    py: Python<'_>,
     source: Vec<u8>,
 ) -> (Vec<(String, usize, usize)>, Vec<(usize, usize)>, Vec<(usize, usize)>) {
-    scan_python_source(&source)
+    // T-3481: release the GIL for the tree-sitter parse + capability scan.
+    py.allow_threads(|| scan_python_source(&source))
 }

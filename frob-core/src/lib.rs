@@ -43,15 +43,20 @@ mod r4;
 mod r5;
 use arch_python::py_function_metrics;
 use callgraph::{
-    called_names, near_duplicate_indices, ordered_called_names, referenced_names,
-    resolve_call_edges, unresolved_exempt_names,
+    called_names, near_duplicate_indices, near_duplicate_indices_impl, ordered_called_names,
+    referenced_names, referenced_names_impl, resolve_call_edges, resolve_call_edges_impl,
+    scan_call_tokens, unresolved_exempt_names, unresolved_exempt_names_impl,
 };
 use capability_python::scan_python_capabilities;
 use exact_regions::exact_regions as run_exact_regions;
+use exact_regions::exact_regions_impl;
 use extract::{extract_tree_cpp, extract_tree_python, extract_tree_rust, extract_tree_typescript};
 use r3::r3_canonical_hash;
+use r3::r3_canonical_hash_impl;
 use r4::{apted_similarity, candidate_pairs, tree_edit_similarity, winnow_fingerprints};
+use r4::{apted_similarity_impl, candidate_pairs_impl, tree_edit_similarity_impl, winnow_fingerprints_impl};
 use r5::{anti_unify, wl_hash};
+use r5::wl_hash_impl;
 #[cfg(test)]
 use callgraph::arch_sim_ratio;
 #[cfg(test)]
@@ -82,18 +87,18 @@ mod tests {
 
     #[test]
     fn canonical_hash_is_deterministic_and_shape_sensitive() {
-        // frob:tests frob-core/src/r3.rs::r3_canonical_hash kind="unit"
+        // frob:tests frob-core/src/r3.rs::r3_canonical_hash_impl kind="unit"
         // frob:tests frob-core/src/lib.rs::hash_str kind="unit"
         let a = vec!["def".into(), "_v0".into(), "return".into(), "_v0".into()];
         let b = vec!["def".into(), "_v0".into(), "return".into(), "_v0".into()];
         let c = vec!["def".into(), "_v0".into(), "return".into(), "_N_".into()];
-        assert_eq!(r3_canonical_hash(a.clone()), r3_canonical_hash(b));
-        assert_ne!(r3_canonical_hash(a), r3_canonical_hash(c));
+        assert_eq!(r3_canonical_hash_impl(a.clone()), r3_canonical_hash_impl(b));
+        assert_ne!(r3_canonical_hash_impl(a), r3_canonical_hash_impl(c));
     }
 
     #[test]
     fn r3_literal_abstraction_collapses_differing_constants() {
-        // frob:tests frob-core/src/r3.rs::r3_canonical_hash kind="unit"
+        // frob:tests frob-core/src/r3.rs::r3_canonical_hash_impl kind="unit"
         let a = vec![
             "def".into(),
             "_v0".into(),
@@ -110,12 +115,12 @@ mod tests {
             "+".into(),
             "2".into(),
         ];
-        assert_eq!(r3_canonical_hash(a), r3_canonical_hash(b));
+        assert_eq!(r3_canonical_hash_impl(a), r3_canonical_hash_impl(b));
     }
 
     #[test]
     fn r3_literal_abstraction_does_not_collapse_different_operators() {
-        // frob:tests frob-core/src/r3.rs::r3_canonical_hash kind="unit"
+        // frob:tests frob-core/src/r3.rs::r3_canonical_hash_impl kind="unit"
         let plus = vec![
             "def".into(),
             "_v0".into(),
@@ -132,12 +137,12 @@ mod tests {
             "-".into(),
             "1".into(),
         ];
-        assert_ne!(r3_canonical_hash(plus), r3_canonical_hash(minus));
+        assert_ne!(r3_canonical_hash_impl(plus), r3_canonical_hash_impl(minus));
     }
 
     #[test]
     fn r3_elif_desugar_matches_manually_nested_if_else() {
-        // frob:tests frob-core/src/r3.rs::r3_canonical_hash kind="unit"
+        // frob:tests frob-core/src/r3.rs::r3_canonical_hash_impl kind="unit"
         let with_elif = vec![
             "if".into(),
             "_v0".into(),
@@ -172,12 +177,12 @@ mod tests {
             "return".into(),
             "3".into(),
         ];
-        assert_eq!(r3_canonical_hash(with_elif), r3_canonical_hash(nested));
+        assert_eq!(r3_canonical_hash_impl(with_elif), r3_canonical_hash_impl(nested));
     }
 
     #[test]
     fn r3_elif_desugar_does_not_collapse_different_conditions() {
-        // frob:tests frob-core/src/r3.rs::r3_canonical_hash kind="unit"
+        // frob:tests frob-core/src/r3.rs::r3_canonical_hash_impl kind="unit"
         let a = vec![
             "if".into(),
             "_v0".into(),
@@ -202,7 +207,7 @@ mod tests {
             "return".into(),
             "2".into(),
         ];
-        assert_ne!(r3_canonical_hash(a), r3_canonical_hash(b));
+        assert_ne!(r3_canonical_hash_impl(a), r3_canonical_hash_impl(b));
     }
 
     #[test]
@@ -228,27 +233,28 @@ mod tests {
 
     #[test]
     fn winnow_fingerprints_nonempty_for_long_enough_token_stream() {
+        // frob:tests frob-core/src/r4.rs::winnow_fingerprints_impl kind="unit"
         let toks: Vec<String> = (0..20).map(|i| format!("t{}", i)).collect();
-        let fps = winnow_fingerprints(toks, 4, 4);
+        let fps = winnow_fingerprints_impl(toks, 4, 4);
         assert!(!fps.is_empty());
     }
 
     #[test]
     fn candidate_pairs_finds_shared_bucket() {
         let sets = vec![vec![1u64, 2, 3], vec![2u64, 3, 4], vec![99u64]];
-        let pairs = candidate_pairs(sets, 2);
+        let pairs = candidate_pairs_impl(sets, 2);
         assert_eq!(pairs, vec![(0, 1)]);
     }
 
     #[test]
     fn candidate_pairs_never_emits_a_self_pair() {
-        // frob:tests frob-core/src/r4.rs::candidate_pairs kind="unit"
+        // frob:tests frob-core/src/r4.rs::candidate_pairs_impl kind="unit"
         // Regression for T-0268: a region whose own fingerprint set
         // contains a duplicate value indexes itself twice into the same
         // bucket, which previously produced a self-pair (i, i) once that
         // region's own duplicate-value collision count reached min_shared.
         let sets = vec![vec![7u64, 7, 7], vec![99u64]];
-        let pairs = candidate_pairs(sets, 2);
+        let pairs = candidate_pairs_impl(sets, 2);
         assert!(
             pairs.iter().all(|&(i, j)| i != j),
             "candidate_pairs returned a self-pair: {:?}",
@@ -259,8 +265,9 @@ mod tests {
 
     #[test]
     fn tree_edit_similarity_identical_sequences_is_one() {
+        // frob:tests frob-core/src/r4.rs::tree_edit_similarity_impl kind="unit"
         let a = vec![1u64, 2, 3];
-        let (sim, alignment) = tree_edit_similarity(a.clone(), a);
+        let (sim, alignment) = tree_edit_similarity_impl(a.clone(), a);
         assert!((sim - 1.0).abs() < 1e-9);
         assert_eq!(alignment, vec![(0, 0), (1, 1), (2, 2)]);
     }
@@ -269,20 +276,20 @@ mod tests {
     fn tree_edit_similarity_disjoint_sequences_is_zero() {
         let a = vec![1u64, 2, 3];
         let b = vec![9u64, 8, 7];
-        let (sim, _) = tree_edit_similarity(a, b);
+        let (sim, _) = tree_edit_similarity_impl(a, b);
         assert!(sim.abs() < 1e-9);
     }
 
     #[test]
     fn wl_hash_isomorphic_relabeled_graphs_collide() {
-        // frob:tests frob-core/src/r5.rs::wl_hash kind="unit"
+        // frob:tests frob-core/src/r5.rs::wl_hash_impl kind="unit"
         // Triangle a-b-c with labels ["def", "use", "use"], vs the same
         // triangle with nodes renumbered -- 1-WL must be invariant to that.
         let labels_a = vec!["def".to_string(), "use".to_string(), "use".to_string()];
         let adj_a = vec![(0usize, 1usize), (1, 2), (2, 0)];
         let labels_b = vec!["use".to_string(), "def".to_string(), "use".to_string()];
         let adj_b = vec![(1usize, 0usize), (0, 2), (2, 1)];
-        assert_eq!(wl_hash(adj_a, labels_a, 2), wl_hash(adj_b, labels_b, 2));
+        assert_eq!(wl_hash_impl(adj_a, labels_a, 2), wl_hash_impl(adj_b, labels_b, 2));
     }
 
     #[test]
@@ -292,31 +299,31 @@ mod tests {
         let path = vec![(0usize, 1usize), (1, 2)];
         let triangle = vec![(0usize, 1usize), (1, 2), (2, 0)];
         assert_ne!(
-            wl_hash(path, labels.clone(), 2),
-            wl_hash(triangle, labels, 2)
+            wl_hash_impl(path, labels.clone(), 2),
+            wl_hash_impl(triangle, labels, 2)
         );
     }
 
     #[test]
     fn wl_hash_empty_graph_is_zero() {
-        assert_eq!(wl_hash(Vec::new(), Vec::new(), 2), 0);
+        assert_eq!(wl_hash_impl(Vec::new(), Vec::new(), 2), 0);
     }
 
     #[test]
     fn apted_identical_trees_is_similarity_one() {
-        // frob:tests frob-core/src/r4.rs::apted_similarity kind="unit"
+        // frob:tests frob-core/src/r4.rs::apted_similarity_impl kind="unit"
         // frob:tests frob-core/src/r4.rs::build_postorder kind="unit"
         // frob:tests frob-core/src/r4.rs::zhang_shasha_distance kind="unit"
         // def -> [return, name]  (a 3-node tree: root + 2 leaf children)
         let labels = vec!["def".into(), "return".into(), "name".into()];
         let parents = vec![-1i64, 0, 0];
-        let sim = apted_similarity(labels.clone(), parents.clone(), labels, parents);
+        let sim = apted_similarity_impl(labels.clone(), parents.clone(), labels, parents);
         assert!((sim - 1.0).abs() < 1e-9);
     }
 
     #[test]
     fn apted_disjoint_single_leaf_trees_is_zero_similarity() {
-        let sim = apted_similarity(
+        let sim = apted_similarity_impl(
             vec!["a".into()],
             vec![-1i64],
             vec!["b".into()],
@@ -337,7 +344,7 @@ mod tests {
         let parents_a = vec![-1i64, 0, 0];
         let labels_b = vec!["add".into(), "y".into(), "x".into()];
         let parents_b = vec![-1i64, 0, 0];
-        let sim = apted_similarity(labels_a, parents_a, labels_b, parents_b);
+        let sim = apted_similarity_impl(labels_a, parents_a, labels_b, parents_b);
         // Not identical (rename cost at the two leaf positions), but still
         // highly similar (same root label, same arity/shape).
         assert!(sim < 1.0);
@@ -365,7 +372,7 @@ mod tests {
 
     #[test]
     fn apted_empty_vs_empty_is_similarity_one() {
-        let sim = apted_similarity(Vec::new(), Vec::new(), Vec::new(), Vec::new());
+        let sim = apted_similarity_impl(Vec::new(), Vec::new(), Vec::new(), Vec::new());
         assert!((sim - 1.0).abs() < 1e-9);
     }
 
@@ -480,6 +487,7 @@ mod tests {
         assert_eq!(first.bindings_b, vec![(0usize, 2usize), (1usize, 4usize)]);
     }
 
+    // frob:tests frob-core/src/r5.rs::anti_unify_impl kind="unit"
     #[test]
     fn anti_unify_pyfunction_wraps_hole_ceiling_as_false_sentinel() {
         // The #[pyfunction] boundary never raises for a hole-ceiling
@@ -488,8 +496,10 @@ mod tests {
         let parents_a = vec![-1i64, 0, 0];
         let labels_b = vec!["class".into(), "p".into(), "q".into(), "r".into()];
         let parents_b = vec![-1i64, 0, 0, 0];
-        let (ok, labels, parents, bindings_a, bindings_b) =
-            anti_unify(labels_a, parents_a, labels_b, parents_b);
+        pyo3::prepare_freethreaded_python();
+        let (ok, labels, parents, bindings_a, bindings_b) = Python::with_gil(|py| {
+            anti_unify(py, labels_a, parents_a, labels_b, parents_b)
+        });
         assert!(!ok);
         assert!(labels.is_empty());
         assert!(parents.is_empty());
@@ -499,7 +509,7 @@ mod tests {
 
     #[test]
     fn exact_regions_finds_shared_block_inside_different_functions() {
-        // frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::exact_regions_impl kind="unit"
         // frob:tests frob-core/src/exact_regions.rs::build_suffix_array kind="unit"
         // frob:tests frob-core/src/exact_regions.rs::kasai_lcp kind="unit"
         // Two otherwise-different token streams sharing one 6-token block
@@ -519,7 +529,7 @@ mod tests {
             .chain(["print", "y"].iter())
             .map(|s| s.to_string())
             .collect();
-        let (regions, truncated) = run_exact_regions(vec![doc_a.clone(), doc_b.clone()], shared.len(), 10_000);
+        let (regions, truncated) = exact_regions_impl(vec![doc_a.clone(), doc_b.clone()], shared.len(), 10_000);
         assert!(!truncated);
         assert_eq!(regions.len(), 1);
         let (da, oa, db, ob, l) = regions[0];
@@ -535,7 +545,7 @@ mod tests {
         let shared = vec!["a", "b", "c"];
         let doc_a: Vec<String> = shared.iter().map(|s| s.to_string()).collect();
         let doc_b: Vec<String> = shared.iter().map(|s| s.to_string()).collect();
-        let (regions, _) = run_exact_regions(vec![doc_a, doc_b], 10, 10_000);
+        let (regions, _) = exact_regions_impl(vec![doc_a, doc_b], 10, 10_000);
         assert!(regions.is_empty());
     }
 
@@ -543,7 +553,7 @@ mod tests {
     fn exact_regions_no_match_across_wholly_different_documents() {
         let doc_a: Vec<String> = vec!["a".into(), "b".into(), "c".into(), "d".into()];
         let doc_b: Vec<String> = vec!["w".into(), "x".into(), "y".into(), "z".into()];
-        let (regions, _) = run_exact_regions(vec![doc_a, doc_b], 2, 10_000);
+        let (regions, _) = exact_regions_impl(vec![doc_a, doc_b], 2, 10_000);
         assert!(regions.is_empty());
     }
 
@@ -553,7 +563,7 @@ mod tests {
         // the boundary from being reported as a match with anything.
         let doc_a: Vec<String> = vec!["p".into(), "q".into(), "r".into()];
         let doc_b: Vec<String> = vec!["r".into(), "s".into(), "t".into()];
-        let (regions, _) = run_exact_regions(vec![doc_a, doc_b], 1, 10_000);
+        let (regions, _) = exact_regions_impl(vec![doc_a, doc_b], 1, 10_000);
         // "r" alone (length 1) legitimately matches (doc0 offset 2, doc1
         // offset 0) -- but nothing longer, since "r","s" (from b) never
         // equals a real 2-token run present in doc_a.
@@ -571,17 +581,17 @@ mod tests {
         let shared: Vec<String> = (0..12).map(|i| format!("t{i}")).collect();
         let doc_a = shared.clone();
         let doc_b = shared.clone();
-        let (regions, _) = run_exact_regions(vec![doc_a, doc_b], 3, 10_000);
+        let (regions, _) = exact_regions_impl(vec![doc_a, doc_b], 3, 10_000);
         assert_eq!(regions.len(), 1);
         assert_eq!(regions[0].4, shared.len());
     }
 
     #[test]
     fn exact_regions_empty_input_is_empty_output() {
-        let (regions, truncated) = run_exact_regions(Vec::new(), 1, 10_000);
+        let (regions, truncated) = exact_regions_impl(Vec::new(), 1, 10_000);
         assert!(regions.is_empty());
         assert!(!truncated);
-        let (regions, _) = run_exact_regions(vec![vec!["a".into()]], 0, 10_000);
+        let (regions, _) = exact_regions_impl(vec![vec!["a".into()]], 0, 10_000);
         assert!(regions.is_empty());
     }
 
@@ -601,7 +611,7 @@ mod tests {
 
     #[test]
     fn exact_regions_three_identical_documents_reports_all_three_pairs() {
-        // frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::exact_regions_impl kind="unit"
         // Regression for the reviewer-caught bug (T-0193 round 2): only
         // SA-adjacent suffix pairs were compared, so a block repeated in
         // 3+ documents silently dropped non-adjacent occurrence pairs --
@@ -609,7 +619,7 @@ mod tests {
         // them in the suffix array.
         let block: Vec<String> = ["a", "b", "c", "d"].iter().map(|s| s.to_string()).collect();
         let docs = vec![block.clone(), block.clone(), block.clone()];
-        let (regions, _) = run_exact_regions(docs, 2, 10_000);
+        let (regions, _) = exact_regions_impl(docs, 2, 10_000);
         assert!(has_pair(&regions, 0, 1, 4), "missing (doc0, doc1): {regions:?}");
         assert!(has_pair(&regions, 0, 2, 4), "missing (doc0, doc2): {regions:?}");
         assert!(has_pair(&regions, 1, 2, 4), "missing (doc1, doc2): {regions:?}");
@@ -617,10 +627,10 @@ mod tests {
 
     #[test]
     fn exact_regions_four_way_shared_block_reports_every_pair() {
-        // frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::exact_regions_impl kind="unit"
         let block: Vec<String> = (0..6).map(|i| format!("w{i}")).collect();
         let docs = vec![block.clone(), block.clone(), block.clone(), block.clone()];
-        let (regions, _) = run_exact_regions(docs, 3, 10_000);
+        let (regions, _) = exact_regions_impl(docs, 3, 10_000);
         for x in 0..4 {
             for y in (x + 1)..4 {
                 assert!(has_pair(&regions, x, y, 6), "missing ({x}, {y}): {regions:?}");
@@ -630,7 +640,7 @@ mod tests {
 
     #[test]
     fn exact_regions_mixed_case_two_nested_shared_regions() {
-        // frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::exact_regions_impl kind="unit"
         // Three documents share region A ("p q r s"); only two of those
         // three (doc0, doc1) additionally share a second region B
         // ("m n o", immediately following A) that doc2 does not have at
@@ -649,7 +659,7 @@ mod tests {
         let doc0 = mk(&region_b);
         let doc1 = mk(&region_b);
         let doc2 = mk(&["x", "y", "z"]); // no region B
-        let (regions, _) = run_exact_regions(vec![doc0, doc1, doc2], 3, 10_000);
+        let (regions, _) = exact_regions_impl(vec![doc0, doc1, doc2], 3, 10_000);
 
         // Region A (length 4) ties all three documents together.
         assert!(has_pair(&regions, 0, 1, 4), "missing region-A (doc0,doc1): {regions:?}");
@@ -670,7 +680,7 @@ mod tests {
 
     #[test]
     fn exact_regions_run_size_guard_bounds_pair_emission_on_a_large_run() {
-        // frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::exact_regions_impl kind="unit"
         // T-0273: reviewer finding on T-0193 -- 2000 identical documents
         // sharing a block produced 1,999,000 unbounded pairs. With the
         // default cap (200) a 500-document run must emit at most
@@ -679,7 +689,7 @@ mod tests {
         // never mistakes the capped result for exhaustive.
         let block: Vec<String> = ["a", "b", "c", "d"].iter().map(|s| s.to_string()).collect();
         let docs: Vec<Vec<String>> = (0..500).map(|_| block.clone()).collect();
-        let (regions, truncated) = run_exact_regions(docs, 2, 200);
+        let (regions, truncated) = exact_regions_impl(docs, 2, 200);
         assert!(truncated, "500-document identical run must be flagged truncated");
         let max_uncapped_pairs = 500usize * 499 / 2;
         let cap_pairs = 200usize * 199 / 2;
@@ -693,12 +703,12 @@ mod tests {
 
     #[test]
     fn exact_regions_run_size_guard_does_not_trip_below_the_cap() {
-        // frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::exact_regions_impl kind="unit"
         // A run at or below max_run_size is unaffected: no truncation
         // signal, and every pair among the (small) run is still reported.
         let block: Vec<String> = ["a", "b", "c", "d"].iter().map(|s| s.to_string()).collect();
         let docs: Vec<Vec<String>> = (0..5).map(|_| block.clone()).collect();
-        let (regions, truncated) = run_exact_regions(docs, 2, 200);
+        let (regions, truncated) = exact_regions_impl(docs, 2, 200);
         assert!(!truncated);
         assert_eq!(regions.len(), 5 * 4 / 2);
     }
@@ -716,7 +726,7 @@ mod tests {
         assert_eq!(lcp, vec![0, 1, 3, 0, 0, 2]);
     }
 
-    // frob:tests frob-core/src/callgraph.rs::resolve_call_edges kind="unit"
+    // frob:tests frob-core/src/callgraph.rs::resolve_call_edges_impl kind="unit"
     #[test]
     fn resolve_call_edges_matches_private_callee_and_skips_self_and_public() {
         let by_name: HashMap<String, Vec<(String, String, bool)>> = HashMap::from([
@@ -729,7 +739,7 @@ mod tests {
                 vec![("a.py::public_fn".to_string(), "a.py".to_string(), false)],
             ),
         ]);
-        let out = resolve_call_edges(
+        let out = resolve_call_edges_impl(
             vec!["a.py::caller".to_string()],
             vec![vec![
                 "helper".to_string(),
@@ -756,7 +766,7 @@ mod tests {
             "caller".to_string(),
             vec![("a.py::caller".to_string(), "a.py".to_string(), true)],
         )]);
-        let out = resolve_call_edges(
+        let out = resolve_call_edges_impl(
             vec!["a.py::caller".to_string()],
             vec![vec!["caller".to_string()]],
             vec![vec![]],
@@ -770,7 +780,7 @@ mod tests {
     #[test]
     fn resolve_call_edges_marks_unresolved_private_looking_miss_unless_exempt() {
         let by_name: HashMap<String, Vec<(String, String, bool)>> = HashMap::new();
-        let unresolved = resolve_call_edges(
+        let unresolved = resolve_call_edges_impl(
             vec!["a.py::caller".to_string()],
             vec![vec!["_missing".to_string()]],
             vec![vec![]],
@@ -786,7 +796,7 @@ mod tests {
             )]
         );
 
-        let exempted = resolve_call_edges(
+        let exempted = resolve_call_edges_impl(
             vec!["a.py::caller".to_string()],
             vec![vec!["_missing".to_string()]],
             vec![vec!["_missing".to_string()]],
@@ -798,13 +808,14 @@ mod tests {
     }
 
     // frob:tests frob-core/src/callgraph.rs::called_names kind="unit"
+    // frob:tests frob-core/src/callgraph.rs::scan_call_tokens kind="unit"
     #[test]
     fn called_names_rescues_wrapper_marker_argument() {
         let tokens: Vec<String> = ["memoize_per_run", "(", "_target", ")"]
             .iter()
             .map(|s| s.to_string())
             .collect();
-        let mut names = called_names(tokens, vec!["memoize_per_run".to_string()]);
+        let mut names = scan_call_tokens(&tokens, &["memoize_per_run".to_string()], false);
         names.sort();
         assert_eq!(
             names,
@@ -812,24 +823,26 @@ mod tests {
         );
     }
 
+    // frob:tests frob-core/src/callgraph.rs::scan_call_tokens kind="unit"
     #[test]
     fn ordered_called_names_preserves_order_and_duplicates() {
         let tokens: Vec<String> = ["_a", "(", ")", "_b", "(", ")", "_a", "(", ")"]
             .iter()
             .map(|s| s.to_string())
             .collect();
-        let names = ordered_called_names(tokens, vec![]);
+        let names = scan_call_tokens(&tokens, &[], true);
         assert_eq!(
             names,
             vec!["_a".to_string(), "_b".to_string(), "_a".to_string()]
         );
     }
 
+    // frob:tests frob-core/src/callgraph.rs::referenced_names_impl kind="unit"
     #[test]
     fn referenced_names_covers_signature_and_body_deduped() {
         let sig: Vec<String> = ["self", "arg"].iter().map(|s| s.to_string()).collect();
         let body: Vec<String> = ["arg", "+", "1"].iter().map(|s| s.to_string()).collect();
-        let mut names = referenced_names(sig, body);
+        let mut names = referenced_names_impl(sig, body);
         names.sort();
         assert_eq!(
             names,
@@ -837,6 +850,7 @@ mod tests {
         );
     }
 
+    // frob:tests frob-core/src/callgraph.rs::unresolved_exempt_names_impl kind="unit"
     #[test]
     fn unresolved_exempt_names_exempts_only_pure_foreign_attribute_calls() {
         // `self._foo()` (confident, never exempt) and `obj._bar()` (always
@@ -847,7 +861,7 @@ mod tests {
         .iter()
         .map(|s| s.to_string())
         .collect();
-        let mut exempt = unresolved_exempt_names(tokens);
+        let mut exempt = unresolved_exempt_names_impl(tokens);
         exempt.sort();
         assert_eq!(exempt, vec!["_bar".to_string()]);
     }
@@ -898,7 +912,7 @@ mod tests {
         );
     }
 
-    // frob:tests frob-core/src/callgraph.rs::near_duplicate_indices kind="unit"
+    // frob:tests frob-core/src/callgraph.rs::near_duplicate_indices_impl kind="unit"
     #[test]
     fn near_duplicate_indices_matches_python_reference_cluster() {
         // Same fixture, threshold, and expected cluster as
@@ -911,7 +925,7 @@ mod tests {
             "_S_ return _v1 + _v2".to_string(),
             "totally different body here with more tokens padding".to_string(),
         ];
-        let idx = near_duplicate_indices(bodies, 0.9);
+        let idx = near_duplicate_indices_impl(bodies, 0.9);
         assert_eq!(idx, vec![0usize, 1usize]);
     }
 }

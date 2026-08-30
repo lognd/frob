@@ -30,7 +30,8 @@ fn is_identifier_token(tok: &str) -> bool {
 /// (`_called_names`'s frozenset contract); `true` preserves source-text
 /// order with duplicates kept (`_ordered_called_names`'s contract) --
 /// same scan, two output shapes, avoiding two near-identical loops.
-fn scan_call_tokens(body_tokens: &[String], wrapper_markers: &[String], ordered: bool) -> Vec<String> {
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+pub(crate) fn scan_call_tokens(body_tokens: &[String], wrapper_markers: &[String], ordered: bool) -> Vec<String> {
     let markers: std::collections::HashSet<&str> =
         wrapper_markers.iter().map(|s| s.as_str()).collect();
     let n = body_tokens.len();
@@ -61,17 +62,30 @@ fn scan_call_tokens(body_tokens: &[String], wrapper_markers: &[String], ordered:
 /// T-0930: `frob.graph.callgraph._called_names` -- de-duplicated call-name
 /// scan (see `scan_call_tokens`).
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:ticket T-3481
 #[pyfunction]
-pub fn called_names(body_tokens: Vec<String>, wrapper_markers: Vec<String>) -> Vec<String> {
-    scan_call_tokens(&body_tokens, &wrapper_markers, false)
+pub fn called_names(
+    py: Python<'_>,
+    body_tokens: Vec<String>,
+    wrapper_markers: Vec<String>,
+) -> Vec<String> {
+    // T-3481: release the GIL for the token scan (T-3457's strata-core
+    // shape) so a Python watchdog thread can run during a long call.
+    py.allow_threads(|| scan_call_tokens(&body_tokens, &wrapper_markers, false))
 }
 
 /// T-0930: `frob.graph.callgraph._ordered_called_names` -- source-order,
 /// duplicates-kept call-name scan (see `scan_call_tokens`).
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:ticket T-3481
 #[pyfunction]
-pub fn ordered_called_names(body_tokens: Vec<String>, wrapper_markers: Vec<String>) -> Vec<String> {
-    scan_call_tokens(&body_tokens, &wrapper_markers, true)
+pub fn ordered_called_names(
+    py: Python<'_>,
+    body_tokens: Vec<String>,
+    wrapper_markers: Vec<String>,
+) -> Vec<String> {
+    // T-3481: same GIL-release shape as `called_names` above.
+    py.allow_threads(|| scan_call_tokens(&body_tokens, &wrapper_markers, true))
 }
 
 /// T-0930: `frob.graph.callgraph._referenced_names` -- every identifier
@@ -79,8 +93,19 @@ pub fn ordered_called_names(body_tokens: Vec<String>, wrapper_markers: Vec<Strin
 /// recall than `called_names`: catches dispatch-table/decorator/default-
 /// value mentions that never appear as a `name(` call token at all).
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:ticket T-3481
 #[pyfunction]
-pub fn referenced_names(sig_tokens: Vec<String>, body_tokens: Vec<String>) -> Vec<String> {
+pub fn referenced_names(
+    py: Python<'_>,
+    sig_tokens: Vec<String>,
+    body_tokens: Vec<String>,
+) -> Vec<String> {
+    // T-3481: release the GIL for the identifier-token walk.
+    py.allow_threads(|| referenced_names_impl(sig_tokens, body_tokens))
+}
+
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+pub(crate) fn referenced_names_impl(sig_tokens: Vec<String>, body_tokens: Vec<String>) -> Vec<String> {
     let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut out: Vec<String> = Vec::new();
     for tok in sig_tokens.iter().chain(body_tokens.iter()) {
@@ -96,8 +121,15 @@ pub fn referenced_names(sig_tokens: Vec<String>, body_tokens: Vec<String>) -> Ve
 /// than `self` (T-0813's `obj._method(...)`/`super().__init__(...)`
 /// false-positive disposition).
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:ticket T-3481
 #[pyfunction]
-pub fn unresolved_exempt_names(body_tokens: Vec<String>) -> Vec<String> {
+pub fn unresolved_exempt_names(py: Python<'_>, body_tokens: Vec<String>) -> Vec<String> {
+    // T-3481: release the GIL for the O(n) token walk below.
+    py.allow_threads(|| unresolved_exempt_names_impl(body_tokens))
+}
+
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+pub(crate) fn unresolved_exempt_names_impl(body_tokens: Vec<String>) -> Vec<String> {
     let mut confident: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut all_calls: std::collections::HashSet<String> = std::collections::HashSet::new();
     let n = body_tokens.len();
@@ -137,8 +169,32 @@ pub fn unresolved_exempt_names(body_tokens: Vec<String>) -> Vec<String> {
 /// callers that resolved to zero callees omitted, exactly like the
 /// Python original.
 // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:ticket T-3481
 #[pyfunction]
 pub fn resolve_call_edges(
+    py: Python<'_>,
+    callers: Vec<String>,
+    names_per_caller: Vec<Vec<String>>,
+    exempt_per_caller: Vec<Vec<String>>,
+    by_name: HashMap<String, Vec<(String, String, bool)>>,
+    mark_unresolved: bool,
+    unresolved_sentinel: String,
+) -> Vec<(String, Vec<String>)> {
+    // T-3481: release the GIL for the O(names * candidates) matching loop.
+    py.allow_threads(|| {
+        resolve_call_edges_impl(
+            callers,
+            names_per_caller,
+            exempt_per_caller,
+            by_name,
+            mark_unresolved,
+            unresolved_sentinel,
+        )
+    })
+}
+
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+pub(crate) fn resolve_call_edges_impl(
     callers: Vec<String>,
     names_per_caller: Vec<Vec<String>>,
     exempt_per_caller: Vec<Vec<String>>,
@@ -383,8 +439,15 @@ pub(crate) fn arch_sim_ratio(a: &[char], b: &[char]) -> f64 {
 /// have at least one same-group partner scoring `>= threshold` under
 /// `arch_sim_ratio` (difflib-`SequenceMatcher.ratio()`-equivalent).
 // frob:doc docs/modules/dup.md#rust-core
+// frob:ticket T-3481
 #[pyfunction]
-pub fn near_duplicate_indices(bodies: Vec<String>, threshold: f64) -> Vec<usize> {
+pub fn near_duplicate_indices(py: Python<'_>, bodies: Vec<String>, threshold: f64) -> Vec<usize> {
+    // T-3481: release the GIL for the O(n^2) pairwise similarity scan.
+    py.allow_threads(|| near_duplicate_indices_impl(bodies, threshold))
+}
+
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+pub(crate) fn near_duplicate_indices_impl(bodies: Vec<String>, threshold: f64) -> Vec<usize> {
     let chars: Vec<Vec<char>> = bodies.iter().map(|s| s.chars().collect()).collect();
     let mut cluster: std::collections::HashSet<usize> = std::collections::HashSet::new();
     for i in 0..chars.len() {

@@ -876,6 +876,14 @@ consume), no `from X import *` wildcard registry fallback (T-0659, same
 reason), and no tuple/list destructuring alias (T-0659, implementable
 without the registry but lower-value than the two evasions this ticket's
 own dispatch named explicitly -- left as documented future work).
+
+T-3481: `scan_python_capabilities` now releases the GIL for its
+tree-sitter parse + capability scan (`py.allow_threads`), the same fix
+T-3457 shipped for strata-core and T-3481 applied across every frob-core
+`#[pyfunction]` -- see
+docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface for the
+full rationale and the shared must-fire/must-stay-quiet test coverage
+(tests/unit/test_frob_core_gil.py).
 <!-- frob:describes src/frob/vet/_scan.py::scan_tree -->
 <!-- frob:describes src/frob/vet/_lifecycle.py::_scan_lifecycle_scripts -->
 <!-- frob:describes src/frob/vet/_obfuscation.py::_high_entropy_strings -->

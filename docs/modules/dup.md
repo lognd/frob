@@ -444,6 +444,22 @@ the other four are parked (correct, parity-tested, exported) but
 measured net-slower than pure-Python at this repo's real per-symbol call
 granularity, so no Python shim calls them.
 
+T-3481: every `#[pyfunction]` in this crate now releases the GIL for the
+duration of its native computation (`py.allow_threads`), the same fix
+T-3457 shipped for strata-core -- before this, NONE of frob-core's 19
+`#[pyfunction]`s released the GIL at all, so a Python watchdog thread
+(pytest-timeout's thread-method `Timer`, or any other Python thread)
+could not run -- let alone preempt the process -- while one of them was
+still computing a long call. Each export's Rust-visible signature grows a
+leading `py: Python<'_>` parameter (pyo3 auto-injects it; invisible to
+Python callers and to `frob_core.pyi`'s stub, which is unchanged), and
+its original body moves into a private (`pub(crate)`) `..._impl` sibling
+that this crate's own Rust unit tests call directly (no live GIL needed
+there). See tests/unit/test_frob_core_gil.py for the must-fire (timeout
+preemption + background-thread scheduling proof) and must-stay-quiet
+(unchanged return values) coverage, mirroring
+tests/unit/strata/test_strata_core_gil.py's shape for strata-core.
+
 T-0953 added one more kernel to this SAME crate/pymodule for
 `frob.arch._python` (not `frob.dup` or `frob.graph`) --
 `near_duplicate_indices`, archgate's `_near_duplicate_cluster`

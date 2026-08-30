@@ -1920,6 +1920,13 @@ source_lines)` a consumer can still run Python-side post-hoc, cheaply,
 without threading it through the FFI boundary as a second kernel input.
 No consumer is rewired to this kernel yet (T-1219's job).
 
+T-3481: `py_function_metrics` now releases the GIL for the tree-sitter
+parse + metrics walk (`py.allow_threads`), the same fix T-3457 shipped
+for strata-core and T-3481 applied across every frob-core `#[pyfunction]`
+-- see docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+for the full rationale and the shared must-fire/must-stay-quiet test
+coverage (tests/unit/test_frob_core_gil.py).
+
 ## Public API
 
 <a id="public-api"></a>

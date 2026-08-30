@@ -338,6 +338,13 @@ this portion, T-1220's own acceptance criterion (python/cpp/rust/
 typescript kernels exported, kotlin staying on the Python path) is fully
 delivered; only the consumer rewiring remains, under T-1219.
 
+T-3481: all four `extract_tree_*` kernels now release the GIL for their
+tree-sitter parse (`py.allow_threads`), the same fix T-3457 shipped for
+strata-core and T-3481 applied across every frob-core `#[pyfunction]` --
+see docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface for
+the full rationale and the shared must-fire/must-stay-quiet test coverage
+(tests/unit/test_frob_core_gil.py).
+
 ## Primitives
 
 <!-- frob:describes src/frob/lang/_common.py::_collapse_ws -->

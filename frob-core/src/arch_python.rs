@@ -83,9 +83,9 @@ fn line_of(node: Node) -> usize {
 
 /// Deepest control-flow nesting depth inside `func_body_node` -- matches
 /// `_py_max_nesting` exactly (a pure recursive max, no early return).
-// frob:invariant terminates reason="each recursive call descends strictly into a \
-// child of node in tree-sitter's own finite parse tree" measure="remaining depth from \
-// node to its deepest leaf in the parse tree"
+// frob:invariant terminates reason="each recursive call descends strictly into a child of node in \
+// tree-sitter's own finite parse tree" measure="remaining depth from node to its deepest leaf in \
+// the parse tree"
 // frob:ticket T-1222
 fn max_nesting(node: Node, current: usize) -> usize {
     let mut best = current;
@@ -103,9 +103,9 @@ fn max_nesting(node: Node, current: usize) -> usize {
 
 /// Cheap cyclomatic-complexity proxy: count of `BRANCH_NODE_TYPES` nodes
 /// in `node`'s subtree -- matches `_py_cyclomatic` exactly.
-// frob:invariant terminates reason="each recursive call descends strictly into a \
-// child of node in tree-sitter's own finite parse tree" measure="remaining depth from \
-// node to its deepest leaf in the parse tree"
+// frob:invariant terminates reason="each recursive call descends strictly into a child of node in \
+// tree-sitter's own finite parse tree" measure="remaining depth from node to its deepest leaf in \
+// the parse tree"
 // frob:ticket T-1222
 fn cyclomatic(node: Node) -> usize {
     let mut count = if BRANCH_NODE_TYPES.contains(&node.kind()) { 1 } else { 0 };
@@ -121,13 +121,12 @@ fn cyclomatic(node: Node) -> usize {
 /// `conditional_expression` has no separate condition field, so its own
 /// text stands for it.
 // frob:ticket T-1222
-// frob:waive DUP001 reason="the r2 structural match is against unrelated short \
-// predicate/lookup functions across this crate (is_dynamic_dispatch_subscript, \
-// collect_candidates, walk_leaves, collect_comment_nodes, anti_unify_core) and four \
-// strata-core recursive-descent parser methods -- none share this function's actual \
-// logic (a two-branch field-lookup-with-text-fallback); the r2 rung matches on \
-// generic short-function control-flow shape only, a coincidental match class this \
-// size of function is prone to, not a real duplication to extract a helper from"
+// frob:waive DUP001 reason="the r2 structural match is against unrelated short predicate/lookup \
+// functions across this crate (is_dynamic_dispatch_subscript, collect_candidates, walk_leaves, \
+// collect_comment_nodes, anti_unify_core) and four strata-core recursive-descent parser methods \
+// -- none share this function's actual logic (a two-branch field-lookup-with-text-fallback); the \
+// r2 rung matches on generic short-function control-flow shape only, a coincidental match class \
+// this size of function is prone to, not a real duplication to extract a helper from"
 fn branch_condition_text<'a>(node: Node, source: &'a [u8]) -> &'a str {
     if node.kind() == "if_statement" {
         if let Some(cond) = node.child_by_field_name("condition") {
@@ -223,11 +222,10 @@ fn is_field_write(node: Node) -> bool {
 /// determinable -- matches `_py_raise_exception_type` exactly.
 // frob:ticket T-1222
 // frob:waive DUP001 reason="the r2 structural match is against capability_python.rs's \
-// first_positional_arg (an unrelated argument-list scan with a different payload and \
-// no named-children iteration) -- the r2 rung matches on the generic 'iterate named \
-// children, return on first match of a kind check' shape every small tree-sitter \
-// lookup helper in this crate necessarily has, not a real duplication to extract a \
-// helper from"
+// first_positional_arg (an unrelated argument-list scan with a different payload and no \
+// named-children iteration) -- the r2 rung matches on the generic 'iterate named children, return \
+// on first match of a kind check' shape every small tree-sitter lookup helper in this crate \
+// necessarily has, not a real duplication to extract a helper from"
 fn raise_exception_type(node: Node, source: &[u8]) -> Option<String> {
     let mut cursor = node.walk();
     for c in node.named_children(&mut cursor) {
@@ -248,9 +246,8 @@ fn raise_exception_type(node: Node, source: &[u8]) -> Option<String> {
 /// `_py_except_exception_type` exactly.
 // frob:ticket T-1222
 // frob:waive DUP001 reason="the r2 structural match is against capability_python.rs's \
-// first_positional_arg (an unrelated argument-list scan) -- same coincidental \
-// generic-shape match as raise_exception_type immediately above, not a real \
-// duplication to extract a helper from"
+// first_positional_arg (an unrelated argument-list scan) -- same coincidental generic-shape match \
+// as raise_exception_type immediately above, not a real duplication to extract a helper from"
 fn except_exception_type(node: Node, source: &[u8]) -> Option<String> {
     let mut cursor = node.walk();
     for c in node.named_children(&mut cursor) {
@@ -291,10 +288,10 @@ struct BodyEvents {
 /// here, see above). Nested function bodies are walked separately by the
 /// caller (`collect_function_metrics`), one call per function, matching
 /// `_py_build_function`'s own per-function recursion.
-// frob:invariant terminates reason="each recursive call descends strictly into a \
-// child of node in tree-sitter's own finite parse tree; a function_definition/ \
-// class_definition child stops descent entirely rather than recursing" \
-// measure="remaining depth from node to its deepest leaf in the parse tree"
+// frob:invariant terminates reason="each recursive call descends strictly into a child of node in \
+// tree-sitter's own finite parse tree; a function_definition/ class_definition child stops \
+// descent entirely rather than recursing" measure="remaining depth from node to its deepest leaf \
+// in the parse tree"
 // frob:ticket T-1222
 fn collect_body_events(node: Node, source: &[u8], events: &mut BodyEvents) {
     let mut cursor = node.walk();
@@ -372,15 +369,15 @@ type FunctionMetrics = (
 /// (signature through closing body line), not just the body -- the
 /// caller's existing `body_line_count`/`func.line` fields remain the
 /// authoritative per-field source; `span` here is a convenience locator.
-// frob:invariant terminates reason="each recursive call descends strictly into a \
-// child of node in tree-sitter's own finite parse tree" measure="remaining depth from \
-// node to its deepest leaf in the parse tree"
+// frob:invariant terminates reason="each recursive call descends strictly into a child of node in \
+// tree-sitter's own finite parse tree" measure="remaining depth from node to its deepest leaf in \
+// the parse tree"
 // frob:ticket T-1222
 // frob:waive DUP001 reason="the r2 structural match is against capability_python.rs's \
-// first_positional_arg (an unrelated, non-recursive argument-list scan with a \
-// completely different signature and payload) -- the r2 rung matches on generic \
-// control-flow shape only, not this function's actual per-node dispatch/recursion \
-// logic; not a real duplication to extract a helper from"
+// first_positional_arg (an unrelated, non-recursive argument-list scan with a completely \
+// different signature and payload) -- the r2 rung matches on generic control-flow shape only, not \
+// this function's actual per-node dispatch/recursion logic; not a real duplication to extract a \
+// helper from"
 fn collect_function_metrics(node: Node, source: &[u8], out: &mut Vec<FunctionMetrics>) {
     let mut cursor = node.walk();
     for c in node.children(&mut cursor) {
@@ -461,7 +458,12 @@ fn py_function_metrics_source(source: &[u8]) -> Vec<FunctionMetrics> {
 /// empty list rather than a `PyErr`.
 // frob:doc docs/modules/arch.md#normalized-code-model
 // frob:ticket T-1222
+// frob:ticket T-3481
 #[pyfunction]
-pub fn py_function_metrics(source: Vec<u8>) -> Vec<FunctionMetrics> {
-    py_function_metrics_source(&source)
+pub fn py_function_metrics(py: Python<'_>, source: Vec<u8>) -> Vec<FunctionMetrics> {
+    // T-3481: release the GIL for the tree-sitter parse + metrics walk
+    // (same shape as T-3457's strata-core fix) so a Python watchdog
+    // thread (pytest-timeout's thread-method Timer, or any other Python
+    // thread) can run while this call is in flight.
+    py.allow_threads(|| py_function_metrics_source(&source))
 }

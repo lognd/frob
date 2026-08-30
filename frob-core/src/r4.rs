@@ -14,9 +14,16 @@ use std::collections::HashMap;
 /// anywhere in the token stream produces the same fingerprint, which is
 /// what makes region-granular matching (docs/modules/dup.md's "regions, not just
 /// functions") fall out for free.
+// frob:ticket T-3481
 #[pyfunction]
-pub fn winnow_fingerprints(tokens: Vec<String>, k: usize, w: usize) -> Vec<u64> {
+pub fn winnow_fingerprints(py: Python<'_>, tokens: Vec<String>, k: usize, w: usize) -> Vec<u64> {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // T-3481: release the GIL for the k-gram hashing + winnowing below.
+    py.allow_threads(|| winnow_fingerprints_impl(tokens, k, w))
+}
+
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+pub(crate) fn winnow_fingerprints_impl(tokens: Vec<String>, k: usize, w: usize) -> Vec<u64> {
     if k == 0 || tokens.len() < k {
         return Vec::new();
     }
@@ -66,9 +73,23 @@ pub fn winnow_fingerprints(tokens: Vec<String>, k: usize, w: usize) -> Vec<u64> 
 /// per region). Returns index pairs `(i, j)` with `i < j` whose fingerprint
 /// sets share at least `min_shared` values -- the candidate pairs that get
 /// verified downstream by `tree_edit_similarity`.
+// frob:ticket T-3481
 #[pyfunction]
-pub fn candidate_pairs(fingerprint_sets: Vec<Vec<u64>>, min_shared: usize) -> Vec<(usize, usize)> {
+pub fn candidate_pairs(
+    py: Python<'_>,
+    fingerprint_sets: Vec<Vec<u64>>,
+    min_shared: usize,
+) -> Vec<(usize, usize)> {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // T-3481: release the GIL for the bucket + shared-count scan below.
+    py.allow_threads(|| candidate_pairs_impl(fingerprint_sets, min_shared))
+}
+
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+pub(crate) fn candidate_pairs_impl(
+    fingerprint_sets: Vec<Vec<u64>>,
+    min_shared: usize,
+) -> Vec<(usize, usize)> {
     let mut buckets: HashMap<u64, Vec<usize>> = HashMap::new();
     for (idx, fps) in fingerprint_sets.iter().enumerate() {
         for fp in fps {
@@ -114,9 +135,20 @@ pub fn candidate_pairs(fingerprint_sets: Vec<Vec<u64>>, min_shared: usize) -> Ve
 /// known gap recorded for a follow-up (frob:ticket T-0001 follow-up:
 /// upgrade to true APTED). Returns `(similarity, alignment)` where
 /// `alignment` is matched `(i, j)` statement-index pairs.
+// frob:ticket T-3481
 #[pyfunction]
-pub fn tree_edit_similarity(a: Vec<u64>, b: Vec<u64>) -> (f64, Vec<(usize, usize)>) {
+pub fn tree_edit_similarity(
+    py: Python<'_>,
+    a: Vec<u64>,
+    b: Vec<u64>,
+) -> (f64, Vec<(usize, usize)>) {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // T-3481: release the GIL for the O(n*m) DP alignment below.
+    py.allow_threads(|| tree_edit_similarity_impl(a, b))
+}
+
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+pub(crate) fn tree_edit_similarity_impl(a: Vec<u64>, b: Vec<u64>) -> (f64, Vec<(usize, usize)>) {
     let n = a.len();
     let m = b.len();
     if n == 0 && m == 0 {
@@ -326,14 +358,31 @@ pub(crate) fn zhang_shasha_distance(
 /// (node structure, not tree-sitter node types directly -- the caller,
 /// `frob.dup._pipeline`, builds this from `frob.lang`'s exported subtree).
 /// Returns similarity in `[0, 1]` (`1 - distance / max(|A|, |B|)`).
+// frob:ticket T-3481
 #[pyfunction]
 pub fn apted_similarity(
+    py: Python<'_>,
     labels_a: Vec<String>,
     parents_a: Vec<i64>,
     labels_b: Vec<String>,
     parents_b: Vec<i64>,
 ) -> f64 {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // T-3481: release the GIL for the Zhang-Shasha tree edit distance below.
+    py.allow_threads(|| apted_similarity_impl(labels_a, parents_a, labels_b, parents_b))
+}
+
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+// frob:waive DUP001 reason="structural-similarity false positive against unrelated small \
+// generic-shaped functions (branch_condition_text, walk_leaves, Parser.parse_unit, etc.) -- \
+// T-3481 only renamed/split the pre-existing apted_similarity body into this _impl sibling, no \
+// new logic was written; permanent exemption, not deferred work"
+pub(crate) fn apted_similarity_impl(
+    labels_a: Vec<String>,
+    parents_a: Vec<i64>,
+    labels_b: Vec<String>,
+    parents_b: Vec<i64>,
+) -> f64 {
     if labels_a.is_empty() && labels_b.is_empty() {
         return 1.0;
     }

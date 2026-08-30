@@ -51,11 +51,11 @@ fn span_of(node: Node) -> (usize, usize) {
 /// both walk, reimplemented once here so every collector below (comments,
 /// identifiers, the token stream) shares one recursion instead of three.
 // frob:ticket T-1649
-// frob:invariant terminates reason="each recursive call descends strictly into a \
-// child of node in tree-sitter's own parse tree, which is finite (bounded by the \
-// input source's own length/nesting); recursion stops the instant child_count() is 0 \
-// (a leaf), which every path through a finite tree reaches in finitely many steps" \
-// measure="remaining depth from node to its deepest leaf in the parse tree"
+// frob:invariant terminates reason="each recursive call descends strictly into a child of node in \
+// tree-sitter's own parse tree, which is finite (bounded by the input source's own \
+// length/nesting); recursion stops the instant child_count() is 0 (a leaf), which every path \
+// through a finite tree reaches in finitely many steps" measure="remaining depth from node to its \
+// deepest leaf in the parse tree"
 fn walk_leaves<'a>(node: Node<'a>, out: &mut Vec<Node<'a>>) {
     if node.child_count() == 0 {
         out.push(node);
@@ -205,11 +205,11 @@ fn extract_python_source(source: &[u8]) -> PythonExtraction {
 /// (T-1221), not part of this crate's PyO3-exported surface itself.
 // frob:doc docs/modules/vet.md#public-api
 // frob:tests \
-// tests/unit/test_capability_native.py::TestScanPythonCapabilitiesParity.test_import_a\
-// lias_and_scope_shadowing kind="unit"
+// tests/unit/test_capability_native.py::TestScanPythonCapabilitiesParity.test_import_alias_and_sco\
+// pe_shadowing kind="unit"
 // frob:tests \
-// tests/unit/test_capability_native.py::TestScanPythonCapabilitiesParity.test_this_rep\
-// os_own_capability_python_module_matches kind="unit"
+// tests/unit/test_capability_native.py::TestScanPythonCapabilitiesParity.test_this_repos_own_capab\
+// ility_python_module_matches kind="unit"
 // frob:ticket T-1221
 pub(crate) fn python_non_executable_byte_spans(source: &[u8]) -> Vec<(usize, usize)> {
     let mut parser = Parser::new();
@@ -263,8 +263,10 @@ pub(crate) fn python_non_executable_byte_spans(source: &[u8]) -> Vec<(usize, usi
 /// Never raises (see module docstring): a buffer tree-sitter cannot parse
 /// yields four empty lists rather than a `PyErr`.
 // frob:doc docs/modules/lang.md#extraction-api
+// frob:ticket T-3481
 #[pyfunction]
 pub fn extract_tree_python(
+    py: Python<'_>,
     source: Vec<u8>,
 ) -> (
     Vec<(usize, usize)>,
@@ -272,13 +274,16 @@ pub fn extract_tree_python(
     Vec<(String, usize)>,
     Vec<String>,
 ) {
-    let result = extract_python_source(&source);
-    (
-        result.comment_spans,
-        result.docstring_spans,
-        result.identifiers,
-        result.tokens,
-    )
+    // T-3481: release the GIL for the tree-sitter parse below.
+    py.allow_threads(|| {
+        let result = extract_python_source(&source);
+        (
+            result.comment_spans,
+            result.docstring_spans,
+            result.identifiers,
+            result.tokens,
+        )
+    })
 }
 
 /// One parsed extraction result for a rust source buffer -- three
@@ -318,12 +323,11 @@ const RUST_IDENTIFIER_KINDS: [&str; 3] = ["identifier", "type_identifier", "fiel
 /// silently find zero rust comments (verified: it does, in the corpus
 /// golden-parity check this kernel was built against).
 // frob:ticket T-1649
-// frob:invariant terminates reason="each recursive call descends strictly into a \
-// child of node in tree-sitter's own parse tree, which is finite; recursion stops the \
-// instant a RUST_COMMENT_KINDS match is found (no further descent below a matched \
-// node) or, failing that, at a leaf with zero children, either of which every path \
-// through a finite tree reaches in finitely many steps" measure="remaining depth from \
-// node to its deepest leaf in the parse tree"
+// frob:invariant terminates reason="each recursive call descends strictly into a child of node in \
+// tree-sitter's own parse tree, which is finite; recursion stops the instant a RUST_COMMENT_KINDS \
+// match is found (no further descent below a matched node) or, failing that, at a leaf with zero \
+// children, either of which every path through a finite tree reaches in finitely many steps" \
+// measure="remaining depth from node to its deepest leaf in the parse tree"
 fn collect_comment_nodes<'a>(node: Node<'a>, out: &mut Vec<Node<'a>>) {
     if RUST_COMMENT_KINDS.contains(&node.kind()) {
         out.push(node);
@@ -402,12 +406,17 @@ fn extract_rust_source(source: &[u8]) -> RustExtraction {
 /// Never raises (see module docstring): a buffer tree-sitter cannot parse
 /// yields three empty lists rather than a `PyErr`.
 // frob:doc docs/modules/lang.md#extraction-api
+// frob:ticket T-3481
 #[pyfunction]
 pub fn extract_tree_rust(
+    py: Python<'_>,
     source: Vec<u8>,
 ) -> (Vec<(usize, usize)>, Vec<(String, usize)>, Vec<String>) {
-    let result = extract_rust_source(&source);
-    (result.comment_spans, result.identifiers, result.tokens)
+    // T-3481: release the GIL for the tree-sitter parse below.
+    py.allow_threads(|| {
+        let result = extract_rust_source(&source);
+        (result.comment_spans, result.identifiers, result.tokens)
+    })
 }
 
 /// One parsed extraction result for a cpp source buffer -- same 3-tuple
@@ -488,12 +497,20 @@ fn extract_cpp_source(source: &[u8]) -> CppExtraction {
 /// Never raises (see module docstring): a buffer tree-sitter cannot parse
 /// yields three empty lists rather than a `PyErr`.
 // frob:doc docs/modules/lang.md#extraction-api
+// frob:ticket T-3481
+// frob:waive DUP002 reason="deliberate per-language kernel parity \
+// (extract_tree_python/rust/cpp/typescript already share this exact allow_threads-wrapper shape \
+// by design, per docs/modules/lang.md#extraction-api); not accidental duplication"
 #[pyfunction]
 pub fn extract_tree_cpp(
+    py: Python<'_>,
     source: Vec<u8>,
 ) -> (Vec<(usize, usize)>, Vec<(String, usize)>, Vec<String>) {
-    let result = extract_cpp_source(&source);
-    (result.comment_spans, result.identifiers, result.tokens)
+    // T-3481: release the GIL for the tree-sitter parse below.
+    py.allow_threads(|| {
+        let result = extract_cpp_source(&source);
+        (result.comment_spans, result.identifiers, result.tokens)
+    })
 }
 
 /// One parsed extraction result for a typescript source buffer -- same
@@ -583,10 +600,15 @@ fn extract_typescript_source(source: &[u8]) -> TypescriptExtraction {
 /// Never raises (see module docstring): a buffer tree-sitter cannot parse
 /// yields three empty lists rather than a `PyErr`.
 // frob:doc docs/modules/lang.md#extraction-api
+// frob:ticket T-3481
 #[pyfunction]
 pub fn extract_tree_typescript(
+    py: Python<'_>,
     source: Vec<u8>,
 ) -> (Vec<(usize, usize)>, Vec<(String, usize)>, Vec<String>) {
-    let result = extract_typescript_source(&source);
-    (result.comment_spans, result.identifiers, result.tokens)
+    // T-3481: release the GIL for the tree-sitter parse below.
+    py.allow_threads(|| {
+        let result = extract_typescript_source(&source);
+        (result.comment_spans, result.identifiers, result.tokens)
+    })
 }

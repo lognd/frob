@@ -184,8 +184,10 @@ pub(crate) fn anti_unify_core(
 /// contract (see module doc) never lets a Rust exception cross the PyO3
 /// boundary, so a hole-ceiling failure (`ok == false`) is a plain sentinel
 /// value, not a Python exception; all four arrays are empty in that case.
+// frob:ticket T-3481
 #[pyfunction]
 pub fn anti_unify(
+    py: Python<'_>,
     labels_a: Vec<String>,
     parents_a: Vec<i64>,
     labels_b: Vec<String>,
@@ -198,6 +200,23 @@ pub fn anti_unify(
     Vec<(usize, usize)>,
 ) {
     // frob:doc docs/modules/dup.md#anti-unification-plotkin-lgg
+    // T-3481: release the GIL for the anti-unification walk below.
+    py.allow_threads(|| anti_unify_impl(labels_a, parents_a, labels_b, parents_b))
+}
+
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+pub(crate) fn anti_unify_impl(
+    labels_a: Vec<String>,
+    parents_a: Vec<i64>,
+    labels_b: Vec<String>,
+    parents_b: Vec<i64>,
+) -> (
+    bool,
+    Vec<String>,
+    Vec<i64>,
+    Vec<(usize, usize)>,
+    Vec<(usize, usize)>,
+) {
     match anti_unify_core(&labels_a, &parents_a, &labels_b, &parents_b) {
         Ok(t) => (true, t.labels, t.parents, t.bindings_a, t.bindings_b),
         Err(AntiUnifyErr::HoleCeilingExceeded) => {
@@ -218,9 +237,21 @@ pub fn anti_unify(
 /// After `iterations` rounds the per-node labels are folded (order-
 /// independent, via XOR) into one graph hash, so reordered-but-equivalent
 /// dataflow graphs collide regardless of node numbering.
+// frob:ticket T-3481
 #[pyfunction]
-pub fn wl_hash(adjacency: Vec<(usize, usize)>, labels: Vec<String>, iterations: usize) -> u64 {
+pub fn wl_hash(
+    py: Python<'_>,
+    adjacency: Vec<(usize, usize)>,
+    labels: Vec<String>,
+    iterations: usize,
+) -> u64 {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // T-3481: release the GIL for the WL-refinement rounds below.
+    py.allow_threads(|| wl_hash_impl(adjacency, labels, iterations))
+}
+
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+pub(crate) fn wl_hash_impl(adjacency: Vec<(usize, usize)>, labels: Vec<String>, iterations: usize) -> u64 {
     let n = labels.len();
     if n == 0 {
         return 0;

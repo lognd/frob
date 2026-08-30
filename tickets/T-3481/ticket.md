@@ -2,7 +2,7 @@
 id: T-3481
 title: 'frob-core #[pyfunction]s hold the GIL for O(n) work, defeating pytest-timeout
   like T-3457'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -60,6 +60,12 @@ scope_changes:
   reason: testsuite::fs.write/exec ratchet ceiling bumps required by SELFAUDIT001/SYS111
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/test_frob_core_gil.py::TestTimeoutFiresDuringLongNativeCall::test_timeout_fires_during_near_duplicate_indices
+- tests/unit/test_frob_core_gil.py::TestGilActuallyReleased::test_background_thread_runs_during_near_duplicate_indices
+- tests/unit/test_frob_core_gil.py::TestResultsUnchanged::test_near_duplicate_indices_result_unchanged
+- tests/unit/test_frob_core_gil.py::TestResultsUnchanged::test_resolve_call_edges_result_unchanged
+- tests/unit/test_frob_core_gil.py::TestResultsUnchanged::test_r3_canonical_hash_result_unchanged
 designated_repro_test: null
 threat: null
 component: null

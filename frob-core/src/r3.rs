@@ -99,9 +99,16 @@ fn r3_canonicalize(tokens: &[String]) -> Vec<String> {
 /// source length, constant values, or `elif`-vs-nested-`if/else` spelling.
 /// Kept as a pure fold (not a crate like blake3) to keep the dependency
 /// surface at just pyo3.
+// frob:ticket T-3481
 #[pyfunction]
-pub fn r3_canonical_hash(tokens: Vec<String>) -> String {
+pub fn r3_canonical_hash(py: Python<'_>, tokens: Vec<String>) -> String {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // T-3481: release the GIL for the canonicalize + hash walk below.
+    py.allow_threads(|| r3_canonical_hash_impl(tokens))
+}
+
+// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+pub(crate) fn r3_canonical_hash_impl(tokens: Vec<String>) -> String {
     let canonical = r3_canonicalize(&tokens);
     let mut acc: u64 = 0xcbf29ce484222325; // FNV offset basis, arbitrary seed
     for tok in &canonical {
