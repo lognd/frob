@@ -7,8 +7,6 @@ kind: bug
 origin: agent
 created: '2026-08-29'
 priority: critical
-blocked_by:
-- T-3457
 parent: null
 tier: ticket
 sprint: null
@@ -83,3 +81,6 @@ equivalent root cause once found).
 
 ## Failure log
 - 2026-08-29 attempt 1: MEASURED (this worktree, ac5c2ae67 code, natives built): both selfaudit001 tests complete locally in 60-110s (order of magnitude of the historical ~27s baseline noted in their own docstrings), not the 19-min CI stall -- and src/frob/strata/_selfconform*.py, _claims.py, _facts.py, design/frob.strata, and tests/system/test_frob_self_model.py are ALL byte-identical between b94cea5d0 and ac5c2ae67, so anomaly #1 has no candidate fix inside this ticket's declared scope. Anomaly #2 is root-caused and CONFIRMED reproducible: strata-core's #[pyfunction]s (worst_age/reachable/propagated_demand) never call py.allow_threads, so they hold the GIL for the entire native call; pytest-timeout's thread-method watchdog is itself Python code needing the GIL and cannot preempt a long strata_core call regardless of timeout value (measured: --timeout=5 --timeout-method=thread did not fire even once across a 67s run of test_fragments_module_fs_read_is_declared_not_selfaudit001, while a synthetic time.sleep(20) test with --timeout=3 fired correctly at 3.7s). The real fix is a Rust change (py.allow_threads in strata-core/src/lib.rs), outside T-3449's declared Python-file scope -- filed as T-3457 with the full measurement and fix sketch.
+
+## Unblock log
+- 2026-08-29: unblocked by T-3457 -- T-3457 (GIL-release fix) landed at 92f97987137f -- this blocker is resolved
