@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/_port_selfcheck.py
 - src/frob/gates/_waive.py
 - tests/unit/gates/test_port_selfcheck.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,12 @@ scope_changes:
   glob: tests/unit/gates/test_port_selfcheck.py
   reason: PORT001-DEFAULT needs registration in _waive.py's known-rule allowlist (UnregisteredGateRuleConstructed)
     and its own gate tests
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/modules/gates.md
+  reason: PORT001-DEFAULT is a new PORT001-family rule id; the port_selfcheck_gate
+    doc anchor covering PORT001 needs updating to avoid doc drift
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
