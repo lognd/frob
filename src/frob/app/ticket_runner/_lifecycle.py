@@ -28,7 +28,11 @@ from typing import TYPE_CHECKING
 from frob.app.config import AppConfig
 from frob.gitio import run_argv
 from frob.logging import get_logger
-from frob.process._guard import EXEC_KILL_SWITCH_ENV, exec_enabled
+from frob.process._guard import (
+    EXEC_KILL_SWITCH_ENV,
+    exec_enabled,
+    guarded_subprocess_run,
+)
 
 if TYPE_CHECKING:
     from frob.tickets._reconcile import ReconcileReport
@@ -441,6 +445,55 @@ def _ensure_worktree_fresh(worktree: Path, ticket_id: str) -> None:
     )
 
 
+# frob:ticket T-3320
+# frob:tests tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork.test_runs_uv_sync_in_the_worktree  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork.test_exec_disabled_degrades_to_a_warning_not_sys_exit  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork.test_nonzero_exit_degrades_to_a_warning_not_sys_exit  # noqa: E501
+def _sync_venv_for_work(worktree: Path, ticket_id: str) -> None:
+    """`frob ticket work`'s venv-sync half (T-3320): run `uv sync` inside
+    `worktree` so a FRESH worktree has its own `.venv` populated with the
+    project's declared deps (pydantic/dotenv/pytest/etc) before an agent's
+    first `frob check --ticket` there -- without this, `ty` fails
+    "Cannot resolve imported module" for every declared dep on a fresh
+    worktree, since a `git worktree add` copies tracked files only, never
+    `.venv/` (gitignored). Runs BEFORE `_build_natives_for_work` (native
+    crates build into the project venv `uv sync` just created).
+
+    Best-effort, same posture as `_build_natives_for_work`: `uv sync`
+    failing (network-restricted sandbox, `uv` not on PATH, kill switch)
+    degrades to a logged warning, never `sys.exit` -- a missing venv is
+    exactly the pre-existing broken state this ticket found, not a new
+    failure mode `ticket work` should start refusing to work around."""
+    result = guarded_subprocess_run(
+        ["uv", "sync"],
+        cwd=str(worktree),
+        capture_output=True,
+        text=True,
+        timeout=300,
+    )
+    if result.is_err:
+        _log.warning(
+            "ticket work: %s uv sync failed to run (%s) -- run `uv sync` "
+            "by hand in %s before `frob check`",
+            ticket_id,
+            result.danger_err,
+            worktree,
+        )
+        return
+    proc = result.danger_ok
+    if proc.returncode != 0:
+        _log.warning(
+            "ticket work: %s uv sync exited %s -- run `uv sync` by hand "
+            "in %s before `frob check` (%s)",
+            ticket_id,
+            proc.returncode,
+            worktree,
+            (proc.stderr or "").strip()[-500:],
+        )
+        return
+    _log.info("ticket work: %s uv sync completed in %s", ticket_id, worktree)
+
+
 # frob:ticket T-1175
 def _build_natives_for_work(worktree: Path, ticket_id: str) -> None:
     """`frob ticket work`'s natives-build half (T-1175, playbook section 0
@@ -639,6 +692,7 @@ def _work_cluster(root: Path, cfg: AppConfig) -> None:
     ).resolve()
     _worktree_add_or_reuse(root, worktree, cluster_id)
     _ensure_worktree_fresh(worktree, cluster_id)
+    _sync_venv_for_work(worktree, cluster_id)
     _build_natives_for_work(worktree, cluster_id)
     _print_agent_env_hint(worktree, f"--cluster {cluster_id}")
 
@@ -709,6 +763,7 @@ def _work(root: Path, cfg: AppConfig) -> None:
     ).resolve()
     _worktree_add_or_reuse(root, worktree, cfg.ticket_id)
     _ensure_worktree_fresh(worktree, cfg.ticket_id)
+    _sync_venv_for_work(worktree, cfg.ticket_id)
     _build_natives_for_work(worktree, cfg.ticket_id)
     _print_agent_env_hint(worktree, cfg.ticket_id)
 

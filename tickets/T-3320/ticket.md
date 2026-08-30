@@ -2,7 +2,7 @@
 id: T-3320
 title: 'Fresh ticket-work worktree has no venv: ty fails on every declared dep until
   manual uv sync'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
