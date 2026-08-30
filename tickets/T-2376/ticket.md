@@ -51,6 +51,15 @@ scope_changes:
     via frob check --only perf)'
   actor: logan
   at: '2026-08-30'
+body_changes:
+- mode: append
+  reason: T-2376 kind=bug but the change is a pure static-analysis-directive addition,
+    no runtime behavior change -- BUG002's confirmatory-only refusal is the correct
+    signal that this is not a defect-repro-shaped fix
+  actor: logan
+  at: '2026-08-30'
+  old_length: 1314
+  new_length: 1779
 evidence:
 - tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion
 - tests/test_perf.py::test_perf005_silenced_by_reasoned_termination_directive
@@ -124,3 +133,5 @@ Closure is two-part per the epic (T-0969):
 Narrow `scope` to the actual files this family's findings live in once you've
 run the gate and can see them -- do not take a broad blanket scope; this keeps
 you disjoint from sibling children of T-0969.
+
+frob:no-behavior-change reason="this fix adds frob:invariant terminates justification directives to 9 already-correct, already-terminating recursive functions -- it silences a static-analysis WARN finding by documenting proof of termination, not by changing any function's runtime behavior; PERF005's own designated evidence (test_perf005_fires_on_unproven_self_recursion) legitimately passes at both main and the fix since the functions themselves are unchanged"
