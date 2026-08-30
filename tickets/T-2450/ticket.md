@@ -1,7 +1,7 @@
 ---
 id: T-2450
 title: Promote verify->ticket_runner private helpers to a public seam
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -67,6 +67,10 @@ scope_changes:
     three wrapper functions'
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestDetachedSweepEnvPublicSeam::test_delegates_to_the_private_implementation
+- tests/unit/test_rapid_sweep.py::TestFileRegressionTicketPublicSeam::test_delegates_to_the_private_implementation
+- tests/test_ticket_land.py::TestUnscopedErrorFindingsPublicSeam::test_delegates_with_the_same_arguments
 designated_repro_test: null
 threat: null
 component: null

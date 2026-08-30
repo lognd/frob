@@ -520,6 +520,33 @@ that point inherits both values automatically via ordinary POSIX
 fork/exec priority inheritance -- no per-subprocess wiring needed
 anywhere else in this codebase.
 
+## Public seam for cross-node callers (T-2450)
+
+<!-- frob:doc docs/modules/tickets-verify-sweep.md#public-seam-for-cross-node-callers-t-2450 -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::detached_sweep_env -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::file_regression_ticket -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::unscoped_error_findings -->
+
+T-2407's own SYS003 burn-down declared the `frob.verify` -> `app.
+ticket_runner` coupling architecturally sound (verify genuinely needs
+the sweep/land primitives above) but flagged calling the underlying
+PRIVATE, underscore-prefixed names directly across that node boundary
+as debt in its own right -- 10/55/62 measured grep hits for
+`_detached_sweep_env`/`_unscoped_error_findings`/`_file_regression_
+ticket` respectively, wide enough to deserve its own change rather than
+folding into the SYS003 pass. T-2450 closes it with a thin public
+wrapper next to each private implementation: `detached_sweep_env`
+(`_rapid_sweep.py`), `file_regression_ticket` (`_rapid_sweep.py`, a
+narrower signature than its private counterpart -- omits
+`attributed_ids`, which the one cross-node caller never supplies), and
+`unscoped_error_findings` (`_land_cmd.py`). `frob.verify._drain`/`frob.
+verify._worker` import and call ONLY these public names now;
+`app.ticket_runner`'s own in-module callers are untouched, still calling
+the private implementations directly. All three names are also declared
+in `design/frob.strata`'s `cli` node `interface=` list, closing the
+undeclared-cross-node-coupling half of the debt alongside the naming
+half.
+
 ## Batch test selection (T-1689)
 
 <!-- frob:describes src/frob/verify/_selection.py::BatchSelectionError -->
@@ -1825,7 +1852,8 @@ own never-block contract.
 
 **Mechanism.** `spawn_deferred_drain(root, land_ticket_id)` fires
 `frob verify drain-async` into a DETACHED child
-(`start_new_session=True`, the exact `_detached_sweep_env`-pinned shape
+(`start_new_session=True`, the exact `detached_sweep_env`-pinned shape
+(T-2450's public seam)
 `spawn_deferred_post_land_sweep` already established, T-2030's own
 root-cause fix reused verbatim) and returns immediately -- spawned
 unconditionally, alongside the sweep spawn, from the same rapid-land

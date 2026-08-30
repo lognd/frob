@@ -47,7 +47,8 @@ module:
     spawn_deferred_post_land_sweep`) -- the land that triggers it is not
     waiting on anything this module does.
  2. AUTOMATIC, NOT INVOKED. Modeled directly on that same deferred sweep:
-    the SAME detached-child machinery (`_detached_sweep_env`, the same
+    the SAME detached-child machinery (T-2450: `detached_sweep_env`, the
+    public seam for the same
     `subprocess.Popen(..., start_new_session=True)` shape), a second
     independent spawn from the same land call site -- not a second,
     separately-invented mechanism, and not a command an operator has to
@@ -330,9 +331,10 @@ def spawn_deferred_drain(root: Path, land_ticket_id: str) -> Result[int, DrainEr
     log_path = log_dir / f"{land_ticket_id}-{int(time.time())}.log"
     argv = [sys.executable, "-m", "frob", "verify", "drain-async"]
 
-    from frob.app.ticket_runner._rapid_sweep import _detached_sweep_env
+    # frob:ticket T-2450
+    from frob.app.ticket_runner._rapid_sweep import detached_sweep_env
 
-    env = _detached_sweep_env(root)
+    env = detached_sweep_env(root)
     env[_EXCLUDE_PID_ENV_VAR] = str(os.getpid())
     env[_LAND_TICKET_ID_ENV_VAR] = land_ticket_id
 

@@ -1264,6 +1264,27 @@ class TestDetachedSweepEnv:
         assert "FROB_AGENT" not in env
 
 
+# frob:ticket T-2450
+class TestDetachedSweepEnvPublicSeam:
+    """T-2450: `detached_sweep_env` is a thin public wrapper around
+    `_detached_sweep_env` -- the cross-node seam `frob.verify._drain`
+    imports instead of reaching across the node boundary to call the
+    private name directly."""
+
+    # frob:ticket T-2450
+    # frob:tests tests/unit/test_rapid_sweep.py::TestDetachedSweepEnvPublicSeam.test_delegates_to_the_private_implementation  # noqa: E501
+    def test_delegates_to_the_private_implementation(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.app.ticket_runner._rapid_sweep import (
+            _detached_sweep_env,
+            detached_sweep_env,
+        )
+
+        monkeypatch.setenv("FROB_WORKTREE", "/some/worktree")
+        assert detached_sweep_env(tmp_path) == _detached_sweep_env(tmp_path)
+
+
 def _git(repo: Path, *args: str) -> str:
     """Run git in `repo` and return stdout (test helper, T-1698)."""
     import subprocess
@@ -3772,6 +3793,24 @@ class TestFileRegressionTicket:
             frozenset({("RULE1", "a.py"), ("RULE2", "b.py")}),
         )
         assert filed is None
+
+
+# frob:ticket T-2450
+class TestFileRegressionTicketPublicSeam:
+    """T-2450: `file_regression_ticket` is a thin public wrapper around
+    `_file_regression_ticket` -- the cross-node seam `frob.verify._worker`
+    imports instead of reaching across the node boundary to call the
+    private name directly."""
+
+    # frob:ticket T-2450
+    # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicketPublicSeam.test_delegates_to_the_private_implementation  # noqa: E501
+    def test_delegates_to_the_private_implementation(self, tmp_path: Path) -> None:
+        from frob.app.ticket_runner._rapid_sweep import file_regression_ticket
+
+        filed = file_regression_ticket(
+            tmp_path, "T-9001", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is not None
 
 
 # frob:ticket T-2352

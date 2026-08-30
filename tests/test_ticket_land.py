@@ -11905,6 +11905,40 @@ class TestLandLockInlineWaitDefaultsNearZero:
         assert elapsed_waiting_s < 10.0, elapsed_waiting_s
 
 
+# frob:ticket T-2450
+class TestUnscopedErrorFindingsPublicSeam:
+    """T-2450: `unscoped_error_findings` is a thin public wrapper around
+    `_unscoped_error_findings` -- the cross-node seam `frob.verify.
+    _worker`'s `_default_verify_fn` imports instead of reaching across
+    the node boundary to call the private name directly."""
+
+    # frob:ticket T-2450
+    # frob:tests tests/test_ticket_land.py::TestUnscopedErrorFindingsPublicSeam.test_delegates_with_the_same_arguments  # noqa: E501
+    def test_delegates_with_the_same_arguments(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.app.ticket_runner import _land_cmd
+
+        seen: dict[str, Any] = {}
+
+        def _fake(
+            root: Path,
+            ticket_id: str,
+            *,
+            budget: int | None = None,
+            env: dict[str, str] | None = None,
+            full: bool = False,
+        ) -> frozenset[tuple[str, str]] | None:
+            seen["args"] = (root, ticket_id, budget, env, full)
+            return frozenset()
+
+        monkeypatch.setattr(_land_cmd, "_unscoped_error_findings", _fake)
+        result = _land_cmd.unscoped_error_findings(tmp_path, "T-0001", full=True)
+
+        assert result == frozenset()
+        assert seen["args"] == (tmp_path, "T-0001", None, None, True)
+
+
 class TestUnscopedErrorFindingsExcludesNoTicketNoise:
     """T-1804: `_unscoped_error_findings` -- the shared spawn both
     the deferred post-land sweep and `--land-parity` use -- must exclude

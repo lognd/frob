@@ -41,9 +41,11 @@ ever written.
 WHAT THIS LEAF REUSES, NOT REINVENTS: T-1684's `_rapid_sweep` module
 already has the whole "run one unscoped check, diff against a rolling
 baseline, file a regression ticket on new findings, always rebaseline"
-sequence (`_read_baseline`/`_write_baseline`/`_file_regression_ticket`,
-originally built for a per-land spawn). This module reuses those three
-functions directly rather than re-deriving the same rolling-baseline
+sequence (`_read_baseline`/`_write_baseline`/`_file_regression_ticket`
+-- called here via `file_regression_ticket`, T-2450's public seam for
+this node boundary -- originally built for a per-land spawn). This
+module reuses those three functions directly rather than re-deriving the
+same rolling-baseline
 comparison a second time -- the only genuinely NEW decision this leaf
 adds on top is "and if it's green, advance the watermark and compact the
 queue", which `_rapid_sweep` has no reason to know about.
@@ -496,8 +498,9 @@ class WorkerOutcome(BaseModel):
 
 #: `verify_fn(root, commit_sha)` -> the fresh absolute `(rule_id, file)`
 #: error-identity set, or `None` if unmeasurable -- the exact contract
-#: `frob.app.ticket_runner._land_cmd._unscoped_error_findings` already
-#: implements (T-1703's own fix lives there: a budget-truncated run is
+#: `frob.app.ticket_runner._land_cmd.unscoped_error_findings` (T-2450's
+#: public seam) already implements (T-1703's own fix lives there: a
+#: budget-truncated run is
 #: `None`, never a partial set). Injectable so tests can count calls
 #: without spawning a real `frob check` subprocess.
 VerifyFn = Callable[[Path, str], "frozenset[tuple[str, str]] | None"]
@@ -534,9 +537,10 @@ def _default_verify_fn(
     budget" section for the vicious cycle this closes. Measured
     uncontended full-check cost on this repo (2026-08-26): ~333s, well
     inside `_land_cmd._FULL_CHECK_TIMEOUT_S`'s 1800s hard ceiling."""
-    from frob.app.ticket_runner._land_cmd import _unscoped_error_findings
+    # frob:ticket T-2450
+    from frob.app.ticket_runner._land_cmd import unscoped_error_findings
 
-    return _unscoped_error_findings(root, commit_sha, full=True)
+    return unscoped_error_findings(root, commit_sha, full=True)
 
 
 def _findings_digest(findings: frozenset[tuple[str, str]]) -> str:
@@ -841,10 +845,11 @@ def _resolve_verification_outcome(
     NOT write at all, leaving the prior baseline untouched so the
     unfilable finding still shows up as NEW on the next wake, and keeps
     doing so every wake until something durable owns it."""
+    # frob:ticket T-2450
     from frob.app.ticket_runner._rapid_sweep import (
-        _file_regression_ticket,
         _read_baseline,
         _write_baseline,
+        file_regression_ticket,
     )
 
     baseline = _read_baseline(root)
@@ -896,7 +901,7 @@ def _resolve_verification_outcome(
             pass
 
         with unleased_root_env():
-            filed = _file_regression_ticket(
+            filed = file_regression_ticket(
                 root, tip.ticket_id, tip.commit_sha, new_findings
             )
         if filed is None:

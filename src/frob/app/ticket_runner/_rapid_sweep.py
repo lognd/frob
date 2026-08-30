@@ -1050,6 +1050,28 @@ def _detached_sweep_env(root: Path) -> dict[str, str]:
     return env
 
 
+# frob:ticket T-2450
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#public-seam-for-cross-node-callers-t-2450
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestDetachedSweepEnvPublicSeam.test_delegates_to_the_\
+# private_implementation
+def detached_sweep_env(root: Path) -> dict[str, str]:
+    """T-2450: public seam for `_detached_sweep_env`, for callers OUTSIDE
+    `app.ticket_runner`'s own node (`frob.verify._drain`, which spawns
+    the SAME detached `sweep-async` child machinery this module owns) --
+    filed from T-2407's SYS003 burn-down, which flagged `frob.verify`
+    reaching across the node boundary to call a private, underscore-
+    prefixed helper directly as debt in its own right, independent of
+    whether the coupling itself is architecturally sound (it is: T-2407
+    already declared the verify -> cli flow legitimate). Every in-module
+    caller keeps using `_detached_sweep_env` directly, unchanged -- this
+    wrapper exists ONLY for the cross-node case, so a future reader
+    grepping for this module's own private helpers is not misled into
+    thinking `_detached_sweep_env` itself became public."""
+    return _detached_sweep_env(root)
+
+
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn.test_exec_disabled_records_debt_and_refuses  # noqa: E501
@@ -2510,6 +2532,31 @@ def _file_regression_ticket(
         return None
     _auto_dispose_filed_findings(root, unfiled_pairs, regression_id)
     return regression_id
+
+
+# frob:ticket T-2450
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#public-seam-for-cross-node-callers-t-2450
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestFileRegressionTicketPublicSeam.test_delegates_to_\
+# the_private_implementation
+def file_regression_ticket(
+    root: Path,
+    final_id: str,
+    commit_sha: str,
+    new_findings: frozenset[tuple[str, str]],
+) -> str | None:
+    """T-2450: public seam for `_file_regression_ticket`, for callers
+    OUTSIDE `app.ticket_runner`'s own node (`frob.verify._worker`, which
+    files a regression ticket for newly-observed error findings the same
+    way a rapid-sweep does) -- see `detached_sweep_env`'s own docstring
+    for the T-2407/SYS003 debt this closes; every in-module caller keeps
+    using `_file_regression_ticket` directly, unchanged. Deliberately
+    omits `attributed_ids` (unlike the private implementation) -- the
+    ONE cross-node caller this seam exists for never supplies it, and a
+    narrower public signature is easier to keep stable than one that
+    exposes every internal parameter."""
+    return _file_regression_ticket(root, final_id, commit_sha, new_findings)
 
 
 # frob:ticket T-2208

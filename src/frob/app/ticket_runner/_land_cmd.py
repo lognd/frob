@@ -819,6 +819,32 @@ def _unscoped_error_findings(
     )
 
 
+# frob:ticket T-2450
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#public-seam-for-cross-node-callers-t-2450
+# frob:tests \
+# tests/test_ticket_land.py::TestUnscopedErrorFindingsPublicSeam.test_delegates_with_th\
+# e_same_arguments
+def unscoped_error_findings(
+    root: Path,
+    ticket_id: str,
+    *,
+    budget: int | None = None,
+    env: dict[str, str] | None = None,
+    full: bool = False,
+) -> frozenset[tuple[str, str]] | None:
+    """T-2450: public seam for `_unscoped_error_findings`, for callers
+    OUTSIDE `app.ticket_runner`'s own node (`frob.verify._worker`'s
+    `_default_verify_fn`, which needs the exact same unscoped/unbudgeted
+    `full=True` measurement `frob verify now` uses) -- see
+    `_rapid_sweep.detached_sweep_env`'s own docstring for the T-2407/
+    SYS003 debt this closes; every in-module caller keeps using
+    `_unscoped_error_findings` directly, unchanged."""
+    return _unscoped_error_findings(
+        root, ticket_id, budget=budget, env=env, full=full
+    )
+
+
 # frob:doc docs/modules/tickets-landing.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
 # frob:ticket T-1513
