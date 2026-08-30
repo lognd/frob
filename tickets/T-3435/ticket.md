@@ -50,6 +50,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d45d89152b138bb82584b8b88e9ae3e07bcd13c4
 ---
 found while working T-3275 (re-scope PORT001's population, do-not-fix-here for anything beyond the stated acceptance): T-3275 widened PORT001's SCANNED POPULATION to repo-wide (tracked_repo_python_files), which now includes src/frob/testing/_coverage_refresh.py -- the exact module whose hardcoded _DEFAULT_COV_TARGET = "src/frob" motivated this whole ticket (FROBLEMS.md F-011). But running the widened PORT001 against this repo does NOT flag that line: neither of PORT001's two AST shapes (PORT001-PATH: a string literal passed as a .startswith(...) argument; PORT001-IDENT: a bare package-name literal inside a Tuple/List/JoinedStr) matches a plain module-level string-constant ASSIGNMENT like _DEFAULT_COV_TARGET = "src/frob". This is a distinct gap from the population question T-3275 fixed: PORT001 now scans the right FILES but still cannot detect this particular hardcoding SHAPE. Add a third detection shape (PORT001-DEFAULT or similar): a module-level (or function-default-value) string-constant assignment whose value is exactly "src/<declared-package>" or the bare declared package name used as a full path-shaped literal. Decide tier (advisory vs behavioral) and whether it needs its own rule id or folds into PORT001-PATH.
