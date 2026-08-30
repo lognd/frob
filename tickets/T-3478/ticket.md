@@ -22,6 +22,7 @@ scope:
 - docs/modules/graph.md
 - docs/commands/check.md
 - docs/modules/process.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +42,12 @@ scope_changes:
   glob: docs/modules/process.md
   reason: derived_state_write_lock docstring cross-reference update required by acceptance
     criteria
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001 requires declaring the new test file's fs.write capability
+    (Path.write_text in the test helper) in the testsuite node
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
