@@ -17,6 +17,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
 - src/frob/gates/__init__.py
+- docs/modules/gates.md
+- src/frob/gates/_waive.py
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +29,27 @@ scope_changes:
   glob: src/frob/gates/__init__.py
   reason: wire cross_ticket_leakage_gate into frob check's gate dispatch (_ALL_GATES/_CANONICAL_GATE_ORDER/dispatch
     dict), the only place a new gate can be registered
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/gates.md
+  reason: doc target for the new cross_ticket_leakage_gate/CROSSTICKET001 frob:doc
+    directive, plus the REG002 known-gate-rule registry and check-coverage manifest
+    entry every prior gate wiring (LANDPARITY001/002, VMOD001, TDD001) also needed
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: doc target for the new cross_ticket_leakage_gate/CROSSTICKET001 frob:doc
+    directive, plus the REG002 known-gate-rule registry and check-coverage manifest
+    entry every prior gate wiring (LANDPARITY001/002, VMOD001, TDD001) also needed
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: doc target for the new cross_ticket_leakage_gate/CROSSTICKET001 frob:doc
+    directive, plus the REG002 known-gate-rule registry and check-coverage manifest
+    entry every prior gate wiring (LANDPARITY001/002, VMOD001, TDD001) also needed
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
