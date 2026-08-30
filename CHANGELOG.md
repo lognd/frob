@@ -670,6 +670,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3444: REF001 missing tickets-archive.md exemption: T-3249 fixed tickets.md, sibling ledger file still fails clean
 - T-3445: strata tmLanguage grammar missing V-model keywords (architecture, configuration, entity, code_ref, obligation, runnable)
 - T-3446: strata export golden test_seccomp drifted from the committed golden
+- T-3447: SYS111 ratchet: core fs.read via-list grew to 35 sites, failing test_sys_gate_zero_violations
 - T-3448: .gitattributes attachment CRLF-suppression glob is too broad: unrelated text files escape autocrlf
 - T-3450: SYS100 undeclared capability: tests/unit/test_check_admission.py exec sites missing from testsuite via-list
 - T-3454: post-land sweep regression from T-3438: 2 new (rule, file) identit(ies), 8 finding(s) (DOC007, DRIFT002)

@@ -1,7 +1,7 @@
 ---
 id: T-3447
 title: 'SYS111 ratchet: core fs.read via-list grew to 35 sites, failing test_sys_gate_zero_violations'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -59,6 +59,8 @@ body_changes:
   at: '2026-08-29'
   old_length: 1008
   new_length: 2323
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
 designated_repro_test: null
 threat: null
 component: null

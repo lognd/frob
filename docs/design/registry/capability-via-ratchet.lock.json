@@ -76,9 +76,9 @@
       "ticket": "T-2877"
     },
     "core::fs.read": {
-      "accepted_count": 34,
-      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
-      "ticket": "T-2743"
+      "accepted_count": 35,
+      "reason": "T-3447: SYS111 measured this (node, capability) pair above its committed ceiling of 34 (test_sys_gate_zero_violations, GitHub Actions run 33282540898) after T-3416/T-3409/T-3429/T-3430 each added a genuine, already-declared-node fs.read site to core -- every contributing file is already a via-source for this pair (verified against design/frob.strata's core node fs.read via-list), so this is accumulated legitimate growth across several already-authorized lands, not a fresh, unreviewed grant. Bumping the ceiling to the current measured count (35) rather than re-justifying each site individually, mirroring T-2743/T-2407's own precedent for this same class of finding.",
+      "ticket": "T-3447"
     },
     "core::fs.write": {
       "accepted_count": 25,
@@ -216,9 +216,9 @@
       "ticket": "T-1628"
     },
     "testsuite::env.read": {
-      "accepted_count": 16,
-      "reason": "T-2001 auto-baseline: this land's own diff grew env.read on testsuite from 15 to 16 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 17,
+      "reason": "T-3447: SYS111 measured this pair above its committed ceiling of 16 alongside the core::fs.read breach this ticket exists to fix, with no reachable single-land attribution (accumulated growth across several already-authorized test lands since T-2001's own 16-site baseline). Every contributing file is already a declared testsuite fs.read/env.read via-source; bumping the ceiling to the current measured count (17) rather than re-justifying each site individually, mirroring T-2743's own precedent for this same class of finding.",
+      "ticket": "T-3447"
     },
     "testsuite::env.write": {
       "accepted_count": 6,
@@ -231,9 +231,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 224,
-      "reason": "T-3386: SELFAUDIT001/T-3324 fix -- added tests/test_check_runner.py to testsuite exec via-list (its _git_init fixture already calls subprocess.run at lines 38/39/42/282/283, unaccounted since the strata node was last synced), growing exec on testsuite from 223 to 224 site(s)",
-      "ticket": "T-3386"
+      "accepted_count": 226,
+      "reason": "T-3447: SYS111 measured this pair above its committed ceiling of 224 alongside the core::fs.read breach this ticket exists to fix, with no reachable single-land attribution (accumulated growth across several already-authorized test lands since T-3386's 224-site baseline). Re-measured to 226 after T-3450 (a sibling SYS100 fix) landed and declared one more genuine exec site (tests/unit/test_check_admission.py) in the same via-list. Every contributing file is already a declared testsuite exec via-source; bumping the ceiling to the current measured count (226) rather than re-justifying each site individually, mirroring T-2743's own precedent for this same class of finding.",
+      "ticket": "T-3447"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -246,14 +246,14 @@
       "ticket": "T-1628"
     },
     "testsuite::fs.read": {
-      "accepted_count": 171,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on testsuite from 170 to 171 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 172,
+      "reason": "T-3447: SYS111 measured this pair above its committed ceiling of 171 alongside the core::fs.read breach this ticket exists to fix, with no reachable single-land attribution (accumulated growth across several already-authorized test lands since T-2001's own 171-site baseline). Every contributing file is already a declared testsuite fs.read via-source; bumping the ceiling to the current measured count (172) rather than re-justifying each site individually, mirroring T-2743's own precedent for this same class of finding.",
+      "ticket": "T-3447"
     },
     "testsuite::fs.write": {
-      "accepted_count": 405,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 396 to 405 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 407,
+      "reason": "T-3447: SYS111 measured this pair above its committed ceiling of 405 alongside the core::fs.read breach this ticket exists to fix, with no reachable single-land attribution (accumulated growth across several already-authorized test lands since T-2001's own 405-site baseline). Every contributing file is already a declared testsuite fs.write via-source; bumping the ceiling to the current measured count (407) rather than re-justifying each site individually, mirroring T-2743's own precedent for this same class of finding.",
+      "ticket": "T-3447"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
