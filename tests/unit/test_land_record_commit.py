@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import subprocess
 import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -162,10 +163,24 @@ class TestRecordLandCommitOutOfTree:
         assert loaded.is_ok
         updated = loaded.danger_ok.model_copy(update={"land_commit": land_sha})
 
+        # T-3471: on CI, the OLD add-then-commit-immediately shape let the
+        # commit complete before the poller thread's next porcelain sample --
+        # a real scheduling race, not a bug in the probe itself, but the
+        # positive control still needs to be deterministic (a control that
+        # only sometimes fires proves nothing when it happens not to). Fix:
+        # hold the dirty state open -- write + add, then spin-wait (bounded)
+        # until the poller has actually recorded an untorn dirty sample --
+        # before committing, so the control can never race the commit past
+        # the sampler again.
         with _Poller(landed_root) as poller:
             assert write_ticket(landed_root, updated).is_ok
             rel = str(v2_ticket_path(landed_root, TICKET_ID).relative_to(landed_root))
             _run(["git", "add", "--", rel], landed_root)
+
+            deadline = time.monotonic() + 10.0
+            while not poller.untorn_dirty() and time.monotonic() < deadline:
+                time.sleep(0.01)
+
             _run(
                 ["git", "commit", "-q", "-m", f"record land commit for {TICKET_ID}"],
                 landed_root,

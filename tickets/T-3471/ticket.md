@@ -2,7 +2,7 @@
 id: T-3471
 title: 'test_probe_catches_the_in_root_write_positive_control races on CI: the sampler
   never observes the dirty root'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
