@@ -2,7 +2,7 @@
 id: T-3433
 title: 'PORT001-IDENT: src/frob/graph/cache.py hardcodes package name in fingerprint
   tuple'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'

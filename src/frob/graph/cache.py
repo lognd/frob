@@ -101,6 +101,20 @@ _SCHEMA_VERSION = 4
 # stay listed here explicitly; every tree-sitter-loaded language's
 # fingerprint surface now updates automatically if `frob.lang` ever adds or
 # drops a package to that set, with no second hand-copied tuple to forget.
+# frob:ticket T-3433
+# PORT001-IDENT reviewed and DECIDED as a legitimate self-reference, not a
+# portability bug: this cache belongs to frob's OWN analyzer, not to
+# whatever repo it happens to be scanning. The fingerprint's job is "would
+# a version bump of a package that determines parse OUTPUT silently make
+# this cache stale" -- and the packages that determine THIS cache's parse
+# output are always frob's own extraction/digest code and strata-core's
+# native `.strata` grammar, regardless of which repo is under analysis. A
+# consumer repo's own dependencies play no part in how frob.graph parses
+# that repo's source, so there is nothing to "resolve from the scanned
+# repo's own declared dependencies" here -- unlike PORT001-PATH's silent-
+# pass/false-fire class, retargeting this to be config-driven would not
+# fix a real cross-repo bug, only replace two names that are correct for
+# every host repo with a lookup that could return the wrong ones.
 _NON_LANGUAGE_FINGERPRINT_PACKAGES = ("frob", "strata-core")
 _FINGERPRINT_PACKAGES = (
     *_NON_LANGUAGE_FINGERPRINT_PACKAGES,
