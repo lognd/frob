@@ -34,7 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: dedefc9b95308747f8bbc49c7ed585a7794380b3
 ---
 Auto-filed by the TICK006 Tier-A fix (T-1544): T-3031's Done report claimed T-draft-36006d55 was filed, but T-draft-36006d55 resolves to no block in tickets.md or tickets-archive.md -- a phantom filing trail. The original claim's own surrounding text (the only surviving description of the intended work) is quoted verbatim below; review and refine as needed.
 
