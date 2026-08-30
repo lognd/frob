@@ -7,8 +7,6 @@ kind: bug
 origin: agent
 created: '2026-08-29'
 priority: critical
-blocked_by:
-- T-3458
 parent: null
 tier: ticket
 sprint: null
@@ -122,3 +120,4 @@ cost driver is filed as T-3458 for separate scoping/prioritization.
 
 ## Unblock log
 - 2026-08-29: unblocked by T-3457 -- T-3457 (GIL-release fix) landed at 92f97987137f -- this blocker is resolved
+- 2026-08-30: unblocked by T-3458 -- T-3458 landed the compiled-glob-cache fix for the real O(files x globs) fnmatch bottleneck in _via_matches/_via_matches_site (design/frob.strata's testsuite via-list); T-3449 can now re-measure with that fix in place
