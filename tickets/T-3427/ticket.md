@@ -2,7 +2,7 @@
 id: T-3427
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3395):
   1 new (rule, file) identit(ies), 1 finding(s) (DOC006)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -46,3 +46,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 
 ## Failure log
 - 2026-08-29 attempt 1: Re-measured with 'frob check --only docblocks' on current main (via the T-3427 worktree, natives built): zero DOC006 hits against tickets/T-3424/ticket.md. The only DOC006 hit in the whole docblocks run is on a DIFFERENT file (tickets/T-3411/ticket.md:89, frob.app.telemetry._state), which is not in this ticket's scope and not the identity this ticket was filed for. tickets/T-3424/ticket.md's body contains no dotted-path code-symbol-shaped text at all (only backtick-quoted FILE paths), so there is nothing for DOC006 to have matched here even historically -- stale/mis-scoped sweep attribution, not a real regression in this file. Already resolved on main.
+
+## Drop reason
+- 2026-08-30: Already resolved on main: frob check --only docblocks shows zero DOC006 hits on tickets/T-3424/ticket.md (series G measurement, 2026-08-30); the body has no dotted-path symbol references for DOC006 to match.
