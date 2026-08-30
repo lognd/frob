@@ -47,7 +47,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 89278e4046ce56b0e1645176c632334e0eee8937
 ---
 REPORTED FROM REAL CONSUMER USE (../diax FROBLEMS.md F-029, F-039, F-042,
 frob 0.530.0, 2026-08-28). Three separate reports, one root cause: a single
