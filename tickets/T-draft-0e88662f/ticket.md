@@ -6,7 +6,7 @@ kind: bug
 origin: human
 created: '2026-08-30'
 priority: medium
-parent: null
+parent: T-0969
 tier: ticket
 sprint: null
 runs_last: false
@@ -23,6 +23,13 @@ scope_changes:
   glob: src/frob/**
   reason: triage/decision record ticket (mirrors T-2955's pattern) -- names candidate
     files but does not commit to editing them here
+  actor: logan
+  at: '2026-08-30'
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-0969
+  reason: child of the WARN-tier burn-down epic, sibling of T-2378/T-2955/T-2970
   actor: logan
   at: '2026-08-30'
 body_changes:
