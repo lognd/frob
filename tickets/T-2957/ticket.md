@@ -67,6 +67,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 48dfdcbb856ca39bd942513c0cbf248a25fd8f68
 ---
 frob:no-behavior-change reason="T-2957's landed change is a pure internal de-dup refactor of set_priority/set_tier/set_component/set_kind in src/frob/tickets/_setters.py -- extracted the shared reason-required guard into _set_reasoned_field and trimmed a repeated docstring paragraph to a cross-reference; no behavior or public-api contract change is intended, per BUG002's T-1616 recovery path"
