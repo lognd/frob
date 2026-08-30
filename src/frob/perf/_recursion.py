@@ -68,14 +68,23 @@ def _enclosing_scope(qualname: str) -> str:
 def _is_receiver_aware_call(tokens: tuple[str, ...], i: int) -> bool:
     """True if `tokens[i]` (an identifier immediately followed by `(`)
     is a genuine call candidate under receiver-aware rules: either
-    UNqualified (`foo(...)`, no `.` before it), or qualified with `self`
-    as the immediate receiver (`self.foo(...)`). Any other qualified form
-    -- `super().foo(...)`, `other.foo(...)`, `cls.foo(...)` -- is excluded.
-    Reviewer-caught bug (T-0290 round 2): a bare `identifier(` scan with no
-    receiver awareness read `super().__init__()` as a self-recursive call
-    to `__init__`, producing ~50 false-positive PERF005/006 findings on
-    frob's own constructors."""
-    if i == 0 or tokens[i - 1] != ".":
+    UNqualified (`foo(...)`, no `.` or `::` before it), or qualified with
+    `self` as the immediate `.`-receiver (`self.foo(...)`). Any other
+    qualified form -- `super().foo(...)`, `other.foo(...)`, `cls.foo(...)`,
+    or ANY `::`-qualified path (`Type::method(...)`, `module::func(...)`)
+    -- is excluded. Reviewer-caught bug (T-0290 round 2): a bare
+    `identifier(` scan with no receiver awareness read `super().__init__()`
+    as a self-recursive call to `__init__`, producing ~50 false-positive
+    PERF005/006 findings on frob's own constructors. T-3479: `::` is a
+    single SCOPE token (`frob.lang._common`'s Rust/C++ lexer), never a
+    self-receiver -- a bare short-name scan that only excluded `.`-qualified
+    calls let `BTreeMap::new()`/`Vec::new()` inside a free function named
+    `new` read as a same-file recursive call to that unrelated `new`."""
+    if i == 0:
+        return True
+    if tokens[i - 1] == "::":
+        return False
+    if tokens[i - 1] != ".":
         return True
     return i >= 2 and tokens[i - 2] == "self"
 

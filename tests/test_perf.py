@@ -678,6 +678,56 @@ def test_perf005_does_not_pair_same_named_methods_across_classes(tmp_path):
     assert beta_refs == []
 
 
+def test_perf005_does_not_fire_on_unrelated_scope_qualified_new(tmp_path):
+    """T-3479: `::`-qualified calls (`BTreeMap::new()`, `Vec::new()`) inside
+    a free function ALSO named `new` are not self- or mutually-recursive --
+    `::` is a SCOPE token, never a `self`-receiver, so it must be excluded
+    from the bare-short-name candidate set exactly like a non-`self`
+    `.`-qualified call already is. Pre-fix, a file-scope `Graph::new`-style
+    fn calling `BTreeMap::new()`/`Vec::new()` (same short name `new`, same
+    file-scope `(path, scope)` key as an unrelated `GraphSchema::new` in
+    the same file) was falsely paired as PERF005 mutual recursion --
+    the real specimen at strata-core/src/graph/model.rs:257."""
+    # frob:ticket T-3479
+    # frob:tests src/frob/perf/_recursion.py::recursion_rules
+    src = (
+        "struct Graph { edges: Vec<u32> }\n\n"
+        "impl Graph {\n"
+        "    fn new() -> Self {\n"
+        "        Graph { edges: Vec::new() }\n"
+        "    }\n"
+        "}\n\n"
+        "struct GraphSchema { fields: Vec<u32> }\n\n"
+        "impl GraphSchema {\n"
+        "    fn new() -> Self {\n"
+        "        GraphSchema { fields: Vec::new() }\n"
+        "    }\n"
+        "}\n"
+    )
+    path = _write(tmp_path, "graph.rs", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule in ("PERF005", "PERF006") for v in violations)
+
+
+def test_perf005_still_fires_on_scope_qualified_self_recursion(tmp_path):
+    """Must-fire control for T-3479: a genuinely recursive Rust fn that
+    calls itself through a `::`-qualified path (`Self::helper` recursing
+    into itself, or a free fn calling its own scope-qualified name) is
+    still flagged -- the `::`-exclusion in `_is_receiver_aware_call` must
+    only drop OTHER types' qualified calls, never mask real recursion
+    reached via a `::`-qualified self-call."""
+    # frob:ticket T-3479
+    # frob:tests src/frob/perf/_recursion.py::recursion_rules
+    src = "fn spin(x: i32) -> i32 {\n    spin(x)\n}\n"
+    path = _write(tmp_path, "spin.rs", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert any(v.rule in ("PERF005", "PERF006") for v in violations)
+
+
 def test_profile_command_and_load_artifact_round_trip(tmp_path):
     """`profile_command` writes an artifact `load_artifact` can read back."""
     # frob:ticket T-0021
