@@ -1,7 +1,7 @@
 ---
 id: T-3446
 title: strata export golden test_seccomp drifted from the committed golden
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -20,6 +20,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
 designated_repro_test: null
 threat: null
 component: null
