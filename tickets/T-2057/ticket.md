@@ -2,7 +2,7 @@
 id: T-2057
 title: Wire strata/graph/vet examined-sites into WAIVE004 (blocked pending a sound
   site-identity mapping)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-10'
