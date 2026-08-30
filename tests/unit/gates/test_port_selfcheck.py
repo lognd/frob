@@ -206,6 +206,58 @@ class TestPort001:
         assert "src/frob/strata/_offender.py" in path_hits
         assert "src/frob/vet/_offender.py" in ident_hits
 
+    def test_bare_default_value_is_flagged_t3435(self, tmp_path: Path) -> None:
+        """MUST-FIRE (T-3435): a bare `_X = "src/frob"` module-level
+        assignment -- the `_DEFAULT_COV_TARGET = "src/frob"` shape
+        (FROBLEMS.md F-011) that motivated PORT001's own creation but
+        that neither PORT001-PATH (`.startswith(...)` wrapper) nor
+        PORT001-IDENT (`Tuple`/`List`/`JoinedStr` wrapper) can catch, is
+        now caught by the third shape, PORT001-DEFAULT. Also covers the
+        function-default-value variant of the same shape."""
+        _init_repo(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(_PYPROJECT_NAMED_FROB)
+        _write_gate_module(
+            tmp_path,
+            "frob",
+            "_offender.py",
+            '_DEFAULT_COV_TARGET = "src/frob"\n\n\n'
+            'def f(target="src/frob"):\n    return target\n',
+        )
+        _commit(tmp_path)
+
+        violations = port_selfcheck_gate(tmp_path)
+
+        hits = [v for v in violations if v.rule == "PORT001-DEFAULT"]
+        assert len(hits) == 1, (
+            "one violation per FILE (first-match-wins scan), not one per "
+            "occurrence -- matches PORT001-PATH/PORT001-IDENT's own posture"
+        )
+        assert hits[0].file == "src/frob/gates/_offender.py"
+        assert hits[0].severity.value == "warn"
+
+    def test_bare_pkg_name_assignment_stays_quiet_t3435(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET (T-3435): a bare `_PKG = "frob"` assignment
+        (the package NAME alone, not a `"src/<pkg>"` path-shaped value)
+        is the declared-identity case `_identity_literal_hit`'s own
+        docstring already excludes -- a single named constant, reviewable
+        at its own declaration, not path-building logic. PORT001-DEFAULT
+        must not widen that exclusion into a false positive."""
+        _init_repo(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(_PYPROJECT_NAMED_FROB)
+        _write_gate_module(
+            tmp_path,
+            "frob",
+            "_offender.py",
+            '_PKG = "frob"\n',
+        )
+        _commit(tmp_path)
+
+        violations = port_selfcheck_gate(tmp_path)
+
+        assert [v for v in violations if v.rule == "PORT001-DEFAULT"] == []
+
     def test_clean_gate_module_is_silent(self, tmp_path: Path) -> None:
         """A gate module with no hardcoded identity literal at all is
         clean -- proves this is not a check that always fires."""

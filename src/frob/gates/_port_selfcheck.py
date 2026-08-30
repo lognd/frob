@@ -264,6 +264,40 @@ def _identity_literal_hit(node: ast.AST, pkg: str) -> ast.Constant | None:
     return None
 
 
+# frob:ticket T-3435
+def _default_value_hit(node: ast.AST, pkg: str) -> ast.Constant | None:
+    """PORT001-DEFAULT: a bare `"src/<pkg>"` string-constant used as a
+    plain assignment's value (module-level `_X = "src/<pkg>"` or
+    `_X: str = "src/<pkg>"`) or as a function parameter's default value --
+    the `_DEFAULT_COV_TARGET = "src/frob"` shape (FROBLEMS.md F-011, the
+    incident that motivated PORT001's own creation, T-2384) that neither
+    `_path_prefix_hit` (needs a `.startswith(...)` call wrapping the
+    literal) nor `_identity_literal_hit` (needs a `Tuple`/`List`/
+    `JoinedStr` wrapping it) can catch: a plain assignment/default has no
+    such wrapper at all -- the exact SHAPE gap T-3275's population
+    widening did not touch (see this module's own T-3275 docstring
+    section: T-3275 fixed WHICH FILES get scanned, not WHICH SHAPES get
+    detected).
+
+    Deliberately narrower than `_identity_literal_hit`'s bare-pkg-name
+    case: this only matches the FULL `"src/<pkg>"` path-shaped value, not
+    a bare `"<pkg>"` assignment (`_PKG = "frob"`, the declared-identity
+    case `_identity_literal_hit`'s own docstring already excludes) --
+    that shape is a single named constant, reviewable at its own
+    declaration and not itself path-building logic; `"src/<pkg>"` is."""
+    target = f"src/{pkg}"
+    for sub in ast.walk(node):
+        if isinstance(sub, (ast.Assign, ast.AnnAssign)):
+            value = sub.value
+            if isinstance(value, ast.Constant) and value.value == target:
+                return value
+        elif isinstance(sub, ast.arguments):
+            for default in (*sub.defaults, *sub.kw_defaults):
+                if isinstance(default, ast.Constant) and default.value == target:
+                    return default
+    return None
+
+
 # frob:waive DUP001 reason="sibling PORT001-PATH/PORT001-IDENT/PII010-unresolvable \
 # violation builders: this module's own docstring states PORT001-IDENT is deliberately \
 # a DIFFERENT, non-promoted rule id from PORT001-PATH -- same builder shape, \
@@ -360,6 +394,49 @@ def _parse001_violation(rel_path: str, reason: str) -> Violation:
     )
 
 
+# frob:ticket T-3435
+# frob:enforces CHK-GATE-PORT001-DEFAULT
+def _port001_default_violation(rel_path: str, lineno: int, pkg: str) -> Violation:
+    """PORT001-DEFAULT: a bare `"src/<pkg>"` string-constant assignment or
+    function-default value -- BEHAVIORAL, the SAME promotion class as
+    PORT001-PATH (T-3435's decision, not IDENT's permanently-advisory
+    one): off a repo whose package is not `pkg`, this default silently
+    points at a path that does not exist rather than erroring -- exactly
+    the `_DEFAULT_COV_TARGET = "src/frob"` shape that produced
+    FROBLEMS.md F-011 and motivated PORT001's own creation (T-2384), so
+    it belongs in the same WARN->ERROR bar as PORT001-PATH once that
+    burn-down closes, not in PORT001-IDENT's separate never-promoted
+    lane."""
+    _log.warning(
+        "PORT001-DEFAULT: %s:%d hardcodes this repo's own package name "
+        "%r as a bare src/<pkg> default value",
+        rel_path,
+        lineno,
+        pkg,
+    )
+    return Violation(
+        rule="PORT001-DEFAULT",
+        severity=Severity.WARN,
+        file=rel_path,
+        line=lineno,
+        message=(
+            f"PORT001-DEFAULT: {rel_path}:{lineno} hardcodes this repo's "
+            f"own package name {pkg!r} as a bare 'src/{pkg}' default "
+            f"value (a plain assignment or function-parameter default) "
+            f"instead of resolving it from the project's declared config "
+            f"-- off a repo whose package is not named {pkg!r}, this "
+            f"silently defaults to a path that does not exist rather "
+            f"than erroring. Retarget to a resolver reading the "
+            f"project's own pyproject.toml (see "
+            f"frob.lang._nodes._declared_python_source_roots, T-2195), "
+            f"or add (rel_path) to frob.gates._port_selfcheck._ALLOWLIST "
+            f"with a one-line reason if this file is genuinely, "
+            f"permanently about this repo's own identity -- never "
+            f"silently"
+        ),
+    )
+
+
 # frob:waive DUP001 reason="sibling UNRESOLVED-pkg-name-violation builders: this is \
 # PORT001's own, _root_asset_dirs.py's is ROOT001's -- same fail-loudly \
 # log-then-UNRESOLVED-Violation shape (T-2391 convention), independently-evolving rule \
@@ -400,17 +477,21 @@ def _unresolved_project_name_violation(root: Path) -> Violation:
 # frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_non_detector_package_code_is_now_scanned_t3275  # noqa: E501
 # frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_legitimate_self_reference_stays_quiet_t3275  # noqa: E501
 # frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_strata_and_vet_are_scanned_since_t2405  # noqa: E501
+# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_bare_default_value_is_flagged_t3435  # noqa: E501
+# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_bare_pkg_name_assignment_stays_quiet_t3435  # noqa: E501
 def port_selfcheck_gate(root: Path) -> tuple[Violation, ...]:
     """PORT001: every git-tracked `.py` file under one of
     `DETECTOR_PACKAGE_ROOTS` (`src/frob/{check,gates,strata,vet}/`,
     T-2405 widening past `src/frob/gates/**` alone) that hardcodes this
     repo's own resolved package name as a path prefix
-    (`.startswith("src/<pkg>/")`) or as a bare literal path segment
-    (a tuple/list/f-string element), unless the file is in `_ALLOWLIST`
-    with a stated reason. UNRESOLVED (not a clean pass) if `root`'s own
-    `pyproject.toml` `[project].name` cannot be read. A file this gate
-    cannot read/parse fires PARSE001 instead of silently dropping out of
-    the scan, matching LEXCHECK001/RENDER001's own convention."""
+    (`.startswith("src/<pkg>/")`), as a bare literal path segment
+    (a tuple/list/f-string element), or as a bare `"src/<pkg>"` default
+    value (a plain assignment or function-parameter default, T-3435),
+    unless the file is in `_ALLOWLIST` with a stated reason. UNRESOLVED
+    (not a clean pass) if `root`'s own `pyproject.toml` `[project].name`
+    cannot be read. A file this gate cannot read/parse fires PARSE001
+    instead of silently dropping out of the scan, matching LEXCHECK001/
+    RENDER001's own convention."""
     root = Path(root)
     pkg = _project_package_name(root)
     if pkg is None:
@@ -434,6 +515,12 @@ def port_selfcheck_gate(root: Path) -> tuple[Violation, ...]:
         ident_hit = _identity_literal_hit(tree, pkg)
         if ident_hit is not None:
             violations.append(_port001_ident_violation(rel_path, ident_hit.lineno, pkg))
+            continue
+        default_hit = _default_value_hit(tree, pkg)
+        if default_hit is not None:
+            violations.append(
+                _port001_default_violation(rel_path, default_hit.lineno, pkg)
+            )
     _log.warning(
         "port_selfcheck_gate: scanned %d tracked src/frob/**/*.py file(s), "
         "repo-wide (T-3275: not DETECTOR_PACKAGE_ROOTS-scoped -- see "

@@ -968,6 +968,15 @@ _KNOWN_GATE_RULES = frozenset(
         # PORT001 split decision this turn.
         "PORT001-PATH",
         "PORT001-IDENT",
+        # frob:ticket T-3435
+        # T-3435: PORT001-DEFAULT -- the third PORT001-family AST shape
+        # (frob.gates._port_selfcheck), a bare "src/<pkg>" string-constant
+        # assignment or function-default value (the FROBLEMS.md F-011
+        # shape neither PORT001-PATH's .startswith(...) wrapper nor
+        # PORT001-IDENT's Tuple/List/JoinedStr wrapper could catch). Same
+        # WARN->ERROR promotion class as PORT001-PATH, a separate rule id
+        # from PORT001-IDENT's permanently-advisory one.
+        "PORT001-DEFAULT",
         # frob:ticket T-2441
         # T-2441: registers the THIRD PORT001-family rule id -- bare
         # "PORT001" (Violation(rule="PORT001", ...) at

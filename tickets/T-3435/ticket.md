@@ -2,7 +2,7 @@
 id: T-3435
 title: PORT001 cannot catch a bare string-constant identity default (detection-shape
   gap)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -42,6 +42,9 @@ scope_changes:
     doc anchor covering PORT001 needs updating to avoid doc drift
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_bare_default_value_is_flagged_t3435
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_bare_pkg_name_assignment_stays_quiet_t3435
 designated_repro_test: null
 threat: null
 component: null
