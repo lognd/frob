@@ -2,7 +2,7 @@
 id: T-3458
 title: SYS101/SYS111 self-conformance scan cost scales with design/frob.strata's largest
   via-list x repo file count
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -16,10 +16,31 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_selfconform_kinds.py
+- src/frob/strata/_effects.py
+- tests/unit/strata/test_effects.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/strata/_effects.py
+  reason: profiling test_sys_gate_zero_violations (cProfile over sys_gate) shows the
+    real O(files x globs) fnmatch hot path is _effects.py::_via_matches_site/_via_matches
+    (4.5M fnmatch calls, ~40s cumulative, largely os.path.normcase overhead repeated
+    per call), not _selfconform_kinds.py::_fully_excluded_node_ids (measured 0.303s
+    of the ~50s total, not the bottleneck this ticket's own filing hypothesized)
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/strata/test_effects.py
+  reason: profiling test_sys_gate_zero_violations (cProfile over sys_gate) shows the
+    real O(files x globs) fnmatch hot path is _effects.py::_via_matches_site/_via_matches
+    (4.5M fnmatch calls, ~40s cumulative, largely os.path.normcase overhead repeated
+    per call), not _selfconform_kinds.py::_fully_excluded_node_ids (measured 0.303s
+    of the ~50s total, not the bottleneck this ticket's own filing hypothesized)
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
