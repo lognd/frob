@@ -48,7 +48,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 38b2c6ddd4ec417fe187c7c32248ad0a8dc0f8c2
 ---
 MEASURED on GitHub Actions run 33284942175 (ubuntu-latest, HEAD ac5c2ae67,
 2026-08-30). The Test step reached [ 99%] at 01:30:23 and was SIGABRT-killed
