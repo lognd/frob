@@ -2,7 +2,7 @@
 id: T-3469
 title: 'Lease-pin refusal regressed again: 11 gate errors now precede/replace the
   frob ticket start remediation in a bare worktree'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -22,6 +22,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/system/test_cli_check.py::TestCheckTicketLeasePinRefusal::test_ticket_lease_recorded_elsewhere_refuses
+- tests/system/test_cli_check.py::TestCheckTicketLeasePinRefusal::test_refusal_short_circuits_before_any_gate_runs
 designated_repro_test: null
 threat: null
 component: null
