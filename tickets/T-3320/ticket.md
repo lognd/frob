@@ -2,7 +2,7 @@
 id: T-3320
 title: 'Fresh ticket-work worktree has no venv: ty fails on every declared dep until
   manual uv sync'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_lifecycle.py
+- tests/unit/test_ticket_runner_venv_sync_t3320.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_runner_venv_sync_t3320.py
+  reason: unit test coverage for the venv-sync fix, no source outside declared scope
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
