@@ -2,7 +2,7 @@
 id: T-2957
 title: 'frob-dup: burn the family to zero and promote WARN to ERROR (restores T-2378''s
   original commitment)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -16,7 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_setters.py
-- tickets/T-draft-0e88662f/**
+- tickets/T-3514/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,7 +29,7 @@ scope_changes:
   actor: logan
   at: '2026-08-30'
 - op: add
-  glob: tickets/T-draft-0e88662f/**
+  glob: tickets/T-3514/**
   reason: 'real de-duplication burn-down: extracted _set_reasoned_field from set_priority/set_tier/set_component;
     filed the src/ residue triage follow-up under this ticket''s own tickets dir'
   actor: logan

@@ -2609,6 +2609,78 @@
       "old_digest": "405adc6ee9fb856f8932d47441adaebeee22f70b8739bca5664a8be92d3a1a0f",
       "reason": "T-3324: added frob:tests directives after the land-time T-2114 refusal",
       "ref": "src/frob/gates/_sys.py::selfaudit_findings_touching"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "body",
+      "new_digest": "dcc9bed71e672550e704b627e86e029da489bdc3da771d2ed7caa344fb524499",
+      "old_digest": null,
+      "reason": "T-2957 de-dup: extracted the shared reason-required guard into _set_reasoned_field and trimmed the repeated T-2353 docstring paragraph to a cross-reference; behavior and public contract described in docs/modules/tickets.md#public-api are unchanged, re-verified against the current docstrings/signatures",
+      "ref": "src/frob/tickets/_setters.py::set_priority"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "f1abf10c4a41fa7cde7e45a1dcca241ad941782add5356146f5e0402d05d2bb1",
+      "old_digest": null,
+      "reason": "T-2957 de-dup: extracted the shared reason-required guard into _set_reasoned_field and trimmed the repeated T-2353 docstring paragraph to a cross-reference; behavior and public contract described in docs/modules/tickets.md#public-api are unchanged, re-verified against the current docstrings/signatures",
+      "ref": "src/frob/tickets/_setters.py::set_priority"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "body",
+      "new_digest": "85425e62cfbdaaf48bb6f7e15d9a8eb11588601159f6199650a9ff16147e8267",
+      "old_digest": null,
+      "reason": "T-2957 de-dup: extracted the shared reason-required guard into _set_reasoned_field and trimmed the repeated T-2353 docstring paragraph to a cross-reference; behavior and public contract described in docs/modules/tickets.md#public-api are unchanged, re-verified against the current docstrings/signatures",
+      "ref": "src/frob/tickets/_setters.py::set_tier"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "a0519b998d44ffed24bbf87123fac23688b37ff338921a159c37baaa8984e58e",
+      "old_digest": null,
+      "reason": "T-2957 de-dup: extracted the shared reason-required guard into _set_reasoned_field and trimmed the repeated T-2353 docstring paragraph to a cross-reference; behavior and public contract described in docs/modules/tickets.md#public-api are unchanged, re-verified against the current docstrings/signatures",
+      "ref": "src/frob/tickets/_setters.py::set_tier"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "body",
+      "new_digest": "01f85562b4f5deaed0cb8ac28545ee039828e0022f1ac96d2810d4e95b010416",
+      "old_digest": null,
+      "reason": "T-2957 de-dup: extracted the shared reason-required guard into _set_reasoned_field and trimmed the repeated T-2353 docstring paragraph to a cross-reference; behavior and public contract described in docs/modules/tickets.md#public-api are unchanged, re-verified against the current docstrings/signatures",
+      "ref": "src/frob/tickets/_setters.py::set_component"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "1cede181e190ea76d61e65df9461a3571b155297dc7004c0dca1ebf6b32782c5",
+      "old_digest": null,
+      "reason": "T-2957 de-dup: extracted the shared reason-required guard into _set_reasoned_field and trimmed the repeated T-2353 docstring paragraph to a cross-reference; behavior and public contract described in docs/modules/tickets.md#public-api are unchanged, re-verified against the current docstrings/signatures",
+      "ref": "src/frob/tickets/_setters.py::set_component"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "body",
+      "new_digest": "838d045ba3eff892c508b8d9c56d52d530e2613b7ba81e1aaabdc463e443bb1f",
+      "old_digest": null,
+      "reason": "T-2957 de-dup: extracted the shared reason-required guard into _set_reasoned_field and trimmed the repeated T-2353 docstring paragraph to a cross-reference; behavior and public contract described in docs/modules/tickets.md#public-api are unchanged, re-verified against the current docstrings/signatures",
+      "ref": "src/frob/tickets/_setters.py::set_kind"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "d3ade0ee0404f2f80e8b6b0f37cf3b116687117c352a8d4da998a16bc87e0308",
+      "old_digest": null,
+      "reason": "T-2957 de-dup: extracted the shared reason-required guard into _set_reasoned_field and trimmed the repeated T-2353 docstring paragraph to a cross-reference; behavior and public contract described in docs/modules/tickets.md#public-api are unchanged, re-verified against the current docstrings/signatures",
+      "ref": "src/frob/tickets/_setters.py::set_kind"
     }
   ],
   "entries": [
@@ -3881,6 +3953,46 @@
       "digest": "e72cb77e91e74e24ba2ceb91e2c4d173e95dd3be174b5b322bed0ad8518875f4",
       "facet": "sig",
       "ref": "src/frob/tickets/_scope.py::scope_lease_conflict"
+    },
+    {
+      "digest": "01f85562b4f5deaed0cb8ac28545ee039828e0022f1ac96d2810d4e95b010416",
+      "facet": "body",
+      "ref": "src/frob/tickets/_setters.py::set_component"
+    },
+    {
+      "digest": "1cede181e190ea76d61e65df9461a3571b155297dc7004c0dca1ebf6b32782c5",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_setters.py::set_component"
+    },
+    {
+      "digest": "838d045ba3eff892c508b8d9c56d52d530e2613b7ba81e1aaabdc463e443bb1f",
+      "facet": "body",
+      "ref": "src/frob/tickets/_setters.py::set_kind"
+    },
+    {
+      "digest": "d3ade0ee0404f2f80e8b6b0f37cf3b116687117c352a8d4da998a16bc87e0308",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_setters.py::set_kind"
+    },
+    {
+      "digest": "dcc9bed71e672550e704b627e86e029da489bdc3da771d2ed7caa344fb524499",
+      "facet": "body",
+      "ref": "src/frob/tickets/_setters.py::set_priority"
+    },
+    {
+      "digest": "f1abf10c4a41fa7cde7e45a1dcca241ad941782add5356146f5e0402d05d2bb1",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_setters.py::set_priority"
+    },
+    {
+      "digest": "85425e62cfbdaaf48bb6f7e15d9a8eb11588601159f6199650a9ff16147e8267",
+      "facet": "body",
+      "ref": "src/frob/tickets/_setters.py::set_tier"
+    },
+    {
+      "digest": "a0519b998d44ffed24bbf87123fac23688b37ff338921a159c37baaa8984e58e",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_setters.py::set_tier"
     },
     {
       "digest": "52cca8547796b570cd071abae5497f5bb98c0c76aa55dae51bf9f2cf565eae3b",

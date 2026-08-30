@@ -203,9 +203,37 @@ def _set_ticket_field(
     return Ok(updated)
 
 
+# frob:ticket T-2957
+def _set_reasoned_field(
+    root: Path,
+    ticket_id: str,
+    field: str,
+    value: object,
+    *,
+    log_value: object,
+    reason: str,
+) -> Result[Ticket, TicketError | LeaseError]:
+    """Reason-required guard plus `_set_ticket_field` delegate shared by
+    the single-value setters that refuse a blank/whitespace-only `reason`
+    with `Err(TicketError.TriageReasonMissing)` before writing
+    (`set_priority`/`set_tier`/`set_component`, T-2957 de-dup of the
+    frob-dup renamed-duplicate family -- these three bodies were
+    byte-for-byte identical apart from the field name and value shape)."""
+    if not reason.strip():
+        return Err(TicketError.TriageReasonMissing)
+    return _set_ticket_field(
+        root, ticket_id, field, value, log_value=log_value, reason=reason
+    )
+
+
 # frob:ticket T-0411
 # frob:ticket T-2353
+# frob:ticket T-2957
 # frob:doc docs/modules/tickets.md#public-api
+# frob:waive AFFECT001 reason="T-2957: pure internal de-dup refactor -- delegates to \
+# the new _set_reasoned_field helper and trims a repeated docstring paragraph to a \
+# cross-reference; the documented public-api behavior/contract is unchanged \
+# (re-verified, frob ack'd), so docs/modules/tickets.md#public-api needs no edit"
 # frob:tests tests/test_tickets_priority.py::TestSetPriority.test_updates_priority_field
 # frob:tests tests/test_tickets_priority.py::TestSetPriority.test_reason_missing_refuses
 # frob:tests \
@@ -225,9 +253,7 @@ def set_priority(
     appended to `ticket.triage_changes` -- closing the "priority change
     leaves no audit trail" gap this ticket found: `scope`/`accept --amend`
     both already required and recorded a reason, `priority` alone did not."""
-    if not reason.strip():
-        return Err(TicketError.TriageReasonMissing)
-    return _set_ticket_field(
+    return _set_reasoned_field(
         root, ticket_id, "priority", priority, log_value=priority.value, reason=reason
     )
 
@@ -235,7 +261,12 @@ def set_priority(
 # frob:ticket T-0834
 # frob:ticket T-1616
 # frob:ticket T-2353
+# frob:ticket T-2957
 # frob:doc docs/modules/tickets.md#public-api
+# frob:waive AFFECT001 reason="T-2957: docstring-only change (trimmed the repeated \
+# T-2353 paragraph to a cross-reference to set_priority); the documented public-api \
+# behavior/contract is unchanged (re-verified, frob ack'd), so \
+# docs/modules/tickets.md#public-api needs no edit"
 # frob:tests tests/test_ticket_evidence.py::TestSetKind.test_updates_kind_field
 # frob:tests \
 # tests/test_ticket_evidence.py::TestKindHistory.test_change_after_evidence_recorded
@@ -250,10 +281,9 @@ def set_kind(
     pattern `set_priority` uses. A no-op write (still logged) if `kind`
     already matches.
 
-    T-2353: `reason` is now REQUIRED (`Err(TicketError.TriageReasonMissing)`
-    on a blank/whitespace-only value) and recorded into a `TriageChangeEntry`
-    appended to `ticket.triage_changes`, the same `set_priority`/T-2353
-    accountability this module's other single-value setters gained.
+    T-2353: `reason` is required, same `_set_reasoned_field`/`set_priority`
+    accountability (see `set_priority`'s docstring for the full audit-trail
+    rationale).
 
     T-1616: if the ticket already carries evidence and/or a substantive
     Done report at the moment of the change -- i.e. this is not a fresh,
@@ -324,7 +354,12 @@ def _kind_history_entry(ticket: Ticket, kind: TicketKind) -> str | None:
 
 # frob:ticket T-1069
 # frob:ticket T-2353
+# frob:ticket T-2957
 # frob:doc docs/modules/tickets.md#public-api
+# frob:waive AFFECT001 reason="T-2957: pure internal de-dup refactor -- delegates to \
+# the new _set_reasoned_field helper and trims a repeated docstring paragraph to a \
+# cross-reference; the documented public-api behavior/contract is unchanged \
+# (re-verified, frob ack'd), so docs/modules/tickets.md#public-api needs no edit"
 # frob:tests tests/test_tickets_tiers.py::TestSetTier.test_updates_tier_field
 # frob:tests tests/test_tickets_tiers.py::TestSetTier.test_reason_missing_refuses
 def set_tier(
@@ -341,13 +376,10 @@ def set_tier(
     carries, so they apply to the new value on the very next read; this
     function does not re-validate or move `parent` links.
 
-    T-2353: `reason` is now REQUIRED (`Err(TicketError.TriageReasonMissing)`
-    on a blank/whitespace-only value) and recorded into a `TriageChangeEntry`
-    appended to `ticket.triage_changes`, the same `set_priority`/T-2353
-    accountability this module's other single-value setters gained."""
-    if not reason.strip():
-        return Err(TicketError.TriageReasonMissing)
-    return _set_ticket_field(
+    T-2353: `reason` is required, same `_set_reasoned_field`/`set_priority`
+    accountability (see `set_priority`'s docstring for the full audit-trail
+    rationale)."""
+    return _set_reasoned_field(
         root, ticket_id, "tier", tier, log_value=tier.value, reason=reason
     )
 
@@ -1105,7 +1137,12 @@ from frob.tickets._flow import (  # noqa: E402
 
 # frob:ticket T-0454
 # frob:ticket T-2353
+# frob:ticket T-2957
 # frob:doc docs/modules/tickets.md#public-api
+# frob:waive AFFECT001 reason="T-2957: pure internal de-dup refactor -- delegates to \
+# the new _set_reasoned_field helper and trims a repeated docstring paragraph to a \
+# cross-reference; the documented public-api behavior/contract is unchanged \
+# (re-verified, frob ack'd), so docs/modules/tickets.md#public-api needs no edit"
 # frob:tests \
 # tests/test_tickets_organization.py::TestSetComponent.test_updates_component_field
 # frob:tests \
@@ -1117,12 +1154,9 @@ def set_component(
     ticket belongs to, the same single-writer, ledger-locked pattern
     `set_priority` uses. `component=None` clears it back to uncategorized.
 
-    T-2353: `reason` is now REQUIRED (`Err(TicketError.TriageReasonMissing)`
-    on a blank/whitespace-only value) and recorded into a `TriageChangeEntry`
-    appended to `ticket.triage_changes`, the same `set_priority`/T-2353
-    accountability this module's other single-value setters gained."""
-    if not reason.strip():
-        return Err(TicketError.TriageReasonMissing)
-    return _set_ticket_field(
+    T-2353: `reason` is required, same `_set_reasoned_field`/`set_priority`
+    accountability (see `set_priority`'s docstring for the full audit-trail
+    rationale)."""
+    return _set_reasoned_field(
         root, ticket_id, "component", component, log_value=component, reason=reason
     )
