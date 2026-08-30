@@ -2,7 +2,7 @@
 id: T-3437
 title: 'T-3420 follow-up: test_coverage.py still asserts sigterm is True, and the
   SIGTERM must-fire fixture fails on macOS'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-29'
