@@ -2,7 +2,7 @@
 id: T-3487
 title: 'test_with_serial_pools_worker_is_majority_attributed: relative assertion from
   T-3455 rejects 0.998 vs 0.504'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -20,6 +20,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: record the TEST016/BUG002 waiver for a test-only assertion fix
+  actor: logan
+  at: '2026-08-30'
+  old_length: 811
+  new_length: 1123
+evidence:
+- tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_with_serial_pools_worker_is_majority_attributed
 designated_repro_test: null
 threat: null
 component: null
@@ -32,3 +41,5 @@ MEASURED on GitHub Actions run 33308245923 (ubuntu-latest, HEAD 355eb4468, 2026-
 FAILING: tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_with_serial_pools_worker_is_majority_attributed
     AssertionError: patched attribution (0.9978) was not decisively larger than unpatched attribution (0.5039) measured in the same run
 0.998 vs 0.504 IS decisively larger, so the relative assertion T-3455 introduced is mis-stated (inverted operands, a ratio threshold above 2x, or comparing the wrong pair). Fix the assertion so it states the property (patched attribution exceeds unpatched by a clear margin, e.g. ratio >= 1.5 AND patched > 0.9) and add the failing numbers to the message. Run 5x.
+
+frob:waive BUG002 reason="test-only change: the diff touches only the assertion text of tests/unit/perf/test_serial_pools.py, so there is no production code whose mutants the bound evidence could kill; the misfiring assertion was measured on CI run 33308245923 (0.9978 vs 0.5039 rejected on a 2x technicality)"
