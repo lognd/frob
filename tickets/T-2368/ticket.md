@@ -19,6 +19,7 @@ scope:
 - tests/unit/test_ticket_store.py
 - src/frob/gates/_waive_comments.py
 - src/frob/gates/_pii_structural/_emails.py
+- tickets/T-draft-40171987/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,12 @@ scope_changes:
   glob: src/frob/gates/_pii_structural/_emails.py
   reason: PLACE001/PII011 severity promotion once each code's repo-wide count is at
     zero
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tickets/T-draft-40171987/**
+  reason: T-2368's own out-of-scope discovery filed as a new ticket; the ticket file
+    lands with this ticket
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
