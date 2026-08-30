@@ -57,7 +57,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b2f7e0075f75addfe485053b208d75d46539d228
 ---
 fleet_status.py's forkserver reporting measures ORPHAN STATUS and SWAP, never
 RESIDENT MEMORY, so a coordinator reading it concludes forkservers are healthy
