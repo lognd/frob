@@ -2,7 +2,7 @@
 id: T-3454
 title: 'post-land sweep regression from T-3438: 2 new (rule, file) identit(ies), 8
   finding(s) (DOC007, DRIFT002)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -25,6 +25,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: record no-behavior-change front door for BUG002
+  actor: logan
+  at: '2026-08-29'
+  old_length: 1465
+  new_length: 1858
+evidence:
+- tests/unit/test_main_entry.py::TestVetHookSuppressesStartupWarnings::test_vet_hook_suppresses_startup_warnings
+- tests/unit/test_main_entry.py::TestVetHookSuppressesStartupWarnings::test_vet_without_hook_still_warns
 designated_repro_test: null
 threat: null
 component: null
@@ -47,3 +57,7 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DRIFT002  tests/unit/test_main_entry.py  -> attributed to T-3438 (commit f58091d391b9, already closed/dropped -- filed below) via tests/unit/test_main_entry.py::TestVetHookSuppressesStartupWarnings
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+
+
+frob:no-behavior-change reason="Fix is comment-only (removing two malformed frob:tests directives from tests/unit/test_main_entry.py that used the wrong Class::method separator convention); no production code or test behavior changes, so the designated evidence test passes identically before and after -- BUG002's mutation-kill requirement does not apply to a directive-comment-only fix."
