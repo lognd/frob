@@ -2,7 +2,7 @@
 id: T-3265
 title: 'post-land sweep regression from T-3079, T-3255, T-3249: 1 new (rule, file)
   identit(ies), 1 finding(s) (DOC006)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-28'
@@ -45,3 +45,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 
 ## Failure log
 - 2026-08-29 attempt 1: already resolved on main: DOC006 tickets/T-3262/ticket.md no longer fires -- frob check --only docblocks shows 0 DOC006 findings against that file; body_changes T-3283 already corrected the CLI shape to 'frob scaffold new python-tool <name>'. Live DOC006 errors are only against T-3411 and T-3424, unrelated to this ticket's scope
+
+## Drop reason
+- 2026-08-29: Stale premise: the cited (rule, file) identities no longer fire on main (measured by the series C implementer with frob check --only docblocks/coverage before its land of the failure log, 2026-08-29); the requeue after 'fail' is not actionable.
