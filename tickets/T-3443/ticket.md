@@ -18,10 +18,19 @@ scope:
 - src/frob/lang/__init__.py
 - src/frob/lang/_support.py
 - tests/unit/test_exports.py
+- src/frob/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/__init__.py
+  reason: ticket body's scope named src/frob/doctor/__init__.py but doctor.py is a
+    flat module re-exported from src/frob/__init__.py, the actual owning __init__
+    for those symbols
+  actor: logan
+  at: '2026-08-29'
 evidence:
 - tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 designated_repro_test: null
