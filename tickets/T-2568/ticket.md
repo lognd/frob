@@ -2,7 +2,7 @@
 id: T-2568
 title: 'may-raise resolver ignores a guard predicate that establishes a call''s precondition:
   all 8 remaining EXHAUST002 findings'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
