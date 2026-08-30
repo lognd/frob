@@ -14,6 +14,12 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_land_parity.py
+- src/frob/gates/__init__.py
+- src/frob/gates/_waive.py
+- docs/modules/gates.md
+- tests/unit/test_land_parity_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
@@ -30,6 +36,46 @@ scope_changes:
     the concrete functions to reuse (T-3302's own investigation)
   actor: logan
   at: '2026-08-29'
+- op: add
+  glob: src/frob/gates/_land_parity.py
+  reason: 'smallest-version: expose T-2114 doc/test-edge and diff-scoped ARCH001 as
+    real gate rules; _land_cmd.py is leased by T-2642 (in-progress) so the shared
+    pure logic is imported FROM it read-only rather than moved out of it, avoiding
+    the scope-lease conflict entirely'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'smallest-version: expose T-2114 doc/test-edge and diff-scoped ARCH001 as
+    real gate rules; _land_cmd.py is leased by T-2642 (in-progress) so the shared
+    pure logic is imported FROM it read-only rather than moved out of it, avoiding
+    the scope-lease conflict entirely'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'smallest-version: expose T-2114 doc/test-edge and diff-scoped ARCH001 as
+    real gate rules; _land_cmd.py is leased by T-2642 (in-progress) so the shared
+    pure logic is imported FROM it read-only rather than moved out of it, avoiding
+    the scope-lease conflict entirely'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'smallest-version: expose T-2114 doc/test-edge and diff-scoped ARCH001 as
+    real gate rules; _land_cmd.py is leased by T-2642 (in-progress) so the shared
+    pure logic is imported FROM it read-only rather than moved out of it, avoiding
+    the scope-lease conflict entirely'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_land_parity_gate.py
+  reason: 'smallest-version: expose T-2114 doc/test-edge and diff-scoped ARCH001 as
+    real gate rules; _land_cmd.py is leased by T-2642 (in-progress) so the shared
+    pure logic is imported FROM it read-only rather than moved out of it, avoiding
+    the scope-lease conflict entirely'
+  actor: logan
+  at: '2026-08-30'
 body_changes:
 - mode: set
   reason: file the real check/close-wiring fix as its own properly-scoped ticket;
