@@ -79,3 +79,6 @@ frob ticket contention / sequential land if both leaves touch the same
 lines, but the changes themselves are logically independent (transport
 guard vs. multiprocessing context) so parallel implementation is fine;
 only the LAND needs to serialize if there's a literal line conflict.
+
+## Failure log
+- 2026-08-30 attempt 1: no hardcoded get_context("fork") exists in scope (src/frob/process/_proc_scan.py, _reap.py, src/frob/serve/_socketd.py) -- grep confirms zero context-selection calls there; gates/__init__.py (out of scope) already picks forkserver/spawn correctly. All literal get_context("fork") sites are in test files (tests/test_ticket_land.py, tests/unit/test_land_finish_guard.py, tests/unit/test_land_lock_liveness.py) outside T-3509 scope, and test_ticket_land.py plus src/frob/serve/_socketd.py are already claimed by T-3506's scope -- widening into those test files here would collide with the other agent's ticket. No safe in-scope fix exists; deferring to T-3506 or a follow-up ticket for the fork-hardcoded test harnesses.
