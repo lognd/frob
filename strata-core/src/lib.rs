@@ -54,11 +54,27 @@ type Edge = (String, String, String, bool, bool);
 /// far as a chain of transitive ones.
 #[pyfunction]
 fn reachable(
+    py: Python<'_>,
     edges: Vec<Edge>,
     src: String,
     through_barriers: bool,
 ) -> HashMap<String, Vec<String>> {
     // frob:doc docs/strata/kernel.md#strata-core
+    // T-3457: releases the GIL for the O(graph) BFS below so a Python
+    // watchdog thread (e.g. pytest-timeout's thread-method Timer) can run
+    // concurrently and actually preempt a long call -- inputs (`edges`/
+    // `src`) are already owned Rust data by the time this line runs (pyo3
+    // extracts them from the Python arguments before the function body
+    // starts), and the returned `HashMap` is converted to a Python object
+    // only after this closure returns and the GIL is reacquired.
+    py.allow_threads(|| reachable_impl(edges, src, through_barriers))
+}
+
+fn reachable_impl(
+    edges: Vec<Edge>,
+    src: String,
+    through_barriers: bool,
+) -> HashMap<String, Vec<String>> {
     let mut outgoing: HashMap<&str, Vec<&Edge>> = HashMap::new();
     for edge in &edges {
         outgoing.entry(edge.1.as_str()).or_default().push(edge);
@@ -340,8 +356,14 @@ fn zero_weight_path(
 /// running longest-path DP over the resulting DAG in topological order is
 /// then exact -- no caller-context-dependent memoization anywhere.
 #[pyfunction]
-fn worst_age(edges: Vec<AgedEdge>, target: String) -> (f64, Vec<String>) {
+fn worst_age(py: Python<'_>, edges: Vec<AgedEdge>, target: String) -> (f64, Vec<String>) {
     // frob:doc docs/strata/kernel.md#strata-core
+    // T-3457: releases the GIL for the O(graph) SCC/DAG computation below,
+    // same reasoning as `reachable` above -- see that function's comment.
+    py.allow_threads(|| worst_age_impl(edges, target))
+}
+
+fn worst_age_impl(edges: Vec<AgedEdge>, target: String) -> (f64, Vec<String>) {
     let mut incoming: HashMap<&str, Vec<&AgedEdge>> = HashMap::new();
     let mut outgoing: HashMap<&str, Vec<&AgedEdge>> = HashMap::new();
     for edge in &edges {
@@ -610,8 +632,18 @@ fn compute_demand(
 /// with the cycle as witness, never a silent clamp (deny-by-default,
 /// charter law 2).
 #[pyfunction]
-fn propagated_demand(edges: Vec<DemandEdge>, target: String) -> (f64, Vec<String>) {
+fn propagated_demand(
+    py: Python<'_>,
+    edges: Vec<DemandEdge>,
+    target: String,
+) -> (f64, Vec<String>) {
     // frob:doc docs/strata/kernel.md#capacity-semantics
+    // T-3457: releases the GIL for the O(graph) closure/memoized-recursion
+    // computation below, same reasoning as `reachable` above.
+    py.allow_threads(|| propagated_demand_impl(edges, target))
+}
+
+fn propagated_demand_impl(edges: Vec<DemandEdge>, target: String) -> (f64, Vec<String>) {
     let mut outgoing_all: HashMap<String, Vec<String>> = HashMap::new();
     let mut rate_sources: HashSet<String> = HashSet::new();
     let mut incoming_undeclared: HashMap<String, Vec<(String, String, f64)>> = HashMap::new();
@@ -707,10 +739,20 @@ fn propagated_demand(edges: Vec<DemandEdge>, target: String) -> (f64, Vec<String
 /// this crate's Rust API, not necessarily new PyO3 surface).
 #[pyfunction]
 fn vmodel_check(
+    py: Python<'_>,
     nodes: Vec<(String, String, Option<String>, BTreeMap<String, String>)>,
     edges: Vec<(String, String, String, BTreeMap<String, String>)>,
 ) -> (Vec<String>, Vec<(String, String)>) {
     // frob:doc docs/strata/vmodel.md#pyo3-surface-vmodel_check
+    // T-3457: releases the GIL for the O(graph) closure computation below,
+    // same reasoning as `reachable` above.
+    py.allow_threads(|| vmodel_check_impl(nodes, edges))
+}
+
+fn vmodel_check_impl(
+    nodes: Vec<(String, String, Option<String>, BTreeMap<String, String>)>,
+    edges: Vec<(String, String, String, BTreeMap<String, String>)>,
+) -> (Vec<String>, Vec<(String, String)>) {
     use graph::vmodel::{check_closure, v_model_schema, ClosureViolation};
     use graph::Graph;
 
@@ -781,7 +823,7 @@ mod tests {
     fn reachable_returns_witness_paths() {
         // frob:tests strata-core/src/lib.rs::reachable kind="unit"
         // frob:tests strata-core/src/lib.rs::strata_core kind="unit"
-        let paths = reachable(
+        let paths = reachable_impl(
             vec![edge("f1", "a", "b", false), edge("f2", "b", "c", false)],
             "a".to_string(),
             false,
@@ -796,7 +838,7 @@ mod tests {
         // T-0282: a --(non-transitive)--> b --(non-transitive)--> c must
         // reach b (single hop, always correct) but NOT c (chaining past a
         // non-transitive edge is the disclosed gap this ticket fixes).
-        let paths = reachable(
+        let paths = reachable_impl(
             vec![
                 nontransitive_edge("f1", "a", "b"),
                 nontransitive_edge("f2", "b", "c"),
@@ -815,7 +857,7 @@ mod tests {
         // a --(transitive)--> b --(non-transitive)--> c: c IS reachable
         // (the non-transitive edge is the LAST hop, which is allowed) but
         // nothing past c is, since c was never enqueued.
-        let paths = reachable(
+        let paths = reachable_impl(
             vec![
                 edge("f1", "a", "b", false),
                 nontransitive_edge("f2", "b", "c"),
@@ -830,14 +872,14 @@ mod tests {
     fn barriers_stop_taint_unless_asked() {
         // frob:tests strata-core/src/lib.rs::reachable kind="unit"
         let edges = vec![edge("f1", "evil", "api", true)];
-        assert!(!reachable(edges.clone(), "evil".to_string(), false).contains_key("api"));
-        assert!(reachable(edges, "evil".to_string(), true).contains_key("api"));
+        assert!(!reachable_impl(edges.clone(), "evil".to_string(), false).contains_key("api"));
+        assert!(reachable_impl(edges, "evil".to_string(), true).contains_key("api"));
     }
 
     #[test]
     fn worst_age_takes_the_stalest_path() {
         // frob:tests strata-core/src/lib.rs::worst_age kind="unit"
-        let (age, path) = worst_age(
+        let (age, path) = worst_age_impl(
             vec![
                 ("f1".into(), "truth".into(), "replica".into(), 300.0),
                 ("f2".into(), "replica".into(), "view".into(), 30.0),
@@ -862,7 +904,7 @@ mod tests {
         // inactive. The true worst case is 4.0 via C -> B -> A -> T. A
         // silent undercount here means an AGE bound claim could be FALSELY
         // PROVED -- the SCC-condensation replacement must get this right.
-        let (age, path) = worst_age(
+        let (age, path) = worst_age_impl(
             vec![
                 ("e0".into(), "B".into(), "A".into(), 0.0),
                 ("e1".into(), "B".into(), "T".into(), 0.0),
@@ -879,7 +921,7 @@ mod tests {
     #[test]
     fn worst_age_is_infinite_on_positive_cycles() {
         // frob:tests strata-core/src/lib.rs::worst_age kind="unit"
-        let (age, _) = worst_age(
+        let (age, _) = worst_age_impl(
             vec![
                 ("f1".into(), "a".into(), "b".into(), 1.0),
                 ("f2".into(), "b".into(), "a".into(), 1.0),
@@ -893,7 +935,7 @@ mod tests {
     fn propagated_demand_chain_multiplies_fanout() {
         // frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
         // src(10/s) -> a (fanout 2) -> b (fanout 3): 10 * 2 * 3 = 60.
-        let (v, _) = propagated_demand(
+        let (v, _) = propagated_demand_impl(
             vec![
                 ("f1".into(), "src".into(), "a".into(), Some(10.0), 2.0),
                 ("f2".into(), "a".into(), "b".into(), None, 3.0),
@@ -907,7 +949,7 @@ mod tests {
     fn propagated_demand_sums_converging_paths() {
         // frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
         // two independent declared sources into the same target: sums.
-        let (v, _) = propagated_demand(
+        let (v, _) = propagated_demand_impl(
             vec![
                 ("f1".into(), "s1".into(), "t".into(), Some(4.0), 1.0),
                 ("f2".into(), "s2".into(), "t".into(), Some(6.0), 1.0),
@@ -921,7 +963,7 @@ mod tests {
     fn propagated_demand_positive_cycle_is_infinite() {
         // frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
         // src feeds a, a<->b cycle (both undeclared), b is the target.
-        let (v, witness) = propagated_demand(
+        let (v, witness) = propagated_demand_impl(
             vec![
                 ("f0".into(), "src".into(), "a".into(), Some(5.0), 1.0),
                 ("f1".into(), "a".into(), "b".into(), None, 1.0),
@@ -938,7 +980,7 @@ mod tests {
     fn propagated_demand_unfed_cycle_contributes_zero() {
         // frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
         // a<->b cycle with no declared rate anywhere reaching it: 0, finite.
-        let (v, _) = propagated_demand(
+        let (v, _) = propagated_demand_impl(
             vec![
                 ("f1".into(), "a".into(), "b".into(), None, 1.0),
                 ("f2".into(), "b".into(), "a".into(), None, 1.0),
@@ -977,7 +1019,7 @@ mod tests {
         // referencing an undeclared kind (a construction error) -- proves
         // the PyO3 boundary surfaces BOTH failure classes in one call
         // rather than only the first one hit.
-        let (errors, violations) = vmodel_check(
+        let (errors, violations) = vmodel_check_impl(
             vec![
                 (
                     "req-1".to_string(),
@@ -1014,7 +1056,7 @@ mod tests {
     #[test]
     fn vmodel_check_is_quiet_on_a_fully_closed_graph() {
         // frob:tests strata-core/src/lib.rs::vmodel_check kind="unit"
-        let (errors, violations) = vmodel_check(
+        let (errors, violations) = vmodel_check_impl(
             vec![
                 (
                     "req-1".to_string(),
@@ -1072,7 +1114,7 @@ mod tests {
         // T-3044 H3 must-fire fixture: an artifact node with NO code_ref
         // attr must surface as a construction error, not silently accept
         // an unfalsifiable node.
-        let (errors, _violations) = vmodel_check(
+        let (errors, _violations) = vmodel_check_impl(
             vec![(
                 "req-1".to_string(),
                 "artifact".to_string(),

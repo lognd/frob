@@ -2,7 +2,7 @@
 id: T-3457
 title: strata_core Rust extensions never release the GIL, so pytest-timeout's thread
   watchdog cannot preempt a long native call
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -28,6 +28,12 @@ scope_changes:
     GIL during long calls
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/unit/strata/test_strata_core_gil.py::TestTimeoutFiresDuringLongNativeCall::test_timeout_fires_during_worst_age
+- tests/unit/strata/test_strata_core_gil.py::TestGilActuallyReleased::test_background_thread_runs_during_worst_age
+- tests/unit/strata/test_strata_core_gil.py::TestResultsUnchanged::test_worst_age_result_unchanged
+- tests/unit/strata/test_strata_core_gil.py::TestResultsUnchanged::test_reachable_result_unchanged
+- tests/unit/strata/test_strata_core_gil.py::TestResultsUnchanged::test_propagated_demand_result_unchanged
 designated_repro_test: null
 threat: null
 component: null
