@@ -2,7 +2,7 @@
 id: T-3490
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3481):
   5 new (rule, file) identit(ies), 12 finding(s) (WIRE002)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-30'
