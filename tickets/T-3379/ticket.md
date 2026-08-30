@@ -2,7 +2,7 @@
 id: T-3379
 title: Rapid-sweep self-absorb (record-as-debt) path is blocked by the worktree-guard
   it always runs under
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -17,10 +17,25 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/verify/**
 - src/frob/tickets/_worktree_guard.py
+- tests/unit/verify/test_worker.py
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/verify/test_worker.py
+  reason: T-3379 adds unit tests for the new FROB_WORKTREE-strip fix in _worker.py,
+    and frob ack writes frob.lock as part of acknowledging the resulting drift
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: frob.lock
+  reason: T-3379 adds unit tests for the new FROB_WORKTREE-strip fix in _worker.py,
+    and frob ack writes frob.lock as part of acknowledging the resulting drift
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
