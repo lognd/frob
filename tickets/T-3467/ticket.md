@@ -2,7 +2,7 @@
 id: T-3467
 title: Move T-2114/ARCH001-diff pure logic into frob.gates._land_parity for real (fix
   the layering direction)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-30'
@@ -20,6 +20,19 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate::test_new_public_symbol_missing_both_directives_fires
+- tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate::test_new_public_symbol_with_both_directives_is_quiet
+- tests/unit/test_land_parity_gate.py::TestLandParityDocTestGate::test_no_diff_is_quiet
+- tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate::test_new_over_threshold_function_fires
+- tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate::test_pre_existing_over_threshold_function_merely_touched_is_quiet
+- tests/unit/test_land_parity_gate.py::TestLandParityLongFunctionGate::test_no_diff_is_quiet
+- tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_a_new_public_symbol_with_no_edges_refuses_the_land
+- tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_a_new_public_symbol_with_both_edges_does_not_refuse
+- tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_an_unrelated_land_touching_no_new_public_symbols_is_unaffected
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_new_over_threshold_function_refuses_the_land
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_pre_existing_over_threshold_function_merely_touched_does_not_refuse
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_an_unrelated_land_touching_no_python_files_is_unaffected
 designated_repro_test: null
 threat: null
 component: null
