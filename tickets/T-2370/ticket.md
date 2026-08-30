@@ -314,3 +314,4 @@ pass through to promotion.
 
 ## Failure log
 - 2026-08-22 attempt 1: bundles two codes with incompatible closure shapes: COV006 can never satisfy a promote-to-error criterion (its own docstring forbids it permanently, best-effort name-based resolver) while COV007 needs a 37-item individual waiver pass; split into T-2865 (COV006 waivers, done in this worktree) and T-2866 (COV007 waiver pass plus promotion)
+- 2026-08-30 attempt 2: Already split into T-2865 (COV006 waivers, DONE) and T-2866 (COV007: 37 individually-reasoned waivers across 24 files, then promote) per this ticket's own Failure log from a prior attempt. T-2370 itself can never satisfy its bundled acceptance (COV006 must NEVER promote per its own gate docstring) and the COV007 half is still open work tracked in T-2866, not something to re-attempt here.
