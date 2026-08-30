@@ -310,6 +310,7 @@ from frob.tickets._models import (
 from frob.tickets._provisional import (  # noqa: F401 -- re-exported so tests/test_tickets_collision.py's monkeypatch("frob.gates.on_default_branch", ...) still resolves
     on_default_branch,
 )
+from frob.tickets._scope import FROB_MANAGED_SIDE_EFFECT_PATHS
 from frob.tickets._store import _FRONTMATTER_RE as _TICKETS_FRONTMATTER_RE
 from frob.tickets._store import _parse_ledger as _tickets_parse_ledger
 from frob.tickets._store import _store_mode as _tickets_store_mode
@@ -3738,6 +3739,15 @@ def _scope_gate_check_file(
     implicitly included here too; T-1819: the ticket's own `tickets/<id>/**`
     sharded-ledger bookkeeping files are implicitly included too) or is
     exempt (already committed under another ticket's own scope, T-0108)."""
+    if file in FROB_MANAGED_SIDE_EFFECT_PATHS:
+        # T-3296: frob itself rewrites this path as a side effect of a
+        # routine ticket verb (e.g. --stamp-coverage), regardless of
+        # which ticket is running it -- never a genuine SCOPE001 finding,
+        # and never something that needs declaring in `ticket.scope` at
+        # all. See FROB_MANAGED_SIDE_EFFECT_PATHS's own docstring for why
+        # this lives in frob.tickets._scope, not a second list here.
+        _log.debug("SCOPE001: %s exempt (frob-managed side-effect path)", file)
+        return None
     if scope_matches(file, ticket.scope, kind=ticket.kind, ticket_id=ticket.id):
         return None
     if (

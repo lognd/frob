@@ -94,6 +94,63 @@ class TestScopeLeaseConflict:
         assert holder_id == holder.id
         assert holder_glob == "src/frob/gates/**"
 
+    # frob:ticket T-3296
+    def test_frob_managed_side_effect_path_never_conflicts(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_frob_manage\
+        # d_side_effect_path_never_conflicts
+        """MUST-FIRE (T-3296): a SECOND in-progress ticket must be able to
+        declare `frob-coverage.lock.json` in its own scope while a FIRST
+        in-progress ticket already holds it -- the exact F-029/F-039/F-042
+        deadlock (only one ticket in the whole repo could ever satisfy
+        TEST006's documented `--stamp-coverage` step)."""
+        from frob.tickets._scope import scope_lease_conflict
+
+        holder = _make_ticket(
+            tmp_path,
+            scope=("frob-coverage.lock.json",),
+            state=TicketState.IN_PROGRESS,
+        )
+        queue = load_queue(tmp_path).danger_ok
+        conflict = scope_lease_conflict(
+            "T-9999",
+            ("frob-coverage.lock.json",),
+            dict(queue.tickets),
+            root=tmp_path,
+        )
+        assert conflict is None
+        assert holder.state is TicketState.IN_PROGRESS
+
+    # frob:ticket T-3296
+    def test_non_exempt_path_still_conflicts_alongside_exempt_one(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict.test_non_exempt_\
+        # path_still_conflicts_alongside_exempt_one
+        """MUST-STAY-QUIET (T-3296): the exemption is narrow -- a genuine,
+        non-exempt collision in the SAME `--add` call still refuses,
+        naming the real holder. Proves the exempt-path skip does not widen
+        into "skip the whole call once any exempt entry is present"."""
+        from frob.tickets._scope import scope_lease_conflict
+
+        holder = _make_ticket(
+            tmp_path, scope=("src/frob/gates/**",), state=TicketState.IN_PROGRESS
+        )
+        queue = load_queue(tmp_path).danger_ok
+        conflict = scope_lease_conflict(
+            "T-9999",
+            ("frob-coverage.lock.json", "src/frob/gates/bar.py"),
+            dict(queue.tickets),
+            root=tmp_path,
+        )
+        assert conflict is not None
+        holder_id, holder_glob = conflict
+        assert holder_id == holder.id
+        assert holder_glob == "src/frob/gates/**"
+
 
 class TestMutateScope:
     def test_add_free_path_granted(self, tmp_path: Path) -> None:

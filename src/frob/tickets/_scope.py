@@ -63,6 +63,29 @@ from frob.tickets._worktree_guard import enforce_worktree_lease
 _log = get_logger("frob.tickets")
 
 
+# frob:ticket T-3296
+# T-3296: frob-coverage.lock.json is a committed, tracked file that
+# `--stamp-coverage` (frob.gates._coverage.write_coverage_lock) rewrites as
+# a side effect of a routine, documented TEST006 workflow step -- not
+# something an operator deliberately chose to edit. Treating it like any
+# other tracked path meant only ONE in-progress ticket in the whole repo
+# could ever hold the exclusive scope-lease `scope_lease_conflict` (below)
+# enforces, so every other ticket was structurally unable to satisfy
+# TEST006 through the documented `make coverage && frob check
+# --stamp-coverage` path (the reported F-029/F-039/F-042 deadlock).
+# `frob.gates`'s SCOPE001 check (`_scope_gate_check_file`) imports this
+# SAME set rather than re-deriving its own, so the scope-lease exemption
+# and the SCOPE001 exemption can never drift apart -- T-3298 extends this
+# set (or adds a second, provenance-scoped mechanism alongside it) for
+# other frob-managed side-effect paths; do not duplicate a second literal
+# list elsewhere for the same class of path.
+FROB_MANAGED_SIDE_EFFECT_PATHS: frozenset[str] = frozenset(
+    {
+        "frob-coverage.lock.json",
+    }
+)
+
+
 def _current_actor() -> str:
     """Best-effort identity for a `scope_changes` audit entry's `actor` field
     -- the OS login name, or `"unknown"` if the platform/sandbox refuses to
@@ -230,6 +253,10 @@ def scope_lease_conflict(
     call, or leave it `()` for a grant-time check (`start`) where there is
     no pre-existing granted subset to exempt against."""
     for glob in scope:
+        if glob in FROB_MANAGED_SIDE_EFFECT_PATHS:
+            # T-3296: never a real conflict -- more than one in-progress
+            # ticket must be able to declare/write this path at once.
+            continue
         conflict = _scope_add_conflicts(glob, ticket_id, queue, own_scope, root=root)
         if conflict is not None:
             return conflict

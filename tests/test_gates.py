@@ -6217,6 +6217,47 @@ class TestScopePrework:
         violations = scope_gate(diff, ticket, snap)
         assert any(v.rule == "SCOPE001" for v in violations)
 
+    # frob:ticket T-3296
+    def test_scope001_frob_managed_side_effect_path_never_fires(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        """MUST-FIRE (T-3296): --stamp-coverage's rewrite of
+        frob-coverage.lock.json must never trip SCOPE001, for a ticket
+        with NO declared scope at all -- the exemption does not depend on
+        the ticket having claimed the path (that claim is exactly what
+        the F-029/F-039/F-042 deadlock made impossible for every ticket
+        but one)."""
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=())
+        diff = Diff(
+            base="x", hunks=(Hunk(file="frob-coverage.lock.json", span=(1, 1)),)
+        )
+        violations = scope_gate(diff, ticket, snap)
+        assert not any(v.rule == "SCOPE001" for v in violations)
+
+    # frob:ticket T-3296
+    def test_scope001_still_fires_for_non_exempt_unscoped_file_alongside_exempt_one(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        """MUST-STAY-QUIET (T-3296): the exemption is per-path, not
+        per-diff -- a genuinely out-of-scope file in the SAME diff as the
+        exempt path still fires SCOPE001."""
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=("src/allowed/**",))
+        diff = Diff(
+            base="x",
+            hunks=(
+                Hunk(file="frob-coverage.lock.json", span=(1, 1)),
+                Hunk(file="src/other/f.py", span=(1, 1)),
+            ),
+        )
+        violations = scope_gate(diff, ticket, snap)
+        scope001 = [v for v in violations if v.rule == "SCOPE001"]
+        assert len(scope001) == 1
+        assert scope001[0].file == "src/other/f.py"
+
     # frob:ticket T-0906
     def test_scope001_empty_scope_ledger_still_implicitly_in_scope(
         self, tmp_path: Path

@@ -2,7 +2,7 @@
 id: T-3296
 title: frob-coverage.lock.json scope-lease deadlock blocks TEST006 for every ticket
   but one
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -37,6 +37,11 @@ scope_changes:
     exemption this ticket adds
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict::test_frob_managed_side_effect_path_never_conflicts
+- tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict::test_non_exempt_path_still_conflicts_alongside_exempt_one
+- tests/test_gates.py::TestScopePrework::test_scope001_frob_managed_side_effect_path_never_fires
+- tests/test_gates.py::TestScopePrework::test_scope001_still_fires_for_non_exempt_unscoped_file_alongside_exempt_one
 designated_repro_test: null
 threat: null
 component: null
