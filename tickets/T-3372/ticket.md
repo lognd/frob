@@ -2,7 +2,7 @@
 id: T-3372
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3361):
   1 new (rule, file) identit(ies), 1 finding(s) (TICK002)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -46,3 +46,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 
 ## Failure log
 - 2026-08-30 attempt 1: already resolved on main: frob check --only tickets --ticket T-3372 finds no TICK002 finding in tickets.md
+
+## Drop reason
+- 2026-08-30: Already resolved on main: the owning gate's scoped run zero-matches every cited identity (series K measurement, 2026-08-30; T-3354's CLAUDE001 was ~/.claude materialization drift fixed by frob claude sync, no repo diff).
