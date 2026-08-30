@@ -29,7 +29,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4882181199964e3782579d3cd16a2b605405f1e2
 ---
 MEASURED on GitHub Actions run 33308245923 (ubuntu-latest, HEAD 355eb4468, 2026-08-30): suite completed in 16.3 min with 6 failures of 12816. Reproduce by node id with -p no:xdist first.
 
