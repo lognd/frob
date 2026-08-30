@@ -16,10 +16,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/arch/_mayraise.py
+- src/frob/arch/_normalized.py
+- src/frob/arch/_python.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/arch/_normalized.py
+  reason: Series S measured that the fix needs NormalizedModule to carry module-level
+    assignments / comprehension tags; _mayraise.py alone cannot see them
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/arch/_python.py
+  reason: Series S measured that the fix needs NormalizedModule to carry module-level
+    assignments / comprehension tags; _mayraise.py alone cannot see them
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
