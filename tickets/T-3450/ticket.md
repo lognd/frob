@@ -17,11 +17,19 @@ runs_last_parallel_safe_reason: null
 scope:
 - design/frob.strata
 - tests/unit/test_check_admission.py
-- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: collides with in-progress T-3447's lease on the same file; T-3450's own
+    fix (declaring the missing exec via-site) may trip a downstream SYS111 ratchet
+    bump, but that is handled by the land pipeline's own fix_sys111_capability_ratchet_sync
+    Tier-A auto-fix, not a manual edit this ticket needs to make itself
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
