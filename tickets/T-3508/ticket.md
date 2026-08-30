@@ -6,8 +6,6 @@ kind: bug
 origin: human
 created: '2026-08-30'
 priority: medium
-blocked_by:
-- T-2963
 parent: T-3505
 tier: ticket
 sprint: null
@@ -86,3 +84,6 @@ MUST-STAY-QUIET
 
 SCOPE GROUPING: scope-disjoint from the fcntl, os.sysconf, fork-context
 and charmap leaves -- dispatchable in parallel with all four.
+
+## Unblock log
+- 2026-08-30: unblocked by T-2963 -- T-3508 is a narrow loud-refusal/parity slice, not the full transport epic; it must not wait on T-2963's epic-sized post-1.0.0 work per its own body -- related-but-not-blocking is the correct edge
