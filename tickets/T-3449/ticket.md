@@ -15,7 +15,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- tests/system/test_frob_self_model.py
 - src/frob/strata/_selfconform*.py
 - src/frob/strata/_claims.py
 - src/frob/strata/_facts.py
@@ -23,6 +22,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/system/test_frob_self_model.py
+  reason: T-3447 holds an in-progress lease on this file; T-3449's fix targets _selfconform_kinds/_claims/_facts
+    perf, not the test file itself, and its own scope's fixture will live in tests/gates/
+    instead
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
