@@ -877,19 +877,48 @@ class TestSubprocessCoverageRc:
     # frob:ticket T-1235
     # frob:ticket T-2527
     def test_rc_declares_multiprocessing_and_sigterm(self, tmp_path: Path) -> None:
-        """`concurrency = multiprocessing, thread` and `sigterm = True`
-        so a `ProcessPoolExecutor` gate worker's execution is recorded
-        (the original T-1235 "Loss B" fix -- still also present in
+        """`concurrency = multiprocessing, thread` so a
+        `ProcessPoolExecutor` gate worker's execution is recorded (the
+        original T-1235 "Loss B" fix -- still also present in
         `pyproject.toml`'s own `[tool.coverage.run]`, never lost; this
-        just proves the generated rc carries it too)."""
+        just proves the generated rc carries it too), and `sigterm = False`
+        (T-3420: coverage.py's own SIGTERM handler can deadlock
+        re-entrantly against a hang-guard's own SIGTERM delivery --
+        upstream coveragepy#1101/#1340, both open against 7.14.1 as
+        installed here -- so the generated rc must carry the SAME value
+        as `pyproject.toml`'s own setting, never a second config that
+        disagrees)."""
         rc_path = _refresh_mod._write_coverage_subprocess_rc(
             tmp_path, cov_target="src/frob"
         )
         text = rc_path.read_text(encoding="utf-8")
         assert "concurrency = multiprocessing, thread" in text
-        assert "sigterm = True" in text
+        assert "sigterm = False" in text
         assert "branch = True" in text
         assert "parallel = True" in text
+
+    # frob:ticket T-3437
+    def test_rc_sigterm_matches_pyprojects_own_setting(self, tmp_path: Path) -> None:
+        """T-3437 regression proof: the generated rc's `sigterm` value
+        must equal `pyproject.toml`'s own `[tool.coverage.run] sigterm`
+        -- two coverage configs disagreeing on this is exactly the bug
+        this ticket fixed (pyproject.toml already carried T-3420's
+        `sigterm = false`, but this generator still emitted `True`
+        until this fix). Reads the REAL repo pyproject.toml, not a
+        hardcoded expectation, so this cannot silently drift out of
+        sync with a future T-3420-style flip again."""
+        import tomllib
+
+        repo_root = Path(__file__).resolve().parent.parent
+        pyproject = tomllib.loads(
+            (repo_root / "pyproject.toml").read_text(encoding="utf-8")
+        )
+        expected_sigterm = pyproject["tool"]["coverage"]["run"]["sigterm"]
+        rc_path = _refresh_mod._write_coverage_subprocess_rc(
+            tmp_path, cov_target="src/frob"
+        )
+        text = rc_path.read_text(encoding="utf-8")
+        assert f"sigterm = {expected_sigterm}" in text
 
     # frob:ticket T-1235
     # frob:ticket T-2527

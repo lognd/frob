@@ -177,14 +177,22 @@ def _write_coverage_subprocess_rc(root: Path, *, cov_target: str) -> Path:
     `COVERAGE_PROCESS_START` at a dedicated rc with absolute paths instead
     of at `pyproject.toml` directly.
 
-    `concurrency = multiprocessing, thread` and `sigterm = True` (T-1235's
-    "Loss B" fix) are NOT duplicated here -- those already live in
-    `pyproject.toml`'s `[tool.coverage.run]` and were never lost; only the
-    absolute-path rc generation was. `[paths] source` remaps a relative-
-    root-recorded path (this repo's own top-level `coverage:` pass, which
-    still uses `pyproject.toml`'s relative config) back onto the same
-    canonical `src/frob` key at combine time, so the two coverage passes
-    merge instead of appearing as two different files."""
+    `concurrency = multiprocessing, thread` (T-1235's "Loss B" fix) is
+    NOT duplicated here -- it already lives in `pyproject.toml`'s
+    `[tool.coverage.run]` and was never lost; only the absolute-path rc
+    generation was. `[paths] source` remaps a relative-root-recorded path
+    (this repo's own top-level `coverage:` pass, which still uses
+    `pyproject.toml`'s relative config) back onto the same canonical
+    `src/frob` key at combine time, so the two coverage passes merge
+    instead of appearing as two different files.
+
+    `sigterm = False` (T-3420, flipped from the original `True`):
+    coverage.py's own SIGTERM handler can deadlock re-entrantly against
+    a hang-guard's own SIGTERM delivery (upstream coveragepy#1101/#1340,
+    both open against 7.14.1 as installed here) -- this generated rc
+    must carry the SAME value as `pyproject.toml`'s own setting, one
+    home for the decision, never two coverage configs disagreeing on
+    it."""
     rc_path = root / _SUBPROCESS_RC_REL
     rc_path.parent.mkdir(parents=True, exist_ok=True)
     absolute_source = str((root / cov_target).resolve())
@@ -196,7 +204,7 @@ def _write_coverage_subprocess_rc(root: Path, *, cov_target: str) -> Path:
                 "branch = True",
                 "parallel = True",
                 "relative_files = True",
-                "sigterm = True",
+                "sigterm = False",
                 "concurrency = multiprocessing, thread",
                 "disable_warnings = no-data-collected",
                 f"source = {absolute_source}",

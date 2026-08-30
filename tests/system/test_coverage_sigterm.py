@@ -97,9 +97,21 @@ def _send_signal_to_group(pid: int, sig: int) -> None:
     """Send a signal to the process group led by pid. POSIX-only (os.killpg
     does not exist on win32); this whole test class is skipped there, but
     fetch through getattr so a multi-platform static check does not flag
-    the win32 branch for a member that is genuinely absent there."""
+    the win32 branch for a member that is genuinely absent there.
+
+    T-3437 (MEASURED on macOS CI, run 33281416850): the child can already
+    have exited (caught the first SIGTERM and died, or the widened-
+    critical-section window closed faster than macOS's own scheduling)
+    by the time the SECOND signal is sent, in which case `killpg` raises
+    `ProcessLookupError` (errno ESRCH, "No such process"). A dead process
+    group IS the must-fire outcome this fixture is proving (the process
+    terminated, it did not deadlock) -- so ESRCH is swallowed here, never
+    treated as a test failure or a reason to skip on macOS specifically."""
     killpg = getattr(os, "killpg")  # noqa: B009 -- deliberate, see docstring
-    killpg(pid, sig)
+    try:
+        killpg(pid, sig)
+    except ProcessLookupError:
+        pass  # already exited -- the process group is gone, which is fine
 
 
 def _spawn_coverage_run(test_file: Path, cwd: Path) -> subprocess.Popen:
@@ -175,7 +187,10 @@ class TestCoverageSigtermDeadlock:
         finally:
             if proc.poll() is None:
                 _send_signal_to_group(proc.pid, signal.SIGKILL)  # cleanup only
-                proc.wait(timeout=10)
+                try:
+                    proc.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    pass  # best-effort cleanup; the assertion above already ran
 
     def test_normal_run_writes_complete_coverage_data(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET: with SIGTERM handling off, an ordinary

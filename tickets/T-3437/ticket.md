@@ -2,7 +2,7 @@
 id: T-3437
 title: 'T-3420 follow-up: test_coverage.py still asserts sigterm is True, and the
   SIGTERM must-fire fixture fails on macOS'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -30,11 +30,22 @@ scope_changes:
     matches pyproject.toml's T-3420 value
   actor: logan
   at: '2026-08-29'
-designated_repro_test: null
+evidence:
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_declares_multiprocessing_and_sigterm
+- tests/test_coverage.py::TestPyprojectDeclaresCoverageConcurrency::test_pyproject_declares_concurrency_and_sigterm
+- tests/system/test_coverage_sigterm.py::TestCoverageSigtermDeadlock::test_repeated_sigterm_terminates_in_bounded_time
+- tests/system/test_coverage_sigterm.py::TestCoverageSigtermDeadlock::test_normal_run_writes_complete_coverage_data
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_sigterm_matches_pyprojects_own_setting
+designated_repro_test: tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_sigterm_matches_pyprojects_own_setting
 acceptance:
 - text: given HEAD on macos-latest and ubuntu-latest, when tests/test_coverage.py
     and tests/system/test_coverage_sigterm.py run, then both pass
-  evidence: []
+  evidence:
+  - tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_declares_multiprocessing_and_sigterm
+  - tests/test_coverage.py::TestPyprojectDeclaresCoverageConcurrency::test_pyproject_declares_concurrency_and_sigterm
+  - tests/system/test_coverage_sigterm.py::TestCoverageSigtermDeadlock::test_repeated_sigterm_terminates_in_bounded_time
+  - tests/system/test_coverage_sigterm.py::TestCoverageSigtermDeadlock::test_normal_run_writes_complete_coverage_data
+  - tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_sigterm_matches_pyprojects_own_setting
 threat: null
 component: null
 anchor: false
