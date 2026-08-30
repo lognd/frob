@@ -42,7 +42,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 138083604832451b343f59d04e5ad7bef7b27ddd
 ---
 MEASURED on GitHub Actions run 33311990183 (macos-latest, HEAD 986f8671c,
 2026-08-30): with the 40m budget (T-3482) macOS completes the suite in 26.5
