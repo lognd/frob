@@ -541,6 +541,30 @@ never dropped -- previously an evidence-count tiebreak picked ONE side's
 evidence set wholesale, silently discarding the other side's ids when two
 worktrees closed the same ticket with disjoint evidence.
 
+### Pollable land-status marker (T-2691)
+
+`land()` writes a small JSON marker at `<root>/.frob/land-status.json`
+(`frob.tickets._land._write_land_status`) at each saga phase --
+`acquiring-lock` (right before the lock attempt), `waiting-for-lock` (a
+contended `_land_lock`, with the holder metadata it is blocked on),
+`lock-acquired`, `running` (right where the T-0456 intent journal is
+also written), and finally `done`/`failed` -- each write carries this
+process's pid, an ISO-8601 UTC `started_at` preserved across a single
+land's own phase transitions, and `updated_at` (always refreshed). Fixes
+the disclosure gap behind a 2026-08-20 incident: a land killed by its own
+foreground timeout under lock contention left an orphaned `land.lock`
+entry and a truncated log, with no way for an operator to poll whether it
+was progressing, waiting, or already dead. Unlike the intent journal
+(`frob.tickets._journal`, cleared on every exit), this marker is
+deliberately left in place after `land()` returns -- its last phase and a
+stale `updated_at` are themselves the "this died mid-flight" signal.
+`scripts/fleet_status.py`'s `read_land_status_marker`/
+`_land_status_marker_line` (see
+`docs/guides/coordinator-scripts.md#read_land_status_marker`) render it
+as a `LAND STATUS MARKER:` line in the standing `LANDS IN FLIGHT` report;
+best-effort throughout (a write
+failure is logged and swallowed, never fails the land itself).
+
 ## Frob ticket land --plan (T-1269)
 
 <!-- frob:describes src/frob/tickets/_land.py::land_plan -->

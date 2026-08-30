@@ -11423,6 +11423,75 @@ class TestLandLockHolderMetadataAndTimeout:
         )
 
 
+# frob:ticket T-2691
+class TestLandStatus:
+    """T-2691: `_write_land_status` writes `root`'s land-status marker
+    (`.frob/land-status.json`) -- the externally-pollable phase/lock-wait
+    disclosure fixing the incident where a land killed under lock
+    contention left nothing beyond a truncated stdout log for an operator
+    to inspect."""
+
+    # frob:ticket T-2691
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandStatus.test_phase_transitions_are_pollable
+    def test_phase_transitions_are_pollable(self, tmp_path: Path) -> None:
+        """Successive `_write_land_status` calls for the SAME ticket
+        preserve `started_at` across phase transitions (T-2691's own
+        docstring requirement -- an operator timing a land against a
+        single clock, not a new one per phase) while always advancing
+        `updated_at` and the recorded `phase`."""
+        import json
+        import time
+
+        from frob.tickets._land import _LAND_STATUS_REL, _write_land_status
+
+        _write_land_status(tmp_path, "T-2691", "acquiring-lock")
+        first = json.loads((tmp_path / _LAND_STATUS_REL).read_text())
+        assert first["ticket_id"] == "T-2691"
+        assert first["phase"] == "acquiring-lock"
+        assert first["pid"] == os.getpid()
+
+        time.sleep(0.01)
+        _write_land_status(tmp_path, "T-2691", "running")
+        second = json.loads((tmp_path / _LAND_STATUS_REL).read_text())
+        assert second["phase"] == "running"
+        assert second["started_at"] == first["started_at"]
+        assert second["updated_at"] != first["updated_at"]
+
+    # frob:ticket T-2691
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandStatus.test_waiting_phase_records_lock_holder
+    def test_waiting_phase_records_lock_holder(self, tmp_path: Path) -> None:
+        """`lock_wait`, when given, is recorded verbatim under the
+        marker's own `lock_wait` key -- the holder metadata a blocked
+        land is currently waiting on."""
+        import json
+
+        from frob.tickets._land import _LAND_STATUS_REL, _write_land_status
+
+        holder = {"pid": 123, "session_id": "other-session"}
+        _write_land_status(tmp_path, "T-2691", "waiting-for-lock", lock_wait=holder)
+        marker = json.loads((tmp_path / _LAND_STATUS_REL).read_text())
+        assert marker["lock_wait"] == holder
+
+    # frob:ticket T-2691
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandStatus.test_write_failure_is_best_effort_and_n\
+    # ever_raises
+    def test_write_failure_is_best_effort_and_never_raises(
+        self, tmp_path: Path
+    ) -> None:
+        """A `.frob/` that cannot be created (e.g. a same-named file
+        blocking the directory) makes `_write_land_status` log and return
+        quietly, same as `_write_intent`'s own best-effort posture --
+        this marker must never itself fail a `land()` call."""
+        from frob.tickets._land import _write_land_status
+
+        blocker = tmp_path / ".frob"
+        blocker.write_text("not a directory")
+        _write_land_status(tmp_path, "T-2691", "running")  # must not raise
+
+
 # frob:ticket T-2934
 class TestLandLockPlatformBackends:
     """T-2934: `_land_lock`'s msvcrt (Windows) backend and its loud

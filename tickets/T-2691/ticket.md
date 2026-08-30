@@ -1,7 +1,7 @@
 ---
 id: T-2691
 title: frob ticket land has no externally-pollable progress/lock-contention status
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -51,6 +51,15 @@ scope_changes:
     doc'
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/test_ticket_land.py::TestLandStatus::test_phase_transitions_are_pollable
+- tests/test_ticket_land.py::TestLandStatus::test_waiting_phase_records_lock_holder
+- tests/test_ticket_land.py::TestLandStatus::test_write_failure_is_best_effort_and_never_raises
+- tests/unit/test_coordinator_scripts.py::TestReadLandStatusMarker::test_reads_a_written_marker
+- tests/unit/test_coordinator_scripts.py::TestReadLandStatusMarker::test_missing_marker_returns_none
+- tests/unit/test_coordinator_scripts.py::TestReadLandStatusMarker::test_unparseable_marker_returns_none
+- tests/unit/test_coordinator_scripts.py::TestLandStatusMarkerLine::test_no_marker_renders_nothing
+- tests/unit/test_coordinator_scripts.py::TestLandStatusMarkerLine::test_marker_renders_phase_ticket_and_pid
 designated_repro_test: null
 threat: null
 component: null

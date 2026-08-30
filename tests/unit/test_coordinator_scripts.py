@@ -2361,6 +2361,53 @@ class TestLandLockHolderPids:
         assert fleet_status.land_lock_holder_pids(root, proc=proc) == []
 
 
+# frob:ticket T-2691
+class TestReadLandStatusMarker:
+    """`fleet_status.read_land_status_marker` (T-2691): reads the
+    `frob.tickets._land`-written land-status marker best-effort."""
+
+    # frob:ticket T-2691
+    def test_reads_a_written_marker(self, tmp_path: Path) -> None:
+        (tmp_path / ".frob").mkdir(parents=True)
+        (tmp_path / ".frob" / "land-status.json").write_text(
+            '{"ticket_id": "T-2691", "phase": "running", "pid": 42}',
+            encoding="utf-8",
+        )
+        marker = fleet_status.read_land_status_marker(tmp_path)
+        assert marker == {"ticket_id": "T-2691", "phase": "running", "pid": 42}
+
+    # frob:ticket T-2691
+    def test_missing_marker_returns_none(self, tmp_path: Path) -> None:
+        assert fleet_status.read_land_status_marker(tmp_path) is None
+
+    # frob:ticket T-2691
+    def test_unparseable_marker_returns_none(self, tmp_path: Path) -> None:
+        (tmp_path / ".frob").mkdir(parents=True)
+        (tmp_path / ".frob" / "land-status.json").write_text(
+            "not json", encoding="utf-8"
+        )
+        assert fleet_status.read_land_status_marker(tmp_path) is None
+
+
+# frob:ticket T-2691
+class TestLandStatusMarkerLine:
+    """`fleet_status._land_status_marker_line` (T-2691): the LANDS-section
+    rendering of a land-status marker."""
+
+    # frob:ticket T-2691
+    def test_no_marker_renders_nothing(self) -> None:
+        assert fleet_status._land_status_marker_line(None) is None
+
+    # frob:ticket T-2691
+    def test_marker_renders_phase_ticket_and_pid(self) -> None:
+        marker = {"ticket_id": "T-2691", "phase": "waiting-for-lock", "pid": 42}
+        line = fleet_status._land_status_marker_line(marker)
+        assert line is not None
+        assert "T-2691" in line
+        assert "waiting-for-lock" in line
+        assert "42" in line
+
+
 def _write_proc_locks(proc: Path, lines: list[str]) -> None:
     """Fake `<proc>/locks` (T-3093) -- `_true_flock_holder_pid` reads
     this exact path."""

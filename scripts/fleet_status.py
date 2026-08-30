@@ -3942,6 +3942,66 @@ def _print_ticket_readiness(readiness: dict) -> bool:
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_guidance_line_uses_l\
 # ive_count_not_raw_count
+# frob:ticket T-2691
+# frob:doc docs/guides/coordinator-scripts.md#read_land_status_marker
+def read_land_status_marker(root: Path) -> dict | None:
+    """Best-effort read of `root`'s T-2691 land-status marker
+    (`frob.tickets._land.LAND_STATUS_REL`, `.frob/land-status.json`) --
+    `None` on any read/parse failure (never written yet, or a write is
+    mid-flight), the identical shape `land_lock_holder_pids`'s own
+    sibling readers use elsewhere in this module. Mirrors `frob.tickets.
+    _land._read_land_lock_holder`'s contract exactly, duplicated rather
+    than imported: this script is a standalone diagnostic deliberately
+    free of a `frob` package import (see this module's own top-of-file
+    rationale), the same posture every other `/proc`/lock-file reader
+    here already takes."""
+    path = root / ".frob" / "land-status.json"
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    if not raw.strip():
+        return None
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+# frob:ticket T-2691
+def _land_status_marker_line(
+    marker: dict | None, *, now: datetime | None = None
+) -> str | None:
+    """`None` when no marker was ever written (`marker is None`), else a
+    single `LAND STATUS MARKER:` line naming the last-recorded phase,
+    ticket id, pid, and how long ago it was last updated (T-2691) --
+    the direct fix for the incident this ticket was filed from: a land
+    killed under lock contention left nothing pollable beyond a truncated
+    stdout log. A stale `updated_at` next to a `running`/`waiting-for-
+    lock` phase (`age_s` large) is itself the "looks dead, was likely
+    killed mid-flight" signal -- deliberately not classified as an error
+    here (this script's own advisory posture, matching `LAND LOCK:`
+    above): the reader decides what counts as stale for their situation."""
+    if marker is None:
+        return None
+    phase = marker.get("phase", "<unknown>")
+    ticket_id = marker.get("ticket_id", "<unknown>")
+    pid = marker.get("pid", "<unknown>")
+    updated_at = marker.get("updated_at")
+    age_part = ""
+    if isinstance(updated_at, str):
+        try:
+            updated = datetime.fromisoformat(updated_at)
+        except ValueError:
+            updated = None
+        if updated is not None:
+            reference = now if now is not None else datetime.now(UTC)
+            age_s = (reference - updated).total_seconds()
+            age_part = f", updated {age_s:.0f}s ago"
+    return f"LAND STATUS MARKER: {ticket_id} phase={phase} pid={pid}{age_part}"
+
+
 def _land_status_lines(
     invocations: list[dict],
     holder_pids: list[int],
@@ -3958,6 +4018,7 @@ def _land_status_lines(
     true_holder_pid: int | None = None,
     forkserver_count_: int | None = None,
     forkserver_rss_kb: int | None = None,
+    status_marker_line: str | None = None,
 ) -> list[str]:
     """Render the LANDS/LAND LOCK/LOAD block as plain text lines from
     already-computed inputs -- the PURE-COMPUTE half of the ARCH103 split
@@ -4016,8 +4077,15 @@ def _land_status_lines(
     (`_true_flock_holder_pid`, a real `/proc/locks` read) distinguish the
     one true holder from the rest; `true_holder_determinable=None` (the
     default) preserves this function's PRE-T-3093 rendering exactly, for
-    a caller that has not opted into the new fields."""
+    a caller that has not opted into the new fields.
+
+    T-2691: `status_marker_line` (`_land_status_marker_line`'s own
+    rendering, or `None` when there is nothing to show) is appended as
+    its own line right after `LANDS IN FLIGHT` -- `None` (the default)
+    preserves every pre-T-2691 caller's exact output."""
     lines = [f"LANDS IN FLIGHT: {len(invocations)}"]
+    if status_marker_line is not None:
+        lines.append(status_marker_line)
     for inv in invocations:
         # T-2193: land_invocations() drops any row it cannot parse a
         # ticket id from, so ticket_id is always real here -- never None.
@@ -4328,7 +4396,13 @@ def _print_land_status() -> None:
     rss_headline`) can attribute the aggregate to concurrent checks --
     see that function's own docstring for the advisory-vs-cap reasoning.
     ARCH103 (T-2172 precedent): all formatting/branching lives in
-    `_land_status_lines`; this function only gathers inputs and prints."""
+    `_land_status_lines`; this function only gathers inputs and prints.
+
+    T-2691: also reads `root`'s land-status marker (`read_land_status_
+    marker`) and renders it via `_land_status_marker_line` -- the
+    externally-pollable phase/lock-wait disclosure this ticket adds,
+    surfaced right alongside the pre-existing pid/elapsed/CPU LANDS
+    line."""
     invocations = land_invocations()
     holder_pids = land_lock_holder_pids(REPO)
     lock_path = REPO / ".frob" / "land.lock"
@@ -4337,6 +4411,7 @@ def _print_land_status() -> None:
     swap = swap_pressure()
     held = leases()
     concurrent_checks = concurrent_check_count()
+    status_marker_line = _land_status_marker_line(read_land_status_marker(REPO))
     for line in _land_status_lines(
         invocations,
         holder_pids,
@@ -4353,6 +4428,7 @@ def _print_land_status() -> None:
         true_holder_pid,
         forkserver_count(),
         forkserver_rss_held_kb(),
+        status_marker_line,
     ):
         print(line)
 

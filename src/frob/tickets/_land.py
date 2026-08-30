@@ -182,6 +182,100 @@ def _land_lock_path(root: Path) -> Path:
     return root / _LAND_LOCK_REL
 
 
+# frob:ticket T-2691
+# T-2691: an operator watching `frob ticket land` under fleet contention had
+# no way to poll whether it was progressing, waiting on `land.lock`, or was
+# preempted/killed mid-flight -- the only signal was a live-stdout WARNING
+# line (`_land_lock`'s "waiting up to Ns before refusing") that reaches
+# nobody once the process is backgrounded or the shell that spawned it is
+# gone. `_LAND_STATUS_REL` is the smallest useful fix in the T-2141
+# disclosure direction: a single JSON marker under `root`'s `.frob/`,
+# written at each saga phase (`_write_land_status` below) so `fleet_
+# status.py` (and a future `frob ticket land-status` verb) can read "is my
+# land alive, and what was it last doing" without `ps`/`git log --grep`
+# archaeology. Deliberately a distinct filename from `land.lock` itself
+# (same T-0577 reasoning that keeps the lock file's own name out of
+# anything a worktree branch could commit) and from the T-0456 intent
+# journal (`journal/<id>.json`, cleared on exit -- this file is NOT cleared
+# on exit, so its last phase/timestamp survives a crash for post-mortem
+# reading, which is the whole point).
+_LAND_STATUS_REL = ".frob/land-status.json"
+
+
+def _land_status_path(root: Path) -> Path:
+    """The land-status marker path `_write_land_status` writes (T-2691)."""
+    return root / _LAND_STATUS_REL
+
+
+# frob:ticket T-2691
+# frob:tests \
+# tests/test_ticket_land.py::TestLandStatus.test_phase_transitions_are_pollable
+# frob:tests \
+# tests/test_ticket_land.py::TestLandStatus.test_write_failure_is_best_effort_and_never\
+# _raises
+def _write_land_status(
+    root: Path,
+    ticket_id: str,
+    phase: str,
+    *,
+    lock_wait: dict | None = None,
+) -> None:
+    """Best-effort write of `root`'s land-status marker (T-2691): `phase`
+    (a short machine-readable label -- `"acquiring-lock"`, `"waiting-for-
+    lock"`, `"running"`, `"done"`, `"failed"`), this process's pid, an
+    ISO-8601 UTC `started_at` PRESERVED across calls for the same pid+
+    ticket (read back from any pre-existing marker written by THIS
+    process for THIS ticket, so a later phase transition does not reset
+    the clock an operator is timing the land against), and `updated_at`
+    (always this call's own timestamp, so a stale `updated_at` next to a
+    `"running"` phase is itself the "looks dead" signal T-2691's incident
+    report describes). `lock_wait`, if given, is the holder metadata
+    `_land_lock` is currently waiting on (mirrors `_read_land_lock_
+    holder`'s own shape) -- omitted once the lock is acquired.
+
+    Same posture as `_write_intent`/`_land_lock_holder_metadata`: a write
+    failure (unwritable `.frob/`, disk full) is logged at DEBUG and
+    swallowed, never raised -- this marker is a disclosure aid, not a
+    correctness dependency, and must never itself cause a `land()` call
+    to fail. Unlike the T-0456 intent journal, this file is deliberately
+    NOT cleared when `land()` returns -- its last-written phase and
+    `updated_at` are exactly what lets a human or `fleet_status.py` tell
+    "finished cleanly a while ago" apart from "died mid-flight, `updated_
+    at` frozen at a stale `running`"."""
+    from datetime import datetime, timezone
+
+    path = _land_status_path(root)
+    pid = os.getpid()
+    started_at = datetime.now(timezone.utc).isoformat()
+    existing = _read_land_lock_holder(path)  # same best-effort JSON read shape
+    if (
+        isinstance(existing, dict)
+        and existing.get("pid") == pid
+        and existing.get("ticket_id") == ticket_id
+        and isinstance(existing.get("started_at"), str)
+    ):
+        started_at = existing["started_at"]
+    status = {
+        "ticket_id": ticket_id,
+        "pid": pid,
+        "phase": phase,
+        "started_at": started_at,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if lock_wait is not None:
+        status["lock_wait"] = lock_wait
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(status) + "\n", encoding="utf-8")
+    except OSError as exc:
+        _log.debug(
+            "land: %s could not write land-status marker (%s) -- T-2691 "
+            "disclosure degraded, land itself unaffected",
+            root,
+            exc,
+        )
+
+
 # frob:ticket T-2091
 # frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome.test_skipped_unmeasured_is_not_printed_as_verified_true  # noqa: E501
 # frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofClaimsOutcome.test_passed_healthy_path_is_unchanged  # noqa: E501
@@ -713,6 +807,10 @@ def _land_lock(
                     timeout,
                 )
                 logged_holder = True
+                if ticket_id is not None:
+                    _write_land_status(
+                        root, ticket_id, "waiting-for-lock", lock_wait=holder
+                    )
             if _time.monotonic() >= deadline:
                 os.close(fd)
                 raise LandLockTimeout(root, _read_land_lock_holder(path)) from None
@@ -748,6 +846,8 @@ def _land_lock(
             exc,
         )
     _log.debug("land: _land_lock acquired (%s) by %s", path, holder_metadata)
+    if ticket_id is not None:
+        _write_land_status(root, ticket_id, "lock-acquired")
     try:
         yield
     finally:
@@ -1555,9 +1655,11 @@ def land(
     if wait_budget.is_err:
         return Err(wait_budget.danger_err)
 
+    # frob:ticket T-2691
+    _write_land_status(root, ticket_id, "acquiring-lock")
     try:
         with _land_lock(root, ticket_id, timeout=wait_budget.danger_ok):
-            return _land_locked(
+            result = _land_locked(
                 root,
                 ticket_id,
                 worktree,
@@ -1575,6 +1677,12 @@ def land(
                 allow_cross_ticket=allow_cross_ticket,
                 pre_commit_sweep=pre_commit_sweep,
             )
+            # T-2691: last phase written while still holding the lock, so
+            # a poller can never observe "lock-acquired"/"running" racing
+            # against a next land's own "waiting-for-lock" overwrite of
+            # the same marker for a DIFFERENT ticket.
+            _write_land_status(root, ticket_id, "done" if result.is_ok else "failed")
+            return result
     except LandLockTimeout as exc:
         _log.error(
             "land: %s refused -- %s (T-1515: the pre-T-1515 behavior was "
@@ -1582,6 +1690,7 @@ def land(
             ticket_id,
             exc,
         )
+        _write_land_status(root, ticket_id, "failed")
         return Err(LandError.LandLockTimeout)
 
 
@@ -2532,6 +2641,7 @@ def _land_locked(
     # OUTLIVES this process means it crashed mid-land, the condition `frob
     # ticket reconcile` surfaces as an anomaly instead of it going unnoticed.
     _write_intent(root, ticket_id, worktree)
+    _write_land_status(root, ticket_id, "running")
     try:
         stage = _land_merge_stage(
             root, worktree, ticket, ticket_id, main_branch_name, dry_run

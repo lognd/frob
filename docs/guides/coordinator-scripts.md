@@ -991,6 +991,21 @@ land genuinely exceeds 1500s under load). The kernel releases a `flock`
 the instant its holder dies, so this is a live, race-free liveness
 check, not an inference. `proc` is injectable for tests.
 
+### `read_land_status_marker`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#read_land_status_marker -->
+
+T-2691. Best-effort read of `frob.tickets._land`'s land-status marker
+(`.frob/land-status.json`, written at each `land()` saga phase --
+`acquiring-lock`, `waiting-for-lock`, `lock-acquired`, `running`,
+`done`/`failed`, each with pid/started_at/updated_at and, while waiting,
+the lock holder it is blocked on). `None` on any read/parse failure.
+Fixes the incident that motivated this ticket: a land killed under lock
+contention left an operator nothing pollable beyond a truncated stdout
+log to tell "progressing" from "dead" apart. `_print_land_status` prints
+its rendering (`_land_status_marker_line`) as a `LAND STATUS MARKER:`
+line right after `LANDS IN FLIGHT`.
+
 ### `host_load`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#host_load -->
