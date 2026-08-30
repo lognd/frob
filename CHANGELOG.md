@@ -667,6 +667,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3443: frob-exports reports missing public symbols in frob.doctor and frob.lang._support
 - T-3445: strata tmLanguage grammar missing V-model keywords (architecture, configuration, entity, code_ref, obligation, runnable)
 - T-3446: strata export golden test_seccomp drifted from the committed golden
+- T-3448: .gitattributes attachment CRLF-suppression glob is too broad: unrelated text files escape autocrlf
 
 ## [0.530.0] - unreleased
 

@@ -267,15 +267,30 @@ class TestAttachmentCrlfSuppression:
         # tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression.test_un\
         # related_text_file_still_gets_autocrlf_conversion
         """Negative control: a plain file OUTSIDE any attachments path is
-        NOT covered by the widened rule -- proves the glob is scoped to
-        attachments, not accidentally suppressing autocrlf repo-wide."""
+        NOT covered by the attachment `-text` glob -- proves the glob is
+        scoped to attachments, not accidentally suppressing conversion
+        repo-wide.
+
+        T-2611 later pinned `* text=auto eol=lf` repo-wide (for measurement
+        tools that read the working tree byte-for-byte), so checkout no
+        longer injects literal CRLF into ANY tracked file regardless of
+        attribute coverage -- a byte-content assertion can no longer tell
+        "covered by the attachment rule" apart from "covered by the
+        repo-wide default". `git check-attr` reads the resolved attribute
+        directly instead: an unrelated file must resolve to `text: auto`
+        (the repo-wide default), never `text: unset` (what the attachment
+        `-text` rule sets) -- that resolution is exactly what checkout-time
+        CRLF handling keys off, so it is the right level to assert this at.
+        """
         full = autocrlf_repo / "some_unrelated_file.md"
         full.write_bytes(b"line one\nline two\n")
         _commit_all(autocrlf_repo, "add unrelated file")
-        full.unlink()
-        _run(["git", "checkout", "--", "some_unrelated_file.md"], autocrlf_repo)
 
-        assert b"\r\n" in full.read_bytes(), (
-            "unrelated file unexpectedly escaped autocrlf conversion -- "
-            "the attachment glob is too broad"
+        result = _run(
+            ["git", "check-attr", "text", "--", "some_unrelated_file.md"],
+            autocrlf_repo,
+        )
+        assert result.stdout.strip() == "some_unrelated_file.md: text: auto", (
+            "unrelated file unexpectedly picked up the attachment glob's "
+            f"-text attribute -- the attachment glob is too broad: {result.stdout!r}"
         )

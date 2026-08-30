@@ -2,7 +2,7 @@
 id: T-3448
 title: '.gitattributes attachment CRLF-suppression glob is too broad: unrelated text
   files escape autocrlf'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -22,6 +22,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression::test_unrelated_text_file_still_gets_autocrlf_conversion
+- tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression::test_v2_nested_attachment_survives_checkout_unconverted
+- tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression::test_v1_flat_attachment_still_covered
 designated_repro_test: null
 threat: null
 component: null
