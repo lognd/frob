@@ -43,3 +43,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DOC006  tickets/T-1382/ticket.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Failure log
+- 2026-08-30 attempt 1: already resolved on main: frob check --only docblocks --ticket T-3402 finds no DOC006 finding on tickets/T-1382/ticket.md (the only DOC006 hit in the scoped run is a different file, tickets/T-3411/ticket.md)
