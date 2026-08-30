@@ -7,8 +7,6 @@ kind: bug
 origin: agent
 created: '2026-08-30'
 priority: critical
-blocked_by:
-- T-2450
 parent: null
 tier: ticket
 sprint: null
@@ -61,3 +59,6 @@ docstring and state it. Also repair the existing changelog.d/T-2691.md via
 the sanctioned path (regenerate through the generator, never a hand edit
 that the next land resets). Must-fire: a Done report containing
 `frob.app.telemetry._state` yields a fragment with zero DOC006 findings.
+
+## Unblock log
+- 2026-08-30: unblocked by T-2450 -- root-cause fix is a DOC006 exemption for changelog.d/ in _docptr.py, matching the existing CHANGELOG.md/tickets-archive.md archival-record precedent -- no longer needs to touch src/frob/app/ticket_runner/_land_cmd.py, so the T-2450 lease collision is moot
