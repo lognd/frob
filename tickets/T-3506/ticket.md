@@ -1,0 +1,120 @@
+---
+id: T-3506
+title: 'Portable process lock: share the msvcrt/fcntl dual-path beyond derived_state_lock'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-30'
+priority: medium
+parent: T-3505
+tier: story
+sprint: null
+runs_last: false
+milestone: 1.0.0
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/process/_lock.py
+- src/frob/process/_pid_liveness.py
+- src/frob/serve/_leases.py
+- src/frob/serve/_socketd.py
+- src/frob/tickets/_land.py
+- src/frob/tickets/_land_git_ops.py
+- src/frob/tickets/_land_queue.py
+- src/frob/tickets/_leases.py
+- src/frob/tickets/_mutation_sweep_queue.py
+- src/frob/tickets/_new_renumber.py
+- src/frob/tickets/_store.py
+- src/frob/verify/_watermark.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- src/frob/gates/_narrative_blocks.py
+- src/frob/gates/_walk_lint.py
+- src/frob/testing/_coverage_wait.py
+- tests/test_ticket_leases.py
+- tests/test_gates.py
+- tests/test_ticket_leases_cross_worktree.py
+- tests/test_ticket_land.py
+- tests/test_hook_root_write_guard.py
+- tests/test_tickets_leases.py
+- tests/unit/test_coordinator_scripts.py
+scope_breadth_ack: true
+scope_breadth_ack_reason: one shared lock primitive genuinely fans out to every fcntl
+  call site plus its lease/land/gate test files; T-3076's own by-file breakdown is
+  the evidence for this exact file set
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Adopt a single portable process-lock primitive for the OTHER fcntl call
+sites, mirroring the dual-path (fcntl/msvcrt) approach
+src/frob/process/_lock.py::derived_state_lock already uses.
+
+MEASURED: 22 of T-3076's 278 windows-only failures are
+ModuleNotFoundError: No module named 'fcntl'. This is the single
+largest primitive bucket and the one T-3076 flags as most consequential
+-- fcntl backs file locking used by leases, land serialization and the
+root-write guard, so BY FILE the windows-only concentration (from
+T-3076) is dominated by this cluster:
+  41  tests/test_ticket_leases.py
+  27  tests/test_gates.py
+  20  tests/test_ticket_leases_cross_worktree.py
+  17  tests/test_ticket_land.py
+   9  tests/test_hook_root_write_guard.py
+   (plus test_tickets_leases.py, test_coordinator_scripts.py)
+
+DESIGN: src/frob/process/_lock.py already imports fcntl defensively
+(fcntl = None if unavailable) and dual-paths derived_state_lock between
+fcntl.flock (POSIX) and msvcrt (Windows). Extract that dual-path lock
+into a shared, reusable primitive in src/frob/process/ (e.g. a
+`portable_flock(fd, exclusive) -> None` / context manager) and have
+every OTHER direct `import fcntl` / `fcntl.flock(...)` call site adopt
+it instead of importing fcntl directly. Do NOT re-derive a second
+msvcrt branch per call site -- one home, per the no-duplication
+principle.
+
+FILES IN SCOPE (measured via `git grep -ln fcntl -- src`):
+  src/frob/process/_lock.py            (already dual-paths; source of
+                                         the primitive to extract/share)
+  src/frob/process/_pid_liveness.py
+  src/frob/serve/_leases.py
+  src/frob/serve/_socketd.py
+  src/frob/tickets/_land.py
+  src/frob/tickets/_land_git_ops.py
+  src/frob/tickets/_land_queue.py
+  src/frob/tickets/_leases.py
+  src/frob/tickets/_mutation_sweep_queue.py
+  src/frob/tickets/_new_renumber.py
+  src/frob/tickets/_store.py
+  src/frob/verify/_watermark.py
+  src/frob/app/ticket_runner/_rapid_sweep.py
+  src/frob/gates/_narrative_blocks.py
+  src/frob/gates/_walk_lint.py
+  src/frob/testing/_coverage_wait.py
+
+MUST-FIRE (acceptance)
+- No module under src/frob imports fcntl directly except the shared
+  primitive's own home (src/frob/process/_lock.py or its extracted
+  successor module).
+- On Windows, file locking is REAL (msvcrt-backed, correct mutual
+  exclusion) or LOUDLY refuses -- per PLATFORM001 doctrine, never a
+  silent no-op. A silently no-op lease lock is a correctness bug (two
+  agents could write the same file), not acceptable degradation.
+- The 41+27+20+17+9 windows-only failures in the files listed above
+  collapse to (near-)zero once this lands; re-measurement happens in
+  the re-measure leaf, not here.
+
+MUST-STAY-QUIET (acceptance)
+- POSIX behavior (existing fcntl.flock semantics, timeouts, LOCK_EX/
+  LOCK_SH) is byte-for-byte unchanged on Linux/macOS -- this is a
+  Windows-additive change, not a POSIX refactor.
+- Existing POSIX lease/land/gate/coordinator test suites stay green
+  with no new skips.
+
+SCOPE GROUPING: this leaf is scope-disjoint from the os.sysconf,
+AF_UNIX, fork-context and charmap leaves below (different files, no
+overlap) -- dispatchable in parallel with all four.
