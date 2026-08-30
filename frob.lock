@@ -2555,6 +2555,60 @@
       "old_digest": null,
       "reason": "T-3474: added comprehension_id field to both, documented in docs/modules/arch.md#normalized-code-model's table rows for each",
       "ref": "src/frob/arch/_normalized.py::NormalizedCall"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "body",
+      "new_digest": "3918169c7721a2ddb7ae62c3f262ee2cf4c644c78d82b9ac35c0965e183e8f0f",
+      "old_digest": null,
+      "reason": "T-3324: documented both new symbols in docs/modules/gates.md's Self-audit at land section, including a correction that the section's zero-new-wiring claim only held for a running (non-rapid-skipped) re-verification",
+      "ref": "src/frob/gates/_sys.py::selfaudit_findings_touching"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "405adc6ee9fb856f8932d47441adaebeee22f70b8739bca5664a8be92d3a1a0f",
+      "old_digest": null,
+      "reason": "T-3324: documented both new symbols in docs/modules/gates.md's Self-audit at land section, including a correction that the section's zero-new-wiring claim only held for a running (non-rapid-skipped) re-verification",
+      "ref": "src/frob/gates/_sys.py::selfaudit_findings_touching"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "body",
+      "new_digest": "7d6edb82ef6345297ccd43fbd0586b48eaf222c4807b5eb24edeaeb61a28d3ba",
+      "old_digest": null,
+      "reason": "T-3324: documented both new symbols in docs/modules/gates.md's Self-audit at land section, including a correction that the section's zero-new-wiring claim only held for a running (non-rapid-skipped) re-verification",
+      "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "7ad06a795002f9c91ec61398ef71020176874b84cda549c52cba836d533521e3",
+      "old_digest": null,
+      "reason": "T-3324: documented both new symbols in docs/modules/gates.md's Self-audit at land section, including a correction that the section's zero-new-wiring claim only held for a running (non-rapid-skipped) re-verification",
+      "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "body",
+      "new_digest": "3918169c7721a2ddb7ae62c3f262ee2cf4c644c78d82b9ac35c0965e183e8f0f",
+      "old_digest": "3918169c7721a2ddb7ae62c3f262ee2cf4c644c78d82b9ac35c0965e183e8f0f",
+      "reason": "T-3324: added frob:tests directives after the land-time T-2114 refusal",
+      "ref": "src/frob/gates/_sys.py::selfaudit_findings_touching"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "405adc6ee9fb856f8932d47441adaebeee22f70b8739bca5664a8be92d3a1a0f",
+      "old_digest": "405adc6ee9fb856f8932d47441adaebeee22f70b8739bca5664a8be92d3a1a0f",
+      "reason": "T-3324: added frob:tests directives after the land-time T-2114 refusal",
+      "ref": "src/frob/gates/_sys.py::selfaudit_findings_touching"
     }
   ],
   "entries": [
@@ -3087,6 +3141,16 @@
       "digest": "e95d9ae016e0c80327a72fd91fad9b392a388766fb6fcd5e2d075e26ae3c63f3",
       "facet": "sig",
       "ref": "src/frob/gates/_protocol_summary.py::protocol_summary_gate"
+    },
+    {
+      "digest": "3918169c7721a2ddb7ae62c3f262ee2cf4c644c78d82b9ac35c0965e183e8f0f",
+      "facet": "body",
+      "ref": "src/frob/gates/_sys.py::selfaudit_findings_touching"
+    },
+    {
+      "digest": "405adc6ee9fb856f8932d47441adaebeee22f70b8739bca5664a8be92d3a1a0f",
+      "facet": "sig",
+      "ref": "src/frob/gates/_sys.py::selfaudit_findings_touching"
     },
     {
       "digest": "6f0f4786b2055919d7737b40dd28ee540375b5f188e46b78031a3dc4addb0925",
@@ -3737,6 +3801,16 @@
       "digest": "5d705d64b3c93168a2d5ecf70ffec389f5949c17495f9125e8dad78264859864",
       "facet": "sig",
       "ref": "src/frob/tickets/_land_squash.py::_check_squash_conflicted_v2"
+    },
+    {
+      "digest": "7d6edb82ef6345297ccd43fbd0586b48eaf222c4807b5eb24edeaeb61a28d3ba",
+      "facet": "body",
+      "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
+    },
+    {
+      "digest": "7ad06a795002f9c91ec61398ef71020176874b84cda549c52cba836d533521e3",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
     },
     {
       "digest": "e367ba5a32de34adea944959582e54ee1dd3683910dbaaf8891a0dde77e46661",

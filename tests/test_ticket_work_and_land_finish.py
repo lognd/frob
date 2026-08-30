@@ -45,7 +45,10 @@ from frob.tickets import (
     set_no_scope_declared,
 )
 from frob.tickets._land import land
-from frob.tickets._land_squash import _assert_still_on_expected_branch
+from frob.tickets._land_squash import (
+    _assert_still_on_expected_branch,
+    _refuse_if_selfaudit_findings_in_touched_files,
+)
 from frob.tickets._leases import LeaseError
 from frob.tickets._models import LandError, LandReport, Ticket, TicketError
 from frob.tickets._store import atomic_write, ledger_path, load_all, write_ticket
@@ -2661,4 +2664,89 @@ class TestBranchDriftGuard:
         # Sanity/baseline: an ordinary land (no branch movement) must not
         # be refused by the new guard.
         result = _assert_still_on_expected_branch(repo, "main", "T-0001")
+        assert result.is_ok
+
+
+# frob:ticket T-3324
+class TestSelfauditFindingsInTouchedFiles:
+    """T-3324: `_refuse_if_selfaudit_findings_in_touched_files` -- land-
+    time enforcement for the self-conformance drift class T-3283
+    diagnosed (a repo-wide "still clean" assertion that no individual
+    land's own diff-scoped check re-verifies, so it rots between lands).
+    Exercises the function directly against `frob.gates._sys.selfaudit_
+    findings_touching`'s own seam (mocked) rather than a real design/
+    dir, mirroring `TestPreCommitUnscopedSweepFn`'s style for the
+    sibling pre-commit-sweep guard."""
+
+    # frob:ticket T-3324
+    def test_no_findings_is_a_noop(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles.test_no_findings_is_a_noop  # noqa: E501
+        monkeypatch.setattr(
+            "frob.gates._sys.selfaudit_findings_touching", lambda root, files: ()
+        )
+        tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        result = _refuse_if_selfaudit_findings_in_touched_files(
+            repo, "T-0001", "T-0001", tip, frozenset({"src/feature.py"})
+        )
+        assert result.is_ok
+
+    # frob:ticket T-3324
+    def test_findings_in_touched_files_refuses_and_unwinds(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles.test_findings_in_touched_files_refuses_and_unwinds  # noqa: E501
+        from frob.gates._models import Severity, Violation
+
+        finding = Violation(
+            rule="SELFAUDIT001",
+            severity=Severity.ERROR,
+            file="design",
+            line=1,
+            message=(
+                "SELFAUDIT001: self-audit family SYS100 node=testsuite: "
+                "capability 'fs.read' observed at src/feature.py:1 but "
+                "not declared"
+            ),
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.selfaudit_findings_touching",
+            lambda root, files: (finding,),
+        )
+        # Stage a real, uncommitted change so the unwind's own effect
+        # (reset back to `tip`) is observable.
+        (repo / "src" / "feature.py").write_text("# a change the unwind must undo\n")
+        _run(["git", "add", "-A"], repo)
+        tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        result = _refuse_if_selfaudit_findings_in_touched_files(
+            repo, "T-0001", "T-0001", tip, frozenset({"src/feature.py"})
+        )
+
+        assert result.is_err
+        assert result.danger_err == LandError.PreLandUnscopedSweepFailed
+        # The unwind reset the staged change away.
+        status = _run(["git", "status", "--porcelain"], repo).stdout
+        assert "feature.py" not in status
+
+    # frob:ticket T-3324
+    def test_finding_outside_touched_files_is_not_this_ticket_s_concern(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles.test_finding_outside_touched_files_is_not_this_ticket_s_concern  # noqa: E501
+        # The filtering itself lives in `selfaudit_findings_touching`
+        # (tested directly in tests/test_gates.py) -- this only proves
+        # the caller trusts an empty return as "clean", never re-filters
+        # on its own.
+        monkeypatch.setattr(
+            "frob.gates._sys.selfaudit_findings_touching", lambda root, files: ()
+        )
+        result = _refuse_if_selfaudit_findings_in_touched_files(
+            Path("/nonexistent"),
+            "T-0001",
+            "T-0001",
+            "deadbeef",
+            frozenset({"unrelated/other.py"}),
+        )
         assert result.is_ok

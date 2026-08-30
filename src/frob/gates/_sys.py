@@ -557,3 +557,52 @@ def _log_sys_gate_summary(design_ids, violations: tuple[Violation, ...]) -> None
         len(violations),
         len(design_ids.errors),
     )
+
+
+# frob:ticket T-3324
+# frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
+# frob:tests tests/test_gates.py::TestSelfauditFindingsTouching.test_no_design_dir_returns_empty  # noqa: E501
+# frob:tests tests/test_gates.py::TestSelfauditFindingsTouching.test_finding_in_touched_file_is_returned  # noqa: E501
+# frob:tests tests/test_gates.py::TestSelfauditFindingsTouching.test_finding_in_untouched_file_is_filtered_out  # noqa: E501
+# frob:tests tests/test_gates.py::TestSelfauditFindingsTouching.test_clean_model_returns_empty  # noqa: E501
+# frob:tests tests/test_gates.py::TestSelfauditFindingsTouching.test_substring_filter_is_exact_regardless_of_native_availability  # noqa: E501
+def selfaudit_findings_touching(
+    root: Path, files: frozenset[str]
+) -> tuple[Violation, ...]:
+    """T-3324: the subset of `sys_gate`'s own SELFAUDIT001 (SYS100-107/
+    SYS2xx/SYS205/REL2xx) findings whose message text names one of
+    `files` -- the diff-scoped land-time enforcement T-3283/T-3324
+    diagnosed as missing: a full-repo self-conformance assertion rots
+    between lands because no individual land's own diff-scoped `frob
+    check` re-checks it, so a land that reintroduces (or newly
+    introduces) a violation in a file it itself touched should be
+    refused THERE, cheaply, rather than discovered cold by the next
+    periodic full-repo run. Reuses `_selfaudit_violations`, the exact
+    evaluation `sys_gate` itself calls, so this can never disagree with
+    what `frob check` reports for the same tree.
+
+    `files` matching is a plain substring test against each `Violation.
+    message` -- `Violation.file` is always the design directory itself
+    for every SELFAUDIT001 finding (`_selfaudit_violation`'s own `file=
+    design_dir`), never the real offending source file, which instead
+    only appears inside the underlying check's own free-text detail
+    (e.g. SYS100's `"capability 'fs.read' observed at <path>:<line> but
+    not declared"`) -- the same lightweight-text-over-a-second-schema
+    convention this repo already accepts elsewhere (`frob.arch._mayraise`'s
+    guard-predicate discharges) rather than parsing a structured location
+    out of every sub-rule's differently-shaped detail text.
+
+    Fails OPEN (empty tuple) exactly like `sys_gate` itself when `root`
+    has no `design/` (or `[strata].design_dir`) directory -- a repo not
+    using strata sees nothing, matching every other SELFAUDIT001 caller's
+    opt-in posture."""
+    root = Path(root)
+    design_dir = _design_dir(root)
+    if not (root / design_dir).is_dir():
+        return ()
+
+    from frob.strata import load_design_ids
+
+    design_ids = load_design_ids(root, design_dir)
+    violations = _selfaudit_violations(root, design_ids, design_dir)
+    return tuple(v for v in violations if any(f in v.message for f in files))

@@ -823,6 +823,22 @@ reddens any other ERROR-severity gate already does. No `frob.tickets`/
 `frob.app` code needed to change to wire this in; the fix was making the
 surface a gate at all.
 
+**T-3324 correction:** the paragraph above is accurate only when a land's
+post-merge re-verification actually RUNS. Under the `rapid` profile
+(T-1575/T-1681), that re-verification is `SKIPPED-UNMEASURED` -- so a
+land that reintroduces (or newly introduces) a SELFAUDIT001/SYS100
+finding in a file it itself touches was NOT actually caught at land
+time, only discovered cold whenever someone next happened to run the
+slow full-repo self-conformance test file directly (T-3283's finding,
+T-1691's `tests/unit/verify/test_bisect.py` landing the concrete
+incident). `frob.gates._sys.selfaudit_findings_touching` plus
+`frob.tickets._land_squash._refuse_if_selfaudit_findings_in_touched_
+files` close that gap: an UNCONDITIONAL (never skipped by the rapid
+profile, unlike the general pre-commit sweep) diff-scoped check, cheap
+because it only evaluates findings whose message names one of the
+land's own touched files rather than re-running full-repo self-
+conformance on every land.
+
 ### Land parity (LANDPARITY001/LANDPARITY002, T-3456)
 
 T-3302's investigation (F-032/F-051) found three land-only checks with no

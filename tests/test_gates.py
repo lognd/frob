@@ -17599,6 +17599,8 @@ class TestSysGate:
         assert sys004[0].file == "design/m.strata"
 
 
+from frob.gates._sys import selfaudit_findings_touching  # noqa: E402
+
 _SELFAUDIT_DESIGN_STRATA_UNDECLARED = """module m
 node widget : trusted { code "src/frob/widget/**"; }
 """
@@ -18023,6 +18025,107 @@ class TestSelfAuditGate:
         )
         violations = _compliance_selfaudit_violations(tmp_path, design_ids, "design")
         assert violations == []
+
+
+# frob:ticket T-3324
+class TestSelfauditFindingsTouching:
+    """`frob.gates._sys.selfaudit_findings_touching` (T-3324): the diff-
+    scoped land-time enforcement seam -- `frob.tickets._land_squash`'s
+    own `_refuse_if_selfaudit_findings_in_touched_files` calls this to
+    decide whether a land should be refused, filtered to findings whose
+    message names one of the land's own touched files."""
+
+    # frob:tests src/frob/gates/_sys.py::selfaudit_findings_touching kind="unit"
+    def test_no_design_dir_returns_empty(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/a.py", "def f(): pass\n")
+        assert selfaudit_findings_touching(tmp_path, frozenset({"src/a.py"})) == ()
+
+    # frob:tests src/frob/gates/_sys.py::selfaudit_findings_touching kind="unit"
+    def test_substring_filter_is_exact_regardless_of_native_availability(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # Exercises the actual filtering logic directly against a mocked
+        # `_selfaudit_violations` (never touching real `.strata` parsing,
+        # unlike the other tests in this class) -- proves the filter
+        # itself is correct independent of whether `strata_core` natives
+        # are built in the current environment.
+        from frob.gates._models import Severity, Violation
+
+        _write(tmp_path, "design", "")
+        (tmp_path / "design").unlink()
+        (tmp_path / "design").mkdir()
+
+        touching = Violation(
+            rule="SELFAUDIT001",
+            severity=Severity.ERROR,
+            file="design",
+            line=1,
+            message="SELFAUDIT001: ... observed at src/a.py:3 but not declared",
+        )
+        not_touching = Violation(
+            rule="SELFAUDIT001",
+            severity=Severity.ERROR,
+            file="design",
+            line=1,
+            message="SELFAUDIT001: ... observed at src/b.py:9 but not declared",
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys._selfaudit_violations",
+            lambda root, design_ids, design_dir: [touching, not_touching],
+        )
+        monkeypatch.setattr(
+            "frob.strata.load_design_ids", lambda root, design_dir: object()
+        )
+
+        findings = selfaudit_findings_touching(tmp_path, frozenset({"src/a.py"}))
+        assert findings == (touching,)
+
+    # frob:tests src/frob/gates/_sys.py::selfaudit_findings_touching kind="unit"
+    def test_finding_in_touched_file_is_returned(self, tmp_path: Path) -> None:
+        _write(tmp_path, "design/m.strata", _SELFAUDIT_DESIGN_STRATA_UNDECLARED)
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        findings = selfaudit_findings_touching(
+            tmp_path, frozenset({"src/frob/widget/_io.py"})
+        )
+        assert len(findings) >= 1
+        assert all("SYS100" in v.message for v in findings)
+
+    # frob:tests src/frob/gates/_sys.py::selfaudit_findings_touching kind="unit"
+    def test_finding_in_untouched_file_is_filtered_out(self, tmp_path: Path) -> None:
+        # Same undeclared-capability model as the must-fire test above,
+        # but the "touched files" set names an UNRELATED file -- this
+        # land did not cause the drift and must not be blamed for it.
+        _write(tmp_path, "design/m.strata", _SELFAUDIT_DESIGN_STRATA_UNDECLARED)
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        findings = selfaudit_findings_touching(
+            tmp_path, frozenset({"src/frob/unrelated/_other.py"})
+        )
+        assert findings == ()
+
+    # frob:tests src/frob/gates/_sys.py::selfaudit_findings_touching kind="unit"
+    def test_clean_model_returns_empty(self, tmp_path: Path) -> None:
+        design = (
+            "module m\n"
+            'node widget : trusted { code "src/frob/widget/**"; may "net"; }\n'
+        )
+        _write(tmp_path, "design/m.strata", design)
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        findings = selfaudit_findings_touching(
+            tmp_path, frozenset({"src/frob/widget/_io.py"})
+        )
+        assert findings == ()
 
 
 def _complex_function_source(fn_name: str) -> str:

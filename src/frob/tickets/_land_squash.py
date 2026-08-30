@@ -1496,6 +1496,62 @@ def _apply_pre_commit_sweep_or_unwind(
     return Err(LandError.PreLandUnscopedSweepFailed)
 
 
+# frob:ticket T-3324
+def _refuse_if_selfaudit_findings_in_touched_files(
+    stage: Path,
+    ticket_id: str,
+    final_id: str,
+    pre_land_tip: str,
+    touched_files: frozenset[str],
+) -> Result[None, LandError]:
+    """T-3324: land-time enforcement for the self-conformance drift class
+    T-3283 diagnosed structurally -- a repo-wide "still clean" assertion
+    that rots between lands because no individual land's own diff-scoped
+    `frob check` ever re-checks it against the shared surface, so it is
+    only discovered cold by the next unrelated periodic full-repo run
+    (T-1691's `tests/unit/verify/test_bisect.py` landing with undeclared
+    `fs.read`/`exec` is the exact incident this closes).
+
+    Runs `frob.gates._sys.selfaudit_findings_touching` -- the SAME
+    SELFAUDIT001/SYS100 evaluation `sys_gate` itself uses -- against
+    `stage`'s post-squash tree, filtered to findings attributable to
+    `touched_files` (this land's OWN diff). Deliberately runs
+    UNCONDITIONALLY, unlike `_apply_pre_commit_sweep_or_unwind`'s
+    `pre_commit_sweep` (skipped under the rapid profile, T-1575) --
+    it is cheap (diff-scoped, not a full-repo scan), which is exactly
+    what makes an always-on check here affordable where the full sweep
+    is not. A finding in some OTHER, untouched file is a pre-existing
+    repo-wide drift this land did not cause and must not be blamed for;
+    it is left to the periodic full sweep, unchanged.
+
+    On a hit, unwinds via `_verified_reset_root` -- the same free,
+    before-any-commit-exists shape `_apply_pre_commit_sweep_or_unwind`
+    already uses -- and reuses `LandError.PreLandUnscopedSweepFailed`
+    (a land-time-unscoped-sweep refusal is exactly what this is,
+    narrowed to the self-conformance surface; a dedicated error variant
+    would live in `frob.tickets._models`, outside this ticket's declared
+    scope)."""
+    from frob.gates._sys import selfaudit_findings_touching
+
+    findings = selfaudit_findings_touching(stage, touched_files)
+    if not findings:
+        return Ok(None)
+    unwound = _verified_reset_root(stage, pre_land_tip, ticket_id)
+    if unwound.is_err:
+        return Err(unwound.danger_err)
+    _log.error(
+        "land: %s refused -- %d self-conformance finding(s) attributable to "
+        "this land's own touched files (T-3324): %s. The staged squash was "
+        "unwound before any commit landed on main -- fix the finding(s) and "
+        "retry `frob ticket land %s`",
+        ticket_id,
+        len(findings),
+        [v.message for v in findings],
+        ticket_id,
+    )
+    return Err(LandError.PreLandUnscopedSweepFailed)
+
+
 # frob:ticket T-1920
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_branch_drift_before_final_commit_refuses_by_construction  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_no_drift_is_a_noop  # noqa: E501
@@ -1677,6 +1733,35 @@ def _seal_squash_apply(
 
 
 # frob:ticket T-0907
+# frob:ticket T-3324
+def _run_pre_commit_checks(
+    stage: Path,
+    ticket_id: str,
+    final_id: str,
+    pre_land_tip: str,
+    pre_commit_sweep: Callable[[Path, str], bool | None] | None,
+    touched_files: frozenset[str],
+) -> Result[None, LandError]:
+    """`_land_squash_apply_finish`'s two pre-commit checks (split out to
+    keep that function under ARCH001's threshold, T-3324): the existing
+    pluggable `pre_commit_sweep` (`_apply_pre_commit_sweep_or_unwind`,
+    skipped by the rapid profile, T-1575) followed by the UNCONDITIONAL
+    self-conformance drift check (`_refuse_if_selfaudit_findings_in_
+    touched_files`, T-3324 -- never skipped, since it is cheap and
+    diff-scoped rather than a full-repo scan). Both share the identical
+    unwind-before-any-commit-exists shape; running them in sequence here
+    (rather than inline in the caller) is purely a line-count split, not
+    a behavior change."""
+    swept = _apply_pre_commit_sweep_or_unwind(
+        stage, ticket_id, final_id, pre_land_tip, pre_commit_sweep
+    )
+    if swept.is_err:
+        return Err(swept.danger_err)
+    return _refuse_if_selfaudit_findings_in_touched_files(
+        stage, ticket_id, final_id, pre_land_tip, touched_files
+    )
+
+
 def _land_squash_apply_finish(
     root: Path,
     worktree: Path,
@@ -1751,11 +1836,16 @@ def _land_squash_apply_finish(
         )
         return Ok(absorbed)
 
-    swept = _apply_pre_commit_sweep_or_unwind(
-        stage, ticket_id, final_id, pre_land_tip, pre_commit_sweep
+    pre_commit_checks = _run_pre_commit_checks(
+        stage,
+        ticket_id,
+        final_id,
+        pre_land_tip,
+        pre_commit_sweep,
+        worktree_changeset,
     )
-    if swept.is_err:
-        return Err(swept.danger_err)
+    if pre_commit_checks.is_err:
+        return Err(pre_commit_checks.danger_err)
 
     still_on_branch = _assert_still_on_expected_branch(
         root, main_branch_name, ticket_id, unstage_on_drift=not squash_precomposed
