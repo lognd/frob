@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 23f0e3e4dfaad451b10a6ca209d7683b71859a7d
 ---
 The deferred post-land unscoped sweep (T-1684) for T-3420 at commit 344eba4dbafbca5c580b055c2fd2614dd32e825a found 1 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 
