@@ -837,6 +837,74 @@ def _py_plain_import_statement_imports(stmt: Node) -> list[NormalizedImport]:
     return out
 
 
+# frob:ticket T-3473
+def _py_string_literal_raw_text(node: Node) -> str | None:
+    """The raw source characters between a python string literal's quotes
+    (T-3473) -- prefix (`r`/`b`/`f`/...) and the quote characters stripped,
+    everything else left exactly as written (a regex pattern's `\\d`
+    escape is a REGEX escape, not a python one, so this deliberately does
+    NOT decode python string escapes the way a real literal-eval would).
+    Returns `None` for anything that is not a single plain/raw string
+    token (an f-string, a concatenated/adjacent string, a byte string) --
+    `_py_top_level_regex_patterns` only trusts an unambiguous single
+    literal."""
+    if node.type != "string":
+        return None
+    raw = _node_text(node)
+    match = re.match(r'^[a-zA-Z]*([\'"])(.*)\1$', raw, re.DOTALL)
+    if match is None:
+        return None
+    return match.group(2)
+
+
+# frob:ticket T-3473
+def _py_top_level_regex_patterns(root: Node) -> dict[str, str]:
+    """`bare_name -> pattern_text` for every top-level `NAME =
+    re.compile(PATTERN)` assignment directly under the module root
+    (T-3473) -- the ONE deliberately narrow top-level-statement
+    projection this model carries (see `NormalizedModule.
+    module_regex_patterns`'s own docstring for why, and this module's
+    own module-scope comment for the general rule this is an exception
+    to). Only a bare identifier target, a `re.compile(...)` call whose
+    callee text is literally `re.compile`, and a single plain/raw string
+    first argument are recognized -- an aliased import (`from re import
+    compile as rc`), a computed pattern, or a concatenated/f-string
+    pattern all fall through silently rather than record a wrong
+    pattern (fail-closed: absent from the map reads as \"no known
+    pattern\", never a wrong one)."""
+    patterns: dict[str, str] = {}
+    for c in root.children:
+        if c.type == "assignment":
+            assign = c
+        elif c.type == "expression_statement":
+            assign = next(
+                (gc for gc in c.named_children if gc.type == "assignment"), None
+            )
+        else:
+            continue
+        if assign is None:
+            continue
+        target = _child(assign, "left")
+        value = _child(assign, "right")
+        if target is None or target.type != "identifier" or value is None:
+            continue
+        if value.type != "call":
+            continue
+        if _py_call_callee_text(value) != "re.compile":
+            continue
+        call_args = _child(value, "arguments")
+        if call_args is None:
+            continue
+        first_arg = next(iter(call_args.named_children), None)
+        if first_arg is None:
+            continue
+        pattern_text = _py_string_literal_raw_text(first_arg)
+        if pattern_text is None:
+            continue
+        patterns[_node_text(target)] = pattern_text
+    return patterns
+
+
 def _py_build_module(
     tree: object, rel: str, source_lines: tuple[str, ...] = ()
 ) -> NormalizedModule:
@@ -851,6 +919,7 @@ def _py_build_module(
     classes: list[NormalizedClass] = []
     functions: list[NormalizedFunction] = []
     imports: list[NormalizedImport] = []
+    module_regex_patterns = _py_top_level_regex_patterns(t.root_node)
     for c in t.root_node.children:
         if c.type == "class_definition":
             classes.append(_py_build_class(c, source_lines))
@@ -880,6 +949,7 @@ def _py_build_module(
         imports=imports,
         classes=classes,
         functions=functions,
+        module_regex_patterns=module_regex_patterns,
     )
 
 

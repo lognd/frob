@@ -2425,6 +2425,48 @@ class TestPythonAdapter:
         assert calls["lib.quiet_call"].declared_raises == frozenset()
         assert calls["plain"].declared_raises is None
 
+    # frob:ticket T-3473
+    def test_adapt_records_top_level_regex_compile_pattern_text(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/arch/_python.py::PythonAdapter.adapt kind="unit"
+        from frob.arch._python import PythonAdapter
+        from frob.lang import raw_tree
+
+        src_path = tmp_path / "pat.py"
+        src_path.write_text("import re\n\n_RE = re.compile(r'a(\\d+)b')\n")
+        parsed = raw_tree(src_path)
+        assert parsed.is_ok
+        tree, source, _language = parsed.danger_ok
+
+        module = PythonAdapter().adapt(tree, source, "pat.py")
+        assert module.module_regex_patterns == {"_RE": r"a(\d+)b"}
+
+    # frob:ticket T-3473
+    def test_adapt_ignores_non_regex_top_level_assignments(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/arch/_python.py::PythonAdapter.adapt kind="unit"
+        # A plain constant, a computed pattern, and an aliased-import call
+        # must all be silently absent -- fail-closed, never a wrong guess.
+        from frob.arch._python import PythonAdapter
+        from frob.lang import raw_tree
+
+        src_path = tmp_path / "pat.py"
+        src_path.write_text(
+            "import re\n"
+            "from re import compile as rc\n\n"
+            "_NOT_A_PATTERN = 42\n"
+            "_COMPUTED = re.compile(build_pattern())\n"
+            "_ALIASED = rc(r'x(\\d+)')\n"
+        )
+        parsed = raw_tree(src_path)
+        assert parsed.is_ok
+        tree, source, _language = parsed.danger_ok
+
+        module = PythonAdapter().adapt(tree, source, "pat.py")
+        assert module.module_regex_patterns == {}
+
 
 # ---------------------------------------------------------------------------
 # T-0611: TypeScriptAdapter -- maps a real parsed TypeScript file onto
@@ -6818,6 +6860,211 @@ class TestIsdigitGuardDischarge:
 
         assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset(
             {"ValueError"}
+        )
+
+
+# frob:ticket T-3473
+class TestRegexGroupGuardDischarge:
+    """`frob.arch._mayraise._regex_group_guard_discharges` (T-3473): a
+    module-level `re.compile(PATTERN)` constant's own provably digit-only
+    capture group, read via `match.group(N)` after an `if match is None:
+    return` guard, rules out the `ValueError` `int()`/`float()` would
+    otherwise contribute -- the corpus shape T-2568's isdigit-guard fix
+    could not reach (`scripts/_require_python.py::_required_version`,
+    `scripts/wait_for_land_slot.py::probe_lands_in_flight`)."""
+
+    # frob:ticket T-3473
+    def test_digit_only_group_after_none_guard_discharges_value_error(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # `_required_version`'s own shape: `match = PATTERN.search(text)`,
+        # `if match is None: return None`, `int(match.group(1))`.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=5,
+            calls=[
+                NormalizedCall(callee="_PATTERN.search", line=2),
+                NormalizedCall(
+                    callee="int",
+                    line=4,
+                    args=[NormalizedCallArg(index=0, text="match.group(1)")],
+                ),
+            ],
+            branches=[NormalizedBranch(line=3, condition_text="match is None")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py",
+            language="python",
+            functions=[f],
+            module_regex_patterns={"_PATTERN": r"(\d+)"},
+        )
+
+        # T-3473: the ValueError contribution from int()'s digit-only
+        # group is discharged; "Unknown" remains because the resolver
+        # cannot resolve _PATTERN.search itself (an unrelated, separate
+        # resolution-coverage gap, not this fix's concern).
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset(
+            {"Unknown"}
+        )
+
+    # frob:ticket T-3473
+    def test_non_digit_group_still_raises_value_error(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # Same shape, but the compiled pattern's group 1 is NOT digit-only
+        # (`\w+`) -- int() can genuinely still raise, must not discharge.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=5,
+            calls=[
+                NormalizedCall(callee="_PATTERN.search", line=2),
+                NormalizedCall(
+                    callee="int",
+                    line=4,
+                    args=[NormalizedCallArg(index=0, text="match.group(1)")],
+                ),
+            ],
+            branches=[NormalizedBranch(line=3, condition_text="match is None")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py",
+            language="python",
+            functions=[f],
+            module_regex_patterns={"_PATTERN": r"(\w+)"},
+        )
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset(
+            {"ValueError", "Unknown"}
+        )
+
+    # frob:ticket T-3473
+    def test_missing_none_guard_still_raises_value_error(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # The pattern is digit-only but there is no "match is None" guard
+        # branch at all -- must not discharge (int() can still see a
+        # None.group() AttributeError-adjacent path this resolver has no
+        # visibility into, so the ValueError contribution stays reported
+        # fail-closed).
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=4,
+            calls=[
+                NormalizedCall(callee="_PATTERN.search", line=2),
+                NormalizedCall(
+                    callee="int",
+                    line=3,
+                    args=[NormalizedCallArg(index=0, text="match.group(1)")],
+                ),
+            ],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py",
+            language="python",
+            functions=[f],
+            module_regex_patterns={"_PATTERN": r"(\d+)"},
+        )
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset(
+            {"ValueError", "Unknown"}
+        )
+
+    # frob:ticket T-3473
+    def test_ambiguous_regex_call_candidates_does_not_discharge(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # Two DIFFERENT module-level patterns both get `.search()`'d in the
+        # same function -- this resolver has no def-use binding of `match`
+        # to either one, so it must fail closed rather than guess.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=6,
+            calls=[
+                NormalizedCall(callee="_PATTERN_A.search", line=2),
+                NormalizedCall(callee="_PATTERN_B.search", line=3),
+                NormalizedCall(
+                    callee="int",
+                    line=5,
+                    args=[NormalizedCallArg(index=0, text="match.group(1)")],
+                ),
+            ],
+            branches=[NormalizedBranch(line=4, condition_text="match is None")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py",
+            language="python",
+            functions=[f],
+            module_regex_patterns={
+                "_PATTERN_A": r"(\d+)",
+                "_PATTERN_B": r"(\d+)",
+            },
+        )
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset(
+            {"ValueError", "Unknown"}
+        )
+
+    # frob:ticket T-3473
+    def test_real_require_python_corpus_site_has_no_leaked_value_error(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # End-to-end via the real python adapter over the real corpus
+        # site's own source shape (both groups digit-only, two int() calls
+        # sharing one guard) -- the actual finding this ticket closes.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._python import PythonAdapter
+        from frob.lang import get_parser
+
+        src = (
+            b"import re\n\n"
+            b"_RE = re.compile(r'requires-python\\s*=\\s*\"[^\\d]*(\\d+)\\.(\\d+)')\n\n"
+            b"def f(text):\n"
+            b"    match = _RE.search(text)\n"
+            b"    if match is None:\n"
+            b"        return None\n"
+            b"    return (int(match.group(1)), int(match.group(2)))\n"
+        )
+        tree = get_parser("python").parse(src)
+        module = PythonAdapter().adapt(tree, src, "pkg/mod.py")
+
+        # T-3473: no ValueError leak; "Unknown" remains from the
+        # unresolved _RE.search call itself (unrelated resolution gap).
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset(
+            {"Unknown"}
         )
 
 

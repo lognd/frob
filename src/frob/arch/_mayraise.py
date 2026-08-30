@@ -91,6 +91,8 @@ T-0690's job, not duplicated here."""
 
 from __future__ import annotations
 
+import re
+
 from pydantic import BaseModel
 
 from frob.arch._normalized import (
@@ -363,6 +365,7 @@ def _nearest_preceding_catch(
 def _own_base_raises(
     func: NormalizedFunction,
     name_to_func: dict[str, NormalizedFunction],
+    module: NormalizedModule,
     *,
     include_subscripts: bool = True,
 ) -> tuple[set[str], set[str], set[str]]:
@@ -398,7 +401,7 @@ def _own_base_raises(
     unbounded recursion."""
     direct = _resolve_direct_raises(func)
     catchable, resolved_callees = _resolve_call_contributions(
-        func, name_to_func, include_subscripts=include_subscripts
+        func, name_to_func, module, include_subscripts=include_subscripts
     )
     return direct, catchable, resolved_callees
 
@@ -518,10 +521,126 @@ def _isdigit_guard_discharges(
     )
 
 
+# frob:ticket T-3473
+_REGEX_GROUP_CALL_RE = re.compile(r"^(\w+)\.group\((\d+)\)$")
+
+
+# frob:ticket T-3473
+def _regex_capturing_group_texts(pattern: str) -> list[str]:
+    """Every top-level (non-nested-aware, but order-correct even when
+    nested) capturing group's own inner text from a regex `pattern`
+    string, left-to-right by opening-paren position (T-3473) -- a
+    non-capturing group (`(?:...)`, `(?P<name>...)`, a lookaround) is
+    skipped, an escaped literal paren (`\\(`) is skipped, matching
+    Python's own `re` group-numbering rule closely enough for the two
+    real corpus patterns this was built against (`(\\d+)` groups with no
+    nesting) without attempting a full regex-grammar parse."""
+    groups: list[tuple[int, str]] = []
+    stack: list[tuple[int, bool]] = []
+    i = 0
+    n = len(pattern)
+    while i < n:
+        ch = pattern[i]
+        if ch == "\\":
+            i += 2
+            continue
+        if ch == "(":
+            is_capturing = not (i + 1 < n and pattern[i + 1] == "?")
+            stack.append((i, is_capturing))
+            i += 1
+            continue
+        if ch == ")":
+            if stack:
+                start, is_capturing = stack.pop()
+                if is_capturing:
+                    groups.append((start, pattern[start + 1 : i]))
+            i += 1
+            continue
+        i += 1
+    groups.sort(key=lambda pair: pair[0])
+    return [text for _, text in groups]
+
+
+# frob:ticket T-3473
+def _regex_group_is_digit_only(pattern: str, group_index: int) -> bool:
+    """True when `pattern`'s `group_index`-th (1-based) capturing group
+    is EXACTLY `\\d+` (T-3473) -- the narrow digit-safety proof
+    `_regex_group_guard_discharges` needs; any other group shape
+    (`\\d*`, `[0-9]+`, an unparseable pattern, an out-of-range index)
+    fails closed to `False` rather than guess."""
+    groups = _regex_capturing_group_texts(pattern)
+    if group_index < 1 or group_index > len(groups):
+        return False
+    return groups[group_index - 1] == "\\d+"
+
+
+# frob:ticket T-3473
+def _regex_group_guard_discharges(
+    bare: str,
+    call: NormalizedCall,
+    func: NormalizedFunction,
+    module: NormalizedModule,
+) -> bool:
+    """True when `call` (`int(x)`/`float(x)`, `bare` restricted to
+    `_ISDIGIT_GUARDED_VALUEERROR_RAISERS`) reads a regex match group whose
+    module-level compiled pattern proves the group is digit-only, guarded
+    by a preceding `if <name> is None: return`-shaped branch (T-3473) --
+    `scripts/_require_python.py::_required_version`'s `int(match.
+    group(1))` after `if match is None: return None`, where
+    `_REQUIRES_PYTHON_RE`'s own group 1 is `(\\d+)`, is the corpus case
+    this exists for.
+
+    MATCH RULE: `call`'s one positional argument's text must match
+    `<name>.group(<N>)` exactly (`_REGEX_GROUP_CALL_RE`). `func.calls`
+    must contain EXACTLY ONE `<pattern_name>.search(...)`/`<pattern_name>.
+    match(...)` call whose receiver `pattern_name` is a key in `module.
+    module_regex_patterns` -- deliberately NOT verified to be the same
+    call that produced `<name>` (this model still carries no local-
+    assignment/def-use tracking at all, see `NormalizedModule.
+    module_regex_patterns`'s own docstring), so ambiguity (more than one
+    candidate regex `.search`/`.match` call in the same function) fails
+    closed to `False` rather than guess which one binds `<name>`. That
+    pattern's own group `<N>` must be digit-only
+    (`_regex_group_is_digit_only`). Finally, some `NormalizedBranch` in
+    `func` at or before `call.line` must contain the literal substring
+    `"<name> is None"` in its `condition_text` -- the same function-wide,
+    line-adjacency-free textual-guard convention `_isdigit_guard_
+    discharges` already uses (see its own docstring for why line-order
+    alone is not required)."""
+    if bare not in _ISDIGIT_GUARDED_VALUEERROR_RAISERS:
+        return False
+    positional = [a for a in call.args if a.text is not None]
+    if len(positional) != 1:
+        return False
+    arg_text = positional[0].text
+    if not arg_text:
+        return False
+    match = _REGEX_GROUP_CALL_RE.match(arg_text)
+    if match is None:
+        return False
+    var_name, group_str = match.group(1), match.group(2)
+    candidates = {
+        c.callee.rsplit(".", 1)[0]
+        for c in func.calls
+        if c.callee.rsplit(".", 1)[-1] in ("search", "match")
+        and c.callee.rsplit(".", 1)[0] in module.module_regex_patterns
+    }
+    if len(candidates) != 1:
+        return False
+    pattern = module.module_regex_patterns[next(iter(candidates))]
+    if not _regex_group_is_digit_only(pattern, int(group_str)):
+        return False
+    guard_token = f"{var_name} is None"
+    return any(
+        b.line <= call.line and guard_token in b.condition_text for b in func.branches
+    )
+
+
 # frob:ticket T-0976
 def _resolve_call_contributions(
     func: NormalizedFunction,
     name_to_func: dict[str, NormalizedFunction],
+    module: NormalizedModule,
     *,
     include_subscripts: bool = True,
 ) -> tuple[set[str], set[str]]:
@@ -559,7 +678,14 @@ def _resolve_call_contributions(
             # `ValueError` its unguarded row would otherwise contribute.
             default_discharged = _default_arg_discharges(bare, call)
             guard_discharged = _isdigit_guard_discharges(bare, call, func)
-            if not default_discharged and not guard_discharged:
+            regex_group_discharged = _regex_group_guard_discharges(
+                bare, call, func, module
+            )
+            if (
+                not default_discharged
+                and not guard_discharged
+                and not regex_group_discharged
+            ):
                 catchable |= _BUILTIN_RAISERS[bare]
         elif bare in name_to_func:
             resolved_callees.add(bare)
@@ -675,7 +801,7 @@ def _register_module_functions(
         id_to_func[fid] = func
         qualname_by_id[fid] = qualname
         direct, catchable, resolved = _own_base_raises(
-            func, name_to_func, include_subscripts=include_subscripts
+            func, name_to_func, module, include_subscripts=include_subscripts
         )
         direct_by_id[fid] = direct
         catchable_by_id[fid] = catchable

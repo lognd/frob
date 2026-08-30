@@ -433,7 +433,25 @@ class NormalizedModule(BaseModel):
     bare type-alias binding has no existing entity to become). This is
     the root a language-agnostic check walks instead of a raw tree-sitter
     `Tree` -- everything a check needs (see this module's docstring) is
-    reachable from here without touching `frob.lang`/tree-sitter at all."""
+    reachable from here without touching `frob.lang`/tree-sitter at all.
+
+    `module_regex_patterns` (T-3473) is the ONE deliberately narrow
+    exception to this model's own no-top-level-statement rule (see
+    `_python.py`'s module-scope comment on why the rest of a module's
+    top-level statements are NOT modeled): a `bare_name -> pattern_text`
+    map of every top-level `NAME = re.compile(PATTERN)` assignment,
+    `PATTERN`'s raw source text (quotes/`r`-prefix stripped, escapes left
+    as literal source characters -- a regex pattern's own escape grammar,
+    not python's). Consumed by `frob.arch._mayraise`'s
+    `_regex_group_guard_discharges` to prove a `match.group(N)` access
+    following an `if match is None: return` guard cannot raise
+    `ValueError` when the compiled pattern's own group `N` is provably
+    digit-only (`\\d+`) -- narrower than a real def-use binding of the
+    local `match` variable to its regex (this model still carries no
+    local-assignment tracking at all), so the discharge only fires when a
+    function has exactly one `<name>.search(...)`/`<name>.match(...)`
+    call whose receiver is a known pattern name (see that function's own
+    docstring for the full match rule)."""
 
     model_config = {}
 
@@ -443,6 +461,7 @@ class NormalizedModule(BaseModel):
     classes: list[NormalizedClass] = []
     functions: list[NormalizedFunction] = []
     type_aliases: list[NormalizedTypeAlias] = []
+    module_regex_patterns: dict[str, str] = {}
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model

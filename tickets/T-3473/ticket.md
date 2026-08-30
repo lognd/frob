@@ -2,7 +2,7 @@
 id: T-3473
 title: may-raise resolver cannot track regex-group digit-safety through a None-checked
   match object
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -42,6 +42,15 @@ scope_changes:
     and the module_regex_patterns adapter extraction
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/test_arch.py::TestRegexGroupGuardDischarge::test_digit_only_group_after_none_guard_discharges_value_error
+- tests/unit/test_arch.py::TestRegexGroupGuardDischarge::test_non_digit_group_still_raises_value_error
+- tests/unit/test_arch.py::TestRegexGroupGuardDischarge::test_missing_none_guard_still_raises_value_error
+- tests/unit/test_arch.py::TestRegexGroupGuardDischarge::test_ambiguous_regex_call_candidates_does_not_discharge
+- tests/unit/test_arch.py::TestRegexGroupGuardDischarge::test_real_require_python_corpus_site_has_no_leaked_value_error
+- tests/unit/test_arch.py::TestPythonAdapter::test_adapt_records_top_level_regex_compile_pattern_text
+- tests/unit/test_arch.py::TestPythonAdapter::test_adapt_ignores_non_regex_top_level_assignments
+- tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_guarded_int_call_discharges_value_error
 designated_repro_test: null
 threat: null
 component: null
