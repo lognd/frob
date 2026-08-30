@@ -18,6 +18,7 @@ scope:
 - src/frob/arch/_mayraise.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
+- src/frob/arch/_python.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,12 @@ scope_changes:
 - op: add
   glob: tests/unit/test_arch.py
   reason: unit tests for compute_may_raise
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/arch/_python.py
+  reason: populates the new NormalizedCallArg.text field the resolver's guard-discharge
+    needs
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
