@@ -21,6 +21,7 @@ scope:
 - src/frob/arch/_python.py
 - src/frob/arch/_normalized.py
 - scripts/_require_python.py
+- scripts/wait_for_land_slot.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +55,11 @@ scope_changes:
   at: '2026-08-30'
 - op: add
   glob: scripts/_require_python.py
+  reason: 'EXHAUST002 waiver: regex-group digit-safety model limit, follow-up T-3473'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: scripts/wait_for_land_slot.py
   reason: 'EXHAUST002 waiver: regex-group digit-safety model limit, follow-up T-3473'
   actor: logan
   at: '2026-08-30'
