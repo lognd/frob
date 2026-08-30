@@ -1,7 +1,7 @@
 ---
 id: T-2866
 title: Write 37 individual COV007 waivers across 24 files, then promote to error
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -150,3 +150,6 @@ promoted from WARN to ERROR in frob/gates/__init__.py.
 ## Failure log
 - 2026-08-22 attempt 1: 36 of 37 waivers written and characterized; split off T- -- landing the 36 completed waivers under a new ticket and tracking the last (_reap.py, blocked by T-2849's live lease) plus promotion under T-2874
 - 2026-08-30 attempt 2: Already resolved on main: T-2874 (landed e069869ca6 'Waive COV007's last finding (_reap.py) and promote COV007 to ERROR') plus a sibling split ticket already carry all 37 individually-reasoned frob:waive COV007 comments across the 24 files this ticket names -- git grep -c 'frob:waive COV007' over the 24 scoped files sums to exactly 37, matching every symbol this ticket's body enumerates. Severity is already Severity.ERROR in src/frob/gates/__init__.py::_cov007 (confirmed by reading the source). Measured: 'frob check --only coverage' shows gate:COV 251 waived, 0 unwaived COV007 findings; the gate's single 1-error line is an unrelated COV003 finding on ticket T-3410, outside this ticket's scope. Both of this ticket's acceptance criteria are already true on main; no code change needed.
+
+## Drop reason
+- 2026-08-30: Already resolved on main by T-2874 (e069869ca6): all 37 COV007 waivers present (git grep -c sums to 37) and COV007 promoted to ERROR in gates/__init__.py::_cov007; frob check --only coverage shows 0 unwaived COV007.
