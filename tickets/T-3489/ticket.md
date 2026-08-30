@@ -7,6 +7,8 @@ kind: bug
 origin: agent
 created: '2026-08-30'
 priority: critical
+blocked_by:
+- T-2450
 parent: null
 tier: ticket
 sprint: null
