@@ -446,6 +446,7 @@ def _py_call_args(node: Node) -> list[NormalizedCallArg]:
                     ident=_node_text(val)
                     if val is not None and val.type == "identifier"
                     else None,
+                    text=_node_text(val) if val is not None else None,
                 )
             )
             continue
@@ -453,6 +454,7 @@ def _py_call_args(node: Node) -> list[NormalizedCallArg]:
             NormalizedCallArg(
                 index=position,
                 ident=_node_text(a) if a.type == "identifier" else None,
+                text=_node_text(a),
             )
         )
         position += 1

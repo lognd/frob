@@ -98,13 +98,28 @@ class NormalizedCallArg(BaseModel):
     shape (a literal, a call, an attribute access, ...) -- dispatch/
     registration detectors (`frob.arch._python._collect_dispatch_refs`)
     only care about bare-identifier arguments, so non-identifier shapes are
-    not otherwise represented here."""
+    not otherwise represented here.
+
+    `text` (T-2568) is the argument expression's raw source text
+    regardless of shape -- `ident`'s superset, kept as a SEPARATE field
+    rather than widening `ident` itself since `ident` already has callers
+    that rely on its bare-identifier-only contract (`_collect_dispatch_
+    refs`). Added so `frob.arch._mayraise`'s guard-predicate discharge can
+    compare a call argument's text (`entry.name`) against a preceding
+    branch's `condition_text` (`entry.name.isdigit()`) for expression
+    shapes `ident` alone cannot represent -- same lightweight-text-over-
+    full-grammar convention `NormalizedBranch.condition_text` already
+    uses. `None` only when no argument node was available to render text
+    from (should not occur for a real parsed call, but kept optional to
+    match every other raw-text field in this model, which degrades to
+    `None` rather than raising)."""
 
     model_config = {}
 
     index: int | None = None
     keyword: str | None = None
     ident: str | None = None
+    text: str | None = None
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model

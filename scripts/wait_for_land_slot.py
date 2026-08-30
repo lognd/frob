@@ -148,6 +148,12 @@ from fleet_status import (  # noqa: E402
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestProbeLandsInFlight.test_probe_timeout_is_\
 # unmeasured
+# frob:waive EXHAUST002 reason="T-2568: match.group(1) is guarded by 'if match is \
+# None: return None' and _LANDS_IN_FLIGHT_RE's own group is digit-only by \
+# construction, so int() genuinely cannot raise here -- but proving that requires \
+# tracking a module-level compiled regex's pattern text through a local match-object \
+# binding to its .group() call, real local flow the isdigit-guard fix (T-2568) does \
+# not attempt; follow-up T-3473"
 def probe_lands_in_flight(command: list[str]) -> int | None:
     """Run `command` (default: `fleet_status.py` itself) and return its
     own `LANDS IN FLIGHT: N` reading, or `None` when the probe could not

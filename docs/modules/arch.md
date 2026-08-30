@@ -1749,7 +1749,8 @@ each per-grammar walker implements to produce it:
 | `NormalizedParam` | one parameter: name, optional type, whether it has a default |
 | `NormalizedBranch` | one decision point (`if`/`elif`/ternary/short-circuit): line + condition source text |
 | `NormalizedLoop` | one `for`/`while`: line + kind |
-| `NormalizedCall` | one call site: callee name, line, and `declared_raises` (T-0689 -- a `# frob:callee-raises A, B` comment's parsed exception-name set, renamed from `frob:raises` by T-0931; `None` when absent; see [may-raise resolver](#may-raise-resolver)) |
+| `NormalizedCall` | one call site: callee name, line, `args`, and `declared_raises` (T-0689 -- a `# frob:callee-raises A, B` comment's parsed exception-name set, renamed from `frob:raises` by T-0931; `None` when absent; see [may-raise resolver](#may-raise-resolver)) |
+| `NormalizedCallArg` | one call argument: position/keyword, `ident` (bare-identifier text only, `None` for any other shape), and `text` (T-2568 -- the argument expression's raw source text regardless of shape; `ident`'s superset, used by the [may-raise resolver](#may-raise-resolver)'s isdigit-guard discharge to match a call's own argument against a preceding branch's condition text) |
 | `NormalizedFieldAccess` | one field read/write inside a body: name, line, `is_write` |
 | `NormalizedReturn` | one `return`: line, optional value text |
 | `NormalizedRaise` | one `raise`/`throw`: line, exception type name where determinable |
@@ -1826,6 +1827,40 @@ taste (the option table and its costs live on T-2543's attachment):
   route is deliberately NOT included: it has a confirmed source.
   `frob.gates._exhaustive_handling` consumes this to separate EXHAUST002
   from EXHAUST004 -- see docs/modules/gates.md#exhaust001exhaust002-t-0688.
+
+**T-2568 -- a preceding `.isdigit()` guard discharges `int(x)`/`float(x)`'s
+`ValueError` for that same argument expression.** The remaining
+EXHAUST002 false-positive class after T-2552/T-2543: a predicate
+immediately before a call establishes that call's precondition, and the
+resolver had no notion of it (`if not entry.name.isdigit(): continue` /
+`int(entry.name)` still reported `ValueError` as escaping, even though
+the guard means the call site can never see one).
+`NormalizedCallArg.text` (this ticket's own model addition -- `ident`
+only ever captured a bare-identifier argument, never an attribute chain
+like `entry.name`) makes the call's own argument expression available as
+text; `_isdigit_guard_discharges` then checks whether any preceding
+`NormalizedBranch` in the same function has that exact text immediately
+followed by `.isdigit()` in its `condition_text` -- a substring test
+(matching this file's own textual-match convention, not a second
+expression grammar) that fires for a negated guard, an affirmative one,
+or a short-circuit `and`, whichever shape the guard is worded as.
+Restricted to exactly `int`/`float` (never `open`/`getattr`/`next`,
+whose rows mean something else). Deliberately NOT the nearest-preceding-
+branch-of-any-kind proxy `_nearest_preceding_catch` uses elsewhere in
+this file: real guarded code has unrelated branches between the guard
+and the call, so this filters to isdigit-matching branches FIRST, then
+takes the nearest among those.
+
+Measured on this repo's own source: every isdigit-guarded EXHAUST002
+finding in the corpus cleared. Two model-limit classes remain, both
+disclosed via `frob:waive EXHAUST002` at their sites rather than forced:
+a `match.group(N)` guarded by `if match is None:` where `N`'s regex
+group is provably digit-only (real local flow -- tracking a module-level
+compiled regex's pattern through a local match-object binding -- follow-
+up T-3473) and a list comprehension whose OUTPUT expression is textually
+BEFORE its own trailing `if`-clause guard even though the guard executes
+first at runtime per item (comprehension-awareness the model does not
+carry -- follow-up T-3474).
 
 `LanguageAdapter` is a `typing.Protocol` (`runtime_checkable`): one
 `language` label (a `frob.lang` grammar name) and one method,

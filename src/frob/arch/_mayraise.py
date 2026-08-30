@@ -461,6 +461,63 @@ def _default_arg_discharges(bare: str, call: NormalizedCall) -> bool:
     return positional >= needed
 
 
+#: Bare builtins whose sole `_BUILTIN_RAISERS` row (T-2568) is `ValueError`
+#: raised on a non-numeric string, and whose raise a preceding `.isdigit()`
+#: guard on the SAME argument expression genuinely rules out -- restricted
+#: to exactly these two (never widened to `open`/`getattr`/`next`, whose
+#: rows mean something else entirely) by `_isdigit_guard_discharges` below.
+_ISDIGIT_GUARDED_VALUEERROR_RAISERS = frozenset({"int", "float"})
+
+
+# frob:ticket T-2568
+def _isdigit_guard_discharges(
+    bare: str, call: NormalizedCall, func: NormalizedFunction
+) -> bool:
+    """True when a `.isdigit()` guard on `call`'s own argument expression
+    rules out the `ValueError` `int(x)`/`float(x)` (`bare` restricted to
+    `_ISDIGIT_GUARDED_VALUEERROR_RAISERS`) would otherwise contribute --
+    the guard-predicate class T-2568 exists to fix: `if not entry.name.
+    isdigit(): continue` / `pid = int(entry.name)` reports `ValueError` as
+    escaping even though the guard means the call site can never see one.
+
+    MATCH RULE: `call` must have exactly one argument with known `text`
+    (T-2568's own `NormalizedCallArg.text` addition -- `entry.name` is an
+    attribute access, not a bare identifier, so the older `ident`-only
+    field could never represent it). Among every `NormalizedBranch` in
+    `func` preceding the call (`branch.line <= call.line`) whose
+    `condition_text` contains that argument text immediately followed by
+    `.isdigit()` -- a plain substring test, matching this file's own
+    established `condition_text` textual-match convention rather than a
+    second expression grammar -- the NEAREST one (`max` by line) must
+    exist. Filtering to isdigit-matching branches FIRST, then taking the
+    nearest among THOSE, deliberately differs from `_nearest_preceding_
+    catch`'s plain "nearest branch of any kind": a real guarded loop body
+    (`if not entry.name.isdigit(): continue` ... several unrelated `try`/
+    `if` branches later ... `int(entry.name)`) has the isdigit guard
+    several branches BEFORE the call, not adjacent to it -- taking the
+    single nearest branch of any shape would pick one of those unrelated
+    branches instead and never discharge a single real corpus site. The
+    substring test alone (not an exact-match) is deliberate: it fires
+    equally for a negated guard (`if not entry.name.isdigit(): continue`),
+    an affirmative one (`if entry.name.isdigit():`), and a short-circuit
+    `and` (`entry.name.isdigit() and f(int(entry.name))`) -- every shape
+    this repo's own EXHAUST002 corpus at T-2568 filing used, all of which
+    embed the identical `"{arg_text}.isdigit()"` token regardless of how
+    the branch as a whole is worded."""
+    if bare not in _ISDIGIT_GUARDED_VALUEERROR_RAISERS:
+        return False
+    positional = [a for a in call.args if a.text is not None]
+    if len(positional) != 1:
+        return False
+    arg_text = positional[0].text
+    if not arg_text:
+        return False
+    guard_token = f"{arg_text}.isdigit()"
+    return any(
+        b.line <= call.line and guard_token in b.condition_text for b in func.branches
+    )
+
+
 # frob:ticket T-0976
 def _resolve_call_contributions(
     func: NormalizedFunction,
@@ -497,7 +554,12 @@ def _resolve_call_contributions(
             # T-2552: `getattr(o, n, default)`/`next(it, default)` return
             # the default instead of raising -- a resolved call that
             # contributes nothing, NOT an unresolved one.
-            if not _default_arg_discharges(bare, call):
+            # T-2568: `int(x)`/`float(x)` preceded by a `.isdigit()` guard
+            # on the identical argument expression cannot see the
+            # `ValueError` its unguarded row would otherwise contribute.
+            default_discharged = _default_arg_discharges(bare, call)
+            guard_discharged = _isdigit_guard_discharges(bare, call, func)
+            if not default_discharged and not guard_discharged:
                 catchable |= _BUILTIN_RAISERS[bare]
         elif bare in name_to_func:
             resolved_callees.add(bare)

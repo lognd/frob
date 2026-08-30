@@ -28,6 +28,12 @@ from pathlib import Path
 _REQUIRES_PYTHON_RE = re.compile(r'requires-python\s*=\s*"[^\d]*(\d+)\.(\d+)')
 
 
+# frob:waive EXHAUST002 reason="T-2568: match.group(1)/match.group(2) are guarded by \
+# 'if match is None: return None' and _REQUIRES_PYTHON_RE's own groups are \\d+-only, \
+# so int() genuinely cannot raise here -- but proving that requires tracking a \
+# module-level compiled regex's pattern text through a local match-object binding to \
+# its .group() call, real local flow the isdigit-guard fix (T-2568) does not attempt; \
+# follow-up T-3473"
 def _required_version(pyproject_path: Path) -> tuple[int, int] | None:
     """`(major, minor)` parsed from `pyproject_path`'s own `requires-python
     = ">=X.Y"` line, or `None` if the file is unreadable or the line is

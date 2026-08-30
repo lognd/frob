@@ -6670,6 +6670,157 @@ class TestBuiltinRaiserPrecision:
         assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset()
 
 
+# frob:ticket T-2568
+class TestIsdigitGuardDischarge:
+    """`frob.arch._mayraise._isdigit_guard_discharges` (T-2568): a
+    preceding `.isdigit()` guard on `int(x)`/`float(x)`'s own argument
+    expression rules out the `ValueError` the unguarded call would
+    otherwise contribute -- the guard-predicate class that was, at T-2568
+    filing, this repo's ENTIRE EXHAUST002 corpus (all 8 findings named
+    `entry.name.isdigit()`-shaped guards)."""
+
+    # frob:ticket T-2568
+    def test_guarded_int_call_discharges_value_error(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # `if not entry.name.isdigit(): continue` / `int(entry.name)` --
+        # the exact shape every real finding in the corpus used.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=4,
+            branches=[
+                NormalizedBranch(line=2, condition_text="not entry.name.isdigit()")
+            ],
+            calls=[
+                NormalizedCall(
+                    callee="int",
+                    line=4,
+                    args=[NormalizedCallArg(index=0, text="entry.name")],
+                )
+            ],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset()
+
+    # frob:ticket T-2568
+    def test_unguarded_int_call_still_raises_value_error(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # No preceding branch at all -- `int(x)` on an unguarded string
+        # must still be reported; T-2552's own doctrine (this ticket must
+        # not weaken `_BUILTIN_RAISERS` for `int`/`float`) stays enforced
+        # for the unguarded case.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=2,
+            calls=[
+                NormalizedCall(
+                    callee="int",
+                    line=2,
+                    args=[NormalizedCallArg(index=0, text="raw")],
+                )
+            ],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset(
+            {"ValueError"}
+        )
+
+    # frob:ticket T-2568
+    def test_guard_several_unrelated_branches_before_the_call_still_discharges(
+        self,
+    ) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # The real corpus shape: `if not entry.name.isdigit(): continue`,
+        # then one or more UNRELATED branches (a nested try/except's own
+        # `if`) before int() is finally called. A plain "nearest preceding
+        # branch of any kind" proxy would pick the unrelated branch and
+        # never discharge -- this must filter to isdigit-matching branches
+        # FIRST, then take the nearest among those.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=6,
+            branches=[
+                NormalizedBranch(line=2, condition_text="not entry.name.isdigit()"),
+                NormalizedBranch(line=4, condition_text="cwd == resolved"),
+            ],
+            calls=[
+                NormalizedCall(
+                    callee="int",
+                    line=6,
+                    args=[NormalizedCallArg(index=0, text="entry.name")],
+                )
+            ],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset()
+
+    # frob:ticket T-2568
+    def test_isdigit_guard_on_a_different_expression_does_not_discharge(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # The guard exists but names a DIFFERENT expression than the one
+        # passed to int() -- must not discharge (the guard's precondition
+        # covers a different value, so int()'s ValueError genuinely can
+        # still occur).
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=4,
+            branches=[NormalizedBranch(line=2, condition_text="other.isdigit()")],
+            calls=[
+                NormalizedCall(
+                    callee="int",
+                    line=4,
+                    args=[NormalizedCallArg(index=0, text="entry.name")],
+                )
+            ],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset(
+            {"ValueError"}
+        )
+
+
 # frob:ticket T-2543
 class TestSubscriptProvenance:
     """`FunctionMayRaise.subscript_derived` (T-2543, A2+A4): the resolver

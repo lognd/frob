@@ -315,6 +315,13 @@ def _forkserver_root_is_live_check(
 # frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers.test_missing_proc_returns_empty  # noqa: E501
 # frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers.test_forkserver_of_orphaned_forkserver_is_reaped  # noqa: E501
 # frob:tests tests/unit/test_process_reap.py::TestReapOrphanedForkservers.test_forkserver_under_a_live_check_is_never_reaped  # noqa: E501
+# frob:waive EXHAUST002 reason="T-2568: [int(entry.name) for entry in entries if entry \
+# .name.isdigit() and ...] -- the output expr is guarded by the SAME comprehension's \
+# own trailing if-clause, genuinely safe, but the guard clause executes AFTER the \
+# output expr is written in source order (comprehension semantics), and T-2568's \
+# isdigit-guard discharge only accepts a guard branch at or before the call's own \
+# line; needs comprehension-awareness the current model does not carry. follow-up \
+# T-3474"
 def reap_orphaned_forkservers(
     age_floor_s: float = DEFAULT_ORPHAN_AGE_FLOOR_S,
     proc: Path = Path("/proc"),

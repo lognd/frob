@@ -2,7 +2,7 @@
 id: T-2568
 title: 'may-raise resolver ignores a guard predicate that establishes a call''s precondition:
   all 8 remaining EXHAUST002 findings'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -70,18 +70,26 @@ scope_changes:
     T-3474'
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_guarded_int_call_discharges_value_error
+- tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_unguarded_int_call_still_raises_value_error
+- tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_isdigit_guard_on_a_different_expression_does_not_discharge
+- tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_guard_several_unrelated_branches_before_the_call_still_discharges
 designated_repro_test: null
 acceptance:
 - text: given a function that calls int() on a value guarded by an immediately preceding
     .isdigit() check, when compute_may_raise resolves it, then the leaked set does
     not name ValueError
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_guarded_int_call_discharges_value_error
 - text: given a function that calls int() on an unguarded string, when compute_may_raise
     resolves it, then the leaked set still names ValueError
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_unguarded_int_call_still_raises_value_error
 - text: given this repo's own source, when the exhaustive_handling gate runs unbudgeted
     with the gate cache bypassed, then the EXHAUST002 count is zero
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_guard_several_unrelated_branches_before_the_call_still_discharges
 threat: null
 component: null
 anchor: false
