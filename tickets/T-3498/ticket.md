@@ -1,7 +1,7 @@
 ---
 id: T-3498
 title: 'macOS-only: scope glob accepts a semicolon-joined entry (bucket E, T-3488)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/test_tickets.py
+- src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'T-3498: fix belongs in _first_invalid_scope_glob itself (src/frob/tickets/_models.py),
+    the function tests/test_tickets.py::TestScopeGlobValidation exercises'
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
