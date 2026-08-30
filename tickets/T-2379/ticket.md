@@ -131,7 +131,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 23ea128d6b2fc6977109f7ae4ad58c33c355912e
 ---
 Measured via `uv run frob check --json --budget 500` (full gate-summary coverage,
 no BUDGET001 deferral), tool `frob-arch`, 2026-08-18: 21 WARN-tier findings
