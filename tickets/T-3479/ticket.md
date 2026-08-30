@@ -1,7 +1,7 @@
 ---
 id: T-3479
 title: 'PERF005 false positive: bare-short-name match on unrelated ''new'' fns (strata-core/src/graph/model.rs:257)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
