@@ -51,7 +51,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3ce02f5c9898701f8f9ae52839c5aa93c1ccc056
 ---
 found while working T-3449 (round 2, coordinator-directed A/B re-measurement).
 
