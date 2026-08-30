@@ -650,6 +650,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3416: Update design/frob.strata SYS100 fs.read capability for process/_reap split (T-3396)
 - T-3420: coverage-instrumented pytest deadlocks in its own SIGTERM handler and survives timeout: likely cause of the CI and macOS hangs
 - T-3423: test_parses_and_elaborates freezes model counts by hand and has now drifted a fourth time; its docstring records the prior three
+- T-3424: T-3260's vmodel split changed the FFI edge payload shape: edges gained an attrs field, breaking the round-trip assertion
 - T-3425: CI: windows-latest job is advisory (continue-on-error) until the T-3076 Windows-only failure set is drained
 - T-3426: CI: ubuntu Test budget 25m kills a passing suite in its slow self-scan tail (99% at 20m, aborted at 25m)
 - T-3429: Declare testsuite exec/fs.write/env.read capabilities for tests/system/test_coverage_sigterm.py

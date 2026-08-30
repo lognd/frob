@@ -2,7 +2,7 @@
 id: T-3424
 title: 'T-3260''s vmodel split changed the FFI edge payload shape: edges gained an
   attrs field, breaking the round-trip assertion'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -26,6 +26,11 @@ scope_changes:
   reason: declare scope before editing per T-3424
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/unit/strata/test_vmodel_authoring.py::TestVmodelAuthoringFormat::test_vmodel_node_and_edge_round_trip_through_python
+- tests/unit/strata/test_vmodel_authoring.py::TestVmodelAuthoringFormat::test_duplicate_vmodel_node_name_is_a_parse_error
+- tests/unit/strata/test_vmodel_authoring.py::TestVmodelAuthoringFormat::test_existing_bare_module_files_parse_unchanged
+- tests/unit/strata/test_vmodel_authoring.py::TestVmodelAuthoringFormat::test_designs_own_frob_strata_still_parses
 designated_repro_test: null
 threat: null
 component: null

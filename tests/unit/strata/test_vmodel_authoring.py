@@ -33,17 +33,72 @@ def _parse(text: str) -> dict:
 
 
 class TestVmodelAuthoringFormat:
+    # frob:ticket T-3424
     def test_vmodel_node_and_edge_round_trip_through_python(self) -> None:
+        """T-3424: this asserts the FULL node/edge payload shape crossing
+        the Rust-to-Python boundary (`name`/`kind`/`level`/`attrs` for a
+        node, `kind`/`src`/`dst`/`attrs` for an edge) -- not just a subset
+        of fields -- against `strata_core.parse_source`'s real output, so
+        a field this repo's own `frob.gates._vmodel._collect_nodes_edges`
+        genuinely reads (T-3044 H3: `runnable`/`code_ref` on nodes,
+        `reason` on `supersedes` edges) can never silently drift out of
+        sync with what this test expects again.
+
+        HISTORY (T-3424): this test previously asserted `vmodel_edges`
+        with NO `attrs` key at all, and `vmodel_nodes` by NAME only (not
+        full shape) -- both predate T-3044 H3, which added `attrs` to
+        BOTH payloads (`strata-core/src/parse/grammar_core.rs`, the
+        pre-T-3260 file, at the same `ast.vmodel_edges.push({..., "attrs":
+        attrs})`/`ast.vmodel_nodes.push({..., "attrs": attrs})` call sites
+        this test now covers). T-3260 (2026-08-29) later split that file
+        into `strata-core/src/parse/grammar_vmodel.rs` verbatim -- `git
+        show` of the pre-split file (commit 5ee140434^:strata-core/src/
+        parse/grammar_core.rs) confirms the identical `attrs` field and
+        the identical T-3044 H3 comment already present, unchanged by the
+        split -- so T-3260 introduced NOTHING here; it only made this
+        pre-existing, already-consumed field visible again by moving the
+        code a test's stale expectation happened to be pointed at. This is
+        answer (a) from the ticket's own decision tree: `attrs` is
+        INTENDED and genuinely consumed (`frob.gates._vmodel`'s
+        `_collect_nodes_edges` reads `n.get("attrs", {})`/`e.get("attrs",
+        {})` for exactly this purpose), so the fix is updating this
+        stale expectation to the real shape, exercising a non-empty
+        `attrs` case on both node and edge (`runnable`/`reason`) so the
+        consumed fields have real coverage, not just an empty-dict shape
+        that would pass whether or not the grammar wired them at all.
+        """
         payload = _parse(
             "module m\n"
             'vmodel_node req_1 kind "artifact" level "requirements";\n'
             'vmodel_node design_1 kind "artifact" level "component-design";\n'
+            'vmodel_node ctest_1 kind "test" runnable "tests/test_x.py::test_y";\n'
             'vmodel_edge kind "satisfies" src design_1 dst req_1;\n'
+            'vmodel_edge kind "supersedes" src req_1 dst design_1 reason "revised scope";\n'
         )
         ast = payload["ok"]
-        assert [n["name"] for n in ast["vmodel_nodes"]] == ["req_1", "design_1"]
+        assert ast["vmodel_nodes"] == [
+            {"name": "req_1", "kind": "artifact", "level": "requirements", "attrs": {}},
+            {
+                "name": "design_1",
+                "kind": "artifact",
+                "level": "component-design",
+                "attrs": {},
+            },
+            {
+                "name": "ctest_1",
+                "kind": "test",
+                "level": None,
+                "attrs": {"runnable": "tests/test_x.py::test_y"},
+            },
+        ]
         assert ast["vmodel_edges"] == [
-            {"kind": "satisfies", "src": "design_1", "dst": "req_1"}
+            {"kind": "satisfies", "src": "design_1", "dst": "req_1", "attrs": {}},
+            {
+                "kind": "supersedes",
+                "src": "req_1",
+                "dst": "design_1",
+                "attrs": {"reason": "revised scope"},
+            },
         ]
 
     def test_duplicate_vmodel_node_name_is_a_parse_error(self) -> None:
