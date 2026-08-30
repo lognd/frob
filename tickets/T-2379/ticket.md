@@ -19,6 +19,9 @@ scope:
 - src/frob/vet/_capability_core.py
 - src/frob/gates/_pii_structural/_keywords.py
 - tickets/T-draft-68252dc0/**
+- src/frob/arch/_shared_state_race.py
+- src/frob/arch/_lock_ordering.py
+- src/frob/check/_python.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +49,30 @@ scope_changes:
   glob: tickets/T-draft-68252dc0/**
   reason: T-2379's own out-of-scope discovery filed as a new ticket; the ticket file
     lands with this ticket
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/arch/_shared_state_race.py
+  reason: unguarded-shared-write/lock-order-cycle severity promotion to error once
+    both categories are at zero repo-wide, plus wiring the frob-arch tool summary's
+    severity map/exit-code/gate-summary to actually surface an 'error' category (it
+    only handled warning/suggestion/info before)
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/arch/_lock_ordering.py
+  reason: unguarded-shared-write/lock-order-cycle severity promotion to error once
+    both categories are at zero repo-wide, plus wiring the frob-arch tool summary's
+    severity map/exit-code/gate-summary to actually surface an 'error' category (it
+    only handled warning/suggestion/info before)
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: unguarded-shared-write/lock-order-cycle severity promotion to error once
+    both categories are at zero repo-wide, plus wiring the frob-arch tool summary's
+    severity map/exit-code/gate-summary to actually surface an 'error' category (it
+    only handled warning/suggestion/info before)
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
