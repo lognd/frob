@@ -2434,10 +2434,28 @@
       "actor": "logan",
       "at": "2026-08-29",
       "facet": "body",
+      "new_digest": "42d79990ffa0263f58ecbc7361499e4fd101d79cbd4f0037724149db1239477f",
+      "old_digest": "ebd8f83db85015f1e637722287cd2a77210beed2390dc8fc48c726c01acf5be9",
+      "reason": "T-3378: added the TICK002/draft-owner exemption filter and its own docstring paragraph",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
       "new_digest": "edcc0b6f8ed958ce2360902f62cedd2ca4a6dc09facf3b46ed2279586ad0fb3e",
       "old_digest": "99bae214d15f723ee9448697f2233c8c2deb8d2f3664c388dc6ff724b87da162",
       "reason": "T-3441: re-verified against current code and updated docs/modules/tickets-lifecycle.md's Public API narrative for scope_lease_conflict to document T-3296's FROB_MANAGED_SIDE_EFFECT_PATHS skip-before-collision-check behavior, which the paragraph was missing; the rest of the paragraph (shared entrypoint, own_scope semantics, call sites) is still accurate",
       "ref": "src/frob/tickets/_scope.py::scope_lease_conflict"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "old_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "reason": "T-3378: added the TICK002/draft-owner exemption filter and its own docstring paragraph",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
     },
     {
       "actor": "logan",
@@ -3726,7 +3744,7 @@
       "ref": "src/frob/verify/_quarantine.py::QuarantineError"
     },
     {
-      "digest": "ebd8f83db85015f1e637722287cd2a77210beed2390dc8fc48c726c01acf5be9",
+      "digest": "42d79990ffa0263f58ecbc7361499e4fd101d79cbd4f0037724149db1239477f",
       "facet": "body",
       "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
     },

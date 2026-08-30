@@ -2,7 +2,7 @@
 id: T-3378
 title: 'TICK002 re-raise self-deadlocks the fleet: draft-id quarantine only clears
   via a land it blocks'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -37,6 +37,9 @@ scope_changes:
     and frob ack writes frob.lock as part of acknowledging the resulting DRIFT001
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_tick002_dropped_when_every_draft_id_has_a_live_owner
+- tests/unit/verify/test_quarantine.py::TestRaiseQuarantine::test_tick002_still_raises_when_a_draft_id_is_terminal_unpromoted
 designated_repro_test: null
 threat: null
 component: null

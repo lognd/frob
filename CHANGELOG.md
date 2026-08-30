@@ -630,6 +630,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3361: fix stale mock signature in test_ticket_close_bug002_t1427
 - T-3364: Fix gate:REG002/REF002 errors: register 3 missing gate rule ids, waive REF002 on 3 single-consumer support-module docs
 - T-3374: T-3191's multi-platform ty union triples SUPPRESS001 findings for a cross-platform diagnostic
+- T-3378: TICK002 re-raise self-deadlocks the fleet: draft-id quarantine only clears via a land it blocks
 - T-3380: ruff format repo-wide sweep (81 files, no owning gate)
 - T-3382: Fix gate:REG002 errors: register VERSION001/TDD001/VMOD001 as known gate rules
 - T-3384: fix gate:DOC, gate:DRIFT, gate:SELFAUDIT residue (EO slice)

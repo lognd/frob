@@ -154,6 +154,7 @@ class TestIsQuarantined:
 
 
 # frob:ticket T-1693
+# frob:ticket T-3378
 class TestRaiseQuarantine:
     # frob:ticket T-1693
     def test_raises_and_persists(self, tmp_path: Path) -> None:
@@ -404,6 +405,74 @@ class TestRaiseQuarantine:
         record = result.danger_ok
         assert len(record.findings) == 1
         assert record.findings[0].rule_id == "TEST001"
+
+    # frob:ticket T-3378
+    def test_tick002_dropped_when_every_draft_id_has_a_live_owner(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        # MUST-FIRE: T-3378's own deadlock shape -- a TICK002 finding
+        # naming a draft id whose owning ticket is still live (in-
+        # progress) must not raise quarantine, since only that owning
+        # ticket's own land could ever clear the condition, and that
+        # land is itself blocked by any quarantine this raise creates.
+        from datetime import date
+
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+        from frob.tickets._store import write_ticket
+
+        draft = Ticket(
+            id="T-draft-deadbeef",
+            title="draft in flight",
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+        )
+        written = write_ticket(tmp_path, draft)
+        assert written.is_ok
+
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(QuarantinedFinding(rule_id="TICK002", file="tickets.md"),),
+        )
+        assert result.is_err
+        assert result.danger_err is QuarantineError.EmptyFindings
+        assert is_quarantined(tmp_path).danger_ok is False
+
+    # frob:ticket T-3378
+    def test_tick002_still_raises_when_a_draft_id_is_terminal_unpromoted(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        # MUST-STAY-QUIET (i.e. must still raise): a draft id that
+        # reached DONE without ever being promoted is the genuine
+        # promotion-failure shape TICK002 exists to catch -- the T-3378
+        # exemption must not weaken this case.
+        from datetime import date
+
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+        from frob.tickets._store import write_ticket
+
+        draft = Ticket(
+            id="T-draft-cafef00d",
+            title="draft never promoted",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+        )
+        written = write_ticket(tmp_path, draft)
+        assert written.is_ok
+
+        result = raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(QuarantinedFinding(rule_id="TICK002", file="tickets.md"),),
+        )
+        assert result.is_ok
+        assert is_quarantined(tmp_path).danger_ok is True
 
 
 # frob:ticket T-1693

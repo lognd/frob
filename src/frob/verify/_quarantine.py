@@ -1,6 +1,6 @@
 # frob:ticket T-1693
 # frob:ticket T-3025
-# frob:waive LARGE001 reason="T-3025's severity-proportional raise filter (_RUFF_DETERMINISTIC_AUTOFIX_RULES/_trivial_autofixable_rules/_is_trivial_unattributed plus their frob:tests directives) pushed this file ~90 lines past the 800 threshold; the addition is a single small, cohesive filter co-located with the raise/clear logic it modifies (T-1693's own module), not a candidate for an arbitrary split -- a real file-split ticket is a separate, larger architecture decision out of this bugfix's scope"  # noqa: E501
+# frob:waive LARGE001 reason="T-3025's severity-proportional raise filter (_RUFF_DETERMINISTIC_AUTOFIX_RULES/_trivial_autofixable_rules/_is_trivial_unattributed plus their frob:tests directives) pushed this file ~90 lines past the 800 threshold; the addition is a single small, cohesive filter co-located with the raise/clear logic it modifies (T-1693's own module), not a candidate for an arbitrary split -- a real file-split ticket is a separate, larger architecture decision out of this bugfix's scope. T-3378 adds a second small, cohesive filter of the identical shape (_LIVE_OWNER_STATES/_draft_ids_all_have_live_owners) for the same reason -- still not a split candidate"  # noqa: E501
 """T-1693: the quarantine circuit breaker -- the T-1686 epic's single most
 important rule (this ticket's own text). Landing on top of a known-broken
 base is what makes attribution cost explode: every subsequent land widens
@@ -66,6 +66,8 @@ from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+from frob.tickets._models import TicketQueue, TicketState
+from frob.tickets._provisional import is_draft_id
 
 _log = get_logger(__name__)
 
@@ -155,6 +157,42 @@ def _is_trivial_unattributed(finding: QuarantinedFinding) -> bool:
         and finding.commit_sha is None
         and finding.ticket_id is None
     )
+
+
+# frob:ticket T-3378
+#: T-3378: ticket states a draft id counts as "live/owning" under --
+#: still actively being worked, so its own owning land is the only
+#: thing that can ever clear the TICK002 condition it raises. `DONE`
+#: and `DROPPED` are deliberately excluded: a draft that reached either
+#: without promotion is the real anomaly TICK002 exists to catch.
+_LIVE_OWNER_STATES: frozenset[TicketState] = frozenset(
+    {
+        TicketState.QUEUED,
+        TicketState.PLANNED,
+        TicketState.IN_PROGRESS,
+        TicketState.BLOCKED,
+    }
+)
+
+
+def _draft_ids_all_have_live_owners(queue: TicketQueue) -> bool:
+    """T-3378: `True` iff `queue` contains at least one `T-draft-*` id AND
+    every such id is in a live (non-terminal, `_LIVE_OWNER_STATES`)
+    state -- the exemption predicate `raise_quarantine` uses to stop
+    TICK002 from self-deadlocking the fleet: close-time mirroring writes
+    an in-progress ticket's draft id onto main before the owning ticket
+    lands and renumbers it, so TICK002 fires on every in-flight draft BY
+    CONSTRUCTION, and the raised quarantine forces fleet-wide
+    synchronous verification -- including on the owning ticket's own
+    land, the only thing that could ever clear the condition. `False`
+    when there are no draft ids at all (nothing to exempt) or when at
+    least one draft id has reached a terminal state without being
+    promoted (the genuine promotion-failure shape TICK002 must keep
+    raising against)."""
+    drafts = [t for tid, t in queue.tickets.items() if is_draft_id(tid)]
+    if not drafts:
+        return False
+    return all(t.state in _LIVE_OWNER_STATES for t in drafts)
 
 
 # frob:ticket T-3065
@@ -392,6 +430,9 @@ def is_quarantined(root: Path) -> Result[bool, QuarantineError]:
 # frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_a_mixed_batch_drops_only_the_trivial_unattributed_finding kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_normalizes_an_absolute_file_to_root_relative_at_write_time kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_an_already_relative_file_is_left_as_is kind="unit"  # noqa: E501
+# frob:ticket T-3378
+# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_tick002_dropped_when_every_draft_id_has_a_live_owner kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_tick002_still_raises_when_a_draft_id_is_terminal_unpromoted kind="unit"  # noqa: E501
 # frob:waive DUP001 reason="T-2207: the new identity-less filter block mirrors this function's OWN pre-existing _NATURALLY_UNATTRIBUTABLE_RULES filter shape on purpose (deliberate consistency, see this function's docstring) -- the resulting structural match against unrelated filter/log/drop bodies across the tree (native-stub pairs, compliance-catalog tests, etc) is the generic shape, not shared logic worth extracting"  # noqa: E501
 # frob:waive AFFECT001 reason="T-3065 adds a write-time path-normalization step (_normalize_finding_path) inside this function's existing filter pipeline -- an implementation-level bugfix to the identity-matching mechanism, not a change to the raise/persist/logging behavior docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693 describes; re-verified accurate via frob ack rather than an edit to that shared, many-symbol doc section"  # noqa: E501
 def raise_quarantine(
@@ -434,7 +475,18 @@ def raise_quarantine(
     deterministic-autofix rule AND genuinely unattributed) is also
     dropped before persisting. This is a SEVERITY cut, not an
     attribution one -- see that function's own docstring for why both
-    halves are required and how narrow the resulting intersection is."""
+    halves are required and how narrow the resulting intersection is.
+
+    T-3378: a THIRD, independent filter runs next -- a `TICK002` finding
+    (a `T-draft-*` id that survived onto the default branch) is dropped
+    when `_draft_ids_all_have_live_owners` says every draft id on the
+    ledger is still owned by a live series. Without this, TICK002 self-
+    deadlocks the fleet: close-time mirroring writes a draft id onto
+    main before its owning ticket lands, TICK002 fires by construction,
+    the raise forces fleet-wide synchronous verification, and the ONLY
+    land that could ever clear the condition is the owning ticket's own
+    -- itself blocked by the quarantine it raised. See that function's
+    own docstring for exactly which states count as live."""
     # T-3065: normalize every finding's `file` to its canonical
     # root-relative form BEFORE any filter runs or the record is
     # persisted -- the single write-time choke point that makes the
@@ -495,6 +547,36 @@ def raise_quarantine(
             len(unidentifiable),
         )
         findings = tuple(f for f in findings if not _is_unidentifiable(f))
+
+    # frob:ticket T-3378
+    # T-3378: a TICK002 finding (a T-draft-* id that survived onto the
+    # default branch) is dropped from the raise when EVERY draft id
+    # currently on the ledger is still owned by a live (non-terminal)
+    # series -- the exact deadlock shape T-3378 measured: close-time
+    # mirroring writes a draft id onto main before its owning ticket
+    # lands, TICK002 fires by construction, the raised quarantine forces
+    # fleet-wide synchronous verification, and the ONLY land that could
+    # ever clear the condition is the owning ticket's own -- which is
+    # itself blocked by the quarantine it raised. See `_draft_ids_all_
+    # have_live_owners`'s own docstring for exactly which states count
+    # as "live" and why a terminal (done/dropped) unpromoted draft is
+    # deliberately NOT covered.
+    tick002 = tuple(f for f in findings if f.rule_id == "TICK002")
+    if tick002:
+        from frob.tickets._archive import load_queue
+
+        loaded_queue = load_queue(root)
+        if loaded_queue.is_ok and _draft_ids_all_have_live_owners(
+            loaded_queue.danger_ok
+        ):
+            _log.info(
+                "quarantine: %d TICK002 finding(s) dropped from this raise -- "
+                "every T-draft-* id on the ledger is still owned by a live "
+                "series, so only that series's own land can ever clear the "
+                "condition (T-3378)",
+                len(tick002),
+            )
+            findings = tuple(f for f in findings if f.rule_id != "TICK002")
 
     if not findings:
         _log.error(
