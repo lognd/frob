@@ -29,6 +29,19 @@ scope_changes:
     logic is src/frob/mutate/_journal.py'
   actor: logan
   at: '2026-08-30'
+body_changes:
+- mode: append
+  reason: 'T-3500: BUG002 waiver -- macOS-only defect cannot fail-then-pass on this
+    Linux worktree host'
+  actor: logan
+  at: '2026-08-30'
+  old_length: 1128
+  new_length: 1802
+evidence:
+- tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess::test_finds_a_process_cwd_into_the_path
+- tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess::test_none_when_no_process_matches
+- tests/test_ticket_leases.py::TestRemoveWorktree::test_keeps_a_live_process_worktree
+- tests/test_mutate_journal.py::test_recycled_pid_with_mismatched_starttime_is_treated_stale
 designated_repro_test: null
 threat: null
 component: null
@@ -58,3 +71,5 @@ Fix shape: either implement a macOS branch (lsof/ps-backed) for the
 scanner, or declare a PLATFORM001 boundary (T-2919 doctrine) with tests
 asserting the DECLARED direction on macOS -- same pattern T-3076 used
 for Windows (docs/design/windows-portability.md).
+
+frob:waive BUG002 reason="T-3500 fixes a macOS-only defect (T-3488 bucket C): the /proc-reading scanner primitives silently degraded to no-finding on any non-Linux platform, including macOS. The designated repro tests genuinely PASS at main on this Linux host, since Linux's /proc code path is unchanged and unbroken -- the new macOS branch (ps/lsof-backed) is unexercised on this host by construction, and can only genuinely fail-then-pass on macos-latest CI, which this implementer cannot dispatch from a Linux worktree. Evidence is confirmatory-only on this host by the nature of the defect, not a weak test -- same shape as T-3488/T-3496/T-3498's own BUG002 waivers."
