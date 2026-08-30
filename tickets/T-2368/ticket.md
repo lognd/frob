@@ -67,8 +67,8 @@ acceptance:
 - text: given PLACE001/PII011 (the two codes T-2368 actually closes), when frob check
     --json runs, then zero unwaived findings remain for both
   evidence: []
-- text: given the family's gate module, when its severity is read, then it is ERROR
-    not WARNING
+- text: given PLACE001's and PII011's gate modules, when severity is read, then it
+    is ERROR not WARNING
   evidence: []
 acceptance_amendments:
 - op: replace
@@ -80,6 +80,16 @@ acceptance_amendments:
   reason: narrowed to what this ticket actually delivers; the rest of the original
     family (INV003/INV004/NEGEXIST001/WALK001/DEAD001/LANG003) is filed as a follow-up
     ticket with current counts, not silently dropped
+  actor: logan
+  at: '2026-08-30'
+- op: replace
+  index: 1
+  old_text: given the family's gate module, when its severity is read, then it is
+    ERROR not WARNING
+  new_text: given PLACE001's and PII011's gate modules, when severity is read, then
+    it is ERROR not WARNING
+  reason: narrowed to what this ticket actually delivers, matching acceptance[0]'s
+    amendment
   actor: logan
   at: '2026-08-30'
 threat: null
