@@ -2,7 +2,7 @@
 id: T-3463
 title: 'TICK004: consider rot-checking a decomposed epic against its children''s own
   progress'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-30'
@@ -16,10 +16,29 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_tickets_gate.py
+- tests/test_tickets_priority.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_priority.py
+  reason: must-fire/must-stay-quiet tests for the T-3463 decomposed-epic children-progress
+    rot check
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_tickets_priority.py
+  reason: must-fire/must-stay-quiet tests for the T-3463 decomposed-epic children-progress
+    rot check
+  actor: logan
+  at: '2026-08-30'
+evidence:
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_decomposed_epic_with_fresh_queued_child_stays_warn
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_decomposed_epic_with_all_children_stalled_escalates_to_error
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_decomposed_epic_past_double_threshold_stays_warn_not_error
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_stalled_decomposition_all_children_terminal_still_errors
 designated_repro_test: null
 threat: null
 component: null

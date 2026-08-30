@@ -297,10 +297,71 @@ def _has_active_child(t: Ticket, queue: TicketQueue) -> bool:
     )
 
 
+# frob:ticket T-3463
+def _epic_children_all_stalled(
+    t: Ticket,
+    queue: TicketQueue,
+    thresholds: dict[Priority, int],
+    today: date,
+) -> bool:
+    """T-3463: whether a decomposed epic/story `t`'s own children show NO
+    sign of active work -- the sharper rot signal T-3399's body explicitly
+    deferred: an epic whose children are ALL ALSO stalled really is
+    rotting, not just "decomposed and being worked" (T-3399's WARN-cap
+    message). `False` (children look healthy, `_tick004_queue_rot` keeps
+    the WARN cap) whenever:
+
+    - `t` has no non-terminal child at all (should not happen here --
+      `_has_active_child` already gates the caller -- but fails safe to
+      "not stalled" rather than raising if it ever does), or
+    - ANY child is `IN_PROGRESS` (real work is happening under this
+      epic right now, regardless of how old that child is), or
+    - among the remaining QUEUED/PLANNED children (a `BLOCKED` child is
+      explicitly waiting on something else, not itself rotting), the
+      YOUNGEST one -- the freshest work item under this epic -- has NOT
+      yet crossed its OWN priority's rot threshold (`_tick004_rot_
+      thresholds`). One fresh child is enough evidence the decomposition
+      is still moving.
+
+    `True` (genuine rot -- the caller lets the epic's own age-driven
+    severity escalate to ERROR same as an undecomposed ticket) only when
+    every candidate above is exhausted: no in-progress child, and even
+    the newest QUEUED/PLANNED child is itself over threshold.
+
+    Direct children only -- T-3463's own Description explicitly defers
+    recursive descent through nested grandchild epics to a follow-up (see
+    this ticket's Done report); a grandchild epic under `t` is read here
+    exactly like any other child, by its own `created` date, not by
+    walking further down its own children."""
+    children = [
+        other
+        for other in queue.tickets.values()
+        if other.id != t.id
+        and other.parent == t.id
+        and other.state not in (TicketState.DONE, TicketState.DROPPED)
+    ]
+    if not children:
+        return False
+    if any(c.state is TicketState.IN_PROGRESS for c in children):
+        return False
+    candidates = [
+        c for c in children if c.state in (TicketState.QUEUED, TicketState.PLANNED)
+    ]
+    if not candidates:
+        # Only BLOCKED children remain: waiting on something else is not
+        # itself evidence of rot the way a plain QUEUED/PLANNED child is.
+        return False
+    youngest = min(candidates, key=lambda c: (today - c.created).days)
+    youngest_age = (today - youngest.created).days
+    youngest_threshold = thresholds[youngest.priority]
+    return youngest_age > youngest_threshold
+
+
 # frob:ticket T-0411
 # frob:ticket T-2200
 # frob:ticket T-2229
 # frob:ticket T-3399
+# frob:ticket T-3463
 # frob:enforces CHK-GATE-TICK004
 def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK004 (T-0411): WARN (escalating to ERROR at 2x threshold) per
@@ -409,7 +470,29 @@ def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         # this fix only stops the false ERROR; the coarser age-only
         # heuristic below still applies for a decomposed epic, capped at
         # WARN, as the interim informational signal.
-        if is_decomposed:
+        if is_decomposed and _epic_children_all_stalled(t, queue, thresholds, today):
+            # frob:ticket T-3463
+            # T-3463: the WARN cap below is for a decomposed epic whose
+            # children are ACTUALLY moving -- when even the freshest
+            # non-terminal child has itself crossed its own rot threshold
+            # and nothing is IN_PROGRESS, "check the children's own
+            # progress" is no longer useful advice: the children ARE the
+            # evidence, and they say the same thing the epic's own age
+            # does. `severity` here is whatever the ordinary age-driven
+            # computation above produced (WARN or ERROR at 2x threshold),
+            # exactly the undecomposed-ticket behavior -- this branch
+            # only stops T-3399's cap from silencing a genuinely stalled
+            # decomposition.
+            message = (
+                f"TICK004: {t.id} ({t.priority.value} priority, {t.tier.value}) "
+                f"has sat {t.state.value} for {age_days}d (threshold {threshold}d) "
+                f"-- decomposed, but its own children are ALSO stalled (no child "
+                f"is in-progress, and even the youngest queued/planned child has "
+                f"crossed its own rot threshold): this is real rot, not the "
+                f"intended decomposed lifecycle; check why the children stopped "
+                f"moving, or drop/re-prioritize the epic"
+            )
+        elif is_decomposed:
             severity = Severity.WARN
             message = (
                 f"TICK004: {t.id} ({t.priority.value} priority, {t.tier.value}) "

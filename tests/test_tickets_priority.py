@@ -417,6 +417,75 @@ class TestTick004QueueRot:
         assert matches[0].severity is Severity.ERROR
         assert "work it" in matches[0].message
 
+    # frob:ticket T-3463
+    def test_decomposed_epic_with_fresh_queued_child_stays_warn(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_priority.py::TestTick004QueueRot.test_decomposed_epic_with_fresh_queued_child_stays_warn  # noqa: E501
+        """MUST STAY QUIET (T-3463): a decomposed epic past 2x threshold
+        whose only non-terminal child is QUEUED but still YOUNG (well
+        under its own rot threshold) keeps T-3399's WARN cap -- one fresh
+        child is real evidence the decomposition is still moving, so
+        `_epic_children_all_stalled` must return `False` here and the
+        epic must NOT escalate to ERROR."""
+        epic = _ticket(
+            ticket_id="T-3470",
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=33),
+            tier=TicketTier.EPIC,
+        )
+        fresh_child = _ticket(
+            ticket_id="T-3471",
+            state=TicketState.QUEUED,
+            priority=Priority.HIGH,
+            created=date.today(),
+            parent="T-3470",
+        )
+        queue = TicketQueue(tickets={epic.id: epic, fresh_child.id: fresh_child})
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-3470" in v.message
+        ]
+        assert len(matches) == 1
+        assert matches[0].severity is Severity.WARN
+        assert "already decomposed" in matches[0].message
+
+    # frob:ticket T-3463
+    def test_decomposed_epic_with_all_children_stalled_escalates_to_error(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_priority.py::TestTick004QueueRot.test_decomposed_epic_with_all_children_stalled_escalates_to_error  # noqa: E501
+        """MUST FIRE (T-3463): a decomposed epic past 2x threshold whose
+        only non-terminal child is QUEUED, not IN_PROGRESS, and has
+        ITSELF crossed its own rot threshold is genuine rot -- the
+        children's own progress corroborates the epic's age instead of
+        excusing it, so `_epic_children_all_stalled` must return `True`
+        and TICK004 must escalate to ERROR exactly like an undecomposed
+        ticket, with a message naming the stalled children rather than
+        the T-3399 "already decomposed" WARN text."""
+        epic = _ticket(
+            ticket_id="T-3472",
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=33),
+            tier=TicketTier.EPIC,
+        )
+        stalled_child = _ticket(
+            ticket_id="T-3473",
+            state=TicketState.QUEUED,
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=20),
+            parent="T-3472",
+        )
+        queue = TicketQueue(tickets={epic.id: epic, stalled_child.id: stalled_child})
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-3472" in v.message
+        ]
+        assert len(matches) == 1
+        assert matches[0].severity is Severity.ERROR
+        assert "children are ALSO stalled" in matches[0].message
+        assert "already decomposed" not in matches[0].message
+
 
 class TestSetPriorityLandInProgressGuard:
     """T-2785: `_set_ticket_field` (the shared home `set_priority`/
