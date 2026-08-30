@@ -2,7 +2,7 @@
 id: T-3489
 title: T-2642 changelog generator emits a DOC006 symbol pointer into land-owned changelog.d/T-2691.md,
   failing the live-repo DOC004/DOC006 test
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -48,6 +48,8 @@ scope_changes:
     tests in this file
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_changelog_fragment_dir_is_an_archival_record_not_checked
 designated_repro_test: null
 threat: null
 component: null

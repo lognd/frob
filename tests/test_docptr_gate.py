@@ -855,6 +855,34 @@ class TestDoc006BareIdentifierNarrowing:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "CHANGELOG.md")
 
+    def test_changelog_fragment_dir_is_an_archival_record_not_checked(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3489: `changelog.d/T-####.md` (the T-2445 per-ticket
+        changelog fragment `CHANGELOG.md` itself is assembled from) is
+        the SAME class as `CHANGELOG.md` one step earlier in the
+        pipeline -- written once, at land time, from that land's own
+        Done-report prose, never edited again. A broken pointer copied
+        verbatim from historical prose (a since-irrelevant line-wrap, or
+        a CLI verb the prose explicitly says was NOT added) has the same
+        no-honest-fix-but-falsify-history shape `CHANGELOG.md`'s own
+        exemption exists for."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "docs/guide.md", "# Anchor\n\nSee `real_thing`.\n")
+        _write(
+            tmp_path,
+            "changelog.d/T-0001.md",
+            "bump: minor\nT-0001: renamed `src/pkg/mod.py::long_gone_symbol`\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "changelog.d/T-0001.md")
+
     def test_sharded_archive_dir_is_an_archival_record_not_checked(
         self, tmp_path: Path
     ) -> None:

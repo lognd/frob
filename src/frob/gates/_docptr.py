@@ -1420,18 +1420,45 @@ _ARCHIVAL_LEDGER_FILES = frozenset({"tickets-archive.md", "CHANGELOG.md"})
 #: two fixed monofile names above.
 _ARCHIVAL_DIR_PREFIX = "tickets/archive/"
 
+# frob:ticket T-3489
+#: `changelog.d/T-####.md` (T-2445's per-ticket changelog fragment
+#: mechanism) is the SAME class as `CHANGELOG.md` above, one directory
+#: level earlier in the pipeline: `frob.release._fragments.write_
+#: changelog_fragment` writes each fragment ONCE, at land time, from
+#: that land's own Done-report WHY prose (`frob.app.ticket_runner.
+#: _land_cmd._changelog_note_for_ticket`) or the ticket title, and
+#: nothing in this codebase ever edits an existing fragment file
+#: again -- `assemble_changelog_from_fragments` only ever READS the
+#: fragment set to regenerate `CHANGELOG.md`'s unreleased section, it
+#: never rewrites a fragment. A copied Done-report WHY can legitimately
+#: carry a dotted symbol path or a CLI-invocation-shaped phrase (T-3489's
+#: own motivating case: `changelog.d/T-2691.md` named both a real symbol
+#: mangled by a since-irrelevant markdown line-wrap, and a CLI verb the
+#: prose explicitly said was NOT added) -- exactly the "correct-at-the-
+#: time, wrong forever after (or never true at all, by design) prose"
+#: shape `_ARCHIVAL_LEDGER_FILES`/`_ARCHIVAL_DIR_PREFIX` already exist to
+#: exempt, not this gate's motivating "a doc that is wrong RIGHT NOW"
+#: case. A glob prefix, not an entry in `_ARCHIVAL_LEDGER_FILES`: the
+#: fragment shape is `changelog.d/T-####.md`, unbounded in count, the
+#: same reason `tickets/archive/` is a prefix rather than a fixed name.
+_CHANGELOG_FRAGMENT_DIR_PREFIX = "changelog.d/"
+
 
 # frob:ticket T-2131
+# frob:ticket T-3489
 def _is_archival_doc(doc_path: str) -> bool:
     """Whether `doc_path` is a historical record `doc006_gate` must never
     check against the CURRENT tree -- `_ARCHIVAL_LEDGER_FILES`'s two fixed
     monofile names, or anything under the v2 sharded archive directory
-    (`_ARCHIVAL_DIR_PREFIX`). Split out as its own predicate (T-2131)
-    purely so the two archival shapes -- fixed names vs. an unbounded
-    glob prefix -- read as one obviously-correct check at each call site,
-    not because either shape changed."""
-    return doc_path in _ARCHIVAL_LEDGER_FILES or doc_path.startswith(
-        _ARCHIVAL_DIR_PREFIX
+    (`_ARCHIVAL_DIR_PREFIX`) or the T-2445 per-ticket changelog fragment
+    directory (`_CHANGELOG_FRAGMENT_DIR_PREFIX`, T-3489). Split out as its
+    own predicate (T-2131) purely so these archival shapes -- fixed names
+    vs. an unbounded glob prefix -- read as one obviously-correct check at
+    each call site, not because any of the shapes changed."""
+    return (
+        doc_path in _ARCHIVAL_LEDGER_FILES
+        or doc_path.startswith(_ARCHIVAL_DIR_PREFIX)
+        or doc_path.startswith(_CHANGELOG_FRAGMENT_DIR_PREFIX)
     )
 
 
