@@ -242,13 +242,6 @@ def migrate_v1_to_v2(root: Path) -> Result[int, TicketError]:
 # frob:tests tests/test_tickets_migration.py::TestMigrateMissingV2.test_migrates_only_the_monofile_only_tickets  # noqa: E501
 # frob:tests tests/test_tickets_migration.py::TestMigrateMissingV2.test_never_overwrites_an_already_migrated_ticket  # noqa: E501
 # frob:tests tests/test_tickets_migration.py::TestMigrateMissingV2.test_a_stale_active_row_whose_v2_state_already_moved_to_archive_is_not_duplicated  # noqa: E501
-# frob:waive AFFECT001 follow_up="T-3472" reason="pure code relocation (LARGE001 \
-# remainder batch 2, extracted verbatim from _store.py) -- the doc content this \
-# function affects is unchanged, only the source file path moved; T-2730 (the original \
-# T-2718-lease-clear follow-up) covered only migrate_to_ledger/ \
-# migrate_v1_to_v2/_migrate_one_v2/_split_done_report's tickets-data-storage.md \
-# anchors -- this function's own frob:doc targets docs/design/ledger-v2.md instead, \
-# split into T-3472 to verify that doc separately"
 # frob:tests \
 # tests/test_tickets_migration.py::TestMigrateCliFillGapsFlag.test_fill_gaps_flag_calls_migrate_missing_v2  # noqa: E501
 # frob:tests \

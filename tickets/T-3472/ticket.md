@@ -1,7 +1,7 @@
 ---
 id: T-3472
 title: Re-verify migrate_missing_v2's AFFECT001 waiver against docs/design/ledger-v2.md
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-30'
@@ -20,6 +20,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_tickets_migration.py::TestMigrateMissingV2::test_migrates_only_the_monofile_only_tickets
+- tests/test_tickets_migration.py::TestMigrateMissingV2::test_never_overwrites_an_already_migrated_ticket
+- tests/test_tickets_migration.py::TestMigrateMissingV2::test_a_stale_active_row_whose_v2_state_already_moved_to_archive_is_not_duplicated
 designated_repro_test: null
 threat: null
 component: null

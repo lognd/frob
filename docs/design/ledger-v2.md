@@ -523,7 +523,8 @@ must deliver; it does not implement any of it.
    equivalence helper actually raises -- proof the round-trip check can
    fail, not just pass.
 
-   `migrate_missing_v2` (T-2355, `src/frob/tickets/_store.py`) closes a
+   `migrate_missing_v2` (T-2355, `src/frob/tickets/_store_migrate.py` as
+   of T-2695's extraction) closes a
    gap `migrate_v1_to_v2` alone left open in practice: once a repo is
    ALREADY v2-mode, `migrate_v1_to_v2` no-ops entirely (by design, so it
    never re-reads a monofile ledger that a v2 repo no longer treats as

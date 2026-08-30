@@ -2519,6 +2519,24 @@
       "old_digest": null,
       "reason": "T-3336: removed the rapid-profile bypass for the missing-evidence/Done-report check so close refuses unconditionally, matching land's own unconditional NotCloseable gate",
       "ref": "src/frob/tickets/_evidence.py::_done_transition_structural_guard"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "body",
+      "new_digest": "d7fdf7de28bfe26ae279f2f0c1d2589a4b8641b06d721878ab1186c0c8cd3754",
+      "old_digest": null,
+      "reason": "T-3472: re-verified docs/design/ledger-v2.md section 7's migrate_missing_v2 paragraph against current code -- the described behavior (gap-filling migrator for partially-migrated repos, walks monofile ledger/archive, writes v2 only where missing, leaves already-migrated tickets untouched) is still accurate; only the file-path citation was stale (function moved to _store_migrate.py in T-2695's extraction, doc still said _store.py), fixed inline",
+      "ref": "src/frob/tickets/_store_migrate.py::migrate_missing_v2"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "a79c810e2472effa7d8d9ab25fbe62c7eb65e205ec1d17b8fb7f69a0a771b26b",
+      "old_digest": null,
+      "reason": "T-3472: re-verified docs/design/ledger-v2.md section 7's migrate_missing_v2 paragraph against current code -- the described behavior (gap-filling migrator for partially-migrated repos, walks monofile ledger/archive, writes v2 only where missing, leaves already-migrated tickets untouched) is still accurate; only the file-path citation was stale (function moved to _store_migrate.py in T-2695's extraction, doc still said _store.py), fixed inline",
+      "ref": "src/frob/tickets/_store_migrate.py::migrate_missing_v2"
     }
   ],
   "entries": [
@@ -3771,6 +3789,16 @@
       "digest": "9b27320b33ca48cfdde2896e81ca1425945211dc45fd157b2533604efa24f105",
       "facet": "sig",
       "ref": "src/frob/tickets/_setters.py::ticket_flow"
+    },
+    {
+      "digest": "d7fdf7de28bfe26ae279f2f0c1d2589a4b8641b06d721878ab1186c0c8cd3754",
+      "facet": "body",
+      "ref": "src/frob/tickets/_store_migrate.py::migrate_missing_v2"
+    },
+    {
+      "digest": "a79c810e2472effa7d8d9ab25fbe62c7eb65e205ec1d17b8fb7f69a0a771b26b",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_store_migrate.py::migrate_missing_v2"
     },
     {
       "digest": "a97a3ad3d64eaf85989c8bd30c70c22849cdd4705cb0d966984432b0debda7de",
