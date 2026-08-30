@@ -20,6 +20,7 @@ scope:
 - docs/modules/dup.md
 - docs/modules/arch.md
 - docs/modules/vet.md
+- docs/modules/lang.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,11 @@ scope_changes:
 - op: add
   glob: docs/modules/vet.md
   reason: 'AFFECT001: scan_python_capabilities doc cross-reference'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/lang.md
+  reason: 'AFFECT001: extract_tree_* doc cross-reference'
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
