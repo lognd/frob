@@ -892,6 +892,18 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             # GATES), so it belongs in gates-fast like every other entry
             # in this same omission class.
             "comment_placement",
+            # frob:ticket T-3486
+            # T-3486: land_parity (LANDPARITY001/LANDPARITY002, T-3456)
+            # and cross_ticket_leakage (CROSSTICKET001, T-3466) were
+            # registered in frob.gates._ALL_GATES (and given a fixed slot
+            # in frob.gates._CANONICAL_GATE_ORDER) but never added to any
+            # _STAGE_GROUPS member -- the identical registered-but-
+            # unreachable omission shape as narrative_blocks/comment_
+            # placement above. Neither is in frob.gates._PROCESS_POOL_
+            # GATES, so both belong on the thread pool here, not gates-
+            # native/-security.
+            "land_parity",
+            "cross_ticket_leakage",
         }
     ),
     # frob:ticket T-0688
