@@ -3,7 +3,7 @@ id: T-3325
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3273):
   13 new (rule, file) identit(ies) (SUPPRESS001, invalid-argument-type, invalid-assignment,
   unresolved-attribute)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-28'
@@ -88,3 +88,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 
 ## Failure log
 - 2026-08-30 attempt 1: already resolved on main: frob check --only ty --ticket T-3325 and --only suppress --ticket T-3325 both zero-match all 13 identities (no SUPPRESS001 in the 6 test files, no invalid-argument-type/invalid-assignment/unresolved-attribute in the 4 python files)
+
+## Drop reason
+- 2026-08-30: Already resolved on main: the owning gate's scoped run zero-matches every cited identity (series K measurement, 2026-08-30; T-3354's CLAUDE001 was ~/.claude materialization drift fixed by frob claude sync, no repo diff).
