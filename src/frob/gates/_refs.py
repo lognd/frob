@@ -295,6 +295,18 @@ _DEFAULT_ROOT_MANIFEST_EXEMPT = frozenset(
         # the same "clean project fails clean" gap T-3019 closed for the
         # two files above.
         "tickets.md",
+        # T-3444: sibling ledger file to `tickets.md` above -- `_land_
+        # squash.py`'s T-0959 splice creates/updates root `tickets-
+        # archive.md` in the same commit the first time any ticket in a
+        # project completes, and it has the identical "read only by
+        # `frob ticket`/`frob check` tooling, never referenced from other
+        # tracked source files" shape T-3249 already exempted `tickets.md`
+        # for. Before this, ANY frob-enabled project's first `frob ticket
+        # land` that completed a ticket tripped REF001 on this file, and
+        # the pre-commit sweep's Tier-A auto-fix cannot resolve it (it is
+        # a structural exemption-list fix, not a per-file annotation), so
+        # the land refused it as a new, unresolvable finding.
+        "tickets-archive.md",
     }
 )
 

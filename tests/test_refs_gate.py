@@ -293,6 +293,44 @@ class TestDefaultRootManifestExempt:
 
         assert "REF001" in _rule_ids(violations, "sub/tickets.md")
 
+    # frob:ticket T-3444
+    def test_root_tickets_archive_md_is_exempt_with_no_declaration(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3444: root `tickets-archive.md` is `tickets.md`'s sibling
+        ledger file -- `_land_squash.py`'s T-0959 splice creates/updates it
+        in the same commit the first time any ticket in a project
+        completes -- and shares the identical "read only by `frob ticket`/
+        `frob check` tooling, never referenced from other tracked source
+        files" shape T-3249 already exempted `tickets.md` for. Before this,
+        any frob-enabled project's first completed `frob ticket land`
+        failed REF001 on a freshly-spliced root tickets-archive.md."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\n')
+        _write(tmp_path, "tickets-archive.md", "# Archived tickets\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert _rule_ids(violations, "tickets-archive.md") == []
+
+    # frob:ticket T-3444
+    def test_nested_tickets_archive_md_still_subject_to_ref001(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3444: the exemption is root-only, mirroring
+        `test_nested_tickets_md_still_subject_to_ref001` above -- a nested
+        `tickets-archive.md` is ordinary tracked content, still subject to
+        REF001."""
+        _init_repo(tmp_path)
+        (tmp_path / "sub").mkdir()
+        _write(tmp_path, "sub/tickets-archive.md", "# Archived tickets\n")
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert "REF001" in _rule_ids(violations, "sub/tickets-archive.md")
+
 
 class TestNativeStubLinking:
     """T-0449: a `.pyi` sidecar beside a `pyproject.toml` whose

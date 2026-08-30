@@ -2073,22 +2073,12 @@ class TestLandProofAndFinish:
 
     # frob:ticket T-1884
     # frob:ticket T-3442
-    @pytest.mark.xfail(
-        reason=(
-            "T-3442: blocked on T-3444 (out of this ticket's scope) -- "
-            "src/frob/gates/_refs.py's _DEFAULT_ROOT_MANIFEST_EXEMPT "
-            "exempts root tickets.md from REF001 (T-3249) but not its "
-            "sibling tickets-archive.md, which _land_squash.py's T-0959 "
-            "splice creates/updates the first time ANY ticket in a "
-            "project completes -- so the T-1514 pre-commit sweep (now "
-            "actually measurable against T-3135's warm-sweep-stage, "
-            "where it used to report unmeasurable and skip) genuinely "
-            "and correctly finds a new REF001 on tickets-archive.md that "
-            "no Tier-A auto-fix can resolve. Remove this xfail once "
-            "T-3444 lands."
-        ),
-        strict=True,
-    )
+    # frob:ticket T-3444
+    # T-3444 landed: src/frob/gates/_refs.py's _DEFAULT_ROOT_MANIFEST_EXEMPT
+    # now exempts tickets-archive.md alongside tickets.md, so the T-1514
+    # pre-commit sweep no longer finds a genuine, unresolvable REF001 on
+    # the freshly-spliced tickets-archive.md this test's land produces --
+    # the xfail(strict=True) T-3442 put here while blocked is removed.
     def test_cli_land_invoked_with_root_equal_to_worktree_still_verifies(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:

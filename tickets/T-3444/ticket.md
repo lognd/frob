@@ -2,7 +2,7 @@
 id: T-3444
 title: 'REF001 missing tickets-archive.md exemption: T-3249 fixed tickets.md, sibling
   ledger file still fails clean'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
