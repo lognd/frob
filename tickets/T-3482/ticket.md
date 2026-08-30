@@ -2,7 +2,7 @@
 id: T-3482
 title: 'CI: macOS Test budget 25m kills the grown suite at 67%; raise to 40m like
   ubuntu (T-3426)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -21,6 +21,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_macos_step_budget_at_least_40_minutes
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_job_timeout_minutes_exceeds_macos_step_budget
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_macos_step_still_uses_faulthandler_and_sigabrt
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_macos_and_ubuntu_step_budgets_match
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_ubuntu_step_still_uses_faulthandler_and_sigabrt
 designated_repro_test: null
 threat: null
 component: null

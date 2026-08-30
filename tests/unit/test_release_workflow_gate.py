@@ -34,6 +34,22 @@ def _load(path: Path) -> dict:
     return doc
 
 
+def _assert_step_uses_faulthandler_and_marker(name_prefix: str, marker: str) -> None:
+    """Shared MUST-STAY-QUIET check (T-3426/T-3482) for the ubuntu/macOS
+    Test steps: PYTHONFAULTHANDLER=1 plus each platform's own
+    SIGABRT-capable stack-dump trigger (`timeout -s ABRT` on ubuntu,
+    `kill -ABRT` on macOS -- `marker` picks which). Extracted so the
+    ubuntu/macOS variants of this same assertion do not duplicate each
+    other's body (frob:doc DUP001)."""
+    doc = _load(_CI_WORKFLOW)
+    for step in doc["jobs"]["build"]["steps"]:
+        if step.get("name", "").startswith(name_prefix):
+            assert step["env"]["PYTHONFAULTHANDLER"] == "1"
+            assert marker in step["run"]
+            return
+    raise AssertionError(f"no {name_prefix!r} Test step found")
+
+
 class TestReleaseWorkflowNoAutomaticTrigger:
     """`release.yml` must declare `workflow_dispatch` and NOTHING else
     under `on:` -- no push, no pull_request, no schedule, no tag, no
@@ -226,15 +242,21 @@ class TestCiUbuntuTestBudgetRaised:
     too tight for a PASSING run (99% at ~20m, killed at 25m mid-self-scan-
     test, not blocked on a lock). The step budget must be raised to at
     least 40m and the job-level ceiling must stay strictly above it, so
-    the step's own stack-dump-on-hang fires first on a genuine hang."""
+    the step's own stack-dump-on-hang fires first on a genuine hang.
+
+    T-3482: the same class of miss recurred on macOS (run 33308245923,
+    killed at [67%], not hung, on a suite grown to 12816 tests) while
+    ubuntu's own T-3426 raise stayed correct -- the two platforms had
+    drifted apart. macOS's budget is now raised to the same 40m floor,
+    plus an explicit cross-platform parity assertion below, so one
+    platform's budget can never silently regress below the other's
+    again."""
 
     def test_ubuntu_test_step_budget_at_least_40_minutes(self) -> None:
         """MUST-FIRE: the ubuntu Test step's `timeout -s ABRT <N>m` budget
         must be >= 40m."""
         text = _CI_WORKFLOW.read_text(encoding="utf-8")
-        match = re.search(
-            r"timeout -s ABRT (\d+)m uv run pytest -q", text
-        )
+        match = re.search(r"timeout -s ABRT (\d+)m uv run pytest -q", text)
         assert match, "expected ubuntu's `timeout -s ABRT <N>m uv run pytest -q` step"
         assert int(match.group(1)) >= 40, (
             f"ubuntu Test step budget regressed below 40m: {match.group(0)!r}"
@@ -259,10 +281,55 @@ class TestCiUbuntuTestBudgetRaised:
         """MUST-STAY-QUIET: the budget raise must not have dropped the
         stack-dump-on-hang mechanism (PYTHONFAULTHANDLER=1 + `timeout -s
         ABRT`, not the default SIGTERM)."""
+        _assert_step_uses_faulthandler_and_marker("Test (ubuntu", "timeout -s ABRT")
+
+    def test_macos_step_budget_at_least_40_minutes(self) -> None:
+        """MUST-FIRE (T-3482): the macOS Test step's `budget=<N>` (seconds)
+        watcher must be >= 2400 (40m) -- the same class of miss T-3426
+        fixed for ubuntu, now closed for macOS too so the two platforms
+        cannot drift apart again."""
+        text = _CI_WORKFLOW.read_text(encoding="utf-8")
+        match = re.search(r"budget=(\d+)\s", text)
+        assert match, "expected macOS's `budget=<N>` watcher assignment"
+        assert int(match.group(1)) >= 2400, (
+            f"macOS Test step budget regressed below 2400s (40m): {match.group(0)!r}"
+        )
+
+    def test_job_timeout_minutes_exceeds_macos_step_budget(self) -> None:
+        """MUST-FIRE: the job-level ceiling must remain strictly greater
+        than the macOS step budget (in minutes), so the step's own
+        instrumented SIGABRT-then-KILL watcher fires before the bare job
+        ceiling."""
         doc = _load(_CI_WORKFLOW)
-        for step in doc["jobs"]["build"]["steps"]:
-            if step.get("name", "").startswith("Test (ubuntu"):
-                assert step["env"]["PYTHONFAULTHANDLER"] == "1"
-                assert "timeout -s ABRT" in step["run"]
-                return
-        raise AssertionError("no ubuntu Test step found")
+        job_timeout = doc["jobs"]["build"]["timeout-minutes"]
+        text = _CI_WORKFLOW.read_text(encoding="utf-8")
+        match = re.search(r"budget=(\d+)\s", text)
+        assert match
+        step_budget_minutes = int(match.group(1)) / 60
+        assert job_timeout > step_budget_minutes, (
+            f"job timeout-minutes ({job_timeout}) must exceed the macOS "
+            f"step budget ({step_budget_minutes}m)"
+        )
+
+    def test_macos_step_still_uses_faulthandler_and_sigabrt(self) -> None:
+        """MUST-STAY-QUIET: the budget raise must not have dropped the
+        stack-dump-on-hang mechanism (PYTHONFAULTHANDLER=1 + `kill -ABRT`,
+        macOS's SIGABRT-capable equivalent of ubuntu's `timeout -s ABRT`)."""
+        _assert_step_uses_faulthandler_and_marker("Test (macos", "kill -ABRT")
+
+    def test_macos_and_ubuntu_step_budgets_match(self) -> None:
+        """MUST-FIRE (T-3482): the two platforms' Test-step budgets must
+        stay EQUAL (40m each) so the class of drift this ticket fixed --
+        one platform's budget raised, the other left stale -- cannot
+        silently recur."""
+        text = _CI_WORKFLOW.read_text(encoding="utf-8")
+        ubuntu_match = re.search(r"timeout -s ABRT (\d+)m uv run pytest -q", text)
+        macos_match = re.search(r"budget=(\d+)\s", text)
+        assert ubuntu_match and macos_match
+        ubuntu_minutes = int(ubuntu_match.group(1))
+        macos_minutes = int(macos_match.group(1)) / 60
+        assert ubuntu_minutes == macos_minutes, (
+            f"ubuntu Test step budget ({ubuntu_minutes}m) and macOS Test "
+            f"step budget ({macos_minutes}m) have drifted apart -- raise "
+            f"whichever is smaller to match the other"
+        )

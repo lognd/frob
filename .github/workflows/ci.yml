@@ -113,15 +113,24 @@ jobs:
       # self-scan tests' bodies (not blocked on a lock) when the 25m
       # `timeout -s ABRT` fired at 22:18:23, killing a run that would have
       # finished. macOS (more cores) completed the identical suite in
-      # 18m31s in the same run, so this is ubuntu's own budget being too
-      # tight on its slow self-scan tail, not the T-3420 SIGTERM deadlock
-      # (this invocation runs without coverage). Raised 25m -> 40m to
-      # clear that tail with real margin; macOS/Windows are unchanged
-      # since macOS's own 18.5m run shows no equivalent problem there.
-      # A follow-up ticket (not this one) should make the self-scan tests
-      # share one cached graph per session so the tail stops costing
-      # minutes per test -- this budget raise only stops CI from killing
-      # a passing-but-slow run.
+      # 18m31s in the SAME run, so this was ubuntu's own budget being too
+      # tight on its slow self-scan tail at that point, not the T-3420
+      # SIGTERM deadlock (this invocation runs without coverage). Raised
+      # 25m -> 40m to clear that tail with real margin; macOS/Windows
+      # were left unchanged at the time, since macOS's own 18.5m run
+      # showed no equivalent problem there YET.
+      #
+      # T-3482: the suite kept growing (12816 tests by 2026-08-30) and
+      # macOS's own 25m budget went stale the same way -- run 33308245923
+      # was killed at [67%] mid-run, not hung, with two prior CLEAN macOS
+      # runs already at 24m/28m. Raised 25m -> 40m here too, matching
+      # ubuntu's own T-3426 raise, so the two platforms cannot drift
+      # apart again (both now share the 40m/2400s budget). Windows stays
+      # unchanged (advisory only, T-3425). A follow-up ticket (not this
+      # one) should make the self-scan tests share one cached graph per
+      # session so the tail stops costing minutes per test on every
+      # platform -- these budget raises only stop CI from killing a
+      # passing-but-slow run.
       #
       # WHY faulthandler_timeout=100 / --timeout=120 (pyproject.toml,
       # pytest-timeout, --timeout-method=thread) did NOT fire during the
@@ -142,13 +151,23 @@ jobs:
       # is a POSIX shell builtin present in macOS's own bash, so it reaches
       # the same faulthandler dump-then-die mechanism as ubuntu's step
       # without depending on GNU tooling.
+      # T-3482: run 33308245923 (macos-latest, HEAD 355eb4468, 2026-08-30)
+      # proved 25m is too tight for a PASSING macOS run too, the same
+      # class of miss T-3426 fixed for ubuntu -- the suite reached [67%]
+      # and was killed by this step's own 1500s watcher at ~11:38 with
+      # test_frob_self_model.py::test_sys_gate_zero_violations on the
+      # stack, not a hang: the previous two clean macOS runs took 24m
+      # (33298117154) and 28m (33303586303) on a suite that has grown to
+      # 12816 tests. Raised 25m -> 40m to match ubuntu's own T-3426 raise
+      # and give the grown suite the same margin; Windows is unchanged
+      # (advisory only, T-3425).
       - name: Test (macos, timed with stack-dump-on-hang)
         if: matrix.os == 'macos-latest'
         env:
           PYTHONFAULTHANDLER: "1"
         run: |
           set -uo pipefail
-          budget=1500  # 25m, same budget/rationale as ubuntu's step above
+          budget=2400  # 40m, same budget/rationale as ubuntu's step above (T-3426/T-3482)
           uv run pytest -q &
           pid=$!
           (
