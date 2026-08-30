@@ -6,6 +6,8 @@ kind: bug
 origin: agent
 created: '2026-08-29'
 priority: critical
+blocked_by:
+- T-3450
 parent: null
 tier: ticket
 sprint: null
@@ -14,7 +16,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- design/frob.strata
 - frob-ratchet.lock.json
 - tests/system/test_frob_self_model.py
 - docs/design/registry/capability-via-ratchet.lock.json
@@ -30,6 +31,21 @@ scope_changes:
     entries
   actor: logan
   at: '2026-08-29'
+- op: remove
+  glob: design/frob.strata
+  reason: T-3447's own fix touches only docs/design/registry/capability-via-ratchet.lock.json
+    (the SYS111 ratchet ceilings) -- it never edits design/frob.strata itself, so
+    releasing this lease frees it for T-3450's SYS100 fix, which does need to edit
+    design/frob.strata
+  actor: logan
+  at: '2026-08-29'
+body_changes:
+- mode: append
+  reason: explain the block-on-T-3450 decision
+  actor: logan
+  at: '2026-08-29'
+  old_length: 1008
+  new_length: 2323
 designated_repro_test: null
 threat: null
 component: null
@@ -42,3 +58,25 @@ MEASURED on GitHub Actions run 33282540898 (ubuntu-latest, HEAD b94cea5d0, 2026-
 FAILING: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
     SELFAUDIT001: self-audit family SYS111 node=core: fs.read via-list on core grew to 35 site(s) ...
 The SYS111 growth ratchet on the core node fs.read via-list tripped after T-3416/T-3409/T-3429/T-3430 added sites. Read the SYS111 doctrine in docs/ (git grep SYS111 -- docs) and apply the sanctioned resolution: either re-baseline the ratchet with a recorded reason, or move sites off the core node. Do not waive. Verify test_sys_gate_zero_violations passes.
+
+
+## Status note (not a Done report -- ticket blocked, not closed)
+
+T-3447's own SYS111 capability-ratchet breach is fully fixed: all 5 breaches
+(core::fs.read 34->35, testsuite::env.read 16->17, testsuite::exec 224->225,
+testsuite::fs.read 171->172, testsuite::fs.write 405->407) re-baselined in
+docs/design/registry/capability-via-ratchet.lock.json with recorded reasons,
+per the "do not waive, re-baseline or move sites off the node" instruction.
+Verified 0 SYS111/capability-ratchet warnings remain in a fresh run.
+
+However the specified verification command (test_sys_gate_zero_violations)
+also requires 0 SYS100 violations repo-wide, and 10 pre-existing SYS100
+findings (tests/unit/test_check_admission.py:373/374/375/377/378/406/412/
+435/441/500 -- exec capability observed but not declared in design/frob.strata's
+testsuite node) are a different, unrelated defect that blocks the same test
+from going green. This is out of T-3447's declared scope (design/frob.strata,
+frob-ratchet.lock.json, tests/system/test_frob_self_model.py, plus
+docs/design/registry/capability-via-ratchet.lock.json added for the SYS111
+fix itself) -- fixing it here would be silent scope expansion onto an
+unrelated finding. Filed T-3450 for it and blocking this ticket on it rather
+than force-closing against a red acceptance test.
