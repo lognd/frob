@@ -23,6 +23,7 @@ scope:
 - docs/commands/check.md
 - docs/modules/process.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +49,12 @@ scope_changes:
   glob: design/frob.strata
   reason: SELFAUDIT001 requires declaring the new test file's fs.write capability
     (Path.write_text in the test helper) in the testsuite node
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SELFAUDIT001/SYS111 ratchet ceiling bump required for the new fs.write via-site
+    added by tests/unit/test_graph_build_lock.py
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
