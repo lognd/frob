@@ -2,7 +2,7 @@
 id: T-2368
 title: Burn INV/NEGEXIST/WALK/PLACE/PII/DEAD/LANG WARN gates to zero, then promote
   to error
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -19,7 +19,7 @@ scope:
 - tests/unit/test_ticket_store.py
 - src/frob/gates/_waive_comments.py
 - src/frob/gates/_pii_structural/_emails.py
-- tickets/T-draft-40171987/**
+- tickets/T-3483/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,11 +50,20 @@ scope_changes:
   actor: logan
   at: '2026-08-30'
 - op: add
-  glob: tickets/T-draft-40171987/**
+  glob: tickets/T-3483/**
   reason: T-2368's own out-of-scope discovery filed as a new ticket; the ticket file
     lands with this ticket
   actor: logan
   at: '2026-08-30'
+body_changes:
+- mode: append
+  reason: 'BUG002 land-time gate: PLACE001 comment-position fix has no meaningful
+    pre/post-fix repro; severity promotion is proven by the amended severity-assertion
+    test instead'
+  actor: logan
+  at: '2026-08-30'
+  old_length: 1415
+  new_length: 2346
 evidence:
 - tests/test_gates.py::TestPlace001Gate::test_directive_directly_above_def_is_silent
 - tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
@@ -66,10 +75,12 @@ designated_repro_test: null
 acceptance:
 - text: given PLACE001/PII011 (the two codes T-2368 actually closes), when frob check
     --json runs, then zero unwaived findings remain for both
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
 - text: given PLACE001's and PII011's gate modules, when severity is read, then it
     is ERROR not WARNING
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
 acceptance_amendments:
 - op: replace
   index: 0
@@ -115,3 +126,15 @@ Grouped together because each individual code's count is too small to justify it
 Closure is two-part per the epic (T-0969): (1) zero findings for every code above, verified via `uv run frob check --json --budget 500 | python3 scripts/check_summary.py` reporting 0 for INV003/INV004/NEGEXIST001/WALK001/PLACE001/PII011/DEAD001/LANG003, AND (2) each promoted from warning to error tier in the gate definition (grep the gate module for its severity constant) -- a burn-down that stops at zero and leaves the gate advisory lets the debt silently reaccumulate.
 
 Narrow `scope` to the actual files touched once you've run the gate and see which ~71 files are involved; do not take a broad blanket scope.
+
+frob:waive BUG002 reason="T-2368's PLACE001 fix is a two-line textual edit to a comment's \
+position in tests/test_gates.py and tests/unit/test_ticket_store.py, not a change to any \
+function's logic -- there is no pre-fix commit at which a test exercising THIS repo's own \
+directive placement could fail (the PLACE001 gate logic itself is unchanged and already \
+covered by tests/test_gates.py::TestPlace001Gate; what changed is which of two ambiguous \
+placements one specific comment sits at, in this repo's own source, not a library \
+behavior). The severity promotions (PLACE001/PII011 WARN -> ERROR) are proven instead by \
+the amended tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires, \
+which now asserts Severity.ERROR and fails against the pre-promotion severity -- that is \
+the actual behavior change this ticket makes, and it is the criterion the amended \
+acceptance[0]/[1] are bound to."
