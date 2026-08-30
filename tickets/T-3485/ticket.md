@@ -2,7 +2,7 @@
 id: T-3485
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2691):
   1 new (rule, file) identit(ies), 1 finding(s) (DOC006)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - changelog.d/T-2691.md
+- tests/test_docptr_gate.py
 findings:
 - - DOC006
   - changelog.d/T-2691.md
@@ -23,6 +24,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: adding a regression test pinned to changelog.d/T-2691.md's own DOC006 zero,
+    independent of unrelated repo-wide findings
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
