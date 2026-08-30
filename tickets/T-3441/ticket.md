@@ -2,7 +2,7 @@
 id: T-3441
 title: 'post-land sweep regression from T-3296: 2 new (rule, file) identit(ies), 4
   finding(s) (COV001, DRIFT001)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -25,6 +25,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: record no-behavior-change front door for BUG002
+  actor: logan
+  at: '2026-08-29'
+  old_length: 1435
+  new_length: 1772
+evidence:
+- tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict::test_frob_managed_side_effect_path_never_conflicts
+- tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict::test_no_collision_is_none
 designated_repro_test: null
 threat: null
 component: null
@@ -47,3 +57,7 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DRIFT001  src/frob/tickets/_scope.py  -> attributed to T-3296 (commit 89278e4046ce, already closed/dropped -- filed below) via src/frob/tickets/_scope.py::FROB_MANAGED_SIDE_EFFECT_PATHS
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+
+
+frob:no-behavior-change reason="Fix is doc/comment-only: added a frob:doc anchor comment to FROB_MANAGED_SIDE_EFFECT_PATHS and updated docs/modules/tickets.md and docs/modules/tickets-lifecycle.md narrative text, then re-acked scope_lease_conflict. No production logic changed, so bound evidence passes identically before and after."
