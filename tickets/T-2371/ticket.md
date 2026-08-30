@@ -53,3 +53,6 @@ Closure is two-part per the epic (T-0969):
 Narrow `scope` to the actual files this family's findings live in once you've
 run the gate and can see them -- do not take a broad blanket scope; this keeps
 you disjoint from sibling children of T-0969.
+
+## Failure log
+- 2026-08-30 attempt 1: Re-measured via 'uv run frob check --only test --json' in a fresh worktree, 2026-08-30: 72 findings across TEST003(30)/TEST006(1)/TEST014(41), not the ticket body's stale 31 (2026-08-18) -- the tree has moved, per the ticket's own instruction to treat that as the correct explanation. This burn-down needs real new integration-test authorship across Rust (frob-core/strata-core) and Python interfaces (TEST003, 30 sites), a policy call on whether TEST006's per-worktree coverage-stamp freshness should even gate a fresh checkout (1 site), and call-graph-informed disambiguation of 41 name-collision pairs concentrated in .claude/hooks/*.py (TEST014) -- each real work, not a mechanical directive-add, and far beyond a single normal-effort session without risking gamed/incorrect frob:tests bindings. Filed T-draft-8729dba3 with the full re-measured breakdown by file/rule for whoever picks this up next, split-scoped per T-2371's own instruction.
