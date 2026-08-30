@@ -230,6 +230,103 @@ class TestRunCoalescedVerification:
         assert watermark.is_ok
         assert watermark.danger_ok is None
 
+    # frob:ticket T-3464
+    def test_all_vanished_findings_advance_the_watermark(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
+        """T-3464 must-stay-quiet fixture: the exact measured livelock
+        (commit 00a415c978ec, 5 phantom findings re-derived and
+        re-quarantined on every single verify cycle forever) must clear
+        WITHOUT a manual `frob verify dispose`. `_file_regression_ticket`
+        returning `None` because EVERY one of `new_findings` vanished by
+        T-3222's own file-time liveness re-check (recorded as
+        `sweep-finding-vanished-before-file:<rule>:<file>` rapid-debt
+        entries, simulated here exactly as `_reverify_unfiled_pairs_at_
+        file_time` itself would write them) must advance the watermark,
+        not pin it -- there is nothing real left to certify against, and
+        nothing durable that could ever own a phantom."""
+        from frob.app.ticket_runner import _rapid_sweep
+        from frob.tickets._evidence import record_rapid_debt
+
+        _enqueue_n(tmp_path, 1)
+        _rapid_sweep._write_baseline(tmp_path, frozenset({("RULE1", "a.py")}), "c0")
+
+        def fake_file_ticket(root, final_id, commit_sha, new_findings):  # noqa: ANN001
+            # Mirrors `_reverify_unfiled_pairs_at_file_time`'s own debt
+            # entry for every pair, then reports nothing fileable --
+            # exactly the T-3222 "everything vanished by file time"
+            # shape, without paying for a real `frob check` spawn.
+            for rule, file in sorted(new_findings):
+                record_rapid_debt(
+                    root, final_id, f"sweep-finding-vanished-before-file:{rule}:{file}"
+                )
+            return None
+
+        monkeypatch.setattr(_rapid_sweep, "_file_regression_ticket", fake_file_ticket)
+        result = run_coalesced_verification(
+            tmp_path,
+            verify_fn=lambda root, sha: frozenset(
+                {("RULE1", "a.py"), ("RULE2", "b.py")}
+            ),
+        )
+
+        assert result.is_ok
+        assert result.danger_ok.status == "vanished"
+        assert result.danger_ok.filed_ticket is None
+        assert result.danger_ok.advanced_watermark is True
+        watermark = load_watermark(tmp_path)
+        assert watermark.is_ok
+        assert watermark.danger_ok is not None
+        assert watermark.danger_ok.commit_sha == "c0"
+
+    # frob:ticket T-3464
+    def test_partially_vanished_findings_still_pin_the_watermark(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
+        """T-3464 must-fire fixture: the vanished-findings relief above
+        must NOT over-fire. When only SOME of `new_findings` vanished at
+        file time (recorded as debt) and at least one pair is still
+        genuinely unfiled -- no matching vanished-debt entry for it --
+        the batch as a whole must still be treated as ownerless and pin
+        the watermark exactly like before this fix. A reproducing
+        finding must never ride through on a sibling phantom's coattails."""
+        from frob.app.ticket_runner import _rapid_sweep
+        from frob.tickets._evidence import record_rapid_debt
+
+        _enqueue_n(tmp_path, 1)
+        _rapid_sweep._write_baseline(tmp_path, frozenset({("RULE1", "a.py")}), "c0")
+
+        def fake_file_ticket(root, final_id, commit_sha, new_findings):  # noqa: ANN001
+            # Only RULE1/a.py vanished; RULE2/b.py is still real (no
+            # debt entry for it) but this fake also fails to file it --
+            # the exact "genuine mix" shape the fix must not paper over.
+            record_rapid_debt(
+                root, final_id, "sweep-finding-vanished-before-file:RULE1:a.py"
+            )
+            return None
+
+        monkeypatch.setattr(_rapid_sweep, "_file_regression_ticket", fake_file_ticket)
+        result = run_coalesced_verification(
+            tmp_path,
+            verify_fn=lambda root, sha: frozenset(
+                {("RULE1", "a.py"), ("RULE2", "b.py")}
+            ),
+        )
+
+        assert result.is_ok
+        assert result.danger_ok.status == "red"
+        assert result.danger_ok.filed_ticket is None
+        assert result.danger_ok.advanced_watermark is False, (
+            "a still-reproducing unfiled finding (RULE2/b.py) must keep "
+            "pinning the watermark even when a SIBLING finding in the "
+            "same batch genuinely vanished"
+        )
+        watermark = load_watermark(tmp_path)
+        assert watermark.is_ok
+        assert watermark.danger_ok is None
+
     def test_clean_run_advances_watermark_and_compacts_queue(
         self, tmp_path: Path
     ) -> None:

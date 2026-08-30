@@ -350,7 +350,10 @@ pre-commit/post-land sweeps, which stay `--budget`-bounded because THEY
 must fit inside a land's own wall-clock deadline. Measured uncontended
 full-check cost on this repo (2026-08-26): ~333s.
 
-**Four possible outcomes**, distinguished by `WorkerOutcome.status`:
+**Five possible outcomes**, distinguished by `WorkerOutcome.status`
+(T-3464 added the fifth; see "Advance-only-on-green cannot drain a
+backlog" below for `"red"`'s own T-2324 nuance and "The vanished-finding
+livelock" for `"vanished"`):
 
 - `"empty"` -- nothing queued, `verify_fn` never even called.
 - `"baseline-established"` -- a real, measured result, but with no PRIOR
@@ -359,9 +362,15 @@ full-check cost on this repo (2026-08-26): ~333s.
   green (watermark untouched) even though the check itself succeeded.
 - `"red"` -- new findings vs the rolling baseline; files a regression
   ticket (reusing `frob.app.ticket_runner._rapid_sweep.
-  _file_regression_ticket`, T-1684's own filer) and leaves the watermark
-  untouched -- a red batch quarantines, it does not revert (T-1686's own
-  recorded decision).
+  _file_regression_ticket`, T-1684's own filer). T-2324 (below) advances
+  the watermark past a red-but-FILED result exactly like green; only a
+  red result with `filed_ticket is None` leaves the watermark untouched.
+- `"vanished"` -- new findings vs the rolling baseline, `filed_ticket is
+  None` (nothing was filed), but the watermark STILL advances -- T-3464's
+  fix for the one case T-2324's "ownerless" reasoning did not anticipate:
+  every one of the new findings had already stopped reproducing by the
+  time `_file_regression_ticket`'s own T-3222 liveness recheck ran, so
+  there is nothing real left to certify against.
 - `"green"` -- no new findings vs a real prior baseline; the watermark
   advances to the tip commit and `compact_queue` drops every entry the
   queue held (they are all covered by the same tip verification).
@@ -1811,6 +1820,56 @@ preserves both hard constraints unchanged: rapid's never-block contract
 (the fix touches only what advances the watermark, never whether or when
 the drain runs) and "an unattributed/ownerless finding is never silently
 certified as verified" (the ownerless branch is untouched).
+
+**The vanished-finding livelock (T-2324/T-3222 interaction, T-3464
+measured incident).** T-2324's own "ownerless" branch above and T-3222's
+file-time liveness recheck (`_reverify_unfiled_pairs_at_file_time`,
+`frob.app.ticket_runner._rapid_sweep`) are each individually correct, but
+combine into a livelock T-2324's own filing never anticipated. T-3222
+exists because MEASURED (two independent samples): 27 of 30 sweep-filed
+identities no longer reproduced by the time an agent read the ticket --
+so `_file_regression_ticket` re-checks liveness before filing, and
+correctly refuses to file a finding that has already stopped reproducing
+(filing a phantom is worse than not filing it). But `_file_regression_
+ticket` returns the SAME `None` for that case as it does for a genuine
+filing failure -- and prior to T-3464, `_resolve_verification_outcome`
+treated both `None`s identically: pin the watermark, never write the
+baseline. When the tip commit does not change between wakes (nothing new
+lands), `_file_regression_ticket` re-derives the IDENTICAL vanished
+findings on every single call, refuses to file them for the same T-3222
+reason, and the watermark pins forever -- MEASURED directly (T-3464,
+2026-08-30): quarantine re-raised on every verify cycle for the same 5
+phantom findings at commit `00a415c978ec`, blocking every land in the
+repo until a human ran `frob verify dispose` by hand, which the very next
+`frob verify now` immediately undid.
+
+The fix (`_vanished_pairs_appended_since` in `frob.verify._worker`):
+before calling `_file_regression_ticket`, record `.frob/rapid-debt.jsonl`'s
+current byte length. If the result is `None`, re-read ONLY the bytes
+appended since that offset (never the file's full history -- an
+unbounded scan would risk treating a pair that vanished once, weeks ago,
+under an unrelated commit as vanished now too) and check whether every
+one of this round's `new_findings` has a matching
+`sweep-finding-vanished-before-file:<rule>:<file>` debt entry --
+`_reverify_unfiled_pairs_at_file_time`'s own `record_rapid_debt` call,
+written as a side effect of the SAME `_file_regression_ticket` call this
+function already pays for, never a second liveness-check spawn. If every
+new finding is accounted for that way, the batch advances with
+`status="vanished"` (`filed_ticket=None`, `advanced_watermark=True`) --
+see the "Five possible outcomes" list above. If even ONE new finding
+lacks a matching debt entry (a genuine mix of vanished-and-still-real
+pairs, or filing failed for a reason unrelated to T-3222 liveness), the
+pre-T-3464 pin-the-watermark path is unchanged -- a single still-
+reproducing finding must never ride through on a sibling phantom's
+coattails. Deliberately implemented as a read of the debt log rather
+than a change to `_file_regression_ticket`'s own return signature: the
+watermark-side fix belongs entirely to `frob.verify._worker`'s existing
+scope, and reading an already-documented side-channel file avoids a
+second, duplicate liveness-check subprocess spawn in the hot verify-tick
+path that changing the filing function's signature (and threading a new
+return value through both `frob.verify._worker` and every `frob.app.
+ticket_runner._rapid_sweep` caller) would have required paying for on
+every wake, mocked or not, in every existing unit test.
 
 **Self-refusal and drop-instead-of-queue (T-2406, measured incident).**
 Direct measurement of 47 real drain attempts (`.frob/verify-drain/*.log`)

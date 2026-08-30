@@ -472,14 +472,21 @@ class WorkerOutcome(BaseModel):
     #: established" (first-ever run, no prior baseline to compare against
     #: -- NOT a proven-green claim, so the watermark is deliberately left
     #: untouched here too), "red" (new findings vs the rolling baseline,
-    #: filed/disposed to `filed_ticket`), or "green" (no new findings).
+    #: filed/disposed to `filed_ticket`, or genuinely ownerless with
+    #: `filed_ticket=None`), "vanished" (T-3464: every new finding was
+    #: unfileable ONLY because none of them reproduced any more by T-3222's
+    #: file-time recheck -- there is nothing durable to own and nothing
+    #: real left to pin on, so this advances like green despite
+    #: `filed_ticket=None`), or "green" (no new findings).
     #: T-2324: "red" no longer implies `advanced_watermark=False` -- check
     #: that field directly, never infer it from `status`. A red result
     #: whose findings got a durable owner (`filed_ticket` is not `None`)
     #: still advances the watermark and compacts the queue, exactly like
     #: green; only a red result that could not even be FILED
     #: (`filed_ticket is None`) leaves the watermark untouched -- see
-    #: `_resolve_verification_outcome`'s own docstring for why.
+    #: `_resolve_verification_outcome`'s own docstring for why. "vanished"
+    #: is the one exception to THAT rule too: `filed_ticket=None` there
+    #: as well, but `advanced_watermark=True`.
     status: str
     commit_sha: str | None = None
     advanced_watermark: bool = False
@@ -553,6 +560,8 @@ def _findings_digest(findings: frozenset[tuple[str, str]]) -> str:
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_new_findings_that_cannot_be_filed_still_do_not_advance  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_clean_run_advances_watermark_and_compacts_queue  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_queue_unreadable_is_an_error  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_all_vanished_findings_advance_the_watermark  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_partially_vanished_findings_still_pin_the_watermark  # noqa: E501
 def run_coalesced_verification(
     root: Path,
     *,
@@ -623,6 +632,170 @@ def run_coalesced_verification(
         # T-1694: unconditional -- a raised exception, an early return, or
         # a normal green/red/baseline-established outcome all reach here.
         _clear_in_flight_marker(root)
+
+
+#: T-3222's exact debt-entry format (`_reverify_unfiled_pairs_at_file_
+#: time`, src/frob/app/ticket_runner/_rapid_sweep.py) -- duplicated here as
+#: a plain string constant rather than an import, since matching the
+#: format of a side-channel log file is a much weaker coupling than
+#: importing the function that writes it (this module already imports
+#: three OTHER private symbols from that module; this is deliberately
+#: NOT a fourth, to avoid the file-level lease `_rapid_sweep.py` sits
+#: under -- see T-3464's own body for why: `src/frob/app/ticket_runner/**`
+#: is commonly held by unrelated in-progress work, and this module's own
+#: fix belongs entirely to the watermark side of the contract, not the
+#: filing side).
+_VANISHED_DEBT_PREFIX = "sweep-finding-vanished-before-file:"
+
+
+# frob:ticket T-3464
+def _rapid_debt_path(root: Path) -> Path:
+    """The `.frob/rapid-debt.jsonl` append-only log `record_rapid_debt`
+    (src/frob/tickets/_evidence.py) writes to -- read-only here (T-3464),
+    this module never writes to it itself."""
+    return root / ".frob" / "rapid-debt.jsonl"
+
+
+# frob:ticket T-3464
+# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_all_vanished_findings_advance_the_watermark  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_partially_vanished_findings_still_pin_the_watermark  # noqa: E501
+def _vanished_pairs_appended_since(
+    root: Path, offset: int
+) -> frozenset[tuple[str, str]]:
+    """T-3464: the `(rule, file)` pairs recorded as file-time-vanished
+    (T-3222's `sweep-finding-vanished-before-file:<rule>:<file>` debt
+    entries) in whatever was appended to `.frob/rapid-debt.jsonl` AFTER
+    byte `offset` -- i.e. only entries a SPECIFIC call just wrote, never
+    the file's full history. This offset-bounded read is deliberate: the
+    file is an unbounded, append-only, cross-session log, and a naive
+    "does this pair appear anywhere in it" check would treat a pair that
+    vanished once weeks ago under a completely different commit as
+    vanished NOW too -- silently advancing the watermark past a finding
+    that has since come back for real. Bounding the read to exactly the
+    bytes one `_file_regression_ticket` call appended makes this
+    precise: those bytes exist if and only if THAT call's own T-3222
+    liveness re-check just ran and found the pair dead.
+
+    Best-effort: any read/parse failure (missing file, a line mid-write,
+    a line that fails a JSON decode) is silently skipped rather than
+    raised -- this is read-only introspection of another module's debt
+    log, and it degrading to "nothing seen" only ever makes this
+    module's caller MORE conservative (falls back to pinning the
+    watermark, T-2324's original behavior), never less."""
+    debt_path = _rapid_debt_path(root)
+    try:
+        with debt_path.open("rb") as handle:
+            handle.seek(offset)
+            appended = handle.read()
+    except OSError:
+        return frozenset()
+    vanished: set[tuple[str, str]] = set()
+    for raw_line in appended.decode("utf-8", errors="replace").splitlines():
+        raw_line = raw_line.strip()
+        if not raw_line:
+            continue
+        try:
+            entry = json.loads(raw_line)
+        except json.JSONDecodeError:
+            continue
+        skipped = entry.get("skipped") if isinstance(entry, dict) else None
+        if not isinstance(skipped, str) or not skipped.startswith(
+            _VANISHED_DEBT_PREFIX
+        ):
+            continue
+        rule, _, file = skipped[len(_VANISHED_DEBT_PREFIX) :].partition(":")
+        vanished.add((rule, file))
+    return frozenset(vanished)
+
+
+# frob:ticket T-3464
+# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_all_vanished_findings_advance_the_watermark  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_partially_vanished_findings_still_pin_the_watermark  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_new_findings_that_cannot_be_filed_still_do_not_advance  # noqa: E501
+def _outcome_for_unfiled_new_findings(
+    root: Path,
+    tip: VerifyQueueEntry,
+    fresh: frozenset[tuple[str, str]],
+    new_findings: frozenset[tuple[str, str]],
+    debt_offset: int,
+) -> Result[WorkerOutcome, WorkerError]:
+    """ARCH001 split of `_resolve_verification_outcome`: the ONLY call
+    site is the `filed is None` branch there, once `_file_regression_
+    ticket` has already run and refused to file anything for
+    `new_findings`.
+
+    T-3464: `_file_regression_ticket` returns `None` for TWO structurally
+    different reasons that used to be indistinguishable to its caller:
+    (a) a finding with no durable owner at all (filing itself failed --
+    T-2324's hard constraint, must still pin the watermark, unchanged
+    below), or (b) EVERY one of `new_findings` no longer reproduced by
+    the time `_file_regression_ticket`'s own T-3222 liveness re-check
+    ran -- there is nothing left to own, so nothing durable CAN record
+    it, but there is also nothing real left to pin the watermark on.
+    Before this fix, case (b) pinned the watermark identically to case
+    (a) -- and since `fresh` never changes when nothing new lands, the
+    SAME phantom findings got re-derived and re-quarantined on every
+    single verify cycle, forever (MEASURED, T-3464: quarantine
+    re-raised every wake for the same 5 findings at commit
+    00a415c978ec). Reading back only the debt entries the caller's
+    `_file_regression_ticket` call just appended (`debt_offset`, never
+    the log's full history -- see `_vanished_pairs_appended_since`'s own
+    docstring) tells the two cases apart without a second check spawn:
+    case (b) leaves a `sweep-finding-vanished-before-file` entry for
+    every one of `new_findings`; case (a) leaves none (a hard filing
+    failure never reaches T-3222's recheck) or leaves fewer than
+    `new_findings` (a genuine mix of vanished-and-still-real pairs),
+    both of which fall through to the unchanged pin-the-watermark
+    path."""
+    from frob.app.ticket_runner._rapid_sweep import _write_baseline
+
+    vanished_now = _vanished_pairs_appended_since(root, debt_offset)
+    if new_findings <= vanished_now:
+        _write_baseline(root, fresh, tip.commit_sha)
+        _log.warning(
+            "verify worker: %d new finding(s) at %s have ALL vanished by "
+            "file time (T-3222/T-3464) -- watermark ADVANCED (nothing "
+            "durable to certify against, but also nothing left that "
+            "reproduces to pin on; T-2324's guarantee only ever meant to "
+            "hold back a REPRODUCING unfiled finding, not a phantom that "
+            "no longer exists)",
+            len(new_findings),
+            tip.commit_sha[:12],
+        )
+        return _advance_watermark_and_compact(
+            root,
+            tip,
+            fresh,
+            status="vanished",
+            filed_ticket=None,
+            findings_count=len(new_findings),
+        )
+    # T-2324/T-3052: the ONE case that must still pin the watermark -- a
+    # finding with no durable owner at all (filing itself failed) cannot
+    # be "accounted for" by anything, so this commit must not be
+    # silently certified as verified. The baseline is deliberately NOT
+    # written here: the prior baseline (already read by the caller) is
+    # left in place, so the unfiled finding(s) remain present in `fresh
+    # - baseline` on every subsequent wake until they are actually
+    # accounted for -- never silently absorbed into "known state" by a
+    # write this branch never asked for.
+    _log.error(
+        "verify worker: %d new finding(s) at %s could NOT be filed -- "
+        "watermark NOT advanced (ownerless, T-2324's own hard "
+        "constraint: never silently certify this); baseline left "
+        "UNCHANGED (T-3052) so these finding(s) reappear as NEW on the "
+        "next wake instead of being silently absorbed",
+        len(new_findings),
+        tip.commit_sha[:12],
+    )
+    return Ok(
+        WorkerOutcome(
+            status="red",
+            commit_sha=tip.commit_sha,
+            filed_ticket=None,
+            findings_count=len(new_findings),
+        )
+    )
 
 
 def _resolve_verification_outcome(
@@ -710,37 +883,25 @@ def _resolve_verification_outcome(
         # incident this closes.
         from frob.tickets._worktree_guard import unleased_root_env
 
+        # T-3464: capture the debt log's length BEFORE calling
+        # `_file_regression_ticket` so a `filed is None` result below can
+        # be split into its two genuinely different causes without a
+        # second liveness-check spawn (see `_vanished_pairs_appended_
+        # since`'s own docstring for why this is offset-bounded, not a
+        # full-file scan).
+        debt_offset = 0
+        try:
+            debt_offset = _rapid_debt_path(root).stat().st_size
+        except OSError:
+            pass
+
         with unleased_root_env():
             filed = _file_regression_ticket(
                 root, tip.ticket_id, tip.commit_sha, new_findings
             )
         if filed is None:
-            # T-2324/T-3052: the ONE case that must still pin the
-            # watermark -- a finding with no durable owner at all
-            # (filing itself failed) cannot be "accounted for" by
-            # anything, so this commit must not be silently certified as
-            # verified. The baseline is deliberately NOT written here:
-            # the prior baseline (already read above) is left in place,
-            # so the unfiled finding(s) remain present in `fresh -
-            # baseline` on every subsequent wake until they are actually
-            # accounted for -- never silently absorbed into "known state"
-            # by a write this branch never asked for.
-            _log.error(
-                "verify worker: %d new finding(s) at %s could NOT be "
-                "filed -- watermark NOT advanced (ownerless, T-2324's own "
-                "hard constraint: never silently certify this); baseline "
-                "left UNCHANGED (T-3052) so these finding(s) reappear as "
-                "NEW on the next wake instead of being silently absorbed",
-                len(new_findings),
-                tip.commit_sha[:12],
-            )
-            return Ok(
-                WorkerOutcome(
-                    status="red",
-                    commit_sha=tip.commit_sha,
-                    filed_ticket=None,
-                    findings_count=len(new_findings),
-                )
+            return _outcome_for_unfiled_new_findings(
+                root, tip, fresh, new_findings, debt_offset
             )
         _write_baseline(root, fresh, tip.commit_sha)
         # T-2324: a red result WITH a durable owner (freshly filed, or

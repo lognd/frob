@@ -2,7 +2,7 @@
 id: T-3464
 title: 'verify watermark stuck at 00a415c978ec: quarantine re-raises every drain cycle,
   blocking every land repo-wide'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -41,6 +41,12 @@ scope_changes:
     ''Five possible outcomes'' list and added a T-3464 subsection'
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_all_vanished_findings_advance_the_watermark
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_partially_vanished_findings_still_pin_the_watermark
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_that_cannot_be_filed_still_do_not_advance
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_filed_to_a_real_ticket_still_advance
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_unfilable_finding_still_pins_the_watermark_on_the_next_wake
 designated_repro_test: null
 threat: null
 component: null
