@@ -52,7 +52,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 989ec93fb6d1f83925b2975f000f1ced251a1b19
 ---
 found while landing T-3449 (a plain ticket-state drop with zero code diff).
 
