@@ -15,11 +15,24 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/tickets/_archive.py
+- tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/_archive.py
+  reason: T-3442 holds a live lease on _archive.py; fixing via test fixture git-init
+    instead, no code-side edit needed
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/test_tickets.py
+  reason: T-3442 holds a live lease on _archive.py; fixing via test fixture git-init
+    instead, no code-side edit needed
+  actor: logan
+  at: '2026-08-29'
 body_changes:
 - mode: append
   reason: 'record a confound I introduced: I reaped five worktrees while EK was measuring
