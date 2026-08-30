@@ -43,3 +43,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TICK002  tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Failure log
+- 2026-08-30 attempt 1: already resolved on main: frob check --only tickets --ticket T-3372 finds no TICK002 finding in tickets.md
