@@ -65,7 +65,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3ee857bfca0f62082e44e49071c9cf8ee4f9c58b
 ---
 An operator watching `frob ticket land` while the fleet is contended has
 no visibility into whether it is progressing, waiting on land.lock, or
