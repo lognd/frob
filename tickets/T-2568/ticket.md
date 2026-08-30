@@ -19,6 +19,7 @@ scope:
 - docs/modules/arch.md
 - tests/unit/test_arch.py
 - src/frob/arch/_python.py
+- src/frob/arch/_normalized.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +44,11 @@ scope_changes:
   glob: src/frob/arch/_python.py
   reason: populates the new NormalizedCallArg.text field the resolver's guard-discharge
     needs
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/arch/_normalized.py
+  reason: NormalizedCallArg model extension (text field) the guard-discharge needs
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
