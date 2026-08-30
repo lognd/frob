@@ -1,7 +1,7 @@
 ---
 id: T-3447
 title: 'SYS111 ratchet: core fs.read via-list grew to 35 sites, failing test_sys_gate_zero_violations'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -17,10 +17,19 @@ scope:
 - design/frob.strata
 - frob-ratchet.lock.json
 - tests/system/test_frob_self_model.py
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: the real SYS111 capability-ratchet lock file this ticket must edit -- the
+    originally declared frob-ratchet.lock.json is an unrelated ratchet with no core/testsuite
+    entries
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
