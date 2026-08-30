@@ -297,53 +297,72 @@ def _has_active_child(t: Ticket, queue: TicketQueue) -> bool:
     )
 
 
-# frob:ticket T-3463
-def _epic_children_all_stalled(
-    t: Ticket,
-    queue: TicketQueue,
-    thresholds: dict[Priority, int],
-    today: date,
-) -> bool:
-    """T-3463: whether a decomposed epic/story `t`'s own children show NO
-    sign of active work -- the sharper rot signal T-3399's body explicitly
-    deferred: an epic whose children are ALL ALSO stalled really is
-    rotting, not just "decomposed and being worked" (T-3399's WARN-cap
-    message). `False` (children look healthy, `_tick004_queue_rot` keeps
-    the WARN cap) whenever:
-
-    - `t` has no non-terminal child at all (should not happen here --
-      `_has_active_child` already gates the caller -- but fails safe to
-      "not stalled" rather than raising if it ever does), or
-    - ANY child is `IN_PROGRESS` (real work is happening under this
-      epic right now, regardless of how old that child is), or
-    - among the remaining QUEUED/PLANNED children (a `BLOCKED` child is
-      explicitly waiting on something else, not itself rotting), the
-      YOUNGEST one -- the freshest work item under this epic -- has NOT
-      yet crossed its OWN priority's rot threshold (`_tick004_rot_
-      thresholds`). One fresh child is enough evidence the decomposition
-      is still moving.
-
-    `True` (genuine rot -- the caller lets the epic's own age-driven
-    severity escalate to ERROR same as an undecomposed ticket) only when
-    every candidate above is exhausted: no in-progress child, and even
-    the newest QUEUED/PLANNED child is itself over threshold.
-
-    Direct children only -- T-3463's own Description explicitly defers
-    recursive descent through nested grandchild epics to a follow-up (see
-    this ticket's Done report); a grandchild epic under `t` is read here
-    exactly like any other child, by its own `created` date, not by
-    walking further down its own children."""
-    children = [
+# frob:ticket T-3476
+# frob:waive DUP001 reason="T-3476: structurally similar to _doable._doable_ \
+# candidates (both filter queue.tickets.values() in a list comprehension) but \
+# semantically different -- this one keys off parent==t.id + DONE/DROPPED exclusion \
+# for the TICK004 rot walk, _doable_candidates keys off tier/state/ blockers for \
+# dispatchability; sharing one function would couple two unrelated gate concerns"
+def _non_terminal_children(t: Ticket, queue: TicketQueue) -> list[Ticket]:
+    """Every OTHER ticket in `queue` carrying `parent == t.id` whose state
+    is not `done`/`dropped` -- the direct-children lookup shared by
+    `_epic_children_all_stalled` and its recursive descent, factored out
+    so the recursion step and the top-level scan read one definition."""
+    return [
         other
         for other in queue.tickets.values()
         if other.id != t.id
         and other.parent == t.id
         and other.state not in (TicketState.DONE, TicketState.DROPPED)
     ]
+
+
+# frob:ticket T-3463
+# frob:ticket T-3476
+def _epic_children_all_stalled(
+    t: Ticket,
+    queue: TicketQueue,
+    thresholds: dict[Priority, int],
+    today: date,
+    _seen: frozenset[str] | None = None,
+) -> bool:
+    """T-3463 (+ T-3476 recursive descent): whether a decomposed epic/
+    story `t`'s own children show NO sign of active work -- the sharper
+    rot signal T-3399's body explicitly deferred. `False` (children look
+    healthy, `_tick004_queue_rot` keeps the WARN cap) whenever: `t` has no
+    non-terminal child (fails safe -- `_has_active_child` already gates
+    the caller); OR any direct child is `IN_PROGRESS`; OR a direct child
+    that is ITSELF a decomposed epic (`_has_active_child`) recursively
+    shows fresh work somewhere in ITS OWN subtree (T-3476: a nested
+    grandchild epic is walked the same way `t` is, not read by its own
+    `created` date alone, so a live great-grandchild counts as fresh
+    evidence for every ancestor above it); OR among the remaining QUEUED/
+    PLANNED children (a `BLOCKED` child is waiting on something else, not
+    rotting), the YOUNGEST -- direct or, via recursion, a stalled nested
+    epic falls through to this same comparison -- has NOT yet crossed its
+    own priority's rot threshold (`_tick004_rot_thresholds`).
+
+    `True` (genuine rot -- lets `t`'s own age-driven severity escalate to
+    ERROR same as an undecomposed ticket) only when every candidate above
+    is exhausted: no in-progress child anywhere in the subtree, and even
+    the newest QUEUED/PLANNED child is itself over threshold.
+
+    `_seen` is an internal cycle guard (ticket ids already visited on
+    this descent) -- a malformed `parent` cycle fails open to "not
+    stalled" for the re-visited node rather than recursing forever."""
+    seen: frozenset[str] = (_seen or frozenset()) | {t.id}
+    children = _non_terminal_children(t, queue)
     if not children:
         return False
     if any(c.state is TicketState.IN_PROGRESS for c in children):
         return False
+    for c in children:
+        if (
+            c.id not in seen
+            and _has_active_child(c, queue)
+            and not _epic_children_all_stalled(c, queue, thresholds, today, seen)
+        ):
+            return False
     candidates = [
         c for c in children if c.state in (TicketState.QUEUED, TicketState.PLANNED)
     ]

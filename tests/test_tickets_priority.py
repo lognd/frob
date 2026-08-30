@@ -187,6 +187,7 @@ class TestSetPriority:
         assert entries[0].reason == "escalated for the demo"
 
 
+# frob:ticket T-3476
 class TestTick004QueueRot:
     """TICK004: a queued/planned ticket past its priority's rot threshold."""
 
@@ -451,6 +452,7 @@ class TestTick004QueueRot:
         assert "already decomposed" in matches[0].message
 
     # frob:ticket T-3463
+    # frob:ticket T-3476
     def test_decomposed_epic_with_all_children_stalled_escalates_to_error(
         self, tmp_path: Path
     ) -> None:
@@ -480,6 +482,102 @@ class TestTick004QueueRot:
         violations = _tick004_queue_rot(tmp_path, queue)
         matches = [
             v for v in violations if v.rule == "TICK004" and "T-3472" in v.message
+        ]
+        assert len(matches) == 1
+        assert matches[0].severity is Severity.ERROR
+        assert "children are ALSO stalled" in matches[0].message
+        assert "already decomposed" not in matches[0].message
+
+    # frob:ticket T-3476
+    def test_nested_grandchild_epic_with_fresh_greatgrandchild_stays_warn(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_priority.py::TestTick004QueueRot.test_nested_grandchild_epic_with_fresh_greatgrandchild_stays_warn  # noqa: E501
+        """MUST STAY QUIET (T-3476): the top epic's only non-terminal
+        child is itself a decomposed epic (a stalled-by-age QUEUED
+        grandchild epic), but THAT grandchild epic has its own fresh
+        QUEUED great-grandchild well under threshold. Recursive descent
+        must read the live great-grandchild as fresh evidence for every
+        ancestor, so the top epic keeps the WARN cap instead of
+        escalating to ERROR."""
+        top_epic = _ticket(
+            ticket_id="T-3480",
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=33),
+            tier=TicketTier.EPIC,
+        )
+        grandchild_epic = _ticket(
+            ticket_id="T-3481",
+            state=TicketState.QUEUED,
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=20),
+            parent="T-3480",
+            tier=TicketTier.EPIC,
+        )
+        greatgrandchild = _ticket(
+            ticket_id="T-3482",
+            state=TicketState.QUEUED,
+            priority=Priority.HIGH,
+            created=date.today(),
+            parent="T-3481",
+        )
+        queue = TicketQueue(
+            tickets={
+                top_epic.id: top_epic,
+                grandchild_epic.id: grandchild_epic,
+                greatgrandchild.id: greatgrandchild,
+            }
+        )
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-3480" in v.message
+        ]
+        assert len(matches) == 1
+        assert matches[0].severity is Severity.WARN
+        assert "already decomposed" in matches[0].message
+
+    # frob:ticket T-3476
+    def test_nested_grandchild_epic_fully_stalled_escalates_to_error(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_priority.py::TestTick004QueueRot.test_nested_grandchild_epic_fully_stalled_escalates_to_error  # noqa: E501
+        """MUST FIRE (T-3476): the top epic's only non-terminal child is
+        a decomposed grandchild epic whose own only non-terminal child
+        (a great-grandchild) is QUEUED and has ALSO crossed its own rot
+        threshold -- rot all the way down the subtree, not just at the
+        top. Recursive descent must escalate the top epic to ERROR
+        exactly as it would for a direct stalled child."""
+        top_epic = _ticket(
+            ticket_id="T-3490",
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=33),
+            tier=TicketTier.EPIC,
+        )
+        grandchild_epic = _ticket(
+            ticket_id="T-3491",
+            state=TicketState.QUEUED,
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=20),
+            parent="T-3490",
+            tier=TicketTier.EPIC,
+        )
+        greatgrandchild = _ticket(
+            ticket_id="T-3492",
+            state=TicketState.QUEUED,
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=20),
+            parent="T-3491",
+        )
+        queue = TicketQueue(
+            tickets={
+                top_epic.id: top_epic,
+                grandchild_epic.id: grandchild_epic,
+                greatgrandchild.id: greatgrandchild,
+            }
+        )
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-3490" in v.message
         ]
         assert len(matches) == 1
         assert matches[0].severity is Severity.ERROR

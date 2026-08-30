@@ -2,7 +2,7 @@
 id: T-3476
 title: 'TICK004: recursive descent through nested grandchild epics for children-progress
   rot check'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-30'
@@ -28,6 +28,9 @@ scope_changes:
     suite'
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_nested_grandchild_epic_with_fresh_greatgrandchild_stays_warn
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_nested_grandchild_epic_fully_stalled_escalates_to_error
 designated_repro_test: null
 threat: null
 component: null
