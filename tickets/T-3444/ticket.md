@@ -2,7 +2,7 @@
 id: T-3444
 title: 'REF001 missing tickets-archive.md exemption: T-3249 fixed tickets.md, sibling
   ledger file still fails clean'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -28,6 +28,10 @@ scope_changes:
   reason: the T-3442 xfail(strict=True) this ticket must remove lives here
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/test_refs_gate.py::TestDefaultRootManifestExempt::test_root_tickets_archive_md_is_exempt_with_no_declaration
+- tests/test_refs_gate.py::TestDefaultRootManifestExempt::test_nested_tickets_archive_md_still_subject_to_ref001
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_cli_land_invoked_with_root_equal_to_worktree_still_verifies
 designated_repro_test: null
 threat: null
 component: null
