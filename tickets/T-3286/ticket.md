@@ -43,3 +43,6 @@ New (rule, file) identit(ies) filed here:
 - unknown-argument  tests/unit/test_pytest_spawn_env_wiring.py
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Failure log
+- 2026-08-29 attempt 1: already resolved on main, not reproducible -- see Failure log for measured evidence
