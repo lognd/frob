@@ -380,8 +380,28 @@ def _first_invalid_scope_glob(globs: Sequence[str]) -> str | None:
     entry this repo's existing tickets actually use (bare literals,
     trailing-slash directories, single/double-star globs, bracket
     classes) probes clean -- see the round-trip positive control in
-    `tests/test_tickets.py`."""
+    `tests/test_tickets.py`.
+
+    T-3496/T-3488 bucket E: a bare `;` is checked FIRST, explicitly, never
+    relying on `Path.glob`'s own syntax validator alone to catch it.
+    Measured: on this host's Python 3.10, `Path.glob` DOES raise
+    `ValueError` for a `;`-joined double-star entry like
+    `'src/frob/verify/**;src/frob/app/ticket_runner/**'` (the embedded
+    `**` mid-component trips its "must be an entire path component"
+    rule) -- but that is CPython-version-dependent stdlib behavior, not a
+    guarantee. `git run 33311990183` measured the identical entry
+    ACCEPTED (no raise) on macOS CI's own Python, meaning at least one
+    supported interpreter build's `glob` module does not reject it,
+    whether from a version difference or an implementation difference. A
+    `;` is never a legitimate glob character in any pattern this module
+    accepts (see `test_every_existing_valid_form_still_passes`'s own
+    positive-control list) and is exactly the delimiter confusion this
+    whole function exists to catch (T-2450's real incident), so it is
+    refused directly and portably instead of through the version-
+    sensitive `Path.glob` probe."""
     for glob in globs:
+        if ";" in glob:
+            return glob
         try:
             next(_SCOPE_GLOB_PROBE_ROOT.glob(glob), None)
         except (ValueError, NotImplementedError):

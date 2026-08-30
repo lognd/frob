@@ -1,7 +1,7 @@
 ---
 id: T-3498
 title: 'macOS-only: scope glob accepts a semicolon-joined entry (bucket E, T-3488)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
