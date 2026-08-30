@@ -27,6 +27,11 @@ scope_changes:
   reason: unit test coverage for the venv-sync fix, no source outside declared scope
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork::test_runs_uv_sync_in_the_worktree
+- tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork::test_exec_disabled_degrades_to_a_warning_not_sys_exit
+- tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork::test_nonzero_exit_degrades_to_a_warning_not_sys_exit
+- tests/unit/test_ticket_runner_venv_sync_t3320.py::TestSyncVenvForWork::test_runs_before_natives_build_in_the_work_flow
 designated_repro_test: null
 threat: null
 component: null
