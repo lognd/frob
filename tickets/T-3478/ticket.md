@@ -2,7 +2,7 @@
 id: T-3478
 title: build_graph holds the exclusive derived-state flock for the whole parse, serializing
   xdist workers into a ~19-minute CI tail stall
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-30'
