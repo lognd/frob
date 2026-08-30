@@ -43,6 +43,15 @@ triage_changes:
     commitment and is gated on the two triage children
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: BUG002 needs an explicit no-behavior-change directive for this pure refactor;
+    the designated repro test correctly PASSES at both main and the fix since no defect
+    fix is intended
+  actor: logan
+  at: '2026-08-30'
+  old_length: 0
+  new_length: 395
 evidence:
 - tests/test_tickets_priority.py::TestSetPriority::test_updates_priority_field
 - tests/test_tickets_priority.py::TestSetPriority::test_reason_missing_refuses
@@ -60,3 +69,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+frob:no-behavior-change reason="T-2957's landed change is a pure internal de-dup refactor of set_priority/set_tier/set_component/set_kind in src/frob/tickets/_setters.py -- extracted the shared reason-required guard into _set_reasoned_field and trimmed a repeated docstring paragraph to a cross-reference; no behavior or public-api contract change is intended, per BUG002's T-1616 recovery path"
