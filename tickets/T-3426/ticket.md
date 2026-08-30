@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a0bb342a698e9bd74b2dbe292dfebd5c9764e913
 ---
 MEASURED on GitHub Actions run 33277131782, job build (ubuntu-latest),
 HEAD bb5c28203, 2026-08-29. The Test step started 21:54:06 and was
