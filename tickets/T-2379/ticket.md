@@ -75,6 +75,12 @@ scope_changes:
     only handled warning/suggestion/info before)
   actor: logan
   at: '2026-08-30'
+- op: add
+  glob: tickets/T-draft-68252dc0/**
+  reason: T-2379's own out-of-scope discovery filed as a new ticket; the ticket file
+    lands with this ticket
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 acceptance:
 - text: given unguarded-shared-write/lock-order-cycle (the two codes T-2379 actually
