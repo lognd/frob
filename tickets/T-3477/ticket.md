@@ -20,6 +20,7 @@ scope:
 - src/frob/gates/_rule_id_scan.py
 - src/frob/vet/_capability_scan.py
 - tickets/T-draft-d3863270/**
+- tests/gates/test_rule_id_scan_branches.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,22 @@ scope_changes:
     new from this worktree; the ticket file itself lands with this ticket
   actor: logan
   at: '2026-08-30'
+- op: add
+  glob: tests/gates/test_rule_id_scan_branches.py
+  reason: T-3477's PERF014 rewrite of scan_candidate_rule_id_literals needs a multi-line-file
+    test that actually exercises the new per-file offset-to-lineno arithmetic (bisect
+    over cumulative per-line byte offsets), which the existing single-line fixtures
+    never touch and TEST016's mutation check caught as a live gap
+  actor: logan
+  at: '2026-08-30'
+evidence:
+- tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_finds_bare_positional_argument
+- tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_finds_code_kwarg_outside_scanned_bases
+- tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_finds_typed_const_assignment
+- tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_inline_comment_example_not_picked_up
+- tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_whole_line_comment_not_picked_up
+- tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_detects_freshly_added_rule_id
+- tests/test_vet.py::TestOpaqueIndirectionGate::test_kotlin_operator_invoke_instance_call_fires
 designated_repro_test: null
 threat: null
 component: null
