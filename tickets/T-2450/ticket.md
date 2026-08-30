@@ -1,7 +1,7 @@
 ---
 id: T-2450
 title: Promote verify->ticket_runner private helpers to a public seam
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -16,6 +16,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/verify/**
 - src/frob/app/ticket_runner/**
+- design/frob.strata
+- tests/test_ticket_land.py
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +42,24 @@ scope_changes:
     entries; the joined string is not a valid glob pattern and matched nothing'
   actor: logan
   at: '2026-08-19'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-2450: interface= declaration for the 3 new public seam symbols, plus
+    their delegation tests'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'T-2450: interface= declaration for the 3 new public seam symbols, plus
+    their delegation tests'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: 'T-2450: interface= declaration for the 3 new public seam symbols, plus
+    their delegation tests'
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
