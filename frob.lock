@@ -2429,6 +2429,24 @@
       "old_digest": "c37b2419f1fb9a35daa0df20e0c3d05cef4f8dcc75d507e7dccd2994cc6a1851",
       "reason": "T-3260 real split: relocated verbatim from vmodel.rs into vmodel/closure.rs; docs/strata/vmodel.md's prose unchanged and still accurate, only file path moved",
       "ref": "strata-core/src/graph/vmodel/closure.rs::check_closure"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "body",
+      "new_digest": "edcc0b6f8ed958ce2360902f62cedd2ca4a6dc09facf3b46ed2279586ad0fb3e",
+      "old_digest": "99bae214d15f723ee9448697f2233c8c2deb8d2f3664c388dc6ff724b87da162",
+      "reason": "T-3441: re-verified against current code and updated docs/modules/tickets-lifecycle.md's Public API narrative for scope_lease_conflict to document T-3296's FROB_MANAGED_SIDE_EFFECT_PATHS skip-before-collision-check behavior, which the paragraph was missing; the rest of the paragraph (shared entrypoint, own_scope semantics, call sites) is still accurate",
+      "ref": "src/frob/tickets/_scope.py::scope_lease_conflict"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-29",
+      "facet": "sig",
+      "new_digest": "e72cb77e91e74e24ba2ceb91e2c4d173e95dd3be174b5b322bed0ad8518875f4",
+      "old_digest": "e72cb77e91e74e24ba2ceb91e2c4d173e95dd3be174b5b322bed0ad8518875f4",
+      "reason": "T-3441: re-verified against current code and updated docs/modules/tickets-lifecycle.md's Public API narrative for scope_lease_conflict to document T-3296's FROB_MANAGED_SIDE_EFFECT_PATHS skip-before-collision-check behavior, which the paragraph was missing; the rest of the paragraph (shared entrypoint, own_scope semantics, call sites) is still accurate",
+      "ref": "src/frob/tickets/_scope.py::scope_lease_conflict"
     }
   ],
   "entries": [
@@ -3653,7 +3671,7 @@
       "ref": "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence"
     },
     {
-      "digest": "99bae214d15f723ee9448697f2233c8c2deb8d2f3664c388dc6ff724b87da162",
+      "digest": "edcc0b6f8ed958ce2360902f62cedd2ca4a6dc09facf3b46ed2279586ad0fb3e",
       "facet": "body",
       "ref": "src/frob/tickets/_scope.py::scope_lease_conflict"
     },
@@ -3736,16 +3754,6 @@
       "digest": "3162432fa18da978a0c575e8728ca3e498a846f895cf8bb9abd29b008c550b2b",
       "facet": "sig",
       "ref": "src/frob/xref/__init__.py::xref"
-    },
-    {
-      "digest": "ccfcd694071ce0a085fb65118ac55cf1c4d9e19e78eb1207a961b2f8daac107b",
-      "facet": "body",
-      "ref": "tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token"
-    },
-    {
-      "digest": "23e41841ff29ef3e6c04dc6d927182dc23dfcb37761208faf7e7d6bc365fc50e",
-      "facet": "sig",
-      "ref": "tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token"
     },
     {
       "digest": "8147c727fc5fb63a32bf724caad7eabcd42fe46d7de42178f2b4debf92edacac",
@@ -3946,6 +3954,16 @@
       "digest": "fb86fd35647e71a9d7b41660808486139fd4d7331e4404ca37a2439fe082c583",
       "facet": "sig",
       "ref": "strata-core/src/graph/vmodel/mod.rs::v_pairing"
+    },
+    {
+      "digest": "ccfcd694071ce0a085fb65118ac55cf1c4d9e19e78eb1207a961b2f8daac107b",
+      "facet": "body",
+      "ref": "tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token"
+    },
+    {
+      "digest": "23e41841ff29ef3e6c04dc6d927182dc23dfcb37761208faf7e7d6bc365fc50e",
+      "facet": "sig",
+      "ref": "tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token"
     }
   ],
   "version": 1

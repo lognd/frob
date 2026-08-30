@@ -2,7 +2,7 @@
 id: T-3441
 title: 'post-land sweep regression from T-3296: 2 new (rule, file) identit(ies), 4
   finding(s) (COV001, DRIFT001)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'

@@ -128,6 +128,9 @@ just this repo's. A `root` whose package name cannot be resolved from
 `pyproject.toml` falls back to the convention-literals-only set
 (UNRESOLVED, logged distinctly, never silently "this project has none").
 
+T-3296: `FROB_MANAGED_SIDE_EFFECT_PATHS` (`frob.tickets._scope`) names tracked, committed paths a routine, documented workflow step rewrites as a side effect (currently just `frob-coverage.lock.json`, written by `--stamp-coverage`) -- never something an operator deliberately chose to edit. `scope_lease_conflict` skips any glob in this set before checking it for a collision, so more than one in-progress ticket can declare/write it at once; `frob.gates`'s SCOPE001 check imports this SAME set so the two exemptions cannot drift apart.
+
+<!-- frob:describes src/frob/tickets/_scope.py::FROB_MANAGED_SIDE_EFFECT_PATHS -->
 <!-- frob:describes src/frob/tickets/_models.py::over_broad_literal_globs -->
 <!-- frob:describes src/frob/tickets/_archive.py::load_queue -->
 <!-- frob:describes src/frob/tickets/_new_renumber.py::new_ticket -->

@@ -665,6 +665,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3435: PORT001 cannot catch a bare string-constant identity default (detection-shape gap)
 - T-3437: T-3420 follow-up: test_coverage.py still asserts sigterm is True, and the SIGTERM must-fire fixture fails on macOS
 - T-3438: frob vet hook mode leaks the frob claude sync config nag to stderr; hook mode must be silent
+- T-3441: post-land sweep regression from T-3296: 2 new (rule, file) identit(ies), 4 finding(s) (COV001, DRIFT001)
 - T-3442: Five out-of-tree land pipeline tests fail on CI: warm-sweep-stage path, T-1920 drift guard inert, record-commit probe
 - T-3443: frob-exports reports missing public symbols in frob.doctor and frob.lang._support
 - T-3444: REF001 missing tickets-archive.md exemption: T-3249 fixed tickets.md, sibling ledger file still fails clean

@@ -504,6 +504,15 @@ means the two call sites cannot answer "does this scope collide?"
 differently again, the same discipline T-1883's `same_worktree_lease`
 extraction already applied to the doable/`--add` pairing above.
 
+T-3296: `scope_lease_conflict` now skips any glob that is a member of
+`FROB_MANAGED_SIDE_EFFECT_PATHS` (e.g. `frob-coverage.lock.json`) before
+checking it for a collision at all -- a frob-managed side-effect path
+that `--stamp-coverage` rewrites as a routine, documented TEST006 step is
+never a real scope conflict, so more than one in-progress ticket can
+declare/write it at once without tripping this guard. `frob.gates`'s
+SCOPE001 check imports the SAME `FROB_MANAGED_SIDE_EFFECT_PATHS` set so
+the two exemptions cannot drift apart.
+
 <!-- frob:describes src/frob/app/ticket_runner/_query.py::_stale_lease_reasons -->
 <!-- frob:describes src/frob/app/ticket_runner/_query.py::_render_doable_in_flight -->
 **`frob ticket doable` now FLAGS a lease that looks dead, in its own

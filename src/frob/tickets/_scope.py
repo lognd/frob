@@ -79,6 +79,7 @@ _log = get_logger("frob.tickets")
 # set (or adds a second, provenance-scoped mechanism alongside it) for
 # other frob-managed side-effect paths; do not duplicate a second literal
 # list elsewhere for the same class of path.
+# frob:doc docs/modules/tickets.md#public-api
 FROB_MANAGED_SIDE_EFFECT_PATHS: frozenset[str] = frozenset(
     {
         "frob-coverage.lock.json",
