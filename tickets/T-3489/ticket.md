@@ -55,7 +55,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6b4a146f6aadd4d07fe0272efce2d637e480f0d3
 ---
 MEASURED on GitHub Actions run 33311990183 (macos-latest and, by the same
 mechanism, ubuntu-latest on the next run), HEAD 986f8671c:
