@@ -56,7 +56,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 77a8ce66893e1934619e93401c3954ed31228bb5
 ---
 REPORTED FROM REAL CONSUMER USE (../diax FROBLEMS.md F-026, F-031, F-043,
 F-048). Four reports, and F-043/F-048 explicitly self-identify as "the F-026
