@@ -20,6 +20,7 @@ scope:
 - tests/unit/test_arch.py
 - src/frob/arch/_python.py
 - src/frob/arch/_normalized.py
+- scripts/_require_python.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +50,11 @@ scope_changes:
 - op: add
   glob: src/frob/arch/_normalized.py
   reason: NormalizedCallArg model extension (text field) the guard-discharge needs
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: scripts/_require_python.py
+  reason: 'EXHAUST002 waiver: regex-group digit-safety model limit, follow-up T-3473'
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
