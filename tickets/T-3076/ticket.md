@@ -7,7 +7,7 @@ kind: bug
 origin: human
 created: '2026-08-27'
 priority: medium
-parent: null
+parent: T-3505
 tier: ticket
 sprint: null
 runs_last: false
@@ -20,6 +20,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-3505
+  reason: T-3076 is the measured characterization this epic drains to zero for 1.0.0
+  actor: logan
+  at: '2026-08-30'
 body_changes:
 - mode: set
   reason: Record the first real Windows suite measurement, the windows-only cluster
