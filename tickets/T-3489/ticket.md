@@ -16,13 +16,26 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
-- changelog.d/**
 - src/frob/gates/_docptr.py
 - tests/unit/test_ticket_runner_land_release.py
+- changelog.d/T-2691.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: changelog.d/**
+  reason: T-3489 only touches the existing T-2691 fragment for repair, not the whole
+    directory
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: changelog.d/T-2691.md
+  reason: T-3489 only touches the existing T-2691 fragment for repair, not the whole
+    directory
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
