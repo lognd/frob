@@ -21,6 +21,7 @@ scope:
 - tests/test_graph.py
 - docs/modules/graph.md
 - docs/commands/check.md
+- docs/modules/process.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,12 @@ scope_changes:
 - op: add
   glob: docs/commands/check.md
   reason: T-0918 docstring paragraph update required by acceptance criteria
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/process.md
+  reason: derived_state_write_lock docstring cross-reference update required by acceptance
+    criteria
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
