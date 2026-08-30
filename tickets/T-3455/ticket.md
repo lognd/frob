@@ -2,7 +2,7 @@
 id: T-3455
 title: test_without_serial_pools_worker_is_unattributed asserts an absolute wall-clock
   bound that CI runners miss
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'

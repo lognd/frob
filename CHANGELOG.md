@@ -668,6 +668,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3445: strata tmLanguage grammar missing V-model keywords (architecture, configuration, entity, code_ref, obligation, runnable)
 - T-3446: strata export golden test_seccomp drifted from the committed golden
 - T-3448: .gitattributes attachment CRLF-suppression glob is too broad: unrelated text files escape autocrlf
+- T-3455: test_without_serial_pools_worker_is_unattributed asserts an absolute wall-clock bound that CI runners miss
 
 ## [0.530.0] - unreleased
 
