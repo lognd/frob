@@ -19,6 +19,7 @@ scope:
 - scripts/fleet_status.py
 - tests/test_ticket_land.py
 - tests/unit/test_coordinator_scripts.py
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,13 @@ scope_changes:
   glob: tests/unit/test_coordinator_scripts.py
   reason: 'T-2691: land-status marker reader/renderer tests live alongside the existing
     land-lock-holder test suite'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: 'T-2691: new public read_land_status_marker needs its own frob:doc anchor
+    in this guide, same convention every sibling fleet_status.py function already
+    follows'
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
