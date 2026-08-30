@@ -2,7 +2,7 @@
 id: T-3468
 title: done-report does not mirror to primary checkout; body-append/Done-report heading
   collision unresolved
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -17,10 +17,25 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/**
 - src/frob/tickets/_reporting.py
+- tests/test_tickets_body.py
+- tests/unit/test_ticket_runner_ledger_mirror.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_body.py
+  reason: add coverage for defect 2 (done-report visibility warning) and defect 3
+    (body --append ambiguous Done-report-heading message) fixes
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_ticket_runner_ledger_mirror.py
+  reason: add coverage for defect 2 (done-report visibility warning) and defect 3
+    (body --append ambiguous Done-report-heading message) fixes
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
