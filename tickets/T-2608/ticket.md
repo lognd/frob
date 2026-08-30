@@ -18,6 +18,7 @@ scope:
 - src/frob/check/_python.py
 - src/frob/gates/_gate_cache.py
 - src/frob/gates/__init__.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,11 @@ scope_changes:
 - op: add
   glob: src/frob/gates/__init__.py
   reason: SCOPE002's implementation lives here; grouping fix requires editing it
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_gates.py
+  reason: new grouping-behavior test for SCOPE002's fix lives here
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
