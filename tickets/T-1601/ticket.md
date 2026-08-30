@@ -1,7 +1,7 @@
 ---
 id: T-1601
 title: 'Language support: Java'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -146,6 +146,23 @@ scope_changes:
     of collected as a test file, same shape as the T-1600 csharp entry
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/test_lang.py::TestJava::test_walks_class_and_method
+- tests/test_lang.py::TestJava::test_package_private_method_is_not_public
+- tests/test_lang.py::TestJava::test_private_method_is_not_public
+- tests/test_lang.py::TestJava::test_static_final_field_is_a_const_symbol
+- tests/test_lang.py::TestJava::test_plain_field_is_not_extracted
+- tests/test_lang.py::TestJava::test_enum_is_a_class_symbol
+- tests/test_lang.py::TestJava::test_inner_class_is_a_transparent_qualname_container
+- tests/test_lang.py::TestJava::test_interface_member_is_implicitly_public
+- tests/test_lang.py::TestJava::test_interface_default_method_is_implicitly_public
+- tests/test_lang.py::TestJava::test_leading_javadoc_comment_binds_as_doc_text
+- tests/test_lang.py::TestJava::test_java_two_comment_node_types
+- tests/test_lang.py::TestJava::test_import_declaration_is_extracted
+- tests/test_lang.py::TestJava::test_multiple_declarators_in_one_field_declaration
+- tests/test_lang_conformance_gate.py::TestJavaCapabilityConformance::test_java_registered_capabilities_pass
+- tests/test_lang_conformance_gate.py::TestJavaCapabilityConformance::test_java_broken_continuation_fixture_is_caught_not_rubber_stamped
+- tests/test_lang_conformance_gate.py::TestJavaCapabilityConformance::test_java_no_symbols_fixture_is_caught_not_rubber_stamped
 designated_repro_test: null
 threat: null
 component: null

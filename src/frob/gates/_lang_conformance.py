@@ -101,6 +101,7 @@ _CAPABILITY_FIXTURE_EXTENSIONS: dict[str, str] = {
     "strata": ".strata",
     "bash": ".sh",
     "csharp": ".cs",
+    "java": ".java",
 }
 
 _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
@@ -222,6 +223,26 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
         f"    // {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
         "    private int PrivateFn()\n"
         "    {\n"
+        "        return 2;\n"
+        "    }\n"
+        "}\n"
+    ),
+    # T-1601: Java has no free-function concept -- the public/private pair
+    # lives inside one class, and `import java.util.List;` is the
+    # import statement. Package-private (no modifier) is the language's
+    # default, so PrivateFn is left bare rather than marked `private` --
+    # exercising the walker's own trap decision, not just its explicit
+    # non-public path.
+    "java": (
+        "// Capability fixture module doc.\n\n"
+        "import java.util.List;\n\n"
+        "public class CapabilityFixture {\n"
+        "    public int publicFn() {\n"
+        "        return privateFn();\n"
+        "    }\n\n"
+        "    // frob:tests \\\n"
+        f"    // {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+        "    int privateFn() {\n"
         "        return 2;\n"
         "    }\n"
         "}\n"
@@ -571,10 +592,13 @@ def _behavioral_capability_check(
 # T-1600: `.cs` (csharp) removed for the identical T-1234 reason -- a
 # real `frob.lang` grammar registration now exists
 # (`frob.lang._walk_csharp`, `frob.lang.__init__._EXTENSION_TABLE`).
+#
+# T-1601: `.java` removed for the identical T-1234 reason -- a real
+# `frob.lang` grammar registration now exists (`frob.lang._walk_java`,
+# `frob.lang.__init__._EXTENSION_TABLE`).
 _UNREGISTERED_CANDIDATE_LANGUAGES: dict[str, str] = {
     ".swift": "swift",
     ".go": "go",
-    ".java": "java",
     ".rb": "ruby",
 }
 

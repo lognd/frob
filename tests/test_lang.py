@@ -862,6 +862,124 @@ class TestCSharp:
         assert COMMENT_TYPES == frozenset({"comment"})
 
 
+# frob:ticket T-1601
+class TestJava:
+    """Java walker (`frob.lang._walk_java`) -- publicness (package-private
+    default is NOT public, module docstring's named trap), static-final
+    fields -> `CONST`, inner classes as transparent qualname containers,
+    interface default methods implicitly public."""
+
+    # frob:ticket T-1601
+    def test_walks_class_and_method(self) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::_walk_java
+        pf = parse_file(_FIXTURES / "sample.java").danger_ok
+        assert pf.language == "java"
+        cls = _symbol(pf, "Widget")
+        assert cls.kind == SymbolKind.CLASS
+        assert cls.public is True
+        assert cls.doc_text == "Adds two numbers."
+        method = _symbol(pf, "Widget.render")
+        assert method.kind == SymbolKind.METHOD
+        assert method.public is True
+
+    # frob:ticket T-1601
+    def test_package_private_method_is_not_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::_java_public
+        pf = parse_file(_FIXTURES / "sample.java").danger_ok
+        bare = _symbol(pf, "Widget.packagePrivate")
+        assert bare.kind == SymbolKind.METHOD
+        assert bare.public is False
+
+    # frob:ticket T-1601
+    def test_private_method_is_not_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::_java_public
+        pf = parse_file(_FIXTURES / "sample.java").danger_ok
+        hidden = _symbol(pf, "Widget.add")
+        assert hidden.kind == SymbolKind.METHOD
+        assert hidden.public is False
+
+    # frob:ticket T-1601
+    def test_static_final_field_is_a_const_symbol(self) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::_java_const_field_symbol
+        pf = parse_file(_FIXTURES / "sample.java").danger_ok
+        const = _symbol(pf, "Widget.MAX_WIDGETS")
+        assert const.kind == SymbolKind.CONST
+        assert const.public is True
+
+    # frob:ticket T-1601
+    def test_plain_field_is_not_extracted(self) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::_java_const_field_symbol
+        pf = parse_file(_FIXTURES / "sample.java").danger_ok
+        names = {s.qualname for s in pf.symbols}
+        assert "Widget.hidden" not in names
+
+    # frob:ticket T-1601
+    def test_enum_is_a_class_symbol(self) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::_java_class_symbol
+        pf = parse_file(_FIXTURES / "sample.java").danger_ok
+        color = _symbol(pf, "Widget.Color")
+        assert color.kind == SymbolKind.CLASS
+        assert color.public is False
+
+    # frob:ticket T-1601
+    def test_inner_class_is_a_transparent_qualname_container(self) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::_java_dispatch
+        pf = parse_file(_FIXTURES / "sample.java").danger_ok
+        names = {s.qualname for s in pf.symbols}
+        assert "Widget.Inner.innerMethod" in names
+        assert "innerMethod" not in names
+
+    # frob:ticket T-1601
+    def test_interface_member_is_implicitly_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::_java_public
+        pf = parse_file(_FIXTURES / "sample.java").danger_ok
+        do_it = _symbol(pf, "Widget.Thing.doIt")
+        assert do_it.kind == SymbolKind.METHOD
+        assert do_it.public is True
+
+    # frob:ticket T-1601
+    def test_interface_default_method_is_implicitly_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::_java_public
+        pf = parse_file(_FIXTURES / "sample.java").danger_ok
+        default_method = _symbol(pf, "Widget.Thing.doItDefault")
+        assert default_method.kind == SymbolKind.METHOD
+        assert default_method.public is True
+
+    # frob:ticket T-1601
+    def test_leading_javadoc_comment_binds_as_doc_text(self) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::_walk_java
+        pf = parse_file(_FIXTURES / "sample.java").danger_ok
+        assert any("sum them" in c.text for c in pf.comments)
+
+    # frob:ticket T-1601
+    def test_java_two_comment_node_types(self) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::COMMENT_TYPES
+        # javadoc, plain block comments, and line comments -- module docstring.
+        from frob.lang._walk_java import COMMENT_TYPES
+
+        assert COMMENT_TYPES == frozenset({"line_comment", "block_comment"})
+
+    # frob:ticket T-1601
+    def test_import_declaration_is_extracted(self) -> None:
+        # frob:tests src/frob/lang/_extract.py::_imports_java
+        from frob.lang import extract_imports
+
+        imports = extract_imports(_FIXTURES / "sample.java").danger_ok
+        assert "java.util.List" in imports
+
+    # frob:ticket T-1601
+    def test_multiple_declarators_in_one_field_declaration(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/lang/_walk_java.py::_java_const_field_symbol
+        source = "public class Y {\n    static final int A = 1, B = 2;\n}\n"
+        path = _write(tmp_path, "multi.java", source)
+        pf = parse_file(path).danger_ok
+        names = {s.qualname for s in pf.symbols}
+        assert "Y.A" in names
+        assert "Y.B" in names
+
+
 # frob:ticket T-2575
 class TestErrors:
     def test_unsupported_extension(self, tmp_path: Path) -> None:

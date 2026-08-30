@@ -1,0 +1,150 @@
+## Done report
+
+Adds Java as a registered `frob.lang` language, mirroring `_walk_csharp.py`'s
+field-based adapter shape end to end (tree-sitter-java exposes real named
+fields -- name/body/type/parameters/declarator -- so this walker follows the
+same recursive-descent-over-`child_by_field_name` shape).
+
+Changed:
+src/frob/lang/_walk_java.py (new)
+src/frob/lang/_extract.py::COMMENT_TYPES / _WALKERS / _imports_java / _IMPORT_WALKERS
+src/frob/lang/__init__.py::_EXTENSION_TABLE
+src/frob/gates/_lang_conformance.py::_CAPABILITY_FIXTURE_SOURCES / _CAPABILITY_FIXTURE_EXTENSIONS / _UNREGISTERED_CANDIDATE_LANGUAGES
+src/frob/lang/_support.py (new java FACETS-wiring citation, see below)
+frob.toml ([[test.runner]] language="java")
+tests/fixtures/lang/sample.java (new)
+tests/test_lang.py::TestJava (new)
+tests/test_lang_conformance_gate.py::TestJavaCapabilityConformance (new)
+docs/modules/lang.md (publicness table, per-language walker notes, contract-section note)
+
+Publicness decision (required by the ticket, the ticket's own named trap):
+the literal `public` keyword only -- Java's package-private DEFAULT (no
+modifier at all) is deliberately NOT public, the mirror image of kotlin's
+bare-declaration-means-public rule. One carve-out: an interface member with
+no modifier of its own is implicitly public (the language's own rule),
+overridden only by an explicit `private`/`protected` modifier -- a `default`
+interface method carries `default` as an ordinary co-modifier and does not
+change this. Verified with test_package_private_method_is_not_public (the
+trap itself) plus test_interface_member_is_implicitly_public /
+test_interface_default_method_is_implicitly_public.
+
+Inner/anonymous classes (required by the ticket): nested class/interface/
+enum declarations are ordinary recursion (qualname stack nests naturally,
+Widget.Inner.innerMethod) -- no special case needed. An ANONYMOUS class body
+(`new Runnable() {...}`) is never reached at all because it lives inside a
+method `block`, which this walker never descends into for symbol extraction
+(disclosed limitation, mirrors _walk_csharp.py's partial-class disclosure).
+Verified with test_inner_class_is_a_transparent_qualname_container.
+
+Interfaces with default methods (required by the ticket): a `default`
+interface method is an ordinary METHOD symbol, publicness computed the same
+implicit-public-carve-out way as any other interface member.
+
+Annotations (required by the ticket): `@Deprecated`/marker_annotation nodes
+sit inside `modifiers` alongside real visibility keywords but have a
+different node TYPE, so `_java_has_modifier`'s literal-keyword-type scan
+never confuses one for a modifier.
+
+Javadoc (required by the ticket): `/** ... */` is the SAME `block_comment`
+node type as a plain `/* */` comment in this grammar -- no javadoc-specific
+stripping needed, `_common._strip_comment_delims` already handles the
+`/**`/`*/` delimiters and each continuation line's leading `*` gutter.
+Verified with test_leading_javadoc_comment_binds_as_doc_text.
+
+Static-final/const fields: a `static final` field (or any field inside an
+interface, implicitly public-static-final in Java) is extracted as
+SymbolKind.CONST; a plain instance field is not symbol-shaped at all
+(mirrors _walk_csharp.py's identical const-field-only rule). One
+field_declaration can declare multiple comma-separated declarators
+(`static final int A, B;`), each becoming its own CONST symbol -- verified
+with test_multiple_declarators_in_one_field_declaration.
+
+Directive DSL / obligation graph: identical posture to T-1600's csharp
+adapter -- doc edges, test edges (frob:tests on every new symbol) all
+present; no waivers needed (no test-only raw-parse helper was added this
+time, learning from T-2905's wire-or-drop finding on _parse_csharp).
+
+Capability conformance (T-1599's 6-of-7 axis): symbol_walk, publicness,
+doc_extract, directive_parse, call_graph, import_graph are ALL IMPLEMENTED
+and behaviorally verified -- Java calls are parenthesized (`foo()`), so no
+call_graph KNOWN_GAP is needed. test_discovery stays structural-only (no
+bounded, offline-safe Java test-runner toolchain integration exists yet,
+same disclosed posture as typescript/c/cpp/kotlin/csharp).
+
+Positive/negative controls:
+- Positive (must-pass): tests/fixtures/lang/sample.java -- public class,
+  package-private method (the trap), private method, static final field,
+  plain (non-extracted) field, inner class, interface with a default
+  method, enum, leading javadoc comment.
+- Positive (must-fail #1): test_java_broken_continuation_fixture_is_caught_not_rubber_stamped
+  -- dropped continuation line must fail directive_parse.
+- Positive (must-fail #2): test_java_no_symbols_fixture_is_caught_not_rubber_stamped
+  -- empty fixture must fail symbol_walk.
+
+FACETS-wiring gap (mirrors T-2906's bash/csharp precedent): java's
+capability/dup/docblock facets are not yet wired into
+frob.vet._capability_registry / frob.dup._exhaustiveness /
+frob.gates._docblocks. Rather than leave those three LANG003 known-gap
+detail strings uncited (the T-2906 incident T-1600's own done-report
+describes), filed a follow-up ticket (T-3492, renumbers at land)
+while working this ticket and cited it via a new
+`_JAVA_PENDING_FACET_WIRING`/`_JAVA_PENDING_FACET_WIRING_TICKET` pair in
+`_support.py`, the same disclosed-not-yet-closed shape T-2906 established.
+
+Evidence: 16 node ids bound via `frob ticket evidence T-1601`, all passing
+via `uv run pytest -q -p no:xdist tests/test_lang.py -k Java` (13 passed)
+and `uv run pytest -q -p no:xdist tests/test_lang_conformance_gate.py -k
+Java` (9 passed). Broader run: `uv run pytest -q -p no:xdist tests/test_lang.py
+tests/test_lang_conformance_gate.py tests/test_lang_support.py`, excluding
+4 pre-existing strata-native-unavailable failures this fresh worktree
+carries (strata_core not built here -- confirmed pre-existing by running the
+identical test clean from the primary checkout, which has natives built),
+210 passed.
+
+Gates: `frob check --only docblocks --only lang_conformance --only
+lang_project_conformance` -- gate:LANG clean (0 errors, 17 warnings, 5 of
+them the newly-added java facet WARNs, all verifying against the T-draft-
+56ea69d0 citation). The wider `frob check --budget 300 --ticket T-1601`
+run's gate:LANG ERROR count (4) traces entirely to capability_conformance's
+own strata-native-unavailable pre-existing failure in this worktree, not to
+java -- confirmed by re-running LANG's constituent gates without
+capability_conformance and getting 0 errors. Every other FAIL in that wider
+run (DOC/DRIFT/WAIVE/TICK/REF/REL/PRE/SCOPE/DEPR/DUP/LARGE/OPAQUE/
+SELFAUDIT/WIRE) traces to files outside this ticket's touched set
+(src/frob/verify/_bisect.py, src/frob/arch/_normalized.py,
+frob-ratchet.lock.json, etc.) -- confirmed by inspecting each finding's file
+path.
+
+Filed:
+- T-3492 (renumbers at land) -- wire java into vet/dup/docblock
+  capability facets, mirroring T-2906's bash/csharp follow-up exactly.
+
+### Changed
+```
+ tickets/T-1601/ticket.md           | 54 +++++++++++++++++++++++++++++++++++++-
+ tickets/T-3492/ticket.md | 32 ++++++++++++++++++++++
+ 2 files changed, 85 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_lang.py::TestJava::test_walks_class_and_method` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestJava::test_package_private_method_is_not_public` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestJava::test_private_method_is_not_public` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestJava::test_static_final_field_is_a_const_symbol` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestJava::test_plain_field_is_not_extracted` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestJava::test_enum_is_a_class_symbol` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestJava::test_inner_class_is_a_transparent_qualname_container` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestJava::test_interface_member_is_implicitly_public` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestJava::test_interface_default_method_is_implicitly_public` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestJava::test_leading_javadoc_comment_binds_as_doc_text` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestJava::test_java_two_comment_node_types` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestJava::test_import_declaration_is_extracted` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestJava::test_multiple_declarators_in_one_field_declaration` (pytest node id, verified passing when recorded)
+- `tests/test_lang_conformance_gate.py::TestJavaCapabilityConformance::test_java_registered_capabilities_pass` (pytest node id, verified passing when recorded)
+- `tests/test_lang_conformance_gate.py::TestJavaCapabilityConformance::test_java_broken_continuation_fixture_is_caught_not_rubber_stamped` (pytest node id, verified passing when recorded)
+- `tests/test_lang_conformance_gate.py::TestJavaCapabilityConformance::test_java_no_symbols_fixture_is_caught_not_rubber_stamped` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 16 passed (from 16 evidence id(s))
+- gates: 23 error(s), 4086 warning(s), 870 waived
+- error-findings: COV003@tests/unit/test_scaffold_project.py, DEPR006@frob-deprecated-baseline.lock.json, DOC006@changelog.d/T-2691.md, DOC007@src/frob/verify/_bisect.py, DRIFT001@src/frob/app/ticket_runner/_rapid_sweep.py, DRIFT001@src/frob/app/ticket_runner/_verify.py, DRIFT002@src/frob/verify/_bisect.py, DUP001@src/frob/lang/_extract.py, DUP001@src/frob/lang/_walk_java.py, LARGE001@.claude/hooks/root-write-guard.py, LARGE001@src/frob/arch/_mayraise.py, OPAQUE001@src/frob/_cli_parsers/_ticket/_metadata.py, PRE001@tickets/T-1601, REL001@src/frob/__init__.py, SELFAUDIT001@tests/unit/verify/test_bisect.py, TICK004@tickets.md, WAIVE009@src/frob/arch/_normalized.py, WAIVE011@frob-ratchet.lock.json, WIRE002@src/frob/app/ticket_runner/_land_cmd.py, WIRE002@src/frob/gates/_arch.py, WIRE002@src/frob/gates/_coverage_sites.py, WIRE002@src/frob/gates/_render_lint.py, WIRE002@tests/unit/test_new_ticket_scope_overlap_warning.py

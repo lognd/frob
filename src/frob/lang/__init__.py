@@ -155,6 +155,11 @@ _EXTENSION_TABLE: dict[str, tuple[str, str]] = {
     # name (tree-sitter-c-sharp) -- see `frob.lang._walk_csharp` for the
     # walker and its publicness/property-vs-field decisions.
     ".cs": ("csharp", "csharp"),
+    # frob:ticket T-1601
+    # tree-sitter-language-pack bundles the "java" grammar under that
+    # name (tree-sitter-java) -- see `frob.lang._walk_java` for the
+    # walker and its publicness/inner-class decisions.
+    ".java": ("java", "java"),
 }
 
 # `.strata` has no tree-sitter grammar (`_parse`/`_EXTENSION_TABLE` below

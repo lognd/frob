@@ -107,6 +107,7 @@ the whole declaration and `body_tokens` is always `()`.
 | kotlin | absence of a `private`/`protected`/`internal` visibility modifier (kotlin's own default visibility is `public`) |
 | bash | `not name.startswith("_")` -- bash has no visibility keyword at all; this is a naming *convention* (shellcheck's own leading-underscore-is-private idiom), not something the language enforces (T-1604) |
 | csharp | the literal `public` keyword only -- both silent defaults (top-level `internal`, member `private`) and every other explicit modifier are NOT public; an interface member with no modifier of its own is implicitly public (the language's own rule), overridden only by an explicit non-public modifier (T-1600) |
+| java | the literal `public` keyword only -- the package-private default (no modifier at all) is NOT public, the trap this language names explicitly; an interface member with no modifier of its own is implicitly public (the language's own rule), overridden only by an explicit `private`/`protected` modifier (T-1601) |
 
 ## Comment extraction and binding
 
@@ -133,7 +134,7 @@ names the walker treats as comment-typed leaves.
 Each language has its own recursive-descent walker (`_walk_python.py`,
 `_walk_typescript.py`, `_walk_rust.py`, `_walk_c.py`'s `_walk_c_family`
 shared by c/cpp, `_walk_kotlin.py`, `_walk_bash.py`, `_walk_csharp.py`,
-`_walk_strata.py`) built on the shared
+`_walk_java.py`, `_walk_strata.py`) built on the shared
 `_common.py` primitives (`_leaf_tokens`, `_leading_doc_comment`,
 `_strip_comment_delims`, `_span_of`).
 Notable per-language handling:
@@ -192,6 +193,35 @@ Notable per-language handling:
   declaration's TYPE subtree, never inside its `name` field, so they
   cannot confuse name extraction. `///` XML doc comments, `//`, and
   `/* */` all collapse to the same `comment` node type in this grammar.
+- **java** (T-1601): `class`/`interface`/`enum` declarations are
+  transparent `CLASS`-shaped qualname containers (`tree-sitter-java`
+  exposes real named fields -- `name`/`body`/`type`/`parameters`/
+  `declarator`), so inner classes/interfaces/enums are ordinary recursion,
+  not a special case -- an ANONYMOUS class body (`new Runnable() {...}`)
+  is never reached because it lives inside a method `block`, which this
+  walker never descends into. Publicness checks for the literal `public`
+  modifier keyword only: Java's package-private default (no modifier at
+  all) is deliberately NOT public -- the ticket's own named trap, the
+  mirror image of kotlin's bare-declaration-means-public rule -- except
+  an interface member with NO modifier of its own, which the language
+  itself makes public by definition (including a `default` method, which
+  carries the `default` keyword as an ordinary modifier alongside, never
+  instead of, the publicness check). A `static final` field (or any
+  field inside an interface, implicitly `public static final` in Java) is
+  extracted as `SymbolKind.CONST`; a plain instance field is not
+  symbol-shaped at all (mirrors `_walk_csharp.py`'s identical
+  const-field-only rule). One `field_declaration` can declare multiple
+  comma-separated declarators (`static final int A, B;`), each becoming
+  its own `CONST` symbol. `//` line comments and `/* */`/`/** */` block
+  comments (javadoc included) are two node types (`line_comment`/
+  `block_comment`), mirroring kotlin's pair rather than C#'s single-type
+  grammar; javadoc needs no special stripping -- `_strip_comment_delims`
+  already handles the `/**`/`*/` delimiters and each continuation line's
+  leading `*` gutter through the same path a plain block comment uses.
+  `capability`/`dup`/`docblock` facet-registry wiring for java (mirrors
+  T-2906's bash/csharp precedent) is a disclosed `KNOWN_GAP` tracked by
+  a follow-up ticket filed while working T-1601 -- see the Language
+  Support Contract section below.
 
 ## Data models
 
@@ -626,6 +656,15 @@ bucket plus recognized bash's pre-existing console-command one) rather
 than leaving the citation in place -- both languages now read
 `IMPLEMENTED` on all three facets, `arch` remaining the one genuine,
 already-tracked T-0329 gap every other non-python/cpp language shares.
+
+T-1601: java (this ticket's grammar) landed the same way bash/csharp
+originally did -- only the `grammar` facet real at land time.
+`capability`/`dup`/`docblock` read as `KNOWN_GAP` citing a follow-up
+ticket filed while working T-1601 (`frob.lang._support.
+_JAVA_PENDING_FACET_WIRING`/`_JAVA_PENDING_FACET_WIRING_TICKET`), the
+same disclosed-not-yet-closed shape T-2906 established for bash/csharp;
+a future pass should do the real subsystem integration and remove the
+citation the same way T-2906 did.
 
 T-2996: `refactor` joined `FACETS` after the audit found `frob.refactor`
 was Python-only with ZERO language-literal branching to find -- a

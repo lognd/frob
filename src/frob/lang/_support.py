@@ -467,6 +467,12 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # ADAPTERS` has no entry for yet (T-2996 found this is every
     # language except python).
     "T-3231": True,
+    # T-1601's own filed finding (mirrors T-2906's bash/csharp
+    # precedent): java gets a real frob.lang grammar/walker but is not
+    # yet wired into the capability/dup/docblock FACETS -- cited by
+    # `_capability_status`/`_dup_status`/`_docblock_status`'s shared
+    # `_JAVA_PENDING_FACET_WIRING_TICKET` constant.
+    "T-3492": True,
 }
 
 
@@ -503,6 +509,18 @@ _REFACTOR_ADAPTER_LANGUAGES = frozenset({"python"})
 # derived here as a set so `_capability_status` never hand-copies the
 # `("c", "cpp")` pair a second time.
 _CAPABILITY_C_CPP_MEMBERS = frozenset({"c", "cpp"})
+
+# T-1601: java registered a real frob.lang grammar/walker but is not yet
+# wired into the three OTHER FACETS-axis subsystems (frob.vet.
+# _capability_registry, frob.dup._exhaustiveness, frob.gates._docblocks)
+# -- mirrors `_NEW_ADAPTER_LANGUAGES_PENDING_FACET_WIRING`'s prior bash/
+# csharp shape (T-2906, now closed and removed) exactly: a small
+# membership set naming exactly which pending adapter this citation
+# covers, so a future language added to the three facet dispatches
+# without going through this same set stays a genuinely unreasoned
+# (loud) gap, not silently absorbed into this citation by accident.
+_JAVA_PENDING_FACET_WIRING = frozenset({"java"})
+_JAVA_PENDING_FACET_WIRING_TICKET = "T-3492"
 
 
 def _docblock_languages() -> frozenset[str]:
@@ -571,6 +589,11 @@ def _capability_status(language: str) -> FacetStatus:
         return _known_gap("c-cpp bucket missing from capability LANGUAGES")
     if language in capability_languages:
         return _implemented("frob.vet._capability_registry.LANGUAGES entry")
+    if language in _JAVA_PENDING_FACET_WIRING:
+        return _known_gap(
+            f"{language} absent from frob.vet._capability_registry.LANGUAGES "
+            f"-- tracked by {_JAVA_PENDING_FACET_WIRING_TICKET}"
+        )
     return _known_gap(f"{language} absent from frob.vet._capability_registry.LANGUAGES")
 
 
@@ -587,6 +610,11 @@ def _dup_status(language: str) -> FacetStatus:
 
     if language in dup_languages:
         return _implemented("frob.dup._exhaustiveness.LANGUAGES entry")
+    if language in _JAVA_PENDING_FACET_WIRING:
+        return _known_gap(
+            f"{language} absent from frob.dup._exhaustiveness.LANGUAGES "
+            f"-- tracked by {_JAVA_PENDING_FACET_WIRING_TICKET}"
+        )
     return _known_gap(f"{language} absent from frob.dup._exhaustiveness.LANGUAGES")
 
 
@@ -620,6 +648,11 @@ def _docblock_status(language: str) -> FacetStatus:
         )
     if language in _docblock_languages():
         return _implemented("frob.gates._docblocks fenced-language bucket entry")
+    if language in _JAVA_PENDING_FACET_WIRING:
+        return _known_gap(
+            f"{language} has no DOC004 fenced-language bucket "
+            f"-- tracked by {_JAVA_PENDING_FACET_WIRING_TICKET}"
+        )
     return _known_gap(f"{language} has no DOC004 fenced-language bucket")
 
 

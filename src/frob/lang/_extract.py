@@ -22,6 +22,7 @@ from frob.lang._models import RawComment, RawSymbol
 from frob.lang._walk_bash import _walk_bash
 from frob.lang._walk_c import _walk_c_family
 from frob.lang._walk_csharp import _walk_csharp
+from frob.lang._walk_java import _walk_java
 from frob.lang._walk_kotlin import _walk_kotlin
 from frob.lang._walk_python import _walk_python, _walk_python_docstring_comments
 from frob.lang._walk_rust import _walk_rust
@@ -49,6 +50,10 @@ COMMENT_TYPES: dict[str, frozenset[str]] = {
     # comments all collapse to the same `comment` node type in this
     # grammar (see `_walk_csharp.COMMENT_TYPES`'s own docstring).
     "csharp": frozenset({"comment"}),
+    # frob:ticket T-1601
+    # Java's two comment node types -- see `_walk_java.COMMENT_TYPES`'s own
+    # docstring for the javadoc-collapses-onto-block_comment decision.
+    "java": frozenset({"line_comment", "block_comment"}),
 }
 
 
@@ -77,6 +82,7 @@ _WALKERS = {
     "kotlin": _walk_kotlin,
     "bash": _walk_bash,
     "csharp": _walk_csharp,
+    "java": _walk_java,
 }
 
 # frob:ticket T-0342
@@ -509,6 +515,33 @@ def _imports_csharp(root: Node) -> tuple[str, ...]:
     return tuple(results)
 
 
+# frob:ticket T-1601
+def _imports_java(root: Node) -> tuple[str, ...]:
+    """Every `import_declaration`'s dotted target (T-1601) -- covers all
+    three forms (`import java.util.List;`, `import java.util.*;`, `import
+    static java.lang.Math.PI;`) with one rule: the declaration's own
+    `scoped_identifier` child is always the real target regardless of
+    form -- verified interactively before writing this (module
+    docstring's own exploration): the `static` keyword always precedes it
+    and a wildcard `*` always follows it, never the reverse."""
+    results: list[str] = []
+
+    def visit(n: Node) -> None:
+        if n.type == "import_declaration":
+            target = next(
+                (c for c in n.named_children if c.type == "scoped_identifier"), None
+            )
+            if target is not None:
+                text = _child_text(target)
+                if text:
+                    results.append(text)
+        for child in n.children:
+            visit(child)
+
+    visit(root)
+    return tuple(results)
+
+
 _IMPORT_WALKERS = {
     "python": _imports_python,
     "c": _imports_c_family,
@@ -519,6 +552,7 @@ _IMPORT_WALKERS = {
     "kotlin": _imports_kotlin,
     "bash": _imports_bash,
     "csharp": _imports_csharp,
+    "java": _imports_java,
 }
 
 
