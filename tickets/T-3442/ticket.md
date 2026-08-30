@@ -2,7 +2,7 @@
 id: T-3442
 title: 'Five out-of-tree land pipeline tests fail on CI: warm-sweep-stage path, T-1920
   drift guard inert, record-commit probe'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -26,6 +26,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally
+- tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard::test_branch_drift_before_final_commit_refuses_by_construction
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_cli_land_invoked_with_root_equal_to_worktree_still_verifies
+- tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_probe_catches_the_in_root_write_positive_control
+- tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_root_never_goes_dirty_while_the_record_is_made
 designated_repro_test: null
 threat: null
 component: null
