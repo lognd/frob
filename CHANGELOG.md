@@ -621,6 +621,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3322: frob ticket new hung indefinitely in a WSL2 9p RPC after writing the ticket file
 - T-3326: frob check --fix is repo-wide even from a targeted invocation, and a killed run leaves an unrecorded partial rewrite
 - T-3328: TestArchive's 5 baseline failures are git worktree list exit 128 under load hitting T-3230's new fail-closed path
+- T-3336: frob ticket close reports success on a ticket land then refuses as NotCloseable, and done-report does not mirror like its sibling verbs
 - T-3341: fix FROB_VERBOSE env leak in TestVerboseFlag (test isolation)
 - T-3342: Fix gate:DOC errors (DOC001-007 cluster)
 - T-3344: Clear gate:DRIFT findings (53 errors) for release gate

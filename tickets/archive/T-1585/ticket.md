@@ -49,9 +49,19 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency::test_rapid_missing_evidence_and_done_report_proceeds_with_debt_recorded
+- tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency::test_rapid_missing_evidence_and_done_report_still_refuses
 - tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency::test_non_rapid_missing_evidence_and_done_report_still_refuses
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency::test_rapid_missing_evidence_and_done_report_proceeds_with_debt_recorded
+  new_node: tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency::test_rapid_missing_evidence_and_done_report_still_refuses
+  reason: T-3336 removed the rapid-profile leniency this test exercised (close now
+    refuses unconditionally to match land's own gate) and renamed the test in place
+    to assert the corrected behavior -- rebinding T-1585's evidence citation to the
+    renamed node id so it still resolves; T-1585's own historical claim (leniency
+    existed) is superseded by T-3336, not retroactively rewritten
+  actor: logan
+  at: '2026-08-30'
 threat: null
 component: null
 anchor: false

@@ -3357,19 +3357,26 @@ class TestV2StateTransitions:
 
 # frob:ticket T-1585
 # frob:ticket T-3156
+# frob:ticket T-3336
 class TestDoneTransitionStructuralGuardRapidLeniency:
-    """T-1585 items 1: `rapid` lets a close proceed without evidence/a
-    Done report (T-1681), recording the skip as auditable debt rather
-    than silently dropping the requirement -- locks the backstop
-    (debt_sink is ALWAYS invoked on the relaxed path) with a direct
-    regression test, since no existing test exercised this function's
-    `rapid=True` branch end to end."""
+    """T-3336 (superseding T-1585/T-3156's old `rapid` leniency for this
+    ONE check): `land`'s own NotCloseable gate requires evidence + a
+    Done report UNCONDITIONALLY, with no `rapid` relaxation -- so `close`
+    accepting the same missing state under `rapid=True` let a ticket
+    reach `state: done`, with `close` reporting success, that `land`
+    then refused (MEASURED twice independently, T-3277 and the T-2667
+    landing series). `rapid` no longer relaxes THIS check under any
+    profile; the class name/module are kept as the historical home of
+    this exact regression, now asserting the corrected behavior."""
 
-    # frob:ticket T-3156
-    def test_rapid_missing_evidence_and_done_report_proceeds_with_debt_recorded(
+    # frob:ticket T-3336
+    def test_rapid_missing_evidence_and_done_report_still_refuses(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency.test_rapid_missing_evidence_and_done_report_proceeds_with_debt_recorded  # noqa: E501
+        # frob:tests tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency.test_rapid_missing_evidence_and_done_report_still_refuses  # noqa: E501
+        # MUST-FIRE (T-3336): a ticket closed under the rapid profile
+        # without evidence/a Done report is refused AT CLOSE TIME, same
+        # as land would refuse it -- never silently downgraded to debt.
         from frob.tickets._evidence import _done_transition_structural_guard
 
         ticket = _ticket(evidence=(), body="## Description\nno done report here\n")
@@ -3382,14 +3389,17 @@ class TestDoneTransitionStructuralGuardRapidLeniency:
             rapid=True,
             debt_sink=lambda tid, what: recorded.append((tid, what)),
         )
-        assert result.is_ok
-        assert recorded == [("T-0001", "missing-evidence-or-done-report")]
+        assert result.is_err
+        assert result.danger_err == TicketError.MissingEvidence
+        assert recorded == []
 
-    # frob:ticket T-3156
+    # frob:ticket T-3336
     def test_non_rapid_missing_evidence_and_done_report_still_refuses(
         self, tmp_path: Path
     ) -> None:
         # frob:tests tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency.test_non_rapid_missing_evidence_and_done_report_still_refuses  # noqa: E501
+        # MUST-STILL-PASS CONTROL: the non-rapid refusal this fix must
+        # not weaken, unchanged from before.
         from frob.tickets._evidence import _done_transition_structural_guard
 
         ticket = _ticket(evidence=(), body="## Description\nno done report here\n")
@@ -3404,6 +3414,33 @@ class TestDoneTransitionStructuralGuardRapidLeniency:
         )
         assert result.is_err
         assert result.danger_err == TicketError.MissingEvidence
+        assert recorded == []
+
+    # frob:ticket T-3336
+    def test_rapid_with_real_evidence_and_done_report_lands_without_extra_steps(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency.test_rapid_with_real_evidence_and_done_report_lands_without_extra_steps  # noqa: E501
+        # MUST-STAY-QUIET (T-3336): a normal close that DOES produce
+        # real evidence and a Done report proceeds under rapid exactly
+        # as it always has -- this fix narrows the missing-state
+        # leniency only, it does not touch the well-formed path.
+        from frob.tickets._evidence import _done_transition_structural_guard
+
+        ticket = _ticket(
+            evidence=("tests/test_x.py::test_y",),
+            body="## Description\nx\n\n## Done report\nreal narrative\n",
+        )
+        recorded: list[tuple[str, str]] = []
+        result = _done_transition_structural_guard(
+            tmp_path,
+            ticket,
+            {ticket.id: ticket},
+            covers_scope=None,
+            rapid=True,
+            debt_sink=lambda tid, what: recorded.append((tid, what)),
+        )
+        assert result.is_ok
         assert recorded == []
 
 
@@ -3423,10 +3460,18 @@ class TestHollowDoneReportGuard:
     )
 
     # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_rapid_hollow_report_refused  # noqa: E501
+    # frob:ticket T-3336
     def test_rapid_hollow_report_refused(self, tmp_path: Path) -> None:
+        # T-3336: `evidence` is non-empty here on purpose -- the hollow
+        # guard's OWN condition is about the BODY's rendered `### Changed`/
+        # `### Evidence` placeholder text, decoupled from the ticket's
+        # structured evidence list (a hand-authored test body, unlike a
+        # real auto-rendered one, can disagree with the list); the
+        # missing-evidence gate this fix adds sits BEFORE the hollow
+        # check and must not shadow it here.
         from frob.tickets._evidence import _done_transition_structural_guard
 
-        ticket = _ticket(evidence=(), body=self._HOLLOW_BODY)
+        ticket = _ticket(evidence=("tests/test_x.py::test_y",), body=self._HOLLOW_BODY)
         result = _done_transition_structural_guard(
             tmp_path,
             ticket,
@@ -3439,11 +3484,23 @@ class TestHollowDoneReportGuard:
         assert result.danger_err == TicketError.HollowDoneReport
 
     # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_docs_kind_rapid_hollow_report_exempt  # noqa: E501
+    # frob:ticket T-3336
     def test_docs_kind_rapid_hollow_report_exempt(self, tmp_path: Path) -> None:
+        # T-3336: `land`'s own NotCloseable gate requires non-empty
+        # evidence UNCONDITIONALLY too -- even for a docs-kind ticket,
+        # its own error text names the remedy (`frob ticket close
+        # --evidence-cmd '<command>'`), never a truly evidence-free
+        # close. A `cmd:` entry here matches that documented shape;
+        # T-3195's hollow-EXEMPTION is about the body's rendered
+        # placeholder text, never a license to skip evidence entirely.
         from frob.tickets._evidence import _done_transition_structural_guard
         from frob.tickets._models import TicketKind
 
-        ticket = _ticket(evidence=(), body=self._HOLLOW_BODY, kind=TicketKind.DOCS)
+        ticket = _ticket(
+            evidence=("cmd:sha256=deadbeefcafefeed",),
+            body=self._HOLLOW_BODY,
+            kind=TicketKind.DOCS,
+        )
         result = _done_transition_structural_guard(
             tmp_path,
             ticket,
@@ -3455,7 +3512,13 @@ class TestHollowDoneReportGuard:
         assert result.is_ok
 
     # frob:tests tests/test_tickets.py::TestHollowDoneReportGuard.test_no_behaviour_change_narrative_exempt  # noqa: E501
+    # frob:ticket T-3336
     def test_no_behaviour_change_narrative_exempt(self, tmp_path: Path) -> None:
+        # T-3336: per this ticket's own stated decision (a no-behaviour-
+        # change close still requires real, resolvable pytest evidence --
+        # `land`'s gate makes no narrative exception), the ticket must
+        # still bind an adjacent real evidence id even though this
+        # particular close changed no runtime behavior itself.
         from frob.tickets._evidence import _done_transition_structural_guard
 
         body = (
@@ -3464,7 +3527,7 @@ class TestHollowDoneReportGuard:
             "### Changed\n(no changed files detected)\n\n"
             "### Evidence\n(no evidence recorded)\n"
         )
-        ticket = _ticket(evidence=(), body=body)
+        ticket = _ticket(evidence=("tests/test_x.py::test_y",), body=body)
         result = _done_transition_structural_guard(
             tmp_path,
             ticket,

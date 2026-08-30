@@ -2501,6 +2501,24 @@
       "old_digest": "713a0cf7723f83a2f9a3edd7766b13241036c29f8c861613652c9e3efe68b76f",
       "reason": "T-3379: filing/self-absorb write now goes through frob.tickets._worktree_guard.unleased_root_env instead of a local os.environ strip, so the SELFAUDIT001 env-capability finding lands on the tickets_ledger component (which already declares it) rather than verify",
       "ref": "src/frob/verify/_worker.py::run_coalesced_verification"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "body",
+      "new_digest": "0f073093e1e701d96690a9bd0abd9b2ac20a5650a9257c862314a275850d2cc4",
+      "old_digest": null,
+      "reason": "T-3336: removed the rapid-profile bypass for the missing-evidence/Done-report check so close refuses unconditionally, matching land's own unconditional NotCloseable gate",
+      "ref": "src/frob/tickets/_evidence.py::_done_transition_structural_guard"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "7c2d42a8152b276f231354ab8903f5fa08cb67a62cdaa926dc5ee6f4b36ba5b7",
+      "old_digest": null,
+      "reason": "T-3336: removed the rapid-profile bypass for the missing-evidence/Done-report check so close refuses unconditionally, matching land's own unconditional NotCloseable gate",
+      "ref": "src/frob/tickets/_evidence.py::_done_transition_structural_guard"
     }
   ],
   "entries": [
@@ -3608,6 +3626,16 @@
       "digest": "293a635f950f8eeee5e6ffd7deb087add2f53d732fc93164d424a78829bb2a45",
       "facet": "sig",
       "ref": "src/frob/tickets/__init__.py::transition"
+    },
+    {
+      "digest": "0f073093e1e701d96690a9bd0abd9b2ac20a5650a9257c862314a275850d2cc4",
+      "facet": "body",
+      "ref": "src/frob/tickets/_evidence.py::_done_transition_structural_guard"
+    },
+    {
+      "digest": "7c2d42a8152b276f231354ab8903f5fa08cb67a62cdaa926dc5ee6f4b36ba5b7",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_evidence.py::_done_transition_structural_guard"
     },
     {
       "digest": "382d20066b23c51c785db02b6baaa5ffa950faa232900124d78ddac910868390",

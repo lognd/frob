@@ -2,7 +2,7 @@
 id: T-3336
 title: frob ticket close reports success on a ticket land then refuses as NotCloseable,
   and done-report does not mirror like its sibling verbs
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -18,7 +18,7 @@ scope:
 - src/frob/tickets/_done_report.py
 - src/frob/tickets/_evidence.py
 - tests/test_tickets.py
-- tickets/T-draft-4de2fe57/**
+- tickets/T-3468/**
 - frob.lock
 - tickets/T-1585/**
 scope_breadth_ack: false
@@ -43,7 +43,7 @@ scope_changes:
   actor: logan
   at: '2026-08-30'
 - op: add
-  glob: tickets/T-draft-4de2fe57/**
+  glob: tickets/T-3468/**
   reason: T-3336 updates the existing rapid-leniency/hollow-report tests in test_tickets.py
     for the new unconditional evidence gate, and files the required defect-2/defect-3
     follow-up ticket whose ticket.md write needs to be in scope
@@ -131,6 +131,10 @@ body_changes:
   at: '2026-08-29'
   old_length: 4130
   new_length: 6691
+evidence:
+- tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency::test_rapid_missing_evidence_and_done_report_still_refuses
+- tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency::test_non_rapid_missing_evidence_and_done_report_still_refuses
+- tests/test_tickets.py::TestDoneTransitionStructuralGuardRapidLeniency::test_rapid_with_real_evidence_and_done_report_lands_without_extra_steps
 designated_repro_test: null
 threat: null
 component: null

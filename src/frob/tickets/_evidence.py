@@ -486,21 +486,53 @@ def _done_transition_structural_guard(
     split from its review/mutation/reverify/diff-derived checks.
     `skip_stale_claims`: only `reverify_close_guard` passes `True` --
     see T-3360."""
+    # frob:ticket T-3336
+    # T-3336: MEASURED 2026-08-28/2026-08-29 (two independent incidents,
+    # T-3277 and T-2667's landing series) -- `frob ticket land`'s OWN
+    # NotCloseable gate (`_land_merge.py`: `if not ticket.evidence or not
+    # _has_done_report(ticket.body): return Err(LandError.NotCloseable)`)
+    # requires BOTH a non-empty `evidence` list AND a literal `## Done
+    # report` heading UNCONDITIONALLY -- it has no `rapid`/profile
+    # parameter to relax by. This guard used to accept the identical
+    # missing state under `rapid=True`, downgrading it to a WARN + a
+    # rapid-debt line and reporting `close` successful. That let a
+    # ticket reach `state: done` locally, with `close` reporting
+    # success, that `land` then refused outright -- the same "an
+    # operation reports a state it has not actually achieved" shape
+    # this project has been burned by repeatedly. Per T-3336's own
+    # explicit instruction (do not loosen land's check, the guard that
+    # makes Done reports trustworthy at all): CLOSE now REFUSES here
+    # unconditionally too, under every profile, with the same
+    # `MissingEvidence` outcome and wording `rapid=False` already used
+    # -- close and land now agree structurally, so no state exists
+    # where one calls this successful and the other calls it
+    # NotCloseable. `rapid` is kept as a parameter (still governs the
+    # SEPARATE hollow-report exemption immediately below) rather than
+    # removed, so this stays a minimal, targeted fix to the one
+    # divergent condition, not a wider profile-relaxation change.
+    #
+    # DECISION (T-3336's own stated design question -- should a
+    # no-behaviour-change ticket be required to cite pytest evidence at
+    # all): YES, chosen deliberately. `land`'s gate makes no exception
+    # for a no-behaviour-change narrative, and "do not loosen land's
+    # check" forecloses adding one there -- so close cannot exempt it
+    # either without reopening the exact divergence this fix closes.
+    # The accepted cost (binding an adjacent, real, resolvable test id
+    # even for an accounting-only change, as T-3336's own "Series EJ"
+    # incident did by hand) is smaller than the alternative: trusting a
+    # close-time narrative declaration is precisely the trust boundary
+    # `land`'s evidence check exists to enforce, and a docs-kind rapid
+    # ticket already has the dedicated, visible `_hollow_done_report_
+    # exempt` escape hatch for the genuinely evidence-free case.
     if not ticket.evidence or not _has_done_report(ticket.body):
-        if rapid:
-            _log.warning(
-                "tickets: %s closing WITHOUT full evidence/Done report -- "
-                "profile=rapid (T-1681), recorded in rapid-debt.jsonl",
-                ticket.id,
-            )
-            debt_sink and debt_sink(ticket.id, "missing-evidence-or-done-report")
-        else:
-            _log.warning(
-                "tickets: %s cannot close, missing evidence or a substantive "
-                "Done report",
-                ticket.id,
-            )
-            return Err(TicketError.MissingEvidence)
+        _log.warning(
+            "tickets: %s cannot close, missing evidence or a substantive "
+            "Done report -- `frob ticket land` refuses this unconditionally "
+            "(NotCloseable) regardless of profile, so close no longer "
+            "accepts it under rapid either (T-3336)",
+            ticket.id,
+        )
+        return Err(TicketError.MissingEvidence)
     # frob:ticket T-3195
     if _is_hollow_done_report(ticket.body) and not _hollow_done_report_exempt(
         ticket, ticket.body, rapid=rapid
