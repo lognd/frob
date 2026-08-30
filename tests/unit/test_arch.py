@@ -2467,6 +2467,41 @@ class TestPythonAdapter:
         module = PythonAdapter().adapt(tree, source, "pat.py")
         assert module.module_regex_patterns == {}
 
+    # frob:ticket T-3474
+    def test_adapt_tags_comprehension_branch_and_call_with_shared_id(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/arch/_python.py::PythonAdapter.adapt kind="unit"
+        # The comprehension's output-expr call and its trailing if-clause
+        # branch get the SAME non-None comprehension_id; a plain function-
+        # body call/branch outside any comprehension stays None.
+        from frob.arch._python import PythonAdapter
+        from frob.lang import raw_tree
+
+        src_path = tmp_path / "comp.py"
+        src_path.write_text(
+            "def f(entries):\n"
+            "    if len(entries) == 0:\n"
+            "        return []\n"
+            "    return [int(e) for e in entries if e.isdigit() and True]\n"
+        )
+        parsed = raw_tree(src_path)
+        assert parsed.is_ok
+        tree, source, _language = parsed.danger_ok
+
+        module = PythonAdapter().adapt(tree, source, "comp.py")
+        func = module.functions[0]
+
+        plain_branch = next(
+            b for b in func.branches if "len(entries)" in b.condition_text
+        )
+        assert plain_branch.comprehension_id is None
+
+        comp_call = next(c for c in func.calls if c.callee == "int")
+        comp_branch = next(b for b in func.branches if "isdigit" in b.condition_text)
+        assert comp_call.comprehension_id is not None
+        assert comp_call.comprehension_id == comp_branch.comprehension_id
+
 
 # ---------------------------------------------------------------------------
 # T-0611: TypeScriptAdapter -- maps a real parsed TypeScript file onto
@@ -7066,6 +7101,161 @@ class TestRegexGroupGuardDischarge:
         assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset(
             {"Unknown"}
         )
+
+
+# frob:ticket T-3474
+class TestComprehensionGuardOrdering:
+    """`frob.arch._mayraise._isdigit_guard_discharges`'s T-3474 extension:
+    a comprehension's `if`-clause is written AFTER its own leading (output)
+    expression but evaluates BEFORE it runs each iteration --
+    `comprehension_id` correlation discharges that shape without a line-
+    order requirement; two DIFFERENT comprehensions, or a comprehension
+    branch against a NON-comprehension call, still fail closed."""
+
+    # frob:ticket T-3474
+    def test_trailing_if_clause_discharges_its_own_leading_expression(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # `reap_orphaned_forkservers`'s own shape: `[int(entry.name) for
+        # entry in entries if entry.name.isdigit() and ...]` -- the
+        # output expr's own int() call sits at a LOWER line than its
+        # guarding if-clause, same comprehension_id on both.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=4,
+            calls=[
+                NormalizedCall(
+                    callee="int",
+                    line=2,
+                    args=[NormalizedCallArg(index=0, text="entry.name")],
+                    comprehension_id=1,
+                )
+            ],
+            branches=[
+                NormalizedBranch(
+                    line=4,
+                    condition_text="entry.name.isdigit()",
+                    comprehension_id=1,
+                )
+            ],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset()
+
+    # frob:ticket T-3474
+    def test_different_comprehension_ids_do_not_discharge(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # Two SEPARATE comprehensions in one function -- the guard in one
+        # must not be credited to the other's output expression.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=6,
+            calls=[
+                NormalizedCall(
+                    callee="int",
+                    line=2,
+                    args=[NormalizedCallArg(index=0, text="entry.name")],
+                    comprehension_id=1,
+                )
+            ],
+            branches=[
+                NormalizedBranch(
+                    line=6,
+                    condition_text="entry.name.isdigit()",
+                    comprehension_id=2,
+                )
+            ],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset(
+            {"ValueError"}
+        )
+
+    # frob:ticket T-3474
+    def test_comprehension_branch_does_not_discharge_a_non_comprehension_call(
+        self,
+    ) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # The guard branch carries a comprehension_id but the LATER call
+        # is plain code (comprehension_id=None) -- ordinary line-order
+        # rules still apply and are satisfied here (branch precedes call),
+        # so this one DOES discharge, exercising the "or" path's other arm
+        # staying correct rather than accidentally always-true.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=4,
+            branches=[
+                NormalizedBranch(
+                    line=2,
+                    condition_text="entry.name.isdigit()",
+                    comprehension_id=1,
+                )
+            ],
+            calls=[
+                NormalizedCall(
+                    callee="int",
+                    line=4,
+                    args=[NormalizedCallArg(index=0, text="entry.name")],
+                )
+            ],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset()
+
+    # frob:ticket T-3474
+    def test_real_proc_scan_corpus_site_has_no_leaked_value_error(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # End-to-end via the real python adapter over the real corpus
+        # site's own source shape.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._python import PythonAdapter
+        from frob.lang import get_parser
+
+        src = (
+            b"def f(entries):\n"
+            b"    return [\n"
+            b"        int(entry.name)\n"
+            b"        for entry in entries\n"
+            b"        if entry.name.isdigit() and other(int(entry.name))\n"
+            b"    ]\n"
+        )
+        tree = get_parser("python").parse(src)
+        module = PythonAdapter().adapt(tree, src, "pkg/mod.py")
+
+        result = compute_may_raise(module)["pkg/mod.py::f"]
+        assert "ValueError" not in result.raises
 
 
 # frob:ticket T-2543

@@ -2,7 +2,7 @@
 id: T-3474
 title: may-raise resolver treats a list-comprehension leading expression as preceding
   its own trailing if-clause
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -42,6 +42,13 @@ scope_changes:
     and adapter extraction
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/test_arch.py::TestComprehensionGuardOrdering::test_trailing_if_clause_discharges_its_own_leading_expression
+- tests/unit/test_arch.py::TestComprehensionGuardOrdering::test_different_comprehension_ids_do_not_discharge
+- tests/unit/test_arch.py::TestComprehensionGuardOrdering::test_comprehension_branch_does_not_discharge_a_non_comprehension_call
+- tests/unit/test_arch.py::TestComprehensionGuardOrdering::test_real_proc_scan_corpus_site_has_no_leaked_value_error
+- tests/unit/test_arch.py::TestPythonAdapter::test_adapt_tags_comprehension_branch_and_call_with_shared_id
+- tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_guarded_int_call_discharges_value_error
 designated_repro_test: null
 threat: null
 component: null

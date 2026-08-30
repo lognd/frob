@@ -2537,6 +2537,24 @@
       "old_digest": null,
       "reason": "T-3472: re-verified docs/design/ledger-v2.md section 7's migrate_missing_v2 paragraph against current code -- the described behavior (gap-filling migrator for partially-migrated repos, walks monofile ledger/archive, writes v2 only where missing, leaves already-migrated tickets untouched) is still accurate; only the file-path citation was stale (function moved to _store_migrate.py in T-2695's extraction, doc still said _store.py), fixed inline",
       "ref": "src/frob/tickets/_store_migrate.py::migrate_missing_v2"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "48bba7c4e3e618a3bf0ef92073e4ac587a09504e5538d7481fe8679e3136617d",
+      "old_digest": null,
+      "reason": "T-3474: added comprehension_id field to both, documented in docs/modules/arch.md#normalized-code-model's table rows for each",
+      "ref": "src/frob/arch/_normalized.py::NormalizedBranch"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "acfcc785c9d606036b118102886127ff170c31104ae538ed11c6b89b9caa9797",
+      "old_digest": null,
+      "reason": "T-3474: added comprehension_id field to both, documented in docs/modules/arch.md#normalized-code-model's table rows for each",
+      "ref": "src/frob/arch/_normalized.py::NormalizedCall"
     }
   ],
   "entries": [
@@ -2764,6 +2782,16 @@
       "digest": "1f278e21843f62455f569b82cbe764acf79b53bc2d70d199b6664a4b65f8cf50",
       "facet": "sig",
       "ref": "src/frob/arch/_mayraise.py::compute_may_raise"
+    },
+    {
+      "digest": "48bba7c4e3e618a3bf0ef92073e4ac587a09504e5538d7481fe8679e3136617d",
+      "facet": "sig",
+      "ref": "src/frob/arch/_normalized.py::NormalizedBranch"
+    },
+    {
+      "digest": "acfcc785c9d606036b118102886127ff170c31104ae538ed11c6b89b9caa9797",
+      "facet": "sig",
+      "ref": "src/frob/arch/_normalized.py::NormalizedCall"
     },
     {
       "digest": "6b3d8c91114fe4f038d288093cd47d2707b3d4b61058022bb7cc740d8a30f778",

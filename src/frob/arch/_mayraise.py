@@ -506,7 +506,18 @@ def _isdigit_guard_discharges(
     `and` (`entry.name.isdigit() and f(int(entry.name))`) -- every shape
     this repo's own EXHAUST002 corpus at T-2568 filing used, all of which
     embed the identical `"{arg_text}.isdigit()"` token regardless of how
-    the branch as a whole is worded."""
+    the branch as a whole is worded.
+
+    T-3474: `b.line <= call.line` is not the only way a branch can be
+    said to precede `call` -- a comprehension's `if`-clause is written
+    AFTER its own leading (output) expression but evaluates BEFORE it
+    runs each iteration, so `NormalizedBranch.comprehension_id`/
+    `NormalizedCall.comprehension_id` (both non-`None` and equal) is
+    accepted as an ALTERNATIVE to the line-order test, never a
+    replacement for it -- a branch and call outside any comprehension
+    (`comprehension_id is None` on either side) still need real line
+    order, and two DIFFERENT comprehensions in the same function
+    (different, both non-`None` ids) still fail closed."""
     if bare not in _ISDIGIT_GUARDED_VALUEERROR_RAISERS:
         return False
     positional = [a for a in call.args if a.text is not None]
@@ -517,7 +528,15 @@ def _isdigit_guard_discharges(
         return False
     guard_token = f"{arg_text}.isdigit()"
     return any(
-        b.line <= call.line and guard_token in b.condition_text for b in func.branches
+        (
+            b.line <= call.line
+            or (
+                b.comprehension_id is not None
+                and b.comprehension_id == call.comprehension_id
+            )
+        )
+        and guard_token in b.condition_text
+        for b in func.branches
     )
 
 

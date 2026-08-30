@@ -123,6 +123,10 @@ class NormalizedCallArg(BaseModel):
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
+# frob:waive AFFECT001 follow_up="T-3481" reason="added comprehension_id (T-3474); \
+# docs/modules/arch.md is under another ticket's LIVE lease (T-3481) at the time of \
+# this change, so the doc table row cannot be updated here -- re-verify and update \
+# once that lease clears"
 class NormalizedCall(BaseModel):
     """A call site inside a function/method body: the callee name (bare
     identifier or `obj.method` dotted form), the source line it occurs at,
@@ -138,7 +142,10 @@ class NormalizedCall(BaseModel):
     adapter that has raw source lines to scan (today: `frob.arch._python`);
     adapters that do not thread source text leave this `None` for every
     call, which is indistinguishable from "no declaration" and therefore
-    safe (fail-closed still applies)."""
+    safe (fail-closed still applies). `comprehension_id` (T-3474) mirrors
+    `NormalizedBranch.comprehension_id`'s own docstring -- `None` outside a
+    comprehension, otherwise an id shared with every branch/call inside
+    the SAME comprehension node."""
 
     model_config = {}
 
@@ -146,9 +153,14 @@ class NormalizedCall(BaseModel):
     line: int
     args: list[NormalizedCallArg] = []
     declared_raises: frozenset[str] | None = None
+    comprehension_id: int | None = None
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
+# frob:waive AFFECT001 follow_up="T-3481" reason="added comprehension_id (T-3474); \
+# docs/modules/arch.md is under another ticket's LIVE lease (T-3481) at the time of \
+# this change, so the doc table row cannot be updated here -- re-verify and update \
+# once that lease clears"
 class NormalizedBranch(BaseModel):
     """One decision point (`if`/`elif`/`else`, a ternary, a boolean
     short-circuit) inside a function/method body -- the shared unit the
@@ -157,12 +169,23 @@ class NormalizedBranch(BaseModel):
     the branch's test expression, kept as text (not a further-normalized
     sub-model) since detectors that need structure from it (an `isinstance`
     target, an equality target/literal) already do so via lightweight text
-    parsing rather than a second full expression grammar."""
+    parsing rather than a second full expression grammar.
+
+    `comprehension_id` (T-3474) is `None` outside a comprehension/generator
+    expression, or an id unique to one comprehension node (an adapter's own
+    `id(node)`, not meaningful across files/parses) shared by every branch
+    AND `NormalizedCall` found inside that SAME comprehension -- a
+    comprehension's `if`-clause is written AFTER its own leading (output)
+    expression but evaluates BEFORE it runs each iteration, so
+    `frob.arch._mayraise`'s guard-predicate discharge correlates a branch
+    to a call by this id instead of by `line <= line` when either carries
+    one, rather than adding a whole second def-use/AST-scope model."""
 
     model_config = {}
 
     line: int
     condition_text: str
+    comprehension_id: int | None = None
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model

@@ -404,6 +404,22 @@ _BRANCH_EVENT_TYPES = frozenset(
     {"if_statement", "boolean_operator", "conditional_expression"}
 )
 
+#: Comprehension/generator-expression node types (T-3474): entering one of
+#: these allocates a fresh `comprehension_id` (`id(node)`) that every
+#: branch/call found in its subtree -- output expression, `for`-clause(s),
+#: `if`-clause(s) alike -- gets tagged with, so `_mayraise`'s guard-
+#: predicate discharge can correlate a comprehension's own trailing
+#: `if`-clause to its (textually earlier) output expression without a
+#: line-order requirement neither can satisfy.
+_COMPREHENSION_TYPES = frozenset(
+    {
+        "list_comprehension",
+        "set_comprehension",
+        "dictionary_comprehension",
+        "generator_expression",
+    }
+)
+
 
 def _py_branch_condition_text(node: Node) -> str:
     """Source text of a branch node's own test condition: an `if_statement`
@@ -564,6 +580,7 @@ def _py_collect_body_events(
     catches: list[NormalizedCatch],
     subscripts: list[NormalizedSubscript],
     source_lines: tuple[str, ...] = (),
+    comprehension_id: int | None = None,
 ) -> None:
     """Flatten every structural event (T-0609 shape) inside `node`'s
     subtree, stopping at a nested `function_definition`/`class_definition`
@@ -573,15 +590,24 @@ def _py_collect_body_events(
     may-raise resolver's builtin-raiser table keys off. `source_lines`
     (T-0689, optional -- empty when a caller has no raw source to offer)
     lets each `call` site pick up its own `# frob:callee-raises` declaration
-    (`_frob_raises_declaration`) onto `NormalizedCall.declared_raises`."""
+    (`_frob_raises_declaration`) onto `NormalizedCall.declared_raises`.
+    `comprehension_id` (T-3474, optional) is the enclosing comprehension
+    node's own `id()` once `node` is inside one of `_COMPREHENSION_TYPES`
+    (`None` outside any comprehension) -- threaded down onto every branch
+    and call found in that subtree (see `NormalizedBranch.comprehension_id`'s
+    own docstring for why)."""
     for c in node.children:
         if c.type in ("function_definition", "class_definition"):
             continue
+        child_comprehension_id = (
+            id(c) if c.type in _COMPREHENSION_TYPES else comprehension_id
+        )
         if c.type in _BRANCH_EVENT_TYPES:
             branches.append(
                 NormalizedBranch(
                     line=c.start_point[0] + 1,
                     condition_text=_py_branch_condition_text(c),
+                    comprehension_id=comprehension_id,
                 )
             )
         if c.type in _LOOP_KINDS:
@@ -596,6 +622,7 @@ def _py_collect_body_events(
                     line=call_line,
                     args=_py_call_args(c),
                     declared_raises=_frob_raises_declaration(source_lines, call_line),
+                    comprehension_id=comprehension_id,
                 )
             )
         if c.type == "attribute" and _py_is_self_attribute(c):
@@ -653,6 +680,7 @@ def _py_collect_body_events(
             catches,
             subscripts,
             source_lines,
+            child_comprehension_id,
         )
 
 
