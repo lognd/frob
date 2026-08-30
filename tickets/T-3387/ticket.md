@@ -2,7 +2,7 @@
 id: T-3387
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3346):
   2 new (rule, file) identit(ies), 2 finding(s) (ARCH103, DOC003)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -51,3 +51,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 
 ## Failure log
 - 2026-08-30 attempt 1: already resolved on main: frob check --only arch --ticket T-3387 and --only docblocks --ticket T-3387 both zero-match ARCH103/DOC003 (neither code appears in the scoped diagnostics set)
+
+## Drop reason
+- 2026-08-30: Already resolved on main: the owning gate's scoped run zero-matches every cited identity (series K measurement, 2026-08-30; T-3354's CLAUDE001 was ~/.claude materialization drift fixed by frob claude sync, no repo diff).
