@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/root-write-guard.py
+- tests/test_hook_root_write_guard.py
+- docs/guides/claude-hooks.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +27,18 @@ scope_changes:
   glob: .claude/hooks/root-write-guard.py
   reason: T-3421 fixes the root-write guard's redirect matching -- this is the only
     file that implements it
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/test_hook_root_write_guard.py
+  reason: root-write-guard tests + its doc anchor page, needed for a redirect-parsing
+    fix and its fixtures
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: root-write-guard tests + its doc anchor page, needed for a redirect-parsing
+    fix and its fixtures
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
