@@ -62,7 +62,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fbac89f51b64356d818893355225e42ceb9e25ee
 ---
 T-2376 fixed the 9 Python-file PERF005 unproven-recursion findings via
 frob:invariant terminates directives (src/frob/gates/_dead_symbols.py,
