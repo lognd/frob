@@ -14,136 +14,10 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-scope:
-- src/frob/tickets/_setters.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-scope_changes:
-- op: add
-  glob: src/frob/gates/_walk_lint.py
-  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
-    helpers for same-file duplicate blocks
-  actor: logan
-  at: '2026-08-30'
-- op: add
-  glob: src/frob/tickets/_land_git_ops.py
-  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
-    helpers for same-file duplicate blocks
-  actor: logan
-  at: '2026-08-30'
-- op: add
-  glob: src/frob/_cli_parsers/_misc.py
-  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
-    helpers for same-file duplicate blocks
-  actor: logan
-  at: '2026-08-30'
-- op: add
-  glob: src/frob/tickets/_setters.py
-  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
-    helpers for same-file duplicate blocks
-  actor: logan
-  at: '2026-08-30'
-- op: add
-  glob: src/frob/deploy/_generate_windows.py
-  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
-    helpers for same-file duplicate blocks
-  actor: logan
-  at: '2026-08-30'
-- op: add
-  glob: src/frob/strata/_mode_conformance.py
-  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
-    helpers for same-file duplicate blocks
-  actor: logan
-  at: '2026-08-30'
-- op: add
-  glob: src/frob/gates/_wire.py
-  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
-    helpers for same-file duplicate blocks
-  actor: logan
-  at: '2026-08-30'
-- op: add
-  glob: src/frob/lang/_walk_bash.py
-  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
-    helpers for same-file duplicate blocks
-  actor: logan
-  at: '2026-08-30'
-- op: add
-  glob: src/frob/tickets/_store.py
-  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
-    helpers for same-file duplicate blocks
-  actor: logan
-  at: '2026-08-30'
-- op: add
-  glob: src/frob/app/check_runner.py
-  reason: real de-duplication burn-down for T-2957 (frob-dup family), extracting shared
-    helpers for same-file duplicate blocks
-  actor: logan
-  at: '2026-08-30'
-- op: remove
-  glob: src/frob/gates/_walk_lint.py
-  reason: narrowed to the one genuine extraction actually implemented (set_priority/set_tier/set_component
-    reason-guard de-dup); rest of the frob-dup family deferred to a follow-up triage
-    ticket
-  actor: logan
-  at: '2026-08-30'
-- op: remove
-  glob: src/frob/tickets/_land_git_ops.py
-  reason: narrowed to the one genuine extraction actually implemented (set_priority/set_tier/set_component
-    reason-guard de-dup); rest of the frob-dup family deferred to a follow-up triage
-    ticket
-  actor: logan
-  at: '2026-08-30'
-- op: remove
-  glob: src/frob/_cli_parsers/_misc.py
-  reason: narrowed to the one genuine extraction actually implemented (set_priority/set_tier/set_component
-    reason-guard de-dup); rest of the frob-dup family deferred to a follow-up triage
-    ticket
-  actor: logan
-  at: '2026-08-30'
-- op: remove
-  glob: src/frob/deploy/_generate_windows.py
-  reason: narrowed to the one genuine extraction actually implemented (set_priority/set_tier/set_component
-    reason-guard de-dup); rest of the frob-dup family deferred to a follow-up triage
-    ticket
-  actor: logan
-  at: '2026-08-30'
-- op: remove
-  glob: src/frob/strata/_mode_conformance.py
-  reason: narrowed to the one genuine extraction actually implemented (set_priority/set_tier/set_component
-    reason-guard de-dup); rest of the frob-dup family deferred to a follow-up triage
-    ticket
-  actor: logan
-  at: '2026-08-30'
-- op: remove
-  glob: src/frob/gates/_wire.py
-  reason: narrowed to the one genuine extraction actually implemented (set_priority/set_tier/set_component
-    reason-guard de-dup); rest of the frob-dup family deferred to a follow-up triage
-    ticket
-  actor: logan
-  at: '2026-08-30'
-- op: remove
-  glob: src/frob/lang/_walk_bash.py
-  reason: narrowed to the one genuine extraction actually implemented (set_priority/set_tier/set_component
-    reason-guard de-dup); rest of the frob-dup family deferred to a follow-up triage
-    ticket
-  actor: logan
-  at: '2026-08-30'
-- op: remove
-  glob: src/frob/tickets/_store.py
-  reason: narrowed to the one genuine extraction actually implemented (set_priority/set_tier/set_component
-    reason-guard de-dup); rest of the frob-dup family deferred to a follow-up triage
-    ticket
-  actor: logan
-  at: '2026-08-30'
-- op: remove
-  glob: src/frob/app/check_runner.py
-  reason: narrowed to the one genuine extraction actually implemented (set_priority/set_tier/set_component
-    reason-guard de-dup); rest of the frob-dup family deferred to a follow-up triage
-    ticket
-  actor: logan
-  at: '2026-08-30'
 triage_changes:
 - field: parent
   old_value: null
@@ -153,6 +27,16 @@ triage_changes:
     commitment and is gated on the two triage children
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_tickets_priority.py::TestSetPriority::test_updates_priority_field
+- tests/test_tickets_priority.py::TestSetPriority::test_reason_missing_refuses
+- tests/test_tickets_priority.py::TestSetPriority::test_reasoned_change_records_triage_entry
+- tests/test_tickets_tiers.py::TestSetTier::test_updates_tier_field
+- tests/test_tickets_tiers.py::TestSetTier::test_reason_missing_refuses
+- tests/test_tickets_organization.py::TestSetComponent::test_updates_component_field
+- tests/test_tickets_organization.py::TestSetComponent::test_reason_missing_refuses
+- tests/test_ticket_evidence.py::TestSetKind::test_updates_kind_field
+- tests/test_ticket_evidence.py::TestSetKind::test_reason_missing_refuses
 designated_repro_test: null
 threat: null
 component: null
