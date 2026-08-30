@@ -2,7 +2,7 @@
 id: T-3470
 title: 'test_fs_change_notifies_the_cached_verify_worker fails on CI: FS-watch change
   did not notify the verify worker'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'

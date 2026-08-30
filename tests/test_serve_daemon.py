@@ -177,13 +177,32 @@ class TestWatchThreadNotifiesVerifyWorker:
             worker = _daemon._get_verify_worker(repo)
             assert worker._pending_since is None
 
-            (repo / "src" / "pkg" / "a.py").write_text('"""Module, edited."""\n')
-
-            watch_deadline = time.monotonic() + 10
+            # T-3470: `WatchThread`'s first tick captures its OWN baseline
+            # dirty-key (its `_last_key is None` branch never reports a
+            # change, by construction -- see `WatchThread._run`'s own
+            # docstring). If that first tick lands AFTER a single write
+            # below, the edit becomes the baseline instead of a detected
+            # change, and no later tick ever reports one -- a real race
+            # between "daemon socket reachable" (bind/listen, gated above)
+            # and "watch thread has completed its first poll tick", which
+            # this test never synchronized on. Rather than reach into
+            # `_socketd`'s local `watcher` (not exposed to callers), make
+            # the write itself event-driven: repeat it (with fresh content
+            # each time, so every write is a genuine, distinct dirty-key)
+            # until the worker observes a change or a generous bounded
+            # deadline elapses -- deterministic regardless of which side
+            # of the watch thread's first tick the very first write landed
+            # on, since some later write is always strictly after it.
+            watch_deadline = time.monotonic() + 15
+            attempt = 0
             while time.monotonic() < watch_deadline:
+                attempt += 1
+                (repo / "src" / "pkg" / "a.py").write_text(
+                    f'"""Module, edited (attempt {attempt})."""\n'
+                )
                 if worker._pending_since is not None:
                     break
-                time.sleep(0.1)
+                time.sleep(0.5)
             assert worker._pending_since is not None, (
                 "FS-watch change did not notify() the cached verify worker"
             )
