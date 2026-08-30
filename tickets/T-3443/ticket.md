@@ -1,7 +1,7 @@
 ---
 id: T-3443
 title: frob-exports reports missing public symbols in frob.doctor and frob.lang._support
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -22,6 +22,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 designated_repro_test: null
 threat: null
 component: null
