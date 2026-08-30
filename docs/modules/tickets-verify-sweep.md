@@ -684,11 +684,10 @@ hole T-1693 closed.
 
 **What this leaf does NOT do.** The bisect leaf T-1686's own design names
 as the handoff for UNATTRIBUTED findings ("tier 3: bisect only the
-residue tier 2 cannot attribute") is not built yet -- an unattributed
-finding today is filed as an ordinary regression ticket with its
-candidate commits named in the body, for a human to read; there is no
-automated bisect trigger. This is a disclosed scope cut, not a silent
-gap: the bisect leaf is future work this ticket does not claim to close.
+residue tier 2 cannot attribute") was not built at T-1690 landing time --
+an unattributed finding was filed as an ordinary regression ticket with
+its candidate commits named in the body, for a human to read; there was
+no automated bisect trigger. T-1691 (below) closes this scope cut.
 
 **T-1753 follow-up (post-land sweep hygiene).** T-1690's own land
 tripped the deferred post-land sweep: `attribute_batch` split along its
@@ -734,6 +733,80 @@ until the first's write is on disk, then its own duplicate check sees
 the sibling and correctly disposes to it via
 `_dispose_to_existing_duplicate_or_none` instead of filing a second
 copy.
+
+## Bisect attribution (T-1691)
+
+<!-- frob:describes src/frob/verify/_bisect.py::BisectError -->
+<!-- frob:describes src/frob/verify/_bisect.py::BisectOutcome -->
+<!-- frob:describes src/frob/verify/_bisect.py::BisectOutcome.is_attributed -->
+<!-- frob:describes src/frob/verify/_bisect.py::bisect_unattributed_finding -->
+
+The handoff T-1690's own "What this leaf does NOT do" section named:
+tier 1/2 symbolic attribution (`attribute_batch`, above) either pins a
+finding to exactly one commit or gives up and reports it UNATTRIBUTED.
+`bisect_unattributed_finding` (src/frob/verify/_bisect.py) is the fallback for
+that give-up case -- a real, scoped bisect over the batch's own
+candidate commits, rather than leaving every UNATTRIBUTED finding as a
+dead end for a human to re-derive by hand.
+
+**Scoped re-verification, not a full gate pass per candidate.** A batch
+`N` commits wide costs `ceil(log2(N))` calls into a caller-supplied
+`verify_fn`, each one checking ONLY whether the single finding under
+bisect reproduces at one candidate commit -- never a full `frob check`
+run per step. This is the whole reason the fallback is affordable: a
+full pass per candidate would make batching a wash the moment any batch
+actually goes red (T-1691's own ticket body), erasing the throughput
+T-1688's coalescing worker exists to buy.
+
+**Isolation: reuses T-1463's snapshot-worktree machinery, does not
+reimplement it.** Each candidate is checked out into a throwaway,
+DETACHED `git worktree`
+(`frob.app.ticket_runner._land_cmd._spawn_baseline_snapshot_worktree`/
+`_remove_baseline_snapshot_worktree`) rather than moving `root` itself --
+the SAME isolation `_capture_pre_land_baseline` already relies on to run
+concurrently with a live `land()` merge. `root`'s HEAD and working tree
+are byte-identical before and after a bisect run
+(`TestBisectUnattributedFinding.test_never_touches_the_root_checkout`
+pins this directly): a bisect must never race, or be raced by, another
+agent's own land against the same shared root.
+
+**Bounded, both axes, both logged when hit.** `step_budget` (default 20)
+and `wall_clock_budget_s` (default 300) are independent ceilings; either
+one tripping mid-search ends the bisect immediately. This matters
+because a naive binary search over a WRONG assumption (the batch is not
+actually monotonically good-then-bad -- a flaky finding, or two
+independent regressions in the same batch) can spin arbitrarily long
+chasing a culprit that does not exist in the shape the search expects;
+a bounded search converts that failure mode into a bounded, logged one
+instead of a hung or runaway process.
+
+**"Cannot verify" is never "verified" -- on exhaustion, name the WHOLE
+batch, not just the still-unresolved half.** Hitting either budget, a
+candidate whose snapshot worktree cannot even be spawned, or `verify_fn`
+itself returning `Err` (an inconclusive step, not a Boolean verdict) all
+degrade to the identical outcome: `BisectOutcome.unattributed_candidates`
+populated with EVERY commit from the ORIGINAL candidate list, never just
+the range the search had not yet ruled out when it stopped. A search
+that narrowed some commits out before stopping has not actually PROVEN
+those commits clean -- only left them unchecked -- so reporting a
+half-narrowed range as the residue would silently overstate what was
+verified. This is the same standing invariant `Attribution`'s own
+`ambiguous`/`error` outcomes (above) already commit to: an unmeasurable
+result is never presented as a measured-clean one.
+
+**What this leaf does NOT do.** `bisect_unattributed_finding` is a pure
+search-plus-isolation primitive -- it takes an ordered candidate list
+and a `verify_fn` and returns an outcome; it does not itself decide WHEN
+to bisect an UNATTRIBUTED finding, how to derive the ordered candidate
+list from a real red batch, what a real `verify_fn` (a scoped
+reproduction check against one finding) looks like, or what to do with
+an attributed/unattributed `BisectOutcome` afterward (file it as the
+regression ticket's own evidence, re-open quarantine, etc.). Wiring this
+primitive into the T-1690/quarantine/regression-ticket pipeline that
+currently treats every UNATTRIBUTED finding as a dead end is a disclosed
+follow-up, not a silent gap -- this leaf closes T-1691's own stated
+scope (the search-and-isolate mechanism), not the full pipeline
+integration.
 
 ## Backpressure (T-1692)
 

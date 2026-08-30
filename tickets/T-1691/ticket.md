@@ -1,7 +1,7 @@
 ---
 id: T-1691
 title: Bisect the unattributable residue of a red batch
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-08-06'
@@ -41,6 +41,17 @@ scope_changes:
   reason: unit tests for the new bisect module this ticket adds
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_converges_to_the_known_culprit_within_log2_n_steps
+- tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_converges_when_culprit_is_the_first_candidate
+- tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_converges_when_culprit_is_the_last_candidate
+- tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_single_candidate_batch_attributes_without_any_verify_call
+- tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_empty_candidates_refuses
+- tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_non_positive_budget_refuses
+- tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_exhausted_step_budget_files_unattributed_naming_every_candidate
+- tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_exhausted_wall_clock_budget_files_unattributed
+- tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_inconclusive_verify_callback_degrades_to_unattributed
+- tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_never_touches_the_root_checkout
 designated_repro_test: null
 threat: null
 component: verification
