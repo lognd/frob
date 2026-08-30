@@ -111,9 +111,9 @@
       "ticket": "T-2743"
     },
     "gates::fs.read": {
-      "accepted_count": 53,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on gates from 51 to 53 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 55,
+      "reason": "T-3465: declaring the SELFAUDIT001/SYS100 undeclared capability sites found live on main (src/frob/gates/_land_parity.py, src/frob/gates/_policy_weakening_gate.py, tests/unit/strata/test_strata_core_gil.py, tests/unit/test_land_parity_gate.py, tests/unit/test_sync_claude_config_stale_guard_t3408.py, tests/unit/verify/test_worker.py) grows this pair's via-list count as a direct consequence -- these are genuinely-observed, already-existing capability sites this ticket is declaring honestly (frob.vet._capability_scan measured them), not a fresh capability grant; bumping the ceiling to the current measured count.",
+      "ticket": "T-3465"
     },
     "gates::fs.write": {
       "accepted_count": 40,
@@ -216,9 +216,9 @@
       "ticket": "T-1628"
     },
     "testsuite::env.read": {
-      "accepted_count": 17,
-      "reason": "T-3447: SYS111 measured this pair above its committed ceiling of 16 alongside the core::fs.read breach this ticket exists to fix, with no reachable single-land attribution (accumulated growth across several already-authorized test lands since T-2001's own 16-site baseline). Every contributing file is already a declared testsuite fs.read/env.read via-source; bumping the ceiling to the current measured count (17) rather than re-justifying each site individually, mirroring T-2743's own precedent for this same class of finding.",
-      "ticket": "T-3447"
+      "accepted_count": 19,
+      "reason": "T-3465: declaring the SELFAUDIT001/SYS100 undeclared capability sites found live on main (src/frob/gates/_land_parity.py, src/frob/gates/_policy_weakening_gate.py, tests/unit/strata/test_strata_core_gil.py, tests/unit/test_land_parity_gate.py, tests/unit/test_sync_claude_config_stale_guard_t3408.py, tests/unit/verify/test_worker.py) grows this pair's via-list count as a direct consequence -- these are genuinely-observed, already-existing capability sites this ticket is declaring honestly (frob.vet._capability_scan measured them), not a fresh capability grant; bumping the ceiling to the current measured count.",
+      "ticket": "T-3465"
     },
     "testsuite::env.write": {
       "accepted_count": 6,
@@ -231,9 +231,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 226,
-      "reason": "T-3447: SYS111 measured this pair above its committed ceiling of 224 alongside the core::fs.read breach this ticket exists to fix, with no reachable single-land attribution (accumulated growth across several already-authorized test lands since T-3386's 224-site baseline). Re-measured to 226 after T-3450 (a sibling SYS100 fix) landed and declared one more genuine exec site (tests/unit/test_check_admission.py) in the same via-list. Every contributing file is already a declared testsuite exec via-source; bumping the ceiling to the current measured count (226) rather than re-justifying each site individually, mirroring T-2743's own precedent for this same class of finding.",
-      "ticket": "T-3447"
+      "accepted_count": 229,
+      "reason": "T-3465: declaring SELFAUDIT001/SYS100 sites in tests/unit/test_cross_ticket_leakage_gate.py (new file landed by a sibling ticket, T-3466, while this ticket's own worktree was mid-flight; re-measured and rebased onto it) grows this pair's via-list count as a direct consequence -- genuinely-observed, already-existing capability sites, not a fresh capability grant; bumping the ceiling to the current measured count.",
+      "ticket": "T-3465"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -246,14 +246,14 @@
       "ticket": "T-1628"
     },
     "testsuite::fs.read": {
-      "accepted_count": 172,
-      "reason": "T-3447: SYS111 measured this pair above its committed ceiling of 171 alongside the core::fs.read breach this ticket exists to fix, with no reachable single-land attribution (accumulated growth across several already-authorized test lands since T-2001's own 171-site baseline). Every contributing file is already a declared testsuite fs.read via-source; bumping the ceiling to the current measured count (172) rather than re-justifying each site individually, mirroring T-2743's own precedent for this same class of finding.",
-      "ticket": "T-3447"
+      "accepted_count": 173,
+      "reason": "T-3465: declaring the SELFAUDIT001/SYS100 undeclared capability sites found live on main (src/frob/gates/_land_parity.py, src/frob/gates/_policy_weakening_gate.py, tests/unit/strata/test_strata_core_gil.py, tests/unit/test_land_parity_gate.py, tests/unit/test_sync_claude_config_stale_guard_t3408.py, tests/unit/verify/test_worker.py) grows this pair's via-list count as a direct consequence -- these are genuinely-observed, already-existing capability sites this ticket is declaring honestly (frob.vet._capability_scan measured them), not a fresh capability grant; bumping the ceiling to the current measured count.",
+      "ticket": "T-3465"
     },
     "testsuite::fs.write": {
-      "accepted_count": 407,
-      "reason": "T-3447: SYS111 measured this pair above its committed ceiling of 405 alongside the core::fs.read breach this ticket exists to fix, with no reachable single-land attribution (accumulated growth across several already-authorized test lands since T-2001's own 405-site baseline). Every contributing file is already a declared testsuite fs.write via-source; bumping the ceiling to the current measured count (407) rather than re-justifying each site individually, mirroring T-2743's own precedent for this same class of finding.",
-      "ticket": "T-3447"
+      "accepted_count": 411,
+      "reason": "T-3465: declaring SELFAUDIT001/SYS100 sites in tests/unit/test_cross_ticket_leakage_gate.py (new file landed by a sibling ticket, T-3466, while this ticket's own worktree was mid-flight; re-measured and rebased onto it) grows this pair's via-list count as a direct consequence -- genuinely-observed, already-existing capability sites, not a fresh capability grant; bumping the ceiling to the current measured count.",
+      "ticket": "T-3465"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

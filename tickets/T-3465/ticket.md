@@ -2,7 +2,7 @@
 id: T-3465
 title: 'SELFAUDIT001: testsuite node undeclared fs.write/exec (test_strata_core_gil.py)
   and env.read (test_worker.py)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -36,6 +36,11 @@ body_changes:
   at: '2026-08-30'
   old_length: 993
   new_length: 1988
+evidence:
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+- tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean
+- tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch::test_real_repo_design_selfconform_has_no_eval_gap
 designated_repro_test: null
 threat: null
 component: null
