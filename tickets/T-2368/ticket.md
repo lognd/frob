@@ -2,7 +2,7 @@
 id: T-2368
 title: Burn INV/NEGEXIST/WALK/PLACE/PII/DEAD/LANG WARN gates to zero, then promote
   to error
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -55,14 +55,33 @@ scope_changes:
     lands with this ticket
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/test_gates.py::TestPlace001Gate::test_directive_directly_above_def_is_silent
+- tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
+- tests/test_gates.py::TestPlace001Gate::test_no_nearby_symbol_at_all_is_silent
+- tests/test_gates.py::TestPlace001Gate::test_per_field_pydantic_idiom_is_silent
+- tests/gates/test_comment_placement.py::TestCplace001::test_symref_binds_to_the_enclosing_function
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_alembic_positional_column_ssn_fires
 designated_repro_test: null
 acceptance:
-- text: given the family's WARN codes, when frob check --json runs, then zero findings
-    remain
+- text: given PLACE001/PII011 (the two codes T-2368 actually closes), when frob check
+    --json runs, then zero unwaived findings remain for both
   evidence: []
 - text: given the family's gate module, when its severity is read, then it is ERROR
     not WARNING
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 0
+  old_text: given the family's WARN codes, when frob check --json runs, then zero
+    findings remain
+  new_text: given PLACE001/PII011 (the two codes T-2368 actually closes), when frob
+    check --json runs, then zero unwaived findings remain for both
+  reason: narrowed to what this ticket actually delivers; the rest of the original
+    family (INV003/INV004/NEGEXIST001/WALK001/DEAD001/LANG003) is filed as a follow-up
+    ticket with current counts, not silently dropped
+  actor: logan
+  at: '2026-08-30'
 threat: null
 component: null
 anchor: false
