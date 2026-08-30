@@ -81,6 +81,42 @@ equivalent root cause once found).
 
 ## Failure log
 - 2026-08-29 attempt 1: MEASURED (this worktree, ac5c2ae67 code, natives built): both selfaudit001 tests complete locally in 60-110s (order of magnitude of the historical ~27s baseline noted in their own docstrings), not the 19-min CI stall -- and src/frob/strata/_selfconform*.py, _claims.py, _facts.py, design/frob.strata, and tests/system/test_frob_self_model.py are ALL byte-identical between b94cea5d0 and ac5c2ae67, so anomaly #1 has no candidate fix inside this ticket's declared scope. Anomaly #2 is root-caused and CONFIRMED reproducible: strata-core's #[pyfunction]s (worst_age/reachable/propagated_demand) never call py.allow_threads, so they hold the GIL for the entire native call; pytest-timeout's thread-method watchdog is itself Python code needing the GIL and cannot preempt a long strata_core call regardless of timeout value (measured: --timeout=5 --timeout-method=thread did not fire even once across a 67s run of test_fragments_module_fs_read_is_declared_not_selfaudit001, while a synthetic time.sleep(20) test with --timeout=3 fired correctly at 3.7s). The real fix is a Rust change (py.allow_threads in strata-core/src/lib.rs), outside T-3449's declared Python-file scope -- filed as T-3457 with the full measurement and fix sketch.
+- 2026-08-30 attempt 2: Round 2 (coordinator-directed): redid the A/B as a real measurement, not just a diff-emptiness
+argument. Scratch git worktrees at b94cea5d0 and ac5c2ae67 (uv sync + frob natives build in
+each), quiet box confirmed via uptime (load < 2 at measurement time), single-threaded
+-p no:xdist, 2 runs where feasible:
+
+test_sys_gate_zero_violations: b94cea5d0 = 49.75s, 48.36s; ac5c2ae67 = 50.23s; current main
+(T-3457's GIL fix already landed) = 49.68s, 49.45s.
+test_fragments_module_fs_read_is_declared_not_selfaudit001: b94cea5d0 = 68.47s;
+ac5c2ae67 = 67.65s.
+
+All four numbers per test land within a ~2s band. There is no 2x-4x (or any) wall-time
+regression between b94cea5d0 and ac5c2ae67, so there is no commit to bisect in that range --
+the coordinator's revised premise (xdist-under-contention amplifying a 3-4x local slowdown)
+does not hold locally either, since the two endpoints measure identically. The 27.11s baseline
+the test's own docstring cites almost certainly predates b94cea5d0 by a wide margin (organic
+repo growth over the project's full history, not these 30 commits).
+
+REAL COST DRIVER, filed separately as T-3458 (perf, scoped to
+src/frob/strata/_selfconform_kinds.py): design/frob.strata's testsuite node's may "exec" via
+list has grown to 250+ literal glob entries; _fully_excluded_node_ids does an uncached
+O(files x globs) fnmatch scan per node (~8500 files x ~250 globs for testsuite alone), which
+is the ~60-70s ambient baseline this ticket's own tests pay on every build_graph call -- not
+introduced by any single commit, and not fixable by finding a "culprit commit" in T-3449's
+30-commit window. CI's own xdist-parallel workers on a constrained runner very plausibly
+compound this (each worker pays the same ~60-70s cost, competing for the same few cores), but
+reproducing that specific contention needs a live GH Actions runner, outside this
+investigation's reach and outside T-3449's file scope.
+
+T-3457 (GIL-release fix, already landed at 92f97987137f) independently and directly fixes
+anomaly #2 -- the per-test timeout will now demonstrably fire even if a future slow CI run
+does hit an unlucky multi-minute stall, converting a silent 40-minute SIGABRT into a clean
+300s per-test failure. That is delivered regardless of anomaly #1's ultimate root cause.
+
+Failing T-3449 again on this basis: no in-scope, or even bisectable, code fix exists for
+anomaly #1 in the b94cea5d0..ac5c2ae67 range (measured, not just diffed). The organic-growth
+cost driver is filed as T-3458 for separate scoping/prioritization.
 
 ## Unblock log
 - 2026-08-29: unblocked by T-3457 -- T-3457 (GIL-release fix) landed at 92f97987137f -- this blocker is resolved
