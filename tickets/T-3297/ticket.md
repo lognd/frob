@@ -2,7 +2,7 @@
 id: T-3297
 title: Missing merge driver for frob-managed ledger files causes MergeConflict at
   land
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -18,10 +18,19 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_land_git_ops.py
 - src/frob/app/ticket_runner/_land_cmd.py
+- .gitattributes
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .gitattributes
+  reason: the actual bug is that tickets/*/ticket.md and frob-coverage.lock.json were
+    never registered to any merge driver in .gitattributes -- fixing the driver alone
+    does nothing without this
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
