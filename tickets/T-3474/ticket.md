@@ -54,7 +54,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6a0b1f4f74b204434a0f0dfcd2ccde53cbf1ced1
 ---
 follow-up split off T-2568 (isdigit-guard discharge). src/frob/process/_proc_scan.py::reap_orphaned_forkservers has [int(entry.name) for entry in entries if entry.name.isdigit() and ...] -- the output expr int(entry.name) is TEXTUALLY before the if-clause's isdigit() guard even though it executes AFTER it at runtime per item. T-2568's guard-discharge only accepts a guard branch at or before the call's own line, so it never matches this shape. Needs comprehension-awareness (tag which NormalizedBranch is a comprehension if-clause and which calls are inside the same comprehension's output expr) that the current NormalizedFunction model does not carry. EXHAUST002 finding: src/frob/process/_proc_scan.py:318 (reap_orphaned_forkservers).
 
