@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_reporting.py
 - tests/test_tickets_body.py
 - tests/unit/test_ticket_runner_ledger_mirror.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,12 @@ scope_changes:
   glob: tests/unit/test_ticket_runner_ledger_mirror.py
   reason: add coverage for defect 2 (done-report visibility warning) and defect 3
     (body --append ambiguous Done-report-heading message) fixes
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'AFFECT001: documenting T-3468''s BodyTextAmbiguousSection error-message
+    pointer to done-report'
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
