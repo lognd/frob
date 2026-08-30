@@ -2,7 +2,7 @@
 id: T-3450
 title: 'SYS100 undeclared capability: tests/unit/test_check_admission.py exec sites
   missing from testsuite via-list'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -38,6 +38,8 @@ scope_changes:
     precedent already in this file
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_check_admission_exec_sites_are_declared_not_selfaudit001
 designated_repro_test: null
 threat: null
 component: null

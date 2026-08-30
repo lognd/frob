@@ -640,6 +640,36 @@ class TestFrobSelfModel:
             f"never-observed fs.write SYS violation: {node_violations}"
         )
 
+    # frob:tests design/frob.strata kind="e2e"
+    # frob:ticket T-3450
+    # T-3450: same `build_graph(_REPO_ROOT, ...)` whole-repo-scan shape as
+    # `test_sys_gate_zero_violations` above. Same 300s reasoning as the
+    # other `build_graph(_REPO_ROOT, ...)` tests in this class.
+    @pytest.mark.timeout(300)
+    def test_check_admission_exec_sites_are_declared_not_selfaudit001(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3450 regression: `tests/unit/test_check_admission.py`'s
+        `_init_repo`/worktree-fixture helpers call `subprocess.run` (real
+        `git init`/`git worktree add` invocations) -- ten such exec sites
+        that were never declared in `testsuite`'s `may "exec" via [...]`
+        list in `design/frob.strata`, first measured on GitHub Actions run
+        33282540898. Narrower than `test_sys_gate_zero_violations` above
+        (which also trips on unrelated, pre-existing SYS111 ratchet
+        findings tracked separately by T-3447) so this one regression
+        cannot be masked by those.
+        """
+        build_result = build_graph(_REPO_ROOT, tmp_path / "cache.db")
+        assert build_result.is_ok, f"graph build failed: {build_result.err}"
+        violations = sys_gate(_REPO_ROOT, build_result.danger_ok)
+        admission_violations = [
+            v for v in violations if "test_check_admission.py" in v.message
+        ]
+        assert admission_violations == [], (
+            f"tests/unit/test_check_admission.py should have no "
+            f"undeclared-capability SYS violation: {admission_violations}"
+        )
+
 
 # frob:ticket T-3423
 class TestFrobSelfModelFailureModes:
