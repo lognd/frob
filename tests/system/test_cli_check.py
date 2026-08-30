@@ -1006,6 +1006,7 @@ class TestGitlessTargetGateSeverity:
 
 # frob:ticket T-0787
 # frob:ticket T-0806
+# frob:ticket T-3469
 class TestCheckTicketLeasePinRefusal:
     """T-0787 wired `frob check`'s `--ticket`/branch resolution through
     `frob.gates.ticket_lease_pin` (T-0766's cross-worktree lease primitive)
@@ -1016,13 +1017,40 @@ class TestCheckTicketLeasePinRefusal:
     (tests/test_tickets_leases.py::TestTicketLeasePin), never a real
     `frob check --ticket <id>` CLI run from a worktree that does NOT hold
     the lease. Deferred to T-0806 (this class) rather than fixed inline
-    with T-0787 -- see this ticket's Done report."""
+    with T-0787 -- see this ticket's Done report.
 
-    def test_ticket_lease_recorded_elsewhere_refuses(self, tmp_path):
-        """`frob check --ticket <id>` from a SECOND linked `git worktree`,
-        when `<id>`'s lease is recorded for the FIRST (main) worktree, exits
-        1 with a refusal naming `frob ticket start <id>` -- never a silent
-        pass and never a crash."""
+    T-1556 (landed after T-0806) narrowed the pin check in `frob.app.
+    check_runner._refuse_ticket_lease_mismatch` to MUTATING invocations
+    only (`--stamp-baseline`/`--stamp-coverage`) -- a plain read
+    (`--only gates`/no flags at all) no longer refuses even when the
+    lease is recorded for a sibling worktree, by design (see that
+    function's own T-1556 docstring section: a reviewer re-verifying a
+    ticket's gate claims writes no lease-protected state, so there is
+    nothing for the pin to protect). `test_ticket_lease_recorded_
+    elsewhere_refuses` below now exercises a MUTATING invocation
+    (`--stamp-baseline`) to still cover the real T-0695 shape the pin
+    exists for; T-3469 found it had drifted to `--only gates` (a
+    read, which T-1556 exempts) and was only passing by coincidence,
+    via `PRE001`'s OLD remediation text ('run: frob ticket start
+    <id>') matching the same substring this test asserts on -- T-3301
+    (F-031) later corrected that text to 'frob ticket sweep <id>'
+    (`start` refuses on an already-in-progress ticket), which is what
+    surfaced this test's real, unrelated failure. `test_refusal_
+    short_circuits_before_any_gate_runs` is new (T-3469): it pins the
+    ordering invariant the bug report's title names -- the lease-pin
+    refusal is the FIRST and ONLY thing printed, never diluted by a
+    flood of unrelated gate errors from a run that should never have
+    started."""
+
+    @staticmethod
+    def _lease_mismatch_fixture(tmp_path):
+        """Shared T-0787/T-3469 fixture: a main repo with `T-0001`
+        `frob ticket start`ed (recording its cross-worktree lease
+        pinned to `main_repo`), plus a second linked `git worktree`
+        of the same repo that never itself ran `frob ticket start` --
+        the T-0695 cross-worktree lease-collision shape both tests in
+        this class drive `frob check` against. Returns `(ticket_id,
+        second_worktree)`."""
         main_repo = tmp_path / "main"
         main_repo.mkdir()
         git_init_and_config(main_repo)
@@ -1067,14 +1095,23 @@ class TestCheckTicketLeasePinRefusal:
             str(second_worktree),
             cwd=main_repo,
         )
+        return ticket_id, second_worktree
+
+    def test_ticket_lease_recorded_elsewhere_refuses(self, tmp_path):
+        """`frob check --ticket <id> --stamp-baseline` (a MUTATING
+        invocation -- see this class's own T-1556 docstring section for
+        why the pin check only fires for these) from a SECOND linked
+        `git worktree`, when `<id>`'s lease is recorded for the FIRST
+        (main) worktree, exits 1 with a refusal naming `frob ticket
+        start <id>` -- never a silent pass and never a crash."""
+        ticket_id, second_worktree = self._lease_mismatch_fixture(tmp_path)
 
         r = run(
             "check",
             str(second_worktree),
             "--ticket",
             ticket_id,
-            "--only",
-            "gates",
+            "--stamp-baseline",
             cwd=second_worktree,
         )
         out = r.stdout + r.stderr
@@ -1082,3 +1119,37 @@ class TestCheckTicketLeasePinRefusal:
         assert out.strip(), "a lease-pin refusal must never be silent"
         assert ticket_id in out
         assert "frob ticket start" in out
+
+    def test_refusal_short_circuits_before_any_gate_runs(self, tmp_path):
+        """T-3469: the lease-pin refusal above is not just present
+        somewhere in the output -- it must be the ONLY reason `frob
+        check` exits 1. `_refuse_ticket_lease_mismatch` runs (and, on a
+        mismatch, `sys.exit(1)`s) BEFORE `run()` ever reaches `_run_
+        stages_and_report`/`_run_all_stages`, so no gate (`gate:MILE`,
+        `gate:PRE`, `gate:REF`, `gate:SCOPE`, `gate:TEST`, ...) gets a
+        chance to run at all against this mismatched worktree -- a
+        flood of unrelated gate errors alongside (or instead of) the
+        refusal is exactly the regression this ticket's own title
+        names ('11 gate errors now precede/replace the lease-pin
+        remediation')."""
+        ticket_id, second_worktree = self._lease_mismatch_fixture(tmp_path)
+
+        r = run(
+            "check",
+            str(second_worktree),
+            "--ticket",
+            ticket_id,
+            "--stamp-baseline",
+            cwd=second_worktree,
+        )
+        out = r.stdout + r.stderr
+        assert r.returncode == 1, out
+        assert "frob ticket start" in out
+        # No gate ever ran: none of their `gate:<NAME>` report-line
+        # prefixes appear anywhere in the output.
+        for gate_name in ("MILE", "PRE", "REF", "SCOPE", "TEST", "COV"):
+            assert f"gate:{gate_name}" not in out, (
+                f"gate:{gate_name} ran despite the lease-pin mismatch -- "
+                f"the CLI-level refusal must short-circuit before any "
+                f"gate/stage dispatch, not just add a line: {out}"
+            )

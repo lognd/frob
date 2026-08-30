@@ -2,7 +2,7 @@
 id: T-3469
 title: 'Lease-pin refusal regressed again: 11 gate errors now precede/replace the
   frob ticket start remediation in a bare worktree'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
