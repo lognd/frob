@@ -24,6 +24,7 @@ scope:
 - src/frob/lang/__init__.py
 - src/frob/lang/_support.py
 - src/frob/gates/_lang_conformance.py
+- frob.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -137,6 +138,12 @@ scope_changes:
   glob: src/frob/gates/_lang_conformance.py
   reason: LANG004 capability-conformance fixture + gate wiring for the new java adapter,
     same as T-1600/T-1604
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: frob.toml
+  reason: test.runner entry routing .java fixture data through the pytest suite instead
+    of collected as a test file, same shape as the T-1600 csharp entry
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
