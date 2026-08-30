@@ -1,7 +1,7 @@
 ---
 id: T-3496
 title: 'macOS-only: text/citation scans return 0 hits (bucket D, T-3488)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -15,10 +15,27 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/test_tickets_live_tracker.py;tests/test_gates.py
+- src/frob/tickets/_live_tracker.py
+- src/frob/gates/_wire.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_live_tracker.py
+  reason: 'T-3496: root cause is a git grep -E pattern using \b/\s (GNU regex extensions,
+    not portable POSIX ERE) in these two source files; macOS git links a regex backend
+    that silently fails to match them, producing 0 hits'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_wire.py
+  reason: 'T-3496: root cause is a git grep -E pattern using \b/\s (GNU regex extensions,
+    not portable POSIX ERE) in these two source files; macOS git links a regex backend
+    that silently fails to match them, producing 0 hits'
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
