@@ -2,7 +2,7 @@
 id: T-3286
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3272):
   2 new (rule, file) identit(ies) (unknown-argument)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-28'
@@ -46,3 +46,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 
 ## Failure log
 - 2026-08-29 attempt 1: already resolved on main, not reproducible -- see Failure log for measured evidence
+
+## Drop reason
+- 2026-08-29: Not reproducible on main: ty reports zero diagnostics on both scoped files and frob check --ticket T-3286 shows no unknown-argument finding against them (measured by the series D implementer, 2026-08-30).
