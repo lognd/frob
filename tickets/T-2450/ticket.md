@@ -76,7 +76,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ed9d7cbf9662bb7e0b995990fe3e40fcffb47c0f
 ---
 Filed by T-2407's SYS003 burn-down. verify/_drain.py, verify/_worker.py
 call three PRIVATE (underscore-prefixed) app.ticket_runner helpers
