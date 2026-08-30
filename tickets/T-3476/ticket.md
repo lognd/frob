@@ -36,6 +36,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c5143ff94e2daf561b50a32ef3fe0b3883e31ad8
 ---
 T-3463 implemented direct-children-only rot corroboration for a decomposed epic/story (_epic_children_all_stalled): an epic escalates back to ERROR when no child is IN_PROGRESS and even the youngest QUEUED/PLANNED child has crossed its own rot threshold. T-3463's own Description explicitly deferred recursive descent through nested grandchild epics -- a grandchild epic under a decomposed epic is currently read by its own created date only, never by walking further down into ITS children's progress. Needs its own design pass: how deep to recurse, cycle/self-parent guards, and calibration against real ledger data (does a healthy-looking grandchild epic with stalled great-grandchildren count as fresh evidence, or not) before implementing.
