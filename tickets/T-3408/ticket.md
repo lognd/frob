@@ -2,7 +2,7 @@
 id: T-3408
 title: sync-claude-config from a stale worktree silently reverts a sibling agent's
   in-flight fix to the shared global hooks
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -40,7 +40,14 @@ scope_changes:
     live in this new test file
   actor: logan
   at: '2026-08-30'
-designated_repro_test: null
+evidence:
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain::test_unmodified_source_behind_main_is_stale
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain::test_worktree_own_edit_is_never_stale_even_if_main_also_moved
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain::test_source_matches_main_is_not_stale
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain::test_unknown_git_readings_fail_open
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal::test_stale_file_skipped_forward_file_synced
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal::test_allow_stale_overrides_the_refusal
+designated_repro_test: tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain::test_unmodified_source_behind_main_is_stale
 threat: null
 component: null
 anchor: false

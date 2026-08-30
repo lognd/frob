@@ -335,6 +335,38 @@ automatically on every `frob` invocation (stderr, next to
 `stale_install_warning`/`stale_binary_warning`); the WRITE stays this
 script's/the verb's explicit call, never automatic.
 
+T-3408: the WRITE path now refuses to sync a managed file whose source
+(this worktree's own copy) is BEHIND `main` for that specific file --
+unchanged by the worktree since it branched, while `main` has since
+moved it (`stale_managed_sources`/`_is_source_stale_vs_main`). Measured
+incident this fixes: every worktree carries its own copy of `MANAGED`'s
+sources, `~/.claude/` is shared by every process on the machine, and
+nothing previously asked whether a syncing worktree's OWN copy was
+current before overwriting the shared destination with it -- a worktree
+that branched before a sibling's hook fix landed on `main` could run
+this script and silently revert that fix globally (measured live
+2026-08-29: series EQ's sync clobbered series ER's in-flight `frob-
+suggest.py` fix; caught only by an agent diffing by chance). CHECKED
+FIRST per this ticket's own requirement: the pre-T-3408 script had no
+staleness or diff guard of any kind -- `plan()` compared source to the
+CURRENT destination only, with no notion of "behind" vs "ahead".
+
+POLICY CHOSEN, with reasoning (T-3408's three-option menu): refuse per
+file when the worktree's own copy is unchanged since branching AND main
+has moved that file (option (b)), NOT a main-only refusal (option (a),
+which would cost every agent in-place hook testing, a real and common
+workflow), and NOT a bare destination-diff-and-confirm (option (c)
+alone, which would also demand an override for a perfectly safe forward
+sync whenever the destination is merely stale relative to `main` with
+nothing actually at risk -- checking against `main` directly is the more
+precise question, and matches what the measured incident actually was).
+(c)'s own escape hatch is folded in regardless: `--allow-stale`
+overrides the refusal explicitly, per file. A worktree's OWN edit to a
+managed file is NEVER treated as stale, however far `main` has moved on
+that file meanwhile -- the in-place-testing case this policy exists to
+preserve. Deliberately not a lock (the ticket's own explicit "do not"):
+serializing writers still lets the stale one win once it is its turn.
+
 T-1809 gates this drift as a `frob check` stage (`claude-config-drift`,
 CLAUDE001, `src/frob/app/check_runner.py::_claude_config_drift_result`):
 opt-in on this script existing, it fails `frob check` outright when a
