@@ -1,7 +1,7 @@
 ---
 id: T-3499
 title: 'macOS-only: 4 unrelated subprocess/env failures (bucket F, T-3488)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/test_tickets_evidence_cli.py;tests/test_app_daemon_proxy.py;tests/test_coverage.py;tests/test_coverage_sigterm.py
+- tests/system/test_coverage_sigterm.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/system/test_coverage_sigterm.py
+  reason: 'T-3499: original ticket named tests/test_coverage_sigterm.py, a path that
+    does not exist -- the real file is tests/system/test_coverage_sigterm.py'
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
