@@ -3816,9 +3816,10 @@ def _land_should_skip_inline_claims_reverify(worktree: Path) -> bool:
     from frob.verify import settings_for_profile
 
     resolved = effective_profile(worktree)
-    if resolved.is_ok and not settings_for_profile(
-        resolved.danger_ok
-    ).pre_commit_sweep_enabled:
+    if (
+        resolved.is_ok
+        and not settings_for_profile(resolved.danger_ok).pre_commit_sweep_enabled
+    ):
         return True
     return _land_deadline_cannot_afford_inline_claims_reverify(worktree)
 
@@ -5804,6 +5805,146 @@ def _check_cross_ticket_leakage(
     return _report_leaked_tickets(
         ticket.id, leaked, worktree_tickets, allow_cross_ticket=allow_cross_ticket
     )
+
+
+# frob:ticket T-3466
+def _cross_ticket_leakage_findings(
+    root: Path, ticket_id: str
+) -> tuple[dict[str, list[str]], dict[str, Ticket]]:
+    """`(leaked, worktree_tickets)` -- the same pure pieces `_check_
+    cross_ticket_leakage` composes (`_branch_changed_files`,
+    `_machinery_owned_leakage_exempt_paths`, `_load_leakage_ledgers`,
+    `_find_leaked_tickets`) (T-3466, ARCH001 split of `cross_ticket_
+    leakage_gate` to keep it under the LANDPARITY002 threshold, zero
+    behavior change), against `root` (a TICKET'S WORKTREE) and its own
+    resolved primary checkout (`_resolve_primary_checkout`, T-1003).
+    `leaked` is `{}` when the diff/ledger cannot be read, `ticket_id` is
+    not present in the worktree's own ledger, or nothing leaked;
+    `worktree_tickets` is `{}` whenever `leaked` is, so callers never see
+    one empty and the other populated."""
+    from frob.tickets._models import LEDGER_PATH
+    from frob.tickets._store import archive_path
+
+    worktree = root
+    primary_root = _resolve_primary_checkout(worktree) or worktree
+    base_ref = "main"
+    changed = _branch_changed_files(worktree, base_ref)
+    if changed.is_err:
+        return {}, {}
+    archive_rel = archive_path(worktree).relative_to(worktree).as_posix()
+    relevant = (
+        frozenset(changed.danger_ok)
+        - {LEDGER_PATH, archive_rel}
+        - _machinery_owned_leakage_exempt_paths()
+    )
+    if not relevant:
+        return {}, {}
+    worktree_tickets, root_tickets = _load_leakage_ledgers(
+        primary_root, worktree, ticket_id
+    )
+    if worktree_tickets is None or ticket_id not in worktree_tickets:
+        return {}, {}
+    leaked = _find_leaked_tickets(
+        primary_root,
+        worktree,
+        ticket_id,
+        worktree_tickets,
+        root_tickets,
+        relevant,
+        base_ref,
+    )
+    return leaked, worktree_tickets
+
+
+# frob:ticket T-3466
+def _cross_ticket_leakage_violations(
+    ticket_id: str,
+    leaked: dict[str, list[str]],
+    worktree_tickets: dict[str, Ticket],
+) -> tuple[Violation, ...]:
+    """The `Violation`-formatting half of `cross_ticket_leakage_gate`
+    (T-3466, ARCH001 split, zero behavior change): one `CROSSTICKET001`
+    `Violation` per `(other_ticket_id, leaked_path)` pair `_cross_ticket_
+    leakage_findings` returns, annotated with `_scope_claim_reason` the
+    same way `_report_leaked_tickets`'s own land-time refusal message
+    is."""
+    from frob.gates._models import Severity, Violation
+
+    violations: list[Violation] = []
+    for other_id, paths in sorted(leaked.items()):
+        other = worktree_tickets.get(other_id)
+        for p in sorted(paths):
+            reason = _scope_claim_reason(p, other) if other is not None else "unknown"
+            violations.append(
+                Violation(
+                    rule="CROSSTICKET001",
+                    severity=Severity.ERROR,
+                    file=p,
+                    line=0,
+                    message=(
+                        f"CROSSTICKET001: {p} is covered by {other_id}'s own "
+                        f"scope ({reason}), and {other_id} is still "
+                        f"IN_PROGRESS (T-1355) -- landing {ticket_id} would "
+                        f"carry {other_id}'s unfinished work onto main; "
+                        f"land/park {other_id} first, or `frob ticket land "
+                        f"--allow-cross-ticket` if this is a genuinely "
+                        f"intentional joint land"
+                    ),
+                )
+            )
+    return tuple(violations)
+
+
+# frob:ticket T-3466
+# frob:doc docs/modules/gates.md#cross-ticket-leakage-crossticket001-t-3466
+# frob:enforces CHK-GATE-CROSSTICKET001
+# frob:tests tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate.test_leaked_sibling_scope_fires  # noqa: E501
+# frob:tests tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate.test_no_ticket_id_is_quiet  # noqa: E501
+# frob:tests tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate.test_no_leaked_tickets_is_quiet  # noqa: E501
+def cross_ticket_leakage_gate(
+    root: Path, ticket_id: str | None
+) -> tuple[Violation, ...]:
+    """CROSSTICKET001 (T-3466, filed from T-3456's own scoping-out): a
+    `frob check`-callable wrapper around the same pure detection T-1355's
+    `_check_cross_ticket_leakage` runs at land time -- `root`'s branch
+    carries a DIFFERENT, still-`IN_PROGRESS` ticket's committed work
+    (the T-1352 incident shape: a multi-ticket series worktree lands one
+    ticket while quietly carrying a sibling's still-open changes onto
+    main).
+
+    Unlike LANDPARITY001/002 (T-3456), which are pure functions of
+    `(worktree, merge_base, touched_paths)` alone, CrossTicketLeakage
+    needs to know WHICH ticket is landing -- there is no "does this
+    overlap a sibling's lease" question without a subject ticket -- so
+    this gate additionally takes `ticket_id` (`frob check --ticket <id>`'s
+    own id, threaded through by the caller) and is a no-op (`()`) with no
+    id, exactly mirroring `release_gate`'s existing `ticket_id`-optional
+    shape in this same dispatch table.
+
+    `root` here is `frob check`'s own root, ordinarily a TICKET'S
+    WORKTREE (this is the case T-3456 scoped this check out to solve):
+    `_cross_ticket_leakage_findings` resolves the primary checkout
+    `_check_cross_ticket_leakage` itself needs from `root` via
+    `_resolve_primary_checkout` (T-1003), the SAME helper `frob ticket
+    land` uses for the identical "which checkout is the ledger's
+    authoritative copy in" question -- `frob check` needs no new
+    `--worktree`/`--base` flag of its own to answer this.
+
+    Deliberately NOT a re-invocation of `_check_cross_ticket_leakage`
+    itself: that function returns `Result[None, LandError]` and only
+    LOGS its findings (it is a land-time refusal gate, not a
+    `Violation`-producing one) -- `_cross_ticket_leakage_findings` calls
+    the same pure pieces that function composes directly, and
+    `_cross_ticket_leakage_violations` formats each finding the exact
+    same check would refuse on as its own `Violation`. `()` when there
+    is no `ticket_id` or nothing leaked -- the same fail-open posture
+    every other diff-scoped check in this module already uses."""
+    if ticket_id is None:
+        return ()
+    leaked, worktree_tickets = _cross_ticket_leakage_findings(root, ticket_id)
+    if not leaked:
+        return ()
+    return _cross_ticket_leakage_violations(ticket_id, leaked, worktree_tickets)
 
 
 # frob:ticket T-1932

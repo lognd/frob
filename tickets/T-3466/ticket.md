@@ -2,7 +2,7 @@
 id: T-3466
 title: Expose CrossTicketLeakage as a real frob check gate rule (needs worktree/base_ref
   plumbing)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-30'
@@ -52,6 +52,10 @@ scope_changes:
     entry every prior gate wiring (LANDPARITY001/002, VMOD001, TDD001) also needed
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate::test_leaked_sibling_scope_fires
+- tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate::test_no_ticket_id_is_quiet
+- tests/unit/test_cross_ticket_leakage_gate.py::TestCrossTicketLeakageGate::test_no_leaked_tickets_is_quiet
 designated_repro_test: null
 threat: null
 component: null

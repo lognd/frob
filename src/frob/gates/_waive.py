@@ -483,6 +483,10 @@ _KNOWN_GATE_RULES = frozenset(
         # rule above this comment already needed.
         "LANDPARITY001",
         "LANDPARITY002",
+        # T-3466: CROSSTICKET001 (frob.tickets._land.cross_ticket_leakage_
+        # gate) -- same "add to the frozenset" step LANDPARITY001/002
+        # immediately above already needed.
+        "CROSSTICKET001",
         # T-1087: `frob vet`'s own rule ids (src/frob/vet/**) -- a
         # different CLI surface (`frob vet`, not `frob check`'s gate
         # family), outside `_rule_id_scan.SCANNED_BASES` entirely, same

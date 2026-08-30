@@ -303,6 +303,7 @@ from frob.testing._collect import (
 )
 from frob.testing._models import CollectedTests
 from frob.tickets import Ticket, TicketError, TicketQueue, TicketState, load_queue
+from frob.tickets._land import cross_ticket_leakage_gate
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
     _scope_globs,
@@ -6032,6 +6033,12 @@ _ALL_GATES = frozenset(
         # rules, immediately after "vmodel" (same position as its own
         # dispatch-dict entry below).
         "land_parity",
+        # T-3466: CROSSTICKET001 (frob.tickets._land.cross_ticket_leakage_
+        # gate), immediately after "land_parity" -- same "frob check
+        # --ticket <id> sees what frob ticket land would refuse on"
+        # shape T-3456 already wired for LANDPARITY001/002, scoped out of
+        # that ticket because this one needs a ticket_id argument.
+        "cross_ticket_leakage",
         "archgate",
         # T-0665: OPAQUE001, fail-closed runtime-resolved capability-
         # indirection obligation (frob.gates._opaque.opaque_gate).
@@ -6510,6 +6517,9 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     # T-3456: LANDPARITY001/LANDPARITY002, same position as its own
     # _ALL_GATES entry above.
     "land_parity",
+    # T-3466: CROSSTICKET001, same position as its own _ALL_GATES entry
+    # above.
+    "cross_ticket_leakage",
     "archgate",
     "pii_structural",
     "refs",
@@ -6994,6 +7004,15 @@ def _build_thread_jobs(
         "land_parity": lambda: (
             *land_parity_doc_test_gate(st.root),
             *land_parity_long_function_gate(st.root),
+        ),
+        # T-3466: CROSSTICKET001, same `st.root` as "land_parity" above,
+        # plus `st.ticket.id` (the "which ticket is landing" context this
+        # check specifically needs, T-3456's own scoping-out reason) --
+        # `None` when `frob check` runs with no `--ticket`, matching
+        # "release" above's identical `st.ticket.id if ... else None`
+        # shape.
+        "cross_ticket_leakage": lambda: cross_ticket_leakage_gate(
+            st.root, st.ticket.id if st.ticket is not None else None
         ),
         # T-0788: COMPLIANCE005, always against repo_root (never the
         # possibly-scoped st.root) -- docs/design/registry/compliance.yaml
@@ -8557,6 +8576,7 @@ __all__ = [
     "policy_weakening_gate",
     "land_parity_doc_test_gate",
     "land_parity_long_function_gate",
+    "cross_ticket_leakage_gate",
     "invariant_gate",
     "known_gate_rule_ids",
     "_UNWAIVABLE_RULES",
