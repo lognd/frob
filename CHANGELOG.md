@@ -576,6 +576,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3230: Audit failed-subprocess-folded-into-positive-finding sites (T-3216 sibling survey)
 - T-3236: post-land sweep regression from T-2885: 1 new (rule, file) identit(ies) (OPAQUE001)
 - T-3238: post-land sweep regression from T-3220: 1 new (rule, file) identit(ies), 2 finding(s) (DRIFT002)
+- T-3242: Recovered from T-3031's phantom TICK006 citation of T-draft-36006d55
 - T-3243: post-land sweep regression from T-3228: 4 new (rule, file) identit(ies), 6 finding(s) (ARCH102, DEPR006, REG005, WAIVE011)
 - T-3244: Burn down remaining platform-unsafe test-fixture code surfaced by multi-platform ty (T-3211 split)
 - T-3245: Post-land sweep files byte-identical duplicate tickets (T-3236/T-3237, third confirmed instance)

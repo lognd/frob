@@ -1,7 +1,7 @@
 ---
 id: T-3242
 title: Recovered from T-3031's phantom TICK006 citation of T-draft-36006d55
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-28'
