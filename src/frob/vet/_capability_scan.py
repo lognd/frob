@@ -1217,22 +1217,38 @@ def _kotlin_operator_invoke_call_lines(raw: bytes) -> list[int]:
     class_names = {m.group(1) for m in _KOTLIN_OPERATOR_INVOKE_CLASS_RE.finditer(raw)}
     if not class_names:
         return []
-    lines: list[int] = []
+    constructions: list[tuple[bytes, int]] = []
     for class_name in class_names:
         val_re = _kotlin_val_construction_re(class_name)
-        for construction in val_re.finditer(raw):
-            val_name = construction.group(1)
-            call_re = re.compile(
-                rb"(?<![A-Za-z0-9_.])" + re.escape(val_name) + rb"\s*\("
-            )
-            for call in call_re.finditer(raw):
-                # The construction site itself (`= Handler(`) is not a
-                # call of `val_name` -- only a LATER occurrence of
-                # `val_name(` is the instance-call this construct targets.
-                if call.start() <= construction.end():
-                    continue
-                line = raw.count(b"\n", 0, call.start()) + 1
-                lines.append(line)
+        constructions.extend(
+            (construction.group(1), construction.end())
+            for construction in val_re.finditer(raw)
+        )
+    if not constructions:
+        return []
+    # PERF014 fix (T-3477): one finditer(raw) call per DISTINCT val name,
+    # lexically outside the per-class/per-construction loops above -- the
+    # original ran a fresh call_re.finditer(raw) once per CONSTRUCTION
+    # site, a finditer() call nested two real loop levels deep. Caching by
+    # name here preserves the exact per-construction line accumulation
+    # below (a val re-constructed more than once still gets its own
+    # filtered pass over the cached call starts) while cutting the
+    # finditer() call itself out of the nested loops.
+    call_starts_by_val: dict[bytes, list[int]] = {}
+    for val_name in {name for name, _ in constructions}:
+        call_re = re.compile(
+            rb"(?<![A-Za-z0-9_.])" + re.escape(val_name) + rb"\s*\("
+        )
+        call_starts_by_val[val_name] = [call.start() for call in call_re.finditer(raw)]
+    lines: list[int] = []
+    for val_name, construction_end in constructions:
+        for call_start in call_starts_by_val[val_name]:
+            # The construction site itself (`= Handler(`) is not a call of
+            # `val_name` -- only a LATER occurrence of `val_name(` is the
+            # instance-call this construct targets.
+            if call_start <= construction_end:
+                continue
+            lines.append(raw.count(b"\n", 0, call_start) + 1)
     return lines
 
 

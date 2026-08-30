@@ -374,6 +374,7 @@ def scan_candidate_rule_id_literals(repo_root: Path) -> dict[str, str]:
     # frob:waive PERF004 reason="single rglob over src/, no per-iteration re-sort"
     # frob:waive WALK001 reason="src/ is the whole package tree this scan exists to \
     # cover; no vendor dirs to prune within it"
+    # frob:ticket T-3477
     for path in sorted(src_dir.rglob("*.py")):
         if path.name == "_rule_id_scan.py":
             # Same self-match exclusion as scan_emitted_rule_ids: this
@@ -381,14 +382,37 @@ def scan_candidate_rule_id_literals(repo_root: Path) -> dict[str, str]:
             # examples in prose (e.g. "SYS109" a few lines above), which
             # would otherwise self-match as bogus candidates.
             continue
-        for lineno, line in enumerate(path.read_text().splitlines(), start=1):
-            stripped = line.strip()
-            if stripped.startswith("#"):
-                continue
-            code_part = _INLINE_COMMENT_STRIP.sub("", line)
-            for m in _CANDIDATE_RULE_ID_PATTERN.finditer(code_part):
-                rel = path.relative_to(repo_root).as_posix()
-                found.setdefault(m.group(1), f"{rel}:{lineno}")
+        scanned = _scan_file_for_rule_id_literals(path, repo_root)
+        for rule_id, location in scanned.items():
+            found.setdefault(rule_id, location)
+    return found
+
+
+def _scan_file_for_rule_id_literals(path: Path, repo_root: Path) -> dict[str, str]:
+    """PERF014 fix (T-3477): one `finditer()` call over the whole
+    comment-stripped file text, not one per source line -- a commented-out
+    or whole-comment line is blanked (not omitted) so every remaining
+    line's start offset stays aligned with its 1-based line number, which
+    `bisect.bisect_right` over the precomputed per-line start offsets then
+    recovers for each match without re-scanning line-by-line."""
+    lines = path.read_text().splitlines()
+    processed: list[str] = []
+    for line in lines:
+        if line.strip().startswith("#"):
+            processed.append("")
+            continue
+        processed.append(_INLINE_COMMENT_STRIP.sub("", line))
+    text = "\n".join(processed)
+    offsets: list[int] = []
+    pos = 0
+    for line in processed:
+        offsets.append(pos)
+        pos += len(line) + 1
+    rel = path.relative_to(repo_root).as_posix()
+    found: dict[str, str] = {}
+    for m in _CANDIDATE_RULE_ID_PATTERN.finditer(text):
+        lineno = bisect.bisect_right(offsets, m.start())
+        found.setdefault(m.group(1), f"{rel}:{lineno}")
     return found
 
 

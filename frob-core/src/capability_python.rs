@@ -237,7 +237,11 @@ fn collect_param_name(node: Node, source: &[u8], bound: &mut HashMap<String, i64
 /// matches `_collect_target_names`: recurses through tuple/list patterns
 /// and `as`-pattern wrappers, never through `attribute`/`subscript`
 /// targets (those mutate an existing object, they bind no new name).
+// frob:invariant terminates reason="each recursive call descends strictly into a child of node in \
+// tree-sitter's own finite parse tree" measure="remaining depth from node to its deepest leaf in \
+// the parse tree"
 // frob:ticket T-1221
+// frob:ticket T-3477
 fn collect_target_names(node: Node, source: &[u8], position: i64, bound: &mut HashMap<String, i64>) {
     match node.kind() {
         "identifier" => {
@@ -340,7 +344,11 @@ fn shadowing_scope<'a>(
 /// Resolve one expression node (`identifier`/`attribute`/`subscript`/
 /// `call`/`assignment`) to its fully-qualified import-bound target, or
 /// `None` -- matches `_resolve_py_expr`'s dispatch exactly.
+// frob:invariant terminates reason="resolve_expr/resolve_attribute/resolve_partial_call mutually \
+// recurse only by passing a child field node (object/right/func) from tree-sitter's own finite \
+// parse tree" measure="remaining depth from node to its deepest leaf in the parse tree"
 // frob:ticket T-1221
+// frob:ticket T-3477
 fn resolve_expr(
     node: Node,
     source: &[u8],
@@ -376,7 +384,11 @@ fn resolve_identifier(
     import_table.get(name).cloned()
 }
 
+// frob:invariant terminates reason="resolve_expr/resolve_attribute/resolve_partial_call mutually \
+// recurse only by passing a child field node (object/right/func) from tree-sitter's own finite \
+// parse tree" measure="remaining depth from node to its deepest leaf in the parse tree"
 // frob:ticket T-1221
+// frob:ticket T-3477
 fn resolve_attribute(
     node: Node,
     source: &[u8],
@@ -400,7 +412,11 @@ fn resolve_attribute(
 /// `_resolve_py_partial_call`: resolve the callee, and if it is (an alias
 /// of) `functools.partial` itself, resolve through its first positional
 /// argument.
+// frob:invariant terminates reason="resolve_expr/resolve_attribute/resolve_partial_call mutually \
+// recurse only by passing a child field node (object/right/func) from tree-sitter's own finite \
+// parse tree" measure="remaining depth from node to its deepest leaf in the parse tree"
 // frob:ticket T-1221
+// frob:ticket T-3477
 fn resolve_partial_call(
     node: Node,
     source: &[u8],
@@ -756,7 +772,11 @@ fn record_list_container_alias(
 // candidate-vs-unresolved classification against import/alias tables); the r2 rung matches on the \
 // generic 'match on node.kind(), recurse into children' shape every tree-sitter walker in this \
 // crate necessarily has, not a real duplication to extract a helper from"
+// frob:invariant terminates reason="each recursive call descends strictly into a child of node in \
+// tree-sitter's own finite parse tree" measure="remaining depth from node to its deepest leaf in \
+// the parse tree"
 // frob:ticket T-1221
+// frob:ticket T-3477
 fn collect_candidates(
     node: Node,
     source: &[u8],

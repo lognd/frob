@@ -197,6 +197,37 @@ class TestScanCandidateRuleIdLiterals:
 
         assert "ZZZTEST025" not in found
 
+    def test_reports_correct_line_number_deep_into_a_multi_line_file(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals.te\
+        # st_reports_correct_line_number_deep_into_a_multi_line_file
+        # T-3477 (PERF014): scan_candidate_rule_id_literals now does ONE
+        # finditer() call over the whole comment-stripped file text and
+        # recovers each match's line number via bisect over precomputed
+        # per-line byte offsets, rather than one finditer() call per
+        # source line with the line number handed in by enumerate(). A
+        # single-line fixture can never exercise that offset arithmetic --
+        # this fixture has several preceding lines of varying length
+        # (including a blanked whole-comment line) so a wrong per-line
+        # offset (e.g. omitting the joining newline) reports the wrong
+        # line number for the later match.
+        gates_dir = tmp_path / "src" / "frob" / "gates"
+        gates_dir.mkdir(parents=True)
+        (gates_dir / "_synthetic.py").write_text(
+            "def synthetic_gate_with_a_long_name(argument_one, argument_two):\n"
+            "    # a whole-line comment, blanked not omitted\n"
+            "    intermediate = argument_one + argument_two\n"
+            "    return _selfaudit_violation(\n"
+            '        "ZZZTEST026", intermediate, "deep in the file"\n'
+            "    )\n"
+        )
+
+        found = scan_candidate_rule_id_literals(tmp_path)
+
+        assert found.get("ZZZTEST026") == "src/frob/gates/_synthetic.py:5"
+
 
 class TestFindUnregisteredRuleIds:
     """T-1937: `find_unregistered_rule_ids` is the completeness check
