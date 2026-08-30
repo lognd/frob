@@ -804,6 +804,12 @@ class TestWriteArchivedTicket:
             assert actual.body == expected.body
             assert actual.state == expected.state
 
+    # frob:waive PLACE001 reason="T-1583's directive intentionally annotates the whole \
+    # enclosing TestWriteArchivedTicket class from its tail (a class-wide binding, the \
+    # same posture as the T-1561 directive already sitting directly above the class \
+    # line) -- not a missed placement; the WARN false-positives on the immediately- \
+    # following sibling class TestSetBodyArchivedTicketRouting starting nearby across \
+    # only blank lines/comments"
     # frob:ticket T-1583
 
 

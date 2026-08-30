@@ -7433,7 +7433,10 @@ class TestPlace001Gate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         v = _first_rule(violations, "PLACE001")
         assert v is not None
-        assert v.severity == Severity.WARN
+        # frob:ticket T-2368
+        # T-2368: PLACE001 promoted WARN -> ERROR once repo-wide findings
+        # reached zero.
+        assert v.severity == Severity.ERROR
         assert "Foo" in v.message
         assert "bar" in v.message
 
@@ -14520,10 +14523,9 @@ class TestFixEngineTierABatch2:
         assert not [a for a in applied if a.rule == "WAIVE004"]
         assert (root / "src" / "m.py").read_text(encoding="utf-8") == original
 
-    # frob:ticket T-1548
-
     # -- TIER_A_HANDLERS dict promotion --------------------------------------
 
+    # frob:ticket T-1548
     def test_tier_a_handlers_dict_covers_every_batch_rule(self) -> None:
         # frob:tests src/frob/gates/_fix_engine.py::TIER_A_HANDLERS kind="unit"
         # frob:ticket T-1341

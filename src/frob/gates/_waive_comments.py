@@ -624,7 +624,11 @@ def _place001_comment_violation(
     )
     return Violation(
         rule="PLACE001",
-        severity=Severity.WARN,
+        # frob:ticket T-2368
+        # T-2368: promoted WARN -> ERROR once repo-wide PLACE001 findings
+        # reached zero (the two ambiguous directive placements this rule
+        # found were fixed, not waived).
+        severity=Severity.ERROR,
         file=file,
         line=comment.span[0],
         message=(

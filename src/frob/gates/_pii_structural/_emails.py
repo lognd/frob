@@ -199,7 +199,11 @@ def _pii011_violation(
     qualified_symref = f"{rel_path}::{symref}" if symref is not None else None
     return Violation(
         rule="PII011",
-        severity=Severity.WARN,
+        # frob:ticket T-2368
+        # T-2368: promoted WARN -> ERROR -- repo-wide PII011 is already at
+        # zero unwaived findings (the one remaining hit is a genuine,
+        # already-waived synthetic .invalid-TLD fixture email).
+        severity=Severity.ERROR,
         file=rel_path,
         line=lineno,
         symref=qualified_symref,
