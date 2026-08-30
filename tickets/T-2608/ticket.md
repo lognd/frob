@@ -2,7 +2,7 @@
 id: T-2608
 title: 'gate:SCOPE002 closure debt: narrow-scope tickets touching _gate_cache.py/_python.py
   trip 850+ pre-existing cross-file doc/test scope warnings'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -34,6 +34,12 @@ scope_changes:
   reason: new grouping-behavior test for SCOPE002's fix lives here
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/test_gates.py::TestScope002ClosureGate::test_groups_many_symbols_pointing_at_the_same_missing_file
+- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_doc_target
+- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_private_helper
+- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_test_target
+- tests/test_gates.py::TestScope002ClosureGate::test_silent_on_closed_scope
 designated_repro_test: null
 threat: null
 component: null

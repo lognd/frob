@@ -6874,6 +6874,36 @@ class TestScope002ClosureGate:
         violations = _scope002_violations(ticket, snap, tmp_path)
         assert violations == ()
 
+    # frob:ticket T-2608
+    def test_groups_many_symbols_pointing_at_the_same_missing_file(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_scope002_violations
+        """T-2608: a scoped file whose public symbols ALL point at the
+        SAME out-of-scope doc target must produce ONE SCOPE002 violation
+        naming that missing file (with a count and examples), not one
+        violation per symbol -- the closure-debt shape T-2608 measured
+        (852+ near-duplicate lines from `_gate_cache.py`/`_python.py`,
+        every symbol independently recommending the identical `frob
+        ticket scope <id> --add docs/modules/gates.md`)."""
+        from frob.gates import _scope002_violations  # noqa: PLC0415
+
+        body = "\n".join(
+            f"# frob:doc docs/x.md#foo{i}\ndef foo{i}() -> None:\n    pass\n"
+            for i in range(5)
+        )
+        _write(tmp_path, "src/a.py", body)
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=("src/a.py",))
+        violations = _scope002_violations(ticket, snap, tmp_path)
+        scope002 = [v for v in violations if v.rule == "SCOPE002"]
+        matching = [v for v in scope002 if "docs/x.md" in v.message]
+        assert len(matching) == 1, (
+            "5 symbols sharing one missing doc target must fold into 1 "
+            f"violation, not {len(matching)}: {[v.message for v in matching]}"
+        )
+        assert "5" in matching[0].message
+
 
 # frob:ticket T-0584
 class TestPreworkSweepBounds:

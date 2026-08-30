@@ -3687,10 +3687,32 @@ def _scope002_add_hint(ticket_id: str, missing_file: str) -> str:
     )
 
 
+# frob:ticket T-2608
+_SCOPE002_EXAMPLE_CAP = 3
+#: T-2608: a large, heavily cross-referenced file (e.g. `_gate_cache.py`,
+#: `_python.py`) can have HUNDREDS of pre-existing public symbols whose
+#: doc/test target all happen to be the SAME one or two missing files
+#: (`docs/modules/gates.md`, one shared test module, ...) -- emitting one
+#: WARN per SYMBOL then floods the output with 800+ near-duplicate lines
+#: that all resolve to the identical remediation (`frob ticket scope <id>
+#: --add <missing_file>`). Capped at this many named examples per missing
+#: file; the rest are folded into a trailing "and N more" count so the
+#: real, distinct piece of information -- WHICH files are missing --
+#: survives undiluted by how many symbols happen to point at them.
+
+
 def _scope002_edge_gap_violations(
     ticket: Ticket, snapshot: GraphSnapshot
 ) -> list[Violation]:
-    """Doc-edge + test-edge halves of the SCOPE002 closure triple (T-0998)."""
+    """Doc-edge + test-edge halves of the SCOPE002 closure triple (T-0998).
+
+    T-2608: gaps are grouped by `missing_file` before rendering -- ONE
+    violation per distinct missing file (not one per symbol whose target
+    happens to live there), since every gap sharing a `missing_file`
+    carries the identical remediation. A file with 400 scoped symbols
+    all missing the same doc anchor used to produce 400 near-identical
+    WARN lines; it now produces one, naming up to
+    `_SCOPE002_EXAMPLE_CAP` example symbols plus a total count."""
     from frob.graph.affects import scope_doc_code_gaps, scope_test_gaps
 
     prefixes = {
@@ -3700,16 +3722,30 @@ def _scope002_edge_gap_violations(
         "test_missing_code": "covering",
     }
     site_kind = {"doc_missing_code": "doc anchor ", "test_missing_code": "test "}
-    violations: list[Violation] = []
     gaps = list(scope_doc_code_gaps(snapshot, ticket.scope))
     gaps.extend(scope_test_gaps(snapshot, ticket.scope))
+
+    grouped: dict[str, list] = {}
     for gap in gaps:
+        grouped.setdefault(gap.missing_file, []).append(gap)
+
+    violations: list[Violation] = []
+    for missing_file in sorted(grouped):
+        group = grouped[missing_file]
+        first = group[0]
+        examples = ", ".join(
+            f"{site_kind.get(g.direction, '')}{g.scoped_site} "
+            f"{prefixes[g.direction]} {g.target}"
+            for g in group[:_SCOPE002_EXAMPLE_CAP]
+        )
+        remainder = len(group) - _SCOPE002_EXAMPLE_CAP
+        tail = f" (and {remainder} more)" if remainder > 0 else ""
         violations.append(
             _scope002_violation(
-                f"SCOPE002: {ticket.id} scope includes "
-                f"{site_kind.get(gap.direction, '')}{gap.scoped_site} "
-                f"{prefixes[gap.direction]} {gap.target} lives in "
-                + _scope002_add_hint(ticket.id, gap.missing_file)
+                f"SCOPE002: {ticket.id} scope includes {len(group)} "
+                f"symbol(s) {prefixes[first.direction]} in "
+                + _scope002_add_hint(ticket.id, missing_file)
+                + f" -- {examples}{tail}"
             )
         )
     return violations
@@ -3718,25 +3754,43 @@ def _scope002_edge_gap_violations(
 def _scope002_helper_gap_violations(
     ticket: Ticket, snapshot: GraphSnapshot, root: Path | None
 ) -> list[Violation]:
-    """Private-helper half of the SCOPE002 closure triple (T-0998)."""
+    """Private-helper half of the SCOPE002 closure triple (T-0998).
+
+    T-2608: gaps are grouped by `definition_file` before rendering, same
+    shape (and same reason) as `_scope002_edge_gap_violations`'s own
+    T-2608 grouping -- a scoped file calling many private helpers all
+    defined in the same out-of-scope file used to produce one WARN per
+    caller/callee pair; it now produces one per distinct
+    `definition_file`."""
     from frob.graph.callgraph import scope_private_helper_gaps
 
     if root is None:
         return []
+    gaps = list(
+        scope_private_helper_gaps(root, ticket.scope, tuple(snapshot.file_hashes))
+    )
+    grouped: dict[str, list] = {}
+    for helper_gap in gaps:
+        grouped.setdefault(helper_gap.definition_file, []).append(helper_gap)
+
     violations: list[Violation] = []
-    for helper_gap in scope_private_helper_gaps(
-        root, ticket.scope, tuple(snapshot.file_hashes)
-    ):
+    for definition_file in sorted(grouped):
+        group = grouped[definition_file]
         suggestion = (
-            "add it" if helper_gap.only_used_by_scope else "review the dependency"
+            "add it" if group[0].only_used_by_scope else "review the dependency"
         )
+        examples = ", ".join(
+            f"{g.caller} -> {g.callee}" for g in group[:_SCOPE002_EXAMPLE_CAP]
+        )
+        remainder = len(group) - _SCOPE002_EXAMPLE_CAP
+        tail = f" (and {remainder} more)" if remainder > 0 else ""
         violations.append(
             _scope002_violation(
-                f"SCOPE002: {ticket.id} scope includes {helper_gap.caller} "
-                f"which calls private helper {helper_gap.callee} defined "
-                f"in {helper_gap.definition_file!r}, not in scope "
-                f"(probable under-capture) -- {suggestion}: frob ticket "
-                f"scope {ticket.id} --add {helper_gap.definition_file!r}"
+                f"SCOPE002: {ticket.id} scope includes {len(group)} "
+                f"private-helper call(s) into {definition_file!r}, not in "
+                f"scope (probable under-capture) -- {suggestion}: frob "
+                f"ticket scope {ticket.id} --add {definition_file!r}"
+                f" -- {examples}{tail}"
             )
         )
     return violations
