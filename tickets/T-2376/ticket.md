@@ -73,8 +73,7 @@ acceptance:
   - tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion
 - text: 'severity promotion is deferred: the family (PERF005/PERF008/PERF014) is not
     at a genuine zero repo-wide, so frob.toml''s PERF005/PERF008/PERF014 severities
-    remain WARNING; promote only once T-3477''s remaining findings are also
-    cleared'
+    remain WARNING; promote only once T-3477''s remaining findings are also cleared'
   evidence:
   - tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion
 acceptance_amendments:
@@ -88,8 +87,8 @@ acceptance_amendments:
   reason: 'T-2376: measured 76 WARN findings (up from the body''s stale 51), too large
     to burn down to a genuine family-wide zero in one pass; narrowed the acceptance
     criterion to what was actually closed (all 9 Python-file PERF005 sites) and filed
-    T-3477 for the rest, per the ticket''s own ''land the burn-down and
-    file a follow-up'' instruction'
+    T-3477 for the rest, per the ticket''s own ''land the burn-down and file a follow-up''
+    instruction'
   actor: logan
   at: '2026-08-30'
 - op: replace
@@ -98,8 +97,7 @@ acceptance_amendments:
     ERROR not WARNING
   new_text: 'severity promotion is deferred: the family (PERF005/PERF008/PERF014)
     is not at a genuine zero repo-wide, so frob.toml''s PERF005/PERF008/PERF014 severities
-    remain WARNING; promote only once T-3477''s remaining findings are also
-    cleared'
+    remain WARNING; promote only once T-3477''s remaining findings are also cleared'
   reason: same measured-scope narrowing as acceptance[0] -- promoting severity to
     error now would redden the repo on the 6 remaining Rust PERF005 sites plus PERF008/PERF014,
     exactly what the gate module's own T-0290 comment warns against
@@ -109,7 +107,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7ec83420356c5a758aabb572f5dc9fd6bac6a458
 ---
 Measured via `uv run frob check --json --budget 500` (full gate-summary coverage,
 no BUDGET001 deferral) piped through `scripts/check_summary.py`, 2026-08-18.
