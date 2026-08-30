@@ -2,7 +2,7 @@
 id: T-3407
 title: 'fleet_status reports forkservers healthy while they hold 12.5GB RSS: it measures
   orphan status and swap, never resident memory'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
+- docs/guides/coordinator-scripts.md
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +29,20 @@ scope_changes:
     here
   actor: logan
   at: '2026-08-29'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: T-3407's new public symbols (forkserver_rss_held_kb, forkserver_count, _forkserver_rss_headline)
+    need frob:doc anchors here, and their unit tests live in the coordinator-scripts
+    test file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: T-3407's new public symbols (forkserver_rss_held_kb, forkserver_count, _forkserver_rss_headline)
+    need frob:doc anchors here, and their unit tests live in the coordinator-scripts
+    test file
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
