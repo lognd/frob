@@ -2,7 +2,7 @@
 id: T-3500
 title: 'macOS-only: /proc-based live-process detection breaks on macOS (bucket C,
   T-3488)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -16,10 +16,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_finish_guard.py;src/frob/tickets/_leases.py;src/frob/tickets/_worktree_guard.py;src/frob/process/_mutate_journal.py
+- src/frob/mutate/_journal.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/mutate/_journal.py
+  reason: 'T-3500: original ticket named src/frob/process/_mutate_journal.py, a path
+    that does not exist -- the real file backing tests/test_mutate_journal.py''s starttime/proc
+    logic is src/frob/mutate/_journal.py'
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
