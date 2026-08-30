@@ -3528,7 +3528,20 @@ def _commit_exempts_file(
             other = queue.tickets.get(ref)
             if other is None:
                 continue
-            if scope_matches(file, other.scope):
+            # T-3298: pass ticket_id/kind so `other`'s OWN implicit
+            # tickets/<other.id>/** bookkeeping shard (T-1819) and, for a
+            # FEATURE ticket, its implicit CLI-wiring files (T-0446) are
+            # both honored here exactly as they would be for `other`'s
+            # own `frob check --ticket <other.id>` run -- previously
+            # omitted, so a ticket B created by `frob ticket new` (a
+            # routine side effect of another ticket A's own documented
+            # "file an out-of-scope discovery" workflow step) tripped a
+            # SCOPE001 false positive on tickets/B/ticket.md against A,
+            # because only B's DECLARED scope (empty, for a fresh ticket)
+            # was checked, never B's own implicit bookkeeping-shard scope.
+            if scope_matches(
+                file, other.scope, kind=other.kind, ticket_id=other.id
+            ):
                 return True
     return False
 

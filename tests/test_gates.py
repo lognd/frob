@@ -6429,6 +6429,83 @@ class TestScopePrework:
         violations = scope_gate(diff, ticket_b, snap, root=tmp_path, queue=queue)
         assert not any(v.file == "src/a/mod.py" for v in violations)
 
+    # frob:ticket T-3298
+    def test_scope001_exempts_new_tickets_own_bookkeeping_shard_filed_from_another(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        """MUST-FIRE (T-3298): ticket A (scope excludes tickets/**) runs
+        `frob ticket new` to file ticket B as an out-of-scope discovery --
+        the resulting commit (subject references B, per `frob ticket
+        new`'s own auto-commit convention) writes tickets/B/ticket.md.
+        `frob check --ticket A` must be 0 SCOPE001 findings for
+        tickets/B/ticket.md, even though B has an EMPTY declared scope
+        (the normal state for a freshly filed ticket) -- the exemption
+        must reuse B's own implicit tickets/B/** bookkeeping-shard scope
+        (T-1819), not B's declared scope alone."""
+        _git_init(tmp_path)
+        _write_ticket(tmp_path, _ticket(ticket_id="T-0001", scope=("src/a/**",)))
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+        )
+        _write(tmp_path, "tickets/T-0002/ticket.md", "id: T-0002")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "chore(tickets): file T-0002"],
+            cwd=tmp_path,
+            check=True,
+        )
+        queue = TicketQueue(
+            tickets={
+                "T-0001": _ticket(ticket_id="T-0001", scope=("src/a/**",)),
+                # B's own real state: freshly filed, no declared scope yet.
+                "T-0002": _ticket(ticket_id="T-0002", scope=()),
+            }
+        )
+        diff = working_diff(tmp_path, "main").danger_ok
+        snap = _snapshot(tmp_path)
+        ticket_a = _ticket(ticket_id="T-0001", scope=("src/a/**",))
+
+        violations = scope_gate(diff, ticket_a, snap, root=tmp_path, queue=queue)
+        assert not any(v.file == "tickets/T-0002/ticket.md" for v in violations)
+
+    # frob:ticket T-3298
+    def test_scope001_still_flags_hand_edit_of_unreferenced_tickets_shard(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        """MUST-STAY-QUIET (T-3298): ticket A hand-edits tickets/C/
+        ticket.md directly (a ticket it did not create, in a commit whose
+        subject names A itself, never C) -- SCOPE001 must still fire; the
+        T-3298 fix only reuses an exemption already earned by a commit
+        that actually references the OTHER ticket, it does not grant a
+        blanket allow on the tickets/ directory."""
+        _git_init(tmp_path)
+        _write_ticket(tmp_path, _ticket(ticket_id="T-0001", scope=("src/a/**",)))
+        _write_ticket(tmp_path, _ticket(ticket_id="T-0003", scope=()))
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+        )
+        _write(tmp_path, "tickets/T-0003/ticket.md", "id: T-0003 hand-edited")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "chore(tickets): note (T-0001)"],
+            cwd=tmp_path,
+            check=True,
+        )
+        queue = TicketQueue(
+            tickets={
+                "T-0001": _ticket(ticket_id="T-0001", scope=("src/a/**",)),
+                "T-0003": _ticket(ticket_id="T-0003", scope=()),
+            }
+        )
+        diff = working_diff(tmp_path, "main").danger_ok
+        snap = _snapshot(tmp_path)
+        ticket_a = _ticket(ticket_id="T-0001", scope=("src/a/**",))
+
+        violations = scope_gate(diff, ticket_a, snap, root=tmp_path, queue=queue)
+        assert any(v.file == "tickets/T-0003/ticket.md" for v in violations)
+
     def test_scope001_still_flags_uncommitted_out_of_scope_edit(
         self, tmp_path: Path
     ) -> None:

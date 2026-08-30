@@ -1,7 +1,7 @@
 ---
 id: T-3298
 title: SCOPE001 has no exemption for paths frob itself writes as a side effect
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -16,10 +16,21 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/tickets/_scope.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: must-fire/must-stay-quiet tests for the tickets/<new-id>/ticket.md SCOPE001
+    exemption fix
+  actor: logan
+  at: '2026-08-29'
+evidence:
+- tests/test_gates.py::TestScopePrework::test_scope001_exempts_new_tickets_own_bookkeeping_shard_filed_from_another
+- tests/test_gates.py::TestScopePrework::test_scope001_still_flags_hand_edit_of_unreferenced_tickets_shard
 designated_repro_test: null
 threat: null
 component: null
