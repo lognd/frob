@@ -4587,9 +4587,9 @@ def _assert_diff_does_not_worsen_long_functions_pre_land(
 # checker(worktree, rel_path, text)) -- the same indirect-dispatch shape WIRE001 \
 # cannot trace that frob.gates._arch's own analogous waiver documents; genuinely \
 # wired, not dead. Permanent by design (T-2280's own extension point), so this waiver \
-# does not expire -- follow_up points at T-2057 (open, unrelated), not the ticket \
-# landing this change: a waiver citing its own landing ticket blocks its close \
-# (T-2280's own LiveTrackerCited lesson)" follow_up="T-2057"
+# does not expire -- follow_up points at T-3504 (open, unrelated), not the \
+# ticket landing this change: a waiver citing its own landing ticket blocks its close \
+# (T-2280's own LiveTrackerCited lesson)" follow_up="T-3504"
 def _render001_checker(
     worktree: Path, rel_path: str, text: str
 ) -> tuple[Violation, ...]:
@@ -4623,7 +4623,7 @@ def _render001_checker(
 # a few lines below and invoked indirectly from there \
 # (_file_local_error_violations_for_content iterates the tuple and calls each entry) \
 # -- the same indirect-dispatch shape _render001_checker's own analogous waiver \
-# documents; genuinely wired, not dead" follow_up="T-2057"
+# documents; genuinely wired, not dead" follow_up="T-3504"
 def _doc005_checker(worktree: Path, rel_path: str, text: str) -> tuple[Violation, ...]:
     """`_FILE_LOCAL_ERROR_CHECKERS` adapter for DOC005's README.md-table
     half (T-2285): reuses `frob.gates._docblocks`'s own

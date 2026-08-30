@@ -262,7 +262,8 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 # _LIVENESS_SCAN_CHECKERS dict-dispatch (same shape as _load_family_reporters' \
 # archgate/perf/strata/graph/vet entries in frob.gates._coverage_sites, which carry an \
 # identical WIRE001 waiver for the identical reason) -- static call-graph analysis of \
-# a dict-value assignment cannot see the real runtime caller" follow_up="T-2057"
+# a dict-value assignment cannot see the real runtime caller" \
+# follow_up="T-3504"
 # frob:ticket T-2740
 # frob:tests \
 # tests/test_gates.py::TestRenderLintGate.test_render001_scans_true_for_a_real_scanned_\

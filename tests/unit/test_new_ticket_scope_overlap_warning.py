@@ -25,15 +25,16 @@ def _write(path: Path, text: str) -> None:
 
 
 # frob:ticket T-2257
-# frob:waive WIRE001 follow_up="T-2057" reason="private test-fixture helper used only \
-# by this file's own tests, same posture as tests/unit/conftest.py's and \
+# frob:waive WIRE001 follow_up="T-3504" reason="private test-fixture helper \
+# used only by this file's own tests, same posture as tests/unit/conftest.py's and \
 # test_type_name_only_regression_t1957.py's own identical WIRE001 waivers for a \
-# per-file test helper -- follow_up points at T-2057, this repo's established shared \
-# tracker for a genuinely-wired-but-not-externally-called symbol (see \
-# src/frob/__main__.py, src/frob/gates/_arch.py, src/frob/gates/_coverage_sites.py's \
-# own identical WIRE001 waivers citing it), since a private per-file test helper will \
-# never have a caller outside this module by construction and citing THIS ticket's own \
-# id would make the waiver self-referential and unresolvable the moment T-2257 closes"
+# per-file test helper -- follow_up points at T-3504, this repo's \
+# established shared tracker for a genuinely-wired-but-not-externally-called symbol \
+# (see src/frob/__main__.py, src/frob/gates/_arch.py, \
+# src/frob/gates/_coverage_sites.py's own identical WIRE001 waivers citing it), since \
+# a private per-file test helper will never have a caller outside this module by \
+# construction and citing THIS ticket's own id would make the waiver self-referential \
+# and unresolvable the moment T-2257 closes"
 def _file_cfg(tmp_path: Path, *, title: str, body: str, scope: list[str]) -> AppConfig:
     """A minimal `frob ticket new`-shaped `AppConfig` -- test helper only,
     mirroring `test_ticket_new_scope_plausibility.py`'s own precedent for

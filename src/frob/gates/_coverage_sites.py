@@ -130,10 +130,10 @@ def _load_family_reporters() -> dict[str, Callable[[Path], frozenset[str]]]:
 # actually examined this run) -- kept as an explicit waiver rather than removed \
 # because static call-graph analysis of _load_family_reporters' dict-dispatch call \
 # site is fragile, same posture T-1942 already established for the archgate reporter's \
-# own waivers below. follow_up re-pointed to T-2057 (the open successor tracking \
-# strata/graph/vet, which T-2011 investigated and left unwired) since WIRE002 requires \
-# a live open ticket citation, not because that ticket is expected to touch this \
-# specific waiver" follow_up="T-2057"
+# own waivers below. follow_up re-pointed to T-3504 (the open successor \
+# tracking strata/graph/vet, which T-2011 investigated and left unwired) since WIRE002 \
+# requires a live open ticket citation, not because that ticket is expected to touch \
+# this specific waiver" follow_up="T-3504"
 # frob:ticket T-2575
 def _perf_examined_sites(root: Path) -> frozenset[str]:
     """T-1943: the per-site analysis-coverage substrate's PERF-family
@@ -176,7 +176,7 @@ def _perf_examined_sites(root: Path) -> frozenset[str]:
 # frob:waive WIRE001 reason="STRATA reporter, same substrate-only posture as its three \
 # siblings in this module -- no production caller wired here, deliberately, until \
 # T-2011 (open) does the wiring the way T-1942 already did for archgate" \
-# follow_up="T-2057"
+# follow_up="T-3504"
 def _strata_examined_sites(root: Path) -> frozenset[str]:
     """T-1943: the per-site analysis-coverage substrate's STRATA-family
     reporter -- the repo-relative `.strata` file paths this call's own
@@ -216,7 +216,7 @@ def _strata_examined_sites(root: Path) -> frozenset[str]:
 # frob:waive WIRE001 reason="GRAPH reporter, no production caller yet -- kept \
 # substrate-only per T-1921's own precedent rather than wiring a consumer in this same \
 # diff. Open follow-up T-2011 covers wiring this reporter (and its three siblings) \
-# into WAIVE004" follow_up="T-2057"
+# into WAIVE004" follow_up="T-3504"
 def _graph_examined_sites(root: Path) -> frozenset[str]:
     """T-1943: the per-site analysis-coverage substrate's GRAPH-family
     reporter -- `frob.graph.build_graph`'s own `GraphSnapshot.file_hashes`
@@ -247,7 +247,7 @@ def _graph_examined_sites(root: Path) -> frozenset[str]:
 # frob:ticket T-1943
 # frob:waive WIRE001 reason="VET reporter -- last of the four T-1943 substrate-only \
 # additions, no production caller wired in this diff. T-2011 is the open ticket that \
-# wires this and its siblings into a real WAIVE004 guard" follow_up="T-2057"
+# wires this and its siblings into a real WAIVE004 guard" follow_up="T-3504"
 def _vet_examined_sites(root: Path) -> frozenset[str]:
     """T-1943: the per-site analysis-coverage substrate's VET-family
     reporter -- the repo-relative file paths `frob.vet._capability.
@@ -305,7 +305,8 @@ def _vet_examined_sites(root: Path) -> frozenset[str]:
 # call-graph analysis of that dynamic-report-construction call site is fragile. \
 # follow_up re-pointed to T-2011 (the open ticket wiring perf/strata/graph/ vet \
 # examined-sites into WAIVE004) since WIRE002 requires a live open ticket citation, \
-# not because that ticket is expected to remove this waiver itself" follow_up="T-2057"
+# not because that ticket is expected to remove this waiver itself" \
+# follow_up="T-3504"
 def attach_examined_sites(report: "GateReport", root: Path) -> "GateReport":
     """T-1921: returns a COPY of `report` whose `stats.examined_sites` is
     populated for every family `_load_family_reporters` knows how to
@@ -349,7 +350,7 @@ def attach_examined_sites(report: "GateReport", root: Path) -> "GateReport":
 # perf/strata/graph/vet examined-sites into WAIVE004 and is the most likely next \
 # ticket to touch this module; follow_up points there to satisfy WIRE002's \
 # live-open-ticket requirement, not because that ticket is expected to wire a caller \
-# in" follow_up="T-2057"
+# in" follow_up="T-3504"
 def is_family_instrumented(stats: "GateStats", family: str) -> bool:
     """T-1921: True iff `family` carries a real (possibly empty)
     examined-sites entry in `stats` -- distinguishes "this family reports
@@ -370,7 +371,7 @@ def is_family_instrumented(stats: "GateStats", family: str) -> bool:
 # dynamic-call-site reason as attach_examined_sites above. follow_up re-pointed to \
 # T-2011 (the open ticket wiring perf/strata/graph/vet examined-sites into WAIVE004) \
 # since WIRE002 requires a live open ticket citation, not because that ticket is \
-# expected to remove this waiver itself" follow_up="T-2057"
+# expected to remove this waiver itself" follow_up="T-3504"
 def site_examined(stats: "GateStats", family: str, file: str) -> bool:
     """T-1921: THE single sanctioned way to ask "did this run's gate
     FAMILY actually examine FILE" -- returns False whenever either half

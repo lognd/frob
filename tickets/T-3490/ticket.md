@@ -2,7 +2,7 @@
 id: T-3490
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3481):
   5 new (rule, file) identit(ies), 12 finding(s) (WIRE002)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -43,6 +43,8 @@ scope_changes:
     pin (tests/test_gates.py is leased by T-3495)
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/gates/test_wire002_live_repo.py::test_wire002_zero_against_live_repo
 designated_repro_test: null
 threat: null
 component: null

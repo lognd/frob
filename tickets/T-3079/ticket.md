@@ -19,6 +19,11 @@ scope:
 - strata-core/src/parse/grammar_core.rs
 - tickets.md
 - tickets/T-3260/ticket.md
+findings:
+- - LARGE001
+  - strata-core/src/graph/vmodel.rs
+- - LARGE001
+  - strata-core/src/parse/grammar_core.rs
 evidence_scope:
 - tests/test_arch_gate.py
 scope_breadth_ack: false
@@ -70,11 +75,6 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: b251dffa0392ecda1b857ced1afd96ad9a9653c2
-findings:
-- - LARGE001
-  - strata-core/src/graph/vmodel.rs
-- - LARGE001
-  - strata-core/src/parse/grammar_core.rs
 ---
 The deferred post-land unscoped sweep (T-1684) for T-3044 at commit 51bc8c6ddb492d00af3341e00f7727011e8a961c found 2 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
 
