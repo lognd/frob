@@ -2,7 +2,7 @@
 id: T-3483
 title: INV/NEGEXIST/WALK/DEAD/LANG WARN gate remainder after T-2368's PLACE001/PII011
   close
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
