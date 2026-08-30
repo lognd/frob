@@ -50,7 +50,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 262dabb64756563d366f742a000a73aa1fcfa1c0
 ---
 T-3420 (344eba4db) set `sigterm = false` under [tool.coverage.run] to stop the
 coverage.py SIGTERM-handler re-entrancy deadlock. MEASURED on GitHub Actions run
