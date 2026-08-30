@@ -1,7 +1,7 @@
 ---
 id: T-2730
 title: Update tickets-data-storage.md anchors after T-2695's _store_migrate.py extraction
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-20'
@@ -20,6 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:grep -c frob:describes.src.frob.tickets._store_migrate.py docs/modules/tickets-data-storage.md
+  exit=0 sha256=7de1555df0c2
 designated_repro_test: null
 threat: null
 component: null
