@@ -43,3 +43,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DEBT002  src/frob/app/check_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Failure log
+- 2026-08-30 attempt 1: already resolved on main: frob check --only debt --ticket T-3406 zero-matches DEBT002 in src/frob/app/check_runner.py (code absent from the scoped diagnostics set)
