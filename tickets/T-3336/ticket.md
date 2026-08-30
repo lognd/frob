@@ -19,6 +19,8 @@ scope:
 - src/frob/tickets/_evidence.py
 - tests/test_tickets.py
 - tickets/T-draft-4de2fe57/**
+- frob.lock
+- tickets/T-1585/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +47,78 @@ scope_changes:
   reason: T-3336 updates the existing rapid-leniency/hollow-report tests in test_tickets.py
     for the new unconditional evidence gate, and files the required defect-2/defect-3
     follow-up ticket whose ticket.md write needs to be in scope
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: frob.lock
+  reason: frob ack writes frob.lock; rebinding T-1585's stale evidence citation (frob
+    ticket evidence --replace) writes that archived ticket's file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tickets/T-1585/**
+  reason: frob ack writes frob.lock; rebinding T-1585's stale evidence citation (frob
+    ticket evidence --replace) writes that archived ticket's file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: frob.lock
+  reason: frob ack writes frob.lock; rebinding T-1585's stale evidence citation (frob
+    ticket evidence --replace) writes that archived ticket's file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tickets/T-1585/**
+  reason: frob ack writes frob.lock; rebinding T-1585's stale evidence citation (frob
+    ticket evidence --replace) writes that archived ticket's file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: frob.lock
+  reason: frob ack writes frob.lock; rebinding T-1585's stale evidence citation (frob
+    ticket evidence --replace) writes that archived ticket's file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tickets/T-1585/**
+  reason: frob ack writes frob.lock; rebinding T-1585's stale evidence citation (frob
+    ticket evidence --replace) writes that archived ticket's file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: frob.lock
+  reason: frob ack writes frob.lock; rebinding T-1585's stale evidence citation (frob
+    ticket evidence --replace) writes that archived ticket's file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tickets/T-1585/**
+  reason: frob ack writes frob.lock; rebinding T-1585's stale evidence citation (frob
+    ticket evidence --replace) writes that archived ticket's file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: frob.lock
+  reason: frob ack writes frob.lock; rebinding T-1585's stale evidence citation (frob
+    ticket evidence --replace) writes that archived ticket's file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tickets/T-1585/**
+  reason: frob ack writes frob.lock; rebinding T-1585's stale evidence citation (frob
+    ticket evidence --replace) writes that archived ticket's file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: frob.lock
+  reason: frob ack writes frob.lock; rebinding T-1585's stale evidence citation (frob
+    ticket evidence --replace) writes that archived ticket's file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tickets/T-1585/**
+  reason: frob ack writes frob.lock; rebinding T-1585's stale evidence citation (frob
+    ticket evidence --replace) writes that archived ticket's file
   actor: logan
   at: '2026-08-30'
 body_changes:
