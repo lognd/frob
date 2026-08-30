@@ -2,7 +2,7 @@
 id: T-3477
 title: 'PERF005/PERF008/PERF014: burn down remaining findings after T-2376''s partial
   pass'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -19,7 +19,7 @@ scope:
 - strata-core/src/graph/model.rs
 - src/frob/gates/_rule_id_scan.py
 - src/frob/vet/_capability_scan.py
-- tickets/T-draft-d3863270/**
+- tickets/T-3479/**
 - tests/gates/test_rule_id_scan_branches.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -27,7 +27,7 @@ no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
 - op: add
-  glob: tickets/T-draft-d3863270/**
+  glob: tickets/T-3479/**
   reason: T-3477's own out-of-scope discovery filed as a new ticket via frob ticket
     new from this worktree; the ticket file itself lands with this ticket
   actor: logan
@@ -40,6 +40,14 @@ scope_changes:
     never touch and TEST016's mutation check caught as a live gap
   actor: logan
   at: '2026-08-30'
+body_changes:
+- mode: append
+  reason: 'BUG002 land-time gate: T-3477 is a behavior-preserving perf rewrite (algorithmic,
+    not a functional defect fix), needs frob:no-behavior-change to land'
+  actor: logan
+  at: '2026-08-30'
+  old_length: 1775
+  new_length: 2544
 evidence:
 - tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_finds_bare_positional_argument
 - tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_finds_code_kwarg_outside_scanned_bases
@@ -48,6 +56,7 @@ evidence:
 - tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_whole_line_comment_not_picked_up
 - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_detects_freshly_added_rule_id
 - tests/test_vet.py::TestOpaqueIndirectionGate::test_kotlin_operator_invoke_instance_call_fires
+- tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_reports_correct_line_number_deep_into_a_multi_line_file
 designated_repro_test: null
 threat: null
 component: null
@@ -86,3 +95,13 @@ change, and risky to get right without dedicated attention.
 Severity was NOT promoted to error in frob.toml -- the family is not at
 zero. Promote only once every code above is at zero, per T-2376's/the
 epic's own acceptance criteria.
+
+frob:no-behavior-change reason="T-3477 is a PERF burn-down: 5 frob:invariant terminates \
+directive comments added to already-correct, already-recursive Rust functions (no \
+functional change, comment-only), plus two PERF014 algorithmic rewrites \
+(scan_candidate_rule_id_literals/_kotlin_operator_invoke_call_lines) that are \
+deliberately, explicitly behavior-preserving refactors -- same finditer() matches, same \
+line numbers, same first-occurrence/per-construction multiplicities, verified equal via \
+the existing test suite plus a new multi-line-file regression test. There is no defect \
+this ticket's diff fixes in caller-visible behavior; BUG002 asking for a test that fails \
+at main and passes at the fix does not apply to a same-behavior perf rewrite."
