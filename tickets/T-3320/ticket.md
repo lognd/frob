@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0d4fc7b2f3dca66aa71e3aef2314389a7afe75c3
 ---
 REPORTED FROM REAL CONSUMER USE (../diax FROBLEMS.md F-017). A first-hour
 blocker: this is what happens the FIRST time a new user runs `frob ticket
