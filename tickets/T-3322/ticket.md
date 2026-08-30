@@ -39,7 +39,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 64b291eca4a1ea5ebeae0391d3e03700b42d7d55
 ---
 REPORTED FROM REAL CONSUMER USE (../diax FROBLEMS.md F-023). WORK-DESTROYING
 CLASS OF BUG (an indefinite hang, not a crash) -- this repo runs on WSL2
