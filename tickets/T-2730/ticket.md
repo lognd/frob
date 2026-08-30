@@ -1,7 +1,7 @@
 ---
 id: T-2730
 title: Update tickets-data-storage.md anchors after T-2695's _store_migrate.py extraction
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-20'
