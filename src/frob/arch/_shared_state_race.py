@@ -451,7 +451,10 @@ def _unguarded_shared_write_finding(
         file=rel,
         line=line,
         category="unguarded-shared-write",
-        severity="warning",
+        # frob:ticket T-2379
+        # T-2379: promoted warning -> error once repo-wide
+        # unguarded-shared-write reached zero findings.
+        severity="error",
         message=(
             f"{symref}: write to shared mutable state `{canon}` at line "
             f"{line} is reachable from a thread/executor/async-task "

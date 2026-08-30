@@ -782,14 +782,24 @@ def _run_dup(root: Path) -> ToolResult:
     )
 
 
-def _arch_summary(n_warn_unaccounted: int, n_warn_waived: int, n_sugg: int) -> str:
-    """`"N warnings (M waived), K suggestions"` (or "no issues") over arch
-    findings -- T-0375: the warning headline counts only ARCH001
+def _arch_summary(
+    n_warn_unaccounted: int,
+    n_warn_waived: int,
+    n_sugg: int,
+    n_error_unaccounted: int = 0,
+) -> str:
+    """`"N errors, M warnings (K waived), J suggestions"` (or "no issues")
+    over arch findings -- T-0375: the warning headline counts only ARCH001
     long-functions NOT covered by a matching `frob:waive ARCH001`; waived
     ones stay visible as `note` diagnostics. Suggestion-severity categories
     are never waivable (T-0101's unwaivable channel) so they pass through
-    unchanged."""
+    unchanged. T-2379 adds the error headline for a category promoted past
+    WARN once its own repo-wide finding count reached zero."""
     parts = []
+    if n_error_unaccounted:
+        parts.append(
+            f"{n_error_unaccounted} error{'s' if n_error_unaccounted != 1 else ''}"
+        )
     if n_warn_unaccounted or n_warn_waived:
         n_word = "warning" if n_warn_unaccounted == 1 else "warnings"
         warn_part = f"{n_warn_unaccounted} {n_word}"
@@ -864,13 +874,20 @@ def _run_arch(root: Path) -> ToolResult:
     scan_root = root if root.is_dir() else root.parent
     result = analyze_project(scan_root, **load_arch_config(scan_root))
     waived_symrefs = _arch_long_function_waived_symrefs(root, result.suggestions)
+    # T-2379: "error" added alongside "warning"/"suggestion"/"info" --
+    # a category promoted past T-0289's original WARN-only ceiling once
+    # its own repo-wide finding count reaches zero (see
+    # frob.arch._shared_state_race/_lock_ordering's own T-2379 comments
+    # for which categories currently channel at "error").
     sev_map: dict[str, Severity] = {
         "warning": "warning",
+        "error": "error",
         "suggestion": "note",
         "info": "info",
     }
     diags: list[Diagnostic] = []
     n_warn_unaccounted = 0
+    n_error_unaccounted = 0
     n_warn_waived = 0
     n_sugg = 0
     for s in result.suggestions:
@@ -897,13 +914,17 @@ def _run_arch(root: Path) -> ToolResult:
         )
         if s.severity == "warning":
             n_warn_unaccounted += 1
+        elif s.severity == "error":
+            n_error_unaccounted += 1
         else:
             n_sugg += 1
     return ToolResult(
         tool="frob-arch",
-        exit_code=0,
+        exit_code=1 if n_error_unaccounted else 0,
         diagnostics=diags,
-        summary=_arch_summary(n_warn_unaccounted, n_warn_waived, n_sugg),
+        summary=_arch_summary(
+            n_warn_unaccounted, n_warn_waived, n_sugg, n_error_unaccounted
+        ),
     )
 
 

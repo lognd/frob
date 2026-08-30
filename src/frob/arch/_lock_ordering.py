@@ -538,7 +538,10 @@ def _lock_order_cycle_finding(rel: str, cycle) -> "ArchSuggestion":  # noqa: ANN
         file=rel,
         line=edge_ab.line,
         category="lock-order-cycle",
-        severity="warning",
+        # frob:ticket T-2379
+        # T-2379: promoted warning -> error once repo-wide
+        # lock-order-cycle reached zero findings.
+        severity="error",
         message=(
             f"cyclic lock-acquisition order between `{lock_a}` and "
             f"`{lock_b}`: {edge_ab.symref} acquires {lock_a} before "

@@ -268,6 +268,13 @@ _VERIFY_WORKERS_LOCK = threading.Lock()
 #: job's own concerns) so this job's "did a land happen" detection never
 #: depends on `_poll_post_land` having run first or at all.
 _VERIFY_WORKER_LAST_HEAD: dict[str, str] = {}
+#: T-2379 (unguarded-shared-write): `_poll_verify_worker` runs as a
+#: thread/executor dispatch point (same pool as every other daemon poll
+#: job), so its read-then-write of `_VERIFY_WORKER_LAST_HEAD` needs its
+#: own lock -- a separate lock from `_VERIFY_WORKERS_LOCK` since the two
+#: dicts are updated at different points in the same call and holding one
+#: lock across both would only widen the critical section for no reason.
+_VERIFY_WORKER_LAST_HEAD_LOCK = threading.Lock()
 
 
 def _get_verify_worker(root: Path) -> CoalescingWorker:
@@ -323,9 +330,12 @@ def _poll_verify_worker(root: Path) -> Result[WorkerOutcome, WorkerError] | None
     key = str(root.resolve())
     worker = _get_verify_worker(root)
     if head is not None:
-        last_head = _VERIFY_WORKER_LAST_HEAD.get(key)
-        if last_head != head:
-            _VERIFY_WORKER_LAST_HEAD[key] = head
+        with _VERIFY_WORKER_LAST_HEAD_LOCK:
+            last_head = _VERIFY_WORKER_LAST_HEAD.get(key)
+            moved = last_head != head
+            if moved:
+                _VERIFY_WORKER_LAST_HEAD[key] = head
+        if moved:
             worker.notify()
             _log.debug(
                 "serve: daemon: verify-worker: head moved to %s, notified", head[:12]
@@ -377,9 +387,17 @@ def _worktree_branches(root: Path) -> tuple[tuple[str, str, str], ...]:
     for lease in leases:
         if is_lease_ttl_expired(lease):
             log_key = (root, lease.ticket_id)
-            already_logged = log_key in _ttl_skip_logged
+            # T-2379: reuses the module's single `_LOCK` (guarding
+            # `_STATUS`) instead of a dedicated lock -- a second lock here
+            # created a lexical lock-order-cycle finding against `_LOCK`
+            # across `_poll_rebase_bot`/`_run_daemon_cycle` even though
+            # neither ever holds both at once; one lock removes the
+            # ordering question entirely.
+            with _LOCK:
+                already_logged = log_key in _ttl_skip_logged
+                if not already_logged:
+                    _ttl_skip_logged.add(log_key)
             if not already_logged:
-                _ttl_skip_logged.add(log_key)
                 _log.info(
                     "serve: daemon: rebase-bot: %s lease is past the %ss "
                     "TTL (recorded_at=%s) -- skipping re-simulation, "

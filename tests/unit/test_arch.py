@@ -4575,7 +4575,7 @@ class TestLockOrderingHazards:
         assert "lock_b" in hits[0].message
         assert "deadlock.py::f" in hits[0].message
         assert "deadlock.py::g" in hits[0].message
-        assert hits[0].severity == "warning"
+        assert hits[0].severity == "error"  # T-2379
 
     def test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees(self, tmp_path):
         """The SAME cycle, but each function's second lock is acquired
@@ -8535,7 +8535,7 @@ class TestSharedStateRaceHazards:
         assert len(hits) == 1
         assert "cache" in hits[0].message
         assert "race.py::worker" in hits[0].message
-        assert hits[0].severity == "warning"
+        assert hits[0].severity == "error"  # T-2379
 
     def test_same_write_under_with_lock_does_not_fire(self, tmp_path):
         """The same shape, but the write is enclosed by `with lock:` --

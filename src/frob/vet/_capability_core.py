@@ -322,18 +322,28 @@ def _non_executable_byte_spans(path: Path) -> tuple[ByteSpan, ...]:
     tree, source, language_label = parsed.danger_ok
 
     key = (str(path), hashlib.sha256(source).hexdigest())
+    # T-2379 (lock-order-cycle): a single `_span_cache_lock` critical
+    # section spanning the cache check through the cache write, rather
+    # than two separate acquisitions with the `_docstring_query_cache_lock`-
+    # acquiring call to `_docstring_byte_spans_from_tree` in between --
+    # the previous shape let a lexical acquisition-order scan read this as
+    # "span-lock then docstring-lock" at the first `with` and
+    # "docstring-lock then span-lock" at the second, a cycle across the
+    # two locks even though neither was ever actually held while the
+    # other was held. One critical section makes the real ordering
+    # (span-lock encloses a momentary docstring-lock, never the reverse)
+    # unambiguous.
     with _span_cache_lock:
         cached = _span_cache.get(key)
-    if cached is not None:
-        return cached
+        if cached is not None:
+            return cached
 
-    spans = tuple(
-        sorted(
-            _comment_byte_spans_from_tree(tree, language_label)
-            + _docstring_byte_spans_from_tree(tree, language_label)
+        spans = tuple(
+            sorted(
+                _comment_byte_spans_from_tree(tree, language_label)
+                + _docstring_byte_spans_from_tree(tree, language_label)
+            )
         )
-    )
-    with _span_cache_lock:
         _span_cache[key] = spans
     return spans
 

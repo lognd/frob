@@ -13,6 +13,7 @@ import ast
 import io
 import re
 import tokenize
+from typing import Callable
 
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
@@ -585,6 +586,34 @@ def _extract_comments(text: str) -> list[tuple[int, str, bool]]:
     return comments
 
 
+#: T-2379 (type-dispatch-smell): the AST node-type -> name-extractor
+#: dispatch `_identifier_name` reads instead of an isinstance chain -- a
+#: new node type this scan should read a name from is a new dict entry
+#: here, not an edit to `_identifier_name` itself. `ast.FunctionDef`/
+#: `ast.AsyncFunctionDef`/`ast.ClassDef` share the same extractor since
+#: all three carry a `.name` attribute.
+_IDENTIFIER_NAME_EXTRACTORS: dict[type[ast.AST], Callable[[ast.AST], str]] = {
+    ast.Name: lambda node: node.id,  # type: ignore[attr-defined]  # noqa: E501  # ty: ignore[unresolved-attribute]
+    ast.arg: lambda node: node.arg,  # type: ignore[attr-defined]  # noqa: E501  # ty: ignore[unresolved-attribute]
+    ast.FunctionDef: lambda node: node.name,  # type: ignore[attr-defined]  # noqa: E501  # ty: ignore[unresolved-attribute]
+    ast.AsyncFunctionDef: lambda node: node.name,  # type: ignore[attr-defined]  # noqa: E501  # ty: ignore[unresolved-attribute]
+    ast.ClassDef: lambda node: node.name,  # type: ignore[attr-defined]  # noqa: E501  # ty: ignore[unresolved-attribute]
+    ast.Attribute: lambda node: node.attr,  # type: ignore[attr-defined]  # noqa: E501  # ty: ignore[unresolved-attribute]
+    ast.alias: lambda node: node.asname or node.name,  # type: ignore[attr-defined]  # noqa: E501  # ty: ignore[unresolved-attribute]
+}
+
+
+def _identifier_name(node: ast.AST) -> str | None:
+    """The identifier name `node` binds/references, via
+    `_IDENTIFIER_NAME_EXTRACTORS`'s exact-type dispatch (T-2379), or
+    `None` for a node kind `_in_scope_identifier_tokens` does not read a
+    name from."""
+    extractor = _IDENTIFIER_NAME_EXTRACTORS.get(type(node))
+    if extractor is None:
+        return None
+    return extractor(node)
+
+
 # frob:ticket T-1411
 def _in_scope_identifier_tokens(index: _NodeIndex) -> frozenset[str]:
     """Every lowercase, camelCase/underscore-split token appearing in any
@@ -608,17 +637,7 @@ def _in_scope_identifier_tokens(index: _NodeIndex) -> frozenset[str]:
         *index.attributes,
         *index.aliases,
     ):
-        name: str | None = None
-        if isinstance(node, ast.Name):
-            name = node.id
-        elif isinstance(node, ast.arg):
-            name = node.arg
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            name = node.name
-        elif isinstance(node, ast.Attribute):
-            name = node.attr
-        elif isinstance(node, ast.alias):
-            name = node.asname or node.name
+        name = _identifier_name(node)
         if name is None:
             continue
         lowered = _camel_to_snake(name).lower()

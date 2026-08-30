@@ -1,5 +1,5 @@
 ---
-id: T-draft-0e88662f
+id: T-3503
 title: 'frob-dup: triage the src/ renamed-duplicate residue (non-test family)'
 state: queued
 kind: bug
