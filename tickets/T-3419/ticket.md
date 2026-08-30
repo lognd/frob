@@ -2,7 +2,7 @@
 id: T-3419
 title: 'post-land sweep did not file a real SELFAUDIT001 regression it should have
   caught: findings anchored off-file may be invisible to its identity model'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -59,6 +59,14 @@ scope_changes:
     file'
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/test_ticket_runner_gate_findings.py::TestErrorFindingIdentityOffFileAnchors::test_must_fire_new_selfaudit001_finding_not_deduped_against_unrelated_one
+- tests/unit/test_ticket_runner_gate_findings.py::TestErrorFindingIdentityOffFileAnchors::test_must_stay_quiet_no_message_path_falls_back_to_shared_anchor
+- tests/unit/test_ticket_runner_gate_findings.py::TestErrorFindingIdentityOffFileAnchors::test_ordinary_per_file_finding_is_unaffected
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJsonDropsBlankIdentity::test_blank_identity_diagnostic_is_dropped_not_added
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJsonDropsBlankIdentity::test_drop_is_logged_naming_the_emitting_tool
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJsonDropsBlankIdentity::test_a_diagnostic_with_only_file_set_is_kept
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_ty_and_gate_error_both_appear_in_parsed_set
 designated_repro_test: null
 threat: null
 component: null
