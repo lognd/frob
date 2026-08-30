@@ -1,7 +1,7 @@
 ---
 id: T-3242
 title: Recovered from T-3031's phantom TICK006 citation of T-draft-36006d55
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-28'
@@ -18,6 +18,17 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: phantom-citation recovery ticket resolved as already-done
   on main; no file changes, only a failure-log/evidence record
+body_changes:
+- mode: append
+  reason: 'BUG002 refused: designated repro test passes at parent because there is
+    no code defect here, only a stale ticket-ledger citation to close'
+  actor: logan
+  at: '2026-08-29'
+  old_length: 1530
+  new_length: 1874
+evidence:
+- tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_gitless_target_gates_warn_not_error
+- tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
 designated_repro_test: null
 threat: null
 component: null
@@ -36,3 +47,5 @@ test_render_lint_gate_warns_not_errors_
 
 ## Failure log
 - 2026-08-29 attempt 1: Already resolved on main. T-3031's Done report claimed a new ticket T-draft-36006d55 was filed for adding TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root -- that draft id never resolves (phantom filing trail, likely dropped/never promoted at renumber time), but the DESCRIBED WORK itself is present and passing on main: tests/system/test_cli_check.py::TestGitlessTargetGateSeverity (both test_gitless_target_gates_warn_not_error and test_render_lint_gate_warns_not_errors_on_gitless_root) exist, are wired to T-0705's git-less-target-contract docs/modules/gates.md#git-less-target-contract-t-0705, and pass: 'uv run pytest -p no:xdist tests/system/test_cli_check.py::TestGitlessTargetGateSeverity -v' -> 2 passed. Nothing left to implement; the phantom citation just never got cleaned up.
+
+frob:waive BUG002 reason="phantom-citation recovery ticket: no code defect exists to reproduce -- the work T-draft-36006d55 was supposed to cover already exists and passes on main (T-3031 landed it directly or via an id that never resolved), this ticket only closes the ledger loop with evidence naming the pre-existing test, never a new fix"
