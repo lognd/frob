@@ -15,7 +15,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/gates/_docptr.py
 - tests/unit/test_ticket_runner_land_release.py
 - changelog.d/T-2691.md
@@ -34,6 +33,12 @@ scope_changes:
   glob: changelog.d/T-2691.md
   reason: T-3489 only touches the existing T-2691 fragment for repair, not the whole
     directory
+  actor: logan
+  at: '2026-08-30'
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: root-cause fix lives in _docptr.py (a DOC006 exemption for changelog.d/,
+    matching the existing CHANGELOG.md archival precedent), not in the generator
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
