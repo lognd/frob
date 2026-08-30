@@ -52,7 +52,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3afeabbdfc771037bfe708a21a678602cf7a5dcb
 ---
 Observed during T-2667's land (2026-08-29, under fleet load): the rapid
 sweep's self-absorb path -- the mechanism that records a new finding as
