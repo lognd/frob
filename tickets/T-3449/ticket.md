@@ -2,7 +2,7 @@
 id: T-3449
 title: ubuntu CI stalls 19 minutes at 99% in test_frob_self_model selfaudit001 tests;
   per-test timeout did not fire (regressed between b94cea5d0 and ac5c2ae67)
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -30,6 +30,19 @@ scope_changes:
     instead
   actor: logan
   at: '2026-08-29'
+body_changes:
+- mode: append
+  reason: 'waive BUG002 for land: no in-scope code diff exists to bind fail-at-main/pass-at-fix
+    evidence to; fix landed via T-3457/T-3458 outside scope'
+  actor: logan
+  at: '2026-08-30'
+  old_length: 7992
+  new_length: 8570
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_fragments_module_fs_read_is_declared_not_selfaudit001
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_checker_fleet_deploy_vet_have_no_undeclared_fs_write_selfaudit001
+- tests/unit/strata/test_sys003_calibration.py::TestSys003ZeroOnFrobsOwnRepo::test_sys003_zero_against_live_repo_design
+- tests/test_gates.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
 designated_repro_test: null
 threat: null
 component: null
@@ -121,3 +134,8 @@ cost driver is filed as T-3458 for separate scoping/prioritization.
 ## Unblock log
 - 2026-08-29: unblocked by T-3457 -- T-3457 (GIL-release fix) landed at 92f97987137f -- this blocker is resolved
 - 2026-08-30: unblocked by T-3458 -- T-3458 landed the compiled-glob-cache fix for the real O(files x globs) fnmatch bottleneck in _via_matches/_via_matches_site (design/frob.strata's testsuite via-list); T-3449 can now re-measure with that fix in place
+
+## Drop reason
+- 2026-08-30: the xdist stall/crash this ticket tracks is resolved -- MEASURED post-T-3458: the 5-test bundle under -n 4 completes in 176s wall with zero worker crashes/node-downs (was >308s with gw3/gw4 crashes pre-T-3458), same order of magnitude as b94cea5d0's 230s baseline. But the actual fixes are T-3457 (GIL release in strata-core, fixes the per-test-timeout-not-firing anomaly) and T-3458 (compiled glob cache in src/frob/strata/_effects.py::_via_matches, fixes the underlying cost driver behind the stall) -- both OUTSIDE T-3449's own declared scope (src/frob/strata/_selfconform*.py, _claims.py, _facts.py), both already landed. No code change exists to make within T-3449's own scope, so close's mutation-evidence gate correctly refuses a confirmatory-only evidence set; there is no fix left to attempt here. Remaining unrelated finding (test_sys_gate_zero_violations now fails on 8 pre-existing SELFAUDIT001 violations against design/frob.strata, unrelated to the stall) filed separately as T-draft-5a29b4b2. (absorbed by T-3458)
+
+frob:waive BUG002 reason="this ticket is dropped with no code diff in its own scope (src/frob/strata/_selfconform*.py, _claims.py, _facts.py) -- the underlying xdist stall/crash was root-caused and fixed by two sibling tickets (T-3457: GIL release in strata-core; T-3458: compiled glob cache in src/frob/strata/_effects.py), both outside this scope and already landed. No test bound to THIS ticket can genuinely fail-then-pass across a diff that does not exist; the defect this ticket describes cannot be reproduced by a code change in scope, matching BUG002 remedy option 3."
