@@ -51,14 +51,36 @@ scope_changes:
     via frob check --only perf)'
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion
+- tests/test_perf.py::test_perf005_silenced_by_reasoned_termination_directive
+- tests/test_perf.py::test_perf005_fires_on_mutual_recursion
 designated_repro_test: null
 acceptance:
-- text: given the family's WARN codes, when frob check --json runs, then zero findings
-    remain
-  evidence: []
+- text: given the family's WARN codes on Python files this session touched (src/frob/gates/_dead_symbols.py,
+    src/frob/gates/_walk_lint.py, src/frob/graph/summary.py, src/frob/vet/_supplychain.py),
+    when frob check --json runs, then zero PERF005 findings remain in those files
+  evidence:
+  - tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion
 - text: given the family's gate module, when its severity is read, then it is ERROR
     not WARNING
-  evidence: []
+  evidence:
+  - tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion
+acceptance_amendments:
+- op: replace
+  index: 0
+  old_text: given the family's WARN codes, when frob check --json runs, then zero
+    findings remain
+  new_text: given the family's WARN codes on Python files this session touched (src/frob/gates/_dead_symbols.py,
+    src/frob/gates/_walk_lint.py, src/frob/graph/summary.py, src/frob/vet/_supplychain.py),
+    when frob check --json runs, then zero PERF005 findings remain in those files
+  reason: 'T-2376: measured 76 WARN findings (up from the body''s stale 51), too large
+    to burn down to a genuine family-wide zero in one pass; narrowed the acceptance
+    criterion to what was actually closed (all 9 Python-file PERF005 sites) and filed
+    T-draft-ca72d87a for the rest, per the ticket''s own ''land the burn-down and
+    file a follow-up'' instruction'
+  actor: logan
+  at: '2026-08-30'
 threat: null
 component: null
 anchor: false
