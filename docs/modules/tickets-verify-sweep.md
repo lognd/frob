@@ -707,6 +707,25 @@ is a covariant `collections.abc.Sequence[tuple[str, str] | tuple[str,
 str, int]]` -- callers passing a `list[tuple[str, str]]` (every
 real caller in this module; no caller has ever produced a line-bearing
 3-tuple) are naturally accepted, exactly as they should be.
+
+**T-3245: filing now holds the ledger locks across the duplicate check
+AND the write, closing a cross-process race.**
+`_file_regression_ticket`'s `new_ticket(...)` call used to run
+unlocked: its own internal duplicate refusal
+(`_refuse_exact_duplicate`/`_refuse_finding_duplicate`) reads the ledger
+with a plain `load_all` BEFORE the allocate-and-write step takes
+`allocator_lock`/`ledger_lock`, so two detached sweep processes filing
+for the SAME `(rule, file)` could each pass the duplicate check seeing
+no duplicate, then each write, producing two byte-identical tickets (the
+T-3236/T-3237, T-3158/T-3159, T-3022/T-3023 incidents).
+`_file_regression_ticket` now wraps the call in `with
+allocator_lock(root), ledger_lock(root):` -- the SAME reentrant `flock`s
+`new_ticket` re-acquires internally, so a second racing process blocks
+until the first's write is on disk, then its own duplicate check sees
+the sibling and correctly disposes to it via
+`_dispose_to_existing_duplicate_or_none` instead of filing a second
+copy.
+
 ## Backpressure (T-1692)
 
 <!-- frob:describes src/frob/verify/_backpressure.py::BackpressureError -->

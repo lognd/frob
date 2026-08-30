@@ -2,7 +2,7 @@
 id: T-3428
 title: 'post-land sweep regression from T-3245: 1 new (rule, file) identit(ies), 3
   finding(s) (DRIFT001)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'

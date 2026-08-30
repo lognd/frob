@@ -658,6 +658,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3424: T-3260's vmodel split changed the FFI edge payload shape: edges gained an attrs field, breaking the round-trip assertion
 - T-3425: CI: windows-latest job is advisory (continue-on-error) until the T-3076 Windows-only failure set is drained
 - T-3426: CI: ubuntu Test budget 25m kills a passing suite in its slow self-scan tail (99% at 20m, aborted at 25m)
+- T-3428: post-land sweep regression from T-3245: 1 new (rule, file) identit(ies), 3 finding(s) (DRIFT001)
 - T-3429: Declare testsuite exec/fs.write/env.read capabilities for tests/system/test_coverage_sigterm.py
 - T-3430: SYS100: testsuite fs.read undeclared for tests/unit/test_arch_srp.py
 - T-3431: post-land sweep regression from T-3420: 1 new (rule, file) identit(ies), 1 finding(s) (unresolved-attribute)
