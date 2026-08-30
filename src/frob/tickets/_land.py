@@ -3783,14 +3783,98 @@ def _land_should_skip_inline_claims_reverify(worktree: Path) -> bool:
 
     Best-effort, same fail-closed posture as `_land_is_rapid`: an
     unreadable profile resolves to NOT-rapid (never skip), so a broken
-    config can only make a land MORE thorough, never less."""
+    config can only make a land MORE thorough, never less.
+
+    T-3054: also skips -- regardless of profile -- when the caller has
+    declared its remaining wall-clock budget via `FROB_LAND_DEADLINE_S`
+    (the SAME T-2774 opt-in env var `_resolve_land_lock_wait_budget_s`
+    already reads) and that budget cannot plausibly cover this spawn's
+    own estimated cost (`_derive_post_land_sweep_budget_s`, the SAME
+    estimator T-2774 already reuses rather than inventing a second
+    number to desync). This is this ticket's own subject: before T-3054,
+    a land with a declared deadline could still start this ~144-209s
+    synchronous spawn with too little budget left to finish it, and get
+    SIGTERM'd by the caller's outer `timeout` wrapper mid-spawn -- no
+    `LAND-PROOF:` line, no typed error, indistinguishable from a genuine
+    hang (agent-playbook-appendix.md's T-2032/T-2033 "silent death"
+    section documents exactly this). Skipping cleanly, the same way
+    rapid profile already does, converts that into a land that still
+    lands (verification deferred to the post-land sweep exactly as
+    documented above) instead of a bare SIGKILL. `remaining` uses the
+    FULL declared deadline, not a value already reduced by prior-step
+    elapsed time -- deliberately conservative (this function has no way
+    to know how much of the deadline earlier land() steps already spent)
+    -- so an insufficient full deadline always skips, but a technically
+    sufficient one can still occasionally be exceeded by earlier steps;
+    that residual gap is the SAME shape `_resolve_land_lock_wait_budget_s`
+    already accepts for the lock wait (its own docstring: best-effort,
+    never a hard real-time guarantee). Absent or unparseable
+    `FROB_LAND_DEADLINE_S` leaves this function's behavior byte-for-byte
+    unchanged from before T-3054 -- opt-in, never a regression for a
+    caller that has not declared a deadline."""
     from frob.tickets._profile import effective_profile
     from frob.verify import settings_for_profile
 
     resolved = effective_profile(worktree)
-    if resolved.is_err:
+    if resolved.is_ok and not settings_for_profile(
+        resolved.danger_ok
+    ).pre_commit_sweep_enabled:
+        return True
+    return _land_deadline_cannot_afford_inline_claims_reverify(worktree)
+
+
+# frob:ticket T-3054
+# frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_insufficient_deadline_skips_regardless_of_profile  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_ample_deadline_still_runs_the_spawn  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_no_declared_deadline_is_unchanged  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_unparseable_deadline_is_unchanged  # noqa: E501
+def _land_deadline_cannot_afford_inline_claims_reverify(worktree: Path) -> bool:
+    """T-3054: `True` iff `FROB_LAND_DEADLINE_S` is declared, parseable,
+    and smaller than this land's estimated inline `check_gates` spawn
+    cost (`_derive_post_land_sweep_budget_s`) -- the deadline-aware half
+    of `_land_should_skip_inline_claims_reverify`'s own contract, split
+    out to keep that function under the ARCH001 threshold (mirroring how
+    `_resolve_land_lock_wait_budget_s` is itself already a dedicated
+    function for the analogous lock-wait derivation). `False` (never
+    skip on this basis) when the env var is absent or unparseable, or
+    when the estimate fits inside the declared deadline -- the
+    unconditional pre-T-3054 default in every one of those cases."""
+    raw_deadline = os.environ.get(_FROB_LAND_DEADLINE_ENV)
+    if raw_deadline is None:
         return False
-    return not settings_for_profile(resolved.danger_ok).pre_commit_sweep_enabled
+    try:
+        deadline_s = float(raw_deadline)
+    except ValueError:
+        _log.warning(
+            "land: %s=%r is not a number -- ignoring for the T-3054 "
+            "inline check_gates skip decision (T-2774's own lock-wait "
+            "derivation logs an identical warning for the same "
+            "malformed value)",
+            _FROB_LAND_DEADLINE_ENV,
+            raw_deadline,
+        )
+        return False
+
+    from frob.app._check_chunking import _derive_post_land_sweep_budget_s
+
+    estimated_work_s = float(_derive_post_land_sweep_budget_s(worktree))
+    if deadline_s < estimated_work_s:
+        _log.warning(
+            "land: %s declared %s=%.0fs, which does not cover the "
+            "estimated inline check_gates spawn cost (%.0fs, derived "
+            "from %s's own recorded check-budget-timing.json) -- "
+            "skipping the inline spawn (T-3054) rather than risking a "
+            "SIGKILL mid-spawn from the caller's own outer timeout; "
+            "verification is deferred to the post-land sweep exactly "
+            "as rapid profile already does (T-2913)",
+            worktree,
+            _FROB_LAND_DEADLINE_ENV,
+            deadline_s,
+            estimated_work_s,
+            worktree,
+        )
+        return True
+    return False
 
 
 def _validate_scope_covered_preflight(

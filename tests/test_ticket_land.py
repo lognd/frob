@@ -7142,7 +7142,84 @@ class TestSkipInlineClaimsReverifyUnderRapid:
         assert calls == [1]
 
 
+# frob:ticket T-3054
+class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
+    """T-3054: `_land_should_skip_inline_claims_reverify` also skips the
+    inline `check_gates`/`check_gate_findings` spawn -- regardless of
+    profile -- when a declared `FROB_LAND_DEADLINE_S` cannot plausibly
+    cover its estimated cost, converting the SIGKILL-mid-spawn worst case
+    into a clean skip (same posture T-2913 already established for rapid
+    profile, extended here by the SAME `FROB_LAND_DEADLINE_S`/estimator
+    T-2774 already uses for the land-lock wait)."""
+
+    # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_insufficient_deadline_skips_regardless_of_profile  # noqa: E501
+    def test_insufficient_deadline_skips_regardless_of_profile(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MUST-FIRE (the ticket's own subject): a declared deadline too
+        small to cover the estimated inline spawn cost skips it even
+        under the DEFAULT (non-rapid) profile, where T-2913's own rapid
+        gate would never have skipped it."""
+        from frob.tickets._land import _land_should_skip_inline_claims_reverify
+
+        worktree = tmp_path / "wt"
+        worktree.mkdir()
+        # No frob.toml -- default/standard profile, T-2913's own rapid
+        # gate alone would return False here.
+        monkeypatch.setenv("FROB_LAND_DEADLINE_S", "1")
+
+        assert _land_should_skip_inline_claims_reverify(worktree) is True
+
+    # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_ample_deadline_still_runs_the_spawn  # noqa: E501
+    def test_ample_deadline_still_runs_the_spawn(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MUST-STAY-QUIET: a generous declared deadline (comfortably
+        above the estimated cost) must NOT skip the spawn under the
+        default profile -- opting into a deadline is not itself a reason
+        to skip verification, only a genuinely insufficient one is."""
+        from frob.tickets._land import _land_should_skip_inline_claims_reverify
+
+        worktree = tmp_path / "wt"
+        worktree.mkdir()
+        monkeypatch.setenv("FROB_LAND_DEADLINE_S", "100000")
+
+        assert _land_should_skip_inline_claims_reverify(worktree) is False
+
+    # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_no_declared_deadline_is_unchanged  # noqa: E501
+    def test_no_declared_deadline_is_unchanged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MUST-STAY-QUIET (non-regression): no `FROB_LAND_DEADLINE_S` at
+        all -- every caller before T-3054 -- must behave byte-for-byte as
+        before: default profile never skips."""
+        from frob.tickets._land import _land_should_skip_inline_claims_reverify
+
+        worktree = tmp_path / "wt"
+        worktree.mkdir()
+        monkeypatch.delenv("FROB_LAND_DEADLINE_S", raising=False)
+
+        assert _land_should_skip_inline_claims_reverify(worktree) is False
+
+    # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_unparseable_deadline_is_unchanged  # noqa: E501
+    def test_unparseable_deadline_is_unchanged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A non-numeric `FROB_LAND_DEADLINE_S` is ignored (logged,
+        never raised) -- same degrade-quietly posture T-2774's own
+        `_resolve_land_lock_wait_budget_s` already uses for the
+        identical malformed-value case."""
+        from frob.tickets._land import _land_should_skip_inline_claims_reverify
+
+        worktree = tmp_path / "wt"
+        worktree.mkdir()
+        monkeypatch.setenv("FROB_LAND_DEADLINE_S", "not-a-number")
+
+        assert _land_should_skip_inline_claims_reverify(worktree) is False
+
+
 class TestDoneReportThenLandRealClosuresEndToEnd:
+
     """T-0754 review round 2 fix #2: exercises the REAL production
     closures (`_run_tests_count_fn`/`_check_gates_summary_fn`/
     `_land_passed_fn`/`_land_collected_fn` -- the exact ones `frob ticket

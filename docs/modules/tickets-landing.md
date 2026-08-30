@@ -3069,6 +3069,45 @@ Best-effort, fail-closed: an unreadable profile config resolves to
 NOT-rapid (never skip), so a broken `frob.toml` can only make a land
 MORE thorough, never less.
 
+## Inline claims reverify also skipped under an unaffordable declared deadline (T-3054)
+
+`_land_should_skip_inline_claims_reverify` skips the SAME inline
+`check_gates`/`check_gate_findings` spawn described above for a second,
+independent reason beyond rapid profile: a caller that declared its
+remaining wall-clock budget via `FROB_LAND_DEADLINE_S` (T-2774's env
+var, read here through the new `_land_deadline_cannot_afford_inline_
+claims_reverify` helper) whose declared budget is smaller than the
+spawn's own estimated cost (`_derive_post_land_sweep_budget_s`, the SAME
+estimator T-2774 already reuses for the land-lock wait derivation).
+
+Before this ticket, `FROB_LAND_DEADLINE_S` only bounded the land.lock
+WAIT (T-2774/T-2816) -- a land under the default/standard profile with a
+declared deadline too small to cover this inline spawn could still start
+it, then get SIGTERM'd by the caller's own outer `timeout` wrapper
+mid-spawn: no `LAND-PROOF:` line, no typed error, indistinguishable from
+a genuine hang (see agent-playbook-appendix.md's T-2032/T-2033 "silent
+death" investigation, which measured this exact spawn at 144-209s median
+with a p95/max tail well past a 540s wrapper). Skipping cleanly instead
+-- the same posture T-2913 already established for rapid profile --
+turns that into a land that still lands, with verification deferred to
+the post-land sweep exactly as documented above, rather than a bare
+SIGKILL.
+
+The deadline check uses the FULL declared value, not one already reduced
+by time earlier `land()` steps (the merge, Tier-A auto-fixes, D-05
+re-verification) spent -- this function has no visibility into that
+elapsed time, so it is deliberately conservative in one direction only:
+an insufficient full deadline always skips, while a technically
+sufficient one can still occasionally be exceeded by those earlier
+steps. That residual gap is the same shape `_resolve_land_lock_wait_
+budget_s`'s own docstring already accepts (best-effort, never a hard
+real-time guarantee) -- this extends the SAME established posture to a
+second designed cost, it does not introduce a new one.
+
+Absent or unparseable `FROB_LAND_DEADLINE_S` leaves `_land_should_skip_
+inline_claims_reverify`'s behavior byte-for-byte unchanged from before
+this ticket -- opt-in, exactly like T-2774/T-2816 before it.
+
 ## `frob ticket new` no longer waits out a full land (T-2937)
 
 Every ledger-committing verb funnels its auto-commit through

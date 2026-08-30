@@ -2,7 +2,7 @@
 id: T-3054
 title: 'Land: every designed wait exceeds the 540s shell cap, so the designed worst
   case is SIGKILL mid-saga rather than clean refusal'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -53,6 +53,11 @@ scope_changes:
     mid-spawn'
   actor: logan
   at: '2026-08-29'
+evidence:
+- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_insufficient_deadline_skips_regardless_of_profile
+- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_ample_deadline_still_runs_the_spawn
+- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_no_declared_deadline_is_unchanged
+- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_unparseable_deadline_is_unchanged
 designated_repro_test: null
 threat: null
 component: null
