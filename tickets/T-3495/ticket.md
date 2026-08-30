@@ -2,7 +2,7 @@
 id: T-3495
 title: frob_self_scan_heavy serial chain rebuilds the same repo scan six times; share
   one session-scoped scan so the CI tail stops flapping
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -19,10 +19,19 @@ scope:
 - tests/system/test_frob_self_model.py
 - tests/unit/strata/test_sys003_calibration.py
 - tests/test_gates.py
+- tests/unit/test_conftest_self_scan_fixture.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_conftest_self_scan_fixture.py
+  reason: must-fire/must-stay-quiet regression test for the new frob_self_scan_artifacts
+    fixture, matching this repo's existing tests/unit/test_conftest_*.py convention
+    for testing conftest fixtures
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
