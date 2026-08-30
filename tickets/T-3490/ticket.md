@@ -20,6 +20,7 @@ scope:
 - src/frob/gates/_coverage_sites.py
 - src/frob/gates/_render_lint.py
 - tests/unit/test_new_ticket_scope_overlap_warning.py
+- tests/unit/gates/test_wire002_live_repo.py
 findings:
 - - WIRE002
   - src/frob/app/ticket_runner/_land_cmd.py
@@ -35,6 +36,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/gates/test_wire002_live_repo.py
+  reason: new dedicated test file for the WIRE002-zero-against-live-repo regression
+    pin (tests/test_gates.py is leased by T-3495)
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
