@@ -7,7 +7,7 @@ kind: feature
 origin: human
 created: '2026-08-26'
 priority: medium
-parent: null
+parent: T-3505
 tier: ticket
 sprint: null
 runs_last: false
@@ -26,6 +26,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-3505
+  reason: AF_UNIX leaf below is a scoped 1.0.0 slice of T-2963's transport epic; linking
+    as related-under for milestone tracking
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
