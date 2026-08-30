@@ -40,3 +40,6 @@ Auto-filed by the TICK006 Tier-A fix (T-1544): T-3374's Done report claimed T-33
 is already being fixed by another agent's in-progress
 T-3365 (leases src/frob/gates/_waive.py) plus queued T-3239 --
 left untouched, no collision.
+
+## Failure log
+- 2026-08-30 attempt 1: already resolved on main: T-3374's underlying claim (REG002: VERSION001/TDD001/VMOD001 missing from _KNOWN_GATE_RULES) is false against current main -- all three rule ids are present in src/frob/gates/_waive.py::_KNOWN_GATE_RULES, and frob check --only registry --ticket T-3376 finds zero REG002 findings at all. T-3365 (the ticket the phantom citation named as already fixing this) never existed. No code change needed.
