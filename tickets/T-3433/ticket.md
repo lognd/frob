@@ -40,7 +40,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2c431a56cb76a0e103f949658bebadaedf54578d
 ---
 found while working T-3275 (PORT001 rescope, do-not-fix-here instruction): T-3275's widened PORT001 scan found 16 PORT001-IDENT hits repo-wide; 15 of 16 are legitimate self-reference (frob invoking its own 'python -m frob' CLI, or maintainer-facing diagnostic message text naming a real file). The one genuine candidate: src/frob/graph/cache.py:104 -- _NON_LANGUAGE_FINGERPRINT_PACKAGES = ("frob", "strata-core") hardcodes this repo's own installed package names as the non-language cache-fingerprint inputs, instead of resolving them from the scanned repo's own declared dependencies/config. Evaluate whether this is genuinely a portability bug (would silently omit a consumer repo's own equivalent packages from its fingerprint) or an intentional frob-specific list (if strata-core is always frob's own native companion regardless of host repo, it may be a legitimate self-reference like the already-allowlisted _pii_structural/_self_match.py) -- decide and either allowlist with a stated reason or fix.
 
