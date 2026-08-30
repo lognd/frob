@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_verify.py
+- src/frob/verify/_worker.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/verify/_worker.py
+  reason: T-2324's watermark-advance logic (_resolve_verification_outcome, _advance_watermark_and_compact)
+    lives here
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
