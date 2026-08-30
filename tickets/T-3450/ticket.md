@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a58cacf5d656db852617e2d2dd132f019b77cac0
 ---
 MEASURED locally while working T-3447 (SYS111 ratchet ticket, 2026-08-30):
 after fixing all 5 SYS111 capability-ratchet breaches, tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations still fails with 10 SELFAUDIT001 violations of a DIFFERENT family (SYS100, not SYS111):
