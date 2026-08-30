@@ -19,10 +19,17 @@ scope:
 - src/frob/process/_lock.py
 - tests/unit/test_graph_build_lock.py
 - tests/test_graph.py
+- docs/modules/graph.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/graph.md
+  reason: T-0918 docstring paragraph update required by acceptance criteria
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
