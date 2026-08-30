@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/test_gates.py
 - tests/unit/test_ticket_store.py
+- src/frob/gates/_waive_comments.py
+- src/frob/gates/_pii_structural/_emails.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +34,18 @@ scope_changes:
   glob: tests/unit/test_ticket_store.py
   reason: 'PLACE001 burn-down: fix ambiguous frob:ticket directive placement in these
     two test files'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_waive_comments.py
+  reason: PLACE001/PII011 severity promotion once each code's repo-wide count is at
+    zero
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_pii_structural/_emails.py
+  reason: PLACE001/PII011 severity promotion once each code's repo-wide count is at
+    zero
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
