@@ -14,10 +14,18 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- .claude/hooks/sync-claude-config.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .claude/hooks/sync-claude-config.py
+  reason: the sync tool this ticket must add a staleness guard to
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
