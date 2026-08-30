@@ -36,7 +36,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 395d7c03e3fd20299b1d9937d3cf750842e7f1d8
 ---
 T-3260's split of `strata-core/src/graph/vmodel.rs` changed the SHAPE of the
 vmodel edge payload crossing the Rust-to-Python boundary: edges now carry an
