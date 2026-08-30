@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 03ca2ebeda3f36e47456fae2ba977aee34e2f0d8
 ---
 MEASURED locally (T-3442 investigation, 2026-08-30): tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_cli_land_invoked_with_root_equal_to_worktree_still_verifies fails deterministically because the T-1514 pre-commit unscoped sweep (now actually measurable against T-3135's warm-sweep-stage, where it used to report "unmeasurable" on a cold disposable stage and silently skip) finds a genuine new REF001 finding: tickets-archive.md has no inbound references from any other tracked file -- likely dead or silently unreachable.
 
