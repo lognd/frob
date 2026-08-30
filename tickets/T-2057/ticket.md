@@ -2,7 +2,7 @@
 id: T-2057
 title: Wire strata/graph/vet examined-sites into WAIVE004 (blocked pending a sound
   site-identity mapping)
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-10'
@@ -73,3 +73,6 @@ OPAQUE001 truly consumes, instead of `scan_file_capabilities`'s).
 ## Failure log
 - 2026-08-20 attempt 1: Blocker re-verified still real, unchanged since T-2011: SYS001 code-site/SYS002 synthetic-string/SYS003 code-import-site/SELFAUDIT001 design_dir-constant sites still do not correspond to _strata_examined_sites' .strata-file identity; graph still has no owning rule family; OPAQUE001 still calls _opaque_indirection_findings not scan_file_capabilities (confirmed post-T-2056 docstring fix). No new rule or reporter has appeared since T-2011 landed (dd0cbf95b) through current main to close the identity gap. Not actionable as wire-it; requeuing rather than forcing scope.
 - 2026-08-30 attempt 2: Re-verified 2026-08-30: no new rule/reporter closed the identity gap since T-2011/T-2056 (last failure 2026-08-20). SYS001=directive/code site, SYS002=synthetic design/<kind>/<id> string, SYS003=code-import site, SELFAUDIT001=constant design_dir -- none a real .strata path in _strata_examined_sites' set; SYS004 only fires on load failure (disjoint from the examined set by construction). graph: GraphSnapshot has no single owning rule family. vet: confirmed OPAQUE001 (src/frob/gates/_opaque.py:130) still consumes _opaque_indirection_findings, not scan_file_capabilities -- _vet_examined_sites tracks the wrong candidate set. Not actionable as wire-it without a new matching per-file rule or a reporter rebuilt onto the real site space (e.g. vet onto _opaque_indirection_findings' candidates).
+
+## Drop reason
+- 2026-08-30: Still blocked (re-verified by series T, 2026-08-30): no rule/reporter exists that emits strata/graph/vet examined-sites with a sound (file, symbol qualname, rule) identity, so WAIVE004 has nothing sound to consume. Refile once such a reporter ships; the body carries the design.
