@@ -2,7 +2,7 @@
 id: T-3302
 title: Land-only gates (T-2114 frob:tests, ARCH001, CrossTicketLeakage) never run
   at check/close, and dry-run does not predict them
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -81,3 +81,6 @@ new friction.
 
 ## Failure log
 - 2026-08-29 attempt 1: Investigated per the ticket's own item 1: none of the three families (T-2114 frob:tests, ARCH001 diff-scoped, CrossTicketLeakage) exists as a frob.gates rule at all -- each is an ad-hoc CLI-side assertion in _land_cmd.py/_land.py (sys.exit-based, never a Violation-producing gate run_gates dispatches), so check/close genuinely cannot see them without a new gate rule per family. That is a substantial new-feature undertaking (new rule ids, registry entries, docs, waiver support), not a surgical fix to _verify.py/_land_cmd.py, and _land_cmd.py is a 19-open-ticket hot file per the coordinator's own note -- filed as T-3456 with the concrete functions to reuse and the exact reasoning. Separately (item 3, dry-run predicting land): read _land_core_prepare's and land()'s own docstrings and call sequences -- all three checks are called UNCONDITIONALLY before the dry_run/real branch point ('dry-run and real mode alike', 'dry_run runs every check ... the real run would'), so F-051's dry-run-then-real-failure report does not reproduce against current main's code as read; a live two-ticket-worktree repro to fully confirm this was not completed under this session's time budget and is noted in T-3456 as a quick follow-up check. No code changed in _verify.py/_land_cmd.py since the primary ask (wiring into check/close) needs T-3456's larger scope.
+
+## Drop reason
+- 2026-08-29: Superseded by T-3456: the three land-only families are ad-hoc sys.exit assertions, not frob.gates rules, so wiring them into check/close needs new gate-rule machinery; T-3456 carries the investigation and the plan.
