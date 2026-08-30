@@ -58,7 +58,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 125c1a8f383f469d3f6fe6287aa849276d3b16ca
 ---
 T-3256 landed a cross-process admission budget for `frob check`. Half of it
 works. The half that motivated the ticket does not, because the registry is
