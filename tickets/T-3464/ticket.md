@@ -2,7 +2,7 @@
 id: T-3464
 title: 'verify watermark stuck at 00a415c978ec: quarantine re-raises every drain cycle,
   blocking every land repo-wide'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
