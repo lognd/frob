@@ -15,8 +15,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: phantom-citation recovery ticket resolved as already-done
+  on main; no file changes, only a failure-log/evidence record
 designated_repro_test: null
 threat: null
 component: null
@@ -32,3 +33,6 @@ Auto-filed by the TICK006 Tier-A fix (T-1544): T-3031's Done report claimed T-dr
 
 Filed: T-draft-36006d55 ("TestGitlessTargetGateSeverity::
 test_render_lint_gate_warns_not_errors_
+
+## Failure log
+- 2026-08-29 attempt 1: Already resolved on main. T-3031's Done report claimed a new ticket T-draft-36006d55 was filed for adding TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root -- that draft id never resolves (phantom filing trail, likely dropped/never promoted at renumber time), but the DESCRIBED WORK itself is present and passing on main: tests/system/test_cli_check.py::TestGitlessTargetGateSeverity (both test_gitless_target_gates_warn_not_error and test_render_lint_gate_warns_not_errors_on_gitless_root) exist, are wired to T-0705's git-less-target-contract docs/modules/gates.md#git-less-target-contract-t-0705, and pass: 'uv run pytest -p no:xdist tests/system/test_cli_check.py::TestGitlessTargetGateSeverity -v' -> 2 passed. Nothing left to implement; the phantom citation just never got cleaned up.
