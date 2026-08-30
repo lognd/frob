@@ -47,7 +47,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cc67e4c12e3c0636de6394f7aa1d773b42b79f25
 ---
 STRUCTURAL CAUSE of the recurring ubuntu 99% tail stall, measured across
 runs 33284942175/33289332473/33303586303/33336905168 (stall, ~18-19 min at
