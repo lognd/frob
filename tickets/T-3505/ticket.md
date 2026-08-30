@@ -14,15 +14,31 @@ runs_last: false
 milestone: 1.0.0
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-scope:
-- .github/workflows/ci.yml
-- docs/design/windows-portability.md
-- docs/guides/release.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: epic tracking ticket, per-primitive scope lives on child
   leaves
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: pure epic tracking/decision record; all real work lives
+  on child leaves with their own precise scopes
+scope_changes:
+- op: remove
+  glob: .github/workflows/ci.yml
+  reason: pure epic tracking/decision record; all real work lives on child leaves
+    with their own precise scopes
+  actor: logan
+  at: '2026-08-30'
+- op: remove
+  glob: docs/design/windows-portability.md
+  reason: pure epic tracking/decision record; all real work lives on child leaves
+    with their own precise scopes
+  actor: logan
+  at: '2026-08-30'
+- op: remove
+  glob: docs/guides/release.md
+  reason: pure epic tracking/decision record; all real work lives on child leaves
+    with their own precise scopes
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
