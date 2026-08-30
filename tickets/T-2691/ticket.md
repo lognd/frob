@@ -18,6 +18,7 @@ scope:
 - src/frob/tickets/_land.py
 - scripts/fleet_status.py
 - tests/test_ticket_land.py
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,12 @@ scope_changes:
   glob: tests/test_ticket_land.py
   reason: 'T-2691: land-status marker tests live alongside the existing land.lock
     test suite'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: 'T-2691: land-status marker reader/renderer tests live alongside the existing
+    land-lock-holder test suite'
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
