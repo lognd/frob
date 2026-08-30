@@ -2,7 +2,7 @@
 id: T-3399
 title: 'TICK004 errors on healthy decomposed epics: the rule prints ''already decomposed
   and being worked'' and reports an error anyway'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -17,7 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_tickets_gate.py
 - tests/test_tickets_priority.py
-- tickets/T-draft-5bd6334f/**
+- tickets/T-3463/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,11 +29,15 @@ scope_changes:
   actor: logan
   at: '2026-08-30'
 - op: add
-  glob: tickets/T-draft-5bd6334f/**
+  glob: tickets/T-3463/**
   reason: filing the T-3399 body's required children's-progress follow-up ticket writes
     its own ticket.md
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_undecomposed_stale_ticket_still_errors
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_decomposed_epic_past_double_threshold_stays_warn_not_error
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_stalled_decomposition_all_children_terminal_still_errors
 designated_repro_test: null
 threat: null
 component: null

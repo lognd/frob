@@ -648,6 +648,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3396: Split src/frob/process/_reap.py under LARGE001's 800-line threshold
 - T-3397: Reduce ARCH103 decision-point count in _land_cmd._assert_touched_files_lint_clean_pre_land
 - T-3398: Waive tracked LARGE001/PERF004 debt in __main__.py and frob-suggest.py
+- T-3399: TICK004 errors on healthy decomposed epics: the rule prints 'already decomposed and being worked' and reports an error anyway
 - T-3400: Scaffold: remove Makefile/frob contradiction from templates
 - T-3401: frob test: detect missing pytest-testmon like xdist bound check
 - T-3403: fleet_status reports a live worktree's lease as LEAKED, and a leak verdict is actionable

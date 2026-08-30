@@ -300,6 +300,7 @@ def _has_active_child(t: Ticket, queue: TicketQueue) -> bool:
 # frob:ticket T-0411
 # frob:ticket T-2200
 # frob:ticket T-2229
+# frob:ticket T-3399
 # frob:enforces CHK-GATE-TICK004
 def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK004 (T-0411): WARN (escalating to ERROR at 2x threshold) per
@@ -310,6 +311,41 @@ def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     instead of a silent, age-only queue. Only QUEUED/PLANNED tickets are
     considered (an in-progress/blocked ticket is not rotting, it is being
     worked or is explicitly waiting on a blocker).
+
+    T-3399: the age-driven ERROR escalation is CAPPED at WARN for a
+    decomposed epic/story (`is_decomposed`, T-2229's own `_has_active_
+    child` -- at least one non-terminal child ticket carries `parent ==
+    t.id`). MEASURED 2026-08-29: three genuinely healthy epics (T-0969/
+    T-1273/T-1686) reported as hard ERRORs purely because the severity
+    computation ran BEFORE the decomposed check and was never revisited
+    by it -- the message already said "already decomposed and being
+    worked... the recommended action is checking the children's own
+    progress instead", then the SAME finding reported ERROR anyway,
+    clearable only by corrupting otherwise-correct ledger state (drop/
+    close/re-prioritize a ticket that needed none of that). `queued`
+    while children are worked and landed is the INTENDED lifecycle for a
+    decomposed epic, not rot, so it can no longer become a hard error by
+    age alone -- but the signal is not silenced: it still reports at
+    WARN, still names the age, still recommends checking the children.
+    An UNDECOMPOSED ticket (T-1382's own shape: no non-terminal child at
+    all) is completely unaffected and still escalates to ERROR exactly
+    as before -- `is_decomposed` requires BOTH the EPIC/STORY tier AND a
+    live child, so a plain leaf ticket, or an epic that was never
+    actually decomposed, never enters this branch.
+
+    DECISION (explicitly out of this fix's scope, follow-up filed):
+    measuring rot against the CHILDREN's OWN progress -- an epic whose
+    children are ALL ALSO stalled really is rotting, and that would be
+    a sharper finding than a flat severity cap -- needs its own
+    recursive computation and its own calibration, not a one-line
+    change here. Until that lands, a decomposed epic still reports its
+    OWN age at WARN as an interim signal (never silenced entirely),
+    and an epic whose children have ALL gone terminal (nothing actually
+    in flight -- `is_decomposed` is `False` in that case, since `_has_
+    active_child` requires a NON-terminal child) falls through to the
+    ordinary undecomposed path unchanged, still escalating to ERROR:
+    decomposition that has stalled is real rot and must keep firing
+    exactly as hard as it did before this fix.
 
     T-2200: a `runs_last` ticket is EXCLUDED from the ordinary "work it"
     message -- `frob ticket start` structurally REFUSES any `runs_last`
@@ -343,9 +379,38 @@ def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         # runs_last tickets. Checked before runs_last since decomposition
         # only applies to EPIC/STORY tier, disjoint from the leaf-only
         # runs_last flag.
-        if t.tier in (TicketTier.EPIC, TicketTier.STORY) and _has_active_child(
-            t, queue
-        ):
+        is_decomposed = t.tier in (
+            TicketTier.EPIC,
+            TicketTier.STORY,
+        ) and _has_active_child(t, queue)
+        # frob:ticket T-3399
+        # T-3399: MEASURED 2026-08-29 -- a decomposed epic/story (above)
+        # was capped at WARN in its MESSAGE ("the age is real and still
+        # worth noting, but the recommended action is checking the
+        # children's own progress instead") while `severity` above, set
+        # BEFORE this branch runs, was left untouched -- so a decomposed
+        # epic still escalated to ERROR at 2x threshold exactly like an
+        # undecomposed one, even though the rule's own text already knew
+        # "work it" was the wrong advice. `queued` while children are
+        # worked is the INTENDED lifecycle for a decomposed epic, not
+        # rot -- three healthy epics (T-0969/T-1273/T-1686) reported as
+        # hard ERRORs purely from this mismatch, each one only fixable by
+        # corrupting otherwise-correct ledger state (dropping/closing/
+        # re-prioritizing a ticket that needed none of that). Capped to
+        # WARN here, never escalated further by age alone: the signal
+        # ("still worth noting") stays live, but it can no longer become
+        # an ERROR a release gate refuses to pass without a ledger lie.
+        # DECISION (T-3399's own acceptance criterion): measuring age
+        # against the CHILDREN's own progress instead (an epic whose
+        # children are ALL also stalled really is rotting) is explicitly
+        # OUT of this fix's scope -- it needs its own recursive rot
+        # computation and its own calibration, not a one-line severity
+        # cap. Filed as a follow-up (see this ticket's Done report) --
+        # this fix only stops the false ERROR; the coarser age-only
+        # heuristic below still applies for a decomposed epic, capped at
+        # WARN, as the interim informational signal.
+        if is_decomposed:
+            severity = Severity.WARN
             message = (
                 f"TICK004: {t.id} ({t.priority.value} priority, {t.tier.value}) "
                 f"has sat {t.state.value} for {age_days}d (threshold {threshold}d) "

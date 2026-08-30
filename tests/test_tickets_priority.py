@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from frob.findings import Severity
 from frob.gates import _tick004_queue_rot
 from frob.tickets import (
     PRIORITY_RANK,
@@ -314,6 +315,106 @@ class TestTick004QueueRot:
             v for v in violations if v.rule == "TICK004" and "T-3004" in v.message
         ]
         assert len(matches) == 1
+        assert "work it" in matches[0].message
+
+    # frob:ticket T-3399
+    def test_undecomposed_stale_ticket_still_errors(self, tmp_path: Path) -> None:
+        """MUST-FIRE fixture (T-3399): T-1382's exact shape -- an aged,
+        high-priority, undecomposed ticket (no non-terminal child at all)
+        must still escalate all the way to ERROR at 2x threshold. This
+        fix must not weaken the case TICK004 gets right."""
+        stale = _ticket(
+            ticket_id="T-1382",
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=28),
+        )
+        queue = TicketQueue(tickets={stale.id: stale})
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-1382" in v.message
+        ]
+        assert len(matches) == 1
+        assert matches[0].severity is Severity.ERROR
+        assert "work it" in matches[0].message
+
+    # frob:ticket T-3399
+    def test_decomposed_epic_past_double_threshold_stays_warn_not_error(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET fixture (T-3399): the measured 2026-08-29
+        incident's exact shape -- a decomposed epic (a live non-terminal
+        child) whose age has ALSO crossed the 2x-threshold ERROR line
+        must stay capped at WARN, never escalate to ERROR. Before this
+        fix, `severity` was computed from age alone BEFORE the decomposed
+        branch ran, so this exact case still reported ERROR despite the
+        message already saying "already decomposed and being worked"."""
+        epic = _ticket(
+            ticket_id="T-0969",
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=33),
+            tier=TicketTier.EPIC,
+        )
+        child = _ticket(
+            ticket_id="T-3010",
+            state=TicketState.IN_PROGRESS,
+            priority=Priority.HIGH,
+            created=date.today(),
+            parent="T-0969",
+        )
+        queue = TicketQueue(tickets={epic.id: epic, child.id: child})
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-0969" in v.message
+        ]
+        assert len(matches) == 1
+        assert matches[0].severity is Severity.WARN
+        assert "already decomposed" in matches[0].message
+
+    # frob:ticket T-3399
+    def test_stalled_decomposition_all_children_terminal_still_errors(
+        self, tmp_path: Path
+    ) -> None:
+        """THIRD fixture (T-3399): an aged epic whose children are ALL
+        terminal (nothing actually in flight) is decomposition that has
+        STALLED, not a healthy in-progress epic -- it must keep
+        escalating to ERROR past 2x threshold exactly like an
+        undecomposed ticket. `_has_active_child` already returns `False`
+        for this shape (no NON-terminal child); this fixture asserts the
+        severity cap this ticket adds does not accidentally widen to
+        cover it too."""
+        epic = _ticket(
+            ticket_id="T-3011",
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=33),
+            tier=TicketTier.EPIC,
+        )
+        child_done = _ticket(
+            ticket_id="T-3012",
+            state=TicketState.DONE,
+            priority=Priority.HIGH,
+            created=date.today(),
+            parent="T-3011",
+        )
+        child_dropped = _ticket(
+            ticket_id="T-3013",
+            state=TicketState.DROPPED,
+            priority=Priority.HIGH,
+            created=date.today(),
+            parent="T-3011",
+        )
+        queue = TicketQueue(
+            tickets={
+                epic.id: epic,
+                child_done.id: child_done,
+                child_dropped.id: child_dropped,
+            }
+        )
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-3011" in v.message
+        ]
+        assert len(matches) == 1
+        assert matches[0].severity is Severity.ERROR
         assert "work it" in matches[0].message
 
 
