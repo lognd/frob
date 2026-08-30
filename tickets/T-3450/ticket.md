@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - design/frob.strata
 - tests/unit/test_check_admission.py
+- tests/system/test_frob_self_model.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,13 @@ scope_changes:
     fix (declaring the missing exec via-site) may trip a downstream SYS111 ratchet
     bump, but that is handled by the land pipeline's own fix_sys111_capability_ratchet_sync
     Tier-A auto-fix, not a manual edit this ticket needs to make itself
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/system/test_frob_self_model.py
+  reason: adding a narrow, non-maskable SYS100 regression test for tests/unit/test_check_admission.py's
+    exec sites, following the exact test_fragments_module_fs_read_is_declared_not_selfaudit001
+    precedent already in this file
   actor: logan
   at: '2026-08-29'
 designated_repro_test: null
