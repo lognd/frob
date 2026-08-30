@@ -649,6 +649,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3423: test_parses_and_elaborates freezes model counts by hand and has now drifted a fourth time; its docstring records the prior three
 - T-3425: CI: windows-latest job is advisory (continue-on-error) until the T-3076 Windows-only failure set is drained
 - T-3429: Declare testsuite exec/fs.write/env.read capabilities for tests/system/test_coverage_sigterm.py
+- T-3430: SYS100: testsuite fs.read undeclared for tests/unit/test_arch_srp.py
 
 ## [0.530.0] - unreleased
 

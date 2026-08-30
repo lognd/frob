@@ -1,7 +1,7 @@
 ---
 id: T-3430
 title: 'SYS100: testsuite fs.read undeclared for tests/unit/test_arch_srp.py'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 designated_repro_test: null
 threat: null
 component: null
