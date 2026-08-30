@@ -55,7 +55,9 @@ T-0695's `_concurrency.py` docstring reword.
 from __future__ import annotations
 
 import fnmatch
+import functools
 import json
+import os
 import re
 from datetime import date
 from pathlib import Path
@@ -229,12 +231,45 @@ def _via_glob_and_symbol(entry: str) -> tuple[str, str | None]:
     return (glob, symbol if sep else None)
 
 
+# frob:ticket T-3458
+@functools.lru_cache(maxsize=4096)
+def _compiled_via_entries(
+    via: tuple[str, ...],
+) -> tuple[tuple[re.Pattern[str], str | None], ...]:
+    """Precompiled `(glob-regex, symbol-or-None)` pairs for one `via`
+    tuple, cached per unique via-list content (T-3458): `_via_matches`/
+    `_via_matches_site` are called once per OBSERVATION SITE, and a node's
+    via-list can carry 250+ entries (e.g. `testsuite`'s `may "exec" via
+    ...`) -- re-deriving/re-splitting/re-translating every entry's glob on
+    every call was measured as the dominant cost of `check_capability_
+    conformance` (4.5M `fnmatch.fnmatch` calls, ~40s cumulative under
+    `test_sys_gate_zero_violations`, with `os.path.normcase` alone
+    accounting for ~17s of that -- called once per (via-list, entry, call)
+    triple instead of once per call). `via` tuples come from an already-
+    parsed, immutable `KernelModel` (never mutated post-parse), so caching
+    by the tuple's own value is safe, and identical via-lists shared
+    across nodes/grants collapse to one cache entry for free. Each glob is
+    `os.path.normcase`'d before `fnmatch.translate`, matching `fnmatch.
+    fnmatch`'s own `normcase(name)`-vs-`normcase(pat)` semantics bit for
+    bit -- only the PATTERN side's normcase moves here (computed once);
+    the NAME side's normcase still happens once per call in the two
+    functions below, not per entry."""
+    compiled: list[tuple[re.Pattern[str], str | None]] = []
+    for entry in via:
+        glob, want_symbol = _via_glob_and_symbol(entry)
+        pattern = re.compile(fnmatch.translate(os.path.normcase(glob)))
+        compiled.append((pattern, want_symbol))
+    return tuple(compiled)
+
+
 # frob:ticket T-1627
 def _via_matches(rel: str, via: tuple[str, ...]) -> bool:
     """`True` if `rel` (a binding-relative file path) matches at least one
-    glob in `via` (T-1440), same `fnmatch.fnmatch` matcher `_code_binding.py`
-    already uses for a node's own `code` globs -- one shared matching
-    convention across both the node-level and grant-level glob surfaces.
+    glob in `via` (T-1440), same matching semantics `fnmatch.fnmatch`
+    gives `_code_binding.py` for a node's own `code` globs -- one shared
+    matching convention across both the node-level and grant-level glob
+    surfaces, now routed through `_compiled_via_entries`'s cache (T-3458)
+    instead of a raw `fnmatch.fnmatch` call per entry.
 
     T-1627: a symbol-form via entry (`"glob::symbol"`) still matches here
     on its glob half alone -- this function answers "does `rel` fall
@@ -242,7 +277,11 @@ def _via_matches(rel: str, via: tuple[str, ...]) -> bool:
     py`'s per-file joins (unaware of symbols) still need; the stricter
     per-SYMBOL join a capability observation needs is `_via_matches_site`,
     below, not this function."""
-    return any(fnmatch.fnmatch(rel, _via_glob_and_symbol(glob)[0]) for glob in via)
+    normalized = os.path.normcase(rel)
+    return any(
+        pattern.match(normalized) is not None
+        for pattern, _want_symbol in _compiled_via_entries(via)
+    )
 
 
 # frob:ticket T-1627
@@ -262,10 +301,13 @@ def _via_matches_site(rel: str, symbol: str | None, via: tuple[str, ...]) -> boo
     counts as "at that site", not as an escape from it) -- an observation
     with `symbol=None` (module level, outside every declaration) never
     matches a symbol-form entry, since there is no symbol identity to
-    compare against a bare top-level effect."""
-    for entry in via:
-        glob, want_symbol = _via_glob_and_symbol(entry)
-        if not fnmatch.fnmatch(rel, glob):
+    compare against a bare top-level effect. T-3458: iterates
+    `_compiled_via_entries(via)`'s cached, precompiled entries instead of
+    re-splitting/re-translating each one per call -- same short-circuit
+    order and semantics as before, just faster per entry."""
+    normalized = os.path.normcase(rel)
+    for pattern, want_symbol in _compiled_via_entries(via):
+        if pattern.match(normalized) is None:
             continue
         if want_symbol is None:
             return True

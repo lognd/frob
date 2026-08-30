@@ -2,7 +2,7 @@
 id: T-3458
 title: SYS101/SYS111 self-conformance scan cost scales with design/frob.strata's largest
   via-list x repo file count
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -41,6 +41,11 @@ scope_changes:
     of the ~50s total, not the bottleneck this ticket's own filing hypothesized)
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/strata/test_effects.py::TestViaMatchingCompiledCacheUnchangedResults::test_via_matches_site_matches_naive_across_a_matrix
+- tests/unit/strata/test_effects.py::TestViaMatchingCompiledCacheUnchangedResults::test_via_matches_matches_naive_across_a_matrix
+- tests/unit/strata/test_effects.py::TestViaMatchingCompiledCacheUnchangedResults::test_via_matches_site_empty_via_never_matches
+- tests/unit/strata/test_effects.py::TestViaMatchingCompiledCachePerf::test_compiled_path_is_faster_than_naive_on_a_large_via_list
 designated_repro_test: null
 threat: null
 component: null

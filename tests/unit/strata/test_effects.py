@@ -23,6 +23,9 @@ from frob.strata import (
 from frob.strata._effects import (
     CAPABILITY_RATCHET_LOCK_REL,
     StaleViaSymbolViolation,
+    _via_glob_and_symbol,
+    _via_matches,
+    _via_matches_site,
     capability_ratchet_violations,
     capability_via_site_counts,
     check_ambient_capability_reasons,
@@ -1037,3 +1040,152 @@ class TestAmbientVsEnumeratedCapabilitySplit:
         assert [v.file for v in report.violations] == [
             "tests/test_new_undeclared_site.py"
         ]
+
+
+def _naive_via_matches_site(rel: str, symbol: str | None, via: tuple[str, ...]) -> bool:
+    """T-3458: byte-for-byte the PRE-fix `_via_matches_site` body (raw
+    `fnmatch.fnmatch` per entry, no `_compiled_via_entries` cache) --
+    kept here as the reference implementation the must-stay-quiet test
+    below compares the optimized path against."""
+    import fnmatch as _fnmatch
+
+    for entry in via:
+        glob, want_symbol = _via_glob_and_symbol(entry)
+        if not _fnmatch.fnmatch(rel, glob):
+            continue
+        if want_symbol is None:
+            return True
+        if symbol is None:
+            continue
+        if symbol == want_symbol or symbol.startswith(want_symbol + "."):
+            return True
+    return False
+
+
+def _naive_via_matches(rel: str, via: tuple[str, ...]) -> bool:
+    """T-3458: byte-for-byte the PRE-fix `_via_matches` body -- reference
+    implementation for the must-stay-quiet test below."""
+    import fnmatch as _fnmatch
+
+    return any(_fnmatch.fnmatch(rel, _via_glob_and_symbol(g)[0]) for g in via)
+
+
+class TestViaMatchingCompiledCacheUnchangedResults:
+    """T-3458: `_via_matches`/`_via_matches_site` now route glob matching
+    through `_compiled_via_entries`'s per-via-tuple regex cache instead of
+    a raw `fnmatch.fnmatch` call per entry -- a pure performance change,
+    verified bit-for-bit identical against the pre-fix naive
+    implementation on a representative fixture (must-stay-quiet)."""
+
+    def _fixture_via(self) -> tuple[str, ...]:
+        # A representative via-list shape: plain file globs, a directory
+        # glob, and symbol-scoped entries -- exercises every branch both
+        # implementations must agree on.
+        return (
+            "tests/unit/strata/test_effects.py",
+            "tests/system/*.py",
+            "tests/unit/**/test_*.py",
+            "src/frob/strata/_effects.py::check_capability_conformance",
+            "src/frob/strata/_effects.py::_ViaHelper.nested_method",
+        )
+
+    def test_via_matches_site_matches_naive_across_a_matrix(self) -> None:
+        via = self._fixture_via()
+        cases: list[tuple[str, str | None]] = [
+            ("tests/unit/strata/test_effects.py", None),
+            ("tests/unit/strata/test_effects.py", "TestSomething.test_x"),
+            ("tests/system/test_frob_self_model.py", None),
+            ("tests/system/test_frob_self_model.py", "TestFrobSelfModel.test_x"),
+            ("tests/unit/gates/test_refs.py", "TestX.test_y"),
+            ("tests/integration/test_exports_write.py", None),
+            ("src/frob/strata/_effects.py", None),
+            ("src/frob/strata/_effects.py", "check_capability_conformance"),
+            (
+                "src/frob/strata/_effects.py",
+                "check_capability_conformance.inner",
+            ),
+            ("src/frob/strata/_effects.py", "other_function"),
+            (
+                "src/frob/strata/_effects.py",
+                "_ViaHelper.nested_method",
+            ),
+            (
+                "src/frob/strata/_effects.py",
+                "_ViaHelper.nested_method.closure",
+            ),
+            ("src/frob/strata/_effects.py", "_ViaHelper.other_method"),
+            ("unrelated/module.py", None),
+            ("unrelated/module.py", "anything"),
+        ]
+        for rel, symbol in cases:
+            expected = _naive_via_matches_site(rel, symbol, via)
+            actual = _via_matches_site(rel, symbol, via)
+            assert actual == expected, (
+                f"_via_matches_site({rel!r}, {symbol!r}, via) diverged from "
+                f"the naive reference: expected {expected}, got {actual}"
+            )
+
+    def test_via_matches_matches_naive_across_a_matrix(self) -> None:
+        via = self._fixture_via()
+        for rel in (
+            "tests/unit/strata/test_effects.py",
+            "tests/system/test_frob_self_model.py",
+            "tests/unit/gates/test_refs.py",
+            "src/frob/strata/_effects.py",
+            "unrelated/module.py",
+        ):
+            expected = _naive_via_matches(rel, via)
+            actual = _via_matches(rel, via)
+            assert actual == expected, (
+                f"_via_matches({rel!r}, via) diverged from the naive "
+                f"reference: expected {expected}, got {actual}"
+            )
+
+    def test_via_matches_site_empty_via_never_matches(self) -> None:
+        """Must-stay-quiet edge case: an empty via-list matches nothing,
+        in both implementations, for both functions."""
+        assert _via_matches_site("any/file.py", "any.symbol", ()) is False
+        assert _via_matches("any/file.py", ()) is False
+
+
+class TestViaMatchingCompiledCachePerf:
+    """T-3458 must-fire: the compiled-regex cache path is measurably
+    faster than the naive per-call `fnmatch.fnmatch` path on a synthetic
+    input shaped like `design/frob.strata`'s largest real via-list
+    (`testsuite`'s `may "exec" via ...`, 250+ entries) -- a RELATIVE wall-
+    clock ratio against the naive reference above, not an absolute
+    threshold, so this stays robust to machine speed."""
+
+    def test_compiled_path_is_faster_than_naive_on_a_large_via_list(self) -> None:
+        import time
+
+        via = tuple(f"tests/unit/pkg{i}/test_mod{i}.py" for i in range(250))
+        # 5000 synthetic observation sites, mostly non-matching (the
+        # realistic shape: most files in a repo are NOT covered by any one
+        # node's via-list, so both implementations pay the full via-list
+        # scan on most calls -- exactly the case the naive O(files x
+        # globs) scan is worst at).
+        sites = [(f"tests/unit/other{i % 5000}/test_x.py", None) for i in range(5000)]
+
+        # Warm the compiled-entries cache once (mirrors real usage: the
+        # SAME via tuple is reused across every observation site in a
+        # node's conformance pass, so warmup cost amortizes -- this test
+        # measures the amortized steady-state cost the fix targets).
+        _via_matches_site(sites[0][0], sites[0][1], via)
+
+        t0 = time.perf_counter()
+        for rel, symbol in sites:
+            _via_matches_site(rel, symbol, via)
+        compiled_elapsed = time.perf_counter() - t0
+
+        t0 = time.perf_counter()
+        for rel, symbol in sites:
+            _naive_via_matches_site(rel, symbol, via)
+        naive_elapsed = time.perf_counter() - t0
+
+        assert compiled_elapsed < naive_elapsed * 0.5, (
+            f"compiled-cache path ({compiled_elapsed:.3f}s) is not "
+            f"meaningfully faster than the naive path "
+            f"({naive_elapsed:.3f}s) on a 250-glob x 5000-site synthetic "
+            f"input -- expected at least a 2x speedup"
+        )
