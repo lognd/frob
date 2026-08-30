@@ -57,6 +57,7 @@ import importlib
 import json
 import os
 import re
+import sys
 import threading
 import time as _time
 import tomllib
@@ -73,6 +74,7 @@ from typani.result import Err, Ok, Result
 import frob.gitio as gitio
 from frob.gitio import GitError, ProcResult
 from frob.logging import get_logger
+from frob.process._guard import guarded_subprocess_run
 from frob.tickets._models import TicketError
 
 # frob:ticket T-1619
@@ -1794,9 +1796,9 @@ def _read_land_lock_holder_json(path: Path) -> dict | None:
 
 
 # frob:ticket T-1619
-def _proc_cmdline(pid: int) -> tuple[str, ...] | None:
+def _proc_cmdline_linux(pid: int) -> tuple[str, ...] | None:
     """`/proc/<pid>/cmdline`'s argv, NUL-split (T-1619) -- `None` on any
-    read failure (pid gone, no permission, non-Linux with no `/proc`)."""
+    read failure (pid gone, no permission)."""
     try:
         raw = Path(f"/proc/{pid}/cmdline").read_bytes()
     except OSError:
@@ -1806,14 +1808,161 @@ def _proc_cmdline(pid: int) -> tuple[str, ...] | None:
     )
 
 
+# frob:ticket T-3500
+def _proc_cmdline_darwin(pid: int) -> tuple[str, ...] | None:
+    r"""macOS equivalent of `_proc_cmdline_linux` (T-3500, T-3488 bucket C):
+    macOS has no `/proc`, so this shells to `ps -ww -o command= -p <pid>`
+    (`-ww` disables output truncation; `-o command=` prints the full
+    command line with no header) and whitespace-splits the result.
+
+    This is a best-effort argv reconstruction, not a byte-exact NUL-split
+    like `/proc/<pid>/cmdline` gives on Linux: an argument containing an
+    embedded space would split into two tokens here. Every caller in this
+    module only ever token-searches this result for literal words
+    (`"ticket"`, `"land"`) or a `T-\d+`-shaped whole token (`_TICKET_ID_
+    ARGV_RE`), never reconstructs a real argv to re-exec or compares
+    positional args -- exactly the belt-and-braces backstop precision this
+    module's own docstrings already describe (`_scan_for_live_land_
+    process`: "a precise enough match for a backstop"), so the coarser
+    split is an acceptable degrade, not a silent correctness loss. `None`
+    on any spawn/parse failure or empty output (pid gone, no permission,
+    `ps` missing), matching the Linux function's own contract."""
+    guarded = guarded_subprocess_run(
+        ["ps", "-ww", "-o", "command=", "-p", str(pid)],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    if guarded.is_err:
+        return None
+    proc = guarded.danger_ok
+    if proc.returncode != 0:
+        return None
+    line = proc.stdout.strip()
+    if not line:
+        return None
+    return tuple(line.split())
+
+
+def _proc_cmdline(pid: int) -> tuple[str, ...] | None:
+    """Platform-dispatched `pid`'s argv (T-1619 Linux `/proc`, T-3500
+    macOS `ps` fallback) -- `None` on any other platform or read
+    failure."""
+    if sys.platform == "darwin":
+        return _proc_cmdline_darwin(pid)
+    if sys.platform.startswith("linux"):
+        return _proc_cmdline_linux(pid)
+    return None
+
+
 # frob:ticket T-1619
-def _proc_cwd(pid: int) -> Path | None:
+def _proc_cwd_linux(pid: int) -> Path | None:
     """`/proc/<pid>/cwd`'s resolved target (T-1619) -- `None` on any
-    readlink failure (pid gone, no permission, non-Linux)."""
+    readlink failure (pid gone, no permission)."""
     try:
         return Path(os.readlink(f"/proc/{pid}/cwd")).resolve()
     except OSError:
         return None
+
+
+# frob:ticket T-3500
+def _proc_cwd_darwin(pid: int) -> Path | None:
+    """macOS equivalent of `_proc_cwd_linux` (T-3500, T-3488 bucket C):
+    `lsof -a -p <pid> -d cwd -Fn` prints the pid's cwd file-descriptor
+    entry in `lsof`'s machine-parsable `-F` format -- one `p<pid>` line
+    followed by one `n<path>` line. `None` on any spawn failure, non-zero
+    exit (pid gone, no permission), or a reply with no `n`-prefixed
+    line."""
+    guarded = guarded_subprocess_run(
+        ["lsof", "-a", "-p", str(pid), "-d", "cwd", "-Fn"],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    if guarded.is_err:
+        return None
+    proc = guarded.danger_ok
+    if proc.returncode != 0:
+        return None
+    for line in proc.stdout.splitlines():
+        if line.startswith("n"):
+            return Path(line[1:]).resolve()
+    return None
+
+
+def _proc_cwd(pid: int) -> Path | None:
+    """Platform-dispatched `pid`'s cwd (T-1619 Linux `/proc`, T-3500
+    macOS `lsof` fallback) -- `None` on any other platform or read
+    failure."""
+    if sys.platform == "darwin":
+        return _proc_cwd_darwin(pid)
+    if sys.platform.startswith("linux"):
+        return _proc_cwd_linux(pid)
+    return None
+
+
+# frob:ticket T-3500
+def _live_pids_with_cwd(path: Path) -> tuple[int, ...]:
+    """Every live pid whose cwd resolves to `path` (T-3500): on Linux, an
+    `/proc` directory walk checking each numeric entry's `_proc_cwd_
+    linux` (`scan_for_live_worktree_process`/`_scan_for_live_land_
+    process`'s own original approach, unchanged); on macOS, one `lsof
+    -a -d cwd -Fpn -- <path>` call -- `lsof` treats a bare directory
+    operand as "find every process whose cwd IS this exact path"
+    (non-recursive: unlike `+D <path>`, this does not also match
+    processes with an open file somewhere underneath it), so this is a
+    single targeted query rather than an all-pids enumerate-and-filter
+    loop. Empty tuple (never a refusal by itself) on any platform other
+    than Linux/macOS, or any read/spawn failure -- the same
+    degrade-to-no-finding contract every `/proc`-consuming function in
+    this module already documents."""
+    resolved = path.resolve()
+    if sys.platform.startswith("linux"):
+        proc_dir = Path("/proc")
+        if not proc_dir.is_dir():
+            return ()
+        self_pid = os.getpid()
+        try:
+            entries = tuple(proc_dir.iterdir())
+        except OSError:
+            return ()
+        pids = []
+        for entry in entries:
+            if not entry.name.isdigit():
+                continue
+            pid = int(entry.name)
+            if pid == self_pid:
+                continue
+            if _proc_cwd_linux(pid) == resolved:
+                pids.append(pid)
+        return tuple(pids)
+    if sys.platform == "darwin":
+        guarded = guarded_subprocess_run(
+            ["lsof", "-a", "-d", "cwd", "-Fpn", "--", str(resolved)],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if guarded.is_err:
+            return ()
+        proc = guarded.danger_ok
+        if proc.returncode not in (0, 1):
+            # rc=1 is lsof's own "no match" -- not an error (mirrors this
+            # module's existing `git grep`/`_base_name_match_paths`-style
+            # rc-classification convention elsewhere in this repo).
+            return ()
+        self_pid = os.getpid()
+        pids = []
+        for line in proc.stdout.splitlines():
+            if line.startswith("p"):
+                try:
+                    pid = int(line[1:])
+                except ValueError:
+                    continue
+                if pid != self_pid:
+                    pids.append(pid)
+        return tuple(pids)
+    return ()
 
 
 # frob:ticket T-1619
@@ -1848,28 +1997,16 @@ def scan_for_live_worktree_process(
     running in *path*").
 
     Returns `(pid, argv)` for the first match (`argv` is `None` only if
-    that pid's own `/proc/<pid>/cmdline` could not be read, e.g. a
-    permissions race between the cwd read and the cmdline read) -- or
-    `None` if no live process is cwd'd into `path`."""
-    proc_dir = Path("/proc")
-    if not proc_dir.is_dir():
+    that pid's own cmdline could not be read, e.g. a permissions race
+    between the cwd read and the cmdline read) -- or `None` if no live
+    process is cwd'd into `path`. T-3500: the cwd match itself is now
+    `_live_pids_with_cwd` (Linux `/proc` walk or macOS `lsof`,
+    platform-dispatched there) rather than a `/proc`-only walk inlined
+    here."""
+    pids = _live_pids_with_cwd(path)
+    if not pids:
         return None
-    resolved = path.resolve()
-    self_pid = os.getpid()
-    try:
-        entries = tuple(proc_dir.iterdir())
-    except OSError:
-        return None
-    for entry in entries:
-        if not entry.name.isdigit():
-            continue
-        pid = int(entry.name)
-        if pid == self_pid:
-            continue
-        if _proc_cwd(pid) != resolved:
-            continue
-        return (pid, _proc_cmdline(pid))
-    return None
+    return (pids[0], _proc_cmdline(pids[0]))
 
 
 # frob:ticket T-1619
@@ -1906,26 +2043,18 @@ def _scan_for_live_land_process(
     specific originating land a detached drain child must not treat as a
     competing land (see `_refuse_for_held_land_lock`'s docstring for the
     full rationale). A genuinely different `frob ticket land` pid still
-    matches normally."""
-    proc_dir = Path("/proc")
-    if not proc_dir.is_dir():
-        return None
-    resolved_root = root.resolve()
-    self_pid = os.getpid()
-    try:
-        entries = tuple(proc_dir.iterdir())
-    except OSError:
-        return None
-    for entry in entries:
-        if not entry.name.isdigit():
-            continue
-        pid = int(entry.name)
-        if pid == self_pid or pid == exclude_pid:
+    matches normally.
+
+    T-3500: the cwd match itself is `_live_pids_with_cwd` (Linux `/proc`
+    walk or macOS `lsof`, platform-dispatched there), no longer a
+    `/proc`-only walk inlined here -- extends this backstop's coverage to
+    macOS CI (T-3488 bucket C), which has no `/proc` at all."""
+    pids = _live_pids_with_cwd(root)
+    for pid in pids:
+        if pid == exclude_pid:
             continue
         argv = _proc_cmdline(pid)
         if not argv or "ticket" not in argv or "land" not in argv:
-            continue
-        if _proc_cwd(pid) != resolved_root:
             continue
         ticket_id = next((arg for arg in argv if _TICKET_ID_ARGV_RE.match(arg)), None)
         return (pid, ticket_id)

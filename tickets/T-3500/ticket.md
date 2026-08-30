@@ -2,7 +2,7 @@
 id: T-3500
 title: 'macOS-only: /proc-based live-process detection breaks on macOS (bucket C,
   T-3488)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'

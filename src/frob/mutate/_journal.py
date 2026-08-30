@@ -100,6 +100,7 @@ import base64
 import hashlib
 import json
 import os
+import sys
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -122,6 +123,7 @@ from frob.logging import get_logger
 # unqualified `pid_alive(` call token, deliberately excluding a
 # dot-prefixed one as "someone else's same-named attribute" -- can see
 # this module as a real caller.
+from frob.process._guard import guarded_subprocess_run
 from frob.process._pid_liveness import pid_alive
 
 _log = get_logger(__name__)
@@ -221,24 +223,62 @@ def _target_display(root: Path, target: Path) -> str:
         return str(target)
 
 
-def _pid_starttime(pid: int) -> str | None:
+def _pid_starttime_linux(pid: int) -> str | None:
     """`pid`'s process-start timestamp (field 22 of `/proc/<pid>/stat`,
     clock ticks since boot -- stable for the lifetime of that PID number,
     and different for whatever process the kernel hands the PID to next),
-    or `None` when `/proc` is unavailable (non-Linux) or the file cannot
-    be read/parsed right now (the process just exited, a sandboxed
-    environment, ...). Comm (`(name)`) can itself contain spaces or
-    parentheses, so this splits on the LAST `)` rather than tokenizing
-    naively -- everything after it is `state ppid ... starttime ...`,
-    space-separated, with `starttime` at (0-based) offset 19 in that
-    remainder (field 22 overall, minus the 3 fields -- pid, comm, state --
-    consumed before the remainder starts)."""
+    or `None` when the file cannot be read/parsed right now (the process
+    just exited, a sandboxed environment, ...). Comm (`(name)`) can itself
+    contain spaces or parentheses, so this splits on the LAST `)` rather
+    than tokenizing naively -- everything after it is `state ppid ...
+    starttime ...`, space-separated, with `starttime` at (0-based) offset
+    19 in that remainder (field 22 overall, minus the 3 fields -- pid,
+    comm, state -- consumed before the remainder starts)."""
     try:
         raw = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8", errors="replace")
         after_comm = raw.rsplit(")", 1)[1]
         return after_comm.split()[19]
     except Exception:
         return None
+
+
+def _pid_starttime_darwin(pid: int) -> str | None:
+    """macOS equivalent of `_pid_starttime_linux` (T-3500, T-3488 bucket
+    C): macOS has no `/proc/<pid>/stat`, so this shells to `ps -o lstart=
+    -p <pid>` -- the kernel's own process-start wall-clock timestamp,
+    stable for the lifetime of that PID number and different for
+    whatever process the kernel hands the PID to next, the exact same
+    "stable fingerprint, changes on PID reuse" property `_is_stale`
+    needs. Unlike the Linux field (clock ticks since boot), this is a
+    human-readable date string -- `_is_stale` only ever compares it for
+    equality, never parses or arithmetics on it, so the different
+    representation is transparent to every caller. `None` on any
+    spawn/parse failure or empty output (pid gone, no permission, `ps`
+    missing)."""
+    guarded = guarded_subprocess_run(
+        ["ps", "-o", "lstart=", "-p", str(pid)],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    if guarded.is_err:
+        return None
+    proc = guarded.danger_ok
+    if proc.returncode != 0:
+        return None
+    line = proc.stdout.strip()
+    return line or None
+
+
+def _pid_starttime(pid: int) -> str | None:
+    """Platform-dispatched `pid`'s start-time fingerprint (T-1619/T-0857
+    Linux `/proc`, T-3500 macOS `ps` fallback) -- `None` on any other
+    platform or read failure."""
+    if sys.platform == "darwin":
+        return _pid_starttime_darwin(pid)
+    if sys.platform.startswith("linux"):
+        return _pid_starttime_linux(pid)
+    return None
 
 
 def _is_stale(entry: _MutationJournalEntry) -> bool:
