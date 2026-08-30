@@ -24,6 +24,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 in CI run 33298117154: the backticked proposed module path frob.app.telemetry._state
+    was read as a symbol pointer; reworded to prose so the live-repo DOC004/DOC006
+    test stays zero'
+  actor: logan
+  at: '2026-08-30'
+  old_length: 3823
+  new_length: 3840
 designated_repro_test: null
 threat: null
 component: null
@@ -86,7 +95,7 @@ have it made implicitly"), both are reported here rather than guessed at.
       ~2 lines, both trivial; _home_config_state_hash and
       _external_path_arg_hash are larger, with their own private helpers
       like _walk_home_claude_entries) into a new leaf module
-      (`frob.app.telemetry._state`?) both `__init__.py` and the two
+      (a `_state` leaf under the telemetry package?) both `__init__.py` and the two
       submodules import from -- collapses the SCC cleanly but is a
       bigger move than (1)'s.
    b. Leave the T-2694 ordering workaround as-is (status quo).
