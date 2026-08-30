@@ -2,7 +2,7 @@
 id: T-3408
 title: sync-claude-config from a stale worktree silently reverts a sibling agent's
   in-flight fix to the shared global hooks
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/sync-claude-config.py
+- docs/guides/claude-hooks.md
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +26,18 @@ scope_changes:
 - op: add
   glob: .claude/hooks/sync-claude-config.py
   reason: the sync tool this ticket must add a staleness guard to
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: the stale-source guard's frob:doc anchor lives here, and its unit tests
+    live in this new test file
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_sync_claude_config_stale_guard_t3408.py
+  reason: the stale-source guard's frob:doc anchor lives here, and its unit tests
+    live in this new test file
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
