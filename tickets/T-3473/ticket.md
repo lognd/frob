@@ -2,7 +2,7 @@
 id: T-3473
 title: may-raise resolver cannot track regex-group digit-safety through a None-checked
   match object
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -18,6 +18,7 @@ scope:
 - src/frob/arch/_mayraise.py
 - src/frob/arch/_normalized.py
 - src/frob/arch/_python.py
+- tests/unit/test_arch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,12 @@ scope_changes:
   glob: src/frob/arch/_python.py
   reason: Series S measured that the fix needs NormalizedModule to carry module-level
     assignments / comprehension tags; _mayraise.py alone cannot see them
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: must-fire/must-stay-quiet unit tests for the regex-group guard discharge
+    and the module_regex_patterns adapter extraction
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
