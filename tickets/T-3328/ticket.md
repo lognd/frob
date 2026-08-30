@@ -2,7 +2,7 @@
 id: T-3328
 title: TestArchive's 5 baseline failures are git worktree list exit 128 under load
   hitting T-3230's new fail-closed path
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -51,6 +51,14 @@ body_changes:
   at: '2026-08-29'
   old_length: 7151
   new_length: 11545
+evidence:
+- tests/test_tickets.py::TestArchive::test_idempotent_second_run_moves_nothing
+- tests/test_tickets.py::TestArchive::test_moves_done_and_dropped_only
+- tests/test_tickets.py::TestArchive::test_load_queue_merges_active_and_archive
+- tests/test_tickets.py::TestArchive::test_new_ticket_id_continues_past_archived_max
+- tests/test_tickets.py::TestArchive::test_blocked_by_archived_ticket_resolves_closed
+- tests/test_tickets.py::TestArchive::test_archive_refuses_when_worktree_list_is_unmeasurable
+- tests/test_tickets.py::TestArchive::test_archive_succeeds_in_a_normal_quiet_repo
 designated_repro_test: null
 threat: null
 component: null

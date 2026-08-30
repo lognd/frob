@@ -83,6 +83,18 @@ def _write(root: Path, ticket: Ticket, slug: str = "sample-ticket") -> Path:
     return path
 
 
+def _git_init(path: Path) -> None:
+    """Git-init `path` with no commits (T-3328: `archive`'s live-worktree
+    measurement requires a real git repository since T-3230 made an
+    unmeasurable `git worktree list` a hard refusal rather than a silent
+    "no live worktrees" pass -- a bare non-repo `tmp_path` now exits 128 on
+    that read. `git worktree list` needs an initialized repo, not a commit,
+    so `git init` alone is enough here)."""
+    import subprocess
+
+    subprocess.run(["git", "init", "-q"], cwd=str(path), check=True)
+
+
 # frob:ticket T-1103
 class TestQueue:
     # frob:ticket T-1103
@@ -1850,6 +1862,16 @@ class TestEvidence:
 
 # frob:ticket T-1103
 class TestArchive:
+    # frob:ticket T-3328
+    @pytest.fixture(autouse=True)
+    def _repo(self, tmp_path: Path) -> None:
+        """Give every TestArchive test a real git repo under `tmp_path`
+        (T-3328): `archive`'s live-worktree measurement fails closed (T-3230)
+        on a directory `git worktree list` cannot read, and a bare
+        `tmp_path` is not a git repository, so it exited 128 and refused
+        every one of these tests deterministically, not under load."""
+        _git_init(tmp_path)
+
     # frob:ticket T-1103
     def test_moves_done_and_dropped_only(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_archive.py::archive
@@ -2040,6 +2062,51 @@ class TestArchive:
         )
         created = new_ticket(tmp_path, spec)
         assert created.is_err
+
+    # frob:ticket T-3328
+    def test_archive_refuses_when_worktree_list_is_unmeasurable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/tickets/_archive.py::archive
+        # MUST-FIRE: an archive attempt whose `git worktree list` read
+        # genuinely fails is refused with the unmeasurable error -- T-3230's
+        # fail-closed guard must still fire, distinct from this ticket's
+        # fixture fix (this test does NOT rely on the class's `_repo`
+        # autouse fixture's git-init making the read succeed; it forces the
+        # read to fail regardless of the repo's state).
+        from typani import Nothing
+
+        from frob.tickets import _reconcile
+
+        _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
+
+        # `_archive.py` does `from frob.tickets._reconcile import
+        # _live_worktrees` INSIDE the function on every call, so patching
+        # the name on `_reconcile` itself (not a copy imported elsewhere)
+        # is what actually takes effect.
+        monkeypatch.setattr(
+            _reconcile,
+            "_live_worktrees",
+            lambda *_a, **_kw: Nothing(),
+        )
+        result = archive(tmp_path)
+        assert result.is_err, (
+            "an unmeasurable git worktree list must never be silently "
+            "treated as 'no live worktrees' (T-3230)"
+        )
+        assert result.err is TicketError.ArchiveWorktreeMeasurementFailed
+
+    # frob:ticket T-3328
+    def test_archive_succeeds_in_a_normal_quiet_repo(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_archive.py::archive
+        # MUST-STAY-QUIET: a normal archive in a quiet, real repository with
+        # no live worktrees still succeeds -- the fixture fix (git-init via
+        # the class's autouse `_repo` fixture) must not paper over a genuine
+        # refusal, only remove the false one from a non-repo `tmp_path`.
+        _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
+        result = archive(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok == 1
 
 
 # frob:ticket T-0764
