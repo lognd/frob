@@ -8,6 +8,7 @@ test."""
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -218,3 +219,50 @@ class TestCiWindowsLegAdvisoryOnly:
                 f"{step.get('name', '<unnamed>')!r} -- the advisory "
                 f"boundary must stay job-level and windows-only"
             )
+
+
+class TestCiUbuntuTestBudgetRaised:
+    """T-3426: run 33277131782 proved the ubuntu Test step's 25m budget was
+    too tight for a PASSING run (99% at ~20m, killed at 25m mid-self-scan-
+    test, not blocked on a lock). The step budget must be raised to at
+    least 40m and the job-level ceiling must stay strictly above it, so
+    the step's own stack-dump-on-hang fires first on a genuine hang."""
+
+    def test_ubuntu_test_step_budget_at_least_40_minutes(self) -> None:
+        """MUST-FIRE: the ubuntu Test step's `timeout -s ABRT <N>m` budget
+        must be >= 40m."""
+        text = _CI_WORKFLOW.read_text(encoding="utf-8")
+        match = re.search(
+            r"timeout -s ABRT (\d+)m uv run pytest -q", text
+        )
+        assert match, "expected ubuntu's `timeout -s ABRT <N>m uv run pytest -q` step"
+        assert int(match.group(1)) >= 40, (
+            f"ubuntu Test step budget regressed below 40m: {match.group(0)!r}"
+        )
+
+    def test_job_timeout_minutes_exceeds_ubuntu_step_budget(self) -> None:
+        """MUST-FIRE: the job-level ceiling must remain strictly greater
+        than the ubuntu step budget, so the step's own instrumented
+        timeout (with a stack dump) fires before the bare job ceiling."""
+        doc = _load(_CI_WORKFLOW)
+        job_timeout = doc["jobs"]["build"]["timeout-minutes"]
+        text = _CI_WORKFLOW.read_text(encoding="utf-8")
+        match = re.search(r"timeout -s ABRT (\d+)m uv run pytest -q", text)
+        assert match
+        step_budget = int(match.group(1))
+        assert job_timeout > step_budget, (
+            f"job timeout-minutes ({job_timeout}) must exceed the ubuntu "
+            f"step budget ({step_budget}m)"
+        )
+
+    def test_ubuntu_step_still_uses_faulthandler_and_sigabrt(self) -> None:
+        """MUST-STAY-QUIET: the budget raise must not have dropped the
+        stack-dump-on-hang mechanism (PYTHONFAULTHANDLER=1 + `timeout -s
+        ABRT`, not the default SIGTERM)."""
+        doc = _load(_CI_WORKFLOW)
+        for step in doc["jobs"]["build"]["steps"]:
+            if step.get("name", "").startswith("Test (ubuntu"):
+                assert step["env"]["PYTHONFAULTHANDLER"] == "1"
+                assert "timeout -s ABRT" in step["run"]
+                return
+        raise AssertionError("no ubuntu Test step found")

@@ -2,7 +2,7 @@
 id: T-3426
 title: 'CI: ubuntu Test budget 25m kills a passing suite in its slow self-scan tail
   (99% at 20m, aborted at 25m)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -21,11 +21,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_ubuntu_test_step_budget_at_least_40_minutes
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_job_timeout_minutes_exceeds_ubuntu_step_budget
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_ubuntu_step_still_uses_faulthandler_and_sigabrt
 designated_repro_test: null
 acceptance:
 - text: given HEAD's suite on ubuntu-latest, when the Test step runs, then it completes
     to 100% and reports its own pass/fail instead of exit 124
-  evidence: []
+  evidence:
+  - tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_ubuntu_test_step_budget_at_least_40_minutes
+  - tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_job_timeout_minutes_exceeds_ubuntu_step_budget
+  - tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_ubuntu_step_still_uses_faulthandler_and_sigabrt
 threat: null
 component: null
 anchor: false

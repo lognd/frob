@@ -39,10 +39,15 @@ jobs:
     # case a hang lands in a DIFFERENT step (Sync deps, native build,
     # ...) that isn't individually wrapped. Budget: the slowest OBSERVED
     # full-job completion in this matrix is macOS's ~23 minutes for the
-    # Test stage alone (run 33135896391); 45 minutes gives every step
-    # combined more than 2x that margin without leaving a hang to run for
-    # hours before anyone notices.
-    timeout-minutes: 45
+    # Test stage alone (run 33135896391).
+    #
+    # T-3426: raised 45 -> 60 alongside the ubuntu Test step's own
+    # 25m -> 40m raise below, so the step budget (with its stack dump)
+    # remains the thing that fires first on a genuine hang rather than
+    # this job-level ceiling -- 60 minutes keeps a >2x margin over the
+    # 40-minute step budget without leaving a hang to run for hours
+    # before anyone notices.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -97,9 +102,26 @@ jobs:
       # Budget: macOS's own Test stage completed in ~23 minutes when it
       # last ran cleanly (run 33135896391) and ubuntu's Test step, when it
       # fails outright rather than hanging, finishes within the ~15-minute
-      # whole-job budget (run 33035660969) -- 25 minutes gives the slower
+      # whole-job budget (run 33035660969) -- 25 minutes gave the slower
       # platform's own observed ceiling a small margin without leaving a
-      # genuine hang to run anywhere near the 45-minute job timeout above.
+      # genuine hang to run anywhere near the (then-)45-minute job timeout
+      # above.
+      #
+      # T-3426: run 33277131782 (HEAD bb5c28203, 2026-08-29) proved 25m
+      # is too tight for a PASSING ubuntu run, not just a hung one -- the
+      # suite reached 99% at ~20m and was still inside two whole-repo
+      # self-scan tests' bodies (not blocked on a lock) when the 25m
+      # `timeout -s ABRT` fired at 22:18:23, killing a run that would have
+      # finished. macOS (more cores) completed the identical suite in
+      # 18m31s in the same run, so this is ubuntu's own budget being too
+      # tight on its slow self-scan tail, not the T-3420 SIGTERM deadlock
+      # (this invocation runs without coverage). Raised 25m -> 40m to
+      # clear that tail with real margin; macOS/Windows are unchanged
+      # since macOS's own 18.5m run shows no equivalent problem there.
+      # A follow-up ticket (not this one) should make the self-scan tests
+      # share one cached graph per session so the tail stops costing
+      # minutes per test -- this budget raise only stops CI from killing
+      # a passing-but-slow run.
       #
       # WHY faulthandler_timeout=100 / --timeout=120 (pyproject.toml,
       # pytest-timeout, --timeout-method=thread) did NOT fire during the
@@ -115,7 +137,7 @@ jobs:
         if: runner.os == 'Linux'
         env:
           PYTHONFAULTHANDLER: "1"
-        run: timeout -s ABRT 25m uv run pytest -q
+        run: timeout -s ABRT 40m uv run pytest -q
       # T-3250: macOS has bash but not GNU coreutils' `timeout`. `kill -ABRT`
       # is a POSIX shell builtin present in macOS's own bash, so it reaches
       # the same faulthandler dump-then-die mechanism as ubuntu's step
