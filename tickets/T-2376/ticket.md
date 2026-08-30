@@ -62,8 +62,10 @@ acceptance:
     when frob check --json runs, then zero PERF005 findings remain in those files
   evidence:
   - tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion
-- text: given the family's gate module, when its severity is read, then it is ERROR
-    not WARNING
+- text: 'severity promotion is deferred: the family (PERF005/PERF008/PERF014) is not
+    at a genuine zero repo-wide, so frob.toml''s PERF005/PERF008/PERF014 severities
+    remain WARNING; promote only once T-draft-ca72d87a''s remaining findings are also
+    cleared'
   evidence:
   - tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion
 acceptance_amendments:
@@ -79,6 +81,19 @@ acceptance_amendments:
     criterion to what was actually closed (all 9 Python-file PERF005 sites) and filed
     T-draft-ca72d87a for the rest, per the ticket''s own ''land the burn-down and
     file a follow-up'' instruction'
+  actor: logan
+  at: '2026-08-30'
+- op: replace
+  index: 1
+  old_text: given the family's gate module, when its severity is read, then it is
+    ERROR not WARNING
+  new_text: 'severity promotion is deferred: the family (PERF005/PERF008/PERF014)
+    is not at a genuine zero repo-wide, so frob.toml''s PERF005/PERF008/PERF014 severities
+    remain WARNING; promote only once T-draft-ca72d87a''s remaining findings are also
+    cleared'
+  reason: same measured-scope narrowing as acceptance[0] -- promoting severity to
+    error now would redden the repo on the 6 remaining Rust PERF005 sites plus PERF008/PERF014,
+    exactly what the gate module's own T-0290 comment warns against
   actor: logan
   at: '2026-08-30'
 threat: null
