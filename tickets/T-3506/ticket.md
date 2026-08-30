@@ -37,6 +37,7 @@ scope:
 - tests/test_tickets_leases.py
 - tests/unit/test_coordinator_scripts.py
 - tests/unit/test_ticket_store.py
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: one shared lock primitive genuinely fans out to every fcntl
   call site plus its lease/land/gate test files; T-3076's own by-file breakdown is
@@ -67,6 +68,13 @@ scope_changes:
     as module-local attributes on frob.tickets._store, which now delegates to frob.process._lock's
     shared primitive -- must retarget the monkeypatch to keep exercising the real
     dual-path
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: _baseline_lock's own platform-backend tests monkeypatch fcntl/msvcrt as
+    module-local attributes on frob.app.ticket_runner._rapid_sweep, which now delegates
+    to frob.process._lock's shared primitive -- must retarget the monkeypatch
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
