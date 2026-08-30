@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_worktree_guard.py
 - tests/unit/verify/test_worker.py
 - frob.lock
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,16 @@ scope_changes:
     and frob ack writes frob.lock as part of acknowledging the resulting drift
   actor: logan
   at: '2026-08-30'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: T-3379 adds a frob:doc edge + doc paragraph for the new unleased_root_env
+    public symbol (T-2114 requires it)
+  actor: logan
+  at: '2026-08-30'
+evidence:
+- tests/unit/verify/test_worker.py::TestUnleasedRootEnv::test_filing_call_sees_no_worktree_lease_env
+- tests/unit/verify/test_worker.py::TestUnleasedRootEnv::test_ambient_lease_env_is_restored_after_filing
+- tests/unit/verify/test_worker.py::TestUnleasedRootEnv::test_no_ambient_lease_stays_unset_after_filing
 designated_repro_test: null
 threat: null
 component: null
