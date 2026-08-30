@@ -2,7 +2,7 @@
 id: T-3438
 title: frob vet hook mode leaks the frob claude sync config nag to stderr; hook mode
   must be silent
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -23,6 +23,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_main_entry.py::TestVetHookSuppressesStartupWarnings::test_vet_hook_suppresses_startup_warnings
+- tests/unit/test_main_entry.py::TestVetHookSuppressesStartupWarnings::test_vet_without_hook_still_warns
+- tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
 designated_repro_test: null
 threat: null
 component: null

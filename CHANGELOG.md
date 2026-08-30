@@ -660,6 +660,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3431: post-land sweep regression from T-3420: 1 new (rule, file) identit(ies), 1 finding(s) (unresolved-attribute)
 - T-3432: post-land sweep regression from an unattributed source (sweep spawned by T-3409): 1 new (rule, file) identit(ies) (DOC006)
 - T-3437: T-3420 follow-up: test_coverage.py still asserts sigterm is True, and the SIGTERM must-fire fixture fails on macOS
+- T-3438: frob vet hook mode leaks the frob claude sync config nag to stderr; hook mode must be silent
 - T-3442: Five out-of-tree land pipeline tests fail on CI: warm-sweep-stage path, T-1920 drift guard inert, record-commit probe
 - T-3443: frob-exports reports missing public symbols in frob.doctor and frob.lang._support
 - T-3445: strata tmLanguage grammar missing V-model keywords (architecture, configuration, entity, code_ref, obligation, runnable)

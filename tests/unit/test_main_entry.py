@@ -596,3 +596,43 @@ class TestConcurrentCheckAdvisory:
         calls.clear()
         main_module._dispatch(["check"])
         assert calls == [{"force_stderr": False}]
+
+
+# frob:ticket T-3438
+class TestVetHookSuppressesStartupWarnings:
+    """T-3438: `frob vet --hook ...` is machine-consumed, so the best-
+    effort startup nags (`_print_startup_warnings`, e.g. the Claude-
+    config-drift reminder) must never reach its stderr -- a normal
+    interactive `frob vet` (or any other subcommand) must still get them
+    unchanged."""
+
+    # frob:tests tests/unit/test_main_entry.py::TestVetHookSuppressesStartupWarnings::test_vet_hook_suppresses_startup_warnings  # noqa: E501
+    def test_vet_hook_suppresses_startup_warnings(self, monkeypatch) -> None:
+        """MUST-FIRE: `vet --hook ...` never calls
+        `_print_startup_warnings`."""
+        calls: list[object] = []
+        monkeypatch.setattr(
+            main_module, "_print_startup_warnings", lambda *a, **kw: calls.append(a)
+        )
+        monkeypatch.setattr(
+            main_module.AppConfig, "from_external", lambda *a, **kw: object()
+        )
+        monkeypatch.setattr(main_module, "App", lambda cfg: lambda: None)
+        main_module._dispatch(["vet", ".", "--hook", "git status"])
+        assert calls == []
+
+    # frob:tests tests/unit/test_main_entry.py::TestVetHookSuppressesStartupWarnings::test_vet_without_hook_still_warns  # noqa: E501
+    def test_vet_without_hook_still_warns(self, monkeypatch) -> None:
+        """MUST-STAY-QUIET (i.e. the suppression must not over-fire): a
+        plain interactive `frob vet` (no `--hook`) still calls
+        `_print_startup_warnings` like every other subcommand."""
+        calls: list[object] = []
+        monkeypatch.setattr(
+            main_module, "_print_startup_warnings", lambda *a, **kw: calls.append(a)
+        )
+        monkeypatch.setattr(
+            main_module.AppConfig, "from_external", lambda *a, **kw: object()
+        )
+        monkeypatch.setattr(main_module, "App", lambda cfg: lambda: None)
+        main_module._dispatch(["vet", "."])
+        assert len(calls) == 1

@@ -287,7 +287,15 @@ def _dispatch_default(argv: list[str]) -> None:
     parser = _build_parser()
     args = parser.parse_args(argv)
     pyproject = Path("pyproject.toml")
-    _print_startup_warnings(pyproject.parent.resolve())
+    # T-3438: `frob vet --hook ...` is machine-consumed (a pre-tool-use
+    # hook parses its stdout/exit code, never a human at a terminal), so
+    # the best-effort startup nags (`_print_startup_warnings`) -- stale-
+    # binary/config-drift advisories meant to be "surfaced where an
+    # operator already looks" -- must never leak onto its stderr; a
+    # normal interactive invocation (including `frob vet` without
+    # `--hook`) still gets them.
+    if not (argv and argv[0] == "vet" and "--hook" in argv[1:]):
+        _print_startup_warnings(pyproject.parent.resolve())
     if argv and argv[0] == "check":
         _reap_orphaned_forkservers_best_effort()
         # T-2484: `--json` makes stdout the machine-readable payload, so
