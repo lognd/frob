@@ -17,10 +17,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - frob-core/src/**
 - tests/unit/test_frob_core_gil.py
+- docs/modules/dup.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/dup.md
+  reason: T-3481 GIL-release note required by AFFECT001 for the frob-core kernels
+    doc section
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
