@@ -2,7 +2,7 @@
 id: T-3482
 title: 'CI: macOS Test budget 25m kills the grown suite at 67%; raise to 40m like
   ubuntu (T-3426)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-30'
