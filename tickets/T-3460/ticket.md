@@ -33,6 +33,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7bc190bb11f53cbcd09c8e8c0db0e724550c1f76
 ---
 found while working T-3419. INV051 (src/frob/gates/_policy_weakening_gate.py:130, Violation(file=design_dir,...) same as SELFAUDIT001) shares the identical anchor-collapse defect T-3419 fixed generically via message-text path extraction. Unlike SELFAUDIT001 (whose message always embeds the real offending file as node=<path>), INV051's message names policy ids (child_id/parent_id), not a file path, so T-3419's _real_file_from_message extraction cannot recover a distinguishing file for it -- it still degrades to the shared design_dir anchor identity. A real fix needs either (a) policy_id included in the (rule, file) identity via a separate mechanism, or (b) frob.gates._policy_weakening_gate resolving policy_id back to the .strata file that declares it (the same node_file-map pattern _vmodel.py::_vmodel_violations already uses for VMOD001, T-3264) so Violation.file becomes that real file instead of the constant design_dir.
