@@ -39,6 +39,7 @@ scope:
 - tests/unit/test_ticket_store.py
 - tests/unit/test_rapid_sweep.py
 - tests/test_coverage_wait_shared.py
+- tests/test_serve_socket.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: one shared lock primitive genuinely fans out to every fcntl
   call site plus its lease/land/gate test files; T-3076's own by-file breakdown is
@@ -82,6 +83,13 @@ scope_changes:
   glob: tests/test_coverage_wait_shared.py
   reason: _flock_path's own platform-backend tests monkeypatch fcntl/msvcrt as module-local
     attributes on frob.testing._coverage_wait, which now delegates to frob.process._lock's
+    shared primitive -- must retarget the monkeypatch
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_serve_socket.py
+  reason: acquire_singleton_lock's own platform-backend tests monkeypatch fcntl/msvcrt
+    as module-local attributes on frob.serve._socketd, which now delegates to frob.process._lock's
     shared primitive -- must retarget the monkeypatch
   actor: logan
   at: '2026-08-30'
