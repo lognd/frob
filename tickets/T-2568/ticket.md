@@ -94,7 +94,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4ba6a131e623f8a87789f16626256f65d91ff25a
 ---
 The third false-positive class in the may-raise resolver, found while
 triaging T-2377's EXHAUST002 corpus and left unfixed deliberately -- it
