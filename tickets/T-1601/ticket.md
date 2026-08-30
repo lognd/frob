@@ -168,7 +168,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e030f5ed39711ee40323c3614f8e717eb217c349
 ---
 Add Java to frob's supported languages, meeting the full adapter contract defined by the contract ticket -- not merely parsing.
 
