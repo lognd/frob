@@ -245,13 +245,14 @@ class TestSys003ZeroOnFrobsOwnRepo:
     covers the unrelated SELFAUDIT/SYS100/SYS101/SYS111 self-audit
     families; this test isolates the one family T-2407 actually owns."""
 
-    def test_sys003_zero_against_live_repo_design(self, tmp_path: Path) -> None:
-        from frob.gates import sys_gate
-        from frob.graph import build_graph
-
-        repo_root = Path(__file__).resolve().parents[3]
-        build_result = build_graph(repo_root, tmp_path / "cache.db")
-        assert build_result.is_ok, f"graph build failed: {build_result.err}"
-        violations = sys_gate(repo_root, build_result.danger_ok)
+    def test_sys003_zero_against_live_repo_design(self, frob_self_scan_artifacts) -> None:
+        """T-3495: shares the `frob_self_scan_artifacts` session fixture
+        (`tests/conftest.py`) that `tests/system/test_frob_self_model.py`'s
+        `TestFrobSelfModel` class also reads -- both files' consumers pin
+        onto the SAME `frob_self_scan_heavy` xdist worker (`tests/
+        conftest.py::pytest_collection_modifyitems`), so ONE `build_graph`
+        + `sys_gate` pass per worker session now covers both files'
+        formerly-independent whole-repo scans."""
+        violations = frob_self_scan_artifacts.violations
         sys003 = [v for v in violations if v.rule == "SYS003"]
         assert sys003 == [], f"unexpected SYS003 finding(s): {sys003}"

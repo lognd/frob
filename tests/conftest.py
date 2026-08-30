@@ -602,6 +602,78 @@ def _isolate_worktree_lease_env_before_test() -> Iterator[None]:
                 os.environ[key] = value
 
 
+# frob:ticket T-3495
+class FrobSelfScanArtifacts:
+    """Result of ONE `build_graph(_REPO_ROOT, ...)` + `sys_gate(...)` pass
+    (T-3495) -- a plain in-process result carrier for test fixtures, not
+    a pydantic model crossing any real boundary (it holds a `Result`
+    object and a `Violation` tuple, never serialized). `.repo_root`/
+    `.violations` are what every consuming test actually reads;
+    `.build_result` is kept for a future consumer that needs the raw
+    `GraphSnapshot`."""
+
+    __slots__ = ("repo_root", "build_result", "violations")
+
+    def __init__(self, repo_root: Path, build_result: object, violations: tuple) -> None:
+        """Store one shared self-scan's repo root, raw build `Result`, and
+        the `sys_gate` violations tuple every consuming test filters."""
+        self.repo_root = repo_root
+        self.build_result = build_result
+        self.violations = violations
+
+
+# frob:ticket T-3495
+@pytest.fixture(scope="session")
+def frob_self_scan_artifacts(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> FrobSelfScanArtifacts:
+    """ONE `build_graph(_REPO_ROOT, ...)` + `sys_gate(...)` pass over this
+    repo's own real tree, computed ONCE per pytest session (per xdist
+    worker process, since `tests/conftest.py::pytest_collection_
+    modifyitems`'s `frob_self_scan_heavy` `xdist_group` already pins every
+    consumer of this fixture onto the SAME worker -- session scope is
+    therefore equivalent to "once for the whole group", T-3495's own
+    fix) and shared by every test that would otherwise independently
+    rebuild the identical whole-repo graph.
+
+    T-3495: measured directly -- `tests/system/test_frob_self_model.py`'s
+    `test_sys_gate_zero_violations`/`test_fragments_module_fs_read_is_
+    declared_not_selfaudit001`/`test_checker_fleet_deploy_vet_have_no_
+    undeclared_fs_write_selfaudit001`/`test_check_admission_exec_sites_
+    are_declared_not_selfaudit001` and `tests/unit/strata/test_sys003_
+    calibration.py`'s `test_sys003_zero_against_live_repo_design` each
+    called `build_graph(_REPO_ROOT, tmp_path / "cache.db")` + `sys_gate`
+    independently -- five identical ~30s-warm/multi-minute-cold whole-repo
+    scans back to back in the SAME serialized `frob_self_scan_heavy`
+    xdist group, the structural cause of the recurring CI tail stall this
+    ticket fixes. Every consuming test still runs its OWN assertion over
+    the SAME shared `.violations` tuple (a narrower message/rule filter,
+    or the broad `== ()` bar) -- MUST-STAY-QUIET: a planted violation
+    that only one narrow filter cares about still only fails that one
+    test, exactly as when each test built its own graph. MUST-FIRE: a
+    planted violation visible to the broad filter still fails `test_sys_
+    gate_zero_violations` (or any other consumer using the same shape)
+    the same way, since it is reading the real `sys_gate` output, not a
+    stale or synthetic stand-in.
+
+    A THROWAWAY cache db under `tmp_path_factory`'s own session-scoped
+    temp dir (never this repo's real `.frob/cache.db`) -- same reasoning
+    each test's own former `tmp_path / "cache.db"` docstring already
+    gave: never race a concurrent `frob check`'s real cache file.
+    """
+    from frob.gates import sys_gate
+    from frob.graph import build_graph
+
+    cache_dir = tmp_path_factory.mktemp("frob_self_scan")
+    build_result = build_graph(_REPO_ROOT, cache_dir / "cache.db")
+    assert build_result.is_ok, f"graph build failed: {build_result.err}"
+    violations = sys_gate(_REPO_ROOT, build_result.danger_ok)
+    return FrobSelfScanArtifacts(
+        repo_root=_REPO_ROOT, build_result=build_result, violations=violations
+    )
+
+
+
 PY_SAMPLE = b"""\
 import os
 from pathlib import Path

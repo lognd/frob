@@ -24,8 +24,6 @@ from pathlib import Path
 
 import pytest
 
-from frob.gates import sys_gate
-from frob.graph import build_graph
 from frob.strata import Verdict, elaborate, evaluate_claims, parse_module
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -551,21 +549,21 @@ class TestFrobSelfModel:
     # timeout-ci-hardening, same reasoning T-0742 used for
     # test_scaffold_dx.py).
     @pytest.mark.timeout(300)
-    def test_sys_gate_zero_violations(self, tmp_path: Path) -> None:
+    def test_sys_gate_zero_violations(self, frob_self_scan_artifacts) -> None:
         """`frob check --only sys` against the live repo reports zero violations.
 
         Exercises the full real path (`frob.graph.build_graph` +
         `frob.gates.sys_gate`) CI actually runs, not a synthetic
         `tmp_path` model fixture -- this is the one test in the suite that
         binds directly to this repo's own `frob:channel`/`frob:boundary`
-        anchors and this repo's own `design/` directory. Builds into a
-        throwaway cache (rather than the repo's own `.frob/cache.db`) so
-        this test never races a concurrent `frob check` for the cache
-        file.
+        anchors and this repo's own `design/` directory. T-3495: reads
+        the SHARED `frob_self_scan_artifacts` session fixture (one
+        `build_graph`/`sys_gate` pass for the whole `frob_self_scan_heavy`
+        xdist group) instead of building its own -- see that fixture's
+        own docstring (`tests/conftest.py`) for the must-fire/must-stay-
+        quiet reasoning.
         """
-        build_result = build_graph(_REPO_ROOT, tmp_path / "cache.db")
-        assert build_result.is_ok, f"graph build failed: {build_result.err}"
-        violations = sys_gate(_REPO_ROOT, build_result.danger_ok)
+        violations = frob_self_scan_artifacts.violations
         assert violations == (), f"unexpected SYS violation(s): {violations}"
 
     # frob:tests design/frob.strata kind="e2e"
@@ -579,7 +577,7 @@ class TestFrobSelfModel:
     # violations`, with the same CI-cost-multiplier risk.
     @pytest.mark.timeout(300)
     def test_fragments_module_fs_read_is_declared_not_selfaudit001(
-        self, tmp_path: Path
+        self, frob_self_scan_artifacts
     ) -> None:
         """T-2465 regression: `src/frob/release/_fragments.py` reads
         `changelog.d/*.md` fragments via `Path.exists()`/`Path.read_text()`
@@ -587,11 +585,11 @@ class TestFrobSelfModel:
         `core` node's `may "fs.read"` via-list in `design/frob.strata` --
         narrower than `test_sys_gate_zero_violations` above (which also
         trips on unrelated, pre-existing SYS101/GATERULE001 findings) so
-        this one regression cannot be masked by those.
+        this one regression cannot be masked by those. T-3495: shares the
+        same `frob_self_scan_artifacts` session fixture `test_sys_gate_
+        zero_violations` above does.
         """
-        build_result = build_graph(_REPO_ROOT, tmp_path / "cache.db")
-        assert build_result.is_ok, f"graph build failed: {build_result.err}"
-        violations = sys_gate(_REPO_ROOT, build_result.danger_ok)
+        violations = frob_self_scan_artifacts.violations
         fragments_violations = [v for v in violations if "_fragments.py" in v.message]
         assert fragments_violations == [], (
             f"_fragments.py should have no undeclared-capability SYS "
@@ -606,7 +604,7 @@ class TestFrobSelfModel:
     # this class.
     @pytest.mark.timeout(300)
     def test_checker_fleet_deploy_vet_have_no_undeclared_fs_write_selfaudit001(
-        self, tmp_path: Path
+        self, frob_self_scan_artifacts
     ) -> None:
         """T-2463 regression: `checker`/`fleet`/`deploy` declared a bare
         `may "fs.write";` (no via-list) and `vet` declared `may "fs.write"
@@ -621,11 +619,11 @@ class TestFrobSelfModel:
         contains a single filesystem-write call of any kind -- narrower
         than `test_sys_gate_zero_violations` above (which also trips on
         unrelated, pre-existing SYS101/GATERULE001 findings) so this one
-        regression cannot be masked by those.
+        regression cannot be masked by those. T-3495: shares the same
+        `frob_self_scan_artifacts` session fixture the other tests in
+        this class do.
         """
-        build_result = build_graph(_REPO_ROOT, tmp_path / "cache.db")
-        assert build_result.is_ok, f"graph build failed: {build_result.err}"
-        violations = sys_gate(_REPO_ROOT, build_result.danger_ok)
+        violations = frob_self_scan_artifacts.violations
         node_violations = [
             v
             for v in violations
@@ -647,7 +645,7 @@ class TestFrobSelfModel:
     # other `build_graph(_REPO_ROOT, ...)` tests in this class.
     @pytest.mark.timeout(300)
     def test_check_admission_exec_sites_are_declared_not_selfaudit001(
-        self, tmp_path: Path
+        self, frob_self_scan_artifacts
     ) -> None:
         """T-3450 regression: `tests/unit/test_check_admission.py`'s
         `_init_repo`/worktree-fixture helpers call `subprocess.run` (real
@@ -657,11 +655,10 @@ class TestFrobSelfModel:
         33282540898. Narrower than `test_sys_gate_zero_violations` above
         (which also trips on unrelated, pre-existing SYS111 ratchet
         findings tracked separately by T-3447) so this one regression
-        cannot be masked by those.
+        cannot be masked by those. T-3495: shares the same `frob_self_
+        scan_artifacts` session fixture the other tests in this class do.
         """
-        build_result = build_graph(_REPO_ROOT, tmp_path / "cache.db")
-        assert build_result.is_ok, f"graph build failed: {build_result.err}"
-        violations = sys_gate(_REPO_ROOT, build_result.danger_ok)
+        violations = frob_self_scan_artifacts.violations
         admission_violations = [
             v for v in violations if "test_check_admission.py" in v.message
         ]

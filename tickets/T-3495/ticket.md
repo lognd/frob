@@ -2,7 +2,7 @@
 id: T-3495
 title: frob_self_scan_heavy serial chain rebuilds the same repo scan six times; share
   one session-scoped scan so the CI tail stops flapping
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -32,6 +32,16 @@ scope_changes:
     for testing conftest fixtures
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/test_conftest_self_scan_fixture.py::TestFrobSelfScanArtifactsSharing::test_narrow_filter_ignores_unrelated_violation
+- tests/unit/test_conftest_self_scan_fixture.py::TestFrobSelfScanArtifactsSharing::test_broad_filter_fails_on_any_violation
+- tests/unit/test_conftest_self_scan_fixture.py::TestFrobSelfScanArtifactsSharing::test_narrow_filter_fires_on_its_own_violation
+- tests/unit/test_conftest_self_scan_fixture.py::TestFrobSelfScanArtifactsSharing::test_sys003_filter_ignores_other_rules
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_fragments_module_fs_read_is_declared_not_selfaudit001
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_checker_fleet_deploy_vet_have_no_undeclared_fs_write_selfaudit001
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_check_admission_exec_sites_are_declared_not_selfaudit001
+- tests/unit/strata/test_sys003_calibration.py::TestSys003ZeroOnFrobsOwnRepo::test_sys003_zero_against_live_repo_design
 designated_repro_test: null
 threat: null
 component: null
