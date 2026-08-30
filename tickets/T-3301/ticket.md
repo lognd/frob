@@ -2,7 +2,7 @@
 id: T-3301
 title: PRE001/TEST006 gate-cache staleness survives sweep; REPLAY annotation may break
   gate-summary parse
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -16,10 +16,35 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_verify.py
+- src/frob/gates/_gate_cache.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_gate_cache.py
+  reason: 'reproduced BUG 2 directly (scope --add + sweep, both untracked .frob/ writes,
+    then frob check --ticket <id> twice): _replay_fingerprint (this file) folds root_content_key
+    (tracked-file content only) + .frob/baseline + build fingerprint, but NEVER the
+    per-ticket .frob/prework/<id>.json sweep digest or the gitignored .frob/coverage-stamp
+    TEST006 reads -- so a completed sweep/coverage stamp never busts the whole-run
+    replay cache for the same --ticket signature, exactly matching F-043/F-048/F-031''s
+    reported symptom and remediation (rm -f .frob/gate-cache.db, the file this module
+    writes)'
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'F-031: PRE001''s own remediation text (''run: frob ticket start T-0027
+    again'') names a verb that then REFUSES (''T-0027 is already in-progress -- run
+    sweep instead'') when the ticket is already in-progress, which is always the case
+    when PRE001 can fire (prework_gate only runs for IN_PROGRESS tickets); the fix
+    (prework_gate/_pre001 in gates/__init__.py) is the same finding this ticket''s
+    Done report covers, not a separate scope'
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
