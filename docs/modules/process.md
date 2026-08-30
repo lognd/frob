@@ -325,6 +325,19 @@ is inode-scoped, so different spellings of the same file already
 serialized correctly at the OS level; only the in-process dict lookup was
 spelling-sensitive.
 
+T-3478: `build_graph` calls `derived_state_write_lock` only around its
+cache-mutating tail -- `_prune_stale_cache` plus the final `conn.commit()`
+-- not around the walk and parse of the whole repo. Wrapping the entire
+rebuild in the exclusive hold (the original T-0918 shape) serialized
+concurrent `build_graph` callers -- e.g. `pytest -n` xdist workers each
+running their own build against a different cache -- behind each other for
+the full parse instead of just the cheap commit, measured as a
+~19-minute CI tail stall. See
+`docs/modules/graph.md#exclusive-lock-scope-narrowed-to-the-commit-tail-t-3478`
+for the soundness argument (the unlocked parse writes into one uncommitted
+sqlite transaction no other process can observe until the locked commit
+lands).
+
 `_process_held_counts` (and therefore `_process_already_holds`,
 T-0918/T-0933's no-op guard) is PROCESS-LOCAL: a `ProcessPoolExecutor`
 worker forked/spawned from a parent that already holds `derived_state_lock`

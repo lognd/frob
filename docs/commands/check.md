@@ -408,6 +408,16 @@ real incremental-rebuild behavior across an on-disk content change) sees
 the function's ordinary, always-fresh behavior, because no scope is open
 around that call.
 
+T-3478: memoization is orthogonal to `build_graph`'s cross-process
+`derived_state_write_lock` hold, which was narrowed to only the
+cache-mutating tail (`_prune_stale_cache` + `conn.commit()`) rather than
+the whole walk+parse -- see
+`docs/modules/graph.md#exclusive-lock-scope-narrowed-to-the-commit-tail-t-3478`.
+A `memoize_per_run` cache hit (this section) still short-circuits the
+call entirely -- the second call never reaches the lock at all, narrowed
+or not -- so this change only affects the FIRST call's timing per run
+scope, not the memoization contract itself.
+
 ### Delta baseline (agent workflow)
 
 `frob check` prints every kept violation on every run -- useful for a human

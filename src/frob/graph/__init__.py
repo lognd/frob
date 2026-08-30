@@ -510,12 +510,16 @@ def _prune_stale_cache(conn, seen_paths: set[str]) -> None:
 
 # frob:doc docs/modules/graph.md#public-api
 # frob:doc docs/commands/check.md#run-scoped-memoization
+# frob:doc docs/modules/graph.md#exclusive-lock-scope-narrowed-to-the-commit-tail-t-3478  # noqa: E501
 # frob:tests \
 # tests/test_graph.py::TestLoadGraph.test_non_utf8_doc_file_is_skipped_not_crashed
 # frob:tests tests/unit/test_memo.py::test_build_graph_second_call_is_memo_hit
 # frob:tests tests/test_graph.py::TestBuildIncremental.test_stats_sum_source_and_doc_counts_not_difference  # noqa: E501
+# frob:tests tests/unit/test_graph_build_lock.py
+# frob:waive AFFECT002 reason="T-3478 only narrows build_graph's internal derived_state_write_lock scope (perf, no signature/behavior change observable to callers); src/frob/gates/_waive.py::_severity_overrides is out of this ticket's scope and has nothing to update"  # noqa: E501
 # frob:ticket T-0423
 # frob:ticket T-0918
+# frob:ticket T-3478
 @memoize_per_run
 def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
     """Incrementally (re)build the obligation graph for `root` into `cache`.
@@ -525,48 +529,65 @@ def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
     is a cache hit, not a re-walk -- closes the "same heavy analysis reruns
     across stages" class the T-0418 arch double-run was one instance of.
 
-    T-0918: the whole rebuild below is wrapped in `frob.process._lock.
-    derived_state_write_lock`, which takes a real cross-process EXCLUSIVE
-    `derived_state_lock` when called standalone but no-ops when this
-    process already holds the lock in another thread (e.g. nested inside
-    `frob check`'s SHARED hold) -- see that function's docstring for the
-    full reentrancy contract and its accepted soundness trade-off.
+    T-0918/T-3478: only the CACHE-MUTATING tail -- `_prune_stale_cache`
+    plus `_finalize_build`'s `conn.commit()` -- is wrapped in
+    `frob.process._lock.derived_state_write_lock`, which takes a real
+    cross-process EXCLUSIVE `derived_state_lock` when called standalone
+    but no-ops when this process already holds the lock in another thread
+    (e.g. nested inside `frob check`'s SHARED hold) -- see that function's
+    docstring for the full reentrancy contract. T-0918 originally held
+    this lock around the ENTIRE rebuild (walk + parse of every file, not
+    just the commit), which serializes concurrent `build_graph` calls
+    (e.g. xdist test workers) behind each other for the full parse
+    duration instead of just the cheap final commit -- measured as a
+    ~19-minute CI tail stall (T-3478). Narrowing is sound because:
+    `_cache.connect` and every per-file write inside `_ingest_source_
+    files`/`_ingest_doc_files` (`_cache.store_file_data`) already retry
+    past sqlite-level lock contention on their own (T-1423,
+    `_cache._with_lock_retry`), and those writes land in ONE open,
+    uncommitted transaction that no other process observes until this
+    function's own `conn.commit()` -- so nothing outside the lock can
+    read a partial rebuild. The exclusive hold only needs to cover the
+    point from which this process's changes become visible (prune +
+    commit) through to the commit actually landing, which is exactly what
+    stays locked below.
 
     T-1423: `_cache.CacheLocked` (raised once `_cache._with_lock_retry`'s
     own retry budget is exhausted under sustained contention) is caught
     here and reported as `Err(GraphError.CacheLocked)`, never an unhandled
-    exception reaching `main()`'s top-level handler.
+    exception reaching `main()`'s top-level handler -- both around the
+    unlocked `connect`/parse phase and around the locked commit phase.
     """
     root = root.resolve()
     _log.info("build_graph: root=%s cache=%s", root, cache)
-    with derived_state_write_lock(root):
-        try:
-            conn = _cache.connect(cache)
-        except _cache.CacheLocked as exc:
-            _log.error("build_graph: cache lock never released: %s", exc)
-            return Err(GraphError.CacheLocked)
-        try:
-            exclude_globs = _load_exclude_globs(root)
-            source_files, doc_files = _walk_repo_files(root, exclude_globs)
+    try:
+        conn = _cache.connect(cache)
+    except _cache.CacheLocked as exc:
+        _log.error("build_graph: cache lock never released: %s", exc)
+        return Err(GraphError.CacheLocked)
+    try:
+        exclude_globs = _load_exclude_globs(root)
+        source_files, doc_files = _walk_repo_files(root, exclude_globs)
 
-            src_seen, src_parsed, src_hits, parse_failures = _ingest_source_files(
-                conn, root, source_files
-            )
-            doc_seen, doc_parsed, doc_hits = _ingest_doc_files(conn, root, doc_files)
-            seen_paths = src_seen | doc_seen
-            parsed_count = src_parsed + doc_parsed
-            cache_hits = src_hits + doc_hits
+        src_seen, src_parsed, src_hits, parse_failures = _ingest_source_files(
+            conn, root, source_files
+        )
+        doc_seen, doc_parsed, doc_hits = _ingest_doc_files(conn, root, doc_files)
+        seen_paths = src_seen | doc_seen
+        parsed_count = src_parsed + doc_parsed
+        cache_hits = src_hits + doc_hits
 
+        with derived_state_write_lock(root):
             _prune_stale_cache(conn, seen_paths)
             snapshot = _finalize_build(
                 conn, root, parsed_count, cache_hits, parse_failures
             )
-            return Ok(snapshot)
-        except _cache.CacheLocked as exc:
-            _log.error("build_graph: cache lock never released: %s", exc)
-            return Err(GraphError.CacheLocked)
-        finally:
-            conn.close()
+        return Ok(snapshot)
+    except _cache.CacheLocked as exc:
+        _log.error("build_graph: cache lock never released: %s", exc)
+        return Err(GraphError.CacheLocked)
+    finally:
+        conn.close()
 
 
 # frob:ticket T-0216

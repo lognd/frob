@@ -2,7 +2,7 @@
 id: T-3478
 title: build_graph holds the exclusive derived-state flock for the whole parse, serializing
   xdist workers into a ~19-minute CI tail stall
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -57,6 +57,13 @@ scope_changes:
     added by tests/unit/test_graph_build_lock.py
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope::test_parse_runs_while_another_process_holds_the_lock
+- tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope::test_two_processes_never_commit_to_the_same_cache_concurrently
+- tests/unit/test_graph_build_lock.py::TestBuildGraphCacheLockedStillReported::test_cache_locked_from_connect_is_reported
+- tests/test_graph.py::TestLoadGraph::test_non_utf8_doc_file_is_skipped_not_crashed
+- tests/unit/test_memo.py::test_build_graph_second_call_is_memo_hit
+- tests/test_graph.py::TestBuildIncremental::test_stats_sum_source_and_doc_counts_not_difference
 designated_repro_test: null
 threat: null
 component: null

@@ -251,9 +251,9 @@
       "ticket": "T-3465"
     },
     "testsuite::fs.write": {
-      "accepted_count": 411,
-      "reason": "T-3465: declaring SELFAUDIT001/SYS100 sites in tests/unit/test_cross_ticket_leakage_gate.py (new file landed by a sibling ticket, T-3466, while this ticket's own worktree was mid-flight; re-measured and rebased onto it) grows this pair's via-list count as a direct consequence -- genuinely-observed, already-existing capability sites, not a fresh capability grant; bumping the ceiling to the current measured count.",
-      "ticket": "T-3465"
+      "accepted_count": 412,
+      "reason": "T-3478: declaring a genuinely-new fs.write site in tests/unit/test_graph_build_lock.py (the new test file's _write helper writes fixture files via Path.write_text) grows this pair's via-list count by one -- bumping the ceiling to the current measured count, not a fresh unscoped grant.",
+      "ticket": "T-3478"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

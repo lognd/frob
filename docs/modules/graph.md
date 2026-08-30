@@ -1426,6 +1426,43 @@ exception, so a caller can catch exactly this recoverable-contention case.
 -- a `frob check` run under heavy contention now completes and reports,
 rather than crashing with an unhandled exception.
 
+### Exclusive lock scope narrowed to the commit tail (T-3478)
+
+`build_graph` (`src/frob/graph/__init__.py`) is also wrapped by
+`frob.process._lock.derived_state_write_lock` (T-0918, see
+`docs/modules/process.md#derived-state-lock-t-0859`), a real cross-process
+EXCLUSIVE flock keyed on `root`. T-0918 originally held that lock around
+the WHOLE rebuild -- the repo walk and the parse of every source/doc file,
+not just the cache write -- which serializes any two concurrent
+`build_graph` callers behind each other for the full parse duration, even
+when they write to different `cache` files. Under `pytest -n` (xdist),
+each worker process is its own `build_graph` caller against the same
+`root`; this measured as a ~19-minute CI tail stall.
+
+T-3478 narrows the exclusive hold to only `_prune_stale_cache` plus
+`_finalize_build`'s `conn.commit()`. This is sound because:
+
+- `_cache.connect` and every per-file cache write in `_ingest_source_
+  files`/`_ingest_doc_files` (`_cache.store_file_data`) already retry
+  past sqlite-level lock contention on their own (T-1423,
+  `_cache._with_lock_retry`, above) -- they do not need the flock for
+  correctness against a concurrent writer to the SAME cache file.
+- Those writes land inside ONE open, uncommitted sqlite transaction that
+  no other process/reader can observe until this call's own
+  `conn.commit()` runs -- so nothing outside the process can read a
+  partially-rebuilt cache regardless of where the flock starts.
+- The only window that genuinely needs cross-process exclusivity is the
+  point from which this build's changes become visible (the prune, which
+  deletes stale rows) through the commit landing -- exactly what stays
+  under `derived_state_write_lock` after this change.
+
+Two concurrent `build_graph` calls against the SAME `cache` file still
+serialize (or one reports `Err(GraphError.CacheLocked)` under sustained
+contention, per T-1423 above) -- T-0918's soundness invariant (no two
+processes committing to one cache concurrently) is unchanged. Two
+concurrent calls against DIFFERENT cache files under the same `root` now
+run their walk/parse phases genuinely in parallel instead of serializing.
+
 ### Mount-filesystem performance (T-0245)
 
 On a latency-heavy mount (WSL's `/mnt/c` via 9p, network shares), each
