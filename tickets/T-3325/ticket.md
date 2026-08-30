@@ -85,3 +85,6 @@ New (rule, file) identit(ies) filed here:
 - unresolved-attribute  tests/unit/test_main_entry.py
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Failure log
+- 2026-08-30 attempt 1: already resolved on main: frob check --only ty --ticket T-3325 and --only suppress --ticket T-3325 both zero-match all 13 identities (no SUPPRESS001 in the 6 test files, no invalid-argument-type/invalid-assignment/unresolved-attribute in the 4 python files)
