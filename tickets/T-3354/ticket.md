@@ -2,7 +2,7 @@
 id: T-3354
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3344):
   1 new (rule, file) identit(ies), 1 finding(s) (CLAUDE001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-29'
@@ -50,3 +50,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 
 ## Failure log
 - 2026-08-30 attempt 1: no repo code change applies: CLAUDE001 was live environment drift (managed ~/.claude/hooks/root-write-guard.py copy stale vs .claude/hooks/root-write-guard.py source) reconciled via 'frob claude sync' (writes only to ~/.claude, outside the repo); re-verified clean with frob check --only gates-fast --ticket T-3354 (no CLAUDE001 in the result set)
+
+## Drop reason
+- 2026-08-30: Already resolved on main: the owning gate's scoped run zero-matches every cited identity (series K measurement, 2026-08-30; T-3354's CLAUDE001 was ~/.claude materialization drift fixed by frob claude sync, no repo diff).
