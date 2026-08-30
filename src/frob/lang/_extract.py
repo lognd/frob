@@ -22,6 +22,7 @@ from frob.lang._models import RawComment, RawSymbol
 from frob.lang._walk_bash import _walk_bash
 from frob.lang._walk_c import _walk_c_family
 from frob.lang._walk_csharp import _walk_csharp
+from frob.lang._walk_cuda import _walk_cuda
 from frob.lang._walk_java import _walk_java
 from frob.lang._walk_kotlin import _walk_kotlin
 from frob.lang._walk_python import _walk_python, _walk_python_docstring_comments
@@ -54,6 +55,10 @@ COMMENT_TYPES: dict[str, frozenset[str]] = {
     # Java's two comment node types -- see `_walk_java.COMMENT_TYPES`'s own
     # docstring for the javadoc-collapses-onto-block_comment decision.
     "java": frozenset({"line_comment", "block_comment"}),
+    # frob:ticket T-1602
+    # CUDA's single comment node type -- identical to C/C++, see
+    # `_walk_cuda.COMMENT_TYPES`'s own docstring.
+    "cuda": frozenset({"comment"}),
 }
 
 
@@ -83,6 +88,7 @@ _WALKERS = {
     "bash": _walk_bash,
     "csharp": _walk_csharp,
     "java": _walk_java,
+    "cuda": _walk_cuda,
 }
 
 # frob:ticket T-0342
@@ -553,6 +559,11 @@ _IMPORT_WALKERS = {
     "bash": _imports_bash,
     "csharp": _imports_csharp,
     "java": _imports_java,
+    # frob:ticket T-1602
+    # CUDA's #include grammar is identical to C/C++'s (dialect-flag
+    # decision, `_walk_cuda.py`'s module docstring) -- reuse the SAME
+    # walker rather than a redundant copy.
+    "cuda": _imports_c_family,
 }
 
 

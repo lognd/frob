@@ -160,6 +160,12 @@ _EXTENSION_TABLE: dict[str, tuple[str, str]] = {
     # name (tree-sitter-java) -- see `frob.lang._walk_java` for the
     # walker and its publicness/inner-class decisions.
     ".java": ("java", "java"),
+    # frob:ticket T-1602
+    # tree-sitter-language-pack bundles the "cuda" grammar under that
+    # name -- see `frob.lang._walk_cuda` for the C++-dialect-flag
+    # decision and its kernel-qualifier publicness override.
+    ".cu": ("cuda", "cuda"),
+    ".cuh": ("cuda", "cuda"),
 }
 
 # `.strata` has no tree-sitter grammar (`_parse`/`_EXTENSION_TABLE` below

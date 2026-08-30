@@ -980,6 +980,83 @@ class TestJava:
         assert "Y.B" in names
 
 
+# frob:ticket T-1602
+class TestCuda:
+    """CUDA walker (`frob.lang._walk_cuda`) -- a thin C++-dialect-flag
+    wrapper around `_walk_c_family` (`_walk_c.py`'s `visibility_override`
+    hook), covering the kernel-qualifier publicness decision the ticket
+    named: a `__global__` kernel is always public, a `__device__`-only
+    function is always private, everything else defers to C++'s own
+    static-based rule."""
+
+    # frob:ticket T-1602
+    def test_global_kernel_is_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_cuda.py::_cuda_visibility
+        pf = parse_file(_FIXTURES / "sample.cu").danger_ok
+        assert pf.language == "cuda"
+        kernel = _symbol(pf, "vecAdd")
+        assert kernel.kind == SymbolKind.FUNCTION
+        assert kernel.public is True
+        assert kernel.doc_text == "Adds two vectors elementwise."
+
+    # frob:ticket T-1602
+    def test_device_only_function_is_not_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_cuda.py::_cuda_visibility
+        pf = parse_file(_FIXTURES / "sample.cu").danger_ok
+        device_fn = _symbol(pf, "addOne")
+        assert device_fn.kind == SymbolKind.FUNCTION
+        assert device_fn.public is False
+
+    # frob:ticket T-1602
+    def test_host_device_function_defers_to_cpp_rule(self) -> None:
+        # frob:tests src/frob/lang/_walk_cuda.py::_cuda_visibility
+        pf = parse_file(_FIXTURES / "sample.cu").danger_ok
+        both = _symbol(pf, "both")
+        assert both.kind == SymbolKind.FUNCTION
+        assert both.public is True
+
+    # frob:ticket T-1602
+    def test_static_global_kernel_is_still_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_cuda.py::_cuda_visibility
+        pf = parse_file(_FIXTURES / "sample.cu").danger_ok
+        static_kernel = _symbol(pf, "staticKernel")
+        assert static_kernel.public is True
+
+    # frob:ticket T-1602
+    def test_plain_host_function_follows_cpp_static_rule(self) -> None:
+        # frob:tests src/frob/lang/_walk_cuda.py::_walk_cuda
+        pf = parse_file(_FIXTURES / "sample.cu").danger_ok
+        hidden = _symbol(pf, "hiddenHost")
+        assert hidden.public is False
+        visible = _symbol(pf, "visibleHost")
+        assert visible.public is True
+
+    # frob:ticket T-1602
+    def test_class_method_with_device_qualifier(self) -> None:
+        # frob:tests src/frob/lang/_walk_cuda.py::_cuda_visibility
+        pf = parse_file(_FIXTURES / "sample.cu").danger_ok
+        cls = _symbol(pf, "Widget")
+        assert cls.kind == SymbolKind.CLASS
+        method = _symbol(pf, "Widget.run")
+        assert method.kind == SymbolKind.METHOD
+        assert method.public is False
+
+    # frob:ticket T-1602
+    def test_cuda_one_comment_node_type(self) -> None:
+        # frob:tests src/frob/lang/_walk_cuda.py::COMMENT_TYPES
+        from frob.lang._walk_cuda import COMMENT_TYPES
+
+        assert COMMENT_TYPES == frozenset({"comment"})
+
+    # frob:ticket T-1602
+    def test_include_directive_is_extracted(self) -> None:
+        # frob:tests src/frob/lang/_extract.py::_imports_c_family
+        from frob.lang import extract_imports
+
+        imports = extract_imports(_FIXTURES / "sample.cu").danger_ok
+        assert any("cuda_runtime.h" in spec for spec in imports)
+
+
 # frob:ticket T-2575
 class TestErrors:
     def test_unsupported_extension(self, tmp_path: Path) -> None:

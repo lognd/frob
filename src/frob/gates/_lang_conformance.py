@@ -102,6 +102,7 @@ _CAPABILITY_FIXTURE_EXTENSIONS: dict[str, str] = {
     "bash": ".sh",
     "csharp": ".cs",
     "java": ".java",
+    "cuda": ".cu",
 }
 
 _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
@@ -245,6 +246,25 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
         "    int privateFn() {\n"
         "        return 2;\n"
         "    }\n"
+        "}\n"
+    ),
+    # T-1602: a __global__ kernel is CUDA's publicness analog (the ticket's
+    # own framing); #include is the import/include statement, identical to
+    # plain C/C++. SINGLE physical line, not a continuation -- inherits
+    # the SAME `.c`/`.cpp` quirk docs/modules/lang.md already documents
+    # (the C standard's `//`-comment line-splice rule means tree-sitter-
+    # cuda, being the identical grammar, ALSO merges a two-physical-line
+    # `// frob:tests \` / `// <target>` pair into one comment node before
+    # `frob.lang` ever sees two lines to fold -- not a new, CUDA-specific
+    # gap, the same disclosed one c/cpp already carry).
+    "cuda": (
+        "// Capability fixture module doc.\n\n"
+        "#include <cuda_runtime.h>\n\n"
+        "__global__ void publicFn() {\n"
+        "    privateFn();\n"
+        "}\n\n"
+        f"// frob:tests {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+        "__device__ void privateFn() {\n"
         "}\n"
     ),
 }

@@ -6,10 +6,26 @@ here; the shared token/span/doc mechanism lives in `_common.py`. Both C and
 C++ share this walker, differing only in their comment-node-type set, which
 is threaded through the walk in a `_Ctx` (never a module global -- the parser
 runs under `frob.check`'s thread pool).
+
+CUDA (T-1602): `tree-sitter-language-pack`'s "cuda" grammar is node-for-node
+identical to its "cpp" grammar for every construct this walker inspects --
+`__global__`/`__device__`/`__host__` kernel qualifiers simply show up as
+extra direct children of `function_definition` (their own node TYPE is the
+literal qualifier text, the same shape `_has_static`'s `storage_class_
+specifier` check already reads), everything else (classes, access
+specifiers, namespaces, enums, typedefs, consts) is unchanged. CUDA is
+therefore wired as a C++ DIALECT FLAG, not a distinct walker: `_walk_cuda.py`
+calls this same `_walk_c_family`, passing a `visibility_override` hook that
+reads those qualifier children and defers to this module's own C/C++ rule
+(`return None`) whenever no CUDA-specific qualifier decides the answer --
+see `_walk_cuda.py`'s module docstring for the publicness decision itself
+(a `__global__` kernel entry point is the ticket's own named "analog of a
+public symbol").
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from tree_sitter import Node
@@ -24,13 +40,22 @@ from frob.lang._common import (
 )
 from frob.lang._models import RawSymbol, SymbolKind
 
+#: T-1602: `Callable[[Node], bool | None]` -- given a `function_definition`
+#: node, return an OVERRIDING publicness (`True`/`False`), or `None` to defer
+#: to this module's own C/C++ rule (`_function_symbol`'s default). Threaded
+#: through `_Ctx` rather than a module global for the same thread-pool-safety
+#: reason `comment_types` already is.
+VisibilityOverride = Callable[[Node], "bool | None"]
+
 
 @dataclass(frozen=True)
 class _Ctx:
-    """Per-walk state: the grammar's comment-node types and the symbol sink."""
+    """Per-walk state: the grammar's comment-node types, the symbol sink,
+    and an optional dialect-specific publicness override (T-1602)."""
 
     comment_types: frozenset[str]
     symbols: list[RawSymbol]
+    visibility_override: VisibilityOverride | None = None
 
 
 def _find_declarator_name(node: Node) -> str:
@@ -75,6 +100,10 @@ def _function_symbol(
     body = node.child_by_field_name("body")
     skip = ((body.start_byte, body.end_byte),) if body else ()
     public = (cur_access != "private") if stack else not _has_static(node)
+    if ctx.visibility_override is not None:
+        overridden = ctx.visibility_override(node)
+        if overridden is not None:
+            public = overridden
     return RawSymbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.METHOD if stack else SymbolKind.FUNCTION,
@@ -233,8 +262,18 @@ def _visit(ctx: _Ctx, container: Node, stack: tuple[str, ...], access: str) -> N
         _dispatch(ctx, node, stack, cur_access)
 
 
-def _walk_c_family(root: Node, comment_types: frozenset[str]) -> tuple[RawSymbol, ...]:
-    """Every C/C++ symbol (functions, methods, classes, enums, typedefs, consts)."""
-    ctx = _Ctx(comment_types=comment_types, symbols=[])
+def _walk_c_family(
+    root: Node,
+    comment_types: frozenset[str],
+    *,
+    visibility_override: VisibilityOverride | None = None,
+) -> tuple[RawSymbol, ...]:
+    """Every C/C++ symbol (functions, methods, classes, enums, typedefs,
+    consts). `visibility_override` (T-1602) lets a C++ DIALECT -- cuda is
+    the one caller today -- override a function's computed publicness
+    without this walker knowing anything CUDA-specific itself."""
+    ctx = _Ctx(
+        comment_types=comment_types, symbols=[], visibility_override=visibility_override
+    )
     _visit(ctx, root, (), "public")
     return tuple(ctx.symbols)

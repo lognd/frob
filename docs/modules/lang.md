@@ -108,6 +108,7 @@ the whole declaration and `body_tokens` is always `()`.
 | bash | `not name.startswith("_")` -- bash has no visibility keyword at all; this is a naming *convention* (shellcheck's own leading-underscore-is-private idiom), not something the language enforces (T-1604) |
 | csharp | the literal `public` keyword only -- both silent defaults (top-level `internal`, member `private`) and every other explicit modifier are NOT public; an interface member with no modifier of its own is implicitly public (the language's own rule), overridden only by an explicit non-public modifier (T-1600) |
 | java | the literal `public` keyword only -- the package-private default (no modifier at all) is NOT public, the trap this language names explicitly; an interface member with no modifier of its own is implicitly public (the language's own rule), overridden only by an explicit `private`/`protected` modifier (T-1601) |
+| cuda | a C++ DIALECT (not a distinct walker, `_walk_cuda.py`'s own docstring) layering one override on `_walk_c.py`'s existing static-based rule: a `__global__` kernel is always public (the ticket's own "kernel entry point is the analog of a public symbol" framing) regardless of `static`; a `__device__`-only function (no `__host__` alongside it) is always private, since it can never be called from outside the file the way frob's public/private axis means; every other case (plain host function, `__host__` alone, `__host__ __device__`) defers unchanged to C++'s own rule (T-1602) |
 
 ## Comment extraction and binding
 
@@ -134,7 +135,7 @@ names the walker treats as comment-typed leaves.
 Each language has its own recursive-descent walker (`_walk_python.py`,
 `_walk_typescript.py`, `_walk_rust.py`, `_walk_c.py`'s `_walk_c_family`
 shared by c/cpp, `_walk_kotlin.py`, `_walk_bash.py`, `_walk_csharp.py`,
-`_walk_java.py`, `_walk_strata.py`) built on the shared
+`_walk_java.py`, `_walk_cuda.py` (a thin C++-dialect wrapper), `_walk_strata.py`) built on the shared
 `_common.py` primitives (`_leaf_tokens`, `_leading_doc_comment`,
 `_strip_comment_delims`, `_span_of`).
 Notable per-language handling:
@@ -222,6 +223,36 @@ Notable per-language handling:
   T-2906's bash/csharp precedent) is a disclosed `KNOWN_GAP` tracked by
   a follow-up ticket filed while working T-1601 -- see the Language
   Support Contract section below.
+- **cuda** (T-1602): a C++ DIALECT FLAG, not a distinct walker --
+  `tree-sitter-language-pack`'s "cuda" grammar is node-for-node identical
+  to its "cpp" grammar for every construct `_walk_c.py`'s `_walk_c_family`
+  inspects, so `_walk_cuda.py` is a thin wrapper passing a `visibility_
+  override` hook (`_walk_c.py`'s own new, general parameter, T-1602) that
+  reads `__global__`/`__device__`/`__host__` kernel-qualifier children --
+  each qualifier's own node TYPE is the literal keyword text, the same
+  shape `_has_static`'s `storage_class_specifier` check already reads.
+  Publicness: a `__global__` kernel is always public regardless of
+  `static` (the ticket's own "kernel entry point is the analog of a
+  public symbol" framing -- CUDA's `static` on a kernel only affects
+  cross-translation-unit LINKAGE, never host launchability); a
+  `__device__`-only function (no `__host__` alongside it) is always
+  private, since device code is never callable from outside the file the
+  way frob's public/private axis means; every other case defers unchanged
+  to `_walk_c.py`'s own static-based rule. `#include`/imports and the
+  single `comment` node type are reused directly from C/C++'s own
+  walkers (`_imports_c_family`) -- no CUDA-specific duplicate. A real,
+  pre-existing, ALREADY-DISCLOSED shared-layer quirk this adapter
+  inherits rather than newly introduces: the C standard's `//`-comment
+  line-splice rule means a two-physical-line `// frob:tests \` / `//
+  <target>` continuation never reaches `frob.lang` as two lines to fold
+  in the first place (see the Behavioral conformance section's `.c`/
+  `.cpp` note below) -- CUDA's own capability fixture is therefore
+  deliberately single-physical-line too, matching `.c`/`.cpp`, not a new
+  finding filed against this ticket. `capability`/`dup`/`docblock`
+  facet-registry wiring for cuda (mirrors T-2906's bash/csharp and
+  T-1601's java precedent) is a disclosed `KNOWN_GAP` tracked by a
+  follow-up ticket filed while working T-1602 -- see the Language Support
+  Contract section below.
 
 ## Data models
 
@@ -657,14 +688,15 @@ than leaving the citation in place -- both languages now read
 `IMPLEMENTED` on all three facets, `arch` remaining the one genuine,
 already-tracked T-0329 gap every other non-python/cpp language shares.
 
-T-1601: java (this ticket's grammar) landed the same way bash/csharp
+T-1601/T-1602: java and cuda each landed the same way bash/csharp
 originally did -- only the `grammar` facet real at land time.
 `capability`/`dup`/`docblock` read as `KNOWN_GAP` citing a follow-up
-ticket filed while working T-1601 (`frob.lang._support.
-_JAVA_PENDING_FACET_WIRING`/`_JAVA_PENDING_FACET_WIRING_TICKET`), the
-same disclosed-not-yet-closed shape T-2906 established for bash/csharp;
-a future pass should do the real subsystem integration and remove the
-citation the same way T-2906 did.
+ticket filed while working each one (`frob.lang._support.
+_PENDING_FACET_WIRING_TICKETS`, a language -> ticket mapping, widened
+from T-1601's single-language set once cuda needed its own distinct
+citation), the same disclosed-not-yet-closed shape T-2906 established for
+bash/csharp; a future pass should do the real subsystem integration and
+remove each citation the same way T-2906 did.
 
 T-2996: `refactor` joined `FACETS` after the audit found `frob.refactor`
 was Python-only with ZERO language-literal branching to find -- a

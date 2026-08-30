@@ -1,7 +1,7 @@
 ---
 id: T-1602
 title: 'Language support: CUDA'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -99,6 +99,18 @@ scope_changes:
     resolution touches one of these two named files, not a guess'
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/test_lang.py::TestCuda::test_global_kernel_is_public
+- tests/test_lang.py::TestCuda::test_device_only_function_is_not_public
+- tests/test_lang.py::TestCuda::test_host_device_function_defers_to_cpp_rule
+- tests/test_lang.py::TestCuda::test_static_global_kernel_is_still_public
+- tests/test_lang.py::TestCuda::test_plain_host_function_follows_cpp_static_rule
+- tests/test_lang.py::TestCuda::test_class_method_with_device_qualifier
+- tests/test_lang.py::TestCuda::test_cuda_one_comment_node_type
+- tests/test_lang.py::TestCuda::test_include_directive_is_extracted
+- tests/test_lang_conformance_gate.py::TestCudaCapabilityConformance::test_cuda_registered_capabilities_pass
+- tests/test_lang_conformance_gate.py::TestCudaCapabilityConformance::test_cuda_missing_directive_fixture_is_caught_not_rubber_stamped
+- tests/test_lang_conformance_gate.py::TestCudaCapabilityConformance::test_cuda_no_symbols_fixture_is_caught_not_rubber_stamped
 designated_repro_test: null
 threat: null
 component: null
