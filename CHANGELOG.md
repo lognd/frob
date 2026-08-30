@@ -185,6 +185,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2638: disclosure-remainder guard is lexical and blind to draft ids: rewording a heading defeats it, drafts can never satisfy it
 - T-2639: Wire WAIVE009 into frob check + document in gates.md
 - T-2641: clean up stray changelog.d/T-2593.md fragment left by the T-2615 bug
+- T-2642: changelog entries read as bug reports, not release notes
 - T-2645: unlanded-branch directive parsing uses a temp-file round trip per candidate
 - T-2646: 938 stale local branches are accumulated debt -- needs a stranded-work analysis before pruning
 - T-2647: unused _LEDGER_TRANSACTIONAL_VERBS import raises quarantine and forces synchronous lands fleet-wide

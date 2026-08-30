@@ -29,6 +29,7 @@ def _passed(outcomes: dict) -> frozenset[str]:  # noqa: ANN001
 
 class _FakeTicket:
     title = "Do the thing"
+    body = ""
 
 
 def _write_repo_files(root: Path, *, version: str = "0.1.0") -> None:
@@ -36,6 +37,38 @@ def _write_repo_files(root: Path, *, version: str = "0.1.0") -> None:
         f'[project]\nname = "x"\nversion = "{version}"\n'
     )
     (root / "CHANGELOG.md").write_text("# Changelog\n\n## [0.1.0] - unreleased\n")
+
+
+class _FakeTicketWithNarrative:
+    title = "frob cycle reports a false CLEAN"
+    body = (
+        "## Done report\n"
+        "\n"
+        "Fixed the cycle detector to walk transitive edges so a planted\n"
+        "cycle in top-level layout is actually caught.\n"
+        "\n"
+        "### Changed\n"
+        "src/frob/cycle.py\n"
+    )
+
+
+class TestChangelogNoteForTicket:
+    """T-2642: `_changelog_note_for_ticket` derives a user-facing "what
+    changed" line instead of always falling back to the (problem-stated)
+    ticket title."""
+
+    def test_prefers_recovered_why_narrative(self) -> None:
+        # frob:tests tests/unit/test_ticket_runner_land_release.py::TestChangelogNoteForTicket.test_prefers_recovered_why_narrative  # noqa: E501
+        note = ticket_runner._changelog_note_for_ticket(_FakeTicketWithNarrative())
+        assert note == (
+            "Fixed the cycle detector to walk transitive edges so a "
+            "planted cycle in top-level layout is actually caught."
+        )
+
+    def test_falls_back_to_title_with_no_narrative(self) -> None:
+        # frob:tests tests/unit/test_ticket_runner_land_release.py::TestChangelogNoteForTicket.test_falls_back_to_title_with_no_narrative  # noqa: E501
+        note = ticket_runner._changelog_note_for_ticket(_FakeTicket())
+        assert note == "Do the thing"
 
 
 class TestWriteReleaseBump:

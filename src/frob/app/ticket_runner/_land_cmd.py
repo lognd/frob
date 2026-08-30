@@ -3068,6 +3068,38 @@ def _bump_class_between(old_version: str, new_version: str) -> str:  # noqa: ANN
     return BumpClass.PATCH.name.lower()
 
 
+# frob:ticket T-2642
+# frob:tests tests/unit/test_ticket_runner_land_release.py::TestChangelogNoteForTicket.test_prefers_recovered_why_narrative  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_land_release.py::TestChangelogNoteForTicket.test_falls_back_to_title_with_no_narrative  # noqa: E501
+def _changelog_note_for_ticket(ticket) -> str:  # noqa: ANN001
+    """T-2642: the user-facing "what changed" text for `ticket`'s
+    `CHANGELOG.md` bullet. The ticket TITLE reads as a problem report
+    (this repo's filing convention -- "frob cycle reports a false
+    CLEAN"), not a release note, so a generated changelog entry built
+    from the title alone reads like a bug tracker, not user-facing notes.
+
+    Prefers the free-narrative WHY prose an implementer recorded via
+    `frob ticket done-report --why` (recovered from the ticket's own
+    `## Done report` section by `frob.tickets.recover_done_report_why`)
+    when one exists -- an EXPLICIT, author-controlled description of what
+    changed, collapsed to a single line so it renders as one clean
+    bullet regardless of how the narrative was originally wrapped.
+
+    Falls back to the title verbatim when no narrative was ever recorded
+    (a terse `## Done report\\nDone.`-shaped report, or a `--plan` land
+    with no narrative step) -- per T-2615's own judgment call, a
+    problem-stated title is still a serviceable release note, just not
+    the preferred source now that one is available."""
+    from frob.tickets import recover_done_report_why
+
+    why = recover_done_report_why(ticket.body)
+    if why:
+        collapsed = " ".join(why.split())
+        if collapsed:
+            return collapsed
+    return ticket.title
+
+
 # frob:ticket T-0338
 # frob:ticket T-1009
 # frob:ticket T-2445
@@ -3107,7 +3139,7 @@ def _write_release_bump(  # noqa: ANN201
 
     bump_class = _bump_class_between(pre_bump_version, new_version)
     fragment_written = write_changelog_fragment(
-        root, final_id, bump_class, f"{final_id}: {ticket.title}"
+        root, final_id, bump_class, f"{final_id}: {_changelog_note_for_ticket(ticket)}"
     )
     if fragment_written.is_err:
         _log.error(

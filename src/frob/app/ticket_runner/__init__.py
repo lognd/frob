@@ -66,6 +66,7 @@ from ._close_cmd import (
 )
 from ._land_cmd import (
     _apply_release_bump_for_land,
+    _changelog_note_for_ticket,
     _land,
     _land_bump_version_fn,
     _land_collected_fn,
@@ -317,6 +318,7 @@ __all__ = [
     "_verify_one_bucket_passing",
     "_wave",
     "_work",
+    "_changelog_note_for_ticket",
     "_write_release_bump",
 ]
 

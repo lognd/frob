@@ -1,7 +1,7 @@
 ---
 id: T-2642
 title: changelog entries read as bug reports, not release notes
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -20,6 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_ticket_runner_land_release.py::TestChangelogNoteForTicket::test_prefers_recovered_why_narrative
+- tests/unit/test_ticket_runner_land_release.py::TestChangelogNoteForTicket::test_falls_back_to_title_with_no_narrative
 designated_repro_test: null
 threat: null
 component: null
