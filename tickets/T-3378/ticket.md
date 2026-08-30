@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b2723f396afd9c0df9eb8b4f24cc07be95992a1e
 ---
 Observed during T-2667's land (2026-08-29, ~load 59, 10+ concurrent
 series landing): TICK002 fires when a `T-draft-*` id survives onto the
