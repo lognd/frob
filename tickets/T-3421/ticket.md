@@ -57,7 +57,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 215d3be24e104817bcfd2da2f160317184dfd2d3
 ---
 The root-write guard scans the RAW TEXT of a command -- including inside single
 quotes and inside heredoc bodies -- for redirect-looking character sequences. It
