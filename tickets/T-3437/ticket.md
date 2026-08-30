@@ -17,10 +17,19 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/test_coverage.py
 - tests/system/test_coverage_sigterm.py
+- src/frob/testing/_coverage_refresh.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/testing/_coverage_refresh.py
+  reason: ticket body explicitly requires fixing the generator (_write_coverage_subprocess_rc)
+    and its test together, never just the test, so the generated rc's sigterm setting
+    matches pyproject.toml's T-3420 value
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 acceptance:
 - text: given HEAD on macos-latest and ubuntu-latest, when tests/test_coverage.py
