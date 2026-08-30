@@ -1,7 +1,7 @@
 ---
 id: T-2924
 title: Scope the inline land check_gates spawn to the merge delta for non-rapid profiles
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-25'
@@ -81,3 +81,6 @@ the diff-threading), tests covering the new `--only` selection.
 ## Failure log
 - 2026-08-25 attempt 2: no safe --only merge-delta scoping exists; it drops ToolResult coverage the T-0754 divergence check relies on -- needs owner decision, see Done report
 - 2026-08-30 attempt 3: structurally undoable as scoped, confirmed a third time: this ticket's own attempt 2 (2026-08-25) found no safe --only merge-delta scoping exists ('drops ToolResult coverage the T-0754 divergence check relies on'). That conclusion is now independently baked into current main's own code: src/frob/app/ticket_runner/_verify.py lines 908-925 (the _shared_check_spawn_fn docstring's T-1344/T-2053 investigation) states explicitly '--only/family-skipping is NOT safe' and '--delta does NOT reduce wall-clock at all'. Forcing a --only merge-delta selection here would silently narrow the T-0754 divergence check's own coverage. T-3054 (landed, src/frob/tickets/_land.py::_land_should_skip_inline_claims_reverify / _land_deadline_cannot_afford_inline_claims_reverify) already extended the only viable alternative mechanism -- skip the inline spawn entirely (never scope it) -- from rapid-only to any profile with a declared FROB_LAND_DEADLINE_S too small to afford it. T-2924's literal ask (merge-delta --only scoping) remains unsafe and should not be forced; no owner decision has reversed the T-1344/T-2053 conclusion.
+
+## Drop reason
+- 2026-08-30: Structurally unsafe as asked: any --only narrowing of the inline land check drops verified coverage counted by the T-0754 divergence claim, and --delta does not reduce wall-clock (see _verify.py T-1344/T-2053 notes, three failed attempts). T-3054 shipped the viable alternative (deadline-aware skip of the inline spawn for every profile).
