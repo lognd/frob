@@ -2,7 +2,7 @@
 id: T-3435
 title: PORT001 cannot catch a bare string-constant identity default (detection-shape
   gap)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -16,10 +16,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_port_selfcheck.py
+- src/frob/gates/_waive.py
+- tests/unit/gates/test_port_selfcheck.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: PORT001-DEFAULT needs registration in _waive.py's known-rule allowlist (UnregisteredGateRuleConstructed)
+    and its own gate tests
+  actor: logan
+  at: '2026-08-29'
+- op: add
+  glob: tests/unit/gates/test_port_selfcheck.py
+  reason: PORT001-DEFAULT needs registration in _waive.py's known-rule allowlist (UnregisteredGateRuleConstructed)
+    and its own gate tests
+  actor: logan
+  at: '2026-08-29'
 designated_repro_test: null
 threat: null
 component: null
