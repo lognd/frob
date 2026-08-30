@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/_docptr.py
 - tests/unit/test_ticket_runner_land_release.py
 - changelog.d/T-2691.md
+- tests/test_docptr_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,12 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_land_cmd.py
   reason: root-cause fix lives in _docptr.py (a DOC006 exemption for changelog.d/,
     matching the existing CHANGELOG.md archival precedent), not in the generator
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: adding a changelog.d/ exemption unit test alongside the existing archival-record
+    tests in this file
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
