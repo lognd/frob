@@ -1,7 +1,7 @@
 ---
 id: T-1601
 title: 'Language support: Java'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -20,6 +20,7 @@ scope:
 - tests/test_lang_conformance_gate.py
 - tests/test_lang_support.py
 - docs/modules/lang.md
+- src/frob/lang/_extract.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -111,6 +112,12 @@ scope_changes:
     specific walker file already, the umbrella glob was a leftover'
   actor: logan
   at: '2026-08-18'
+- op: add
+  glob: src/frob/lang/_extract.py
+  reason: central walker/import-walker dispatch table must register java, same as
+    every prior language adapter (T-1600/T-1604 precedent)
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
