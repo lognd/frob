@@ -32,7 +32,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c6ccd0a2a8d66702d1256cba85a84c0f0f6b4990
 ---
 MEASURED on GitHub Actions run 33308245923 (macos-latest, HEAD 355eb4468,
 2026-08-30): the macOS Test step started 11:10:14, reached [ 67%] and was
