@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/_sys.py
 - src/frob/tickets/_land_squash.py
 - tests/test_gates.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,12 @@ scope_changes:
 - op: add
   glob: tests/test_gates.py
   reason: unit tests for selfaudit_findings_touching
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/gates.md
+  reason: document selfaudit_findings_touching under the existing Self-audit at land
+    section
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
