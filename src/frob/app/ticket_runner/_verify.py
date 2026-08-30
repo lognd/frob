@@ -1901,8 +1901,56 @@ def _run_tests_count_fn(root: Path):  # noqa: ANN201
     return fn
 
 
+# frob:ticket T-3468
+# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestDoneReportNotVisibleOnPrimaryWarning.test_done_report_from_worktree_warns_when_not_visible_on_primary  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestDoneReportNotVisibleOnPrimaryWarning.test_done_report_from_primary_is_quiet  # noqa: E501
+def _warn_if_done_report_not_visible_on_primary(root: Path, ticket_id: str) -> None:
+    """T-3468: `done-report` (like `fail`, T-3137) commits to `root`'s own
+    branch ONLY -- `LEDGER_VERB_STRATEGY["done-report"]` is deliberately
+    GENERIC_COMMIT_UNMIRRORED (T-2603): its write describes progress on
+    work that is still worktree-local, and `land` already carries it
+    across atomically with the code it describes, so mirroring it early
+    would advance main's state machine ahead of the work it claims to
+    have finished. That leaves a real gap `frob ticket land` on its own
+    does not close: `close`'s NotCloseable gate needs the '## Done
+    report' heading present, and an agent who only ran `done-report`
+    against the worktree has no way to tell, from main, whether it is
+    there yet -- T-3468's DEFECT 2 (an agent re-running the same command
+    a second time directly against `root` to make main see it, with the
+    two writes able to add/add-conflict on `tickets/<id>/done-report.md`
+    if the mirror this warning explains does not exist). This makes the
+    gap LOUD, reusing `_warn_if_fail_not_visible_on_primary`'s exact
+    `_resolve_primary_checkout` detection, rather than leaving `frob
+    ticket done-report`'s success message imply the report reached
+    anywhere but this worktree's own branch.
+
+    A no-op when `root` IS the resolved primary checkout (the common,
+    already-visible case) or when the primary cannot be resolved at all
+    (best-effort disclosure, never a hard failure of `done-report`
+    itself)."""
+    from frob.tickets._land import _resolve_primary_checkout
+
+    primary = _resolve_primary_checkout(root)
+    if primary is None or primary.resolve() == root.resolve():
+        return
+    _log.error(
+        "ticket done-report: %s Done report recorded ONLY on this "
+        "worktree's own branch (%s) -- NOT yet visible on %s. `frob "
+        "ticket land` will carry it across when this ticket lands; if "
+        "you need it visible on %s BEFORE that (e.g. for a coordinator "
+        "or sibling agent to read now), do not re-run `done-report` "
+        "there -- it would produce an independent copy that can add/add "
+        "conflict with this one. Land this ticket instead, or wait.",
+        ticket_id,
+        root,
+        primary,
+        primary,
+    )
+
+
 # frob:ticket T-0458
 # frob:ticket T-0754
+# frob:ticket T-3468
 # frob:tests \
 # tests/test_tickets_evidence_cli.py::TestDoneReportCli.test_cli_composes_and_writes
 def _done_report(root: Path, cfg: AppConfig) -> None:
@@ -1968,6 +2016,7 @@ def _done_report(root: Path, cfg: AppConfig) -> None:
     )
     if committed.is_err:
         sys.exit(1)
+    _warn_if_done_report_not_visible_on_primary(root, cfg.ticket_id)
 
 
 # frob:ticket T-0737

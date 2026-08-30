@@ -2,7 +2,7 @@
 id: T-3468
 title: done-report does not mirror to primary checkout; body-append/Done-report heading
   collision unresolved
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -43,6 +43,10 @@ scope_changes:
     pointer to done-report'
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestDoneReportNotVisibleOnPrimaryWarning::test_done_report_from_worktree_warns_when_not_visible_on_primary
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestDoneReportNotVisibleOnPrimaryWarning::test_done_report_from_primary_is_quiet
+- tests/test_tickets_body.py::TestBodyCli::test_cli_ambiguous_done_report_heading_points_to_done_report_verb
 designated_repro_test: null
 threat: null
 component: null

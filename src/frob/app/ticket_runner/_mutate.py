@@ -474,13 +474,18 @@ def _resolve_body_mode_and_text(cfg: AppConfig) -> tuple[str, str] | None:
 # documents several symbols under one section, not just a public entry point -- the \
 # many-symbols- one-section convention this repo already accepted for vet.md (T-2810 \
 # declined to touch it), not a T-2810-shaped duplicate"
+# frob:ticket T-3468
 def _body(root: Path, cfg: AppConfig) -> None:
     """`frob ticket body <id> (--append TEXT|--append-file PATH | --set
     TEXT|--set-file PATH) --reason TEXT`: the ONLY thing this command does
     is resolve the mode+text (`_resolve_body_mode_and_text`) and reason
     (`_resolve_body_reason`) and forward to `frob.tickets.set_body`
     (T-2392) -- no validation is re-derived here, same thin-dispatch
-    pattern `_priority`/T-0411 established."""
+    pattern `_priority`/T-0411 established. T-3468 DEFECT 3: a
+    `TicketError.BodyTextAmbiguousSection` failure (the `## Done report`
+    heading collision) gets its own, more useful error naming `frob
+    ticket done-report` as the verb to use instead of the generic
+    ambiguous-section message."""
     from frob.tickets import set_body
 
     if cfg.ticket_id is None:
@@ -503,7 +508,28 @@ def _body(root: Path, cfg: AppConfig) -> None:
 
     result = set_body(root, cfg.ticket_id, text, mode=mode, reason=reason)
     if result.is_err:
-        _log.error("body change failed: %s", result.danger_err)
+        from frob.tickets import TicketError
+
+        if result.danger_err is TicketError.BodyTextAmbiguousSection:
+            # frob:ticket T-3468
+            # DEFECT 3: an agent hand-typing a '## Done report' heading
+            # into `body --append` (the workaround for the dedicated verb
+            # not existing, or not knowing it does) hits this refusal
+            # with no pointer to the verb that exists specifically to
+            # write this heading correctly -- name it here rather than
+            # leaving the generic-ambiguous-section message stand alone.
+            _log.error(
+                "body change failed: %s -- text contains a '## Done "
+                "report'/'## Failure log'/'## Drop reason' heading, which "
+                "this command refuses to splice in ambiguously; if you "
+                "are writing a Done report use `frob ticket done-report "
+                "%s --why ...` instead, the dedicated verb for that "
+                "section",
+                result.danger_err,
+                cfg.ticket_id,
+            )
+        else:
+            _log.error("body change failed: %s", result.danger_err)
         sys.exit(1)
     ticket = result.danger_ok
     _log.info("%s: body %s (now %d chars)", cfg.ticket_id, mode, len(ticket.body))

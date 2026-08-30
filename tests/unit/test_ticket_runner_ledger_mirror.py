@@ -831,3 +831,58 @@ class TestFailNotVisibleOnPrimaryWarning:
         assert not any("NOT yet visible" in r.message for r in caplog.records), [
             r.message for r in caplog.records
         ]
+
+
+# frob:ticket T-3468
+class TestDoneReportNotVisibleOnPrimaryWarning:
+    """`frob ticket done-report` (like `fail`, T-3137) commits to the
+    worktree's own branch ONLY -- `LEDGER_VERB_STRATEGY["done-report"]`
+    stays deliberately GENERIC_COMMIT_UNMIRRORED (T-2603). T-3468 DEFECT
+    2 was an agent silently believing a worktree-only `done-report` had
+    reached main; `_warn_if_done_report_not_visible_on_primary` makes
+    that gap loud instead."""
+
+    def test_done_report_from_worktree_warns_when_not_visible_on_primary(
+        self,
+        _fail_fixture: tuple[Path, Path],
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestDoneReportNotVisibleOnPrimaryWarning.test_done_report_from_worktree_warns_when_not_visible_on_primary  # noqa: E501
+        """MUST FIRE: `done-report` run from a worktree logs a loud,
+        greppable warning naming the primary checkout."""
+        import logging
+
+        from frob.app.ticket_runner._verify import (
+            _warn_if_done_report_not_visible_on_primary,
+        )
+
+        primary, worktree = _fail_fixture
+        with caplog.at_level(logging.ERROR):
+            _warn_if_done_report_not_visible_on_primary(worktree, "T-0001")
+
+        assert any(
+            "NOT yet visible" in r.message and str(primary) in r.message
+            for r in caplog.records
+        ), [r.message for r in caplog.records]
+
+    def test_done_report_from_primary_is_quiet(
+        self,
+        _fail_fixture: tuple[Path, Path],
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestDoneReportNotVisibleOnPrimaryWarning.test_done_report_from_primary_is_quiet  # noqa: E501
+        """MUST STAY QUIET: `done-report` run directly in the primary
+        checkout (root IS primary, nothing invisible) never warns."""
+        import logging
+
+        from frob.app.ticket_runner._verify import (
+            _warn_if_done_report_not_visible_on_primary,
+        )
+
+        primary, _worktree = _fail_fixture
+        with caplog.at_level(logging.ERROR):
+            _warn_if_done_report_not_visible_on_primary(primary, "T-0001")
+
+        assert not any("NOT yet visible" in r.message for r in caplog.records), [
+            r.message for r in caplog.records
+        ]

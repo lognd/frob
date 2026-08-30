@@ -721,7 +721,12 @@ TEXT|--set-file PATH) --reason TEXT|--reason-file PATH` is the CLI front
 door (`frob.app.ticket_runner._mutate._body`) -- argparse's mutually-
 exclusive group refuses more than one of the four text sources at parse
 time; the `-file` variants follow the same T-0737 shell-injection-
-avoidance precedent as every other free-text ticket input.
+avoidance precedent as every other free-text ticket input. T-3468: when
+`set_body` refuses with `TicketError.BodyTextAmbiguousSection` (`text`
+contains a `## Done report`/`## Failure log`/`## Drop reason` heading,
+above), the CLI's error names `frob ticket done-report` as the verb that
+exists specifically to write the `## Done report` section, instead of
+leaving an agent to rediscover it after hitting the generic refusal.
 
 #### `frob ticket close --no-behavior-change` (T-2393)
 

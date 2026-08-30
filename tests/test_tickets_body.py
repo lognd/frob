@@ -238,3 +238,40 @@ class TestBodyCli:
         with pytest.raises(SystemExit) as exc_info:
             _body(tmp_path, cfg)
         assert exc_info.value.code != 0
+
+    # frob:ticket T-3468
+    def test_cli_ambiguous_done_report_heading_points_to_done_report_verb(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_tickets_body.py::TestBodyCli.test_cli_ambiguous_done_report_heading_points_to_done_report_verb  # noqa: E501
+        """T-3468 DEFECT 3: appending text containing a literal '## Done
+        report' heading refuses (BodyTextAmbiguousSection, T-2498)
+        without any pointer to the dedicated verb that writes that
+        heading correctly. The CLI's error message must name `frob
+        ticket done-report` explicitly, not just repeat the generic
+        ambiguous-section error."""
+        import logging
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        spec = TicketSpec(title="a ticket", kind=TicketKind.BUG, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        cfg = AppConfig(
+            ticket_command="body",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_body_append="some text\n## Done report\nmore text",
+            ticket_body_reason="workaround attempt",
+        )
+        with caplog.at_level(logging.ERROR):
+            with pytest.raises(SystemExit) as exc_info:
+                _body(tmp_path, cfg)
+        assert exc_info.value.code != 0
+        assert any("frob ticket done-report" in r.message for r in caplog.records), [
+            r.message for r in caplog.records
+        ]
