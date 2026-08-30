@@ -2,7 +2,7 @@
 id: T-3324
 title: Live-repo self-conformance tests need landing-time enforcement, not just periodic
   re-verification
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -17,10 +17,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_sys.py
 - src/frob/tickets/_land_squash.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: unit tests for selfaudit_findings_touching
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
