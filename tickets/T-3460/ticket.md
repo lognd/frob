@@ -2,7 +2,7 @@
 id: T-3460
 title: 'INV051 also collapses to one identity: no real-file token in its message for
   T-3419''s extraction to use'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -20,6 +20,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGateFileIdentity::test_must_fire_two_weakenings_in_different_files_get_distinct_file_identities
+- tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGateFileIdentity::test_single_file_weakening_reports_that_real_file
+- tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGateFileIdentity::test_unresolvable_child_id_falls_back_to_design_dir
+- tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate::test_weakening_detected
+- tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate::test_clean_policies_no_finding
+- tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate::test_load_failure_skips_silently
+- tests/unit/test_policy_weakening_gate.py::TestPolicyWeakeningGate::test_no_design_dir_noop
 designated_repro_test: null
 threat: null
 component: null

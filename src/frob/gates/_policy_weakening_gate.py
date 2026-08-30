@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from frob.excludes import is_excluded, iter_files, load_exclude_globs
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 
@@ -60,6 +61,74 @@ def _design_dir(root: Path) -> str:
     return value if isinstance(value, str) else _DEFAULT_DESIGN_DIR
 
 
+def _strata_files(root: Path, design_dir: Path) -> list[Path]:
+    """Every `.strata` file under `design_dir`, minus `[graph].exclude`
+    matches -- duplicated from `frob.gates._vmodel._strata_files` /
+    `frob.strata._design_load._strata_files` (same T-0135 "no cross-
+    import just for a file walk" posture those two document) rather than
+    imported, purely so `_policy_id_file_map` below can re-walk the SAME
+    file set `load_design_ids` already loaded (T-3460: `DesignIds.
+    policies` merges every file's `PolicyDecl`s into one flat tuple,
+    discarding which file declared which -- see that dataclass's own
+    docstring -- so this gate has no way to ask `load_design_ids`'s
+    result for that provenance directly)."""
+    if not design_dir.is_dir():
+        return []
+    exclude_globs = load_exclude_globs(root)
+    found = []
+    for path in sorted(iter_files(design_dir, suffix=".strata")):
+        rel = path.relative_to(root).as_posix()
+        if exclude_globs and is_excluded(rel, exclude_globs):
+            continue
+        found.append(path)
+    return found
+
+
+# frob:ticket T-3460
+def _policy_id_file_map(root: Path, design_dir: str) -> dict[str, str]:
+    """`{policy_id: rel_file}` for every `policy` declaration under
+    `design_dir`, re-parsed PER FILE (T-3460) -- the same `node_file`-map
+    pattern `frob.gates._vmodel._collect_vmodel_graph` already uses for
+    VMOD001 (T-3264's own precedent, cited by this ticket's own body).
+    `frob.strata` is already imported by every caller of this function
+    (only reached after `load_design_ids` itself succeeded), so this
+    duplicate per-file parse pays no NEW native-extension cost -- it is
+    strictly a second, cheap syntactic pass over files already read once.
+    A file that fails to re-parse here (should not happen -- the SAME
+    files just parsed cleanly enough to reach this point) is skipped:
+    its own policies simply have no entry and `INV051` findings that
+    involve them fall back to the shared `design_dir` anchor unchanged,
+    never a crash."""
+    from frob.strata import parse_module
+
+    mapping: dict[str, str] = {}
+    for path in _strata_files(root, root / design_dir):
+        rel = path.relative_to(root).as_posix()
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.warning(
+                "policy_weakening_gate: could not re-read %s for its "
+                "policy_id file map: %s",
+                rel,
+                exc,
+            )
+            continue
+        parsed = parse_module(text)
+        if parsed.is_err:
+            _log.debug(
+                "policy_weakening_gate: %s failed to re-parse for its "
+                "policy_id file map (%s) -- its policies fall back to "
+                "the shared design_dir anchor",
+                rel,
+                parsed.danger_err,
+            )
+            continue
+        for policy in parsed.danger_ok.policies:
+            mapping[policy.id] = rel
+    return mapping
+
+
 # frob:enforces CHK-GATE-INV051
 # frob:doc docs/strata/policy.md#refinement-monotonicity-inv-051-t-1482
 # frob:ticket T-1843
@@ -80,7 +149,19 @@ def policy_weakening_gate(root: Path) -> tuple[Violation, ...]:
     import at all). A design load failure is left to SYS004 to report --
     this gate silently contributes nothing rather than double-reporting a
     load failure under a second rule id, since a malformed `.strata` file
-    cannot be compiled into policies at all."""
+    cannot be compiled into policies at all.
+
+    T-3460: each finding's `Violation.file` is the CHILD policy's own
+    declaring `.strata` file (`_policy_id_file_map`) when resolvable,
+    rather than the constant `design_dir` -- otherwise every INV051
+    finding repo-wide collapsed onto one `(rule, file)` identity (the
+    same anchor-collapse class T-3419 fixed generically at the sweep's
+    identity-extraction layer for SELFAUDIT001; INV051's own message
+    names policy ids, never a file path, so that generic fix could not
+    recover a distinguishing file for it -- this is the gate-side,
+    per-rule resolution T-3419's own Done report named as the necessary
+    follow-up, the same `node_file`-map shape VMOD001 already uses,
+    T-3264)."""
     design_dir = _design_dir(root)
     if not (root / design_dir).is_dir():
         _log.debug("policy_weakening_gate: no %s/ directory, skipping", design_dir)
@@ -114,6 +195,14 @@ def policy_weakening_gate(root: Path) -> tuple[Violation, ...]:
     from frob.strata import find_policy_weakenings
 
     weakenings = find_policy_weakenings(compiled.danger_ok)
+    if not weakenings:
+        return ()
+    # T-3460: policy_id -> declaring file, so each finding's identity is
+    # the CHILD policy's own real file (the "subject" a reader would fix)
+    # instead of the shared design_dir anchor every INV051 finding used
+    # to collapse onto -- see this function's own docstring update and
+    # `_policy_id_file_map`'s.
+    policy_file = _policy_id_file_map(root, design_dir)
     violations: list[Violation] = []
     for weakening in weakenings:
         _log.warning(
@@ -127,7 +216,7 @@ def policy_weakening_gate(root: Path) -> tuple[Violation, ...]:
             Violation(
                 rule="INV051",
                 severity=Severity.ERROR,
-                file=design_dir,
+                file=policy_file.get(weakening.child_id, design_dir),
                 line=0,
                 message=(
                     f"INV051: policy {weakening.child_id!r} weakens parent "
