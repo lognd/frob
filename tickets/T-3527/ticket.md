@@ -19,6 +19,13 @@ scope:
 - src/frob/strata/_capacity.py
 - strata-core/src/parse/**
 - src/frob/strata/_design_load.py
+- src/frob/strata/_ast.py
+- src/frob/strata/_elaborate.py
+- src/frob/strata/_models.py
+- src/frob/strata/_facts.py
+- src/frob/app/sys_runner.py
+- src/frob/app/config.py
+- src/frob/app/_cli_parsers/_misc.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +41,62 @@ scope_changes:
   glob: src/frob/strata/_design_load.py
   reason: Series DD measured the fix requires the Rust parser (strata_core.parse_source
     is the sole AST source); widened so the ticket is workable as filed
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/strata/_ast.py
+  reason: 'Fail-log attempt 2 enumerated exactly these: growth-rate grammar is a shared-kernel-primitive
+    change touching NodeDecl AST, elaboration, Node models, aggregate_demand seeding,
+    plus --since/--at CLI wiring; parser-side widening (Series DD) was necessary but
+    not sufficient'
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/strata/_elaborate.py
+  reason: 'Fail-log attempt 2 enumerated exactly these: growth-rate grammar is a shared-kernel-primitive
+    change touching NodeDecl AST, elaboration, Node models, aggregate_demand seeding,
+    plus --since/--at CLI wiring; parser-side widening (Series DD) was necessary but
+    not sufficient'
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/strata/_models.py
+  reason: 'Fail-log attempt 2 enumerated exactly these: growth-rate grammar is a shared-kernel-primitive
+    change touching NodeDecl AST, elaboration, Node models, aggregate_demand seeding,
+    plus --since/--at CLI wiring; parser-side widening (Series DD) was necessary but
+    not sufficient'
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/strata/_facts.py
+  reason: 'Fail-log attempt 2 enumerated exactly these: growth-rate grammar is a shared-kernel-primitive
+    change touching NodeDecl AST, elaboration, Node models, aggregate_demand seeding,
+    plus --since/--at CLI wiring; parser-side widening (Series DD) was necessary but
+    not sufficient'
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: 'Fail-log attempt 2 enumerated exactly these: growth-rate grammar is a shared-kernel-primitive
+    change touching NodeDecl AST, elaboration, Node models, aggregate_demand seeding,
+    plus --since/--at CLI wiring; parser-side widening (Series DD) was necessary but
+    not sufficient'
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'Fail-log attempt 2 enumerated exactly these: growth-rate grammar is a shared-kernel-primitive
+    change touching NodeDecl AST, elaboration, Node models, aggregate_demand seeding,
+    plus --since/--at CLI wiring; parser-side widening (Series DD) was necessary but
+    not sufficient'
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/app/_cli_parsers/_misc.py
+  reason: 'Fail-log attempt 2 enumerated exactly these: growth-rate grammar is a shared-kernel-primitive
+    change touching NodeDecl AST, elaboration, Node models, aggregate_demand seeding,
+    plus --since/--at CLI wiring; parser-side widening (Series DD) was necessary but
+    not sufficient'
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
