@@ -1,7 +1,7 @@
 ---
 id: T-3578
 title: macOS-only ledger commit failure in archive-force live-lease test
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
