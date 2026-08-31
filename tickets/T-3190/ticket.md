@@ -2,7 +2,7 @@
 id: T-3190
 title: 'Adopt real milestones: MILE001 cannot fire while all 346 tickets sit in one
   default milestone'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - frob.toml
 - docs/modules/tickets-lifecycle.md
+- tests/test_ci_workflow_matrix.py
+- tests/test_config_frob_toml_milestone.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +36,27 @@ scope_changes:
     semantics; queue stamping is a ledger mutation needing no source scope
   actor: logan
   at: '2026-08-27'
+- op: add
+  glob: tests/test_ci_workflow_matrix.py
+  reason: feature-kind ticket requires pytest evidence; adding a new regression test
+    file guarding frob.toml's default_milestone semantics (T-3190 acceptance criterion
+    1) since docs/modules/tickets-lifecycle.md and frob.toml alone are not pytest-testable
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/test_config_frob_toml_milestone.py
+  reason: feature-kind ticket requires pytest evidence; adding a new regression test
+    file guarding frob.toml's default_milestone semantics (T-3190 acceptance criterion
+    1) since docs/modules/tickets-lifecycle.md and frob.toml alone are not pytest-testable
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/test_config_frob_toml_milestone.py
+  reason: feature-kind ticket requires pytest evidence node ids; adding a new regression
+    test file guarding frob.toml default_milestone semantics against re-conflating
+    shipping with 1.0.0 (T-3190 acceptance 1)
+  actor: logan
+  at: '2026-08-31'
 body_changes:
 - mode: append
   reason: record the owner's 2026-08-28 decision (publish 0.530.0 to PyPI before 1.0.0),
