@@ -116,3 +116,6 @@ mechanical mass-extraction or a blanket waive):
 Re-measure via: uv run frob check --only dup --json (unscoped), filter
 tool=="frob-dup", partition by whether every fragment path starts with
 "tests/" vs not.
+
+## Failure log
+- 2026-08-31 attempt 2: Measured: frob-dup's docstring-inflation is real, but the correct fix requires either a repo-wide RawSymbol.body_tokens semantic change (call-graph/digest/perf consumers all depend on it verbatim) or new dup-local node-at-span infrastructure frob.lang does not expose yet -- infeasible-in-one-pass without a dedicated repo-wide regression pass; see ticket body for the full measurement.
