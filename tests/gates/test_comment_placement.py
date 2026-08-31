@@ -6,7 +6,7 @@ at any length, a short `# T-1234:` attribution, and an ordinary one-line
 
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from frob.gates._comment_placement import (
     CPLACE001_WAIVE_REASON_LIMIT_LINES,
@@ -23,6 +23,7 @@ def _rule_ids(violations) -> list[str]:
     return [v.rule for v in violations]
 
 
+# frob:ticket T-3539
 class TestCplace001:
     """`src/**/*.py` frob:waive reason-length cap."""
 
@@ -58,6 +59,33 @@ class TestCplace001:
         )
         violations = scan_cplace001_waive_reason_length(Path("src/frob/x.py"), text)
         assert _rule_ids(violations) == ["CPLACE001"]
+        assert violations[0].symref == "src/frob/x.py::handler"
+
+    # frob:ticket T-3539
+    def test_symref_stays_posix_joined_on_a_windows_shaped_path(self) -> None:
+        # frob:tests \
+        # tests/gates/test_comment_placement.py::TestCplace001.test_symref_stays_posix_\
+        # joined_on_a_windows_shaped_path
+        """T-3539: `PureWindowsPath` (not a monkeypatched `os.sep` -- its
+        `__str__` is ALWAYS backslash-joined, on every host platform,
+        making this a genuine cross-platform repro rather than a Windows-
+        only assertion) exercises the exact `rel = str(path)` defect that
+        broke `windows-latest` CI: `symref`/`file` must still come out
+        forward-slash-joined regardless of the input `Path` subtype's own
+        separator convention."""
+        text = (
+            "def handler():\n"
+            '    # frob:waive SOME001 reason="this justification runs on \\\n'
+            "    # for quite a while, well past the compliant one-line \\\n"
+            "    # summary form, exactly the narrative-essay shape T-2987 \\\n"
+            '    # flagged as bloat that belongs in the ticket instead"\n'
+            "    return 1\n"
+        )
+        windows_path = PureWindowsPath("src/frob/x.py")
+        assert str(windows_path) == "src\\frob\\x.py"  # sanity: genuinely backslash-shaped
+        violations = scan_cplace001_waive_reason_length(windows_path, text)
+        assert _rule_ids(violations) == ["CPLACE001"]
+        assert violations[0].file == "src/frob/x.py"
         assert violations[0].symref == "src/frob/x.py::handler"
 
     def test_symref_is_none_at_module_level(self) -> None:

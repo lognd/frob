@@ -1,7 +1,7 @@
 ---
 id: T-3539
 title: Cplace symref/file uses os.sep via str(path) instead of posix -- fails on Windows
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'

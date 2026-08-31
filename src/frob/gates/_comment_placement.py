@@ -59,7 +59,7 @@ from __future__ import annotations
 
 import ast
 import re
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from frob.gates._models import Severity, Violation
 from frob.graph import fold_comment_runs
@@ -164,7 +164,7 @@ def _enclosing_symbol_qualname(text: str, line: int) -> str | None:
 # ioning_frobwaive_by_name
 # frob:enforces CHK-GATE-CPLACE001
 def scan_cplace001_waive_reason_length(
-    path: Path, text: str, *, limit: int = CPLACE001_WAIVE_REASON_LIMIT_LINES
+    path: Path | PurePath, text: str, *, limit: int = CPLACE001_WAIVE_REASON_LIMIT_LINES
 ) -> tuple[Violation, ...]:
     """Every `frob:waive` directive in `text` (a `src/**/*.py` file) whose
     logical comment run spans more than `limit` physical lines, as
@@ -176,7 +176,15 @@ def scan_cplace001_waive_reason_length(
     `frob:waive` directive is identified by matching the DSL's own
     `frob:waive` directive-start syntax on the FOLDED logical line, never
     by a substring search over unfolded comment text."""
-    rel = str(path)
+    # T-3539: `.as_posix()`, not `str(path)` -- a bare `str()` on a
+    # `pathlib.Path` uses the platform separator (`os.sep`), so on
+    # Windows the same input stringifies with backslashes, breaking
+    # both the symref's cross-platform `path::symbol` convention
+    # (this graph's directive-target format is always forward-slash-
+    # joined) and `_is_provenance_exempt`'s `rel.startswith("tickets/")`-
+    # shaped prefix checks just below, which never match a backslash-
+    # joined path.
+    rel = path.as_posix()
     if _is_provenance_exempt(rel):
         return ()
     lines = text.splitlines()
@@ -266,7 +274,10 @@ def _iter_paragraphs(lines: list[str]) -> list[tuple[int, int]]:
 # tests/gates/test_comment_placement.py::TestCplace002.test_must_stay_quiet_exempt_path
 # frob:enforces CHK-GATE-CPLACE002
 def scan_cplace002_docs_narrative(
-    path: Path, text: str, *, word_limit: int = CPLACE002_NARRATIVE_WORD_LIMIT
+    path: Path | PurePath,
+    text: str,
+    *,
+    word_limit: int = CPLACE002_NARRATIVE_WORD_LIMIT,
 ) -> tuple[Violation, ...]:
     """Every ticket-id-citing prose paragraph in `text` (a
     `docs/modules/**/*.md` file) outside a provenance table row, longer
@@ -275,7 +286,15 @@ def scan_cplace002_docs_narrative(
     construction (too few words to cross `word_limit`); the flag is a
     migration CANDIDATE for `frob narrative move`, not a verdict -- same
     judgement-call posture NARR001 already documents for T-2994's split."""
-    rel = str(path)
+    # T-3539: `.as_posix()`, not `str(path)` -- a bare `str()` on a
+    # `pathlib.Path` uses the platform separator (`os.sep`), so on
+    # Windows the same input stringifies with backslashes, breaking
+    # both the symref's cross-platform `path::symbol` convention
+    # (this graph's directive-target format is always forward-slash-
+    # joined) and `_is_provenance_exempt`'s `rel.startswith("tickets/")`-
+    # shaped prefix checks just below, which never match a backslash-
+    # joined path.
+    rel = path.as_posix()
     if _is_provenance_exempt(rel):
         return ()
     lines = text.splitlines()

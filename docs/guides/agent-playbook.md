@@ -456,6 +456,14 @@ the time these gates shipped, so an immediate ERROR would only get waived
 away wholesale. `changelog.d/`, `CHANGELOG.md`, `docs/decisions/`, and
 `tickets/**` are exempt from both rules -- provenance is the point there.
 
+T-3539: both scanners build `rel`/`symref`/the exempt-path check from
+`path.as_posix()`, not a bare `str(path)` -- `str()` on a `pathlib.Path`
+uses the platform separator, so on Windows the same input stringified
+with backslashes, breaking both the symref's cross-platform
+`path::symbol` convention and the `tickets/`-shaped exempt-prefix check
+above (the T-3539 incident: `windows-latest` CI failed both CPLACE001/
+CPLACE002 tests on that mismatch alone).
+
 ## 8. Done-report requirements
 
 - Report only measured numbers: command output you actually ran and read,
