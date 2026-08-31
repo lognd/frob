@@ -205,6 +205,7 @@ def scan_docs_prose_mentions(
 
     ops: list[RewriteOp] = []
     unresolved: list[str] = []
+    # frob:waive WALK001 reason="docs_dir is repo_root/'docs' only -- a fixed subtree, never containing .git/.venv/node_modules/.claude/worktrees, so nothing to prune (T-3483)"  # noqa: E501
     for doc_path in sorted(docs_dir.glob(_DOCS_GLOB)):
         try:
             text = doc_path.read_text(encoding="utf-8")
@@ -275,6 +276,7 @@ def _rewrite_anchor_refs(
             )
     docs_dir = repo_root / "docs"
     if docs_dir.is_dir():
+        # frob:waive WALK001 reason="docs_dir is repo_root/'docs' only -- a fixed subtree, never containing .git/.venv/node_modules/.claude/worktrees, so nothing to prune (T-3483)"  # noqa: E501
         for doc_path in sorted(docs_dir.glob(_DOCS_GLOB)):
             text = doc_path.read_text(encoding="utf-8")
             if old_anchor not in text and f"#{old_slug}" not in text:
@@ -326,6 +328,7 @@ def scan_doc_anchor_carriers(
 
     ops: list[RewriteOp] = []
     unresolved: list[str] = []
+    # frob:waive WALK001 reason="docs_dir is repo_root/'docs' only -- a fixed subtree, never containing .git/.venv/node_modules/.claude/worktrees, so nothing to prune (T-3483)"  # noqa: E501
     for doc_path in sorted(docs_dir.glob(_DOCS_GLOB)):
         try:
             lines = doc_path.read_text(encoding="utf-8").splitlines()

@@ -443,6 +443,7 @@ def _gate_build_fingerprint() -> str:
             parts.append("gates_hash=<no-package-dir>")
         else:
             file_parts: list[str] = []
+            # frob:waive WALK001 reason="pkg_dir is frob.gates' own package dir (src/frob/gates), a fixed small subtree with no .git/.venv/node_modules/build output beneath it -- nothing to prune (T-3483)"  # noqa: E501
             for path in sorted(pkg_dir.rglob("*.py")):
                 try:
                     digest = hashlib.sha256(path.read_bytes()).hexdigest()

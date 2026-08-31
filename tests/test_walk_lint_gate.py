@@ -11,6 +11,7 @@ import ast
 import subprocess
 from pathlib import Path
 
+from frob.gates._waive import _apply_waivers
 from frob.gates._walk_lint import (
     _scan_bare_restricted_imports,
     _scan_import_time_platform_evals,
@@ -19,6 +20,7 @@ from frob.gates._walk_lint import (
     _scan_python_walks,
     walk_lint_gate,
 )
+from frob.graph import build_graph
 
 
 def _git(root: Path, *args: str) -> None:
@@ -662,3 +664,38 @@ class TestPlatform001ImportTimeEval:
     def test_gate_fires_end_to_end(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
         _assert_single_platform001_hit(tmp_path, self._DEFAULT_ARG_SRC)
+
+
+class TestBoundedScopeWaiver:
+    """T-3483: a `frob:waive WALK001 reason="..."` directive above a
+    genuinely small, bounded-scope traversal (the escape hatch this gate's
+    own module docstring names) suppresses the finding end-to-end -- the
+    raw WARN violation is produced by `walk_lint_gate`, then dropped by
+    `_apply_waivers` reading the directive off the graph snapshot, exactly
+    the shape T-3483 added to `_prose.py`/`_docstatus.py`/`_gate_cache.py`/
+    `_support.py`/`_models.py`."""
+
+    # frob:ticket T-3483
+    def test_waived_bounded_glob_is_suppressed_end_to_end(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
+        # frob:tests src/frob/gates/_waive.py::_apply_waivers
+        _init_repo(tmp_path)
+        pkg = tmp_path / "src" / "frob"
+        pkg.mkdir(parents=True)
+        (pkg / "__init__.py").write_text("")
+        (pkg / "offender.py").write_text(
+            "def collect_docs(docs_dir):\n"
+            '    # frob:waive WALK001 reason="docs_dir is a fixed small subtree, never containing .git/.venv/node_modules"\n'  # noqa: E501
+            '    return sorted(docs_dir.glob("**/*.md"))\n'
+        )
+        _commit(tmp_path)
+
+        raw = walk_lint_gate(tmp_path)
+        assert any(v.rule == "WALK001" for v in raw)
+
+        cache = tmp_path / ".frob" / "cache.db"
+        snapshot = build_graph(tmp_path, cache).danger_ok
+        kept, waived = _apply_waivers(raw, snapshot)
+
+        assert not any(v.rule == "WALK001" for v in kept)
+        assert any(v.rule == "WALK001" for v in waived)

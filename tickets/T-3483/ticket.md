@@ -2,7 +2,7 @@
 id: T-3483
 title: INV/NEGEXIST/WALK/DEAD/LANG WARN gate remainder after T-2368's PLACE001/PII011
   close
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -188,6 +188,8 @@ scope_changes:
     remainder'
   actor: logan
   at: '2026-08-30'
+evidence:
+- tests/test_walk_lint_gate.py::TestBoundedScopeWaiver::test_waived_bounded_glob_is_suppressed_end_to_end
 designated_repro_test: null
 threat: null
 component: null

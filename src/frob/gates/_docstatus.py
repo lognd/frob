@@ -250,6 +250,7 @@ def docstatus_gate(root: Path) -> tuple[Violation, ...]:
         for v in (_doc009_check_doc(root, doc_rel),)
         if v is not None
     ]
+    # frob:waive WALK001 reason="pattern is anchored 'docs/**/*.md' -- glob only descends into root/docs, a fixed subtree never containing .git/.venv/node_modules/.claude/worktrees (T-3483)"  # noqa: E501
     doc011_docs = {p.relative_to(root).as_posix() for p in root.glob("docs/**/*.md")}
     known_ids = _doc011_known_ticket_ids(root)
     for doc_rel in sorted(doc011_docs):

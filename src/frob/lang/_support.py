@@ -1411,6 +1411,7 @@ def unfaceted_packages(
         found_literal = False
         # frob:ticket T-3393
         # frob:waive PERF004 reason="each package_dir yields a DIFFERENT rglob() listing, not a hoistable repeated sort of the same input -- sorted for deterministic visit order"  # noqa: E501
+        # frob:waive WALK001 reason="package_dir is one src/frob/<pkg> subpackage, a fixed small subtree with no .git/.venv/node_modules/build output beneath it -- nothing to prune (T-3483)"  # noqa: E501
         for py_file in sorted(package_dir.rglob("*.py")):
             try:
                 tree = ast.parse(py_file.read_text(encoding="utf-8"))

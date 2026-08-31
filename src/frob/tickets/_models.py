@@ -403,6 +403,7 @@ def _first_invalid_scope_glob(globs: Sequence[str]) -> str | None:
         if ";" in glob:
             return glob
         try:
+            # frob:waive WALK001 reason="_SCOPE_GLOB_PROBE_ROOT is a synthetic path that never exists on disk -- this probes glob SYNTAX validity only, next() on a nonexistent root's glob() never actually traverses anything (T-3483)"  # noqa: E501
             next(_SCOPE_GLOB_PROBE_ROOT.glob(glob), None)
         except (ValueError, NotImplementedError):
             return glob
