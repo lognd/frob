@@ -2,7 +2,7 @@
 id: T-3491
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3486):
   1 new (rule, file) identit(ies), 1 finding(s) (DOC006)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -46,3 +46,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 
 ## Failure log
 - 2026-08-30 attempt 1: resolved on main by T-3489 landing: T-3489's own ticket.md is a queued-ticket body while open, and DOC006's frob.app.telemetry._state pointer fired then; T-3489 landed (state=done), and DOC006's existing _is_historical_ticket_doc/_terminal_ticket_ids exemption (T-2505/T-2374) already treats a DONE ticket's body as an immutable historical record, so the finding cleared automatically once state flipped -- no code change needed. Proof: pytest tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo -p no:xdist -- 1 passed, 0 failed (run from t-3491 worktree at main tip after T-3489's land).
+
+## Drop reason
+- 2026-08-30: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (DOC006 tickets/T-3489/ticket.md) is absent from a direct re-check of exactly the 705 named (rule, file) identit(ies) (not a full sweep) that completed with no failed/silent tool stage at doable's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
