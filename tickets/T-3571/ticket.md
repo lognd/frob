@@ -33,6 +33,11 @@ scope_changes:
   reason: self-join-deadlock section documents the correlation narrowing
   actor: logan
   at: '2026-08-31'
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: tests for the correlation narrowing
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
