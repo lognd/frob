@@ -405,6 +405,7 @@ _LANG_EXT: dict[str, str] = {
     "bash": ".sh",
     "csharp": ".cs",
     "java": ".java",
+    "cuda": ".cu",
 }
 
 #: benign source per language guaranteed to contain none of this registry's
@@ -418,6 +419,7 @@ _BENIGN_SOURCE: dict[str, str] = {
     "bash": "x=1\necho $x\n",
     "csharp": "class M { int Add(int a, int b) { return a + b; } }\n",
     "java": "class M { int add(int a, int b) { return a + b; } }\n",
+    "cuda": "__global__ void add(int a, int b, int *c) { *c = a + b; }\n",
 }
 
 

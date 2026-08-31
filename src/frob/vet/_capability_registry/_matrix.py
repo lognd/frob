@@ -20,6 +20,7 @@ from frob.logging import get_logger
 from frob.vet._capability_registry._dangerous_ops_bash_csharp import (
     _BASH_CSHARP_OPERATIONS,
 )
+from frob.vet._capability_registry._dangerous_ops_cuda import _CUDA_OPERATIONS
 from frob.vet._capability_registry._dangerous_ops_java import _JAVA_OPERATIONS
 from frob.vet._capability_registry._dangerous_ops_other import _OTHER_OPERATIONS
 from frob.vet._capability_registry._dangerous_ops_python import _PYTHON_OPERATIONS
@@ -35,7 +36,11 @@ _log = get_logger(__name__)
 #: (T-1420 split) -- the matrix functions below need the whole table, not
 #: either half alone.
 DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
-    _PYTHON_OPERATIONS + _OTHER_OPERATIONS + _BASH_CSHARP_OPERATIONS + _JAVA_OPERATIONS
+    _PYTHON_OPERATIONS
+    + _OTHER_OPERATIONS
+    + _BASH_CSHARP_OPERATIONS
+    + _JAVA_OPERATIONS
+    + _CUDA_OPERATIONS
 )
 
 # frob:doc docs/modules/vet.md#public-api
@@ -885,6 +890,96 @@ _NEW_ADAPTER_SUBSTANTIVE_EXCUSES: tuple[_MatrixExcuse, ...] = (
         "needle pattern -- same posture as kotlin's own embedded_code "
         "excuse, T-0244",
     ),
+    # T-3493: cuda's substantive excuses -- a .cu/.cuh file compiles with
+    # a HOST C/C++ compiler, so wherever c-cpp's own excuse reasoning is
+    # about the standard library or the scanner's own text model (not
+    # anything CUDA-kernel-specific), the identical reasoning applies
+    # here verbatim; cuda mirrors c-cpp's exact patterned/excused kind
+    # split (exec/fs-read/fs-write/ffi/net-connect/net-listen patterned,
+    # everything else excused).
+    _MatrixExcuse(
+        capability_kind="eval",
+        language="cuda",
+        reason="no idiomatic C/C++ 'evaluate a string as code' primitive in "
+        "the standard library; dlopen (ffi) is the closest native-code-"
+        "loading analog and is already patterned separately -- same "
+        "reasoning as c-cpp's own eval excuse (identical host C ABI)",
+    ),
+    _MatrixExcuse(
+        capability_kind="env-read",
+        language="cuda",
+        reason="getenv() is a pervasive, unprefixed C identifier (collides "
+        "with countless unrelated tokens under a plain-substring scanner) "
+        "-- same c-cpp gap, tracked not silently dropped; see "
+        "docs/modules/vet.md 'Honest limits'",
+    ),
+    _MatrixExcuse(
+        capability_kind="env-write",
+        language="cuda",
+        reason="setenv()/putenv() are pervasive, unprefixed C identifiers "
+        "(collide with countless unrelated tokens under a plain-substring "
+        "scanner) -- same c-cpp gap, tracked not silently dropped; see "
+        "docs/modules/vet.md 'Honest limits'",
+    ),
+    _MatrixExcuse(
+        capability_kind="process-control",
+        language="cuda",
+        reason="exit(3)/_exit(2)/signal(2) idioms exist but were not part "
+        "of a per-cell survey -- same un-surveyed gap as c-cpp's own "
+        "process-control excuse",
+    ),
+    _MatrixExcuse(
+        capability_kind="install-hook",
+        language="cuda",
+        reason="no CUDA packaging-install-hook idiom analogous to "
+        "setuptools cmdclass; native builds hook via CMake/nvcc build "
+        "rules, outside this scanner's per-source-file text model -- same "
+        "reasoning as c-cpp's own install-hook excuse",
+    ),
+    _MatrixExcuse(
+        capability_kind="html_render",
+        language="cuda",
+        reason="no C/C++ standard-library DOM/HTML-rendering concept; "
+        "browser-only capability -- same as c-cpp",
+    ),
+    _MatrixExcuse(
+        capability_kind="sql",
+        language="cuda",
+        reason="no single dominant C/C++ DB-API string-interpolation idiom "
+        "(libpq/sqlite3 C APIs use bound parameters as the common path); "
+        "tracked as a gap for the next C SQL-client survey, not claimed "
+        "covered -- same as c-cpp",
+    ),
+    _MatrixExcuse(
+        capability_kind="fetch_url",
+        language="cuda",
+        reason="no single dominant C/C++ URL-fetch idiom in the standard "
+        "library (libcurl is third-party); covered via the closed-world "
+        "vetted-library path for libcurl-linked dependencies, not a hand "
+        "pattern here -- same as c-cpp",
+    ),
+    _MatrixExcuse(
+        capability_kind="deserialize",
+        language="cuda",
+        reason="no C/C++ standard-library object-deserialization primitive "
+        "analogous to pickle/marshal; unsafe deserialization in C/C++ is a "
+        "buffer-parsing bug, already covered by the strcpy/sprintf/gets "
+        "fs-write-bucketed entry above -- same as c-cpp",
+    ),
+    _MatrixExcuse(
+        capability_kind="client_storage",
+        language="cuda",
+        reason="no C/C++ standard-library browser-storage concept; "
+        "browser-only capability -- same as c-cpp",
+    ),
+    _MatrixExcuse(
+        capability_kind="embedded_code",
+        language="cuda",
+        reason="detected structurally by _capability._embedded_code_regions "
+        "(STRING-node size + HTML/JS signal heuristic), not a per-language "
+        "needle pattern -- same posture as c-cpp/java's own embedded_code "
+        "excuse, T-0244",
+    ),
 )
 
 #: T-2906: kinds that are never a real per-language detection surface for
@@ -931,7 +1026,7 @@ _STRUCTURAL_KIND_REASONS: dict[str, str] = {
 #: T-3492: java added -- shares the same structural-kind gaps every other
 #: adapter language has (net/env/fs bare-and-dotted spellings), so it
 #: reuses this same generator rather than a fourth hand-copied block.
-_NEW_ADAPTER_LANGUAGES: tuple[str, ...] = ("bash", "csharp", "java")
+_NEW_ADAPTER_LANGUAGES: tuple[str, ...] = ("bash", "csharp", "java", "cuda")
 
 
 # frob:tests tests/test_capability_registry.py::TestMatrixExhaustiveness.test_no_unexcused_empty_cells  # noqa: E501

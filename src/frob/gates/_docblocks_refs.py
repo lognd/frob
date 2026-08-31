@@ -99,7 +99,12 @@ _RUST_LANGS = frozenset({"rust", "rs"})
 _TS_LANGS = frozenset({"ts", "tsx", "js", "jsx", "javascript", "typescript"})
 # frob:ticket T-0566
 # frob:ticket T-1195
-_C_CPP_LANGS = frozenset({"c", "cpp", "c++", "cxx", "cc", "h", "hpp"})
+# T-3493: cuda joins the same bucket -- a `.cu`/`.cuh` file's own
+# `#include "..."` directives resolve against tracked source files the
+# identical way c-cpp's do (`_c_include_violations` is generic on file
+# existence, not language-specific), so cuda needs no dedicated checker,
+# mirroring T-2906's bash-reuses-console-tier precedent.
+_C_CPP_LANGS = frozenset({"c", "cpp", "c++", "cxx", "cc", "h", "hpp", "cuda", "cu"})
 # frob:ticket T-1195
 _CONSOLE_LANGS = frozenset({"console", "bash", "sh", "shell"})
 # frob:ticket T-2906

@@ -473,11 +473,13 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # frob.vet._capability_registry and frob.dup._exhaustiveness, and a
     # real fenced-block bucket (_JAVA_LANGS) in frob.gates._docblocks;
     # no detail string cites T-3492 any more.
-    # T-1602's own filed finding, identical shape: cuda gets a real
-    # frob.lang grammar/walker but is not yet wired into the
-    # capability/dup/docblock FACETS -- same shared
-    # `_PENDING_FACET_WIRING_TICKETS` mapping.
-    "T-3493": True,
+    # T-3493 (cuda's prior KNOWN_GAP citation, T-1602's own filed
+    # finding) removed -- the gap is closed the same way T-3492's java
+    # entry was: cuda is a real LANGUAGES entry in
+    # frob.vet._capability_registry and frob.dup._exhaustiveness, and
+    # reuses the existing c-cpp fenced-block bucket (_C_CPP_LANGS) in
+    # frob.gates._docblocks (its #include directives resolve the same
+    # way c-cpp's do); no detail string cites T-3493 any more.
     # T-1603's own filed finding, identical shape: zig gets a real
     # frob.lang grammar/walker but is not yet wired into the
     # capability/dup/docblock FACETS -- same shared
@@ -540,7 +542,6 @@ _CAPABILITY_C_CPP_MEMBERS = frozenset({"c", "cpp"})
 # (`_JAVA_LANGS`, `_java_import_violations`); no detail string cites
 # T-3492 any more.
 _PENDING_FACET_WIRING_TICKETS: dict[str, str] = {
-    "cuda": "T-3493",
     "zig": "T-3513",
 }
 
@@ -564,7 +565,11 @@ def _docblock_languages() -> frozenset[str]:
     KNOWN_GAP despite already having a real checker. csharp gets a new
     `_CSHARP_LANGS` bucket (`_csharp_using_violations`, T-2906). T-3492:
     java gets the same new-bucket shape as csharp, `_JAVA_LANGS`
-    (`_java_import_violations`)."""
+    (`_java_import_violations`). T-3493: cuda reuses `_C_CPP_LANGS`
+    itself (its `#include "..."` directives resolve against tracked
+    files the identical way c-cpp's do, `_c_include_violations` is
+    generic on file existence) rather than getting a new bucket -- same
+    reuse shape as bash's own console-tier reuse."""
     from frob.gates._docblocks import (
         _C_CPP_LANGS,
         _CONSOLE_LANGS,
@@ -583,6 +588,7 @@ def _docblock_languages() -> frozenset[str]:
         | ({"bash"} if _CONSOLE_LANGS else set())
         | ({"csharp"} if _CSHARP_LANGS else set())
         | ({"java"} if _JAVA_LANGS else set())
+        | ({"cuda"} if "cuda" in _C_CPP_LANGS else set())
     )
 
 

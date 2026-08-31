@@ -105,6 +105,24 @@ class TestDeriveLanguageRegistry:
         # tracked epic (T-0329) -- not this ticket's scope.
         assert support.facets["arch"].state == FacetState.KNOWN_GAP
 
+    # frob:ticket T-3493
+    def test_cuda_capability_dup_docblock_are_implemented(self) -> None:
+        """T-3493: cuda registered a real `frob.lang` grammar/walker
+        (T-1602) but was not wired into the three OTHER FACETS-axis
+        subsystems -- real `LANGUAGES` entries in `frob.vet.
+        _capability_registry`/`frob.dup._exhaustiveness` plus reuse of
+        the existing c-cpp DOC004 bucket (`_C_CPP_LANGS`, cuda's own
+        `#include` directives resolve the identical way) close the gap
+        for real, not just via a reasoned KNOWN_GAP citation -- same
+        shape as T-3492's java precedent above."""
+        support = derive_language_registry()["cuda"]
+        assert support.facets["capability"].state == FacetState.IMPLEMENTED
+        assert support.facets["dup"].state == FacetState.IMPLEMENTED
+        assert support.facets["docblock"].state == FacetState.IMPLEMENTED
+        # frob.arch's multi-language dispatch is a separate, already
+        # tracked epic (T-0329) -- not this ticket's scope.
+        assert support.facets["arch"].state == FacetState.KNOWN_GAP
+
 
 # frob:ticket T-0405
 # frob:ticket T-0406

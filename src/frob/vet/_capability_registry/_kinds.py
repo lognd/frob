@@ -19,6 +19,10 @@ from __future__ import annotations
 #: T-3492: java added, same discipline -- real patterns for its
 #: highest-value idioms (net/env-read/exec/deserialize) in the new
 #: `_dangerous_ops_java.py`, generated excuses for the rest.
+#: T-3493: cuda added, same discipline -- a `.cu`/`.cuh` file compiles
+#: with a HOST C/C++ compiler, so its real patterns in the new
+#: `_dangerous_ops_cuda.py` mirror c-cpp's own exec/fs/ffi/net entries
+#: verbatim (same C ABI), generated excuses for the rest.
 LANGUAGES: tuple[str, ...] = (
     "python",
     "typescript",
@@ -28,6 +32,7 @@ LANGUAGES: tuple[str, ...] = (
     "bash",
     "csharp",
     "java",
+    "cuda",
 )
 
 # frob:doc docs/modules/vet.md#public-api

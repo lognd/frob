@@ -746,8 +746,21 @@ entries (`_dangerous_ops_java.py`'s `_JAVA_OPERATIONS`), and
 `using`-checker shape for java's `import`). java now reads `IMPLEMENTED`
 on all three facets, `arch` remaining the one genuine, already-tracked
 T-0329 gap every other non-python/cpp language shares -- cuda and zig
-(T-3493/T-3513) are the two `_PENDING_FACET_WIRING_TICKETS` entries
-still open.
+(T-3493/T-3513) were the two `_PENDING_FACET_WIRING_TICKETS` entries
+still open at the time.
+
+T-3493: cuda's own citation is now closed too -- cuda joined
+`frob.vet._capability_registry.LANGUAGES` and `frob.dup._exhaustiveness.
+LANGUAGES` with real patterned entries (`_dangerous_ops_cuda.py`'s
+`_CUDA_OPERATIONS`, mirroring c-cpp's own exec/fs/ffi/net needles
+verbatim -- a `.cu`/`.cuh` file compiles with a host C/C++ compiler), and
+`frob.gates._docblocks` did NOT need a new bucket: cuda's `#include`
+directives resolve against tracked files the identical way c-cpp's do,
+so it simply joined the existing `_C_CPP_LANGS` set (mirrors bash's own
+console-tier reuse, not csharp/java's new-bucket shape). cuda now reads
+`IMPLEMENTED` on all three facets, `arch` remaining the one genuine,
+already-tracked T-0329 gap; zig (T-3513) is the one
+`_PENDING_FACET_WIRING_TICKETS` entry still open.
 
 T-2996: `refactor` joined `FACETS` after the audit found `frob.refactor`
 was Python-only with ZERO language-literal branching to find -- a

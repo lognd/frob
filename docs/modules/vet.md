@@ -1354,6 +1354,24 @@ What landed on top of the lockfile-conformance MVP:
   `_NEW_ADAPTER_SUBSTANTIVE_EXCUSES` alongside bash/csharp's own, mostly
   mirroring kotlin's identical-JVM excuses (same java.io/java.net/
   java.lang surface) wherever the underlying reasoning is identical.
+- **cuda** (T-3493): a first-class `_capability_registry.LANGUAGES`
+  entry with real `DANGEROUS_OPERATIONS` patterns (`.cu`/`.cuh` in
+  `_capability_core._EXT_LANGUAGE`, table in `_dangerous_ops_cuda.py`)
+  -- a `.cu`/`.cuh` file compiles with a HOST C/C++ compiler, so its
+  patterns mirror c-cpp's own exec/fs-read/fs-write/ffi/net-connect/
+  net-listen entries verbatim (identical C ABI): `system()`/`popen()`/
+  `exec*` family (`exec`), `fread()`/`fgets()`/`open()`/`read()`/
+  `mmap()` (`fs-read`), `strcpy`/`sprintf`/`gets` family and `fopen()`/
+  `fwrite()`/`write()`/`rename()`/`unlink()`/`mkdir()` (`fs-write`),
+  `dlopen()` (`ffi`), `socket()`/`connect()`/`send()`/`recv()`/
+  `sendto()`/`recvfrom()`/`getaddrinfo()` (`net-connect`), `bind()`/
+  `listen()` (`net-listen`). Every remaining (kind, "cuda") cell mirrors
+  c-cpp's own excused set exactly (same reasoning, same 11
+  `_NEW_ADAPTER_SUBSTANTIVE_EXCUSES` entries plus the shared generated
+  structural rows) -- CUDA's own device-side memory surface
+  (`cudaMalloc`/`cudaMemcpy`/kernel launch) is deliberately not
+  patterned: it is a memory-safety concern, not a net/fs/exec/eval/
+  deserialize-shaped capability this taxonomy has a bucket for.
 - **Source location** (`_source.py`): best-effort local-cache lookup only
   (`.venv/lib/*/site-packages`, `~/.cache/uv`, `~/.cache/pip`,
   `node_modules/<name>`, `~/.cargo/registry/src`). No network fetch is

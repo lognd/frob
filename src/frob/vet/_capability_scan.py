@@ -178,6 +178,9 @@ _SELF_PATTERN_SUFFIXES: tuple[tuple[str, ...], ...] = (
     # T-3492: java's own needles=(...) literal table, same self-match
     # class as every other _dangerous_ops_*.py entry above.
     ("frob", "vet", "_capability_registry", "_dangerous_ops_java.py"),
+    # T-3493: cuda's own needles=(...) literal table, same self-match
+    # class as every other _dangerous_ops_*.py entry above.
+    ("frob", "vet", "_capability_registry", "_dangerous_ops_cuda.py"),
     ("frob", "vet", "_capability_registry", "_matrix.py"),
     ("frob", "vet", "_capability_registry", "_opaque.py"),
     ("frob", "strata", "_cve_fingerprint.py"),

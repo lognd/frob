@@ -12,7 +12,7 @@ top level (`from frob.vet._capability_registry import X`) -- every symbol
 below is re-exported through `__init__.py`, so callers never need to know
 which submodule actually defines it. Core symbols, and their current home:
 
-- `LANGUAGES: tuple[str, ...]` (`_kinds.py`) -- `("python", "typescript", "rust", "c-cpp", "kotlin", "bash", "csharp", "java")`.
+- `LANGUAGES: tuple[str, ...]` (`_kinds.py`) -- `("python", "typescript", "rust", "c-cpp", "kotlin", "bash", "csharp", "java", "cuda")`.
 - `CAPABILITY_KINDS: tuple[str, ...]` (`_kinds.py`) -- the vet-side
   capability vocabulary (net/fs/eval/env/ffi/install-hook/etc -- distinct
   from the threat catalog's CWE-sink vocabulary, see
@@ -24,8 +24,9 @@ which submodule actually defines it. Core symbols, and their current home:
 - `DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...]` (`_matrix.py`,
   assembled from `_dangerous_ops_python.py`'s `_PYTHON_OPERATIONS`,
   `_dangerous_ops_other.py`'s `_OTHER_OPERATIONS`, (T-2906)
-  `_dangerous_ops_bash_csharp.py`'s `_BASH_CSHARP_OPERATIONS`, and (T-3492)
-  `_dangerous_ops_java.py`'s `_JAVA_OPERATIONS`) -- hundreds of entries,
+  `_dangerous_ops_bash_csharp.py`'s `_BASH_CSHARP_OPERATIONS`, (T-3492)
+  `_dangerous_ops_java.py`'s `_JAVA_OPERATIONS`, and (T-3493)
+  `_dangerous_ops_cuda.py`'s `_CUDA_OPERATIONS`) -- hundreds of entries,
   one per known dangerous API/pattern per language.
 - `_MatrixExcuse` (`_schemas.py`, frozen: `capability_kind`, `language`,
   `reason`) and `CAPABILITY_MATRIX_EXCUSES: tuple[_MatrixExcuse, ...]`

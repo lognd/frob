@@ -302,44 +302,6 @@ def _tracked_md_files(root: Path) -> tuple[str, ...]:
     return tuple(line for line in spawned.danger_ok.stdout.splitlines() if line)
 
 
-# frob:doc docs/modules/gates.md#doc004-unbound-stale-doc-code-blocks-t-0436
-# frob:tests \
-# tests/test_docblocks_gate.py::TestPythonNamespace.test_python_import_of_nonexistent_s\
-# ymbol_is_stale
-# frob:tests \
-# tests/test_docblocks_gate.py::TestPythonNamespace.test_anchored_block_passes
-# frob:tests \
-# tests/test_docblocks_gate.py::TestPythonNamespace.test_unanchored_but_valid_import_wa\
-# rns_unbound
-# frob:tests \
-# tests/test_docblocks_gate.py::TestPythonNamespace.test_waive_doc004_suppresses
-# frob:tests \
-# tests/test_docblocks_gate.py::TestPythonNamespace.test_generic_external_shell_block_n\
-# ot_flagged
-# frob:tests \
-# tests/test_docblocks_gate.py::TestPythonNamespace.test_package_name_differs_from_dire\
-# ctory_name
-# frob:tests \
-# tests/test_docblocks_gate.py::TestRustNamespace.test_rust_use_of_missing_item_is_stale
-# frob:tests \
-# tests/test_docblocks_gate.py::TestRustNamespace.test_rust_use_of_real_item_passes_or_\
-# warns_never_stale
-# frob:tests \
-# tests/test_docblocks_gate.py::TestRustNamespace.test_external_crate_use_not_flagged
-# frob:tests \
-# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_nonexistent_subcommand_is_sta\
-# le
-# frob:tests \
-# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_anchored_pass\
-# es
-# frob:tests \
-# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_unanchored_wa\
-# rns_unbound
-# frob:tests \
-# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_waive_suppresses_console_stale
-# frob:tests \
-# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_no_config_means_no_console_ch\
-# ecking
 # frob:ticket T-3492
 def _doc004_block_violations(
     block: "_FencedBlock",
@@ -384,6 +346,44 @@ def _doc004_block_violations(
     return []
 
 
+# frob:doc docs/modules/gates.md#doc004-unbound-stale-doc-code-blocks-t-0436
+# frob:tests \
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_python_import_of_nonexistent_s\
+# ymbol_is_stale
+# frob:tests \
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_anchored_block_passes
+# frob:tests \
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_unanchored_but_valid_import_wa\
+# rns_unbound
+# frob:tests \
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_waive_doc004_suppresses
+# frob:tests \
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_generic_external_shell_block_n\
+# ot_flagged
+# frob:tests \
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_package_name_differs_from_dire\
+# ctory_name
+# frob:tests \
+# tests/test_docblocks_gate.py::TestRustNamespace.test_rust_use_of_missing_item_is_stale
+# frob:tests \
+# tests/test_docblocks_gate.py::TestRustNamespace.test_rust_use_of_real_item_passes_or_\
+# warns_never_stale
+# frob:tests \
+# tests/test_docblocks_gate.py::TestRustNamespace.test_external_crate_use_not_flagged
+# frob:tests \
+# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_nonexistent_subcommand_is_sta\
+# le
+# frob:tests \
+# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_anchored_pass\
+# es
+# frob:tests \
+# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_unanchored_wa\
+# rns_unbound
+# frob:tests \
+# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_waive_suppresses_console_stale
+# frob:tests \
+# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_no_config_means_no_console_ch\
+# ecking
 def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC004: scan every tracked `.md` doc's fenced code blocks for
     references to THIS PROJECT's own code surface (manifest-derived

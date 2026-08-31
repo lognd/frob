@@ -4387,7 +4387,11 @@ false-positive lesson applies here too: a noisy gate gets blanket-waived):
    `.cs`/`.java` file's own dotted path) is checked for a nearby binding
    directive. bash reuses the pre-existing console-command tier
    (`_CONSOLE_LANGS`, point 5 below) for its own fenced blocks -- no
-   separate resolver needed.
+   separate resolver needed. cuda (T-3493) reuses C/C++'s own
+   `_C_CPP_LANGS`/`_c_include_violations` tier the same way: a `.cu`/
+   `.cuh` file's `#include "..."` directives resolve against tracked
+   files identically to c-cpp's, so no separate resolver was needed
+   there either.
 4. **`frob:waive DOC004 reason="..."` is prominently honored** directly
    out of the block's own nearby text (an HTML comment above the fence, or
    a comment line inside it) -- NOT routed through `frob.graph`'s WAIVE

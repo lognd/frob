@@ -658,6 +658,9 @@ class TestCapabilityScan:
         assert language_for(tmp_path / "mod.cs") == "csharp"
         # T-3492: .java extension mapping for the new java column.
         assert language_for(tmp_path / "Mod.java") == "java"
+        # T-3493: .cu/.cuh extension mapping for the new cuda column.
+        assert language_for(tmp_path / "mod.cu") == "cuda"
+        assert language_for(tmp_path / "mod.cuh") == "cuda"
         assert language_for(tmp_path / "mod.unknownext") is None
 
     def test_bash_pipe_to_shell_detected(self, tmp_path: Path) -> None:
@@ -803,6 +806,53 @@ class TestCapabilityScan:
             "}\n"
         )
         assert scan_file_capabilities(java) == frozenset()
+
+    def test_cuda_host_system_call_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
+        # T-3493: system() is cuda's highest-value fire fixture (a .cu
+        # file compiles with a host C++ compiler, same C ABI as c-cpp).
+        from frob.vet._capability import scan_file_capabilities
+
+        cu = tmp_path / "launcher.cu"
+        cu.write_text(
+            "#include <cstdlib>\n"
+            "extern \"C\" void run(const char *cmd) {\n"
+            "    system(cmd);\n"
+            "}\n"
+        )
+        assert "exec" in scan_file_capabilities(cu)
+
+    def test_cuda_dlopen_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+
+        cu = tmp_path / "loader.cu"
+        cu.write_text(
+            "#include <dlfcn.h>\n"
+            "void *load(const char *path) {\n"
+            "    return dlopen(path, RTLD_NOW);\n"
+            "}\n"
+        )
+        assert "ffi" in scan_file_capabilities(cu)
+
+    def test_cuda_benign_kernel_has_no_capabilities(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
+        # T-3493: a cuda kernel file that touches none of the patterned
+        # needles observes an empty capability set -- confirms the column
+        # does not over-fire on ordinary device kernel code.
+        from frob.vet._capability import scan_file_capabilities
+
+        cu = tmp_path / "add.cu"
+        cu.write_text(
+            "__global__ void add(int *a, int *b, int *c) {\n"
+            "    int i = threadIdx.x;\n"
+            "    c[i] = a[i] + b[i];\n"
+            "}\n"
+        )
+        assert scan_file_capabilities(cu) == frozenset()
 
     def test_scan_directory_capabilities_aggregates_across_files(
         self, tmp_path: Path
