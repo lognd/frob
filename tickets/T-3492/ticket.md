@@ -140,6 +140,23 @@ scope_changes:
     tests.
   actor: logan
   at: '2026-08-30'
+body_changes:
+- mode: append
+  reason: 'BUG002 waiver: facet-wiring ticket adds new matrix entries, no pre-existing
+    failing state to repro'
+  actor: logan
+  at: '2026-08-30'
+  old_length: 374
+  new_length: 1137
+evidence:
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
+- tests/test_lang_support.py::TestDeriveLanguageRegistry::test_java_capability_dup_docblock_are_implemented
+- tests/test_vet.py::TestCapabilityScan::test_java_process_builder_exec_detected
+- tests/test_vet.py::TestCapabilityScan::test_java_object_input_stream_deserialize_detected
+- tests/test_vet.py::TestCapabilityScan::test_java_benign_file_has_no_capabilities
+- tests/test_gates.py::TestDoc004JavaImportDrift::test_import_of_tracked_package_unanchored_warns
+- tests/test_gates.py::TestDoc004JavaImportDrift::test_import_of_tracked_package_anchored_passes
+- tests/test_gates.py::TestDoc004JavaImportDrift::test_import_of_jdk_package_is_not_project_internal
 designated_repro_test: null
 threat: null
 component: null
@@ -148,3 +165,5 @@ anchor_reason: null
 land_commit: null
 ---
 found while working T-1601: java gets a real frob.lang grammar/walker but the capability dangerous-op registry, dup clone-detection exhaustiveness table, and DOC004 fenced-code-block bucket have no java entry yet -- mirrors T-2906's bash/csharp facet-wiring follow-up exactly. frob.lang._support marks these three facets KNOWN_GAP for java citing this ticket in the interim.
+
+<!-- frob:waive BUG002 reason="this is a facet-wiring/feature ticket (mirrors T-2906's identical bash/csharp precedent, itself a bug-kind ticket with the same shape), not a defect with a pre-existing failing behavior -- at the parent commit java simply had zero cells in the capability/dup/docblock matrices (no LANGUAGES entry existed yet), so test_no_unexcused_empty_cells trivially holds at parent (there is nothing to be unexcused when the language does not exist in the matrix at all) and again at the fix (every new cell is now patterned or excused); there is no failing-at-parent state to reproduce because the gap being closed is an absence of entries, not a wrong existing entry. Same posture T-2906 itself would have hit had BUG002 existed then." -->
