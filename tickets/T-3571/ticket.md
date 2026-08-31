@@ -2,7 +2,7 @@
 id: T-3571
 title: 'frob-arch self-join-deadlock detector: false-positive on a helper thread calling
   shutdown() on a foreign server object'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
