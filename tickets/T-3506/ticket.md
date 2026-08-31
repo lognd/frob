@@ -46,6 +46,8 @@ scope:
 - docs/modules/tickets-landing.md
 - docs/modules/tickets-data-storage.md
 - docs/modules/tickets.md
+- tests/unit/test_land_queue.py
+- tests/unit/test_mutation_sweep_queue.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: one shared lock primitive genuinely fans out to every fcntl
   call site plus its lease/land/gate test files; T-3076's own by-file breakdown is
@@ -138,6 +140,30 @@ scope_changes:
     their frob:doc-anchored docs must reflect the T-3506 primitive extraction'
   actor: logan
   at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_land_queue.py
+  reason: adding LandQueueLockUnavailable/SweepQueueLockUnavailable no-backend-refuses-loudly
+    tests, required by frob ticket land's T-2114 new-public-symbol coverage gate
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_mutation_sweep_queue.py
+  reason: adding LandQueueLockUnavailable/SweepQueueLockUnavailable no-backend-refuses-loudly
+    tests, required by frob ticket land's T-2114 new-public-symbol coverage gate
+  actor: logan
+  at: '2026-08-30'
+evidence:
+- tests/unit/test_process_lock.py::TestPortableFlock::test_posix_blocking_acquire_release_round_trips
+- tests/unit/test_process_lock.py::TestPortableFlock::test_posix_nonblocking_contended_returns_false
+- tests/unit/test_process_lock.py::TestPortableFlock::test_windows_branch_selected_when_fcntl_absent
+- tests/unit/test_process_lock.py::TestNoDirectFcntlOutsideSharedPrimitive::test_no_direct_fcntl_import_outside_lock_module
+- tests/unit/test_process_lock.py::TestDerivedStateLockPlatformBackends::test_windows_backend_round_trips
+- tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends::test_windows_backend_round_trips
+- tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends::test_windows_backend_round_trips
+- tests/test_ticket_land.py::TestLandLockPlatformBackends::test_windows_backend_round_trips
+- tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends::test_windows_backend_round_trips
+- tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends::test_windows_backend_round_trips
+- tests/unit/test_rapid_sweep.py::TestBaselineLock::test_windows_backend_serializes_two_concurrent_holders
 designated_repro_test: null
 threat: null
 component: null
