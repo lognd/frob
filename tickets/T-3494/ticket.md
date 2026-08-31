@@ -1,7 +1,7 @@
 ---
 id: T-3494
 title: frob-arch WARN remainder after T-2379 (god-module/god-class/type-dispatch/self-join)
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -52,3 +52,6 @@ god-module (14) + god-class (1): src/frob/gates/_coverage.py, src/frob/gates/_wa
 
 
 Triage complete. Filed 3 real successor tickets covering every remainder item: T-3571 (self-join-deadlock detector false-positive on src/frob/serve/_socketd.py::_idle_monitor -- frob:waive is confirmed ineffective for this category, T-0101, so the real fix is narrowing the detector itself), T-3572 (_claims.py::_eval_one_claim's isinstance-chain type-dispatch smell -- needs a Protocol/dispatch-table design pass on strata's proof-soundness critical path, not a rushed mechanical swap), T-3573 (the 14 god-module + 1 god-class remainder, rolled up as one tracking ticket naming every file -- each is its own small split-design campaign per T-2379's own precedent, to be broken into per-file children as work begins). No code change was safe to make honestly in this ticket itself: the self-join finding cannot be waived (unwaivable channel) and any real fix requires detector changes; the type-dispatch finding is explicitly flagged by this ticket's own prior investigation as needing dedicated design attention on security-sensitive evaluation logic; the god-module/class remainder is real design work per-file, not mechanical. Closing as triage-complete.
+
+## Failure log
+- 2026-08-31 attempt 1: Genuine triage-only outcome, not a code fix: self-join-deadlock cannot be waived (T-0101 unwaivable channel) and needs a detector-narrowing fix (filed T-3571); the _claims.py type-dispatch smell needs a Protocol/dispatch design pass on proof-soundness-critical code (filed T-3572); the 14 god-module + 1 god-class remainder is real per-file split-design work (filed T-3573, rollup). No safe mechanical code change existed for this ticket's own kind=bug scope -- see ticket body for the full disposition.
