@@ -1,7 +1,7 @@
 ---
 id: T-3605
 title: 'COV003: T-3410 cmd: evidence invalid for bug-kind ticket'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
