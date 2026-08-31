@@ -209,10 +209,11 @@ class TestBehavioralCapabilityCheck:
         """T-2365's own named sharpest test case: the `frob:tests \\`
         multi-line directive continuation must FOLD to the exact target
         string, for every language whose fixture actually exercises a
-        continuation (python/typescript/rust/kotlin/strata -- c/cpp's
-        fixture is deliberately single-line, see `_CAPABILITY_FIXTURE_
+        continuation (python/typescript/rust/kotlin/strata -- c/cpp/cuda's
+        fixtures are deliberately single-line, see `_CAPABILITY_FIXTURE_
         SOURCES`'s own comment on the C-grammar line-splice quirk this
-        test discovered) -- a checker that merely looked for the
+        test discovered, T-3541 measurement confirmed it also applies to
+        cuda's identical grammar) -- a checker that merely looked for the
         substring `frob:tests` on the first physical line would pass even
         if `_fold_continuations` silently truncated the target."""
         import frob.gates._lang_conformance as module
@@ -220,7 +221,7 @@ class TestBehavioralCapabilityCheck:
         registry = derive_capability_registry()
         checked = False
         for language, support in sorted(registry.items()):
-            if language in {"c", "cpp"}:
+            if language in {"c", "cpp", "cuda"}:
                 continue
             status = support.capabilities.get("directive_parse")
             if status is None or status.state is not FacetState.IMPLEMENTED:

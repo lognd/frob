@@ -258,6 +258,16 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
     # `// frob:tests \` / `// <target>` pair into one comment node before
     # `frob.lang` ever sees two lines to fold -- not a new, CUDA-specific
     # gap, the same disclosed one c/cpp already carry).
+    #
+    # T-3541: this claim was UNVERIFIED against the behavioral check
+    # until now -- measured directly: a genuine two-line continuation
+    # here produces "0 edge(s), 1 malformed" (the merged single-token
+    # comment fails to parse as a directive at all, never reaching
+    # `frob.lang`'s own fold logic), confirming the quirk is real for
+    # cuda, not just asserted by analogy. `TestBehavioralCapabilityCheck.
+    # test_directive_continuation_folds_correctly_not_just_present` now
+    # skips cuda the same way it already skips c/cpp, with this same
+    # measurement cited there.
     "cuda": (
         "// Capability fixture module doc.\n\n"
         "#include <cuda_runtime.h>\n\n"

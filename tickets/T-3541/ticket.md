@@ -1,7 +1,7 @@
 ---
 id: T-3541
 title: 'lang conformance: cuda fixture has no directive continuation, failing test_directive_continuation_folds_correctly_not_just_present'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -20,6 +20,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_directive_continuation_folds_correctly_not_just_present
 designated_repro_test: null
 threat: null
 component: null
