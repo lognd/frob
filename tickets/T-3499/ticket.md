@@ -27,6 +27,17 @@ scope_changes:
     does not exist -- the real file is tests/system/test_coverage_sigterm.py'
   actor: logan
   at: '2026-08-30'
+body_changes:
+- mode: append
+  reason: 'T-3499: BUG002 waiver -- macOS-only defect cannot fail-then-pass on this
+    Linux worktree host'
+  actor: logan
+  at: '2026-08-30'
+  old_length: 1827
+  new_length: 2414
+evidence:
+- tests/system/test_coverage_sigterm.py::TestCoverageSigtermDeadlock::test_repeated_sigterm_terminates_in_bounded_time
+- tests/system/test_coverage_sigterm.py::TestCoverageSigtermDeadlock::test_normal_run_writes_complete_coverage_data
 designated_repro_test: null
 threat: null
 component: null
@@ -64,3 +75,5 @@ and platform-specific; split into per-cause sub-tickets if a fix
 attempt shows they are not actually independent. The AF_UNIX path-length
 and killpg-pgid causes look most likely to be quick, real fixes rather
 than boundaries to declare.
+
+frob:waive BUG002 reason="T-3499 fixes one macOS-only sub-defect of bucket F (T-3488): killpg raising PermissionError on the macOS GHA runner's own sandbox even for a process's own group. The designated repro test genuinely PASSES at main on this Linux host (killpg never raises EPERM here), so it can only genuinely fail-then-pass on macos-latest CI, which this implementer cannot dispatch from a Linux worktree. Evidence is confirmatory-only on this host by the nature of the defect, not a weak test -- same shape as this drive's other BUG002 waivers (T-3488/T-3496/T-3498/T-3500)."
