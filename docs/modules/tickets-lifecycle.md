@@ -1247,6 +1247,22 @@ frob ticket reconcile           # dry-run: also reports unlanded_branch_work
 frob ticket reconcile --apply   # still never lands/requeues/removes this class
 ```
 
+**T-3522: `reconcile` also populates `doable`'s TTL summary cache.**
+Right after computing `unlanded_branch_work` above, `reconcile` calls
+`frob.app.ticket_runner._query._save_unlanded_summary_cache` with the
+same branch names, writing `.frob/unlanded-summary-cache.json` (T-2127).
+`frob ticket doable` itself never scans branches inline (T-2629, too slow
+at this repo's scale) -- it only ever READS that cache
+(`_load_unlanded_summary_cache`) and prints an explicit "not computed"
+disclosure on a miss rather than silently omitting the summary line.
+Before T-3522 this write side was never actually wired to a real
+caller, so the cache only ever got populated by tests -- `doable` in
+practice always hit the disclosed-miss path. This cache write happens
+on EVERY `reconcile` call, `apply` or not: it is a gitignored,
+best-effort performance cache under `.frob/`, not ticket state, so it
+sits outside `reconcile`'s own "dry-run mutates nothing" guarantee the
+same way `frob check`'s caches do.
+
 ## Atomic ledger writes (T-0456 hardening)
 
 `frob.tickets._store.atomic_write` (every `tickets.md`/`.frob-release.json`

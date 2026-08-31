@@ -335,9 +335,12 @@ def _refuse_apply_if_land_in_progress(
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_reports_the_confirmed_leak_shape kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_apply_refuses_and_writes_nothing_while_land_lock_held kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_apply_still_requeues_when_no_land_in_progress kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populates_the_doable_summary_cache kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populates_the_cache_even_on_a_dry_run kind="unit"  # noqa: E501
 # frob:ticket T-0601
 # frob:ticket T-1934
 # frob:ticket T-2291
+# frob:ticket T-3522
 # frob:doc docs/modules/tickets-lifecycle.md#unlanded-branch-work-t-1934t-1948
 def reconcile(
     root: Path,
@@ -356,8 +359,13 @@ def reconcile(
     `apply` alone).
 
     `apply=False` (the default) is a pure dry-run: every anomaly is still
-    detected and returned, nothing is mutated -- the same "report first,
-    mutate only when asked" posture `frob.clean.scan`/`clean` use.
+    detected and returned, no TICKET STATE is mutated -- the same "report
+    first, mutate only when asked" posture `frob.clean.scan`/`clean` use.
+    T-3522: this always refreshes `.frob/unlanded-summary-cache.json`
+    (`_save_unlanded_summary_cache`), regardless of `apply` -- a gitignored,
+    best-effort performance cache under `.frob/` like any other this repo
+    keeps (baseline, `cache.db`), not ticket state, so it sits outside that
+    dry-run guarantee the same way `frob check`'s own caches do.
 
     `wait_timeout_s` forwards to `refuse_if_land_in_progress`'s own bounded
     wait (T-2291, `None` = its normal configured default) -- exposed here
@@ -400,10 +408,25 @@ def reconcile(
     # Report-only, unconditionally -- no `apply`-gated healing exists for
     # this anomaly class (see `ReconcileReport.unlanded_branch_work`'s own
     # docstring for why).
+    unlanded_findings = _unlanded_branch_work(root)
     unlanded = tuple(
-        f"{finding.ticket_id}@{finding.branch}"
-        for finding in _unlanded_branch_work(root)
+        f"{finding.ticket_id}@{finding.branch}" for finding in unlanded_findings
     )
+    # frob:ticket T-3522
+    # T-2127: populate the TTL cache `doable` reads (`frob.app.
+    # ticket_runner._query._load_unlanded_summary_cache`) with the branch
+    # names this same scan just found -- lazy import to avoid a core
+    # (frob.tickets) -> app-layer (frob.app.ticket_runner) import at
+    # module load time, same posture as `_land.py`'s own lazy `frob.app.
+    # _check_chunking` import. This was the missing production write side
+    # `_save_unlanded_summary_cache`'s own docstring already documented as
+    # the intended caller; `doable` itself never scans branches inline
+    # (T-2629), so this reconcile call is now the only thing that keeps
+    # the cache fresh.
+    from frob.app.ticket_runner._query import _save_unlanded_summary_cache
+
+    branches = tuple(dict.fromkeys(finding.branch for finding in unlanded_findings))
+    _save_unlanded_summary_cache(root, branches)
 
     requeued = _requeue_stale_holds(root, stale_ids) if apply else stale_ids
     removed = (

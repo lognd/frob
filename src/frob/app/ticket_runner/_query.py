@@ -863,12 +863,19 @@ def _load_unlanded_summary_cache(root: Path) -> _UnlandedSummaryCache | None:
     return cache
 
 
-# frob:waive DEAD001 reason="write side of the doable-cache pair; this function's own docstring above documents the intended production caller (frob.tickets._reconcile, after _unlanded_branch_work computes branches) but that wiring was never actually added -- a real gap, filed as T-3522, not a symbol to delete (only tests/unit/test_app_runners_doable_stale_lease.py exercises it today) (T-3521)"  # noqa: E501
+# frob:ticket T-3522
+# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populates_the_doable_summary_cache kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary.test_fresh_cache_round_trips kind="unit"  # noqa: E501
 def _save_unlanded_summary_cache(root: Path, branches: tuple[str, ...]) -> None:
     """Persist a fresh `_UnlandedSummaryCache` for `root` -- best-effort:
     a write failure (read-only tree, missing `.frob/`) is swallowed, since
     a caller that cannot cache the result can still use the one it just
-    computed for THIS call, it just pays the full scan again next time."""
+    computed for THIS call, it just pays the full scan again next time.
+    T-3522: the production write side is `frob.tickets._reconcile.
+    reconcile`, called right after its own `_unlanded_branch_work` scan
+    computes the branch list -- `doable` itself never scans branches
+    inline (T-2629) and only ever reads this cache
+    (`_load_unlanded_summary_cache`)."""
     path = root / _UNLANDED_SUMMARY_CACHE_REL
     try:
         path.parent.mkdir(parents=True, exist_ok=True)

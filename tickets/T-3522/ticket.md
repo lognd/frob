@@ -1,7 +1,7 @@
 ---
 id: T-3522
 title: Wire _save_unlanded_summary_cache into the reconcile path
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -40,6 +40,9 @@ scope_changes:
     ticket changes reconcile''s behavior (populates the doable summary cache)'
   actor: logan
   at: '2026-08-31'
+evidence:
+- tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork::test_populates_the_doable_summary_cache
+- tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork::test_populates_the_cache_even_on_a_dry_run
 designated_repro_test: null
 threat: null
 component: null

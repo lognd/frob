@@ -640,3 +640,41 @@ class TestReconcileUnlandedBranchWork:
         result = reconcile(repo)
         assert result.is_ok
         assert result.danger_ok.unlanded_branch_work == ()
+
+    def test_populates_the_doable_summary_cache(self, repo: Path) -> None:
+        """T-3522: reconcile now calls `_save_unlanded_summary_cache` with
+        the branches its own scan just found -- the production write side
+        `frob.app.ticket_runner._query._load_unlanded_summary_cache`
+        (`doable`'s read side) was documented but never actually wired."""
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populate\
+        # s_the_doable_summary_cache
+        from frob.app.ticket_runner._query import _load_unlanded_summary_cache
+
+        _write_finished_ticket_on_branch(repo, "runner-wiring", "T-1315")
+
+        result = reconcile(repo)
+        assert result.is_ok
+
+        cached = _load_unlanded_summary_cache(repo)
+        assert cached is not None
+        assert cached.branches == ("runner-wiring",)
+
+    def test_populates_the_cache_even_on_a_dry_run(self, repo: Path) -> None:
+        """The cache write is a best-effort performance memoization, not
+        ticket state -- it refreshes on `apply=False` dry-runs too, unlike
+        the ticket-state anomalies `reconcile`'s own docstring says a
+        dry-run leaves untouched."""
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populate\
+        # s_the_cache_even_on_a_dry_run
+        from frob.app.ticket_runner._query import _load_unlanded_summary_cache
+
+        _write_finished_ticket_on_branch(repo, "runner-wiring", "T-1315")
+
+        result = reconcile(repo, apply=False)
+        assert result.is_ok
+
+        cached = _load_unlanded_summary_cache(repo)
+        assert cached is not None
+        assert cached.branches == ("runner-wiring",)
