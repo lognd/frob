@@ -2,7 +2,7 @@
 id: T-3586
 title: Split tests/test_gates.py (21691 lines) into a per-gate-family package via
   frob refactor verbs; establish the monofile-split recipe
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-31'
