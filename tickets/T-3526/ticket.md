@@ -2,7 +2,7 @@
 id: T-3526
 title: Killed frob check --fix leaves a silent half-applied Tier-A rewrite (deleted
   _build_parser, broke the CLI); make the fix pass transactional/journaled
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-30'
