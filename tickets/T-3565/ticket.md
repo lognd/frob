@@ -2,7 +2,7 @@
 id: T-3565
 title: faulthandler.register does not exist on Windows -- T-3560 instrumentation crashed
   pytest_configure
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -27,6 +27,13 @@ scope_changes:
   reason: regression coverage for the fix
   actor: logan
   at: '2026-08-31'
+evidence:
+- tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_succeeds_when_faulthandler_register_is_absent_on_simulated_win32
+- tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_installs_a_signal_handler_when_register_is_absent
+- tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_dump_then_chain_calls_dump_traceback_then_previous_handler
+- tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_still_prefers_faulthandler_register_when_it_exists
+- tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_noop_off_win32
+- tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_noop_when_no_sigbreak_attribute
 designated_repro_test: null
 threat: null
 component: null

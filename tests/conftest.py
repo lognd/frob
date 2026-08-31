@@ -195,28 +195,56 @@ def pytest_collection_modifyitems(
 
 
 # frob:ticket T-3560
+# frob:ticket T-3565
 def _install_sigbreak_faulthandler() -> None:
     """TEMPORARY T-3560 round-3 diagnostics (revert in the same land that
-    fixes the named culprit): on win32 only, registers `faulthandler` on
-    `SIGBREAK` (Windows' console-Ctrl-Break signal; `signal.SIGBREAK` does
-    not exist off win32, so this is a guarded no-op everywhere else). A
-    console ctrl event delivered to this process dumps every thread's
-    stack to stderr the instant it arrives -- whether or not it goes on
-    to surface as the `KeyboardInterrupt` pytest itself catches -- so the
-    windows-latest CI log gets a real stack trace for hypothesis (a) in
-    T-3560's body (a subprocess's termination path delivering a console
-    ctrl event to this process) even in the case where pytest's own
-    `-v --full-trace` (see `.github/workflows/ci.yml`'s T-3560 comment)
-    only shows where collection/execution WAS, not what the interrupt
-    itself interrupted. Uses `faulthandler.register`, not
-    `signal.signal`, so it dumps and then still lets Python's own default
-    `SIGBREAK`/`KeyboardInterrupt` handling proceed afterward -- this is
-    observation-only, never a behavior change to how the interrupt itself
-    is handled."""
+    fixes the named culprit): on win32 only, dumps every thread's stack
+    to stderr the instant a console ctrl event (`SIGBREAK`) reaches this
+    process -- whether or not it goes on to surface as the
+    `KeyboardInterrupt` pytest itself catches -- so the windows-latest CI
+    log gets a real stack trace for hypothesis (a) in T-3560's body (a
+    subprocess's termination path delivering a console ctrl event to
+    this process) even in the case where pytest's own `-v --full-trace`
+    (see `.github/workflows/ci.yml`'s T-3560 comment) only shows where
+    collection/execution WAS, not what the interrupt itself interrupted.
+
+    T-3565: `faulthandler.register` -- this function's original T-3560
+    mechanism -- does not exist AT ALL on win32 (CPython builds it only
+    on POSIX; `getattr(faulthandler, "register", None)` is `None` on
+    Windows, not a degraded/no-op version of the real thing), and calling
+    it anyway crashed `pytest_configure` itself with an `INTERNALERROR
+    AttributeError` before a single test ran (run 33370059331) -- the
+    exact opposite of this function's own "observation-only, never a
+    behavior change" contract. Uses `signal.signal` instead (universally
+    available), installing a handler that calls `faulthandler.
+    dump_traceback(all_threads=True)` and then CHAINS to whatever
+    `SIGBREAK` handler was previously installed (Python's own default,
+    unless something upstream already replaced it) -- this preserves
+    the observation-only contract: the interrupt is still delivered and
+    handled exactly as it would have been without this diagnostic, only
+    with a stack dump on the way. `faulthandler.register`'s own guard
+    (`hasattr(faulthandler, "register")`) is kept for a hypothetical
+    future non-win32 caller of this SIGBREAK-specific path, though none
+    exists today -- `SIGBREAK` itself is win32-only, so this function's
+    own `sys.platform != "win32"` guard already makes that branch dead
+    off Windows; it is defensive documentation, not reachable behavior."""
     sigbreak = getattr(signal, "SIGBREAK", None)
     if sys.platform != "win32" or sigbreak is None:
         return  # pragma: no cover - win32-only, not exercised off Windows
-    faulthandler.register(sigbreak, all_threads=True)
+    if hasattr(faulthandler, "register"):  # pragma: no cover - never true on win32
+        faulthandler.register(sigbreak, all_threads=True)
+        return
+    previous = signal.getsignal(sigbreak)
+
+    def _dump_then_chain(signum: int, frame: object) -> None:
+        faulthandler.dump_traceback(all_threads=True)
+        if callable(previous):
+            previous(signum, frame)
+        elif previous == signal.SIG_DFL:
+            signal.signal(sigbreak, signal.SIG_DFL)
+            os.kill(os.getpid(), signum)
+
+    signal.signal(sigbreak, _dump_then_chain)
 
 
 # frob:ticket T-0885
