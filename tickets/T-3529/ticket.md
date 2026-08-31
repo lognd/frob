@@ -19,6 +19,7 @@ scope:
 - strata-core/src/parse/**
 - src/frob/strata/_design_load.py
 - tests/unit/strata/test_design_load.py
+- tests/unit/test_lang_strata_entity_arch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +41,20 @@ scope_changes:
   glob: tests/unit/strata/test_design_load.py
   reason: T-3529 cross-file entity/architecture resolution regression tests belong
     beside the existing cross-file resolution suite in this file
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/test_lang_strata_entity_arch.py
+  reason: grammar_core.rs's SYS300 parse-time refusal moved to loader-time for the
+    cross-file case (T-3529); this existing pinned test asserts the OLD single-file-only
+    parse_source() behavior and must be updated to match
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/test_lang_strata_entity_arch.py
+  reason: grammar_core.rs's SYS300 parse-time refusal moved to loader-time for the
+    cross-file case (T-3529); this existing pinned test asserts the OLD single-file-only
+    parse_source() behavior and must be updated to match
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
