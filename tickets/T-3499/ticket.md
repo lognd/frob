@@ -1,7 +1,7 @@
 ---
 id: T-3499
 title: 'macOS-only: 4 unrelated subprocess/env failures (bucket F, T-3488)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'

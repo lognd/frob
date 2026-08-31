@@ -106,12 +106,33 @@ def _send_signal_to_group(pid: int, sig: int) -> None:
     `ProcessLookupError` (errno ESRCH, "No such process"). A dead process
     group IS the must-fire outcome this fixture is proving (the process
     terminated, it did not deadlock) -- so ESRCH is swallowed here, never
-    treated as a test failure or a reason to skip on macOS specifically."""
+    treated as a test failure or a reason to skip on macOS specifically.
+
+    T-3499 (MEASURED on macOS CI, T-3488 bucket F): a THIRD, distinct
+    outcome -- `killpg` raising `PermissionError` (errno EPERM) --
+    surfaced even though `_spawn_coverage_run` already passes
+    `start_new_session=True`, so `pid` genuinely IS the child's own
+    process-group leader, not some ambient group the macOS GHA runner's
+    own supervisory process also belongs to (the shape this docstring
+    used to speculate about before this fix). The GHA macOS runner's
+    sandboxing can still refuse a process-group-wide signal an ordinary
+    per-PID signal is allowed to deliver. `os.kill(pid, sig)` (the single
+    process, not its whole group) is the portable fallback: it reaches
+    the same top-level child `proc.pid` names either way, and this test
+    only ever needs the child itself (not any grandchild it spawns) to
+    receive SIGTERM for the deadlock this fixture proves to reproduce."""
     killpg = getattr(os, "killpg")  # noqa: B009 -- deliberate, see docstring
     try:
         killpg(pid, sig)
     except ProcessLookupError:
         pass  # already exited -- the process group is gone, which is fine
+    except PermissionError:
+        # T-3499: group-wide signalling refused (macOS sandbox); fall
+        # back to a direct per-PID signal, which targets the same child.
+        try:
+            os.kill(pid, sig)
+        except ProcessLookupError:
+            pass  # already exited between the two attempts, also fine
 
 
 # T-3431/T-3434: `signal.SIGKILL` genuinely does not exist on win32 (unlike
