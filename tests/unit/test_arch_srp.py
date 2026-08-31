@@ -592,21 +592,36 @@ class TestArchConfigThresholds:
 
 # frob:ticket T-3395
 class TestArch103WaiverStaysEffective:
-    """T-3395: `refactor._verify._import_check_env` and
-    `app._version_guard._git_head_sha` both genuinely trip the
+    """T-3395: `app._version_guard._git_head_sha` genuinely trips the
     `mixed-concern-function`/ARCH103 threshold (I/O plus 2+ decision
-    points), and both carry a `frob:waive ARCH103 reason="..."` comment
+    points) and carries a `frob:waive ARCH103 reason="..."` comment
     resolving it -- this pins that resolution against regressing silently
-    if either function's waiver comment is ever dropped or edited out of
-    sync with the code it targets."""
+    if the function's waiver comment is ever dropped or edited out of
+    sync with the code it targets.
+
+    T-3598: `refactor._verify._import_check_env` used to be this class's
+    OTHER live example, but T-3587's refactor moved its src-vs-repo-root
+    branch out into a separate `import_roots` helper, dropping the
+    function's own decision-point count from 2 to 1 -- below ARCH103's
+    threshold. ARCH103 genuinely no longer fires raw there, so its
+    `frob:waive` was removed (dead weight, waiving nothing) and this
+    class's test for it was replaced with a discharge lock plus a
+    synthetic fixture that keeps proving the waiver MECHANISM itself
+    (bound-to-exact-symbol resolution) without depending on a live
+    function's shape staying put across future refactors."""
 
     # frob:tests src/frob/refactor/_verify.py::_import_check_env
-    def test_import_check_env_arch103_is_waived(self, tmp_path: Path) -> None:
-        """`arch_gate` still finds the raw `ARCH103` condition in
-        `_import_check_env`'s real, on-disk source, but `_apply_waivers`
-        resolves it via the function's own `frob:waive ARCH103` comment --
-        proof the waiver stays bound to the exact symbol it targets."""
-        from frob.gates import _apply_waivers
+    def test_import_check_env_arch103_no_longer_fires_raw(self, tmp_path: Path) -> None:
+        """T-3598 discharge lock: `_import_check_env`'s real, on-disk
+        source no longer trips ARCH103 at all (T-3587 moved its
+        src-vs-repo-root branch into `import_roots`, leaving only 1
+        decision point in this function's own body, below the
+        MIXED_CONCERN_MIN_DECISION_POINTS=2 threshold) -- if a future
+        edit reintroduces a second decision point here, ARCH103 fires
+        again with no waiver bound to it, which is the intended,
+        visible outcome (frob-arch findings are advisory, not
+        build-blocking); this test only locks the CURRENT discharge so
+        it does not silently regress unnoticed."""
         from frob.gates._arch import arch_gate
         from frob.graph import build_graph
 
@@ -616,24 +631,72 @@ class TestArch103WaiverStaysEffective:
             real_source.read_text()
         )
         cache = tmp_path / ".frob" / "cache.db"
-        snap = build_graph(tmp_path, cache).danger_ok
+        build_graph(tmp_path, cache).danger_ok
         violations = arch_gate(tmp_path)
         raw = [
             v
             for v in violations
             if v.rule == "ARCH103" and "_import_check_env" in (v.symref or "")
         ]
-        assert raw, "expected ARCH103 to still fire raw on _import_check_env"
+        assert not raw, (
+            "ARCH103 fires raw on _import_check_env again -- either bind a "
+            "fresh frob:waive ARCH103 with a reason for the new shape, or "
+            "reduce it back below the mixed-concern threshold"
+        )
+
+    def test_waiver_mechanism_resolves_a_genuine_arch103_by_exact_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3598: the general waiver-stays-bound-to-exact-symbol proof
+        `test_import_check_env_arch103_is_waived` used to carry, now on
+        a synthetic fixture (mirroring `_import_check_env`'s ORIGINAL,
+        pre-T-3587 shape: I/O plus 2 decision points) instead of a real,
+        driftable function -- decoupled from any future refactor of the
+        real code."""
+        from frob.gates import _apply_waivers
+        from frob.gates._arch import arch_gate
+        from frob.graph import build_graph
+
+        pkg = tmp_path / "src" / "demo"
+        pkg.mkdir(parents=True)
+        (pkg / "__init__.py").write_text('"""Demo package."""')
+        # T-3598: deliberately avoids "os.environ" as literal text -- this
+        # repo's own strata self-conformance scanner reads capability
+        # signals off a test FILE'S raw text (not just its live AST), so
+        # even a string LITERAL fixture containing "os.environ" trips an
+        # undeclared env.read finding on this test module itself. `print`
+        # (an _IO_BUILTINS entry) gives the same ARCH103 I/O signal with
+        # no real capability behind it.
+        (pkg / "_mixed.py").write_text(
+            "from __future__ import annotations\n"
+            "from pathlib import Path\n"
+            "\n"
+            "\n"
+            '# frob:waive ARCH103 reason="synthetic fixture (T-3598): pins the waiver-stays-bound-to-exact-symbol mechanism"\n'
+            "def _build_env(repo_root: Path) -> dict[str, str]:\n"
+            "    src_root = repo_root / 'src'\n"
+            "    base = str(src_root if src_root.is_dir() else repo_root)\n"
+            "    if repo_root.name:\n"
+            "        print('resolved {}'.format(base))\n"
+            "    return {'PYTHONPATH': base}\n"
+        )
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+        violations = arch_gate(tmp_path)
+        raw = [
+            v
+            for v in violations
+            if v.rule == "ARCH103" and "_build_env" in (v.symref or "")
+        ]
+        assert raw, "fixture should genuinely trip ARCH103 raw"
         kept, waived = _apply_waivers(violations, snap)
         assert not [
-            v
-            for v in kept
-            if v.rule == "ARCH103" and "_import_check_env" in (v.symref or "")
+            v for v in kept if v.rule == "ARCH103" and "_build_env" in (v.symref or "")
         ]
         assert [
             v
             for v in waived
-            if v.rule == "ARCH103" and "_import_check_env" in (v.symref or "")
+            if v.rule == "ARCH103" and "_build_env" in (v.symref or "")
         ]
 
     # frob:tests src/frob/app/_version_guard.py::_git_head_sha

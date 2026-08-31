@@ -2,7 +2,7 @@
 id: T-3598
 title: 'ARCH103 waiver-stays-effective regression: waived function no longer fires
   raw on refactor/_verify.py'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -22,7 +22,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_arch_srp.py::TestArch103WaiverStaysEffective::test_import_check_env_arch103_no_longer_fires_raw
+- tests/unit/test_arch_srp.py::TestArch103WaiverStaysEffective::test_waiver_mechanism_resolves_a_genuine_arch103_by_exact_symbol
+- tests/unit/test_arch_srp.py::TestArch103WaiverStaysEffective::test_git_head_sha_arch103_is_waived
+designated_repro_test: tests/unit/test_arch_srp.py::TestArch103WaiverStaysEffective::test_import_check_env_arch103_no_longer_fires_raw
 threat: null
 component: null
 anchor: false

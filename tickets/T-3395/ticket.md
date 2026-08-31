@@ -41,9 +41,16 @@ body_changes:
   old_length: 573
   new_length: 843
 evidence:
-- tests/unit/test_arch_srp.py::TestArch103WaiverStaysEffective::test_import_check_env_arch103_is_waived
 - tests/unit/test_arch_srp.py::TestArch103WaiverStaysEffective::test_git_head_sha_arch103_is_waived
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_arch_srp.py::TestArch103WaiverStaysEffective::test_import_check_env_arch103_is_waived
+  new_node: tests/unit/test_arch_srp.py::TestArch103WaiverStaysEffective::test_git_head_sha_arch103_is_waived
+  reason: 'T-3598: T-3587 dropped _import_check_env below ARCH103''s decision-point
+    threshold (waiver now dead, test replaced); T-3395''s live proof of the waiver-stays-bound
+    mechanism continues via the sibling _git_head_sha test, unaffected by this refactor'
+  actor: logan
+  at: '2026-08-31'
 threat: null
 component: null
 anchor: false

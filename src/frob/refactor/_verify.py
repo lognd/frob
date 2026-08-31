@@ -148,7 +148,12 @@ def _path_to_module(repo_root: Path, path: Path) -> str | None:
 
 # frob:ticket T-3395
 # frob:ticket T-3587
-# frob:waive ARCH103 reason="single cohesive unit: builds one subprocess env dict, each branch a distinct env-var decision (PYTHONPATH prepend, bytecode-write suppression, coverage-var stripping) documented inline -- splitting it would scatter one env-construction concern across artificial helper boundaries with no real complexity reduction"  # noqa: E501
+# T-3598: no `frob:waive ARCH103` here anymore -- T-3587 moved this
+# function's src-vs-repo-root branch out into `import_roots` (a
+# separate function), dropping this body's own decision-point count
+# from 2 to 1 (only the PYTHONPATH-prepend ternary remains), below
+# ARCH103's MIXED_CONCERN_MIN_DECISION_POINTS=2 threshold -- ARCH103
+# genuinely no longer fires raw here, so the waiver was dead weight.
 def _import_check_env(repo_root: Path) -> dict[str, str]:
     """The subprocess `env` `verify_module_import` runs a real `import`
     under: the current environment plus every one of this repo's own
