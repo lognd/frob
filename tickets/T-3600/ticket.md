@@ -2,7 +2,7 @@
 id: T-3600
 title: 'claude-config-drift fails structurally on CI: 9 managed files read as missing
   where ~/.claude does not exist'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -16,10 +16,46 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/sync-claude-config.py
+- src/frob/app/claude_runner.py
+- src/frob/app/check_runner.py
+- tests/test_check_runner.py
+- tests/unit/test_claude_runner.py
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/claude_runner.py
+  reason: NOT_APPLICABLE fix spans the hook script, its CLI/check_runner adapters,
+    and each layer's own test file
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: NOT_APPLICABLE fix spans the hook script, its CLI/check_runner adapters,
+    and each layer's own test file
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/test_check_runner.py
+  reason: NOT_APPLICABLE fix spans the hook script, its CLI/check_runner adapters,
+    and each layer's own test file
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/test_claude_runner.py
+  reason: NOT_APPLICABLE fix spans the hook script, its CLI/check_runner adapters,
+    and each layer's own test file
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/test_sync_claude_config_stale_guard_t3408.py
+  reason: NOT_APPLICABLE fix spans the hook script, its CLI/check_runner adapters,
+    and each layer's own test file
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
