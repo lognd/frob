@@ -1,7 +1,7 @@
 ---
 id: T-3583
 title: DOC006 at docs/design/macos-portability.md:83 -- path pointer does not resolve
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
