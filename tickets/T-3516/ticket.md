@@ -46,7 +46,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 300f4f9448638006161aabe1f71670d430eb1dc4
 ---
 OWNER REQUEST (2026-08-30): ubuntu CI runs intermittently emit raw xdist
 worker-crash noise mid-stream -- "[gwN] node down: Not properly terminated",
