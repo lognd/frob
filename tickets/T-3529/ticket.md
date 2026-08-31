@@ -16,10 +16,25 @@ runs_last_parallel_safe_reason: null
 scope:
 - docs/strata/entity_architecture.md
 - design/frob.strata
+- strata-core/src/parse/**
+- src/frob/strata/_design_load.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: strata-core/src/parse/**
+  reason: Series DD measured the fix requires the Rust parser (strata_core.parse_source
+    is the sole AST source); widened so the ticket is workable as filed
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/strata/_design_load.py
+  reason: Series DD measured the fix requires the Rust parser (strata_core.parse_source
+    is the sole AST source); widened so the ticket is workable as filed
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
