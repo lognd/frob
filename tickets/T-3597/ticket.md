@@ -2,7 +2,7 @@
 id: T-3597
 title: Windows CI diagnostic step resolves fixture project instead of frob checkout
   (ModuleNotFoundError)
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -34,7 +34,10 @@ scope_changes:
     test file
   actor: logan
   at: '2026-08-31'
-designated_repro_test: null
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepResolvesFrobCheckoutEnv::test_windows_diag_step_uv_run_pins_project_to_checkout
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepResolvesFrobCheckoutEnv::test_windows_diag_step_still_scans_the_fixture_not_the_repo
+designated_repro_test: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepResolvesFrobCheckoutEnv::test_windows_diag_step_uv_run_pins_project_to_checkout
 threat: null
 component: null
 anchor: false

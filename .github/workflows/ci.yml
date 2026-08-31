@@ -391,8 +391,17 @@ jobs:
             "raise SystemExit(main())"
           )
           Set-Content -Path (Join-Path $env:RUNNER_TEMP "frob_check_diag.py") -Value $codeLines
+          # T-3597: cwd is the FIXTURE (so frob check scans the tiny
+          # fixture, not this whole repo) but the venv/deps must resolve
+          # from the frob checkout itself, not from the fixture --
+          # otherwise uv resolves a (nonexistent) project at $fixture and
+          # the child dies with ModuleNotFoundError: No module named
+          # 'frob' before the watchdog ever runs, voiding this whole
+          # diagnostic. --project pins dependency resolution to the
+          # checkout while Push-Location above still leaves cwd (and
+          # therefore frob check's scan target) at the fixture.
           Push-Location $fixture
-          uv run python (Join-Path $env:RUNNER_TEMP "frob_check_diag.py")
+          uv run --project $env:GITHUB_WORKSPACE python (Join-Path $env:RUNNER_TEMP "frob_check_diag.py")
           $exitCode = $LASTEXITCODE
           Pop-Location
           Write-Host "frob check diag exit code: $exitCode"

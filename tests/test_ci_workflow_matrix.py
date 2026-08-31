@@ -43,3 +43,61 @@ class TestCiBuildMatrixCoversAllThreePlatforms:
         workflow = _load_ci_workflow()
         strategy = workflow["jobs"]["build"]["strategy"]
         assert strategy.get("fail-fast") is False
+
+
+class TestWindowsDiagStepResolvesFrobCheckoutEnv:
+    """T-3597: the "Diagnose frob check hang on windows (T-3589)" step
+    `Push-Location`s into a throwaway fixture directory before invoking
+    `uv run python <diag script>` -- with no `--project`, `uv` resolves
+    the venv/dependencies from the CURRENT DIRECTORY, which is the
+    fixture (no pyproject.toml, no `frob` installed), not the frob
+    checkout. The diag process dies with `ModuleNotFoundError: No module
+    named 'frob'` before the faulthandler watchdog it exists to arm ever
+    runs, silently voiding the whole Windows-hang diagnostic (run
+    33412543005). `--project $env:GITHUB_WORKSPACE` pins dependency
+    resolution to the checkout while leaving cwd (and so `frob check`'s
+    scan target) at the fixture."""
+
+    def test_windows_diag_step_uv_run_pins_project_to_checkout(self) -> None:
+        # frob:tests .github/workflows/ci.yml
+        text = (
+            Path(__file__).resolve().parents[1]
+            / ".github"
+            / "workflows"
+            / "ci.yml"
+        ).read_text(encoding="utf-8")
+        idx = text.find("Diagnose frob check hang on windows")
+        assert idx != -1, "windows diag step (T-3589) was removed/renamed"
+        step_text = text[idx : idx + 4000]
+        assert "uv run --project $env:GITHUB_WORKSPACE python" in step_text, (
+            "the diag step's `uv run python <script>` has no --project "
+            "pin -- uv resolves the venv from cwd (Push-Location'd into "
+            "the throwaway fixture, which has no pyproject.toml/frob "
+            "installed), so the diag process dies with ModuleNotFoundError "
+            "before its faulthandler watchdog ever arms (T-3597)"
+        )
+
+    def test_windows_diag_step_still_scans_the_fixture_not_the_repo(self) -> None:
+        """The --project pin must resolve DEPENDENCIES only -- cwd (and so
+        frob check's scan target, since the diag script's own sys.argv
+        carries no explicit path) must stay at the fixture, not flip to
+        scanning this whole repo."""
+        # frob:tests .github/workflows/ci.yml
+        text = (
+            Path(__file__).resolve().parents[1]
+            / ".github"
+            / "workflows"
+            / "ci.yml"
+        ).read_text(encoding="utf-8")
+        idx = text.find("Diagnose frob check hang on windows")
+        assert idx != -1
+        step_text = text[idx : idx + 4000]
+        run_idx = step_text.find("uv run --project")
+        assert run_idx != -1
+        preceding = step_text[:run_idx]
+        assert preceding.rstrip().splitlines()[-1].strip() == "Push-Location $fixture", (
+            "the uv invocation must still be immediately preceded by "
+            "Push-Location $fixture -- --project must pin DEPENDENCY "
+            "resolution only, not also move frob check's scan target off "
+            "the fixture and onto the real repo"
+        )
