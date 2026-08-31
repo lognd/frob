@@ -48,6 +48,7 @@ scope:
 - docs/modules/tickets.md
 - tests/unit/test_land_queue.py
 - tests/unit/test_mutation_sweep_queue.py
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: true
 scope_breadth_ack_reason: one shared lock primitive genuinely fans out to every fcntl
   call site plus its lease/land/gate test files; T-3076's own by-file breakdown is
@@ -150,6 +151,11 @@ scope_changes:
   glob: tests/unit/test_mutation_sweep_queue.py
   reason: adding LandQueueLockUnavailable/SweepQueueLockUnavailable no-backend-refuses-loudly
     tests, required by frob ticket land's T-2114 new-public-symbol coverage gate
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SELFAUDIT001 ratchet-ceiling bump for the new testsuite fs.read site
   actor: logan
   at: '2026-08-30'
 evidence:
