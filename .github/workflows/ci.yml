@@ -363,10 +363,27 @@ jobs:
       - name: Diagnose frob check hang on windows (T-3589)
         if: matrix.os == 'windows-latest'
         timeout-minutes: 5
+        continue-on-error: true
         run: |
           $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
           New-Item -ItemType Directory -Force -Path (Join-Path $fixture "src\demo") | Out-Null
           Set-Content -Path (Join-Path $fixture "src\demo\__init__.py") -Value '"""Empty demo package."""'
+          # T-3604 (T-3589 round 7): a bare src/demo/__init__.py with no
+          # pyproject.toml makes frob's own project-type detection
+          # legitimately yield 'unknown' -- CHECK001, a real gate ERROR,
+          # not a hang. Without this file run 33439890956 measured `frob
+          # check` COMPLETING in 547ms and still aborting the job (T-3589
+          # round 6's fix only addressed the ModuleNotFoundError that
+          # hid this). A minimal pyproject.toml lets frob classify the
+          # fixture as a real Python project and dispatch an actual
+          # language stage, which is what this diagnostic exists to
+          # exercise.
+          Set-Content -Path (Join-Path $fixture "pyproject.toml") -Value @(
+            "[project]",
+            'name = "frob-diag-fixture"',
+            'version = "0.0.0"',
+            'requires-python = ">=3.11"'
+          )
           Push-Location $fixture
           git init -q
           Pop-Location
@@ -387,7 +404,14 @@ jobs:
             "",
             "from frob.__main__ import main",
             "",
-            'sys.argv = ["frob", "check", "--budget", "180"]',
+            # T-3604: no budget flag here (was "180") -- a budget defers
+            # gates-security/lint/static to a later, unmeasured pass, so
+            # a real hang living in one of THOSE stage groups (e.g.
+            # test_cli_check.py's own child-process test) would never
+            # reach this fixture at all. Running unbudgeted is the
+            # actual reproduction attempt: all 5 stage groups against
+            # the tiny fixture, still well inside the 240s watchdog.
+            'sys.argv = ["frob", "check"]',
             "raise SystemExit(main())"
           )
           Set-Content -Path (Join-Path $env:RUNNER_TEMP "frob_check_diag.py") -Value $codeLines
@@ -400,18 +424,36 @@ jobs:
           # diagnostic. --project pins dependency resolution to the
           # checkout while Push-Location above still leaves cwd (and
           # therefore frob check's scan target) at the fixture.
+          $stderrFile = Join-Path $env:RUNNER_TEMP "frob_check_diag_stderr.log"
+          $started = Get-Date
           Push-Location $fixture
-          uv run --project $env:GITHUB_WORKSPACE python (Join-Path $env:RUNNER_TEMP "frob_check_diag.py")
+          uv run --project $env:GITHUB_WORKSPACE python (Join-Path $env:RUNNER_TEMP "frob_check_diag.py") 2>$stderrFile
           $exitCode = $LASTEXITCODE
+          $elapsed = (Get-Date) - $started
           Pop-Location
-          Write-Host "frob check diag exit code: $exitCode"
-          # Not asserted nonzero-fails-the-job: a real repo can
-          # legitimately fail gates (T-0135's `standalone-install`
-          # precedent). What this step locks down is that the process
-          # itself RETURNS at all within the watchdog budget -- a
-          # `faulthandler`-triggered `exit=True` termination is a
-          # nonzero exit this step's own timeout-minutes cap backstops
-          # regardless.
+          Get-Content $stderrFile -ErrorAction SilentlyContinue | Write-Host
+          Write-Host "frob check diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          # T-3604: the ONLY true-failure signal this step exists to
+          # catch is the 240s faulthandler watchdog actually firing --
+          # everything else (a clean run, or `frob check` legitimately
+          # finding gate errors on the fixture, e.g. CHECK001 before
+          # fix 1 above) means "no hang" and must NOT fail this step,
+          # since a real repo can legitimately fail gates (T-0135's
+          # `standalone-install` precedent -- this step was never meant
+          # to assert a clean gate run, only that the process returns).
+          # Wall-clock elapsed time, not the exit code, is the
+          # discriminator: `dump_traceback_later(240, exit=True)` still
+          # lets the child process return (with a nonzero exit) after
+          # dumping every thread's stack, so exit code alone cannot
+          # distinguish "watchdog fired" from "frob check legitimately
+          # exited nonzero in under a second" -- only elapsed time near
+          # the 240s budget can.
+          if ($elapsed.TotalSeconds -ge 235) {
+            Write-Host "::error::frob check diag ran $($elapsed.TotalSeconds)s, at/past the 240s faulthandler watchdog budget -- treating as a HANG (T-3589). See the thread dump above."
+            exit 1
+          }
+          Write-Host "frob check diag: no hang (returned in $($elapsed.TotalSeconds)s, well under the 240s watchdog budget) -- exit code $exitCode is an ordinary gate result, not a failure of this diagnostic step."
+          exit 0
 
       - name: Test (windows, timed with hang guard)
         if: matrix.os == 'windows-latest'

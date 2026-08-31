@@ -2,7 +2,7 @@
 id: T-3604
 title: 'Windows diag step: typeless fixture fast-fails CHECK001 and aborts job before
   Test step (T-3589 round 7)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -29,6 +29,11 @@ scope_changes:
     (same pattern used for T-3077/T-3597)
   actor: logan
   at: '2026-08-31'
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepFixtureIsAClassifiableProject::test_fixture_gets_a_pyproject_toml
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_step_has_continue_on_error
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_is_untouched_and_still_windows_only
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepRunsUnbudgeted::test_diag_invocation_has_no_budget_flag
 designated_repro_test: null
 threat: null
 component: null

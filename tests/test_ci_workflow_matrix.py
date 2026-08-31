@@ -138,3 +138,85 @@ class TestCoverageStepUsesFrobNotMake:
             "the T-1366 coverage-stamp step must call `uv run frob "
             "coverage --full` directly (T-3077)"
         )
+
+
+def _windows_diag_step() -> dict:
+    """The "Diagnose frob check hang on windows (T-3589)" step's own
+    dict from the parsed workflow -- shared by every test below."""
+    workflow = _load_ci_workflow()
+    steps = workflow["jobs"]["build"]["steps"]
+    return next(
+        step
+        for step in steps
+        if "Diagnose frob check hang on windows" in step.get("name", "")
+    )
+
+
+class TestWindowsDiagStepFixtureIsAClassifiableProject:
+    """T-3604 (T-3589 round 7): run 33439890956 measured `frob check`
+    COMPLETING in 547ms on the diag fixture and still aborting the
+    windows job, because a bare src/demo/__init__.py with no
+    pyproject.toml makes project-type detection legitimately yield
+    'unknown' (CHECK001) -- a real gate ERROR, not a hang. The fixture
+    must be a classifiable Python project."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_fixture_gets_a_pyproject_toml(self) -> None:
+        step = _windows_diag_step()
+        assert "pyproject.toml" in step["run"], (
+            "the diag fixture has no pyproject.toml -- frob's project-"
+            "type detection yields 'unknown' (CHECK001) and the step "
+            "fast-fails before ever exercising a real language stage "
+            "(T-3604, run 33439890956)"
+        )
+
+
+class TestWindowsDiagStepDoesNotGateTheJob:
+    """T-3604: this diagnostic step must never abort the job before the
+    Test step runs -- a `frob check` gate finding on the fixture (e.g.
+    the CHECK001 this ticket fixes) is not a hang and must not block the
+    step that actually produces the data this CI run exists to collect."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_step_has_continue_on_error(self) -> None:
+        step = _windows_diag_step()
+        assert step.get("continue-on-error") is True, (
+            "the windows diag step must set continue-on-error: true so "
+            "a gate finding on the fixture (or any other non-hang "
+            "nonzero exit) cannot abort the job before the Test step "
+            "runs (T-3604)"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_test_step_is_untouched_and_still_windows_only(self) -> None:
+        """T-3604 must not touch the Test step itself -- only add
+        continue-on-error to the diagnostic step ahead of it."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        test_step = next(
+            step
+            for step in steps
+            if step.get("name", "").startswith("Test (windows")
+        )
+        assert test_step["if"] == "matrix.os == 'windows-latest'"
+        assert "continue-on-error" not in test_step, (
+            "T-3604 must not add continue-on-error to the Test step "
+            "itself -- only to the diagnostic step ahead of it"
+        )
+
+
+class TestWindowsDiagStepRunsUnbudgeted:
+    """T-3604: a `--budget 180` diag run defers gates-security/lint/
+    static to a later, unmeasured pass -- a real hang living in one of
+    those deferred stage groups would never reach the fixture at all.
+    The diag invocation must run unbudgeted so all 5 stage groups are
+    exercised against the fixture."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_diag_invocation_has_no_budget_flag(self) -> None:
+        step = _windows_diag_step()
+        assert "--budget" not in step["run"], (
+            "the diag invocation still passes --budget, which defers "
+            "gates-security/lint/static -- a hang in one of those stage "
+            "groups would never reach this diagnostic (T-3604)"
+        )
