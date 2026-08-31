@@ -2,7 +2,7 @@
 id: T-3525
 title: 'T-3495 fixture scan exceeds the 300s per-test timeout on CI: worker is killed
   mid-fixture and the fresh worker restarts the scan, looping until the step budget'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -18,6 +18,7 @@ scope:
 - tests/conftest.py
 - tests/system/test_frob_self_model.py
 - tests/unit/test_conftest_stackdump.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,7 +45,22 @@ scope_changes:
     conftest hook'
   actor: logan
   at: '2026-08-30'
-designated_repro_test: null
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001 requires declaring the exec capability _repo_tree_hash's git
+    subprocess calls introduce on the testsuite node
+  actor: logan
+  at: '2026-08-30'
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestRepoTreeHash::test_stable_for_the_same_clean_tree
+- tests/unit/test_conftest_stackdump.py::TestRepoTreeHash::test_falls_back_without_raising_when_git_is_unavailable
+- tests/unit/test_conftest_stackdump.py::TestCachedSelfScan::test_cache_miss_computes_once_and_persists
+- tests/unit/test_conftest_stackdump.py::TestCachedSelfScan::test_cache_hit_does_not_recompute
+- tests/unit/test_conftest_stackdump.py::TestCachedSelfScan::test_tree_hash_mismatch_triggers_exactly_one_fresh_scan
+- tests/unit/test_conftest_stackdump.py::TestCachedSelfScan::test_corrupted_cache_falls_back_to_a_fresh_scan
+- tests/unit/test_conftest_stackdump.py::TestCachedSelfScan::test_must_fire_scan_count_is_one_across_a_simulated_worker_restart
+- tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
+designated_repro_test: tests/unit/test_conftest_stackdump.py::TestCachedSelfScan::test_must_fire_scan_count_is_one_across_a_simulated_worker_restart
 threat: null
 component: null
 anchor: false
