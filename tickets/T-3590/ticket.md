@@ -1,7 +1,7 @@
 ---
 id: T-3590
 title: 'Error burn-down: clear the 73 live frob check errors (DRIFT/DOC cluster dominant)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'

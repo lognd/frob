@@ -256,6 +256,15 @@ epic's children implement:
 - `docs/audits/docs-staleness-2026-07-29.md` -- the 121-doc staleness
   sweep whose findings drive the T-1226 docs-integrity epic and the
   T-1233 fix campaign.
+- [`docs/design/ledger-mirror-batching.md`](design/ledger-mirror-batching.md)
+  -- T-3550: the pending-queue + per-event flush design for mirroring
+  ticket-ledger changes from a worktree onto the shared primary checkout,
+  the live-fleet hazards an implementation must close, and a
+  re-measurement of the historical "41 file commits in 300" figure.
+- [`docs/design/macos-portability.md`](design/macos-portability.md) --
+  T-3488: why `macos-latest` in `ci.yml` stays a real, blocking,
+  REQUIRED CI leg (unlike Windows) -- its own small, mechanical
+  failure set and the buckets fixed under this ticket.
 
 ## Design research corpora (arch + strata check foundations)
 

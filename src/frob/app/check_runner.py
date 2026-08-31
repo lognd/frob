@@ -506,8 +506,11 @@ def _opt_in_deploy_stage_result(
 # frob:ticket T-1809
 # frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
 # frob:tests \
-# tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_manage\
-# d_copy_absent
+# tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_home_c\
+# laude_present_but_file_differs
+# frob:tests \
+# tests/test_check_runner.py::TestClaudeConfigDriftStage.test_not_applicable_when_home_\
+# claude_root_absent
 # frob:tests \
 # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_clean_when_in_sync
 # frob:tests \

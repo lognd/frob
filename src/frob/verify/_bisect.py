@@ -47,8 +47,8 @@ _log = get_logger(__name__)
 
 # frob:doc docs/modules/tickets-verify-sweep.md#bisect-attribution-t-1691
 # frob:tests \
-# tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_empty_candidate\
-# s_refuses kind="unit"
+# tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding.test_empty_candidates\
+# _refuses kind="unit"
 class BisectError(ErrorSet):
     """Fatal, pre-search refusals `bisect_unattributed_finding` returns --
     never raised for a mid-search inconclusive step, which degrades to an
@@ -71,8 +71,8 @@ VerifyAtCommit = Callable[[Path, str], Result[bool, str]]
 
 # frob:doc docs/modules/tickets-verify-sweep.md#bisect-attribution-t-1691
 # frob:tests \
-# tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_converges_to_th\
-# e_known_culprit_within_log2_n_steps kind="unit"
+# tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding.test_converges_to_the\
+# _known_culprit_within_log2_n_steps kind="unit"
 class BisectOutcome(BaseModel):
     """Result of one `bisect_unattributed_finding` run over `candidates`
     for `finding_id` (T-1691): exactly one of `culprit_commit` (search

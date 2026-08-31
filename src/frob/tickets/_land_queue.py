@@ -182,6 +182,7 @@ class LandQueueLockUnavailable(RuntimeError):
 
 # frob:waive AFFECT001 reason="T-3506: see LandQueueLockUnavailable's own waiver \
 # immediately above -- same file, same doc section, same reasoning."
+# frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 @contextmanager
 def file_lock(lock_path: Path, *, label: str) -> Iterator[None]:
     """Exclusive, blocking, cross-process advisory lock over `lock_path`

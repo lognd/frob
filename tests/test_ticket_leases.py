@@ -962,6 +962,7 @@ class TestCommitStartTransition:
 
 # frob:ticket T-1130
 # frob:ticket T-2937
+# frob:ticket T-3590
 class TestCommitTicketLedgerChange:
     """T-1130: `commit_ticket_ledger_change` -- the generalized (arbitrary
     message, `--no-commit` opt-out) sibling of `commit_start_transition`
@@ -1233,6 +1234,10 @@ class TestCommitTicketLedgerChange:
         assert committed_files == ["tickets/T-0001/ticket.md"]
 
     # frob:ticket T-1321
+    # frob:waive PII012 reason="'user.email'/'user.name' below are git CONFIG KEY \
+    # names (the same terminology git's own docs use), not a real credential/PII value \
+    # -- this whole test is ABOUT the absence of git identity config, so the config key \
+    # names appear repeatedly in comments explaining that absence"  # noqa: E501
     def test_identity_less_environment_falls_back_to_throwaway_git_identity(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:

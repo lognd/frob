@@ -2024,7 +2024,7 @@ def _finish_real_land_report(
 
 
 # frob:ticket T-3546
-# frob:doc docs/design/land-splice-test-then-impl.md
+# frob:doc docs/design/land-splice-test-then-impl.md#land-splice-tests-first-then-implementation-t-3546  # noqa: E501
 # frob:tests \
 # tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths.test_mix\
 # ed_paths_split_into_two_groups
@@ -2121,8 +2121,17 @@ def _write_and_commit_pathset_index(
     tree_sha = written.danger_ok.stdout.strip()
 
     committed = run_argv(
-        ("git", "-C", str(repo), "commit-tree", tree_sha, "-p", parent_commit, "-m",
-         message)
+        (
+            "git",
+            "-C",
+            str(repo),
+            "commit-tree",
+            tree_sha,
+            "-p",
+            parent_commit,
+            "-m",
+            message,
+        )
     )
     if committed.is_err or committed.danger_ok.returncode != 0:
         _log.warning("land_splice: commit-tree failed for tree %s", tree_sha)
@@ -2173,7 +2182,7 @@ def _compose_pathset_commit(
 
 
 # frob:ticket T-3546
-# frob:doc docs/design/land-splice-test-then-impl.md
+# frob:doc docs/design/land-splice-test-then-impl.md#land-splice-tests-first-then-implementation-t-3546  # noqa: E501
 # frob:tests \
 # tests/unit/test_land_splice_test_then_impl.py::TestComposeTestThenImplCommits.test_tw\
 # o_commits_chain_correctly
@@ -2203,7 +2212,12 @@ def compose_test_then_impl_commits(
     today. UNWIRED: no caller in the live land path yet (see this
     ticket's own Done report / the design doc's Rollout plan)."""
     test_result = _compose_pathset_commit(
-        repo, pre_land_tip, patch_source, test_paths, pre_land_tip, pre_land_tip,
+        repo,
+        pre_land_tip,
+        patch_source,
+        test_paths,
+        pre_land_tip,
+        pre_land_tip,
         test_message,
     )
     if test_result.is_err:
@@ -2211,7 +2225,13 @@ def compose_test_then_impl_commits(
     test_sha = test_result.danger_ok
 
     impl_result = _compose_pathset_commit(
-        repo, pre_land_tip, patch_source, impl_paths, test_sha, test_sha, impl_message,
+        repo,
+        pre_land_tip,
+        patch_source,
+        impl_paths,
+        test_sha,
+        test_sha,
+        impl_message,
     )
     if impl_result.is_err:
         return Err(impl_result.danger_err)

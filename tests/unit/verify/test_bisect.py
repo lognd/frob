@@ -71,9 +71,7 @@ class TestBisectUnattributedFinding:
         assert result.is_ok
         assert result.danger_ok.culprit_commit == shas[0]
 
-    def test_converges_when_culprit_is_the_last_candidate(
-        self, tmp_path: Path
-    ) -> None:
+    def test_converges_when_culprit_is_the_last_candidate(self, tmp_path: Path) -> None:
         # frob:tests src/frob/verify/_bisect.py::bisect_unattributed_finding
         shas = _init_git_repo_with_commits(tmp_path, 8)
         verify_fn, _calls = _content_verify_fn(len(shas) - 1, shas)

@@ -24,10 +24,19 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_check_runner.py::TestClaudeConfigDriftStage::test_reports_drift_when_managed_copy_absent
+- tests/test_check_runner.py::TestClaudeConfigDriftStage::test_reports_drift_when_home_claude_present_but_file_differs
 - tests/test_check_runner.py::TestClaudeConfigDriftStage::test_clean_when_in_sync
 - tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_check_runner.py::TestClaudeConfigDriftStage::test_reports_drift_when_managed_copy_absent
+  new_node: tests/test_check_runner.py::TestClaudeConfigDriftStage::test_reports_drift_when_home_claude_present_but_file_differs
+  reason: 'T-3590 COV003 burn-down: T-3600 renamed this test (test_reports_drift_when_managed_copy_absent
+    -> the NOT_APPLICABLE/present-but-drifted split); T-1969''s evidence orphaned.
+    Re-pointing to the sibling present-but-drifted test which covers the same original
+    CLAUDE001-fails-on-real-drift claim.'
+  actor: logan
+  at: '2026-08-31'
 threat: null
 component: null
 anchor: false

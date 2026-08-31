@@ -2699,6 +2699,78 @@
       "old_digest": "0a9fa734ad8c65af73ff54ea2cf3a07b90d77235985bf09af7304aa352fbfdc7",
       "reason": "T-3526: body digest moved because write_autofix_manifest is now also called once before the loop (empty applied, pre-first-mutation journal) instead of only after each handler -- the existing docs/modules/gates.md anchor's description of a T-1348 manifest breadcrumb is still accurate in substance; the added pre-first-mutation nuance and AUTOFIX001 detection are tracked to land in that doc via frob:debt AFFECT001 citing T-3534 (docs/modules/gates.md was leased by in-progress T-3492 at filing time)",
       "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-31",
+      "facet": "body",
+      "new_digest": "25a6d4c933eb93a54b1df501b6dc41138483cd2d82e58726a586355ff08323d1",
+      "old_digest": "bcbb11cf08c37fc9c128562bc004e1971607445a9fc66a757592cedf72805521",
+      "reason": "T-3590 DRIFT001 burn-down: read the current body against its docstring's T-2009/T-1690/T-1791 claims (attribution partitioning, quarantine raise, unfiled-pair ticket filing) -- still accurate, no behavior drift",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-31",
+      "facet": "sig",
+      "new_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "old_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "reason": "T-3590 DRIFT001 burn-down: read the current body against its docstring's T-2009/T-1690/T-1791 claims (attribution partitioning, quarantine raise, unfiled-pair ticket filing) -- still accurate, no behavior drift",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-31",
+      "facet": "body",
+      "new_digest": "a7f0df00ebdc3239c7b5dc8d1b6fe16e0851f44cd0a2de2ccccadf46b6d94d90",
+      "old_digest": "aabf09452ad2ffcf552c309deb9bc4a155bec364180fd24ce7870b89e2083267",
+      "reason": "T-3590 DRIFT001 burn-down: read the current body against its docstring's T-3419 shared-anchor extraction claim -- still accurate, no behavior drift",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_error_finding_identity"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-31",
+      "facet": "sig",
+      "new_digest": "ed6b426d8749a18c11b9e81727b355c7308a843979671b339c2be91dcfd47dc4",
+      "old_digest": "ed6b426d8749a18c11b9e81727b355c7308a843979671b339c2be91dcfd47dc4",
+      "reason": "T-3590 DRIFT001 burn-down: read the current body against its docstring's T-3419 shared-anchor extraction claim -- still accurate, no behavior drift",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_error_finding_identity"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-31",
+      "facet": "body",
+      "new_digest": "1221ab65c3234d73b6b279eb3057c052c87c4db66624bd2550a6d71093c9129f",
+      "old_digest": "14f7e04747c37a69506ff9a94c95e1b65d28dfc352fb4c3783d263823b74394e",
+      "reason": "T-3590 DRIFT001 burn-down: read the current body against its docstring's flock/msvcrt shared-vs-exclusive claim -- still accurate, no behavior drift",
+      "ref": "src/frob/process/_lock.py::derived_state_lock"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-31",
+      "facet": "sig",
+      "new_digest": "00d14cd626641cb9c8da9c671be7e34ee5ac0af415e3262f0e55c030d701f834",
+      "old_digest": "00d14cd626641cb9c8da9c671be7e34ee5ac0af415e3262f0e55c030d701f834",
+      "reason": "T-3590 DRIFT001 burn-down: read the current body against its docstring's flock/msvcrt shared-vs-exclusive claim -- still accurate, no behavior drift",
+      "ref": "src/frob/process/_lock.py::derived_state_lock"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-31",
+      "facet": "body",
+      "new_digest": "1aa11e0c11146cb6a460abf4faabb0ea50615d1736e4c6f8551e09cf21d55e90",
+      "old_digest": "7d6edb82ef6345297ccd43fbd0586b48eaf222c4807b5eb24edeaeb61a28d3ba",
+      "reason": "T-3590 DRIFT001 burn-down: read the current body against its docstring's T-3324 unconditional-selfaudit-check claim -- still accurate, no behavior drift",
+      "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-31",
+      "facet": "sig",
+      "new_digest": "7ad06a795002f9c91ec61398ef71020176874b84cda549c52cba836d533521e3",
+      "old_digest": "7ad06a795002f9c91ec61398ef71020176874b84cda549c52cba836d533521e3",
+      "reason": "T-3590 DRIFT001 burn-down: read the current body against its docstring's T-3324 unconditional-selfaudit-check claim -- still accurate, no behavior drift",
+      "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
     }
   ],
   "entries": [
@@ -2828,7 +2900,7 @@
       "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     },
     {
-      "digest": "bcbb11cf08c37fc9c128562bc004e1971607445a9fc66a757592cedf72805521",
+      "digest": "25a6d4c933eb93a54b1df501b6dc41138483cd2d82e58726a586355ff08323d1",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     },
@@ -2878,7 +2950,7 @@
       "ref": "src/frob/app/ticket_runner/_verify.py::_collect_error_findings"
     },
     {
-      "digest": "aabf09452ad2ffcf552c309deb9bc4a155bec364180fd24ce7870b89e2083267",
+      "digest": "a7f0df00ebdc3239c7b5dc8d1b6fe16e0851f44cd0a2de2ccccadf46b6d94d90",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_verify.py::_error_finding_identity"
     },
@@ -3483,7 +3555,7 @@
       "ref": "src/frob/process/_lock.py::_process_already_holds"
     },
     {
-      "digest": "14f7e04747c37a69506ff9a94c95e1b65d28dfc352fb4c3783d263823b74394e",
+      "digest": "1221ab65c3234d73b6b279eb3057c052c87c4db66624bd2550a6d71093c9129f",
       "facet": "body",
       "ref": "src/frob/process/_lock.py::derived_state_lock"
     },
@@ -3893,7 +3965,7 @@
       "ref": "src/frob/tickets/_land_squash.py::_check_squash_conflicted_v2"
     },
     {
-      "digest": "7d6edb82ef6345297ccd43fbd0586b48eaf222c4807b5eb24edeaeb61a28d3ba",
+      "digest": "1aa11e0c11146cb6a460abf4faabb0ea50615d1736e4c6f8551e09cf21d55e90",
       "facet": "body",
       "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
     },

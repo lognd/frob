@@ -38,6 +38,12 @@ class _RefuseRepeatedOption(argparse.Action):
     that only ever set one value per invocation, where a duplicate flag
     is an ordinary user typo, not a lost-pairing risk."""
 
+    # frob:waive OPAQUE001 reason="standard argparse.Action shape: self.dest IS the \
+    # dest= string argparse itself assigned when this Action was registered on the \
+    # parser (never externally-influenced input), and getattr/setattr(namespace, \
+    # self.dest, ...) is exactly how argparse's own builtin Action subclasses (e.g. \
+    # _StoreAction) read/write the parsed namespace -- there is no alternative, \
+    # non-dynamic API for this"  # noqa: E501
     def __call__(self, parser, namespace, values, option_string=None):  # noqa: ANN001
         """Raise `argparse.ArgumentError` (argparse turns this into the
         same `error: ...` + exit(2) shape as any other CLI usage mistake)
