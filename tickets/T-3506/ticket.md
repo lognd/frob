@@ -49,6 +49,7 @@ scope:
 - tests/unit/test_land_queue.py
 - tests/unit/test_mutation_sweep_queue.py
 - docs/design/registry/capability-via-ratchet.lock.json
+- design/frob.strata
 scope_breadth_ack: true
 scope_breadth_ack_reason: one shared lock primitive genuinely fans out to every fcntl
   call site plus its lease/land/gate test files; T-3076's own by-file breakdown is
@@ -156,6 +157,13 @@ scope_changes:
 - op: add
   glob: docs/design/registry/capability-via-ratchet.lock.json
   reason: SELFAUDIT001 ratchet-ceiling bump for the new testsuite fs.read site
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001: removed stale may eval declarations for serve/tickets_ledger
+    nodes -- their importlib.import_module fcntl/msvcrt calls were centralized into
+    frob.process._lock'
   actor: logan
   at: '2026-08-30'
 evidence:
