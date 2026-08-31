@@ -2,7 +2,7 @@
 id: T-3532
 title: Two frob_self_scan_heavy waiver tests still run private whole-repo scans outside
   the T-3495 shared artifacts
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -22,6 +22,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: declare no-behavior-change for BUG002/TEST016
+  actor: logan
+  at: '2026-08-31'
+  old_length: 1594
+  new_length: 1949
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestFleetStatusLarge001WaiverParses::test_waiver_still_suppresses_large001
+- tests/test_gates.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
 designated_repro_test: null
 threat: null
 component: null
@@ -52,3 +62,5 @@ leave it -- but measure first: `time` each under -p no:xdist before/after.
 MUST-STAY-QUIET: both tests still fail on a planted unsuppressed finding.
 ACCEPTANCE: neither test appears in faulthandler dumps on the next two CI
 runs; group tail wall time drops on a quiet local box (state numbers).
+
+frob:no-behavior-change reason="routes both tests onto shared/scoped graph builds for wall-time/cost, not correctness; both tests assert the identical waiver-suppression behavior before and after and already passed at the parent commit -- this is a performance/plumbing fix, not a behavior fix, so BUG002 genuinely cannot require a fail-then-pass repro"
