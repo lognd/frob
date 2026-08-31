@@ -40,7 +40,6 @@ from frob.strata._threat import (
     check_discharge_completeness,
 )
 
-
 _LITMUS_DIR = Path(__file__).resolve().parent / "litmus"
 
 _UNION_CATALOG: tuple = CWE_CATALOG + CWE_TOP_25_CATALOG

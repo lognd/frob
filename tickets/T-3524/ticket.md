@@ -2,7 +2,7 @@
 id: T-3524
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3521):
   1 new (rule, file) identit(ies), 1 finding(s) (I001)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -30,6 +30,8 @@ body_changes:
   at: '2026-08-30'
   old_length: 1264
   new_length: 1396
+evidence:
+- tests/unit/strata/test_litmus_cwe.py::TestFixtureCoverageIsExhaustive::test_every_catalog_entry_has_a_fixture_mapping
 designated_repro_test: null
 threat: null
 component: null
