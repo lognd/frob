@@ -40,7 +40,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cc1d5592a8d7da0c03ac0c57f4e39b087e0069b2
 ---
 frob:waive BUG002 -- macOS-only defect (ground-truth verified from CI run 33353658750 job 99371615032 log: assert 'Anka <runner...local>' == 'frob-bot <...>'); fix is hermetic (scrubs GIT_CONFIG_SYSTEM/GIT_CONFIG_NOSYSTEM/GIT_AUTHOR_*/GIT_COMMITTER_* unconditionally) but the defect itself only reproduces on a macOS runner with a real system-level gitconfig, so it cannot fail-then-pass on this Linux dev box.
 
