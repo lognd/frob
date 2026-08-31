@@ -26,6 +26,7 @@ scope:
 - src/frob/app/sys_runner.py
 - src/frob/app/config.py
 - src/frob/app/_cli_parsers/_misc.py
+- docs/commands/sys.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -97,6 +98,12 @@ scope_changes:
     change touching NodeDecl AST, elaboration, Node models, aggregate_demand seeding,
     plus --since/--at CLI wiring; parser-side widening (Series DD) was necessary but
     not sufficient'
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/commands/sys.md
+  reason: 'scope closure: sys_runner.py frob:doc targets live here; --at DATE CLI
+    change must update its doc in the same land'
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
