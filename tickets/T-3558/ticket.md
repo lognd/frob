@@ -1,7 +1,7 @@
 ---
 id: T-3558
 title: WIRE001 analyzer call-graph misses multiprocessing.Process target= references
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -19,6 +19,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'waive BUG002: no code change needed, follow_up already re-pointed'
+  actor: logan
+  at: '2026-08-31'
+  old_length: 698
+  new_length: 1117
+evidence:
+- tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournalSigkillSubprocess::test_sigkilled_journal_writer_is_detected_and_refused
 designated_repro_test: null
 threat: null
 component: null
@@ -27,3 +36,6 @@ anchor_reason: null
 land_commit: null
 ---
 found while closing T-3534: tests/unit/test_fix_engine_journal.py carries a frob:waive WIRE001 with follow_up=T-3534 for _write_journal_and_block, which is genuinely wired via multiprocessing.Process's target= kwarg in TestAbandonedAutofixJournalSigkillSubprocess.test_sigkilled_journal_writer_is_detected_and_refused -- the call-graph analyzer does not resolve a target= reference the way it resolves a direct call, so this waiver is load-bearing until the analyzer is taught to follow target= kwargs (or an equivalent annotation convention is added). T-3534 was a docs-only ticket (docs/modules/gates.md) and cannot carry this follow_up; re-pointing the waiver's follow_up to this ticket instead.
+
+
+frob:waive BUG002 reason="no code change: tests/unit/test_fix_engine_journal.py already carries frob:waive WIRE001 with follow_up=T-3558 (auto-renumbered at ticket creation, per this ticket's own title). Verified WIRE001 stays quiet on this file (uv run frob check --only wire) and the sigkilled-journal-writer test passes -- nothing to fix, only verification that the re-point is already correct and load-bearing."
