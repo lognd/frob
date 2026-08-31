@@ -1,0 +1,59 @@
+---
+id: T-3566
+title: 'post-land sweep regression from T-3546: 4 new (rule, file) identit(ies), 6
+  finding(s) (ARCH102, COV001, DOC002, DOC006)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-31'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- docs/design/land-splice-test-then-impl.md
+- src/frob/tickets/_land_squash.py
+findings:
+- - ARCH102
+  - src/frob/tickets/_land_squash.py
+- - COV001
+  - src/frob/tickets/_land_squash.py
+- - DOC002
+  - src/frob/tickets/_land_squash.py
+- - DOC006
+  - docs/design/land-splice-test-then-impl.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+The deferred post-land unscoped sweep (T-1684) for T-3546 at commit 9bbccf76e249b5bdda4e59a0c934708f28c5e3d0 found 5 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
+
+T-1935: this is a count of DISTINCT (rule, file) IDENTITIES (4), not a raw finding count -- every finding sharing a (rule, file) pair collapses into ONE identity here (deliberately, so attribution and quarantine reason about "which files went red", not individual diagnostics). An independent re-measurement found 6 actual finding(s) across those 4 identit(ies).
+
+New (rule, file) identit(ies) filed here:
+
+- ARCH102  src/frob/tickets/_land_squash.py
+- COV001  src/frob/tickets/_land_squash.py
+- DOC002  src/frob/tickets/_land_squash.py
+- DOC006  docs/design/land-splice-test-then-impl.md
+
+Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
+
+- ARCH102  src/frob/tickets/_land_squash.py  -> attributed to T-3546 (commit 9bbccf76e249, already closed/dropped -- filed below) via src/frob/tickets/_land_squash.py::_apply_pathset_diff_to_scratch_index
+- COV001  src/frob/tickets/_land_squash.py  -> attributed to T-3546 (commit 9bbccf76e249, already closed/dropped -- filed below) via src/frob/tickets/_land_squash.py::_apply_pathset_diff_to_scratch_index
+- DOC002  src/frob/tickets/_land_squash.py  -> attributed to T-3546 (commit 9bbccf76e249, already closed/dropped -- filed below) via src/frob/tickets/_land_squash.py::_apply_pathset_diff_to_scratch_index
+- DOC006  docs/design/land-splice-test-then-impl.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- SELFAUDIT001  docs/design/registry/capability-via-ratchet.lock.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+
+Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
