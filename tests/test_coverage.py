@@ -782,6 +782,15 @@ class TestNativeCoverageRefresh:
             return Ok(subprocess.CompletedProcess(argv, 0, stdout="ok\n"))
 
         monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
+        # T-3518: force an explicit `-n` onto the first attempt's argv
+        # instead of relying on `_compute_worker_count`'s real memory
+        # measurement -- that measurement reads `/proc/meminfo` and
+        # degrades to `None` (no `-n` appended, leaving `addopts`' own
+        # `-n auto` untouched and invisible to this test's argv-based
+        # crash detection below) on any non-Linux platform, which
+        # silently skipped this test's entire crash/retry path on macOS
+        # instead of exercising the actual recovery logic under test.
+        monkeypatch.setattr(_refresh_mod, "_compute_worker_count", lambda: 12)
         stamp_calls = self._patch_stamp(monkeypatch, stamp=None)
 
         result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)

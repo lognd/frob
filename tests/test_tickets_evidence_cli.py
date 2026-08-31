@@ -445,9 +445,20 @@ class TestRunEvidenceCommandNoShell:
 
         marker = tmp_path / "shell_ran"
         # If this string ever reached a shell, `;` would sequence a second
-        # command that touches `marker`. Passed as a single argv to
-        # `printf`, the whole thing is inert literal text instead.
-        crafted = f"printf hi; touch {marker}"
+        # command that touches `marker`. Quoted, `shlex.split` keeps the
+        # whole thing as a SINGLE argv element passed to `printf` -- inert
+        # literal text, never shell-interpreted.
+        #
+        # T-3518: the string must stay one argv token, not four. Unquoted
+        # (`f"printf hi; touch {marker}"`), `shlex.split` produces
+        # ['printf', 'hi;', 'touch', str(marker)] -- a format string with
+        # no '%' conversion plus two extra positional operands. GNU printf
+        # (Linux) silently ignores the extras and exits 0; BSD printf
+        # (macOS) refuses them ('printf: missing format character') and
+        # exits nonzero, which `run_cmd_evidence` correctly reports as a
+        # non-ok result -- a real printf(1) implementation difference,
+        # nothing to do with shell-safety, the actual property under test.
+        crafted = f'printf "hi; touch {marker}"'
         result = run_cmd_evidence(crafted)
         assert result.is_ok
         assert not marker.exists()

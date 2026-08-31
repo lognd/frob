@@ -1,7 +1,7 @@
 ---
 id: T-3518
 title: 'macOS-only: 3 unmeasured bucket-F failures (T-3499 follow-up)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'

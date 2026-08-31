@@ -15,7 +15,13 @@ from pathlib import Path
 import pytest
 
 from frob.app import _daemon_proxy
-from frob.app._daemon_proxy import ProxyReason, ensure_daemon, query
+from frob.app._daemon_proxy import (
+    DaemonLiveness,
+    ProxyReason,
+    ensure_daemon,
+    probe_daemon,
+    query,
+)
 from frob.serve import SocketDaemonConfig, run_socket_daemon
 from frob.serve._socketd import socket_path
 
@@ -31,16 +37,33 @@ def root(tmp_path: Path) -> Path:
 
 def _start_daemon(root: Path, idle_timeout_s: float = 5.0) -> threading.Thread:
     """Start a real `run_socket_daemon` in a background thread and block
-    until its socket file exists, mirroring `tests/test_serve_socket.py`'s
-    own pattern -- an actual process-shaped daemon, not a mock, is the only
-    thing that can prove the differential invariant below."""
+    until it actually answers a real request, mirroring
+    `tests/test_serve_socket.py`'s own pattern -- an actual process-shaped
+    daemon, not a mock, is the only thing that can prove the differential
+    invariant below.
+
+    T-3518: waits for `probe_daemon` to report `DaemonLiveness.Live`, not
+    merely for the socket FILE to exist. `bind()` creates the file before
+    the daemon has necessarily finished its pre-`serve_forever()` warm-
+    build work (T-1094) and is actually answering queries -- on a box
+    with slower thread scheduling (measured: macOS CI) that gap can
+    exceed `query()`'s own `_SPAWN_GRACE_S` (1.5s) retry window, so a
+    caller racing the file-exists signal sees `ProxyReason.Unreachable`
+    (never even reached the daemon) instead of the real answer this
+    helper exists to let a caller wait for."""
     cfg = SocketDaemonConfig(root=root, idle_timeout_s=idle_timeout_s)
     thread = threading.Thread(target=lambda: run_socket_daemon(cfg), daemon=True)
     thread.start()
-    deadline = time.monotonic() + 5
-    while not socket_path(root).exists() and time.monotonic() < deadline:
+    deadline = time.monotonic() + 10
+    liveness = DaemonLiveness.NoSocket
+    while time.monotonic() < deadline:
+        liveness, _version = probe_daemon(root, timeout_s=0.2)
+        if liveness is DaemonLiveness.Live:
+            break
         time.sleep(0.02)
-    assert socket_path(root).exists()
+    assert liveness is DaemonLiveness.Live, (
+        f"daemon never became Live before the 10s deadline (last liveness={liveness})"
+    )
     return thread
 
 
