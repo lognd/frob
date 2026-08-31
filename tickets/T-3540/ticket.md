@@ -2,7 +2,7 @@
 id: T-3540
 title: 'Windows CI: Start-Process/Wait-Process console-sharing causes an early KeyboardInterrupt,
   aborting the suite at ~1%'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -20,6 +20,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: BUG002 cannot be satisfied by a local test
+  actor: logan
+  at: '2026-08-31'
+  old_length: 2940
+  new_length: 3544
+evidence:
+- tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_continue_on_error_is_windows_only
 designated_repro_test: null
 threat: null
 component: null
@@ -36,3 +45,7 @@ LEADING HYPOTHESIS: .github/workflows/ci.yml's windows Test step ("Test (windows
 FIX: stop sharing the console. Concretely, either (a) drop -NoNewWindow so Start-Process gets its own console/process group (loses inline output capture, needs re-piping via -RedirectStandardOutput/-RedirectStandardError instead), or (b) pass CREATE_NEW_PROCESS_GROUP-equivalent behavior some other way pwsh exposes, or (c) replace the Start-Process/Wait-Process budget wrapper entirely with a mechanism that does not share a console (e.g. a background Start-Job, or a plain "uv run pytest -q" foregrounded under a wrapping timeout.exe/pwsh job with its own console). Verify the fix by re-running windows-latest and confirming the suite reaches a stable completed (not INTERRUPTED) result, or at minimum runs well past the ~1 minute mark this incident shows failing at.
 
 Filed under T-3505 (Windows portability epic).
+
+
+
+frob:waive BUG002 reason="this defect (a stray console-shared CTRL_BREAK_EVENT reaching the pytest child on GitHub-hosted Windows runners) only reproduces on real windows-latest CI infrastructure -- there is no local, deterministic way to simulate a hosted-runner console-control broadcast in a pytest node id; the fix (dropping Start-Process -NoNewWindow so the child gets its own console/process group) is verified by re-running windows-latest and observing the suite run past the ~1%/49s point it previously failed at, tracked as a windows-portability re-measurement follow-up, not by a unit test"
