@@ -40,6 +40,8 @@ scope_changes:
     to the single actual source file.'
   actor: logan
   at: '2026-08-31'
+evidence:
+- tests/unit/graph/test_dsl_markdown_waive.py::TestChangelogMultiLineCodeSpanMention::test_changelog_d_fragments_have_no_unfenced_waive_mention
 designated_repro_test: null
 threat: null
 component: null

@@ -329,3 +329,28 @@ class TestChangelogMultiLineCodeSpanMention:
         _edges, malformed = markdown_anchors("CHANGELOG.md", text)
         waive_mentions = [m for m in malformed if "waive" in m.reason]
         assert waive_mentions == []
+
+    # frob:ticket T-3545
+    def test_changelog_d_fragments_have_no_unfenced_waive_mention(self) -> None:
+        """T-3545: CHANGELOG.md is regenerated from EVERY changelog.d/*.md
+        fragment on each land (`frob.release._fragments.
+        assemble_changelog_from_fragments` replaces the whole version
+        section every call), so an unfenced `frob:waive`-shaped mention in
+        a fragment's own prose (T-3520's own text, describing markers it
+        added elsewhere, not a live directive of its own) reproduces this
+        same failure at the SOURCE the moment that fragment is next
+        assembled -- checking every fragment directly, not just the
+        already-assembled CHANGELOG.md, catches the defect independent of
+        assembly timing and is real evidence this fix works without
+        waiting for a land to regenerate the tracked file."""
+        from pathlib import Path
+
+        repo_root = Path(__file__).resolve().parents[3]
+        fragment_dir = repo_root / "changelog.d"
+        offenders: list[str] = []
+        for path in sorted(fragment_dir.glob("*.md")):
+            text = path.read_text()
+            _edges, malformed = markdown_anchors(path.name, text)
+            if any("waive" in m.reason for m in malformed):
+                offenders.append(path.name)
+        assert offenders == []
