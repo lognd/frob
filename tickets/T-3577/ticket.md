@@ -2,7 +2,7 @@
 id: T-3577
 title: 'Fix windows-latest CI hang: unbounded msvcrt self-deadlock + untimed subprocess
   drain hang'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
