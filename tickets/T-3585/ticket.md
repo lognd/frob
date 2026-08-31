@@ -1,7 +1,7 @@
 ---
 id: T-3585
 title: macOS-only flake in test_clean_dry_run_removes_nothing (test_clean.py)
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
