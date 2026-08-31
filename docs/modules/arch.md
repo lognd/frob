@@ -1385,15 +1385,25 @@ synthetic fixtures keep proving each detector fires.
   fills the pipe buffer and deadlocks both processes.
 - **`self-join-deadlock`.** A function that is itself submitted/started
   as a pool/thread task somewhere in the module (`.submit(f)`,
-  `.map(f, ...)`, `.apply_async(f, ...)`, `Thread(target=f)`) whose OWN
-  body calls `.join()`/`.shutdown()`/`.close()` on some pool/thread
-  object -- a worker blocking on the dispatcher running it. The
-  submitted-callee corpus is built once per module (a submit site and
-  its callee can live in different functions), matched against each
-  candidate function's bare name AND its `Class.method` qualified name;
-  this is a name-based heuristic, not full data-flow, so it can over-
-  fire on an unrelated `.join()` inside a dispatched function -- treat a
-  finding as "investigate", not "definitely this exact pool".
+  `.map(f, ...)`, `.apply_async(f, ...)`, `Thread(target=f)`) AND whose
+  dispatch site also passed it the dispatcher's OWN pool/thread object
+  (`pool.submit(f, pool)`, `Thread(target=f, args=(t,))` where `t` is the
+  `Thread` being constructed) whose OWN body calls `.join()`/
+  `.shutdown()`/`.close()` on that SAME object -- a worker blocking on
+  the dispatcher running it. The submitted-callee corpus is built once
+  per module (a submit site and its callee can live in different
+  functions), matched against each candidate function's bare name AND
+  its `Class.method` qualified name; this is a name-based heuristic, not
+  full data-flow, so it can still over-fire on an unrelated `.join()`
+  bound to a same-named parameter -- treat a finding as "investigate",
+  not "definitely this exact pool". T-3571 narrowed the detector to
+  require this self-pass correlation: previously ANY dispatched
+  function calling `.shutdown()`/`.close()`/`.join()` on ANY object in
+  its own body fired, which false-positived on the standard safe
+  idle-shutdown pattern -- a background thread dispatched via
+  `Thread(target=f, args=(server, ...))` that calls `server.shutdown()`
+  on the FOREIGN server object it polls, never on the dispatching
+  `Thread` itself (`serve/_socketd.py::_idle_monitor`).
 
 ### Async event-loop hazards: `blocking-call-in-async` / `nested-event-loop` / `unawaited-coroutine` / `async-zero-awaits` / `sequential-independent-awaits` (T-0696, T-1027)
 

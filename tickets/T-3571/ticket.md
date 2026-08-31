@@ -2,7 +2,7 @@
 id: T-3571
 title: 'frob-arch self-join-deadlock detector: false-positive on a helper thread calling
   shutdown() on a foreign server object'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -53,7 +53,13 @@ scope_changes:
   reason: tests + doc for the correlation narrowing
   actor: logan
   at: '2026-08-31'
-designated_repro_test: null
+evidence:
+- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool
+- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_undispatched_join
+- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown
+- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_fires_on_genuine_thread_self_join
+- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_socketd_idle_monitor
+designated_repro_test: tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown
 threat: null
 component: null
 anchor: false

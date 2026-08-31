@@ -4317,6 +4317,72 @@ class TestForkPoolHazards:
         hits = [s for s in result.suggestions if s.category == "self-join-deadlock"]
         assert hits == []
 
+    def test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown(
+        self, tmp_path
+    ):
+        """T-3571: a function dispatched via `Thread(target=f, args=(obj,
+        ...))` that calls `.shutdown()` on `obj` -- a FOREIGN object it was
+        handed, not the dispatching `Thread` itself -- must not fire. This
+        is the exact real shape of `_socketd.py::_idle_monitor`: it shuts
+        down the `server` it was passed, never the `Thread` that dispatched
+        it, which is the standard safe idle-shutdown pattern, not a self-
+        join. Before T-3571 narrowed the detector to require the
+        dispatcher's OWN object be passed back (`_DispatchRecord.self_pass_
+        names`), this fired on any dispatched function that called
+        shutdown/close/join on ANY parameter."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "idlemon.py").write_text(
+            "from __future__ import annotations\n"
+            "import threading\n\n"
+            "def _idle_monitor(server, stop):\n"
+            "    while not stop.is_set():\n"
+            "        server.shutdown()\n"
+            "        return\n\n"
+            "def run_daemon(server, stop):\n"
+            "    monitor = threading.Thread(target=_idle_monitor, args=(server, stop))\n"
+            "    monitor.start()\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "self-join-deadlock"]
+        assert hits == []
+
+    def test_self_join_deadlock_fires_on_genuine_thread_self_join(self, tmp_path):
+        """T-3571 positive control: a function dispatched via `Thread(target
+        =f, args=(t,))` where `t` IS the dispatching `Thread` object itself
+        (passed to itself before `.start()`) and whose body calls
+        `t.join()` -- the genuine self-join shape the narrowed correlation
+        must still catch."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "genuine_selfjoin.py").write_text(
+            "from __future__ import annotations\n"
+            "import threading\n\n"
+            "def worker(t):\n"
+            "    t.join()\n\n"
+            "def run():\n"
+            "    t = threading.Thread(target=worker, args=(t,))\n"
+            "    t.start()\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "self-join-deadlock"]
+        assert len(hits) == 1
+        assert hits[0].symref == "genuine_selfjoin.py::worker"
+
+    def test_self_join_deadlock_discharges_on_real_repo_socketd_idle_monitor(self):
+        """Acceptance (T-3571): `src/frob/serve/_socketd.py` carries ZERO
+        `self-join-deadlock` findings after the correlation narrowing --
+        `_idle_monitor` shuts down the `server` object it was passed, not
+        the dispatching `Thread`, and must not fire."""
+        root = Path(__file__).parent.parent.parent / "src" / "frob" / "serve"
+        result = analyze_project(root)
+        hits = [
+            s
+            for s in result.suggestions
+            if s.category == "self-join-deadlock" and "_socketd.py" in s.file
+        ]
+        assert hits == []
+
 
 class TestAsyncEventLoopHazards:
     """`frob.arch._async_hazards` -- blocking-call-in-async,

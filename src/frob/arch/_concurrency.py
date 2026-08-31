@@ -33,9 +33,15 @@ Four detectors, one shared per-function call scan:
   unbounded output.
 - `self-join-deadlock`: a function that is itself submitted/started as a
   pool/thread task (`.submit(f)`, `.map(f, ...)`, `.apply_async(f, ...)`,
-  `Thread(target=f)`) and whose OWN body calls `.join()`/`.shutdown()`/
-  `.close()` on some pool/thread object -- a worker blocking on the very
-  dispatcher that is running it.
+  `Thread(target=f)`) AND whose dispatch site also passed it the
+  dispatcher's OWN pool/thread object (`pool.submit(f, pool)`, `Thread(
+  target=f, args=(t,))` where `t` is the `Thread` being constructed), and
+  whose OWN body calls `.join()`/`.shutdown()`/`.close()` on that SAME
+  object -- a worker blocking on the very dispatcher that is running it.
+  (T-3571: narrowed to require this correlation -- a dispatched function
+  calling `.shutdown()`/`.close()`/`.join()` on an unrelated object it was
+  merely also handed, such as `_socketd.py::_idle_monitor` shutting down
+  the `server` it polls, is the standard safe pattern, not a self-join.)
 """
 
 from __future__ import annotations
@@ -123,18 +129,115 @@ def _target_kwarg_names(call_node: Node) -> list[str]:
     return names
 
 
-def _dispatched_callee_names(root: Node) -> set[str]:
-    """Every callee name (raw + bare-segment) submitted/started as a
-    pool/thread task ANYWHERE in the module -- the corpus
-    `_check_self_join` compares each function's own name against."""
-    names: set[str] = set()
+def _receiver_text(callee_text: str) -> str | None:
+    """The object expression a dotted call is made on (`pool` from
+    `pool.submit(...)`) -- `None` for a bare-name callee with no
+    receiver."""
+    if "." not in callee_text:
+        return None
+    return callee_text.rsplit(".", 1)[0]
+
+
+def _assigned_name(call_node: Node) -> str | None:
+    """The variable name a call node's result is bound to, when the call
+    is the direct right-hand side of a plain `name = Thread(...)`
+    assignment -- `None` otherwise (unassigned, tuple-unpacked, or an
+    attribute/subscript target)."""
+    parent = call_node.parent
+    if parent is None or parent.type != "assignment":
+        return None
+    left = _child(parent, "left")
+    if left is None or left.type != "identifier":
+        return None
+    return _node_text(left)
+
+
+def _call_arg_texts(call_node: Node) -> list[str]:
+    """Raw source text of every positional/keyword argument at a call
+    site, in source order -- used to test whether the dispatcher's own
+    receiver object was passed through to the dispatched callable. A
+    keyword argument's `tuple`/`list` value (`Thread(..., args=(server,
+    stop))`) is flattened to its own elements' text rather than the
+    tuple's whole text, since that is how `Thread(target=f, args=(...))`
+    actually threads positional arguments through to `f` -- without this,
+    `args=(t,)` never textually equals the bare receiver name `t`."""
+    args = _child(call_node, "arguments")
+    if args is None:
+        return []
+    out: list[str] = []
+    for a in args.named_children:
+        if a.type == "keyword_argument":
+            val = _child(a, "value")
+            if val is not None and val.type in ("tuple", "list"):
+                out.extend(_node_text(e) for e in val.named_children)
+            else:
+                out.append(_node_text(val) if val is not None else "")
+        else:
+            out.append(_node_text(a))
+    return out
+
+
+class _DispatchRecord:
+    """One submit/start dispatch site: the candidate callee `names` it
+    targets, and `self_pass_names` -- the subset of the dispatcher's own
+    args whose text equals the dispatch call's own `receiver` object
+    (`pool.submit(worker, pool)`'s `pool` argument, or a `Thread(target=f,
+    args=(monitor,))`'s `args` tuple element matching the assigned `Thread`
+    variable). Non-empty `self_pass_names` is the correlation signal
+    `_check_self_join` requires: the dispatcher does not just target the
+    function, it also hands the function ITS OWN pool/thread object back,
+    which is what makes a same-named join/shutdown/close inside that
+    function a genuine self-join rather than an unrelated foreign call
+    (T-3571 -- `_idle_monitor` is dispatched via `Thread(target=_idle_
+    monitor, args=(server, ...))` but shuts down `server`, never the
+    dispatching `Thread`, so its `self_pass_names` is empty and it must
+    not fire)."""
+
+    __slots__ = ("names", "self_pass_names")
+
+    def __init__(self, names: set[str], self_pass_names: set[str]) -> None:
+        """Store the dispatch site's candidate callee `names` and its
+        `self_pass_names` correlation set (see class docstring)."""
+        self.names = names
+        self.self_pass_names = self_pass_names
+
+
+def _dispatch_records(root: Node) -> list[_DispatchRecord]:
+    """Every submit/start dispatch site in the module as a
+    `_DispatchRecord` -- the corpus `_check_self_join` uses both to find
+    whether a function is dispatched at all, and, per T-3571, whether the
+    dispatcher's own pool/thread object was also passed to it (see
+    `_DispatchRecord`)."""
+    records: list[_DispatchRecord] = []
     for call_node in _iter_calls(root):
         callee = _py_call_callee_text(call_node)
         if _SUBMIT_LIKE_RE.search(callee):
-            names.update(_first_arg_names(call_node))
+            names = set(_first_arg_names(call_node))
+            if not names:
+                continue
+            receiver = _receiver_text(callee)
+            arg_texts = _call_arg_texts(call_node)[1:]  # skip the target itself
+            self_pass = {t for t in arg_texts if receiver is not None and t == receiver}
+            records.append(_DispatchRecord(names, self_pass))
         elif _THREAD_CTOR_RE.search(callee):
-            names.update(_target_kwarg_names(call_node))
-    return names
+            names = set(_target_kwarg_names(call_node))
+            if not names:
+                continue
+            receiver = _assigned_name(call_node)
+            arg_texts = _call_arg_texts(call_node)
+            self_pass = {t for t in arg_texts if receiver is not None and t == receiver}
+            records.append(_DispatchRecord(names, self_pass))
+    return records
+
+
+def _param_names(func_node: Node) -> set[str]:
+    """A function definition's own parameter names, bare identifiers only
+    -- used to test whether a join/shutdown/close call's receiver is one
+    of `fqname`'s own parameters (T-3571's correlation requirement)."""
+    params = _child(func_node, "parameters")
+    if params is None:
+        return set()
+    return {_node_text(p) for p in params.named_children if p.type == "identifier"}
 
 
 # frob:waive ARCH001 reason="two related checks (pool-inside-pool, fork-after-threads) sharing one pass's classified call lists (process_pool/thread_pool/thread_ctor/thread_start/fork); splitting either check into a helper would require threading all five derived lists across a new boundary without reducing the shared classification they both read"  # noqa: E501
@@ -273,22 +376,40 @@ def _check_self_join(
     fqname: str,
     fname: str,
     calls: list[tuple[str, str, int]],
-    dispatched: set[str],
+    dispatch_records: list[_DispatchRecord],
+    param_names: set[str],
     out: list[ArchSuggestion],
 ) -> None:
     """`self-join-deadlock`: `fqname`'s own body calls `.join()`/
-    `.shutdown()`/`.close()` on some pool/thread object, AND `fqname` (or
-    its bare name) is itself submitted/started as a pool/thread task
-    somewhere in the module (`dispatched`, from `_dispatched_callee_names`)
-    -- a worker task blocking on the very dispatcher that is running it."""
-    if fname not in dispatched and fqname not in dispatched:
+    `.shutdown()`/`.close()` on some pool/thread object, `fqname` (or its
+    bare name) is itself submitted/started as a pool/thread task somewhere
+    in the module, AND (T-3571 narrowing) that same dispatch site also
+    passed `fqname` its OWN dispatcher object -- so the join/shutdown/close
+    receiver, resolved through `fqname`'s own parameters, correlates back
+    to the dispatching pool/thread rather than to an unrelated domain
+    object `fqname` happens to also hold (`_DispatchRecord.self_pass_
+    names`/`_param_names`). Without this correlation, ANY function that is
+    both dispatched as a task and calls `.shutdown()`/`.close()`/`.join()`
+    on some parameter fires regardless of whether that parameter is
+    actually the dispatcher -- the false positive this ticket fixes
+    (`_idle_monitor` is dispatched via `Thread(target=_idle_monitor,
+    args=(server, ...))` and shuts down `server`, never the dispatching
+    `Thread`)."""
+    matching = [r for r in dispatch_records if fname in r.names or fqname in r.names]
+    if not matching:
+        return
+    correlated_names = {n for r in matching for n in r.self_pass_names} & param_names
+    if not correlated_names:
         return
     joins = [
         (t, ln)
         for c, t, ln in calls
-        if _JOIN_CALL_RE.search(c)
-        or _SHUTDOWN_CALL_RE.search(c)
-        or _CLOSE_CALL_RE.search(c)
+        if (
+            _JOIN_CALL_RE.search(c)
+            or _SHUTDOWN_CALL_RE.search(c)
+            or _CLOSE_CALL_RE.search(c)
+        )
+        and _receiver_text(c) in correlated_names
     ]
     if not joins:
         return
@@ -330,6 +451,9 @@ def _check_self_join(
 # frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_pipe_wait_deadlock_does_not_fire_with_communicate  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_self_join_deadlock_does_not_fire_on_undispatched_join  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_self_join_deadlock_fires_on_genuine_thread_self_join  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_self_join_deadlock_discharges_on_real_repo_socketd_idle_monitor  # noqa: E501
 def _check_fork_pool_hazards(tree: object, rel: str, out: list[ArchSuggestion]) -> None:
     """Run all four fork/pool hazard detectors (this module's docstring)
     over one parsed python file's functions/methods. `dispatched` (the
@@ -337,7 +461,7 @@ def _check_fork_pool_hazards(tree: object, rel: str, out: list[ArchSuggestion]) 
     whole file since a submit site and its callee can live in different
     functions."""
     t = cast("Tree", tree)
-    dispatched = _dispatched_callee_names(t.root_node)
+    dispatch_records = _dispatch_records(t.root_node)
     for func_node, class_prefix, fname in _iter_py_functions(t.root_node):
         body = _child(func_node, "body")
         if body is None:
@@ -349,4 +473,6 @@ def _check_fork_pool_hazards(tree: object, rel: str, out: list[ArchSuggestion]) 
         fqname = f"{class_prefix}{fname}"
         _check_pool_inside_pool(rel, fqname, calls, out)
         _check_pipe_wait(rel, fqname, calls, out)
-        _check_self_join(rel, fqname, fname, calls, dispatched, out)
+        _check_self_join(
+            rel, fqname, fname, calls, dispatch_records, _param_names(func_node), out
+        )
