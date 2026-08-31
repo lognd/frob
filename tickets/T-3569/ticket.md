@@ -2,7 +2,7 @@
 id: T-3569
 title: 'test_without_serial_pools_worker_is_unattributed: mis-stated attribution bound,
   mirror T-3487'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'

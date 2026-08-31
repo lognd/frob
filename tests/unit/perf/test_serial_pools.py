@@ -235,11 +235,32 @@ class TestInstallSerialPools:
         a specific absolute number a slow enough runner can still miss."""
         without = self._profiled_worker_self_time_fraction(serial=False)
         with_serial = self._profiled_worker_self_time_fraction(serial=True)
-        assert without < with_serial * 0.5, (
-            f"unpatched attribution ({without:.4f}) was not decisively smaller "
-            f"than patched attribution ({with_serial:.4f}) measured in the same "
-            "run -- install_serial_pools() should make a large, unmistakable "
-            "difference, not a marginal one"
+        # T-3569: mirrors T-3487's fix to this test's sibling
+        # (test_with_serial_pools_worker_is_majority_attributed) for the
+        # same root cause -- a pure RATIO bound (`without < with_serial *
+        # 0.5`) breaks down once `with_serial` sits close to its 1.0
+        # ceiling: measured on GitHub Actions ubuntu-latest (run
+        # 33370059331), without=0.5062, with_serial=0.9992, ratio
+        # without/with_serial ~= 0.5065 -- JUST over the 0.5 line on a
+        # rounding technicality, even though 0.506 absolute IS
+        # decisively smaller than 0.999 absolute, the actual property
+        # T-0948 cares about. An absolute-AND-relative pair, the same
+        # shape T-3487 shipped: unpatched attribution must stay a small
+        # ABSOLUTE fraction (<0.7 -- comfortably above the ~0.50
+        # measured noise floor, comfortably below the >0.9 the patched
+        # side asserts) AND the patched side must still be a decisive
+        # relative margin over it (>1.5x).
+        assert without < 0.7, (
+            f"unpatched attribution ({without:.4f}) was not the small "
+            f"minority (<0.7) this test's own name asserts -- patched was "
+            f"{with_serial:.4f} in the same run"
+        )
+        assert with_serial > without * 1.5, (
+            f"patched attribution ({with_serial:.4f}) was not decisively "
+            f"larger than unpatched attribution ({without:.4f}) measured "
+            "in the same run (ratio "
+            f"{with_serial / without if without > 0 else float('inf'):.4f}, "
+            "need >= 1.5)"
         )
 
     def test_with_serial_pools_worker_is_majority_attributed(self) -> None:
