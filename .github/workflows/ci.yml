@@ -302,6 +302,23 @@ jobs:
       # time this landed (no local Windows box) -- if the interrupt
       # recurs even single-process, the mechanism above needs revisiting
       # by someone who can reproduce interactively.
+      #
+      # T-3560 (round 3, TEMPORARY diagnostics -- revert once the named
+      # culprit is fixed): `-p no:xdist` (T-3549) was FALSIFIED as the fix
+      # -- run 33367854833 (HEAD e1974b649) still died with the same
+      # `KeyboardInterrupt` at `threading.py:1169` (`Thread.join`) at
+      # ~4 minutes in, ~1% through collection, plain serial, no execnet in
+      # the process at all. `git grep` finds zero in-repo senders of
+      # CTRL_C_EVENT/interrupt_main/os.kill(SIGINT). `-v --full-trace`
+      # below names the exact test position/traceback the interrupt lands
+      # on (the prior `-q` runs never printed which test was executing),
+      # and the win32-only SIGBREAK faulthandler registration in
+      # `tests/conftest.py` dumps every thread's stack the moment a
+      # console ctrl event reaches this process, whether or not it turns
+      # into a `KeyboardInterrupt` pytest catches. Both go away in the
+      # SAME land that fixes the named root cause (or documents it, if
+      # this turns out to be an external time-bound actor rather than a
+      # specific test's subprocess).
       - name: Test (windows, timed with hang guard)
         if: matrix.os == 'windows-latest'
         env:
@@ -310,7 +327,7 @@ jobs:
           $budget = 1500  # 25m, same budget/rationale as ubuntu's step above
           $stdout = Join-Path $env:RUNNER_TEMP "pytest-stdout.log"
           $stderr = Join-Path $env:RUNNER_TEMP "pytest-stderr.log"
-          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q","-p","no:xdist" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-v","--full-trace","-p","no:xdist" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
             Wait-Process -Id $p.Id -Timeout $budget -ErrorAction Stop
           } catch {

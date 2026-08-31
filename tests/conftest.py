@@ -1,4 +1,7 @@
+import faulthandler
 import os
+import signal
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator
 
@@ -191,6 +194,31 @@ def pytest_collection_modifyitems(
             )
 
 
+# frob:ticket T-3560
+def _install_sigbreak_faulthandler() -> None:
+    """TEMPORARY T-3560 round-3 diagnostics (revert in the same land that
+    fixes the named culprit): on win32 only, registers `faulthandler` on
+    `SIGBREAK` (Windows' console-Ctrl-Break signal; `signal.SIGBREAK` does
+    not exist off win32, so this is a guarded no-op everywhere else). A
+    console ctrl event delivered to this process dumps every thread's
+    stack to stderr the instant it arrives -- whether or not it goes on
+    to surface as the `KeyboardInterrupt` pytest itself catches -- so the
+    windows-latest CI log gets a real stack trace for hypothesis (a) in
+    T-3560's body (a subprocess's termination path delivering a console
+    ctrl event to this process) even in the case where pytest's own
+    `-v --full-trace` (see `.github/workflows/ci.yml`'s T-3560 comment)
+    only shows where collection/execution WAS, not what the interrupt
+    itself interrupted. Uses `faulthandler.register`, not
+    `signal.signal`, so it dumps and then still lets Python's own default
+    `SIGBREAK`/`KeyboardInterrupt` handling proceed afterward -- this is
+    observation-only, never a behavior change to how the interrupt itself
+    is handled."""
+    sigbreak = getattr(signal, "SIGBREAK", None)
+    if sys.platform != "win32" or sigbreak is None:
+        return  # pragma: no cover - win32-only, not exercised off Windows
+    faulthandler.register(sigbreak, all_threads=True)
+
+
 # frob:ticket T-0885
 # frob:ticket T-1433
 # frob:tests \
@@ -216,6 +244,12 @@ def pytest_configure(config: pytest.Config) -> None:
     every xdist worker alike, no early `workerinput` return), since a
     wedge's dead-lock-holder could be either.
 
+    T-3560 (TEMPORARY round-3 windows-latest diagnostics, revert once the
+    named culprit is fixed): also installs `_install_sigbreak_
+    faulthandler`, same every-process timing as the stackdump handler
+    above and for the same reason -- the console ctrl event this is meant
+    to catch could land on either the controller or a worker.
+
     T-3246: also resets `_last_internal_error` to `None` at the start of
     every session, so a value stashed by `pytest_internalerror` during an
     earlier in-process run (e.g. a prior `pytest.main()` call within the
@@ -233,6 +267,7 @@ def pytest_configure(config: pytest.Config) -> None:
     global _last_internal_error, _worker_crash_hook_config
     _last_internal_error = None
     _install_stackdump_handler()
+    _install_sigbreak_faulthandler()
     _worker_crash_hook_config = config
     if hasattr(config, "workerinput"):
         return

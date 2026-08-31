@@ -2,7 +2,7 @@
 id: T-3560
 title: 'Windows KeyboardInterrupt round 3: serial mode falsified execnet; land -v
   --full-trace + SIGBREAK faulthandler instrumentation, then fix the named culprit'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'
