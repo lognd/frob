@@ -2,7 +2,7 @@
 id: T-3545
 title: 'real-CHANGELOG malformed markdown directive: a recent fragment carries a code-span
   directive that parses as malformed'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
