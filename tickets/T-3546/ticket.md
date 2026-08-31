@@ -2,7 +2,7 @@
 id: T-3546
 title: Land splice publishes tests-first then implementation instead of one squash
   (design vs T-3053)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-31'
@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_land.py
 - docs/design/land-splice-test-then-impl.md
 - tests/unit/test_land_splice_test_then_impl.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,12 @@ scope_changes:
   reason: test coverage for the new unwired mechanical primitives
   actor: logan
   at: '2026-08-31'
+- op: add
+  glob: design/frob.strata
+  reason: declare fs.write/env/exec capabilities the new pathset-compose helpers and
+    scratch-repo test genuinely need (SELFAUDIT001/SYS100 land-time refusal)
+  actor: logan
+  at: '2026-08-31'
 body_changes:
 - mode: append
   reason: record the filed follow-up ticket id, per instruction
@@ -42,6 +49,12 @@ body_changes:
   at: '2026-08-31'
   old_length: 1131
   new_length: 1403
+evidence:
+- tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths::test_mixed_paths_split_into_two_groups
+- tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths::test_no_test_paths_returns_none
+- tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths::test_no_impl_paths_returns_none
+- tests/unit/test_land_splice_test_then_impl.py::TestComposeTestThenImplCommits::test_two_commits_chain_correctly
+- tests/unit/test_land_splice_test_then_impl.py::TestComposeTestThenImplCommits::test_final_tree_matches_full_squash
 designated_repro_test: null
 threat: null
 component: null
