@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reconcile.py
 - src/frob/app/ticket_runner/_query.py
+- tests/test_ticket_reconcile.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_query.py
   reason: removing the stale DEAD001 waiver on _save_unlanded_summary_cache that itself
     cites T-3522, now that this ticket wires its real production caller
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/test_ticket_reconcile.py
+  reason: add coverage for the new reconcile->_save_unlanded_summary_cache wiring
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
