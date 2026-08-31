@@ -1990,3 +1990,79 @@ assumed single-actor/serialized until T-0176 (`frob ticket land`)
 formalizes locking; do not rely on it as structurally impossible in
 concurrent automation.
 
+## Adopting real milestones (T-3190)
+
+`MILE001` (an OPEN ticket `blocked_by` another OPEN ticket whose
+EFFECTIVE milestone is LATER, `docs/modules/gates.md#rule-catalog`) and
+`MILE003` (an OPEN ticket whose effective milestone cannot be resolved
+at all) were fully built, registered, and unit-tested (`tests/test_
+gates_milestone.py`, 29 cases, all against synthetic fixtures) while
+this repo's own queue sat in exactly one milestone: `[tickets].
+default_milestone = "1.0.0"` in `frob.toml`, with 0 of the 346 active
+tickets carrying an explicit `milestone`. Every ticket resolved to the
+same value, so MILE001 could never fire by construction -- a "release
+train" gate with nothing to discriminate between is not a defect in the
+gate, but it does mean the machinery had never once been exercised
+against real repo data, only against `tests/test_gates_milestone.py`'s
+synthetic tickets.
+
+**The owner decision (recorded 2026-08-28).** Shipping to PyPI and
+reaching `1.0.0` are NOT the same event: PyPI currently serves a stale
+`0.0.9`, and the goal is a fully green three-platform CI matrix plus a
+working `pip install frob` BEFORE `1.0.0`. The first real publish
+carries the existing `0.530.0` version as-is (`.frob-release.json`/
+REL001's authority, not a renumber -- see T-3251). This gives a real,
+ordered two-milestone set:
+
+- `0.530.0` -- "publishable": everything genuinely required for a green
+  CI matrix on all three platforms and an artifact that installs and
+  works from PyPI.
+- `1.0.0` -- `[tickets].default_milestone`'s existing value, unchanged.
+  Every ticket that does NOT carry an explicit `milestone` of `0.530.0`
+  still resolves here. This is deliberate, not an oversight: `default_
+  milestone` was never meant to assert "everything ships at once" --
+  only to keep MILE003 from flooding on the terminal fallback
+  (`frob.tickets._doable.effective_milestone`) while the queue held no
+  real partition. With a real earlier milestone now named, the default
+  simply means "not on the publish-blocking path," which is what most
+  of the queue -- language-expansion epics, WARN-tier burn-downs --
+  actually is.
+
+Because `packaging.version.Version("0.530.0") < Version("1.0.0")`
+(`MILE001`'s own comparison, real semver order, never a string compare),
+naming `0.530.0` on a ticket is sufficient for the gate to treat it as
+earlier than the `1.0.0` default with zero other config changes.
+
+**Derivation rule for the `0.530.0` set.** A ticket belongs in `0.530.0`
+if, and only if, it directly blocks either (a) a green CI job on
+ubuntu-latest, windows-latest, or macos-latest, or (b) a working
+`pip install frob` from a published wheel. Everything else -- including
+work that is merely CI-*adjacent* (diagnostics, dev-experience,
+CI-authoring ergonomics) -- defaults to `1.0.0`. This is a narrow rule
+on purpose: T-3190's own body warns explicitly against a bulk `milestone:
+0.530.0` backfill "nobody believes and nobody can defend per-ticket."
+
+The KNOWN `0.530.0`-blocking set named when this decision was recorded
+(T-3246, T-3247, T-3249, T-3250, T-3251) is fully DONE as of this
+writing -- re-verified 2026-08-31, all five `[done]`. Terminal tickets
+never carry a live MILE001 edge (`_TERMINAL_STATES` is excluded on both
+the blocked ticket and the blocker), so stamping them retroactively
+would prove nothing live; they are recorded here as historical
+provenance for the rule, not as tickets needing a `milestone` write.
+
+A first-pass scan of the still-open queue against the same rule turned
+up a CANDIDATE set worth owner review before any ledger write: T-2939
+(macOS git subprocess rc=128, 100+ failures), T-3076 (278 Windows-only
+failures), T-3212/T-3213 (macOS SYS107/SYS003 + resolved-root/load_lock
+triage -- likely near-duplicate tickets, worth deduplicating before
+either is stamped), T-3505 (drain T-3076's set, remove the Windows
+advisory flag), T-3512 (remove the windows-latest `continue-on-error`
+advisory flag), and T-3337 (release publish ignores REL001's required
+bump class). This list is a PROPOSAL, not a settled partition -- per
+T-3190's own guardrail, it is recorded here for owner review rather than
+stamped directly. `MILE001`/`MILE003` firing on this repo's own real
+data (rather than only `tests/test_gates_milestone.py`'s fixtures)
+remains open follow-up work once the owner confirms which of the
+candidates, if any, get the `0.530.0` milestone via `frob ticket
+milestone <id> --set 0.530.0` (never a hand-edit of `tickets.md`).
+

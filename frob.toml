@@ -701,6 +701,16 @@ override_ratchet = true
 # of a bulk `milestone: 1.0.0` backfill into all 89 open ticket files --
 # see this ticket's own "SCOPE REDESIGN" section) achieves the identical
 # net effect with zero ticket-file writes.
+# T-3190: `default_milestone` is the TERMINAL fallback every ticket
+# without an explicit `milestone` resolves to -- it does NOT assert that
+# shipping and 1.0.0 are the same event. The owner-recorded milestone
+# decision (docs/modules/tickets-lifecycle.md#adopting-real-milestones-
+# t-3190) names an earlier real milestone, "0.530.0" (green 3-platform CI
+# + a working PyPI install), for the small set of tickets that directly
+# block it; everything else -- including most of the queue -- correctly
+# stays on this default. Do not remove this key before that earlier
+# milestone's blocking set is confirmed: MILE003 (an unresolvable
+# effective milestone) would fire on all ~346 undeclared tickets at once.
 [tickets]
 default_milestone = "1.0.0"
 
