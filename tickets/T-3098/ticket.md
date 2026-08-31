@@ -2,7 +2,7 @@
 id: T-3098
 title: reopen verb missing from TestLedgerAutoCommitEnumeratedOverDispatchTable's
   exhaustiveness buckets
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -42,3 +42,6 @@ FIX DIRECTION: classify `reopen` into the correct bucket (it mutates the
 ledger, so almost certainly _MUTATING_VERB_INVOCATIONS with a real invocation
 fixture, unless it needs _NEEDS_DEDICATED_FIXTURE) and add the missing
 accounting entry.
+
+## Drop reason
+- 2026-08-31: Already resolved: reopen is present in _MUTATING_VERB_INVOCATIONS (tests/test_ticket_leases.py:4150, T-3162) with fixture and special-case handling; TestLedgerAutoCommitEnumeratedOverDispatchTable passes 19/19. Verified by implementer KK.
