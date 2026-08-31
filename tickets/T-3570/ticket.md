@@ -2,7 +2,7 @@
 id: T-3570
 title: 'macOS: frob vet --hook mode leaks a WARNING (sysctl failure) to stderr; must
   emit nothing'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -50,6 +50,10 @@ body_changes:
   new_length: 1266
 evidence:
 - tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
+- tests/unit/test_logging_module.py::TestIsVetHookMode::test_both_tokens_present_is_true
+- tests/unit/test_logging_module.py::TestIsVetHookMode::test_vet_without_hook_is_false
+- tests/unit/test_logging_module.py::TestIsVetHookMode::test_hook_without_vet_is_false
+- tests/unit/test_logging_module.py::TestIsVetHookMode::test_neither_token_is_false
 designated_repro_test: null
 threat: null
 component: null

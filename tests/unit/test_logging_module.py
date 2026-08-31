@@ -13,7 +13,11 @@ from frob.graph import build_graph
 from frob.logging import get_logger, quiet_stdout_logs
 from frob.logging.color import paint, should_color
 from frob.logging.filter import _BelowLevelFilter
-from frob.logging.logger import _resolve_stdout_level_override, _under_pytest
+from frob.logging.logger import (
+    _is_vet_hook_mode,
+    _resolve_stdout_level_override,
+    _under_pytest,
+)
 from frob.testing import CollectedTests
 from frob.tickets import TicketQueue
 
@@ -272,3 +276,38 @@ def test_lazy_handler_stream_properties_have_a_doc_edge(tmp_path):
         v for v in violations if v.rule == "COV001" and "Handler.stream" in v.message
     ]
     assert stream_cov001 == []
+
+
+# frob:ticket T-3570
+class TestIsVetHookMode:
+    """`_is_vet_hook_mode` (T-3570): both "vet" AND "--hook" must be
+    present in `sys.argv` -- either alone is a plain `frob vet` scan or
+    an unrelated subcommand that happens to pass a literal "--hook"
+    token through some other flag, neither of which is hook mode."""
+
+    # frob:tests \
+    # tests/unit/test_logging_module.py::TestIsVetHookMode.test_both_tokens_present_is_\
+    # true
+    def test_both_tokens_present_is_true(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["frob", "vet", ".", "--hook", "git status"])
+        assert _is_vet_hook_mode() is True
+
+    # frob:tests \
+    # tests/unit/test_logging_module.py::TestIsVetHookMode.test_vet_without_hook_is_fal\
+    # se
+    def test_vet_without_hook_is_false(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["frob", "vet", "."])
+        assert _is_vet_hook_mode() is False
+
+    # frob:tests \
+    # tests/unit/test_logging_module.py::TestIsVetHookMode.test_hook_without_vet_is_fal\
+    # se
+    def test_hook_without_vet_is_false(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["frob", "check", "--hook"])
+        assert _is_vet_hook_mode() is False
+
+    # frob:tests \
+    # tests/unit/test_logging_module.py::TestIsVetHookMode.test_neither_token_is_false
+    def test_neither_token_is_false(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["frob", "doctor"])
+        assert _is_vet_hook_mode() is False

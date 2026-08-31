@@ -69,6 +69,18 @@ def _resolve_stdout_level_override() -> int | None:
     return level if isinstance(level, int) else None
 
 
+# frob:ticket T-3570
+def _is_vet_hook_mode() -> bool:
+    """True for `frob vet --hook '<command>'` (T-3438's own machine-
+    consumed shape) -- checked via a direct `sys.argv` scan, the same
+    ordering-independent pattern `_resolve_stdout_level_override` above
+    already uses and for the identical reason: `_init` can fire from a
+    module-level `get_logger(__name__)` reached before `frob.__main__.
+    main` runs its own argv-based dispatch, and `_initialized` caches
+    permanently on first call."""
+    return "vet" in sys.argv and "--hook" in sys.argv
+
+
 def _under_pytest() -> bool:
     """True inside a pytest process (T-1621), used to skip installing
     frob's own root StreamHandlers there.
@@ -123,6 +135,16 @@ def _init() -> None:
     # every entry point (CLI dispatch, direct library import, a test)
     # converges on, so the override applies regardless of which `frob`
     # subcommand or code path runs first.
+    _apply_stdout_level_override()
+    _suppress_stderr_warnings_in_vet_hook_mode()
+
+
+# frob:ticket T-3570
+def _apply_stdout_level_override() -> None:
+    """Apply the `FROB_LOG_LEVEL`/`-v`/`--verbose` override (if any) to
+    the `stdout` handler -- split out of `_init` (T-3570/ARCH001) so
+    that function stays under the long-AND-complex threshold. Must run
+    AFTER `dictConfig` so it wins over `config.toml`'s default."""
     override = _resolve_stdout_level_override()
     if override is not None:
         from frob.logging.handler import _LazyStdoutHandler
@@ -130,6 +152,33 @@ def _init() -> None:
         for handler in logging.getLogger().handlers:
             if isinstance(handler, _LazyStdoutHandler):
                 handler.setLevel(override)
+
+
+# frob:ticket T-3570
+def _suppress_stderr_warnings_in_vet_hook_mode() -> None:
+    """`frob vet --hook ...`'s stdout/exit-code contract (this
+    module's own docstring) is machine-consumed by a Claude Code
+    PreToolUse hook -- it must emit NOTHING beyond that contract, the
+    same "no leakage onto a machine-consumed stream" requirement
+    T-3438 already enforces for the startup-nag PRINTS in `frob.
+    __main__`. That fix only covered the nags; it did not stop an
+    ordinary WARNING-level log record (e.g. a routine, expected-per-
+    call platform-detection miss) from reaching the `stderr` handler
+    via the normal logging path. Raise the `stderr` handler's
+    threshold above WARNING in hook mode specifically -- ERROR and
+    above still surface (a genuine failure worth an operator's
+    attention), and `_run_hook`'s own deliberate BLOCK message
+    (`vet_runner.py`) writes to `sys.stderr` directly via `print`,
+    never through this logger, so it is unaffected. Split out of
+    `_init` (T-3570/ARCH001) so that function stays under the long-
+    AND-complex threshold."""
+    if not _is_vet_hook_mode():
+        return
+    from frob.logging.handler import _LazyStderrHandler
+
+    for handler in logging.getLogger().handlers:
+        if isinstance(handler, _LazyStderrHandler):
+            handler.setLevel(logging.ERROR)
 
 
 # frob:doc docs/modules/logging.md#public-api
