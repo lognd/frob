@@ -5119,7 +5119,15 @@ class TestObfuscationEnsemble:
         from frob.vet._obfuscation import _scan_directory_obfuscation
 
         rlo = chr(0x202E)
-        (tmp_path / "evil.c").write_text(f"// {rlo}nommoc si sti\nint main() {{}}\n")
+        # T-3510: explicit encoding="utf-8" -- the U+202E RIGHT-TO-LEFT
+        # OVERRIDE character this test plants is exactly the kind of
+        # obfuscation payload the scanner exists to catch, so it must
+        # reach disk unmangled; Windows' platform-default 'charmap'/cp1252
+        # codec cannot encode it at all (UnicodeEncodeError), unlike
+        # POSIX where UTF-8 is normally the default.
+        (tmp_path / "evil.c").write_text(
+            f"// {rlo}nommoc si sti\nint main() {{}}\n", encoding="utf-8"
+        )
         signals = _scan_directory_obfuscation(tmp_path)
         assert "invisible-text" in signals
 
@@ -5129,7 +5137,11 @@ class TestObfuscationEnsemble:
         from frob.vet._obfuscation import _scan_directory_obfuscation
 
         rlo = chr(0x202E)
-        (tmp_path / "Evil.kt").write_text(f"// {rlo}nommoc si sti\nfun main() {{}}\n")
+        # T-3510: explicit encoding="utf-8", same rationale as the sibling
+        # C-file test above.
+        (tmp_path / "Evil.kt").write_text(
+            f"// {rlo}nommoc si sti\nfun main() {{}}\n", encoding="utf-8"
+        )
         signals = _scan_directory_obfuscation(tmp_path)
         assert "invisible-text" in signals
 

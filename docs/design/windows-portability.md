@@ -48,6 +48,22 @@ level. Concretely:
   `windows-latest` leg is a known, tracked gap that does not need
   `override_red_ci` to release.
 
+## Primitive bucket status (T-3076's five buckets)
+
+| Primitive | Failures (of 278) | Status | Ticket |
+| --- | --- | --- | --- |
+| `fcntl` | 22 (largest, dominates by file -- see T-3506's own body for the by-file breakdown) | open | T-3506 |
+| `os.sysconf` | 12 | already guarded on main (`sys.platform != "win32"` wraps the call in `_read_uptime_and_clk_tck`) -- no AttributeError reachable | T-3507 (failed: already resolved) |
+| `AF_UNIX` | 10 | guard already correct-direction on main (T-2961); added structural win32-refusal tests (`query`/`probe_daemon`) that were missing | T-3508 (landed) |
+| POSIX `fork` start-method | 8 | no hardcoded `get_context("fork")` in T-3509's scoped source files; the literal call sites are all in test harnesses outside scope (some owned by T-3506) | T-3509 (failed: no in-scope fix) |
+| charmap codec | 2 | closed -- `tests/test_vet.py`'s two bidi-override tests now pass `encoding="utf-8"` explicitly to `write_text` | T-3510 (this ticket) |
+
+Only the charmap bucket is fully closed by this table's own edits; the
+other four rows above are a snapshot from working T-3507/T-3508/T-3509
+in the same series as this ticket, not new burn-down from this ticket
+itself -- see each ticket's own Done report / Failure log entry for the
+measurement backing its row.
+
 ## Concrete failures recorded (not fixed here)
 
 Run 33277131782 surfaced these Windows-only failures; they belong under

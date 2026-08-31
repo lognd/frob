@@ -1,7 +1,7 @@
 ---
 id: T-3510
 title: Force UTF-8 for the remaining charmap-vulnerable text I/O path(s)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
