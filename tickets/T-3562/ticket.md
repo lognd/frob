@@ -2,7 +2,7 @@
 id: T-3562
 title: 'REG008 residue: check-coverage.yaml entry from T-3554 sync missing a required
   field'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -21,6 +21,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
 designated_repro_test: null
 threat: null
 component: null

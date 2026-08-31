@@ -484,6 +484,7 @@ def _native_staleness_result(root: Path) -> ToolResult | None:
 # frob:ticket T-3526
 # frob:tests tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_abandoned_journal_fails_check_loudly kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_no_journal_is_not_a_violation kind="unit"  # noqa: E501
+# frob:enforces CHK-GATE-AUTOFIX001
 def _abandoned_autofix_result(root: Path) -> ToolResult | None:
     """`None` if `frob.gates._fix_engine_shared.
     read_abandoned_autofix_manifest` finds no abandoned Tier-A autofix
