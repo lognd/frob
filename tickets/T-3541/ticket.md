@@ -27,6 +27,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 00db1c194c76e8b0e6898f4e357f9b9938654c91
 ---
 MEASURED run 33353658750: tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_directive_continuation_folds_correctly_not_just_present fails with AssertionError: cuda's fixture has no continuation. The behavioral capability check requires every language fixture to exercise a folded multi-line directive continuation; the CUDA fixture (tests/fixtures/lang/sample.cu, T-1602/T-3493) never got one. Add a folded continuation directive to the CUDA fixture (copy the shape the java/zig fixtures use) and confirm the test passes for every language.
