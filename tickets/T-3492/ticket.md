@@ -162,7 +162,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6e25300ac982a9a7ebb7451459b365bca925b763
 ---
 found while working T-1601: java gets a real frob.lang grammar/walker but the capability dangerous-op registry, dup clone-detection exhaustiveness table, and DOC004 fenced-code-block bucket have no java entry yet -- mirrors T-2906's bash/csharp facet-wiring follow-up exactly. frob.lang._support marks these three facets KNOWN_GAP for java citing this ticket in the interim.
 
