@@ -2,7 +2,7 @@
 id: T-3575
 title: extend T-3324 land-time selfaudit gate to catch SYS111 ratchet growth and DOC006
   doc-pointer drift
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-08-31'
