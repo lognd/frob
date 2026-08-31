@@ -1,7 +1,7 @@
 ---
 id: T-3494
 title: frob-arch WARN remainder after T-2379 (god-module/god-class/type-dispatch/self-join)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -55,3 +55,6 @@ Triage complete. Filed 3 real successor tickets covering every remainder item: T
 
 ## Failure log
 - 2026-08-31 attempt 1: Genuine triage-only outcome, not a code fix: self-join-deadlock cannot be waived (T-0101 unwaivable channel) and needs a detector-narrowing fix (filed T-3571); the _claims.py type-dispatch smell needs a Protocol/dispatch design pass on proof-soundness-critical code (filed T-3572); the 14 god-module + 1 god-class remainder is real per-file split-design work (filed T-3573, rollup). No safe mechanical code change existed for this ticket's own kind=bug scope -- see ticket body for the full disposition.
+
+## Drop reason
+- 2026-08-31: Triage complete: every remainder item now has a real successor (T-3571 detector false positive, T-3572 _claims.py dispatch design, T-3573 god-module rollup); nothing left for this ticket to own.
