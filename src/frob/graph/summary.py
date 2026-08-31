@@ -1026,6 +1026,7 @@ class _RawFuncFacts:
     calls_made: tuple[tuple[str, _LocalState], ...] = ()
 
 
+# frob:waive DEAD001 reason="deliberately unused, per its own docstring -- a placeholder anchor point kept out of __all__ for a future nested-class qualname extension, not accidental dead code (T-3521)"  # noqa: E501
 def _qualname_stack(node: ast.AST, stack: tuple[str, ...] = ()) -> None:
     """Unused placeholder kept out of `__all__` -- see `_iter_functions`
     for the real (stack-threading) qualname walk; this name is not

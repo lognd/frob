@@ -594,6 +594,7 @@ def fix_tick006_phantom_refile(
 _TICK006_GIT_RENAME_TIMEOUT_S = 10.0
 
 
+# frob:waive DEAD001 reason="already bound by a frob:tests directive at tests/test_gates.py:13176 (test_tick006_renamed_draft_resolved_via_git_not_refiled), several hops from its direct call site -- the same COV006-documented reachability shape (build_call_graph structurally cannot see through fix_tick006_phantom_refile) DEAD001's resolver evidently cannot match either (T-3521)"  # noqa: E501
 def _resolve_via_git_rename(root: Path, tid: str) -> str | None:
     """Back-compat wrapper over `_resolve_via_git_rename_measured` for any
     caller that only needs the resolved id, not whether the lookup was

@@ -299,6 +299,7 @@ def _ticket_states_on_branch(root: Path, branch: str) -> dict[str, str]:
     return _ticket_states_on_ref(root, branch, ("tickets/*/ticket.md",))
 
 
+# frob:waive DEAD001 reason="T-2125: kept as a single-id fallback/reference implementation for _all_ticket_states_on_main's per-ticket state logic -- no current caller (its own docstring's prior claim of dedicated unit test coverage was stale; T-3521 corrected it below), not accidental dead code"  # noqa: E501
 def _ticket_state_on_main(root: Path, ticket_id: str) -> str | None:
     """`ticket_id`'s `state:` on `main`, checking the ACTIVE path first and
     the ARCHIVE path second (T-1934's core fix over the first, path-only
@@ -308,11 +309,13 @@ def _ticket_state_on_main(root: Path, ticket_id: str) -> str | None:
     an archived-done ticket misread as "not on main at all"). `None` if
     neither path resolves on `main`.
 
-    T-2125: kept as a single-id fallback/reference implementation (still
-    exercised directly by its own unit tests) -- `_unlanded_findings_for_
-    branch`/`_unlanded_branch_work` no longer call this per ticket id;
-    they call `_all_ticket_states_on_main` ONCE per run instead (see its
-    own docstring for why)."""
+    T-2125: kept as a single-id fallback/reference implementation --
+    `_unlanded_findings_for_branch`/`_unlanded_branch_work` no longer call
+    this per ticket id; they call `_all_ticket_states_on_main` ONCE per
+    run instead (see its own docstring for why). T-3521: has no current
+    caller anywhere in the repo (the "still exercised directly by its own
+    unit tests" claim this docstring previously made did not hold up to
+    a grep -- corrected here rather than left to drift further)."""
     for path in (
         f"tickets/{ticket_id}/ticket.md",
         f"tickets/archive/{ticket_id}/ticket.md",

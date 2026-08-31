@@ -10,6 +10,7 @@ from types import ModuleType
 import pytest
 
 
+# frob:waive DEAD001 reason="called at module scope on the next line (measure_evidence_reach_main = _load_measure_evidence_reach()...), not from within a function body -- a call-graph resolution gap for top-level module statements, not dead code (T-3521)"  # noqa: E501
 def _load_measure_evidence_reach() -> ModuleType:
     """Load `scripts/measure_evidence_reach.py` by file path (it is a
     standalone script, not an importable package member) -- avoids a

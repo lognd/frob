@@ -217,6 +217,7 @@ def _resolve_cross_package_import(
 
 
 # frob:ticket T-2729
+# frob:waive DEAD001 reason="T-1870's own comment above (this file, further down) claims SYS106/SYS108 depend on this, but no code in this repo actually imports or calls it -- SYS106 was apparently never wired to consume it. A real gap, filed as T-3523 rather than deleted, since deleting scaffolding a tracked ticket names as intentionally kept risks losing the SYS106 design intent (T-3521)"  # noqa: E501
 def _cross_node_referenced_symbols(
     binding: CodeBinding, root: Path
 ) -> dict[str, frozenset[str]]:

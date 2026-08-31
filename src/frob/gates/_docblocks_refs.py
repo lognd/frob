@@ -214,6 +214,7 @@ def _load_parser_factory(dotted: str):
 
 
 # frob:ticket T-2941
+# frob:waive DEAD001 reason="called cross-module from src/frob/app/ticket_runner/_land_cmd.py:4685 (import) and :4706 (functools.partial(_load_parser_factory_from_root, root=worktree)) -- a call-graph resolution gap through functools.partial across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _load_parser_factory_from_root(dotted: str, root: Path):
     """Like `_load_parser_factory`, but resolves `dotted` (`module:attr`)
     by importing the module FRESH from `root`'s own on-disk source

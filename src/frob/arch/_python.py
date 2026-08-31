@@ -254,6 +254,7 @@ def _py_cyclomatic(node: Node) -> int:
     return count
 
 
+# frob:waive DEAD001 reason="called cross-module as _python._check_long_functions(...) from src/frob/arch/__init__.py:544 -- a module-attribute-qualified call, a call-graph resolution gap across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _check_long_functions(
     tree: object,
     rel: str,
@@ -294,6 +295,7 @@ def _py_methods(body: Node) -> list[Node]:
     return [n for n in body.named_children if n.type == "function_definition"]
 
 
+# frob:waive DEAD001 reason="called cross-module as _python._check_god_classes(...) from src/frob/arch/__init__.py:545 -- a module-attribute-qualified call, a call-graph resolution gap across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _check_god_classes(
     tree: object,
     rel: str,
@@ -320,6 +322,7 @@ def _check_god_classes(
         )
 
 
+# frob:waive DEAD001 reason="called cross-module as _python._check_high_coupling(...) from src/frob/arch/__init__.py:573 -- a module-attribute-qualified call, a call-graph resolution gap across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _check_high_coupling(
     path: Path,
     rel: str,
@@ -555,14 +558,6 @@ def _py_except_exception_types(node: Node) -> tuple[str, ...]:
                 if m.type in ("identifier", "attribute")
             )
     return ()
-
-
-def _py_except_exception_type(node: Node) -> str | None:
-    """The caught exception type name of an `except_clause`, or `None` for a
-    bare `except:` catch-all or a multi-type `except (A, B):` tuple's first
-    member being taken as the representative type."""
-    names = _py_except_exception_types(node)
-    return names[0] if names else None
 
 
 # frob:ticket T-0632
@@ -1041,6 +1036,7 @@ def _normalized_is_complex(func: NormalizedFunction) -> bool:
     )
 
 
+# frob:waive DEAD001 reason="called cross-module as _python._check_deep_nesting(...) from src/frob/arch/__init__.py:575 -- a module-attribute-qualified call, a call-graph resolution gap across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _check_deep_nesting(
     tree: object,
     path: Path,

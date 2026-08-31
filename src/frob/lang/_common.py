@@ -648,6 +648,7 @@ def _iter_cpp_functions(root: Node) -> tuple[tuple[Node, str], ...]:
 # unrelated domains (C++ symbol naming vs waiver matching), independently evolving, \
 # not shared logic"
 # frob:ticket T-2470
+# frob:waive DEAD001 reason="called from src/frob/arch/_cpp.py:113 and src/frob/arch/_cpp_mayraise.py:466 (both via a direct 'from frob.lang._common import _cpp_symref_qualname'), a call-graph resolution gap, not dead code (T-3521)"  # noqa: E501
 def _cpp_symref_qualname(display_name: str) -> str:
     """`display_name` (this module's own `_iter_cpp_functions`/`_cpp_class_
     methods` native C++ spelling, e.g. `"ClassName::method"`) rewritten to

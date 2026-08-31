@@ -339,6 +339,7 @@ class _GroupedHelpFormatter(argparse.HelpFormatter):
 
 
 # frob:ticket T-0578
+# frob:waive DEAD001 reason="called cross-module from frob.__main__.py:287 (from frob._cli_parsers._root import _build_parser) and named as frob.toml's CLI entrypoint spec (frob.__main__:_build_parser) -- call-graph resolution gap across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _build_parser() -> argparse.ArgumentParser:
     # frob:ticket T-0021
     # frob:ticket T-0231

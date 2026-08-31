@@ -573,6 +573,7 @@ def iter_type_switch_chains(
     return found
 
 
+# frob:waive DEAD001 reason="called cross-module as _patterns._check_type_switch(...) from src/frob/arch/__init__.py:554 -- a module-attribute-qualified call, a call-graph resolution gap across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _check_type_switch(
     tree: object,
     rel: str,
@@ -751,6 +752,7 @@ def _collect_file_constructions(
 
 
 # frob:ticket T-0972
+# frob:waive DEAD001 reason="called cross-module as _patterns._check_scattered_construction(...) from src/frob/arch/__init__.py:716 -- a module-attribute-qualified call, a call-graph resolution gap across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _check_scattered_construction(
     constructions: dict[str, set[str]], out: list[ArchSuggestion]
 ) -> None:

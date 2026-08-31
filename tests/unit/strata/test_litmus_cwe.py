@@ -41,17 +41,6 @@ from frob.strata._threat import (
 )
 
 
-def _repo_root() -> Path:
-    """Walk up from this file until a directory containing `frob.toml` is found."""
-    here = Path(__file__).resolve()
-    for candidate in (here, *here.parents):
-        if (candidate / "frob.toml").is_file():
-            return candidate
-    raise RuntimeError(
-        "could not locate repo root (no frob.toml found above test file)"
-    )
-
-
 _LITMUS_DIR = Path(__file__).resolve().parent / "litmus"
 
 _UNION_CATALOG: tuple = CWE_CATALOG + CWE_TOP_25_CATALOG

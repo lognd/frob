@@ -73,6 +73,7 @@ def _cpp_is_complex(body: Node) -> bool:
     )
 
 
+# frob:waive DEAD001 reason="called cross-module as _cpp._check_long_functions(...) from src/frob/arch/__init__.py:444 -- a module-attribute-qualified call, a call-graph resolution gap across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _check_long_functions(
     tree: object,
     rel: str,
@@ -115,6 +116,7 @@ def _check_long_functions(
         )
 
 
+# frob:waive DEAD001 reason="called cross-module as _cpp._check_god_classes(...) from src/frob/arch/__init__.py:447 -- a module-attribute-qualified call, a call-graph resolution gap across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _check_god_classes(
     tree: object,
     rel: str,

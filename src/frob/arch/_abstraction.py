@@ -29,6 +29,7 @@ from frob.lang import node_text as _node_text
 
 # frob:ticket T-0632
 # frob:ticket T-1195
+# frob:waive DEAD001 reason="called cross-module as _abstraction._extract_signatures(...) from src/frob/arch/__init__.py:546 -- a module-attribute-qualified call, a call-graph resolution gap across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _extract_signatures(
     tree: object,
     rel: str,
@@ -165,6 +166,7 @@ def _collect_dispatch_refs_from_container(container: Node, out: set[str]) -> Non
 
 
 # frob:ticket T-1195
+# frob:waive DEAD001 reason="called cross-module as _abstraction._collect_file_dispatch_refs(...) from src/frob/arch/__init__.py:548 -- a module-attribute-qualified call, a call-graph resolution gap across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _collect_file_dispatch_refs(tree: object) -> set[str]:
     """Every identifier name referenced in a dispatch-like context
     (`_collect_dispatch_refs`) anywhere in a parsed python file's tree.
@@ -692,6 +694,7 @@ def _is_call_through_forwarder_family(
 
 
 # frob:ticket T-1195
+# frob:waive DEAD001 reason="called cross-module as _abstraction._check_abstraction_opportunities(...) from src/frob/arch/__init__.py:713, and directly bound by 9 frob:tests edges in tests/unit/test_arch.py -- a module-attribute-qualified call, a call-graph resolution gap across the module boundary, not dead code (T-3521)"  # noqa: E501
 def _check_abstraction_opportunities(
     all_sigs: list[tuple[str, str, tuple[str, ...], str, str]],
     all_dispatch_refs: dict[str, set[str]],
