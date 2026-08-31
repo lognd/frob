@@ -656,6 +656,8 @@ class TestCapabilityScan:
         assert language_for(tmp_path / "mod.sh") == "bash"
         assert language_for(tmp_path / "mod.bash") == "bash"
         assert language_for(tmp_path / "mod.cs") == "csharp"
+        # T-3492: .java extension mapping for the new java column.
+        assert language_for(tmp_path / "Mod.java") == "java"
         assert language_for(tmp_path / "mod.unknownext") is None
 
     def test_bash_pipe_to_shell_detected(self, tmp_path: Path) -> None:
@@ -746,6 +748,61 @@ class TestCapabilityScan:
             "}\n"
         )
         assert scan_file_capabilities(cs) == frozenset()
+
+    def test_java_process_builder_exec_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
+        # T-3492: ProcessBuilder is java's highest-value fire fixture for
+        # the new java column.
+        from frob.vet._capability import scan_file_capabilities
+
+        java = tmp_path / "Shell.java"
+        java.write_text(
+            "import java.io.IOException;\n"
+            "class Shell {\n"
+            "    void run(String cmd) throws IOException {\n"
+            "        new ProcessBuilder(cmd).start();\n"
+            "    }\n"
+            "}\n"
+        )
+        assert "exec" in scan_file_capabilities(java)
+
+    def test_java_object_input_stream_deserialize_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+
+        java = tmp_path / "Loader.java"
+        java.write_text(
+            "import java.io.ObjectInputStream;\n"
+            "class Loader {\n"
+            "    Object load(java.io.InputStream s) throws Exception {\n"
+            "        ObjectInputStream in = new ObjectInputStream(s);\n"
+            "        return in.readObject();\n"
+            "    }\n"
+            "}\n"
+        )
+        assert "deserialize" in scan_file_capabilities(java)
+
+    def test_java_benign_file_has_no_capabilities(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
+        # T-3492: a java file that touches none of the patterned needles
+        # observes an empty capability set -- confirms the column does not
+        # over-fire on ordinary Java code (mirrors T-1601's own walker
+        # fixture posture).
+        from frob.vet._capability import scan_file_capabilities
+
+        java = tmp_path / "Widget.java"
+        java.write_text(
+            "package com.frob.sample;\n"
+            "public class Widget {\n"
+            "    public int add(int a, int b) { return a + b; }\n"
+            "}\n"
+        )
+        assert scan_file_capabilities(java) == frozenset()
 
     def test_scan_directory_capabilities_aggregates_across_files(
         self, tmp_path: Path

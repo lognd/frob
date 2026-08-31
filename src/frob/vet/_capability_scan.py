@@ -175,6 +175,9 @@ _SELF_PATTERN_SUFFIXES: tuple[tuple[str, ...], ...] = (
     # the LARGE001 threshold -- same self-match class as every other
     # _dangerous_ops_*.py entry above.
     ("frob", "vet", "_capability_registry", "_dangerous_ops_bash_csharp.py"),
+    # T-3492: java's own needles=(...) literal table, same self-match
+    # class as every other _dangerous_ops_*.py entry above.
+    ("frob", "vet", "_capability_registry", "_dangerous_ops_java.py"),
     ("frob", "vet", "_capability_registry", "_matrix.py"),
     ("frob", "vet", "_capability_registry", "_opaque.py"),
     ("frob", "strata", "_cve_fingerprint.py"),

@@ -1,7 +1,7 @@
 ---
 id: T-3492
 title: Wire java into vet/dup/docblock capability facets
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'

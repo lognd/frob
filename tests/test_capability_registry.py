@@ -404,6 +404,7 @@ _LANG_EXT: dict[str, str] = {
     "kotlin": ".kt",
     "bash": ".sh",
     "csharp": ".cs",
+    "java": ".java",
 }
 
 #: benign source per language guaranteed to contain none of this registry's
@@ -416,6 +417,7 @@ _BENIGN_SOURCE: dict[str, str] = {
     "kotlin": "val x: Int = 1\n",
     "bash": "x=1\necho $x\n",
     "csharp": "class M { int Add(int a, int b) { return a + b; } }\n",
+    "java": "class M { int add(int a, int b) { return a + b; } }\n",
 }
 
 

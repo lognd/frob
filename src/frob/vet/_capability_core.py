@@ -69,6 +69,9 @@ _EXT_LANGUAGE = {
     ".sh": "bash",
     ".bash": "bash",
     ".cs": "csharp",
+    # T-3492: java (T-1601's frob.lang grammar), same T-2906 shape -- see
+    # _capability_registry._kinds.LANGUAGES' own T-3492 note.
+    ".java": "java",
 }
 
 

@@ -109,6 +109,12 @@ _CONSOLE_LANGS = frozenset({"console", "bash", "sh", "shell"})
 #: `_c_include_violations` does: against this repo's own tracked files,
 #: not a manifest-derived namespace set.
 _CSHARP_LANGS = frozenset({"csharp", "cs", "c#"})
+# frob:ticket T-3492
+#: java fenced blocks -- same gap as csharp above (no manifest package
+#: set frob reads today), so `_java_import_violations` resolves the same
+#: way `_csharp_using_violations` does: against this repo's own tracked
+#: `.java` files, not a manifest-derived package set.
+_JAVA_LANGS = frozenset({"java"})
 
 
 # ---------------------------------------------------------------------------
@@ -1052,6 +1058,59 @@ def _csharp_using_violations(
                 block.start_line,
                 tier="unbound",
                 detail="csharp using of a project namespace is not anchored",
+            )
+        )
+    return violations
+
+
+_JAVA_IMPORT_RE = re.compile(r"import\s+(?:static\s+)?([\w.]+)(?:\.\*)?\s*;")
+
+
+def _java_import_violations(
+    block: _FencedBlock, doc_path: str, doc_lines: list[str], root: Path
+) -> list[Violation]:
+    """UNBOUND-only for an `import a.b.c;` (or `import static a.b.c;` /
+    on-demand `import a.b.*;`) directive in a `java` fenced block --
+    mirrors `_csharp_using_violations` exactly (T-3492, same shape as
+    T-2906's csharp checker): java has no manifest package set frob
+    reads today (unlike python's package, rust's crate, ts's
+    package.json name), so this never claims STALE (no reliable
+    resolver exists), only flags an import that plausibly names THIS
+    project's own code via the standard java convention that a package
+    mirrors its source directory structure (`com.foo.bar` sources live
+    under `com/foo/bar/`): if any tracked `.java` file path, normalized
+    to dots, contains the dotted import target as a substring, the
+    reference is treated as project-internal and checked for a nearby
+    binding directive. An import naming a well-known JDK/common
+    third-party package (`java.*`, `javax.*`) never matches a tracked
+    path and is skipped, the same "skip anything not clearly this
+    project's own" posture the other four buckets take."""
+    violations: list[Violation] = []
+    window = _nearby_window(doc_lines, block)
+    waive_reason = _nearby_waive_reason(window)
+    tracked = _tracked_source_files(root)
+    dotted_tracked = frozenset(
+        p[: -len(".java")].replace("/", ".") for p in tracked if p.endswith(".java")
+    )
+    seen_project_ref = False
+    for match in _JAVA_IMPORT_RE.finditer(block.body):
+        target = match.group(1)
+        if target.startswith(("java.", "javax.")):
+            continue
+        if any(target in candidate for candidate in dotted_tracked):
+            seen_project_ref = True
+    if not seen_project_ref:
+        return violations
+    if waive_reason is not None:
+        _log.debug("doc004: %s waived (%s): java block", doc_path, waive_reason)
+        return violations
+    if not _has_binding_directive(window):
+        violations.append(
+            _doc004_violation(
+                doc_path,
+                block.start_line,
+                tier="unbound",
+                detail="java import of a project package is not anchored",
             )
         )
     return violations

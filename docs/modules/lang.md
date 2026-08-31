@@ -737,6 +737,18 @@ not-yet-closed shape T-2906 established for bash/csharp; a future pass
 should do the real subsystem integration and remove each citation the
 same way T-2906 did.
 
+T-3492: java's own citation above is now closed the same way T-2906
+closed bash/csharp's -- java joined `frob.vet._capability_registry.
+LANGUAGES` and `frob.dup._exhaustiveness.LANGUAGES` with real patterned
+entries (`_dangerous_ops_java.py`'s `_JAVA_OPERATIONS`), and
+`frob.gates._docblocks` gained a real java fenced-block bucket
+(`_JAVA_LANGS`, `_java_import_violations`, mirrors csharp's own
+`using`-checker shape for java's `import`). java now reads `IMPLEMENTED`
+on all three facets, `arch` remaining the one genuine, already-tracked
+T-0329 gap every other non-python/cpp language shares -- cuda and zig
+(T-3493/T-3513) are the two `_PENDING_FACET_WIRING_TICKETS` entries
+still open.
+
 T-2996: `refactor` joined `FACETS` after the audit found `frob.refactor`
 was Python-only with ZERO language-literal branching to find -- a
 silently single-language module is invisible to any scan looking for

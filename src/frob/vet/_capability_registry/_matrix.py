@@ -20,6 +20,7 @@ from frob.logging import get_logger
 from frob.vet._capability_registry._dangerous_ops_bash_csharp import (
     _BASH_CSHARP_OPERATIONS,
 )
+from frob.vet._capability_registry._dangerous_ops_java import _JAVA_OPERATIONS
 from frob.vet._capability_registry._dangerous_ops_other import _OTHER_OPERATIONS
 from frob.vet._capability_registry._dangerous_ops_python import _PYTHON_OPERATIONS
 from frob.vet._capability_registry._kinds import CAPABILITY_KINDS, LANGUAGES
@@ -34,7 +35,7 @@ _log = get_logger(__name__)
 #: (T-1420 split) -- the matrix functions below need the whole table, not
 #: either half alone.
 DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
-    _PYTHON_OPERATIONS + _OTHER_OPERATIONS + _BASH_CSHARP_OPERATIONS
+    _PYTHON_OPERATIONS + _OTHER_OPERATIONS + _BASH_CSHARP_OPERATIONS + _JAVA_OPERATIONS
 )
 
 # frob:doc docs/modules/vet.md#public-api
@@ -785,6 +786,105 @@ _NEW_ADAPTER_SUBSTANTIVE_EXCUSES: tuple[_MatrixExcuse, ...] = (
         reason="no per-language survey of embedded-script idioms (e.g. "
         "hosting a scripting engine) has been done yet for csharp",
     ),
+    # T-3492: java's substantive excuses -- mirrors kotlin's own excuses
+    # above wherever the underlying JDK/JVM constraint is identical (same
+    # runtime, same APIs), since java and kotlin share java.io/java.net/
+    # java.lang entirely; diverges only where java has no Android-specific
+    # analog (client_storage).
+    _MatrixExcuse(
+        capability_kind="eval",
+        language="java",
+        reason="no idiomatic string-eval/dynamic-code-execution primitive "
+        "in plain Java; the closest analog (ScriptEngine/reflection-based "
+        "class loading) is a distinct, narrower gap tracked separately, "
+        "not surveyed as a dominant idiom here -- same posture as "
+        "kotlin's own eval excuse",
+    ),
+    _MatrixExcuse(
+        capability_kind="env-write",
+        language="java",
+        reason="System.getenv() returns an unmodifiable view; the JVM has "
+        "no supported API to mutate the calling process's own environment "
+        "(ProcessBuilder.environment() mutates a child process's "
+        "environment map instead, a distinct exec-adjacent concept) -- "
+        "same JDK constraint as kotlin's own env-write excuse",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs-write",
+        language="java",
+        reason="java's filesystem access goes through the same java.io/"
+        "java.nio surface as kotlin, with no single dominant write idiom "
+        "distinct enough to needle cheaply without a wider per-API "
+        "survey; tracked as a follow-up, not guessed at here",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs-read",
+        language="java",
+        reason="same java.io/java.nio survey gap as fs-write above -- no "
+        "single dominant read idiom surveyed yet",
+    ),
+    _MatrixExcuse(
+        capability_kind="process-control",
+        language="java",
+        reason="System.exit/Runtime.exit/JVM signal-handling idioms exist "
+        "but were not part of a per-cell survey -- same un-surveyed gap "
+        "as kotlin's own process-control excuse",
+    ),
+    _MatrixExcuse(
+        capability_kind="ffi",
+        language="java",
+        reason="JNI (System.loadLibrary/native methods, plus the newer "
+        "Panama/Foreign Function & Memory API) is the JVM ffi idiom but "
+        "was not part of a per-cell survey; tracked as a follow-up "
+        "rather than guessed at here -- same un-surveyed gap as kotlin's "
+        "own ffi excuse",
+    ),
+    _MatrixExcuse(
+        capability_kind="install-hook",
+        language="java",
+        reason="no plain-Java packaging-install-hook idiom analogous to "
+        "setuptools cmdclass; Maven/Gradle build-plugin goals are the "
+        "closest analog and are already trusted-author build tooling, "
+        "not a runtime dependency capability",
+    ),
+    _MatrixExcuse(
+        capability_kind="html_render",
+        language="java",
+        reason="no dominant raw-HTML-templating idiom has been surveyed "
+        "yet for plain java (unlike kotlin's Android WebView, java has "
+        "no single closest analog to start from)",
+    ),
+    _MatrixExcuse(
+        capability_kind="sql",
+        language="java",
+        reason="JDBC's Statement/PreparedStatement.executeQuery is the "
+        "dominant raw-SQL surface but was not part of a per-cell survey; "
+        "tracked as a follow-up rather than guessed at here",
+    ),
+    _MatrixExcuse(
+        capability_kind="fetch_url",
+        language="java",
+        reason="HttpURLConnection/HttpClient are already patterned under "
+        "net-connect (fetching a URL IS the SSRF-relevant surface for "
+        "those clients); no separate fetch_url-specific idiom distinct "
+        "from the net entries exists to pattern independently -- same "
+        "reasoning as kotlin's own fetch_url excuse",
+    ),
+    _MatrixExcuse(
+        capability_kind="client_storage",
+        language="java",
+        reason="plain java (unlike kotlin's Android target) has no "
+        "client-side runtime -- SharedPreferences/Room are Android-"
+        "specific APIs java does not have an analog for",
+    ),
+    _MatrixExcuse(
+        capability_kind="embedded_code",
+        language="java",
+        reason="detected structurally by _capability._embedded_code_regions "
+        "(STRING-node size + HTML/JS signal heuristic), not a per-language "
+        "needle pattern -- same posture as kotlin's own embedded_code "
+        "excuse, T-0244",
+    ),
 )
 
 #: T-2906: kinds that are never a real per-language detection surface for
@@ -828,7 +928,10 @@ _STRUCTURAL_KIND_REASONS: dict[str, str] = {
     "fs.write": "see the fs.read excuse above, write-side",
 }
 
-_NEW_ADAPTER_LANGUAGES: tuple[str, ...] = ("bash", "csharp")
+#: T-3492: java added -- shares the same structural-kind gaps every other
+#: adapter language has (net/env/fs bare-and-dotted spellings), so it
+#: reuses this same generator rather than a fourth hand-copied block.
+_NEW_ADAPTER_LANGUAGES: tuple[str, ...] = ("bash", "csharp", "java")
 
 
 # frob:tests tests/test_capability_registry.py::TestMatrixExhaustiveness.test_no_unexcused_empty_cells  # noqa: E501

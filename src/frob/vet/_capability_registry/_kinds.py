@@ -16,6 +16,9 @@ from __future__ import annotations
 #: cells (`_new_adapter_matrix_excuses` in `_matrix.py`, mirrors `frob.
 #: dup._exhaustiveness._non_python_excuses`'s generated-not-hand-copied
 #: shape) for every kind that genuinely has no idiom in that language.
+#: T-3492: java added, same discipline -- real patterns for its
+#: highest-value idioms (net/env-read/exec/deserialize) in the new
+#: `_dangerous_ops_java.py`, generated excuses for the rest.
 LANGUAGES: tuple[str, ...] = (
     "python",
     "typescript",
@@ -24,6 +27,7 @@ LANGUAGES: tuple[str, ...] = (
     "kotlin",
     "bash",
     "csharp",
+    "java",
 )
 
 # frob:doc docs/modules/vet.md#public-api

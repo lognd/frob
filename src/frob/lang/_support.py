@@ -467,12 +467,12 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # ADAPTERS` has no entry for yet (T-2996 found this is every
     # language except python).
     "T-3231": True,
-    # T-1601's own filed finding (mirrors T-2906's bash/csharp
-    # precedent): java gets a real frob.lang grammar/walker but is not
-    # yet wired into the capability/dup/docblock FACETS -- cited by
-    # `_capability_status`/`_dup_status`/`_docblock_status`'s shared
-    # `_PENDING_FACET_WIRING_TICKETS` mapping.
-    "T-3492": True,
+    # T-3492 (java's prior KNOWN_GAP citation, T-1601's own filed
+    # finding) removed -- the gap is closed the same way T-2906's
+    # bash/csharp entries were: java is a real LANGUAGES entry in
+    # frob.vet._capability_registry and frob.dup._exhaustiveness, and a
+    # real fenced-block bucket (_JAVA_LANGS) in frob.gates._docblocks;
+    # no detail string cites T-3492 any more.
     # T-1602's own filed finding, identical shape: cuda gets a real
     # frob.lang grammar/walker but is not yet wired into the
     # capability/dup/docblock FACETS -- same shared
@@ -533,8 +533,13 @@ _CAPABILITY_C_CPP_MEMBERS = frozenset({"c", "cpp"})
 # dispatches without going through this same mapping stays a genuinely
 # unreasoned (loud) gap, not silently absorbed into this citation by
 # accident.
+#
+# T-3492 (java's own prior entry here) removed -- the gap is closed: java
+# is a real LANGUAGES entry in frob.vet._capability_registry and frob.dup.
+# _exhaustiveness, and a real fenced-block bucket in frob.gates._docblocks
+# (`_JAVA_LANGS`, `_java_import_violations`); no detail string cites
+# T-3492 any more.
 _PENDING_FACET_WIRING_TICKETS: dict[str, str] = {
-    "java": "T-3492",
     "cuda": "T-3493",
     "zig": "T-3513",
 }
@@ -557,11 +562,14 @@ def _docblock_languages() -> frozenset[str]:
     (console-command drift checking, `bash`/`sh`/`shell` fence tags) --
     it was simply never unioned in here, so bash read as a fenced-block
     KNOWN_GAP despite already having a real checker. csharp gets a new
-    `_CSHARP_LANGS` bucket (`_csharp_using_violations`, T-2906)."""
+    `_CSHARP_LANGS` bucket (`_csharp_using_violations`, T-2906). T-3492:
+    java gets the same new-bucket shape as csharp, `_JAVA_LANGS`
+    (`_java_import_violations`)."""
     from frob.gates._docblocks import (
         _C_CPP_LANGS,
         _CONSOLE_LANGS,
         _CSHARP_LANGS,
+        _JAVA_LANGS,
         _PYTHON_LANGS,
         _RUST_LANGS,
         _TS_LANGS,
@@ -574,6 +582,7 @@ def _docblock_languages() -> frozenset[str]:
         | (_CAPABILITY_C_CPP_MEMBERS if _C_CPP_LANGS else set())
         | ({"bash"} if _CONSOLE_LANGS else set())
         | ({"csharp"} if _CSHARP_LANGS else set())
+        | ({"java"} if _JAVA_LANGS else set())
     )
 
 

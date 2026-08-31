@@ -4376,14 +4376,16 @@ false-positive lesson applies here too: a noisy gate gets blanket-waived):
    immediately-preceding doc lines, so future drift on it would go
    undetected. TS/JS is UNBOUND-only by design (no reliable static
    resolver for its export shapes here -- see the module docstring).
-   C/C++ (T-0566, `_c_include_violations`) and csharp (T-2906,
-   `_csharp_using_violations`) have no manifest namespace to resolve
-   against either, so both are UNBOUND-only too, keyed on this repo's own
-   tracked files instead of a namespace: a quoted `#include "..."` or a
-   `using X.Y;` that plausibly names THIS project's own code (the include
-   path exists as a tracked file; the dotted `using` target is a substring
-   of a tracked `.cs` file's own dotted path) is checked for a nearby
-   binding directive. bash reuses the pre-existing console-command tier
+   C/C++ (T-0566, `_c_include_violations`), csharp (T-2906,
+   `_csharp_using_violations`), and java (T-3492,
+   `_java_import_violations`) have no manifest namespace to resolve
+   against either, so all three are UNBOUND-only too, keyed on this
+   repo's own tracked files instead of a namespace: a quoted `#include
+   "..."`, a `using X.Y;`, or an `import a.b.c;` that plausibly names
+   THIS project's own code (the include path exists as a tracked file;
+   the dotted `using`/`import` target is a substring of a tracked
+   `.cs`/`.java` file's own dotted path) is checked for a nearby binding
+   directive. bash reuses the pre-existing console-command tier
    (`_CONSOLE_LANGS`, point 5 below) for its own fenced blocks -- no
    separate resolver needed.
 4. **`frob:waive DOC004 reason="..."` is prominently honored** directly

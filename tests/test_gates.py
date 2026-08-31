@@ -18346,6 +18346,74 @@ class TestDoc004CsharpUsingDrift:
         assert _by_rule(violations, "DOC004") == []
 
 
+class TestDoc004JavaImportDrift:
+    """T-3492: `java` fenced blocks -- `_java_import_violations` mirrors
+    `_csharp_using_violations` exactly (no manifest package to resolve
+    against, same tracked-file-existence posture): an `import a.b` naming
+    a dotted prefix of a tracked `.java` file's path is treated as
+    project-internal."""
+
+    def test_import_of_tracked_package_unanchored_warns(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "sample/missing/Real.java",
+            "package sample.missing;\npublic class Real {}\n",
+        )
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "```java\nimport sample.missing.Real;\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        unbound = _by_rule(violations, "DOC004")
+        assert unbound
+        assert all(v.severity == Severity.ERROR for v in unbound)
+
+    def test_import_of_tracked_package_anchored_passes(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "sample/missing/Real.java",
+            "package sample.missing;\npublic class Real {}\n",
+        )
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "<!-- frob:doc docs/guide.md -->\n\n"
+            "```java\nimport sample.missing.Real;\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert _by_rule(violations, "DOC004") == []
+
+    def test_import_of_jdk_package_is_not_project_internal(
+        self, tmp_path: Path
+    ) -> None:
+        """`java.*`/`javax.*` imports never resolve to a tracked file, so
+        they never trip DOC004 even unanchored -- same posture as
+        csharp's `System.*`/`Microsoft.*` skip."""
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "```java\nimport java.util.List;\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert _by_rule(violations, "DOC004") == []
+
+
 class TestDoc004ConsoleCommandDrift:
     """T-0443: DOC004's console/bash `<prog> <subcommand>` tier is driven
     entirely by `frob.toml`'s `[[docblocks.commands]]` array -- `prog` plus

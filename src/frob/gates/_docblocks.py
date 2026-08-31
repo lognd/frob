@@ -146,7 +146,7 @@ from frob.graph._models import GraphSnapshot
 from frob.logging import get_logger
 
 if TYPE_CHECKING:
-    from frob.gates._docblocks_refs import _ConsoleCommandSource
+    from frob.gates._docblocks_refs import _ConsoleCommandSource, _FencedBlock
 
 _log = get_logger(__name__)
 
@@ -340,6 +340,50 @@ def _tracked_md_files(root: Path) -> tuple[str, ...]:
 # frob:tests \
 # tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_no_config_means_no_console_ch\
 # ecking
+# frob:ticket T-3492
+def _doc004_block_violations(
+    block: "_FencedBlock",
+    doc_path: str,
+    doc_lines: list[str],
+    root: Path,
+    namespaces: _ProjectNamespaces,
+    module_map: dict[str, str],
+    symbol_names_by_path: dict[str, set[str]],
+    console_sources: "tuple[_ConsoleCommandSource, ...]",
+    console_trees: dict[str, dict],
+) -> list[Violation]:
+    """One fenced block's DOC004 violations, dispatched by `block.lang` --
+    split out of `doc004_gate` (T-3492) purely to keep the per-language
+    `elif` chain (now 6 languages) under ARCH001's long-AND-complex
+    threshold; no behavior change, same dispatch order and same per-
+    language violation functions as before the split."""
+    if block.lang in _PYTHON_LANGS:
+        return _python_from_import_violations(
+            block,
+            doc_path,
+            doc_lines,
+            namespaces.python,
+            module_map,
+            symbol_names_by_path,
+            root,
+        )
+    if block.lang in _RUST_LANGS:
+        return _rust_use_violations(block, doc_path, doc_lines, root, namespaces)
+    if block.lang in _TS_LANGS:
+        return _ts_reference_violations(block, doc_path, doc_lines, namespaces.ts)
+    if block.lang in _C_CPP_LANGS:
+        return _c_include_violations(block, doc_path, doc_lines, root)
+    if block.lang in _CSHARP_LANGS:
+        return _csharp_using_violations(block, doc_path, doc_lines, root)
+    if block.lang in _JAVA_LANGS:
+        return _java_import_violations(block, doc_path, doc_lines, root)
+    if block.lang in _CONSOLE_LANGS and console_sources:
+        return _console_command_violations(
+            block, doc_path, doc_lines, console_sources, console_trees
+        )
+    return []
+
+
 def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC004: scan every tracked `.md` doc's fenced code blocks for
     references to THIS PROJECT's own code surface (manifest-derived
@@ -347,7 +391,8 @@ def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     module/crate/symbol does not resolve -- error) or UNBOUND (it resolves,
     but no nearby `frob:doc`/`frob:describes`/`frob:tests` anchor exists --
     warn). See this module's docstring for the full heuristic and its
-    deliberate scope cuts."""
+    deliberate scope cuts. Per-block dispatch lives in
+    `_doc004_block_violations` (T-3492 ARCH001 split)."""
     root = Path(root)
     namespaces = _project_namespaces(root)
     module_map = _python_module_map(root)
@@ -362,40 +407,19 @@ def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             continue
         doc_lines = text.splitlines()
         for block in _iter_fenced_blocks(text):
-            if block.lang in _PYTHON_LANGS:
-                violations.extend(
-                    _python_from_import_violations(
-                        block,
-                        doc_path,
-                        doc_lines,
-                        namespaces.python,
-                        module_map,
-                        symbol_names_by_path,
-                        root,
-                    )
+            violations.extend(
+                _doc004_block_violations(
+                    block,
+                    doc_path,
+                    doc_lines,
+                    root,
+                    namespaces,
+                    module_map,
+                    symbol_names_by_path,
+                    console_sources,
+                    console_trees,
                 )
-            elif block.lang in _RUST_LANGS:
-                violations.extend(
-                    _rust_use_violations(block, doc_path, doc_lines, root, namespaces)
-                )
-            elif block.lang in _TS_LANGS:
-                violations.extend(
-                    _ts_reference_violations(block, doc_path, doc_lines, namespaces.ts)
-                )
-            elif block.lang in _C_CPP_LANGS:
-                violations.extend(
-                    _c_include_violations(block, doc_path, doc_lines, root)
-                )
-            elif block.lang in _CSHARP_LANGS:
-                violations.extend(
-                    _csharp_using_violations(block, doc_path, doc_lines, root)
-                )
-            elif block.lang in _CONSOLE_LANGS and console_sources:
-                violations.extend(
-                    _console_command_violations(
-                        block, doc_path, doc_lines, console_sources, console_trees
-                    )
-                )
+            )
     _log.info("doc004: %d violation(s) across tracked .md docs", len(violations))
     return tuple(violations)
 
@@ -922,6 +946,9 @@ from frob.gates._docblocks_refs import (  # noqa: E402
     _CSHARP_LANGS as _CSHARP_LANGS,
 )
 from frob.gates._docblocks_refs import (  # noqa: E402
+    _JAVA_LANGS as _JAVA_LANGS,
+)
+from frob.gates._docblocks_refs import (  # noqa: E402
     _PYTHON_LANGS as _PYTHON_LANGS,
 )
 from frob.gates._docblocks_refs import (  # noqa: E402
@@ -947,6 +974,9 @@ from frob.gates._docblocks_refs import (  # noqa: E402
 )
 from frob.gates._docblocks_refs import (  # noqa: E402
     _iter_fenced_blocks as _iter_fenced_blocks,
+)
+from frob.gates._docblocks_refs import (  # noqa: E402
+    _java_import_violations as _java_import_violations,
 )
 from frob.gates._docblocks_refs import (  # noqa: E402
     _load_parser_factory as _load_parser_factory,

@@ -1337,6 +1337,23 @@ What landed on top of the lockfile-conformance MVP:
   (`html_render`, `sql`, `client_storage`, `install-hook`, `embedded_code`,
   plus `ffi`/`deserialize` for bash and `process-control` for csharp) are
   hand-written in `_NEW_ADAPTER_SUBSTANTIVE_EXCUSES`.
+- **java** (T-3492): a first-class `_capability_registry.LANGUAGES` entry
+  with real `DANGEROUS_OPERATIONS` patterns (`.java` in `_capability_core.
+  _EXT_LANGUAGE`, table in `_dangerous_ops_java.py`) -- covers
+  `HttpURLConnection`/`HttpClient` (`net-connect`), `ServerSocket`
+  (`net-listen`), `System.getenv` (`env-read`), `Runtime.getRuntime().
+  exec`/`ProcessBuilder` (`exec`), and `ObjectInputStream.readObject`
+  (`deserialize`, the JDK's own long-running deserialization-RCE gadget
+  class). Every remaining (kind, "java") cell is a written
+  `_MatrixExcuse` -- the structural/normalized-vocabulary kinds share
+  `_new_adapter_matrix_excuses`'s generated rows with bash/csharp
+  (widened `_NEW_ADAPTER_LANGUAGES`), and the substantive un-surveyed
+  idioms (`eval`, `env-write`, `fs-write`, `fs-read`, `process-control`,
+  `ffi`, `install-hook`, `html_render`, `sql`, `fetch_url`,
+  `client_storage`, `embedded_code`) are hand-written in
+  `_NEW_ADAPTER_SUBSTANTIVE_EXCUSES` alongside bash/csharp's own, mostly
+  mirroring kotlin's identical-JVM excuses (same java.io/java.net/
+  java.lang surface) wherever the underlying reasoning is identical.
 - **Source location** (`_source.py`): best-effort local-cache lookup only
   (`.venv/lib/*/site-packages`, `~/.cache/uv`, `~/.cache/pip`,
   `node_modules/<name>`, `~/.cargo/registry/src`). No network fetch is
