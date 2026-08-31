@@ -1,7 +1,7 @@
 ---
 id: T-3529
 title: cross-file entity/architecture resolution for strata
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-30'
@@ -18,6 +18,7 @@ scope:
 - design/frob.strata
 - strata-core/src/parse/**
 - src/frob/strata/_design_load.py
+- tests/unit/strata/test_design_load.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,12 @@ scope_changes:
   glob: src/frob/strata/_design_load.py
   reason: Series DD measured the fix requires the Rust parser (strata_core.parse_source
     is the sole AST source); widened so the ticket is workable as filed
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/strata/test_design_load.py
+  reason: T-3529 cross-file entity/architecture resolution regression tests belong
+    beside the existing cross-file resolution suite in this file
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
