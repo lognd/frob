@@ -2,7 +2,7 @@
 id: T-3604
 title: 'Windows diag step: typeless fixture fast-fails CHECK001 and aborts job before
   Test step (T-3589 round 7)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -16,10 +16,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .github/workflows/ci.yml
+- tests/test_ci_workflow_matrix.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ci_workflow_matrix.py
+  reason: bug-kind ticket requires pytest evidence node ids; tests/test_ci_workflow_matrix.py
+    is the repo's established frob:tests binding location for ci.yml content assertions
+    (same pattern used for T-3077/T-3597)
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
