@@ -35,6 +35,13 @@ scope_changes:
   reason: test coverage for the new unwired mechanical primitives
   actor: logan
   at: '2026-08-31'
+body_changes:
+- mode: append
+  reason: record the filed follow-up ticket id, per instruction
+  actor: logan
+  at: '2026-08-31'
+  old_length: 1131
+  new_length: 1403
 designated_repro_test: null
 threat: null
 component: null
@@ -59,3 +66,6 @@ the final push, so intermediate red commits never run CI. Design against
 T-3053's compose-out-of-tree model. If a ticket's diff cannot be split
 mechanically (no clean test/impl separation), fall back to today's single
 squash -- never force a fabricated split.
+
+
+Filed T-3564 (blocked by T-3546) for the actual wiring into the live land path, per the design doc's Rollout plan and the T-3550 precedent -- design + unwired mechanical primitives land here; the risky wiring into _fold_publish_and_resync is a separate, gated follow-up.
