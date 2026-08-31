@@ -2,7 +2,7 @@
 id: T-3576
 title: teach WIRE001 call-graph analyzer to resolve multiprocessing.Process target=
   kwarg references
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-08-31'
@@ -16,10 +16,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_wire.py
+- tests/unit/test_wire001_multiprocessing_target.py
+- tests/unit/test_fix_engine_journal.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_wire001_multiprocessing_target.py
+  reason: regression fixtures locking WIRE001's already-correct multiprocessing.Process(target=)
+    resolution; removes the now-obsolete waiver from the real file
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/test_fix_engine_journal.py
+  reason: regression fixtures locking WIRE001's already-correct multiprocessing.Process(target=)
+    resolution; removes the now-obsolete waiver from the real file
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
