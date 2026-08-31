@@ -1,7 +1,7 @@
 ---
 id: T-3543
 title: Fold the record-land-commit stub into the land itself (53 of last 300 commits)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-31'
@@ -17,10 +17,35 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_land_finalize.py
 - src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/tickets/_land_squash.py
+- scripts/verify_lands.py
+- src/frob/app/ticket_runner/_lifecycle.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_squash.py
+  reason: the actual record-land-commit stub (_record_land_commit) and its readers
+    live in these files, not the three declared -- _land.py/_land_finalize.py/_land_cmd.py
+    only orchestrate the call
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: scripts/verify_lands.py
+  reason: the actual record-land-commit stub (_record_land_commit) and its readers
+    live in these files, not the three declared -- _land.py/_land_finalize.py/_land_cmd.py
+    only orchestrate the call
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/app/ticket_runner/_lifecycle.py
+  reason: the actual record-land-commit stub (_record_land_commit) and its readers
+    live in these files, not the three declared -- _land.py/_land_finalize.py/_land_cmd.py
+    only orchestrate the call
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
