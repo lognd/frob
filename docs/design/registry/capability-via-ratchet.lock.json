@@ -231,9 +231,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 235,
-      "reason": "T-3574: T-3561/T-3569/T-3570/T-3546-era test files and the reconcile cache work grew this pair's via-list by 1 site (234 -> 235); measured on CI run 33376126399, re-measured locally via TestFrobSelfModel::test_sys_gate_zero_violations against this checkout's own HEAD, not assumed from the ticket title alone.",
-      "ticket": "T-3574"
+      "accepted_count": 236,
+      "reason": "T-3576: test_wire001_multiprocessing_target.py's fixture bodies are literal source text containing the exec-needle-matching substring \"multiprocessing.Process(\" (never actually executed, just written to tmp_path for WIRE001's own text-scan gate to parse) -- grows testsuite exec via-list by 1 site (235 -> 236).",
+      "ticket": "T-3576"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -251,9 +251,9 @@
       "ticket": "T-3506"
     },
     "testsuite::fs.write": {
-      "accepted_count": 418,
-      "reason": "T-3574: T-3561/T-3569/T-3570/T-3546-era test files and the reconcile cache work grew this pair's via-list by 1 site (417 -> 418); measured on CI run 33376126399, re-measured locally via TestFrobSelfModel::test_sys_gate_zero_violations against this checkout's own HEAD, not assumed from the ticket title alone.",
-      "ticket": "T-3574"
+      "accepted_count": 419,
+      "reason": "T-3576: test_wire001_multiprocessing_target.py's _write fixture helper (same shape as test_fix_engine_journal.py's own already-declared usage) calls path.write_text -- grows testsuite fs.write via-list by 1 site (418 -> 419).",
+      "ticket": "T-3576"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

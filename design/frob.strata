@@ -1572,7 +1572,7 @@ node testsuite : trusted {
     // subprocess-pytest fixture writes a synthetic tmp_path test file
     // (a plain Path.write_text) to prove the faulthandler_timeout
     // mechanism, same shape as the other synthetic-suite fixtures above.
-    may "fs.write" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/unit/test_fix_engine_journal.py", "tests/system/test_faulthandler_ci_hygiene.py";
+    may "fs.write" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/unit/test_fix_engine_journal.py", "tests/system/test_faulthandler_ci_hygiene.py", "tests/unit/test_wire001_multiprocessing_target.py";
     // T-3516: _infer_worker_crash_cause reads back its own marker file.
     may "fs.read" via "tests/conftest.py";
     // T-3516: TestWorkerCrashReportIntegration spawns a real
@@ -1585,7 +1585,13 @@ node testsuite : trusted {
     // `sys.executable -m pytest ...` subprocess per MUST-FIRE/MUST-
     // STAY-QUIET case -- the only way to prove the faulthandler_timeout
     // dump-vs-no-dump mechanism at real, scaled-down timing.
-    may "exec" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/system/test_faulthandler_ci_hygiene.py";
+    // T-3576: test_wire001_multiprocessing_target.py's fixture bodies are
+    // literal source TEXT written to tmp_path for WIRE001's own text-scan
+    // gate to parse (never actually executed) -- the fixture-text needle
+    // "multiprocessing.Process(" still lexically matches this scanner's
+    // own textual needle table, same false-positive class T-3598/T-3526
+    // hit for other fixture-literal shapes.
+    may "exec" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/system/test_faulthandler_ci_hygiene.py", "tests/unit/test_wire001_multiprocessing_target.py";
     // T-1478: tests/unit/strata/test_effects.py's own new argument-level
     // `of`-scoping fixtures contain real `os.environ.get(...)` needle
     // literals (exercising the SAME env-read observation the `of` join

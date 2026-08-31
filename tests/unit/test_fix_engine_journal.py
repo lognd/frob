@@ -37,12 +37,16 @@ from frob.gates._fix_engine_shared import (
 from frob.tickets import TicketQueue
 
 
-# frob:waive WIRE001 reason="genuinely wired -- passed as multiprocessing.Process's \
-# own target= in \
-# TestAbandonedAutofixJournalSigkillSubprocess.test_sigkilled_journal_writer_ \
-# is_detected_and_refused below; the analyzer's call-graph does not resolve a target= \
-# reference the way it resolves a direct call" follow_up="T-3576"
-def _write_journal_and_block(root: str, ready: "multiprocessing.synchronize.Event") -> None:
+# T-3576: no frob:waive WIRE001 here anymore -- investigation found the
+# analyzer already resolves multiprocessing.Process(target=...)/ctx.
+# Process(target=...) generically via T-2778's keyword-argument-value
+# shape (target=X is textually indistinguishable from any other name=X
+# keyword argument), so this waiver was dead weight. See
+# tests/unit/test_wire001_multiprocessing_target.py for the locked-in
+# must-fire/must-stay-quiet fixtures naming this exact shape.
+def _write_journal_and_block(
+    root: str, ready: "multiprocessing.synchronize.Event"
+) -> None:
     """Child-process target (module-level so it is picklable on every
     start method): writes the T-1348 journal with THIS process's own
     pid, signals `ready`, then blocks forever so the parent can SIGKILL
@@ -98,14 +102,20 @@ class TestAbandonedAutofixJournal:
         # frob:tests src/frob/check/__init__.py::_abandoned_autofix_result kind="unit"
         (tmp_path / ".frob").mkdir()
         path = _autofix_manifest_path(tmp_path)
-        path.write_text('{"rewritten_paths": ["x.py"], "fix_count": 1, "pid": 999999999}\n')
+        path.write_text(
+            '{"rewritten_paths": ["x.py"], "fix_count": 1, "pid": 999999999}\n'
+        )
         result = _abandoned_autofix_result(tmp_path)
         assert result is not None
         assert result.exit_code != 0
         assert any(d.code == "AUTOFIX001" for d in result.diagnostics)
-        assert "x.py" in result.summary or any("x.py" in d.message for d in result.diagnostics)
+        assert "x.py" in result.summary or any(
+            "x.py" in d.message for d in result.diagnostics
+        )
 
-    def test_completed_apply_tier_a_fixes_leaves_no_journal(self, tmp_path: Path) -> None:
+    def test_completed_apply_tier_a_fixes_leaves_no_journal(
+        self, tmp_path: Path
+    ) -> None:
         # frob:tests src/frob/gates/_fix_engine.py::apply_tier_a_fixes kind="unit"
         (tmp_path / ".frob").mkdir()
         (tmp_path / "tickets.md").write_text("# Tickets\n")
@@ -121,17 +131,13 @@ class TestAbandonedAutofixJournal:
     ) -> None:
         # frob:tests src/frob/check/__init__.py::run_check kind="unit"
         (tmp_path / "tickets.md").write_text("# Tickets\n")
-        monkeypatch.setattr(
-            "frob.check._native_staleness_result", lambda root: None
-        )
+        monkeypatch.setattr("frob.check._native_staleness_result", lambda root: None)
         # A precheck-only smoke check: the abandoned-journal precheck
         # must not itself flag a perfectly ordinary tree with no journal
         # at all -- downstream stage failures (missing native builds
         # etc. in a bare tmp_path) are out of scope for this assertion.
         result = run_check(tmp_path, only=frozenset({"gates"}))
-        assert not any(
-            r.tool == "autofix-journal" for r in result.results
-        )
+        assert not any(r.tool == "autofix-journal" for r in result.results)
 
 
 class TestAbandonedAutofixJournalSigkillSubprocess:
@@ -147,9 +153,7 @@ class TestAbandonedAutofixJournalSigkillSubprocess:
         (tmp_path / ".frob").mkdir()
         ctx = multiprocessing.get_context("fork" if os.name != "nt" else "spawn")
         ready = ctx.Event()
-        proc = ctx.Process(
-            target=_write_journal_and_block, args=(str(tmp_path), ready)
-        )
+        proc = ctx.Process(target=_write_journal_and_block, args=(str(tmp_path), ready))
         proc.start()
         try:
             assert ready.wait(timeout=30), "child never wrote its journal"
