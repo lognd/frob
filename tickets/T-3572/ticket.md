@@ -27,6 +27,9 @@ scope_changes:
   reason: T-3572 dispatch-table regression tests added in this file
   actor: logan
   at: '2026-08-31'
+evidence:
+- tests/unit/strata/test_claims.py::TestClaimDispatchTable::test_dispatch_table_covers_every_claim_body_kind
+- tests/unit/strata/test_claims.py::TestClaimDispatchTable::test_dispatch_table_evaluators_share_one_call_signature
 designated_repro_test: null
 threat: null
 component: null
