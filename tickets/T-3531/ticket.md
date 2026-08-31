@@ -2,7 +2,7 @@
 id: T-3531
 title: 'CI output hygiene: faulthandler dumps at 100s spray 260 lines on healthy runs;
   raise the threshold and surface SUITE-RESULT in the step summary'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -18,6 +18,8 @@ scope:
 - pyproject.toml
 - .github/workflows/ci.yml
 - tests/system/test_faulthandler_ci_hygiene.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +32,25 @@ scope_changes:
     not the real 600s) rather than only editing config.
   actor: logan
   at: '2026-08-31'
+- op: add
+  glob: design/frob.strata
+  reason: the new test file's own fs.write/exec sites (subprocess.run, Path.write_text)
+    need SYS100/SELFAUDIT001 capability declarations plus a ratchet-ceiling bump,
+    same pattern every other new test file in this repo needs.
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: the new test file's own fs.write/exec sites (subprocess.run, Path.write_text)
+    need SYS100/SELFAUDIT001 capability declarations plus a ratchet-ceiling bump,
+    same pattern every other new test file in this repo needs.
+  actor: logan
+  at: '2026-08-31'
+evidence:
+- tests/system/test_faulthandler_ci_hygiene.py::TestPinnedConfigValues::test_faulthandler_timeout_is_raised_above_the_old_noisy_value
+- tests/system/test_faulthandler_ci_hygiene.py::TestPinnedConfigValues::test_captured_log_level_is_bounded_to_warning
+- tests/system/test_faulthandler_ci_hygiene.py::TestFaulthandlerTimeoutMechanism::test_healthy_run_under_threshold_produces_no_dump
+- tests/system/test_faulthandler_ci_hygiene.py::TestFaulthandlerTimeoutMechanism::test_run_past_threshold_still_dumps
 designated_repro_test: null
 threat: null
 component: null
