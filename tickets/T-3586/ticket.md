@@ -2,7 +2,7 @@
 id: T-3586
 title: Split tests/test_gates.py (21691 lines) into a per-gate-family package via
   frob refactor verbs; establish the monofile-split recipe
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-08-31'
@@ -71,3 +71,6 @@ ACCEPTANCE: tests/test_gates.py either deleted or reduced to a thin
 re-export shim under 200 lines (state which and why); zero new gate
 errors; follow-up tickets filed for the other five files with this
 ticket's recipe cited.
+
+## Failure log
+- 2026-08-31 attempt 1: refactor split/move/move-module cannot address tests/** (module_to_path hardcodes src/ as sole root, T-3587 filed); hand-moving is forbidden by the ticket's own method
