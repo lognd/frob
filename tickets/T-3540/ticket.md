@@ -2,7 +2,7 @@
 id: T-3540
 title: 'Windows CI: Start-Process/Wait-Process console-sharing causes an early KeyboardInterrupt,
   aborting the suite at ~1%'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
