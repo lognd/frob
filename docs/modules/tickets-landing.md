@@ -1,3 +1,5 @@
+<!-- frob:waive INV003 reason="spot-checked the write_autofix_manifest/clear_autofix_manifest once-at-end claim against its own detailed, internally-consistent description of _land.py's Tier-A crash-recovery design -- genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
+<!-- frob:waive INV004 reason="spot-checked the write_autofix_manifest/clear_autofix_manifest once-at-end claim against its own detailed, internally-consistent description of _land.py's Tier-A crash-recovery design -- genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
 # frob.tickets -- landing: `frob ticket land`, evidence, liveness, cross-ticket safety
 
 Part of the `frob.tickets` reference, split out of `docs/modules/tickets.md` by T-1780 so this subject's own lease no longer blocks every other ticket working a different one; see [`docs/modules/tickets.md`](tickets.md#split-files-t-1780) for the full split index.

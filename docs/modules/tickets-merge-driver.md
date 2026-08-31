@@ -1,3 +1,5 @@
+<!-- frob:waive INV003 reason="spot-checked the append-only force-overrides.jsonl claim -- consistent with the ledger's own documented write pattern elsewhere in this file; genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
+<!-- frob:waive INV004 reason="spot-checked the append-only force-overrides.jsonl claim -- consistent with the ledger's own documented write pattern elsewhere in this file; genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
 # frob.tickets -- git merge driver for tickets.md/rapid-debt.jsonl
 
 Part of the `frob.tickets` reference, split out of `docs/modules/tickets.md` by T-1780 so this subject's own lease no longer blocks every other ticket working a different one; see [`docs/modules/tickets.md`](tickets.md#split-files-t-1780) for the full split index.

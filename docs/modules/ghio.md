@@ -1,4 +1,6 @@
 <!-- frob:waive REF002 reason="frob.ghio is a single, small support module (the one gh CLI subprocess seam) with exactly one consumer by design (src/frob/ghio.py); a second consumer would not be genuine" -->
+<!-- frob:waive INV003 reason="the flagged claims describe the GitHub CLI/API's own observed behavior (gh api job-scoped log route's 404 semantics), not a claim about frob's own code -- there is nothing in this repo to bind an invariant to (T-3520)" -->
+<!-- frob:waive INV004 reason="the flagged claims describe the GitHub CLI/API's own observed behavior (gh api job-scoped log route's 404 semantics), not a claim about frob's own code -- there is nothing in this repo to bind an invariant to (T-3520)" -->
 
 # frob.ghio -- the GitHub/CI subprocess seam
 

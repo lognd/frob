@@ -1,3 +1,5 @@
+<!-- frob:waive INV003 reason="T-3007-era design doc for strata-core::graph::vmodel -- normative node-kind language is the intended schema contract for a young subsystem, not yet an enforced code invariant to bind (T-3520)" -->
+<!-- frob:waive INV004 reason="T-3007-era design doc for strata-core::graph::vmodel -- normative node-kind language is the intended schema contract for a young subsystem, not yet an enforced code invariant to bind (T-3520)" -->
 # The V-model spec graph (`strata-core::graph::vmodel`)
 
 <!-- frob:waive REF002 reason="T-3007 is the FIRST consumer of strata-core::graph;

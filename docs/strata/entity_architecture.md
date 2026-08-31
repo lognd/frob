@@ -1,5 +1,7 @@
 <!-- frob:ticket T-3026 -->
 <!-- frob:waive REF002 reason="linked from docs/index.md's strata design-doc list (the canonical entry point for every docs/strata/*.md page) plus mentioned by name in docs/strata/surface.md's construct-semantics section; REF002's own path/basename scan does not appear to count a same-subtree (docs/strata/) cross-link as a second independent anchor, but this is a normal, recently-added (T-3006) design doc in an established series (charter.md/kernel.md/surface.md/etc, all reached the identical single-inbound-link-from-index.md way) -- not an orphan." -->
+<!-- frob:waive INV003 reason="T-3006 design doc describing planned entity/architecture/configuration semantics -- normative language throughout is design intent for a subsystem still being built, not yet an enforced code invariant to bind (T-3520)" -->
+<!-- frob:waive INV004 reason="T-3006 design doc describing planned entity/architecture/configuration semantics -- normative language throughout is design intent for a subsystem still being built, not yet an enforced code invariant to bind (T-3520)" -->
 # Entity / architecture / configuration (T-3006, T-3004 section 5)
 
 Strata's `.strata` surface, before this ticket, was ONLY an implementation

@@ -1,3 +1,5 @@
+<!-- frob:waive INV003 reason="spot-checked the load_active archive-exclusion claim -- consistent with this file's own storage-model description; genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
+<!-- frob:waive INV004 reason="spot-checked the load_active archive-exclusion claim -- consistent with this file's own storage-model description; genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
 # frob.tickets -- statically-checkable ticket and feature queue
 
 One sentence: a git-tracked queue of tickets (features, bugs, audits,

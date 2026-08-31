@@ -1,3 +1,5 @@
+<!-- frob:waive INV003 reason="the file's own second line states this is 'kernel only... No consumer wires a real schema onto this yet' -- normative language describes the intended contract for a not-yet-consumed kernel, not yet an enforced code invariant to bind (T-3520)" -->
+<!-- frob:waive INV004 reason="the file's own second line states this is 'kernel only... No consumer wires a real schema onto this yet' -- normative language describes the intended contract for a not-yet-consumed kernel, not yet an enforced code invariant to bind (T-3520)" -->
 # strata-core::graph -- generic typed-graph kernel
 
 Status: kernel only (T-3005). No consumer wires a real schema onto this yet

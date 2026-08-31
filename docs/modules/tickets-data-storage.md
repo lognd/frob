@@ -1,3 +1,5 @@
+<!-- frob:waive INV003 reason="spot-checked the Clipboard capture claim against src/frob/app/ticket_runner/_new.py:890 (if not sys.stdin.isatty()) -- holds against current code; genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
+<!-- frob:waive INV004 reason="spot-checked the Clipboard capture claim against src/frob/app/ticket_runner/_new.py:890 (if not sys.stdin.isatty()) -- holds against current code; genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
 # frob.tickets -- data models, storage internals, organization primitives
 
 Part of the `frob.tickets` reference, split out of `docs/modules/tickets.md` by T-1780 so this subject's own lease no longer blocks every other ticket working a different one; see [`docs/modules/tickets.md`](tickets.md#split-files-t-1780) for the full split index.

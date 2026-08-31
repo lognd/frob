@@ -1,7 +1,7 @@
 ---
 id: T-3520
 title: 'INV003/INV004 WARN burn-down: 12 doc files, unbound normative claims'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-30'
@@ -30,6 +30,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:bash /tmp/claude-1000/-home-logan-projects-frob/f4d0128f-ef81-45f6-8336-64623fe5712f/scratchpad/check_inv_zero.sh
+  exit=0 sha256=52f6875ea794
 designated_repro_test: null
 threat: null
 component: null

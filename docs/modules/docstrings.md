@@ -1,3 +1,5 @@
+<!-- frob:waive INV003 reason="the flagged 'only the docstring and the signature to go on' sentence is prose describing a caller's PERSPECTIVE (the standard's own rationale for why public docstrings carry a higher bar), not a claim about frob's own code enforcing anything checkable -- no invariant applies (T-3520)" -->
+<!-- frob:waive INV004 reason="the flagged 'only the docstring and the signature to go on' sentence is prose describing a caller's PERSPECTIVE (the standard's own rationale for why public docstrings carry a higher bar), not a claim about frob's own code enforcing anything checkable -- no invariant applies (T-3520)" -->
 # Docstring standard (T-2988)
 
 Supersedes the blanket "every public symbol gets a one-line docstring"

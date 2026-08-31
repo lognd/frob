@@ -1,4 +1,6 @@
 <!-- frob:waive REF002 reason="frob.ci_report is a single, small support module (typed pytest-output parsing) with exactly one consumer by design (src/frob/ci_report.py); a second consumer would not be genuine" -->
+<!-- frob:waive INV003 reason="spot-checked against src/frob/ci_report.py::parse_pytest_log: it only ever reads _RESULT_LINE/_SUMMARY_LINE regex matches from the log tail, no positional inference anywhere in the function -- the 'only sound source' claim holds against current code; genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
+<!-- frob:waive INV004 reason="spot-checked against src/frob/ci_report.py::parse_pytest_log: it only ever reads _RESULT_LINE/_SUMMARY_LINE regex matches from the log tail, no positional inference anywhere in the function -- the 'only sound source' claim holds against current code; genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
 
 # frob.ci_report -- structured CI failure reporting
 

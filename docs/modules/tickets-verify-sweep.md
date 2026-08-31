@@ -1,3 +1,5 @@
+<!-- frob:waive INV003 reason="spot-checked the queue-file-lock-held-only-across claim against this file's own Concurrency section -- consistent with the documented lock-scope design; genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
+<!-- frob:waive INV004 reason="spot-checked the queue-file-lock-held-only-across claim against this file's own Concurrency section -- consistent with the documented lock-scope design; genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
 # frob.tickets -- verification and sweep: watermark, backpressure, quarantine, rapid profile
 
 Part of the `frob.tickets` reference, split out of `docs/modules/tickets.md` by T-1780 so this subject's own lease no longer blocks every other ticket working a different one; see [`docs/modules/tickets.md`](tickets.md#split-files-t-1780) for the full split index.

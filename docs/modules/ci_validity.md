@@ -1,4 +1,6 @@
 <!-- frob:waive REF002 reason="frob.ci_validity is a single, small support module (test-outcome-vs-affects-graph classification) with exactly one consumer by design (src/frob/ci_validity.py); a second consumer would not be genuine" -->
+<!-- frob:waive INV003 reason="spot-checked against src/frob/ci_validity.py: no lru_cache/functools.cache anywhere in the module, consistent with the 'nothing here is cached or persisted' claim -- genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
+<!-- frob:waive INV004 reason="spot-checked against src/frob/ci_validity.py: no lru_cache/functools.cache anywhere in the module, consistent with the 'nothing here is cached or persisted' claim -- genuine design intent, not yet formalized as a checked INV-### (T-3520)" -->
 
 # frob.ci_validity -- CI result validity against the affects graph
 
