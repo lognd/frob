@@ -42,10 +42,6 @@ scope:
 - tests/test_serve_socket.py
 - docs/modules/process.md
 - docs/modules/serve.md
-- docs/modules/tickets-verify-sweep.md
-- docs/modules/tickets-landing.md
-- docs/modules/tickets-data-storage.md
-- docs/modules/tickets.md
 - tests/unit/test_land_queue.py
 - tests/unit/test_mutation_sweep_queue.py
 - docs/design/registry/capability-via-ratchet.lock.json
@@ -164,6 +160,34 @@ scope_changes:
   reason: 'SELFAUDIT001: removed stale may eval declarations for serve/tickets_ledger
     nodes -- their importlib.import_module fcntl/msvcrt calls were centralized into
     frob.process._lock'
+  actor: logan
+  at: '2026-08-30'
+- op: remove
+  glob: docs/modules/tickets-data-storage.md
+  reason: reverted content edits to these 4 files -- all under T-3520's own open scope,
+    causing CrossTicketLeakage on land; resolved the AFFECT001 findings via frob:waive
+    at each symbol instead of a doc prose touch
+  actor: logan
+  at: '2026-08-30'
+- op: remove
+  glob: docs/modules/tickets-landing.md
+  reason: reverted content edits to these 4 files -- all under T-3520's own open scope,
+    causing CrossTicketLeakage on land; resolved the AFFECT001 findings via frob:waive
+    at each symbol instead of a doc prose touch
+  actor: logan
+  at: '2026-08-30'
+- op: remove
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: reverted content edits to these 4 files -- all under T-3520's own open scope,
+    causing CrossTicketLeakage on land; resolved the AFFECT001 findings via frob:waive
+    at each symbol instead of a doc prose touch
+  actor: logan
+  at: '2026-08-30'
+- op: remove
+  glob: docs/modules/tickets.md
+  reason: reverted content edits to these 4 files -- all under T-3520's own open scope,
+    causing CrossTicketLeakage on land; resolved the AFFECT001 findings via frob:waive
+    at each symbol instead of a doc prose touch
   actor: logan
   at: '2026-08-30'
 evidence:
