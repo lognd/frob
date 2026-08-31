@@ -169,6 +169,13 @@ def pytest_collection_modifyitems(
     for item in items:
         if any(needle in item.name for needle in _SELF_SCAN_HEAVY_NAME_SUBSTRINGS):
             item.add_marker(pytest.mark.xdist_group(name="frob_self_scan_heavy"))
+            # T-3525: raised per-test budget for the group's shared
+            # frob_self_scan_artifacts fixture -- see that fixture's own
+            # docstring and _cached_self_scan for why (a fixture that can
+            # exceed the default --timeout gets its worker os._exit()d
+            # mid-scan, restarting from scratch on the next worker). SAME
+            # hook assigns both markers, so they can never desync.
+            item.add_marker(pytest.mark.timeout(1200))
         elif item.get_closest_marker(_HEAVY_SUBPROCESS_MARKER) is not None:
             # `item.nodeid`'s file-path prefix (before the first `::`) is
             # declared on the base `pytest.Item` type, unlike `.module`
@@ -945,15 +952,129 @@ def _isolate_worktree_lease_env_before_test() -> Iterator[None]:
                 os.environ[key] = value
 
 
+# frob:ticket T-3525
+_SELF_SCAN_CACHE_DIR = _REPO_ROOT / ".frob" / "self-scan-cache"
+"""T-3525: on-disk persistence for `frob_self_scan_artifacts`'
+`.violations`, keyed by `_repo_tree_hash()` -- makes an xdist worker
+restart (T-3516's own WORKER-CRASH-REPORT machinery covers the crash
+ITSELF; this covers what happens next) cheap: LOAD instead of recompute.
+Lives under this repo's own `.frob/` (survives a worker's death) rather
+than `tmp_path_factory`'s session temp dir (a FRESH worker process gets
+its own fresh `tmp_path_factory` instance, so a tmp-rooted cache would
+die with the worker that wrote it -- exactly the gap this ticket fixes)."""
+
+_SELF_SCAN_COUNTER_ENV = "FROB_SELF_SCAN_COUNTER_FILE"
+"""T-3525: test-only instrumentation -- when set, `_cached_self_scan`
+appends one line to this file every time it actually RUNS `compute` (a
+cache miss), never on a cache hit. Unset in every real run (CI and
+local, zero overhead); the T-3525 MUST-FIRE test sets it to prove
+scan-count==1 across a simulated worker restart (two separate
+subprocess invocations sharing the same cache dir)."""
+
+
+# frob:ticket T-3525
+# frob:waive WIRE001 reason="genuinely wired -- called only from frob_self_scan_ \
+# artifacts below, itself an xdist-group-pinned session fixture only consumed by \
+# tests/system/test_frob_self_model.py and \
+# tests/unit/strata/test_sys003_calibration.py (not a direct in-repo call site \
+# WIRE001's callgraph traces into cross-package)" follow_up="T-3381"
+def _repo_tree_hash(repo_root: Path) -> str:
+    """A hash identifying the exact source tree `frob_self_scan_
+    artifacts` would scan (T-3525) -- `HEAD`'s own commit sha plus a hash
+    of `git status --porcelain`'s output, so an uncommitted local edit
+    invalidates the cache too, not just a new commit. Falls back to a
+    fixed sentinel (never raises) if git is unavailable or the call fails
+    for any reason -- a cache-key MISS just costs one fresh scan, never a
+    hard failure."""
+    import hashlib
+    import subprocess
+
+    try:
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        ).stdout.strip()
+        status = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        ).stdout
+    except Exception:  # noqa: BLE001 -- a hash-computation failure is a cache miss
+        return "no-git-fallback"
+    return hashlib.sha256(f"{head}\n{status}".encode("utf-8")).hexdigest()
+
+
+# frob:ticket T-3525
+# frob:waive WIRE001 reason="genuinely wired -- called only from frob_self_scan_ \
+# artifacts below, itself an xdist-group-pinned session fixture only consumed by \
+# tests/system/test_frob_self_model.py and \
+# tests/unit/strata/test_sys003_calibration.py (not a direct in-repo call site \
+# WIRE001's callgraph traces into cross-package)" follow_up="T-3381"
+def _cached_self_scan(cache_dir: Path, tree_hash: str, compute: "Any") -> "Any":
+    """T-3525's caching primitive: load `compute`'s pickled result from
+    `cache_dir/<tree_hash>.pkl` if present and readable, else call
+    `compute()` ONCE, persist the result (atomic `Path.replace`, so a
+    worker that dies mid-write never leaves a torn file for the next
+    reader to trip over), and return it either way.
+
+    Split out from `frob_self_scan_artifacts` itself so a test can
+    exercise the caching/staleness/corruption logic directly against a
+    cheap fake `compute`, without paying this repo's own real whole-tree
+    scan cost per test run (T-3525's own MUST-FIRE/MUST-STAY-QUIET
+    coverage: `tests/unit/test_conftest_stackdump.py::
+    TestCachedSelfScan`).
+
+    Corruption/staleness handling: any read/unpickle failure (a torn
+    write from a worker that died mid-persist before this ticket's fix,
+    a format change) is treated exactly like a cache miss -- falls
+    through to a fresh `compute()` call, never raises."""
+    import pickle
+
+    cache_path = cache_dir / f"{tree_hash}.pkl"
+    if cache_path.is_file():
+        try:
+            with cache_path.open("rb") as fh:
+                return pickle.load(fh)
+        except Exception:  # noqa: BLE001 -- a bad cache file is a cache miss
+            pass
+    result = compute()
+    counter_path = os.environ.get(_SELF_SCAN_COUNTER_ENV)
+    if counter_path:
+        with open(counter_path, "a", encoding="utf-8") as fh:
+            fh.write("1\n")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    tmp_path = cache_path.with_suffix(f".{os.getpid()}.tmp")
+    try:
+        with tmp_path.open("wb") as fh:
+            pickle.dump(result, fh)
+        tmp_path.replace(cache_path)
+    except Exception:  # noqa: BLE001 -- persistence is best-effort only
+        tmp_path.unlink(missing_ok=True)
+    return result
+
+
 # frob:ticket T-3495
+# frob:ticket T-3525
 class FrobSelfScanArtifacts:
     """Result of ONE `build_graph(_REPO_ROOT, ...)` + `sys_gate(...)` pass
     (T-3495) -- a plain in-process result carrier for test fixtures, not
     a pydantic model crossing any real boundary (it holds a `Result`
     object and a `Violation` tuple, never serialized). `.repo_root`/
-    `.violations` are what every consuming test actually reads;
-    `.build_result` is kept for a future consumer that needs the raw
-    `GraphSnapshot`."""
+    `.violations` are what every consuming test actually reads.
+
+    T-3525: `.build_result` is `None` whenever `.violations` came from
+    `_cached_self_scan`'s on-disk cache (the raw `GraphSnapshot` is not
+    itself persisted -- no current consumer reads `.build_result` at
+    all, see that field's own docstring below) -- also `None` on a FRESH
+    scan now, for the same reason, so cache-hit and cache-miss callers
+    see an identical shape rather than one that varies by chance."""
 
     __slots__ = ("repo_root", "build_result", "violations")
 
@@ -1005,16 +1126,33 @@ def frob_self_scan_artifacts(
     temp dir (never this repo's real `.frob/cache.db`) -- same reasoning
     each test's own former `tmp_path / "cache.db"` docstring already
     gave: never race a concurrent `frob check`'s real cache file.
+
+    T-3525: the scan is now wrapped by `_cached_self_scan`, keyed on
+    `_repo_tree_hash(_REPO_ROOT)` -- an xdist worker that dies mid-GROUP
+    (pytest-timeout's thread-method watchdog, this fixture's own
+    dominant cost on a cold/slow runner) and gets replaced no longer
+    restarts the scan from scratch: if an EARLIER worker in this same
+    tree state already finished and persisted before dying on some
+    LATER test, the fresh worker loads instead of recomputing. A worker
+    that dies mid-COMPUTE (before persisting anything) still costs one
+    fresh scan on the next worker -- this fixes the "N-times-over"
+    cascade, not the one unavoidable in-flight cost the first attempt
+    always pays.
     """
     from frob.gates import sys_gate
     from frob.graph import build_graph
 
-    cache_dir = tmp_path_factory.mktemp("frob_self_scan")
-    build_result = build_graph(_REPO_ROOT, cache_dir / "cache.db")
-    assert build_result.is_ok, f"graph build failed: {build_result.err}"
-    violations = sys_gate(_REPO_ROOT, build_result.danger_ok)
+    def _compute() -> tuple:
+        cache_dir = tmp_path_factory.mktemp("frob_self_scan")
+        build_result = build_graph(_REPO_ROOT, cache_dir / "cache.db")
+        assert build_result.is_ok, f"graph build failed: {build_result.err}"
+        return sys_gate(_REPO_ROOT, build_result.danger_ok)
+
+    violations = _cached_self_scan(
+        _SELF_SCAN_CACHE_DIR, _repo_tree_hash(_REPO_ROOT), _compute
+    )
     return FrobSelfScanArtifacts(
-        repo_root=_REPO_ROOT, build_result=build_result, violations=violations
+        repo_root=_REPO_ROOT, build_result=None, violations=violations
     )
 
 

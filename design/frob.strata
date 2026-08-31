@@ -1569,7 +1569,10 @@ node testsuite : trusted {
     // T-3516: TestWorkerCrashReportIntegration spawns a real
     // `python -m pytest -n 2` subprocess per MUST-FIRE/MUST-STAY-QUIET
     // case -- the only way to exercise an actual xdist worker crash.
-    may "exec" via "tests/unit/test_conftest_stackdump.py";
+    // T-3525: _repo_tree_hash shells out to `git rev-parse HEAD` and
+    // `git status --porcelain` to compute frob_self_scan_artifacts'
+    // cache key.
+    may "exec" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py";
     // T-1478: tests/unit/strata/test_effects.py's own new argument-level
     // `of`-scoping fixtures contain real `os.environ.get(...)` needle
     // literals (exercising the SAME env-read observation the `of` join

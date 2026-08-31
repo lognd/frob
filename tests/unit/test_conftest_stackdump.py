@@ -93,7 +93,11 @@ class TestSelfScanHeavyGrouping:
         """A collected item whose name matches one of the known full-repo
         self-scan tests gets the SAME `xdist_group` marker as the others --
         the exact grouping that makes `--dist=loadgroup` schedule them
-        onto one worker sequentially instead of several workers at once."""
+        onto one worker sequentially instead of several workers at once.
+
+        T-3525: also gets a raised `@pytest.mark.timeout(1200)` -- the
+        SAME hook assigns both, so group membership and the raised budget
+        can never desync."""
         module = _load_conftest()
 
         class _FakeItem:
@@ -120,10 +124,13 @@ class TestSelfScanHeavyGrouping:
 
         group_names = set()
         for item in items[:3]:
-            assert len(item.own_markers) == 1, item.name
-            marker = item.own_markers[0]
-            assert marker.name == "xdist_group"
-            group_names.add(marker.kwargs["name"])
+            assert len(item.own_markers) == 2, item.name
+            marker_names = {m.name for m in item.own_markers}
+            assert marker_names == {"xdist_group", "timeout"}
+            group_marker = next(m for m in item.own_markers if m.name == "xdist_group")
+            group_names.add(group_marker.kwargs["name"])
+            timeout_marker = next(m for m in item.own_markers if m.name == "timeout")
+            assert timeout_marker.args == (1200,)
         assert group_names == {"frob_self_scan_heavy"}
         assert items[3].own_markers == []
 
@@ -656,3 +663,183 @@ class TestWorkerCrashReportIntegration:
         assert failed_lines == [
             "SUITE-RESULT-FAILED: test_planted.py::test_fails (failed)"
         ], combined
+
+
+class TestRepoTreeHash:
+    """T-3525: `_repo_tree_hash`'s never-raises fallback contract."""
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestRepoTreeHash.test_stable_for_the_same_\
+    # clean_tree
+    def test_stable_for_the_same_clean_tree(self, tmp_path: Path) -> None:
+        """Called twice against the SAME (real, this-repo) tree state,
+        `_repo_tree_hash` returns the identical value both times."""
+        module = _load_conftest()
+        first = module._repo_tree_hash(Path.cwd())
+        second = module._repo_tree_hash(Path.cwd())
+        assert first == second
+        assert first != "no-git-fallback"
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestRepoTreeHash.test_falls_back_without_r\
+    # aising_when_git_is_unavailable
+    def test_falls_back_without_raising_when_git_is_unavailable(
+        self, tmp_path: Path
+    ) -> None:
+        """A directory with no `.git` at all (git fails, not a real repo)
+        returns the fixed fallback sentinel instead of raising -- a
+        cache-key MISS just costs one fresh scan, never a hard failure."""
+        module = _load_conftest()
+        result = module._repo_tree_hash(tmp_path)
+        assert result == "no-git-fallback"
+
+
+class TestCachedSelfScan:
+    """T-3525: `_cached_self_scan`'s caching/staleness/corruption logic,
+    exercised directly against a cheap fake `compute` -- the primitive
+    `frob_self_scan_artifacts` wraps around this repo's own real (slow)
+    whole-tree scan."""
+
+    @staticmethod
+    def _counting_compute(calls: list) -> "object":
+        def _compute() -> tuple:
+            calls.append(1)
+            return ("violation-a", "violation-b")
+
+        return _compute
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_cache_miss_compute\
+    # s_once_and_persists
+    def test_cache_miss_computes_once_and_persists(self, tmp_path: Path) -> None:
+        """An empty cache dir: `compute` is called exactly once, its
+        result is returned, and a cache file is left behind for the next
+        caller."""
+        module = _load_conftest()
+        cache_dir = tmp_path / "cache"
+        calls: list = []
+
+        result = module._cached_self_scan(
+            cache_dir, "hash-a", self._counting_compute(calls)
+        )
+
+        assert result == ("violation-a", "violation-b")
+        assert len(calls) == 1
+        assert (cache_dir / "hash-a.pkl").is_file()
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_cache_hit_does_not\
+    # _recompute
+    def test_cache_hit_does_not_recompute(self, tmp_path: Path) -> None:
+        """MUST-FIRE (T-3525, primitive level): once persisted under a
+        given tree hash, a SECOND call with the SAME hash loads from disk
+        -- `compute` is never called again."""
+        module = _load_conftest()
+        cache_dir = tmp_path / "cache"
+        calls: list = []
+
+        first = module._cached_self_scan(
+            cache_dir, "hash-a", self._counting_compute(calls)
+        )
+        second = module._cached_self_scan(
+            cache_dir, "hash-a", self._counting_compute(calls)
+        )
+
+        assert first == second == ("violation-a", "violation-b")
+        assert len(calls) == 1
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_tree_hash_mismatch\
+    # _triggers_exactly_one_fresh_scan
+    def test_tree_hash_mismatch_triggers_exactly_one_fresh_scan(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET (T-3525): a DIFFERENT tree hash is a cache
+        miss of its own -- exactly one fresh `compute` call for the new
+        hash, the first hash's own cached entry is untouched."""
+        module = _load_conftest()
+        cache_dir = tmp_path / "cache"
+        calls: list = []
+
+        module._cached_self_scan(cache_dir, "hash-a", self._counting_compute(calls))
+        module._cached_self_scan(cache_dir, "hash-b", self._counting_compute(calls))
+        module._cached_self_scan(cache_dir, "hash-b", self._counting_compute(calls))
+
+        assert len(calls) == 2  # one for hash-a, one for hash-b (its own first miss)
+        assert (cache_dir / "hash-a.pkl").is_file()
+        assert (cache_dir / "hash-b.pkl").is_file()
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_corrupted_cache_fa\
+    # lls_back_to_a_fresh_scan
+    def test_corrupted_cache_falls_back_to_a_fresh_scan(self, tmp_path: Path) -> None:
+        """A torn/corrupted cache file (a worker that died mid-persist
+        before this ticket's fix, say) is treated as a miss -- `compute`
+        runs and the caller gets a real result, never an unpickle crash."""
+        module = _load_conftest()
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir(parents=True)
+        (cache_dir / "hash-a.pkl").write_bytes(b"not a valid pickle stream")
+        calls: list = []
+
+        result = module._cached_self_scan(
+            cache_dir, "hash-a", self._counting_compute(calls)
+        )
+
+        assert result == ("violation-a", "violation-b")
+        assert len(calls) == 1
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestCachedSelfScan.test_must_fire_scan_cou\
+    # nt_is_one_across_a_simulated_worker_restart
+    def test_must_fire_scan_count_is_one_across_a_simulated_worker_restart(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE (T-3525, process level): two SEPARATE subprocess
+        Python invocations (a fresh interpreter each, standing in for two
+        different xdist worker PROCESSES -- the actual "worker restart"
+        shape this ticket fixes) share the same cache dir and tree hash.
+        A `FROB_SELF_SCAN_COUNTER_FILE` env var, honoured by `_cached_
+        self_scan` itself, records one line per REAL `compute` call
+        across both processes -- asserting exactly one line is
+        scan-count==1 across the simulated restart."""
+        cache_dir = tmp_path / "cache"
+        counter_path = tmp_path / "counter.txt"
+        script = (
+            "import sys\n"
+            "from pathlib import Path\n"
+            "sys.path.insert(0, %r)\n"
+            "from tests.unit._conftest_test_helpers import load_conftest_module\n"
+            "module = load_conftest_module('_t3525_worker_sim')\n"
+            "\n"
+            "\n"
+            "def _compute():\n"
+            "    return ('violation-a',)\n"
+            "\n"
+            "\n"
+            "module._cached_self_scan(Path(%r), 'hash-a', _compute)\n"
+        ) % (str(Path.cwd()), str(cache_dir))
+        env = dict(os.environ)
+        env["FROB_SELF_SCAN_COUNTER_FILE"] = str(counter_path)
+
+        def _run_one_simulated_worker() -> "subprocess.CompletedProcess[str]":
+            """One "worker process" attempt: a fresh interpreter running
+            `script` against the shared `cache_dir`/`counter_path` --
+            called twice below to simulate the original worker plus its
+            xdist-spawned replacement (T-3525 de-dup of the identical
+            `subprocess.run` call PERF012 flagged)."""
+            return subprocess.run(
+                [sys.executable, "-c", script],
+                capture_output=True,
+                text=True,
+                timeout=60,
+                env=env,
+            )
+
+        first = _run_one_simulated_worker()
+        second = _run_one_simulated_worker()
+
+        assert first.returncode == 0, first.stdout + first.stderr
+        assert second.returncode == 0, second.stdout + second.stderr
+        counter_lines = counter_path.read_text(encoding="utf-8").splitlines()
+        assert len(counter_lines) == 1, counter_lines
