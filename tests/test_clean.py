@@ -109,12 +109,29 @@ def test_scan_skips_tracked_files(repo: Path) -> None:
     assert any(p.name == "coverage.xml" for p in report.skipped_tracked)
 
 
+def _snapshot_ignoring_git_maintenance(repo: Path) -> list[Path]:
+    """`repo`'s full tree, EXCLUDING `.git/objects/maintenance.lock` (T-3585:
+    the macOS-CI-only flake in `test_clean_dry_run_removes_nothing`) --
+    git's own background `git maintenance`/`gc --auto` daemon can create
+    and remove this lock file at any moment while a repo is on disk,
+    entirely independent of anything `clean()` does; measured on a real
+    macos-latest run (33385515507) racing exactly this test's two
+    `rglob` scans. `clean(dry_run=True)` never touches `.git/` at all, so
+    a diff confined to this one git-internal lock path is proof the race
+    fired, not proof `clean()` mutated anything."""
+    return sorted(
+        p.relative_to(repo)
+        for p in repo.rglob("*")
+        if p.name != "maintenance.lock"
+    )
+
+
 # frob:tests tests/test_clean.py::test_clean_dry_run_removes_nothing
 def test_clean_dry_run_removes_nothing(repo: Path) -> None:
     """The default (`dry_run=True`) never mutates the tree."""
-    before = sorted(p.relative_to(repo) for p in repo.rglob("*"))
+    before = _snapshot_ignoring_git_maintenance(repo)
     report = clean(repo, CleanTier.DEEP).danger_ok
-    after = sorted(p.relative_to(repo) for p in repo.rglob("*"))
+    after = _snapshot_ignoring_git_maintenance(repo)
     assert before == after
     assert report.dry_run is True
     assert report.count > 0
