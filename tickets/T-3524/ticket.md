@@ -2,7 +2,7 @@
 id: T-3524
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3521):
   1 new (rule, file) identit(ies), 1 finding(s) (I001)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -23,6 +23,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: lint-only fix, no behavioral delta to reproduce
+  actor: logan
+  at: '2026-08-30'
+  old_length: 1264
+  new_length: 1396
 designated_repro_test: null
 threat: null
 component: null
@@ -43,3 +50,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - I001  /home/logan/projects/frob/tests/unit/strata/test_litmus_cwe.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:no-behavior-change reason="pure whitespace fix (removes one stray blank line ruff flags as I001); no runtime behavior change"
