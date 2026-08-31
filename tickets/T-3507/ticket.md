@@ -1,7 +1,7 @@
 ---
 id: T-3507
 title: os.sysconf Windows fallback in process-scan CPU tick-rate helper
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -63,3 +63,6 @@ and charmap leaves -- dispatchable in parallel with all four.
 
 ## Failure log
 - 2026-08-30 attempt 1: already resolved on main: _read_uptime_and_clk_tck already guards os.sysconf with sys.platform != win32, Windows takes the 100-tick fallback directly, AttributeError cannot occur. No code change needed.
+
+## Drop reason
+- 2026-08-30: Already resolved on main: _read_uptime_and_clk_tck guards os.sysconf with sys.platform != win32 and takes the documented 100-tick fallback (series Z measurement, 2026-08-31).
