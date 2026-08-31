@@ -1,7 +1,7 @@
 ---
 id: T-3534
 title: Document T-3526's abandoned Tier-A autofix journal detection in docs/modules/gates.md
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-30'
@@ -24,7 +24,7 @@ scope_changes:
 - op: add
   glob: tests/unit/test_fix_engine_journal.py
   reason: re-point a stale WIRE001 waiver follow_up=T-3534 citation to its correct
-    successor ticket (T-draft-ccac6929) so this docs-only ticket can close
+    successor ticket (T-3558) so this docs-only ticket can close
   actor: logan
   at: '2026-08-31'
 evidence:

@@ -41,7 +41,7 @@ from frob.tickets import TicketQueue
 # own target= in \
 # TestAbandonedAutofixJournalSigkillSubprocess.test_sigkilled_journal_writer_ \
 # is_detected_and_refused below; the analyzer's call-graph does not resolve a target= \
-# reference the way it resolves a direct call" follow_up="T-3534"
+# reference the way it resolves a direct call" follow_up="T-3558"
 def _write_journal_and_block(root: str, ready: "multiprocessing.synchronize.Event") -> None:
     """Child-process target (module-level so it is picklable on every
     start method): writes the T-1348 journal with THIS process's own
