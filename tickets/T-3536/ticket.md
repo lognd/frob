@@ -46,7 +46,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4dfb69e1b721ee95c301dfdc156c923ee1fa16dc
 ---
 frob:waive BUG002 reason="macOS-only defect, ground-truth verified from CI run 33353658750 job 99371615032 (AssertionError showing only cargo Updating crates.io index / Locking N packages chatter as the stderr diagnostic); real cause is pytest-timeout(180) killing the maturin/cargo subprocess mid crates.io-index-clone on a slow/cold macOS runner network, not a reproducible compile bug, so it cannot fail-then-pass on this Linux dev box with a warm cache."
 
