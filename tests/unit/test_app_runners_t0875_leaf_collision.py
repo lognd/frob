@@ -8,6 +8,7 @@ disambiguate the credit onto the actual behavior.
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from pathlib import Path
 
@@ -70,6 +71,10 @@ class TestRegistryRunnerRun:
 
     def test_missing_registry_dir_logs_and_returns(self, tmp_path, caplog):
         """A nonexistent `--registry-path` logs an info line and returns cleanly."""
+        # T-3561: T-3531 pinned pyproject.toml log_level=WARNING for CI
+        # noise -- caplog no longer captures INFO by default, so this
+        # test must ask for its own INFO capture level explicitly.
+        caplog.set_level(logging.INFO)
         cfg = AppConfig(registry_path=tmp_path / "does-not-exist", registry_json=False)
         registry_run(cfg)
         assert "does not exist" in caplog.text

@@ -13,6 +13,7 @@ mocking it away.
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from pathlib import Path
 
@@ -290,6 +291,16 @@ class TestWork:
         )
 
         cfg = AppConfig(ticket_command="work", ticket_id=tid, ticket_foreground=True)
+        # T-3561: T-3531 pinned pyproject.toml log_level=WARNING, and the
+        # app itself sets "frob.app.ticket_runner"'s own logger level
+        # explicitly from that same config -- a bare caplog.at_level
+        # (root-only) does not override an explicitly-set CHILD
+        # logger's level, so the INFO calls this test asserts on were
+        # silently dropped. Target the logger by name explicitly, the
+        # same pattern tests/test_serve_daemon.py and
+        # tests/test_tickets_leases.py already use for this exact class
+        # of interaction.
+        caplog.set_level(logging.INFO, logger="frob.app.ticket_runner")
         with caplog.at_level("INFO"):
             _work(repo, cfg)
 

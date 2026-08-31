@@ -2,7 +2,7 @@
 id: T-3561
 title: T-3531 log_level=WARNING broke 7 log-assertion tests; set per-test capture
   levels
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -23,6 +23,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_debt_runner.py::TestDebtRunner::test_no_debt_logs_clean_message
+- tests/test_debt_runner.py::TestDebtRunner::test_human_mode_reports_expired_flag
+- tests/test_deprecated_runner.py::TestDeprecatedRunner::test_no_deprecations_logs_clean_message
+- tests/test_deprecated_runner.py::TestDeprecatedRunner::test_human_mode_reports_past_sunset_status
+- tests/test_deprecated_runner.py::TestDeprecatedRunner::test_human_mode_reports_orphaned_status_for_closed_ticket
+- tests/unit/test_app_runners_t0875_leaf_collision.py::TestRegistryRunnerRun::test_missing_registry_dir_logs_and_returns
+- tests/test_ticket_work_and_land_finish.py::TestWork::test_fleet_context_reports_the_bound_agent_env_exports_computed
 designated_repro_test: null
 threat: null
 component: null

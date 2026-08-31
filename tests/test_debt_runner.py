@@ -5,6 +5,7 @@ human-readable modes, no mutation."""
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 
 import pytest
@@ -54,6 +55,11 @@ class TestDebtRunner:
     def test_no_debt_logs_clean_message(self, tmp_path: Path, caplog) -> None:
         # frob:tests \
         # tests/test_debt_runner.py::TestDebtRunner.test_no_debt_logs_clean_message
+        # T-3561: T-3531 pinned pyproject.toml log_level=WARNING for CI
+        # noise -- caplog no longer captures INFO by default, so this
+        # test must ask for its own INFO capture level explicitly rather
+        # than relying on the (now-changed) global default.
+        caplog.set_level(logging.INFO)
         _write(tmp_path, "src/a.py", "def helper(x):\n    return x\n")
         cfg = AppConfig(debt_path=tmp_path, debt_json=False)
         run(cfg)
@@ -62,6 +68,8 @@ class TestDebtRunner:
     def test_human_mode_reports_expired_flag(self, tmp_path: Path, caplog) -> None:
         # frob:tests \
         # tests/test_debt_runner.py::TestDebtRunner.test_human_mode_reports_expired_flag
+        # T-3561: see test_no_debt_logs_clean_message above.
+        caplog.set_level(logging.INFO)
         _write(
             tmp_path,
             "src/a.py",

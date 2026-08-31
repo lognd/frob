@@ -5,6 +5,7 @@ JSON and human-readable modes, no mutation."""
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 
 import pytest
@@ -83,6 +84,10 @@ class TestDeprecatedRunner:
     def test_no_deprecations_logs_clean_message(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
+        # T-3561: T-3531 pinned pyproject.toml log_level=WARNING for
+        # CI noise -- caplog no longer captures INFO by default, so
+        # this test must ask for its own INFO capture level.
+        caplog.set_level(logging.INFO)
         _write(tmp_path, "src/a.py", "def helper(x):\n    return x\n")
         cfg = AppConfig(deprecated_path=tmp_path, deprecated_json=False)
         run(cfg)
@@ -92,6 +97,8 @@ class TestDeprecatedRunner:
     def test_human_mode_reports_past_sunset_status(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
+        # T-3561: see test_no_deprecations_logs_clean_message above.
+        caplog.set_level(logging.INFO)
         _write_ticket(tmp_path, "T-0002", "in-progress")
         _write(
             tmp_path,
@@ -114,6 +121,8 @@ class TestDeprecatedRunner:
         ticket shows as `orphaned` -- T-0638's tri-state status
         requirement, distinct from the in-window/past-sunset split
         `DeprecatedEntry.expired` alone can express."""
+        # T-3561: see test_no_deprecations_logs_clean_message above.
+        caplog.set_level(logging.INFO)
         _write_ticket(tmp_path, "T-0003", "done")
         _write(
             tmp_path,
