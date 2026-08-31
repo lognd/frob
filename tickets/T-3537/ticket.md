@@ -35,6 +35,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8d9b6629bc09f6f2c207085cdb59ac7aacdcb878
 ---
 frob:waive BUG002 reason="macOS-only defect verified from CI run 33353658750 job 99371615032: the preemption mechanism works (Timeout banner printed), only the wall bound was too tight for the slow macOS runner (measured 7.006s > 5.0s). The property restated (timeout fired AND call did not run to completion) with a 30s bound is a pure loosening -- it does not add coverage that could fail-then-pass on this Linux dev box, which never showed the tight bound trip."
