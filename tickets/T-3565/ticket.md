@@ -2,7 +2,7 @@
 id: T-3565
 title: faulthandler.register does not exist on Windows -- T-3560 instrumentation crashed
   pytest_configure
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/conftest.py
+- tests/unit/test_conftest_sigbreak_faulthandler.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_conftest_sigbreak_faulthandler.py
+  reason: regression coverage for the fix
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
