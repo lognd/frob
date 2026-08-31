@@ -40,6 +40,9 @@ scope:
 - tests/unit/test_rapid_sweep.py
 - tests/test_coverage_wait_shared.py
 - tests/test_serve_socket.py
+- docs/modules/process.md
+- docs/modules/serve.md
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: one shared lock primitive genuinely fans out to every fcntl
   call site plus its lease/land/gate test files; T-3076's own by-file breakdown is
@@ -91,6 +94,27 @@ scope_changes:
   reason: acquire_singleton_lock's own platform-backend tests monkeypatch fcntl/msvcrt
     as module-local attributes on frob.serve._socketd, which now delegates to frob.process._lock's
     shared primitive -- must retarget the monkeypatch
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/process.md
+  reason: 'AFFECT001 closure: derived_state_lock/portable_flock_acquire, acquire_singleton_lock,
+    and file_lock/LandQueueLockUnavailable all changed and their frob:doc-anchored
+    docs must reflect the T-3506 primitive extraction'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/serve.md
+  reason: 'AFFECT001 closure: derived_state_lock/portable_flock_acquire, acquire_singleton_lock,
+    and file_lock/LandQueueLockUnavailable all changed and their frob:doc-anchored
+    docs must reflect the T-3506 primitive extraction'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'AFFECT001 closure: derived_state_lock/portable_flock_acquire, acquire_singleton_lock,
+    and file_lock/LandQueueLockUnavailable all changed and their frob:doc-anchored
+    docs must reflect the T-3506 primitive extraction'
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
