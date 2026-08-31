@@ -80,6 +80,7 @@ follow-up's own first task is to measure against a macOS box or the
   (`tests/test_mutate_journal.py`) already call through. T-3528
   re-measured this bucket (2026-08-31) and found the fallback fully
   wired on every scoped file except one: the bucket's own file list
+  <!-- frob:waive DOC006 reason="names a module that NEVER existed, illustrating why the scope claim below is accurate -- not a live pointer" -->
   named `src/frob/tickets/_land_finish_guard.py`, which never existed
   as a separate module -- the guard logic these tests cover lives in
   `src/frob/tickets/_leases.py` and `_worktree_guard.py` instead, both
