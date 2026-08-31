@@ -1,7 +1,7 @@
 ---
 id: T-3511
 title: Re-measure Windows suite to completion after the five primitive fixes
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-30'
@@ -34,6 +34,9 @@ triage_changes:
     close
   actor: logan
   at: '2026-08-31'
+evidence:
+- cmd:grep -n 'Re-measurement after the five primitive fixes' docs/design/windows-portability.md
+  exit=0 sha256=a4d277d50889
 kind_history:
 - 2026-08-31 bug->docs evidence=0 done_report=yes
 designated_repro_test: null

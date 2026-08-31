@@ -48,6 +48,55 @@ level. Concretely:
   `windows-latest` leg is a known, tracked gap that does not need
   `override_red_ci` to release.
 
+## Re-measurement after the five primitive fixes (T-3511)
+
+T-3511 re-measured `windows-latest` after all five T-3505 primitive
+fixes landed (T-3506 portable locks at `0cebc2819`; T-3508 AF_UNIX;
+T-3510 charmap->utf-8; T-3507/T-3509 already-resolved, no in-scope
+fix needed). The newest completed run at the time, 33353658750 (HEAD
+`2654ca1ff`, 2026-08-31), again **DID NOT COMPLETE**:
+
+```
+SUITE-RESULT: DID-NOT-COMPLETE exitstatus=2 (INTERRUPTED) collected=12924 (partial) failed=3 (partial, lower-bound)
+```
+
+Only ~1% of the suite ran (129 of 12924 collected) before a bare
+`KeyboardInterrupt` killed the whole pytest session at
+`threading.py:359`, ~49s after xdist finished bringing up its workers
+(03:26:42 -> 03:27:31) -- nowhere near the step's own 1500s (25m)
+`Wait-Process` budget or pytest-timeout's `--timeout=120` per-test
+threshold, and not attributable to any of the five primitives above.
+Per T-3076's own acceptance criterion ("a completed, not-interrupted
+Windows run with a stable count"), this non-completion is itself the
+finding -- **the 278/365-shaped failure-count baseline this doc
+previously carried is retired**; the dominant Windows blocker is now
+this early interrupt, not a large stable failure set.
+
+Diagnosis (from job id 99371614987's log): pytest-timeout's
+`--timeout-method=thread` was ruled out directly by reading
+`pytest_timeout.py`'s `timeout_timer` function -- on expiry it dumps thread stacks
+and calls `os._exit(1)`, a hard process exit, never an interrupt
+signal; no test in this run ran anywhere near 120s regardless (the
+whole session lasted 49s). No `os.kill(CTRL_C_EVENT)` /
+`GenerateConsoleCtrlEvent` call exists anywhere under `tests/` or
+`src/`. Leading hypothesis: `.github/workflows/ci.yml`'s windows Test
+step (T-3250) launches pytest via
+`Start-Process -FilePath uv -ArgumentList run,pytest,-q -NoNewWindow -PassThru`
+then `Wait-Process -Timeout $budget` -- `-NoNewWindow` means the child
+does not get its own console/process group, so it shares the parent
+pwsh step's console; a console control event delivered to that shared
+console (GitHub-hosted Windows runners are known to broadcast
+`CTRL_BREAK_EVENT` to their console as part of heartbeat/cancellation
+handling) propagates to every process attached to it, and CPython's
+default Windows console-control handler maps that to a
+`KeyboardInterrupt` on the main thread -- exactly the observed
+`threading.py:359` stack. Filed as a leaf under T-3505 (see table
+below); not fixed in T-3511 itself (docs-only scope).
+
+The 3 failures visible before the interrupt were all
+`tests/gates/test_comment_placement.py` (Cplace symref/`os.sep`
+issue, already noted below) -- also filed as its own leaf.
+
 ## Primitive bucket status (T-3076's five buckets)
 
 | Primitive | Failures (of 278) | Status | Ticket |
@@ -60,31 +109,36 @@ level. Concretely:
 
 Only the charmap bucket is fully closed by this table's own edits; the
 other four rows above are a snapshot from working T-3507/T-3508/T-3509
-in the same series as this ticket, not new burn-down from this ticket
+in the same series as T-3510, not new burn-down from that ticket
 itself -- see each ticket's own Done report / Failure log entry for the
-measurement backing its row.
+measurement backing its row. All five are DONE as of T-3511's
+re-measurement (T-3506 landed at `0cebc2819`).
 
-## Concrete failures recorded (not fixed here)
+## New failure buckets (post-primitive-fix, T-3511)
 
-Run 33277131782 surfaced these Windows-only failures; they belong under
-T-3076's own burn-down, not this ticket:
+The 278/365-shaped counts above are retired as the reference baseline
+(see "Re-measurement" above) -- the suite has not completed since, so
+there is no comparable stable count yet. Two buckets are characterized
+from what DID run before the interrupt:
 
-- `tests/gates/test_comment_placement.py::TestCplace001::test_symref_binds_to_the_enclosing_function`
-  and `test_must_stay_quiet_exempt_path` -- both assert a POSIX-style
-  symref path (illustrative shape:
-  <!-- frob:waive DOC006 reason="path.py::symbol_name here is an illustrative placeholder shape, not a real tracked file" -->
-  a forward-slash `path.py::symbol_name` pair) but Windows produces the
-  same pair joined with a backslash instead (`os.sep`-shaped, not
-  normalized to posix).
-- `tests/system/test_ci_hang_guard_positive_control.py::...::test_ordinary_fast_test_is_unaffected`
-  -- shells to `timeout`, which resolves to `timeout.exe` on Windows
-  (`Invalid syntax. Default option is not allowed more than '1' time(s)`),
-  a different program than GNU coreutils' `timeout`.
+| Bucket | Shape | Status | Ticket |
+| --- | --- | --- | --- |
+| Early session-wide `KeyboardInterrupt` | Suite aborts at ~1% (49s in), unrelated to any per-test/step timeout; console-sharing (`Start-Process -NoNewWindow`) hypothesis | open, diagnosed not fixed | T-3540 |
+| Cplace symref/`os.sep` | `str(path)` at `_comment_placement.py:179,278` uses the platform separator instead of posix -- 3 failing tests (`TestCplace001`/`TestCplace002`) | open, root cause pinpointed to two exact lines | T-3539 |
+| `tests/system/test_ci_hang_guard_positive_control.py` `timeout` mismatch | GNU `timeout` vs Windows `timeout.exe` (`Invalid syntax`) | open (carried over from the 33277131782 measurement; not re-confirmed this run since the suite aborted before reaching it) | untracked -- file when re-measured post-interrupt-fix |
+
+The KeyboardInterrupt bucket blocks measuring anything past ~1% of the
+suite, so it is the priority: until it is fixed, no run can produce a
+comparable failed-count for the remaining ~99% of the suite, Cplace and
+`timeout.exe` included.
 
 ## Removing the advisory flag
 
 Remove `continue-on-error` from the `windows-latest` leg (and tighten
 the "what green means" note in docs/guides/release.md) once T-3076's
-Windows-only failure set reaches zero. That removal should land as an
-explicit acceptance line on T-3076 itself, not edited into T-3076's body
-from this ticket.
+Windows-only failure set reaches zero AND a windows-latest run reaches
+a stable, completed (not INTERRUPTED) result -- currently blocked on
+the KeyboardInterrupt bucket above, which must be fixed before the
+suite can even finish collecting a real failure count to drain. That
+removal should land as an explicit acceptance line on T-3076 itself,
+not edited into T-3076's body from this ticket.
