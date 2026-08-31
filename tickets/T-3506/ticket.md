@@ -1,7 +1,7 @@
 ---
 id: T-3506
 title: 'Portable process lock: share the msvcrt/fcntl dual-path beyond derived_state_lock'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -164,6 +164,8 @@ evidence:
 - tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends::test_windows_backend_round_trips
 - tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends::test_windows_backend_round_trips
 - tests/unit/test_rapid_sweep.py::TestBaselineLock::test_windows_backend_serializes_two_concurrent_holders
+- tests/unit/test_land_queue.py::TestFileLock::test_no_lock_primitive_refuses_loudly
+- tests/unit/test_mutation_sweep_queue.py::TestSweepLockPlatformBackend::test_no_lock_primitive_refuses_loudly
 designated_repro_test: null
 threat: null
 component: null
