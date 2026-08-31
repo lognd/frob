@@ -1,7 +1,7 @@
 ---
 id: T-3555
 title: 'SYS111/SYS100: declare capabilities for the T-3516/T-3526 test files'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -31,3 +31,6 @@ MEASURED run 33361224273 (HEAD 8d4c18055): tests/system/test_frob_self_model.py:
 
 ## Failure log
 - 2026-08-31 attempt 1: already resolved on current main: tests/system/test_frob_self_model.py's full file (12 tests, including test_sys_gate_zero_violations) passes clean with 0 SYS violations. The SELFAUDIT001/SYS111 finding no longer reproduces -- concurrent lands already declared whatever capability was missing.
+
+## Drop reason
+- 2026-08-31: Already resolved by a concurrent land (series Z verification: fresh whole-repo selfconform scan clean / T-3533 fixed the assertion; 10x + 3x -n 4 local runs green).
