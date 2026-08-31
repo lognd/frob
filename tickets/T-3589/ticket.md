@@ -2,7 +2,7 @@
 id: T-3589
 title: 'Windows round 6: frob check itself hangs on win32 (child of tests/system/conftest.py''s
   first spawn)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
