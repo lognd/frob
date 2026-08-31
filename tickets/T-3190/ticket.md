@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - frob.toml
 - docs/modules/tickets-lifecycle.md
-- tests/test_ci_workflow_matrix.py
 - tests/test_config_frob_toml_milestone.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -55,6 +54,12 @@ scope_changes:
   reason: feature-kind ticket requires pytest evidence node ids; adding a new regression
     test file guarding frob.toml default_milestone semantics against re-conflating
     shipping with 1.0.0 (T-3190 acceptance 1)
+  actor: logan
+  at: '2026-08-31'
+- op: remove
+  glob: tests/test_ci_workflow_matrix.py
+  reason: accidental scope add from a copy-paste error; unrelated to T-3190's milestone
+    work
   actor: logan
   at: '2026-08-31'
 body_changes:
