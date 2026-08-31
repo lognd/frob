@@ -2,7 +2,7 @@
 id: T-3190
 title: 'Adopt real milestones: MILE001 cannot fire while all 346 tickets sit in one
   default milestone'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-27'
@@ -71,6 +71,9 @@ body_changes:
   at: '2026-08-28'
   old_length: 3369
   new_length: 6651
+evidence:
+- tests/test_config_frob_toml_milestone.py::TestDefaultMilestoneDoesNotConflateShippingWithOnePointZero::test_default_milestone_is_configured
+- tests/test_config_frob_toml_milestone.py::TestDefaultMilestoneDoesNotConflateShippingWithOnePointZero::test_default_milestone_is_not_the_publish_milestone
 designated_repro_test: null
 threat: null
 component: null
