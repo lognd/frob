@@ -76,6 +76,28 @@ class DerivedStateLockUnavailable(RuntimeError):
     brief contention."""
 
 
+#: T-3577: ceiling `_msvcrt_acquire_blocking`'s poll loop retries against,
+#: in seconds, before raising `PortableLockUnavailable` instead of retrying
+#: forever. `fcntl.flock` without `LOCK_NB` genuinely blocks indefinitely
+#: on POSIX, but that is safe there because re-locking the SAME fd (the
+#: shape every call site in this codebase uses) is a no-op -- `msvcrt.
+#: locking` has no such same-fd/same-process reentrancy (T-3577's own
+#: measured finding: none of the ported call sites -- `frob.tickets.
+#: _store`/`_land`/`_leases`/`_land_queue`/`_mutation_sweep_queue`/
+#: `_new_renumber`/`_land_git_ops`, `frob.serve._socketd`, `frob.testing.
+#: _coverage_wait` -- carry `derived_state_lock`'s own same-process
+#: reentrancy guard), so a nested same-process re-acquire of the same lock
+#: retries against itself FOREVER on Windows with no bound at all. Chosen
+#: generous (well above any legitimate cross-process contention this
+#: codebase's own locks are held for) so a genuinely slow but healthy
+#: contender never trips it -- this exists to convert an indefinite,
+#: silent hang into a loud, bounded failure, not to police normal
+#: contention latency.
+_MSVCRT_BLOCKING_ACQUIRE_CEILING_S = 120.0
+
+
+# frob:ticket T-3577
+# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_blocking_reentry_raises_instead_of_hanging_forever  # noqa: E501
 def _msvcrt_acquire_blocking(fd: int) -> None:  # pragma: no cover -- windows-only
     """Block (polling) until an exclusive `msvcrt.locking` byte-range
     lock on `fd`'s first byte is acquired -- `msvcrt` has no shared/read
@@ -85,18 +107,38 @@ def _msvcrt_acquire_blocking(fd: int) -> None:  # pragma: no cover -- windows-on
     readers block each other too on Windows, which is safe, just less
     parallel than POSIX's real shared-lock semantics -- see that
     function's own docstring). Mirrors `frob.app.ticket_runner.
-    _rapid_sweep`'s T-2918 `msvcrt.locking` retry-loop shape, but
-    unbounded (no `timeout`): `fcntl.flock` without `LOCK_NB` also
-    blocks indefinitely, and this Windows backend must match that
-    semantics rather than the OTHER, timeout-bounded `_baseline_lock`
-    T-2918 fixed."""
+    _rapid_sweep`'s T-2918 `msvcrt.locking` retry-loop shape.
+
+    T-3577: BOUNDED at `_MSVCRT_BLOCKING_ACQUIRE_CEILING_S`, unlike
+    `fcntl.flock` without `LOCK_NB` (which blocks indefinitely on POSIX --
+    safe there only because same-fd re-locking is a no-op). `msvcrt.
+    locking` is not reentrant even on the same fd/process, so an unbounded
+    version of this loop self-deadlocks FOREVER, with no external signal,
+    the moment any caller nests a same-process re-acquire of a lock this
+    backend already holds -- exactly the asymmetry that hung the
+    windows-latest CI leg (T-3577's own measured root cause). Raises
+    `PortableLockUnavailable` on expiry rather than returning False: this
+    function's contract (mirroring bare `fcntl.flock(fd, LOCK_EX)`) is
+    "always succeeds or raises", never a silent give-up a caller might
+    mistake for "lock file missing" -- see `portable_flock_acquire`'s own
+    `blocking=True, timeout=None` shape."""
     assert msvcrt is not None
+    deadline = time.monotonic() + _MSVCRT_BLOCKING_ACQUIRE_CEILING_S
     while True:
         try:
             os.lseek(fd, 0, os.SEEK_SET)
             msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
             return
-        except OSError:
+        except OSError as exc:
+            if time.monotonic() >= deadline:
+                raise PortableLockUnavailable(
+                    f"process: _msvcrt_acquire_blocking: fd {fd} still "
+                    f"locked after {_MSVCRT_BLOCKING_ACQUIRE_CEILING_S:g}s "
+                    "(T-3577: msvcrt.locking is not reentrant -- this is "
+                    "either genuine long-held cross-process contention, or "
+                    "a same-process nested re-acquire that will never "
+                    "resolve on its own)"
+                ) from exc
             time.sleep(0.05)
 
 
@@ -169,9 +211,12 @@ def portable_flock_acquire(
 
     - `blocking=True, timeout=None` (the default): blocks until
       acquired, exactly like bare `fcntl.flock(fd, LOCK_EX)` (no
-      `LOCK_NB`) -- on Windows, `_msvcrt_acquire_blocking`'s unbounded
-      poll loop. Always returns True (never returns False; only
-      raises).
+      `LOCK_NB`) -- on Windows, `_msvcrt_acquire_blocking`'s poll loop,
+      bounded at `_MSVCRT_BLOCKING_ACQUIRE_CEILING_S` (T-3577: `msvcrt`
+      has no same-process reentrancy the way POSIX same-fd re-flock does,
+      so this shape raises rather than hanging forever on a nested
+      same-process re-acquire -- see that constant's own docstring).
+      Always returns True (never returns False; only raises).
     - `blocking=False, timeout=None`: ONE non-blocking attempt, exactly
       like `fcntl.flock(fd, LOCK_EX | LOCK_NB)` -- returns True if
       acquired, False if already held by someone else (never raises for

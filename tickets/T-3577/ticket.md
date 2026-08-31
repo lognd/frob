@@ -2,7 +2,7 @@
 id: T-3577
 title: 'Fix windows-latest CI hang: unbounded msvcrt self-deadlock + untimed subprocess
   drain hang'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -21,7 +21,6 @@ scope:
 - .github/workflows/ci.yml
 - tests/unit/test_process_lock.py
 - docs/modules/process.md
-- tests/unit/test_conftest_sigbreak_faulthandler.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,12 +31,10 @@ scope_changes:
   reason: 'scope closure: frob:doc target for touched symbols'
   actor: logan
   at: '2026-08-31'
-- op: add
-  glob: tests/unit/test_conftest_sigbreak_faulthandler.py
-  reason: 'T-3560 revert fallout: deleting this file crashes frob check via T-3565
-    own scope glob citing it; keeping the path present as a skip-stub avoids the crash'
-  actor: logan
-  at: '2026-08-31'
+evidence:
+- tests/unit/test_process_lock.py::TestPortableFlock::test_windows_blocking_reentry_raises_instead_of_hanging_forever
+- tests/system/test_run_helper_env_leak.py::TestRunHelperWin32TimeoutSurvivesAHungGrandchild::test_timeout_kills_process_tree_and_never_calls_an_untimed_communicate
+- tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout::test_run_expiry_raises_a_named_loud_error
 designated_repro_test: null
 threat: null
 component: null

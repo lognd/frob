@@ -52,12 +52,14 @@ DEFAULT_RUN_TIMEOUT_S = 100
 # frob:ticket T-0880
 # frob:ticket T-0909
 # frob:ticket T-2980
+# frob:ticket T-3577
 # frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses_under_frob_agent  # noqa: E501
 # frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak.test_run_strips_dispatch_agent_env_vars  # noqa: E501
 # frob:tests tests/system/test_cli_check.py::TestFrobTomlCheckDefaults.test_check_skip_from_frob_toml  # noqa: E501
 # frob:tests tests/system/test_cli_ticket.py::TestTicketNewNonInteractive.test_new_does_not_prompt_or_hang_without_a_tty  # noqa: E501
 # frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout.test_run_default_timeout_is_bounded_not_none  # noqa: E501
 # frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout.test_run_expiry_raises_a_named_loud_error  # noqa: E501
+# frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperWin32TimeoutSurvivesAHungGrandchild.test_timeout_kills_process_tree_and_never_calls_an_untimed_communicate  # noqa: E501
 def run(*args, input=None, cwd=None, env=None, timeout=None):
     """Run the `frob` CLI as a subprocess and capture its result (T-0364:
     the one shared entry point every system test dispatches through).
@@ -141,27 +143,65 @@ def run(*args, input=None, cwd=None, env=None, timeout=None):
     # (`Popen(preexec_fn=...)` raises outright on win32; this repo's CI
     # matrix includes windows-latest) -- PDEATHSIG has no Windows
     # equivalent anyway (`arm_parent_death_signal` itself already
-    # degrades to a no-op there), so Windows keeps the pre-T-2991
-    # `subprocess.run` shape unchanged rather than a fix that cannot
-    # apply on that platform.
+    # degrades to a no-op there), so Windows keeps the pre-T-2991 shape
+    # in spirit, EXCEPT (T-3577) it no longer calls bare `subprocess.run`.
+    #
+    # T-3577 root cause: `subprocess.run(..., timeout=...)`'s OWN internal
+    # `TimeoutExpired` handling calls `process.kill()` and then retries
+    # `communicate()` a SECOND time with NO timeout at all, to drain
+    # remaining output. Windows `CreateProcess` duplicates ALL inheritable
+    # handles into every child a process spawns (unlike POSIX close-on-
+    # exec-by-default) -- if the frob CLI child spawned a grandchild
+    # (e.g. a `multiprocessing` pool worker) before being killed, that
+    # grandchild can still hold the inherited stdout/stderr pipe's write
+    # end open even after `process.kill()`, so the pipe never reaches EOF
+    # and the untimed second `communicate()` blocks FOREVER in its reader
+    # thread's `Thread.join()` -- this is what hung windows-latest CI
+    # (runs 33370059331/33376126399: `tests/system/conftest.py:149 ->
+    # subprocess._communicate -> threading.py:1169`), not any of this
+    # module's own timeout handling (`DEFAULT_RUN_TIMEOUT_S` DID fire; the
+    # hang was entirely inside `subprocess.run`'s post-timeout drain).
+    #
+    # Fix: drive `Popen`/`communicate` ourselves so BOTH the first and any
+    # retry read are bounded, and kill the WHOLE process tree (`taskkill
+    # /T /F`, the Windows analog of this function's POSIX `os.killpg`
+    # branch below) rather than relying on `Popen.kill()`'s single-pid
+    # reach -- so a live grandchild can no longer keep the pipe open past
+    # the first timeout at all.
     if sys.platform == "win32":
+        proc = subprocess.Popen(
+            FROB + list(args),
+            stdin=subprocess.PIPE if input is not None else None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            cwd=cwd,
+            env=merged_env,
+        )
         try:
-            return subprocess.run(
-                FROB + list(args),
+            stdout, stderr = proc.communicate(input=input, timeout=effective_timeout)
+        except subprocess.TimeoutExpired:
+            # Best-effort: kill the whole process tree, not just `proc`
+            # itself, then bound the drain read too -- never fall through
+            # to an untimed `communicate()` retry (that retry is the
+            # actual hang; see this branch's own comment above).
+            subprocess.run(
+                ["taskkill", "/PID", str(proc.pid), "/T", "/F"],
                 capture_output=True,
-                text=True,
-                input=input,
-                cwd=cwd,
-                env=merged_env,
-                timeout=effective_timeout,
+                check=False,
             )
-        except subprocess.TimeoutExpired as exc:
+            try:
+                proc.communicate(timeout=effective_timeout)
+            except subprocess.TimeoutExpired:
+                pass
             raise RuntimeError(
                 f"system-test run() timed out after {effective_timeout}s waiting "
-                f"on {FROB + list(args)!r} (T-2980: this command either hung, or "
-                "legitimately needs longer -- pass an explicit timeout= at the "
-                "call site rather than raising DEFAULT_RUN_TIMEOUT_S)"
-            ) from exc
+                f"on {FROB + list(args)!r} (T-2980/T-3577: this command either "
+                "hung, or legitimately needs longer -- pass an explicit "
+                "timeout= at the call site rather than raising "
+                "DEFAULT_RUN_TIMEOUT_S)"
+            ) from None
+        return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
 
     proc = subprocess.Popen(
         FROB + list(args),

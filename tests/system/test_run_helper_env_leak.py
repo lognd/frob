@@ -17,7 +17,13 @@ import pytest
 
 import tests.system.conftest as _conftest_mod
 from frob.process._reap import arm_parent_death_signal
-from tests.system.conftest import DEFAULT_RUN_TIMEOUT_S, git, git_init_and_config, run
+from tests.system.conftest import (
+    DEFAULT_RUN_TIMEOUT_S,
+    FROB,
+    git,
+    git_init_and_config,
+    run,
+)
 
 
 def _pid_alive(pid: int) -> bool:
@@ -119,6 +125,59 @@ class TestRunHelperDefaultTimeout:
         # frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout.test_run_expiry_raises_a_named_loud_error  # noqa: E501
         with pytest.raises(RuntimeError, match="timed out after"):
             run("--help", timeout=0.01)
+
+
+class TestRunHelperWin32TimeoutSurvivesAHungGrandchild:
+    """T-3577: the win32 branch of `run()` must survive a `TimeoutExpired`
+    without ever falling into bare `subprocess.run`'s own untimed drain
+    retry -- the exact mechanism that hung windows-latest CI (runs
+    33370059331/33376126399, blocked in `subprocess._communicate`'s
+    reader-thread `Thread.join` with NO timeout). Runs on any platform
+    (monkeypatches `sys.platform`/`subprocess.Popen`/`subprocess.run`
+    rather than requiring a real Windows box) -- it pins the CODE PATH
+    (kill the whole process tree via `taskkill /T /F`, then a SECOND,
+    still-BOUNDED read, never an untimed one) rather than depending on
+    real win32 process semantics this sandbox cannot exercise."""
+
+    # frob:ticket T-3577
+    def test_timeout_kills_process_tree_and_never_calls_an_untimed_communicate(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperWin32TimeoutSurvivesAHungGrandchild.test_timeout_kills_process_tree_and_never_calls_an_untimed_communicate  # noqa: E501
+        import subprocess as _subprocess
+
+        monkeypatch.setattr(sys, "platform", "win32")
+
+        communicate_calls: list[float | None] = []
+        taskkill_calls: list[list[str]] = []
+
+        class _FakePopen:
+            pid = 4321
+            args = FROB
+            returncode = None
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def communicate(self, input=None, timeout: float = 0.0):
+                communicate_calls.append(timeout)
+                raise _subprocess.TimeoutExpired(cmd=FROB, timeout=timeout)
+
+        def _fake_run(cmd_args, **kwargs):
+            taskkill_calls.append(list(cmd_args))
+            return _subprocess.CompletedProcess(cmd_args, 0, "", "")
+
+        monkeypatch.setattr(_subprocess, "Popen", _FakePopen)
+        monkeypatch.setattr(_subprocess, "run", _fake_run)
+
+        with pytest.raises(RuntimeError, match="timed out after"):
+            run("--help", timeout=1.0)
+
+        # Both the initial and the retry read are BOUNDED -- neither call
+        # to communicate() ever used timeout=None (the untimed-drain shape
+        # that hung windows-latest CI).
+        assert communicate_calls == [1.0, 1.0]
+        assert taskkill_calls == [["taskkill", "/PID", "4321", "/T", "/F"]]
 
 
 @pytest.mark.skipif(

@@ -165,7 +165,7 @@ class TestPortableFlock:
     `frob.testing._coverage_wait`)."""
 
     def test_posix_blocking_acquire_release_round_trips(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_process_lock.py::TestPortableFlock::test_posix_blocking_acquire_release_round_trips  # noqa: E501
+        # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_blocking_acquire_release_round_trips  # noqa: E501
         import frob.process._lock as _lock_mod
 
         path = tmp_path / "x.lock"
@@ -183,7 +183,7 @@ class TestPortableFlock:
             os.close(fd)
 
     def test_posix_nonblocking_contended_returns_false(self, tmp_path: Path) -> None:
-        # frob:tests tests/unit/test_process_lock.py::TestPortableFlock::test_posix_nonblocking_contended_returns_false  # noqa: E501
+        # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_nonblocking_contended_returns_false  # noqa: E501
         import frob.process._lock as _lock_mod
 
         path = tmp_path / "x.lock"
@@ -218,7 +218,7 @@ class TestPortableFlock:
         absence -- a fake `msvcrt` (backed by real `fcntl.flock` under
         the hood, T-3244's precedent) proves the branch actually runs,
         not merely that it exists in source."""
-        # frob:tests tests/unit/test_process_lock.py::TestPortableFlock::test_windows_branch_selected_when_fcntl_absent  # noqa: E501
+        # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_branch_selected_when_fcntl_absent  # noqa: E501
         import fcntl as _real_fcntl
 
         import frob.process._lock as _lock_mod
@@ -253,6 +253,50 @@ class TestPortableFlock:
         finally:
             os.close(fd)
         assert calls == ["lock", "unlock"]
+
+    # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_blocking_reentry_raises_instead_of_hanging_forever  # noqa: E501
+    def test_windows_blocking_reentry_raises_instead_of_hanging_forever(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3577: the windows-latest CI hang's prime suspect, reproduced
+        deterministically off-Windows via the same monkeypatched-msvcrt
+        harness `test_windows_branch_selected_when_fcntl_absent` uses.
+
+        `msvcrt.locking` is NOT reentrant even on the same fd/process
+        (unlike `fcntl.flock`, which this fake backs itself with) -- a
+        caller that takes the SAME lock twice, blocking, in one process
+        must never hang forever waiting on itself. This proves
+        `_msvcrt_acquire_blocking`'s ceiling (`_MSVCRT_BLOCKING_ACQUIRE_
+        CEILING_S`, shrunk here so the test itself stays fast) turns that
+        self-deadlock into a loud `PortableLockUnavailable` instead of an
+        indefinite hang -- the exact asymmetry that hung windows-latest
+        CI (T-3577's own root-cause finding) never firing a bound at all."""
+        import frob.process._lock as _lock_mod
+
+        class _FakeMsvcrt:
+            LK_NBLCK = 1
+            LK_UNLCK = 2
+
+            @staticmethod
+            def locking(fd: int, mode: int, _nbytes: int) -> None:
+                # Always denies re-locking an already-locked fd, from ANY
+                # caller including the one that already holds it -- the
+                # real msvcrt's non-reentrant behavior this test targets.
+                if mode == _FakeMsvcrt.LK_UNLCK:
+                    return
+                raise PermissionError("simulated non-reentrant msvcrt.locking")
+
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", _FakeMsvcrt)
+        monkeypatch.setattr(_lock_mod, "_MSVCRT_BLOCKING_ACQUIRE_CEILING_S", 0.2)
+
+        path = tmp_path / "x.lock"
+        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+        try:
+            with pytest.raises(_lock_mod.PortableLockUnavailable):
+                _lock_mod.portable_flock_acquire(fd, exclusive=True)
+        finally:
+            os.close(fd)
 
 
 class TestDerivedStateLockPlatformBackends:
@@ -921,7 +965,7 @@ class TestNoDirectFcntlOutsideSharedPrimitive:
     instead."""
 
     def test_no_direct_fcntl_import_outside_lock_module(self) -> None:
-        # frob:tests tests/unit/test_process_lock.py::TestNoDirectFcntlOutsideSharedPrimitive::test_no_direct_fcntl_import_outside_lock_module  # noqa: E501
+        # frob:tests tests/unit/test_process_lock.py::TestNoDirectFcntlOutsideSharedPrimitive.test_no_direct_fcntl_import_outside_lock_module  # noqa: E501
         import ast
 
         repo_root = Path(__file__).resolve().parents[2]

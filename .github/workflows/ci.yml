@@ -303,22 +303,36 @@ jobs:
       # recurs even single-process, the mechanism above needs revisiting
       # by someone who can reproduce interactively.
       #
-      # T-3560 (round 3, TEMPORARY diagnostics -- revert once the named
-      # culprit is fixed): `-p no:xdist` (T-3549) was FALSIFIED as the fix
-      # -- run 33367854833 (HEAD e1974b649) still died with the same
-      # `KeyboardInterrupt` at `threading.py:1169` (`Thread.join`) at
-      # ~4 minutes in, ~1% through collection, plain serial, no execnet in
-      # the process at all. `git grep` finds zero in-repo senders of
-      # CTRL_C_EVENT/interrupt_main/os.kill(SIGINT). `-v --full-trace`
-      # below names the exact test position/traceback the interrupt lands
-      # on (the prior `-q` runs never printed which test was executing),
-      # and the win32-only SIGBREAK faulthandler registration in
-      # `tests/conftest.py` dumps every thread's stack the moment a
-      # console ctrl event reaches this process, whether or not it turns
-      # into a `KeyboardInterrupt` pytest catches. Both go away in the
-      # SAME land that fixes the named root cause (or documents it, if
-      # this turns out to be an external time-bound actor rather than a
-      # specific test's subprocess).
+      # T-3560 (round 3, TEMPORARY diagnostics): `-p no:xdist` (T-3549) was
+      # FALSIFIED as the fix -- run 33367854833 (HEAD e1974b649) still died
+      # with the same `KeyboardInterrupt` at `threading.py:1169`
+      # (`Thread.join`) at ~4 minutes in, ~1% through collection, plain
+      # serial, no execnet in the process at all. `git grep` found zero
+      # in-repo senders of CTRL_C_EVENT/interrupt_main/os.kill(SIGINT).
+      # `-v --full-trace` plus a win32-only SIGBREAK faulthandler
+      # registration in `tests/conftest.py` (both TEMPORARY, T-3560) named
+      # the exact hang site: `tests/system/conftest.py`'s win32 `run()`
+      # branch (`subprocess.run(..., timeout=100)`), blocked in
+      # `subprocess._communicate`'s reader-thread `Thread.join` -- NOT
+      # pytest-timeout (T-3577 confirmed: neither of its two handlers
+      # (`timeout_sigalrm`, `timeout_timer`) ever raises `KeyboardInterrupt`;
+      # `timeout_timer` hard-kills via `os._exit(1)` instead). Root cause
+      # (T-3577): `subprocess.run`'s own internal timeout handling calls
+      # `process.kill()` on `TimeoutExpired` and then retries
+      # `communicate()` a SECOND time with NO timeout to drain remaining
+      # output -- if a grandchild process the frob CLI spawned is still
+      # holding the inherited stdout/stderr pipe open (Windows
+      # `CreateProcess` duplicates ALL inheritable handles into every
+      # child it spawns, unlike POSIX close-on-exec), that untimed second
+      # `communicate()` blocks forever. Compounding suspect closed in the
+      # SAME ticket: `src/frob/process/_lock.py`'s `_msvcrt_acquire_
+      # blocking` was an UNBOUNDED same-process-reentrancy-unsafe poll
+      # loop -- now bounded, converting a silent forever-hang into a loud,
+      # bounded failure. Both T-3560 diagnostics (`-v --full-trace` here
+      # and the SIGBREAK handler in `tests/conftest.py`) are REVERTED in
+      # this same land per T-3560's own contract; `-p no:xdist` (T-3549)
+      # stays, since it is still a real, independent risk-reduction even
+      # though it was not the root cause here.
       - name: Test (windows, timed with hang guard)
         if: matrix.os == 'windows-latest'
         env:
@@ -327,7 +341,7 @@ jobs:
           $budget = 1500  # 25m, same budget/rationale as ubuntu's step above
           $stdout = Join-Path $env:RUNNER_TEMP "pytest-stdout.log"
           $stderr = Join-Path $env:RUNNER_TEMP "pytest-stderr.log"
-          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-v","--full-trace","-p","no:xdist" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-p","no:xdist" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
             Wait-Process -Id $p.Id -Timeout $budget -ErrorAction Stop
           } catch {
