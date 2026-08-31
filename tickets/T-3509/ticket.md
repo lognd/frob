@@ -1,7 +1,7 @@
 ---
 id: T-3509
 title: Spawn-safe multiprocessing context selection where fork is unavailable
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -82,3 +82,6 @@ only the LAND needs to serialize if there's a literal line conflict.
 
 ## Failure log
 - 2026-08-30 attempt 1: no hardcoded get_context("fork") exists in scope (src/frob/process/_proc_scan.py, _reap.py, src/frob/serve/_socketd.py) -- grep confirms zero context-selection calls there; gates/__init__.py (out of scope) already picks forkserver/spawn correctly. All literal get_context("fork") sites are in test files (tests/test_ticket_land.py, tests/unit/test_land_finish_guard.py, tests/unit/test_land_lock_liveness.py) outside T-3509 scope, and test_ticket_land.py plus src/frob/serve/_socketd.py are already claimed by T-3506's scope -- widening into those test files here would collide with the other agent's ticket. No safe in-scope fix exists; deferring to T-3506 or a follow-up ticket for the fork-hardcoded test harnesses.
+
+## Drop reason
+- 2026-08-30: No in-scope fix exists: no production get_context(fork) site in the scoped files; the only context selection (gates/__init__.py) is already forkserver/spawn-aware, and the literal test-file sites belong to T-3506's scope (series Z measurement, 2026-08-31).
