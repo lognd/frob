@@ -80,7 +80,13 @@ class TestTimeoutFiresDuringLongNativeCall:
             ],
             capture_output=True,
             text=True,
-            timeout=9,
+            # T-3537: this outer subprocess.run timeout is a hard kill of
+            # the harness itself, not the property under test -- it must
+            # stay comfortably above the 30.0s assertion bound below or a
+            # slow-but-correctly-preempting CI runner would get killed
+            # here first, masking the real signal with a bare
+            # subprocess.TimeoutExpired.
+            timeout=40,
         )
         elapsed = time.monotonic() - t0
 
@@ -89,16 +95,30 @@ class TestTimeoutFiresDuringLongNativeCall:
         # watchdog thread never got a chance to run at all and the
         # subprocess would still be mid-computation past the 2s deadline.
         # With the GIL released, the watchdog preempts it near the
-        # deadline -- bounded here well under the full uninterrupted
-        # computation time, with headroom for process startup.
-        assert elapsed < 5.0, (
-            f"pytest-timeout did not preempt the long strata_core call in "
-            f"time (took {elapsed}s) -- the GIL is likely being held for "
+        # deadline.
+        #
+        # T-3537: mirrors tests/unit/test_frob_core_gil.py's identical
+        # fix -- the property under test is "the timeout FIRED and the
+        # call did NOT run to completion", not a tight wall-clock bound.
+        # A tight bound (previously 5.0s) conflates preemption with
+        # scheduler speed: a slow/contended CI runner can legitimately
+        # take longer than 5s to actually deliver the watchdog's kill and
+        # flush output even though the GIL WAS released and the watchdog
+        # DID preempt (the "Timeout" banner below proves that half). 30s
+        # is generous headroom above any plausible scheduler delay while
+        # staying an order of magnitude under how long `worst_age` would
+        # take to actually run to completion uninterrupted if the
+        # GIL-release regression came back.
+        assert elapsed < 30.0, (
+            f"pytest-timeout did not preempt the long strata_core call at "
+            f"all (took {elapsed}s) -- the GIL is likely being held for "
             f"the whole native call again: stdout={result.stdout!r} "
             f"stderr={result.stderr!r}"
         )
         assert "Timeout" in result.stdout, (
-            f"expected pytest-timeout's stack-dump marker in stdout: {result.stdout!r}"
+            f"expected pytest-timeout's stack-dump marker in stdout, proving "
+            f"the watchdog actually fired rather than the call simply "
+            f"finishing on its own: {result.stdout!r}"
         )
 
 

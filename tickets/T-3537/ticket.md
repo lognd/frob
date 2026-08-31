@@ -1,7 +1,7 @@
 ---
 id: T-3537
 title: 'macOS: frob_core GIL must-fire wall bound too tight for the CI runner'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -27,6 +27,9 @@ body_changes:
   at: '2026-08-31'
   old_length: 0
   new_length: 465
+evidence:
+- tests/unit/test_frob_core_gil.py::TestTimeoutFiresDuringLongNativeCall::test_timeout_fires_during_near_duplicate_indices
+- tests/unit/strata/test_strata_core_gil.py::TestTimeoutFiresDuringLongNativeCall::test_timeout_fires_during_worst_age
 designated_repro_test: null
 threat: null
 component: null
