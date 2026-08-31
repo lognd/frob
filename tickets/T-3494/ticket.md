@@ -1,7 +1,7 @@
 ---
 id: T-3494
 title: frob-arch WARN remainder after T-2379 (god-module/god-class/type-dispatch/self-join)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -26,6 +26,13 @@ scope_changes:
     pass
   actor: logan
   at: '2026-08-31'
+body_changes:
+- mode: append
+  reason: record the 3 filed successor tickets before closing this triage-only ticket
+  actor: logan
+  at: '2026-08-31'
+  old_length: 3142
+  new_length: 4301
 designated_repro_test: null
 threat: null
 component: null
@@ -42,3 +49,6 @@ self-join-deadlock (1): src/frob/serve/_socketd.py:872, _idle_monitor calling se
 type-dispatch-smell (1): src/frob/strata/_claims.py:682, _eval_one_claim's 4-arm isinstance chain dispatching NoFlow/Reach/Independent/SetEquality (falling through to _eval_bound as the default case) to different _eval_* functions with DIFFERENT signatures (_eval_bound alone takes an extra current argument) -- a real fix needs a proper Protocol/dispatch-table design for a claim-body evaluator that is part of this repo's proof-soundness critical path (strata claims), not a five-minute mechanical dict swap; needs dedicated design attention, not a rushed change to security-sensitive evaluation logic.
 
 god-module (14) + god-class (1): src/frob/gates/_coverage.py, src/frob/gates/_waive.py, src/frob/gitio.py, src/frob/graph/__init__.py, src/frob/graph/callgraph.py, src/frob/lang/__init__.py, src/frob/lang/_common.py, src/frob/lang/_support.py, src/frob/perf/_sketch_store.py, src/frob/render/_elements.py, src/frob/stats/_sketch.py, src/frob/strata/_sysdoc.py, src/frob/tickets/__init__.py, src/frob/tickets/_evidence.py, src/frob/tickets/_models.py, src/frob/tickets/_reporting.py, src/frob/tickets/_store.py (god-module, 10-75 exports each, split-module refactors); src/frob/render/_renderer.py::RenderWriter (god-class, 16 methods vs threshold 12). Each is a genuine module/class-split design exercise (splitting a big module along its own naming/usage clusters, or extracting a mixin/helper class) -- real design judgment per T-2379's own body, not mechanical, and each is its own small campaign; do not blanket-split to hit zero.
+
+
+Triage complete. Filed 3 real successor tickets covering every remainder item: T-3571 (self-join-deadlock detector false-positive on src/frob/serve/_socketd.py::_idle_monitor -- frob:waive is confirmed ineffective for this category, T-0101, so the real fix is narrowing the detector itself), T-3572 (_claims.py::_eval_one_claim's isinstance-chain type-dispatch smell -- needs a Protocol/dispatch-table design pass on strata's proof-soundness critical path, not a rushed mechanical swap), T-3573 (the 14 god-module + 1 god-class remainder, rolled up as one tracking ticket naming every file -- each is its own small split-design campaign per T-2379's own precedent, to be broken into per-file children as work begins). No code change was safe to make honestly in this ticket itself: the self-join finding cannot be waived (unwaivable channel) and any real fix requires detector changes; the type-dispatch finding is explicitly flagged by this ticket's own prior investigation as needing dedicated design attention on security-sensitive evaluation logic; the god-module/class remainder is real design work per-file, not mechanical. Closing as triage-complete.
