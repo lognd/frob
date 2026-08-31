@@ -119,7 +119,7 @@ any consumer. Narrowing to "actually referenced across a node boundary"
 fixes the general problem, not just testsuite's instance of it: every
 node's declared list shrinks to the names some OTHER node's code genuinely
 depends on, matching what "interface" is supposed to mean (a CONTRACT,
-not an inventory), while `_node_real_public_surface` itself (SYS106's own
+not an inventory), while `_node_real_public_surface` itself (SYS110's own
 side, `_module_public_symbols`, and every other consumer) is UNCHANGED --
 only SYS104's comparison and `sync-interface`'s writer narrow. A node
 with an EMPTY required surface (no bound `.py` files, files with nothing

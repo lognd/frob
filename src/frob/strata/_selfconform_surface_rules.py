@@ -9,10 +9,9 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from frob.lang import resolve_local_import
 from frob.logging import get_logger
 
-from ._code_binding import CodeBinding, _dotted, _join_dotted, _relative_base_dir
+from ._code_binding import CodeBinding
 from ._models import KernelModel
 from ._selfconform_ids import (
     SYS110_UNAUDITED_NODES,
@@ -126,11 +125,12 @@ def _node_real_public_surface(
 ) -> frozenset[str]:
     """The union of `_module_public_symbols` across every `.py` file
     `binding` binds to `node_id` -- the full ground-truth exported surface
-    (SYS106 and every other consumer's notion of "real"). SYS104 itself
-    narrows this further via `_cross_node_referenced_symbols` (T-1625,
-    module docstring's SYS104 section) -- this function is deliberately
-    UNCHANGED by that narrowing, so nothing outside SYS104's own
-    comparison is affected."""
+    (SYS110's own notion of "real", `_undeclared_intended_surface_
+    violations`). T-3523: SYS104 used to narrow this further via the now-
+    deleted `_cross_node_referenced_symbols` (T-1625) before comparing
+    against a node's declared `interface=` set -- this function was
+    deliberately UNCHANGED by that narrowing even then, so its own
+    contract is unaffected by SYS104's T-1870 removal."""
     surface: set[str] = set()
     for rel in sorted(binding.owner):
         if binding.owner[rel] != node_id or not rel.endswith(".py"):
@@ -141,148 +141,30 @@ def _node_real_public_surface(
     return frozenset(surface)
 
 
-# frob:ticket T-2729
-def _imported_from_spec(node: ast.ImportFrom, file_dir: Path, root: Path) -> str | None:
-    """The absolute dotted module spec one `ast.ImportFrom` node targets
-    (level-0 absolute, or a relative `from .`/`from ..pkg` resolved
-    against the importing file's own package position, mirroring
-    `_code_binding.py::_relative_imports`'s resolution -- duplicated in
-    miniature here rather than imported because that helper returns
-    (spec, line) PER ALIAS, which would multiply-report the same module
-    spec once per imported name; this caller only ever wants the module
-    spec once, to resolve independently of which names were imported).
-    `None` for a `from . import x` form with no `module` (nothing to
-    resolve past the bare package) or one whose relative level walks
-    above `root`."""
-    if node.level == 0:
-        return node.module
-    base_dir = _relative_base_dir(file_dir, root, node.level)
-    if base_dir is None or node.module is None:
-        return None
-    return _join_dotted(_dotted(base_dir, root), node.module)
-
-
-# frob:waive COV007 reason="T-2729: this private helper's frob:doc anchor predates \
-# this ticket -- same T-0524/T-0529/T-1636 per-function architecture-doc precedent \
-# every other COV007 waiver in this repo already carries, not accidental drift onto a \
-# private symbol introduced by this move"
-# frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150
-# frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
-# rule family -- this symbol only moved to a sibling module verbatim (same name, same \
-# body/signature), no behavior change, so the affects()-closure doc it names needs no \
-# update"
-# frob:ticket T-2729
-def _src_root_prefixes(binding: CodeBinding) -> frozenset[str]:
-    """Every distinct FIRST path segment among `binding.owner`'s bound
-    files (e.g. `{"src"}` for this repo's own `src/frob/**` layout, `{}`
-    for a flat top-level-package repo) -- `resolve_local_import`'s python
-    branch resolves a dotted spec by literal `spec.replace(".", "/")`
-    against `root`, with NO src-layout awareness (verified directly:
-    `resolve_local_import("frob.excludes", ..., root=<repo root>)` returns
-    `None` even though `src/frob/excludes.py` genuinely exists -- only a
-    RELATIVE import's dotted prefix is derived from the importing file's
-    own on-disk position, `_code_binding.py::_relative_imports`/`_dotted`,
-    so it already carries the `src.` prefix and resolves fine). An
-    ABSOLUTE cross-package import (`from frob.excludes import x`) is
-    exactly the dominant shape a genuine CROSS-NODE reference takes in
-    this codebase (a same-node import is far more often the relative
-    form), so `_cross_node_referenced_symbols` -- unlike SYS106's
-    `_reachable_local_files`, whose prior silent under-resolution on
-    absolute specs was never load-bearing since an unreached file merely
-    stays unflagged -- cannot afford to silently drop every absolute
-    import; this derives the missing prefix from the ACTUAL bound layout
-    instead of hardcoding `"src"`."""
-    return frozenset(rel.split("/", 1)[0] for rel in binding.owner if "/" in rel)
-
-
-# frob:ticket T-2729
-def _resolve_cross_package_import(
-    spec: str, file_dir: Path, root: Path, src_prefixes: frozenset[str]
-) -> str | None:
-    """`resolve_local_import(spec, ...)`, falling back to each `src_
-    prefixes` candidate prepended to `spec` (`_src_root_prefixes`'s
-    docstring) if the bare spec does not resolve -- the ONE extra step a
-    literal-path resolver needs to see through a src-layout repo's
-    absolute imports."""
-    target_rel = resolve_local_import(spec, "python", file_dir=file_dir, root=root)
-    if target_rel is not None:
-        return target_rel
-    for prefix in sorted(src_prefixes):
-        target_rel = resolve_local_import(
-            f"{prefix}.{spec}", "python", file_dir=file_dir, root=root
-        )
-        if target_rel is not None:
-            return target_rel
-    return None
-
-
-# frob:ticket T-2729
-# frob:waive DEAD001 reason="T-1870's own comment above (this file, further down) claims SYS106/SYS108 depend on this, but no code in this repo actually imports or calls it -- SYS106 was apparently never wired to consume it. A real gap, filed as T-3523 rather than deleted, since deleting scaffolding a tracked ticket names as intentionally kept risks losing the SYS106 design intent (T-3521)"  # noqa: E501
-def _cross_node_referenced_symbols(
-    binding: CodeBinding, root: Path
-) -> dict[str, frozenset[str]]:
-    """T-1625 (SYS104 option 3): node id -> the names actually imported BY
-    NAME (`from <module> import <name>[, ...]`, module resolved in-repo
-    via `_resolve_cross_package_import`) from at least one file owned by a
-    DIFFERENT node. This is the "does anything outside this node's own
-    code actually depend on this symbol" join that narrows SYS104's
-    required interface surface down from the full real surface (module
-    docstring's SYS104/T-1625 sections) -- a symbol used only WITHIN its
-    own node's files never appears here, exactly like a test class/
-    function nothing else ever imports.
-
-    Deliberately Python-`from`-import-only (module docstring's disclosed
-    scope cut): a bare `import module` followed by `module.symbol`
-    attribute access is not tracked, matching `_python_imports_with_lines`'s
-    own "dominant intra-package style" observation about this codebase.
-    `import *` names are skipped (no way to know statically which real
-    names it binds without importing the module, and this pass is
-    deliberately static-only, same posture `_module_public_symbols` takes
-    on an unparseable file)."""
-    src_prefixes = _src_root_prefixes(binding)
-    referenced: dict[str, set[str]] = {}
-    for rel, owner in binding.owner.items():
-        if not rel.endswith(".py"):
-            continue
-        path = root / rel
-        try:
-            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        except (SyntaxError, OSError, UnicodeDecodeError) as exc:
-            _log.warning(
-                "selfconform: SYS104 cross-node scan could not parse %s: %s", path, exc
-            )
-            continue
-        file_dir = path.parent
-        for stmt in ast.walk(tree):
-            if not isinstance(stmt, ast.ImportFrom):
-                continue
-            spec = _imported_from_spec(stmt, file_dir, root)
-            if spec is None:
-                continue
-            target_rel = _resolve_cross_package_import(
-                spec, file_dir, root, src_prefixes
-            )
-            if target_rel is None:
-                continue  # third-party/stdlib/unresolvable -- not in-repo
-            target_owner = binding.owner.get(target_rel)
-            if target_owner is None or target_owner == owner:
-                continue  # FOREIGN target, or a same-node (internal) import
-            names = referenced.setdefault(target_owner, set())
-            for alias in stmt.names:
-                if alias.name != "*":
-                    names.add(alias.name)
-    return {node_id: frozenset(names) for node_id, names in referenced.items()}
-
-
 # T-1870: SYS104 (`_interface_conformance_violations`, T-0668) used to
 # live here -- deleted along with its writer (`frob.strata.
 # _sync_interface`, T-1150) per an explicit owner directive that no code
-# path may auto-update declared public-symbol surface. It required a
-# node's declared `interface=` set to EXACTLY equal its measured real
-# public surface (both directions); `_node_real_public_surface`,
-# `_cross_node_referenced_symbols`, and `_INTERFACE_PREFIX` (all still
-# defined in this module) survive because SYS106 and SYS108 also depend
-# on them -- only the SYS104 check function and its call site are gone.
+# path may auto-update declared public-symbol surface. `_node_real_
+# public_surface` and `_INTERFACE_PREFIX` (both still defined in this
+# module) survive because SYS110 also depends on them
+# (`_undeclared_intended_surface_violations` below) -- only the SYS104
+# check function and its call site are gone.
+#
+# T-3523: SYS104's OWN narrowing helpers -- `_imported_from_spec`,
+# `_src_root_prefixes`, `_resolve_cross_package_import`, and
+# `_cross_node_referenced_symbols` itself -- had exactly one caller
+# each, all the way up to `_cross_node_referenced_symbols`, which SYS104
+# alone consumed. A T-1870-era comment here claimed they "survive
+# because SYS106 and SYS108 also depend on them"; that was never true
+# for `_cross_node_referenced_symbols` (grep confirms zero callers in
+# this repo, T-3523's own measurement) and is only true for `_node_
+# real_public_surface` above via SYS110, not SYS106/SYS108 -- SYS106
+# (`_selfconform_binding_rules.py::_binding_totality_violations`) is a
+# self-contained reachability walk over `resolve_local_import` that
+# never touches either helper, and SYS108
+# (`_duplicate_interface_violations`) only reads `_node_attr_values`.
+# Deleted the four now-provably-dead functions rather than building a
+# SYS106 consumer for them -- SYS106 already does its job without them.
 # frob:waive COV007 reason="T-2729: this private helper's frob:doc anchor predates \
 # this ticket -- same T-0524/T-0529/T-1636 per-function architecture-doc precedent \
 # every other COV007 waiver in this repo already carries, not accidental drift onto a \

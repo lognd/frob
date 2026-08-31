@@ -1,7 +1,7 @@
 ---
 id: T-3523
 title: SYS106 never wires _cross_node_referenced_symbols/_node_real_public_surface
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
