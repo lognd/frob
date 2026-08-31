@@ -2,8 +2,8 @@
 id: T-3550
 title: 'Design ledger-mirror batching (T-3544 successor): pending-queue + per-event
   sync commit, hazards enumerated'
-state: queued
-kind: feature
+state: in-progress
+kind: docs
 origin: human
 created: '2026-08-31'
 priority: high
@@ -20,6 +20,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: feature
+  new_value: docs
+  reason: deliverable is a design document, docs/design/ledger-mirror-batching.md;
+    no code change in this ticket per its own body (do not implement in this ticket)
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
