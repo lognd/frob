@@ -402,10 +402,11 @@ class TestCoverageLockPlatformBackends:
         # frob:tests \
         # tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends.test_no_\
         # lock_primitive_refuses_loudly
+        import frob.process._lock as _lock_mod
         import frob.testing._coverage_wait as _cw
 
-        monkeypatch.setattr(_cw, "fcntl", None)
-        monkeypatch.setattr(_cw, "msvcrt", None)
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", None)
         with pytest.raises(_cw.CoverageLockUnavailable):
             with _cw._coverage_lock(tmp_path):
                 pass
@@ -423,6 +424,7 @@ class TestCoverageLockPlatformBackends:
         # dows_backend_round_trips
         import fcntl as _real_fcntl
 
+        import frob.process._lock as _lock_mod
         import frob.testing._coverage_wait as _cw
 
         class _FakeMsvcrt:
@@ -441,8 +443,8 @@ class TestCoverageLockPlatformBackends:
                 except OSError as exc:
                     raise PermissionError(str(exc)) from exc
 
-        monkeypatch.setattr(_cw, "fcntl", None)
-        monkeypatch.setattr(_cw, "msvcrt", _FakeMsvcrt)
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", _FakeMsvcrt)
 
         entered = False
         with _cw._coverage_lock(tmp_path):

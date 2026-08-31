@@ -445,11 +445,15 @@ the next caller finds a clean slate.
 `fcntl` is POSIX-only (T-2952: this module used to `import fcntl`
 unconditionally at module scope, which crashed the import of every
 caller -- not just this lock -- on Windows). `acquire_singleton_lock`
-now tries `msvcrt.locking` as a genuine second backend on Windows (the
+tries `msvcrt.locking` as a genuine second backend on Windows (the
 same PLATFORM001-shaped fix T-2918/T-2934 applied to `frob.tickets
 ._store` and `frob.app.ticket_runner._rapid_sweep`), and returns
 `Err(DaemonError.LockUnavailable)` -- never a silent unlocked no-op --
 only when neither `fcntl` nor `msvcrt` exists on the running platform.
+T-3506 moved that dual-path acquire/release to the shared `frob.process.
+_lock.portable_flock_acquire`/`portable_flock_release` primitive rather
+than this module hand-rolling its own `msvcrt` branch; the observable
+lock semantics above are unchanged.
 
 `DaemonError.PlatformUnsupported` (T-2961) is a SEPARATE, later failure
 mode from `LockUnavailable`: the lock primitive above is genuinely

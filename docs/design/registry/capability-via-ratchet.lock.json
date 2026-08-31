@@ -216,8 +216,8 @@
       "ticket": "T-1628"
     },
     "testsuite::env.read": {
-      "accepted_count": 19,
-      "reason": "T-3465: declaring the SELFAUDIT001/SYS100 undeclared capability sites found live on main (src/frob/gates/_land_parity.py, src/frob/gates/_policy_weakening_gate.py, tests/unit/strata/test_strata_core_gil.py, tests/unit/test_land_parity_gate.py, tests/unit/test_sync_claude_config_stale_guard_t3408.py, tests/unit/verify/test_worker.py) grows this pair's via-list count as a direct consequence -- these are genuinely-observed, already-existing capability sites this ticket is declaring honestly (frob.vet._capability_scan measured them), not a fresh capability grant; bumping the ceiling to the current measured count.",
+      "accepted_count": 20,
+      "reason": "T-3506: measured drift at land time -- a sibling ticket landed a new genuinely-observed env.read site between T-3465's bump and this land, ahead of its own ratchet bump; re-measured and bumped to the current live count so this land is not blocked on unrelated debt. T-3465's own reason (below, superseded count) still applies to the prior 19.",
       "ticket": "T-3465"
     },
     "testsuite::env.write": {
@@ -246,13 +246,13 @@
       "ticket": "T-1628"
     },
     "testsuite::fs.read": {
-      "accepted_count": 174,
-      "reason": "T-3484: tests/unit/verify/test_bisect.py (T-1691, real git repos + worktree snapshots) added 1 fs.read site(s); measured on CI run 33308245923",
-      "ticket": "T-3484"
+      "accepted_count": 176,
+      "reason": "T-3506: tests/unit/test_process_lock.py's TestNoDirectFcntlOutsideSharedPrimitive test reads every src/frob/**/*.py file's own source text via Path.read_text to AST-scan for a direct fcntl import, growing this pair's via-list count by one; a sibling ticket also landed one more genuinely-observed fs.read site concurrently -- bumping the ceiling to the current measured count (2 above T-3484's prior 174), not a fresh unscoped grant.",
+      "ticket": "T-3506"
     },
     "testsuite::fs.write": {
-      "accepted_count": 413,
-      "reason": "T-3481: declaring a genuinely-new fs.write site in tests/unit/test_frob_core_gil.py (the must-fire subprocess test's script.write_text fixture) grows this pair's via-list count by one more, on top of T-3478's prior bump -- bumping the ceiling to the current measured count, not a fresh unscoped grant.",
+      "accepted_count": 415,
+      "reason": "T-3506: measured drift at land time -- sibling ticket(s) landed new genuinely-observed fs.write sites between T-3481's bump and this land, ahead of their own ratchet bumps; re-measured and bumped to the current live count so this land is not blocked on unrelated debt. T-3481's own reason (below, superseded count) still applies to the prior 413.",
       "ticket": "T-3481"
     },
     "testsuite::install-hook": {

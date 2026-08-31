@@ -9,6 +9,8 @@ import pytest
 from frob.tickets import Origin, TicketKind, new_ticket
 from frob.tickets._models import TicketSpec
 from frob.tickets._mutation_sweep_queue import (
+    SweepQueueLockUnavailable,
+    _sweep_lock,
     enqueue_pending_sweep,
     pending_sweep_count,
     run_pending_sweep,
@@ -30,6 +32,26 @@ def _make_ticket(tmp_path: Path, *, kind: TicketKind, title: str = "seed") -> st
     result = new_ticket(tmp_path, spec)
     assert result.is_ok
     return result.danger_ok.id
+
+
+# frob:ticket T-3506
+class TestSweepLockPlatformBackend:
+    """T-3506: `_sweep_lock`'s loud refusal (`SweepQueueLockUnavailable`)
+    when neither `fcntl` nor `msvcrt` exists -- replaced a pre-T-3506
+    silent, POSIX-only no-op that never actually serialized concurrent
+    sweep-queue mutations on any platform without `fcntl`."""
+
+    def test_no_lock_primitive_refuses_loudly(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_mutation_sweep_queue.py::TestSweepLockPlatformBackend.test_no_lock_primitive_refuses_loudly  # noqa: E501
+        import frob.process._lock as _lock_mod
+
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", None)
+        with pytest.raises(SweepQueueLockUnavailable):
+            with _sweep_lock(tmp_path):
+                pass
 
 
 class TestEnqueuePendingSweep:

@@ -45,6 +45,9 @@ case a tool by name.
 <!-- frob:describes src/frob/process/_guard.py::guarded_subprocess_run -->
 <!-- frob:describes src/frob/process/_lock.py::_derived_lock_path -->
 <!-- frob:describes src/frob/process/_lock.py::derived_state_lock -->
+<!-- frob:describes src/frob/process/_lock.py::portable_flock_acquire -->
+<!-- frob:describes src/frob/process/_lock.py::portable_flock_release -->
+<!-- frob:describes src/frob/process/_lock.py::lock_backend_available -->
 <!-- frob:describes src/frob/process/_lock.py::DerivedStateLockUnavailable -->
 
 ```python
@@ -302,6 +305,21 @@ conservative-concurrency tradeoff), and a loud `DerivedStateLockUnavailable`
 refusal on any platform with neither primitive -- see `frob.gates.
 _walk_lint`'s PLATFORM001 rule (docs/modules/gates.md#platform001-posix-
 only-primitive-degrades-silently-t-2919), which found this exact site.
+
+T-3506 extracted that dual-path acquire/release itself into a shared,
+reusable primitive -- `portable_flock_acquire`/`portable_flock_release`/
+`lock_backend_available` (`frob.process._lock`) -- and ported every OTHER
+`fcntl`-importing lock call site in the codebase onto it (`frob.tickets.
+_store`/`_new_renumber`/`_land`/`_leases`/`_land_queue`/
+`_mutation_sweep_queue`/`_land_git_ops`, `frob.serve._socketd`, `frob.app.
+ticket_runner._rapid_sweep`, `frob.testing._coverage_wait`) instead of each
+re-deriving its own `msvcrt` branch. `derived_state_lock` itself now calls
+`portable_flock_acquire`/`portable_flock_release` rather than hand-rolling
+the platform branch inline; its own observable semantics (shared/exclusive
+discipline, re-entrancy, `DerivedStateLockUnavailable`) are unchanged.
+`portable_flock_acquire` supports three acquire shapes -- unbounded
+blocking, one non-blocking attempt, and blocking-with-timeout -- matching
+the three shapes this codebase's pre-T-3506 call sites actually used.
 
 `derived_state_write_lock` (T-0918) is the reentrancy-aware writer entry
 point `frob.dup.find_clones`/`frob.graph.build_graph` call: it consults a

@@ -43,13 +43,11 @@ fresh?" check.
 from __future__ import annotations
 
 import hashlib
-import importlib
 import json
 import os
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from types import ModuleType
 from typing import Iterator
 
 from pydantic import BaseModel
@@ -67,25 +65,21 @@ from frob.gitio import git_common_dir
 from frob.graph import GraphSnapshot, build_graph, load_graph
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
+from frob.process._lock import (
+    lock_backend_available,
+    portable_flock_acquire,
+    portable_flock_release,
+)
 
-# T-2952: `fcntl` is POSIX-only. This module used to `import fcntl`
-# unconditionally at module scope, crashing the import of every caller
-# on Windows -- the same PLATFORM001-shaped bug T-2918/T-2934 fixed
-# elsewhere (`frob.tickets._store`, `frob.app.ticket_runner
-# ._rapid_sweep`). Mirrors those exactly: a real `msvcrt.locking`-based
-# backend on Windows, `CoverageLockUnavailable` (a loud refusal) only
-# when NEITHER exists -- never a silent no-op.
-fcntl: ModuleType | None
-try:
-    fcntl = importlib.import_module("fcntl")
-except ImportError:  # pragma: no cover -- posix-only in this repo's CI
-    fcntl = None
-
-msvcrt: ModuleType | None
-try:
-    msvcrt = importlib.import_module("msvcrt")
-except ImportError:  # pragma: no cover -- windows-only in this repo's CI
-    msvcrt = None
+# T-2952/T-3506: `fcntl` is POSIX-only. This module used to `import
+# fcntl` unconditionally at module scope, crashing the import of every
+# caller on Windows -- the same PLATFORM001-shaped bug T-2918/T-2934
+# fixed elsewhere. `_flock_path` now delegates its platform mechanics to
+# `frob.process._lock`'s shared `lock_backend_available`/`portable_
+# flock_acquire`/`portable_flock_release` (T-3506) rather than
+# re-deriving its own `fcntl`/`msvcrt` pair -- still raises
+# `CoverageLockUnavailable` (a loud refusal) only when NEITHER exists,
+# never a silent no-op.
 
 
 # frob:doc docs/modules/testing.md#public-api
@@ -157,44 +151,24 @@ def _flock_path(path: Path, label: str) -> Iterator[None]:
     pair: a real `msvcrt.locking`-based backend on Windows, and
     `CoverageLockUnavailable` (a loud refusal) only when neither `fcntl`
     nor `msvcrt` exists -- never a silent no-op."""
-    if fcntl is None and msvcrt is None:
+    if not lock_backend_available():
         raise CoverageLockUnavailable(
             f"testing: {path}: neither fcntl (POSIX) nor msvcrt (Windows) "
             f"is available on this platform -- refusing to serialize "
             f"{label} unlocked (T-2952)"
         )
     path.parent.mkdir(parents=True, exist_ok=True)
-    windows_backend = msvcrt is not None and fcntl is None
-    if windows_backend:  # pragma: no cover -- windows-only
-        fd = os.open(
-            str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
-        )
-        if os.fstat(fd).st_size < 1:
-            os.write(fd, b"\0")
-            os.fsync(fd)
-        assert msvcrt is not None
-        while True:
-            try:
-                os.lseek(fd, 0, os.SEEK_SET)
-                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
-                break
-            except OSError:
-                time.sleep(0.05)
-    else:
-        assert fcntl is not None
-        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-        fcntl.flock(fd, fcntl.LOCK_EX)
+    # frob:ticket T-3506
+    # msvcrt byte-seeding (when that backend is the one in use) happens
+    # inside portable_flock_acquire itself.
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644)
+    portable_flock_acquire(fd, exclusive=True)
     try:
         _log.debug("coverage_wait: %s lock acquired (%s)", label, path)
         yield
     finally:
-        if windows_backend:  # pragma: no cover -- windows-only
-            assert msvcrt is not None
-            os.lseek(fd, 0, os.SEEK_SET)
-            msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
-        else:
-            assert fcntl is not None
-            fcntl.flock(fd, fcntl.LOCK_UN)
+        # frob:ticket T-3506
+        portable_flock_release(fd)
         os.close(fd)
         _log.debug("coverage_wait: %s lock released (%s)", label, path)
 

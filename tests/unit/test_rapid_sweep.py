@@ -350,13 +350,14 @@ class TestBaselineLock:
         NO-OP this replaces raced every concurrent sweep for the whole
         lock's lifetime, not just under rare, brief contention."""
         # frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_no_lock_primitive_refuses_loudly  # noqa: E501
+        import frob.process._lock as _lock_mod
         from frob.app.ticket_runner._rapid_sweep import (
             BaselineLockUnavailable,
             _baseline_lock,
         )
 
-        monkeypatch.setattr(_rapid_sweep, "fcntl", None)
-        monkeypatch.setattr(_rapid_sweep, "msvcrt", None)
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", None)
         with pytest.raises(BaselineLockUnavailable):
             with _baseline_lock(tmp_path):
                 pass
@@ -377,6 +378,7 @@ class TestBaselineLock:
             )
         import fcntl as _fcntl
 
+        import frob.process._lock as _lock_mod
         from frob.app.ticket_runner._rapid_sweep import _baseline_lock
 
         class _FakeMsvcrt:
@@ -393,8 +395,8 @@ class TestBaselineLock:
                 except OSError as exc:
                     raise PermissionError(str(exc)) from exc
 
-        monkeypatch.setattr(_rapid_sweep, "fcntl", None)
-        monkeypatch.setattr(_rapid_sweep, "msvcrt", _FakeMsvcrt)
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", _FakeMsvcrt)
 
         lock_path = tmp_path / ".frob" / "rapid-sweep-baseline.lock"
         lock_path.parent.mkdir(parents=True)

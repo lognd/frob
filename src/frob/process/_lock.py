@@ -28,6 +28,7 @@ process's WHOLE run, not just its precheck) between fix and full coverage.
 
 from __future__ import annotations
 
+import errno
 import importlib
 import os
 import threading
@@ -104,6 +105,202 @@ def _msvcrt_release(fd: int) -> None:  # pragma: no cover -- windows-only
     assert msvcrt is not None
     os.lseek(fd, 0, os.SEEK_SET)
     msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+
+
+# frob:doc docs/modules/process.md#public-api
+# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_branch_selected_when_fcntl_absent  # noqa: E501
+# frob:ticket T-3506
+class PortableLockUnavailable(RuntimeError):
+    """T-3506: raised by `portable_flock_acquire` when neither `fcntl`
+    (POSIX) nor `msvcrt` (Windows) is importable on this platform -- the
+    SHARED base every per-module `*LockUnavailable` (`DerivedStateLock
+    Unavailable` here, and its now-ported siblings in `frob.tickets.
+    _store`/`_new_renumber`/`_land`/`_leases`/`_land_queue`/
+    `_mutation_sweep_queue`, `frob.serve._socketd`, `frob.app.
+    ticket_runner._rapid_sweep`, `frob.testing._coverage_wait`)
+    previously re-derived its own `neither primitive is available` guard
+    around. Call sites that want their own historically-named exception
+    (for a stable public error surface / existing tests) still define
+    their own subclass and raise IT after calling `lock_backend_
+    available()` themselves; call sites with no such history can let
+    this propagate directly."""
+
+
+# frob:doc docs/modules/process.md#public-api
+# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_branch_selected_when_fcntl_absent  # noqa: E501
+# frob:ticket T-3506
+def lock_backend_available() -> bool:
+    """Whether a real advisory-lock primitive exists on this platform at
+    all (`fcntl` on POSIX, `msvcrt` on Windows) -- the guard every lock
+    call site across this codebase used to re-derive as its own `if
+    fcntl is None and msvcrt is None:` check before raising its own
+    loud, module-specific unavailable-error. Never a silent-degrade
+    signal by itself: a caller that gets `False` back is expected to
+    raise (or propagate `PortableLockUnavailable`), never to proceed
+    unlocked (T-2934/T-2918's PLATFORM001 doctrine)."""
+    return fcntl is not None or msvcrt is not None
+
+
+# frob:doc docs/modules/process.md#public-api
+# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_blocking_acquire_release_round_trips  # noqa: E501
+# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_nonblocking_contended_returns_false  # noqa: E501
+# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_branch_selected_when_fcntl_absent  # noqa: E501
+# frob:ticket T-3506
+def portable_flock_acquire(
+    fd: int,
+    *,
+    exclusive: bool,
+    blocking: bool = True,
+    timeout: float | None = None,
+) -> bool:
+    """Acquire an advisory lock on open file descriptor `fd` -- the ONE
+    shared dual-path (`fcntl.flock` on POSIX / `msvcrt.locking` on
+    Windows) primitive `derived_state_lock` used to hand-roll on its
+    own, extracted (T-3506) so every OTHER lock call site in this
+    codebase (`frob.tickets._store`/`_new_renumber`/`_land`/`_leases`/
+    `_land_queue`/`_mutation_sweep_queue`/`_land_git_ops`, `frob.serve.
+    _socketd`, `frob.app.ticket_runner._rapid_sweep`, `frob.testing.
+    _coverage_wait`) can stop re-deriving its OWN msvcrt branch.
+
+    Three acquire shapes, matching the three this codebase's pre-T-3506
+    call sites actually used (never invented beyond that -- this ticket
+    does not change lock semantics, only shares the primitive behind
+    them):
+
+    - `blocking=True, timeout=None` (the default): blocks until
+      acquired, exactly like bare `fcntl.flock(fd, LOCK_EX)` (no
+      `LOCK_NB`) -- on Windows, `_msvcrt_acquire_blocking`'s unbounded
+      poll loop. Always returns True (never returns False; only
+      raises).
+    - `blocking=False, timeout=None`: ONE non-blocking attempt, exactly
+      like `fcntl.flock(fd, LOCK_EX | LOCK_NB)` -- returns True if
+      acquired, False if already held by someone else (never raises for
+      contention; an `OSError` for any OTHER reason still propagates).
+      On Windows, one `msvcrt.locking(fd, LK_NBLCK, 1)` attempt.
+    - `blocking=True, timeout=<seconds>`: polls (matching `_baseline_
+      lock`'s T-2918 shape) until acquired or `timeout` elapses, then
+      returns False -- never raises on a timeout.
+
+    `exclusive=False` (SHARED) is only meaningful on POSIX: `msvcrt` has
+    no shared/read-lock mode at all, so the Windows backend always takes
+    an EXCLUSIVE lock regardless of `exclusive` (the same documented,
+    deliberate conservative-concurrency tradeoff `derived_state_lock`'s
+    own docstring already describes).
+
+    Raises `PortableLockUnavailable` if neither `fcntl` nor `msvcrt` is
+    importable on this platform -- callers that want their own named
+    exception should check `lock_backend_available()` first and raise
+    that instead, before ever reaching this call."""
+    if fcntl is not None:
+        return _portable_flock_acquire_posix(
+            fd, exclusive=exclusive, blocking=blocking, timeout=timeout
+        )
+    if msvcrt is not None:  # pragma: no cover -- windows-only
+        return _portable_flock_acquire_windows(fd, blocking=blocking, timeout=timeout)
+    raise PortableLockUnavailable(
+        f"process: portable_flock_acquire: neither fcntl (POSIX) nor "
+        f"msvcrt (Windows) is available on this platform -- refusing to "
+        f"acquire fd {fd} unlocked (T-3506)"
+    )
+
+
+# frob:ticket T-3506
+def _portable_flock_acquire_posix(
+    fd: int, *, exclusive: bool, blocking: bool, timeout: float | None
+) -> bool:
+    """The `fcntl.flock` half of `portable_flock_acquire` -- split out
+    (T-3506) purely to keep `portable_flock_acquire` itself under
+    ARCH001's length/complexity threshold; assumes `fcntl is not None`
+    (the caller already checked). See `portable_flock_acquire`'s own
+    docstring for the three acquire-shape contract this implements."""
+    assert fcntl is not None
+    flags = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
+    if blocking and timeout is None:
+        fcntl.flock(fd, flags)
+        return True
+    if not blocking:
+        try:
+            fcntl.flock(fd, flags | fcntl.LOCK_NB)
+            return True
+        except OSError as exc:
+            if exc.errno not in (errno.EACCES, errno.EAGAIN):
+                raise
+            return False
+    assert timeout is not None  # only remaining case: blocking, timed
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            fcntl.flock(fd, flags | fcntl.LOCK_NB)
+            return True
+        except OSError as exc:
+            if exc.errno not in (errno.EACCES, errno.EAGAIN):
+                raise
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(0.05)
+
+
+# frob:ticket T-3506
+def _portable_flock_acquire_windows(
+    fd: int, *, blocking: bool, timeout: float | None
+) -> bool:  # pragma: no cover -- windows-only
+    """The `msvcrt.locking` half of `portable_flock_acquire` -- split out
+    (T-3506) purely to keep `portable_flock_acquire` itself under
+    ARCH001's length/complexity threshold; assumes `msvcrt is not None`
+    (the caller already checked). See `portable_flock_acquire`'s own
+    docstring for the three acquire-shape contract this implements.
+
+    `msvcrt.locking` locks a byte RANGE, unlike `fcntl.flock`'s whole-
+    descriptor lock -- it requires the target byte to already exist, so
+    every msvcrt caller needs the file seeded with at least one byte
+    first. Done HERE (T-3506) rather than at each call site: a caller
+    that opens `fd` fresh (size 0) on POSIX never reaches this function
+    at all, so seeding it only here -- never unconditionally at the call
+    site -- is what keeps a POSIX caller's file layout byte-for-byte
+    unchanged (T-3506's own must-stay-quiet bar) while still satisfying
+    msvcrt's real precondition on Windows."""
+    assert msvcrt is not None
+    if os.fstat(fd).st_size < 1:
+        os.write(fd, b"\0")
+        os.fsync(fd)
+    if blocking and timeout is None:
+        _msvcrt_acquire_blocking(fd)
+        return True
+    deadline = None if timeout is None else time.monotonic() + timeout
+    while True:
+        try:
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            return True
+        except OSError:
+            if not blocking:
+                return False
+            if deadline is not None and time.monotonic() >= deadline:
+                return False
+            time.sleep(0.05)
+
+
+# frob:doc docs/modules/process.md#public-api
+# frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_posix_blocking_acquire_release_round_trips  # noqa: E501
+# frob:ticket T-3506
+def portable_flock_release(fd: int) -> None:
+    """Release a lock `portable_flock_acquire` took on `fd` -- the
+    release half of the shared primitive, `fcntl.flock(fd, LOCK_UN)` on
+    POSIX or `_msvcrt_release` on Windows. Raises `PortableLockUnavailable`
+    in the same neither-backend case `portable_flock_acquire` does (never
+    reached in practice: a caller that got a lock via `portable_flock_
+    acquire` already proved a backend exists)."""
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        return
+    if msvcrt is not None:  # pragma: no cover -- windows-only
+        _msvcrt_release(fd)
+        return
+    raise PortableLockUnavailable(
+        f"process: portable_flock_release: neither fcntl (POSIX) nor "
+        f"msvcrt (Windows) is available on this platform -- cannot "
+        f"release fd {fd} (T-3506)"
+    )
 
 
 #: The advisory lock file `derived_state_lock` holds, relative to a
@@ -372,18 +569,12 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
                 held[key] = (fd, held_exclusive, depth - 1)
         return
 
-    if msvcrt is not None and fcntl is None:  # pragma: no cover -- windows-only
-        fd = os.open(
-            str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
-        )
-        if os.fstat(fd).st_size < 1:
-            os.write(fd, b"\0")
-            os.fsync(fd)
-        _msvcrt_acquire_blocking(fd)
-    else:
-        assert fcntl is not None
-        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-        fcntl.flock(fd, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
+    # frob:ticket T-3506
+    # byte-seeding for msvcrt's byte-range lock (when that backend is the
+    # one in use) now happens inside portable_flock_acquire itself, not
+    # here.
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644)
+    portable_flock_acquire(fd, exclusive=exclusive)
     held[key] = (fd, exclusive, 1)
     with _process_registry_lock:
         _process_held_counts[registry_key] = (
@@ -398,10 +589,8 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
         yield
     finally:
         del held[key]
-        if fcntl is not None:
-            fcntl.flock(fd, fcntl.LOCK_UN)
-        else:  # pragma: no cover -- windows-only
-            _msvcrt_release(fd)
+        # frob:ticket T-3506
+        portable_flock_release(fd)
         os.close(fd)
         with _process_registry_lock:
             remaining = _process_held_counts.get(registry_key, 0) - 1
@@ -528,4 +717,8 @@ __all__ = [
     "derived_state_lock",
     "derived_state_write_lock",
     "held_registry_keys",
+    "PortableLockUnavailable",
+    "lock_backend_available",
+    "portable_flock_acquire",
+    "portable_flock_release",
 ]

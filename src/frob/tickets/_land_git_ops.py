@@ -38,20 +38,23 @@ here.
 from __future__ import annotations
 
 import fnmatch
-import importlib
 import json
 import os
 import re
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from types import ModuleType
 from typing import Any
 
 from typani.result import Err, Ok, Result
 
 from frob.gitio import run_argv
 from frob.logging import get_logger
+from frob.process._lock import (
+    lock_backend_available,
+    portable_flock_acquire,
+    portable_flock_release,
+)
 from frob.tickets._land_ledger_merge import (
     _merge_ledger_tickets,
     _splice_only_ticket,
@@ -104,15 +107,15 @@ def _land_repair_marker_path(root: Path, ticket_id: str) -> Path:
     return _land_repair_dir(root) / f"{ticket_id}.json"
 
 
-# T-2157: same posix-only degradation as `frob.tickets._land`'s own
-# `_land_lock` -- see `reclaim_orphaned_squash_residue`'s docstring for why
-# this module reads (never writes) that module's `LAND_LOCK_REL` constant
-# instead of inventing a second lock file.
-_fcntl: ModuleType | None
-try:
-    _fcntl = importlib.import_module("fcntl")
-except ImportError:  # pragma: no cover -- posix-only in this repo's CI
-    _fcntl = None
+# T-2157/T-3506: `reclaim_orphaned_squash_residue`'s probe used to be
+# POSIX-only (`fcntl` unavailable degraded to a logged no-op, never
+# touching `root`). It now goes through `frob.process._lock`'s shared
+# `lock_backend_available`/`portable_flock_acquire`/`portable_flock_
+# release` (T-3506) instead of hand-rolling its own `fcntl` import, so
+# the probe is REAL (msvcrt-backed) on Windows too, not just POSIX --
+# see `reclaim_orphaned_squash_residue`'s docstring for why this module
+# reads (never writes) `frob.tickets._land`'s own `LAND_LOCK_REL`
+# constant instead of inventing a second lock file.
 
 
 @contextmanager
@@ -525,11 +528,12 @@ def reclaim_orphaned_squash_residue(
         # empty working tree; fall through so the markers themselves get
         # removed rather than lingering forever.
         return _clear_markers_only(markers, ticket_id)
-    if _fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
+    if not lock_backend_available():
         _log.warning(
-            "land: %s reclaim_orphaned_squash_residue: fcntl unavailable on "
-            "this platform -- cannot safely distinguish a live land's own "
-            "staging from orphaned residue in %s, refusing to touch it",
+            "land: %s reclaim_orphaned_squash_residue: neither fcntl nor "
+            "msvcrt is available on this platform -- cannot safely "
+            "distinguish a live land's own staging from orphaned residue "
+            "in %s, refusing to touch it",
             ticket_id,
             root,
         )
@@ -562,15 +566,15 @@ def _reclaim_via_land_lock_probe(
     ARCH001/ARCH103's threshold -- pure extraction, no behavior change.
     Assumes `root` is already known dirty, at least one land-repair marker
     is present (`markers`, T-2286's positive-evidence requirement), and
-    `_fcntl` is available; the caller (`reclaim_orphaned_squash_residue`)
-    checks all three first."""
-    assert _fcntl is not None  # narrows for the type checker; caller already checked
+    a lock backend is available (T-3506); the caller
+    (`reclaim_orphaned_squash_residue`) checks all three first."""
     lock_path = root / LAND_LOCK_REL
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
-    try:
-        _fcntl.flock(fd, _fcntl.LOCK_EX | _fcntl.LOCK_NB)
-    except OSError:
+    fd = os.open(
+        str(lock_path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
+    )
+    # frob:ticket T-3506
+    if not portable_flock_acquire(fd, exclusive=True, blocking=False):
         _log.warning(
             "land: %s root %s has staged/dirty content and a land-repair "
             "marker is present, but land.lock is currently HELD by a live "
@@ -584,7 +588,8 @@ def _reclaim_via_land_lock_probe(
     try:
         return _reset_orphaned_residue_under_lock(root, ticket_id, markers)
     finally:
-        _fcntl.flock(fd, _fcntl.LOCK_UN)
+        # frob:ticket T-3506
+        portable_flock_release(fd)
         os.close(fd)
 
 

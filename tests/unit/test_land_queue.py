@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from typani.result import Err, Ok
 
 from frob.tickets._land_queue import (
@@ -205,6 +206,20 @@ class TestFileLock:
         with file_lock(lock_path, label="test"):
             pass
         assert lock_path.exists()
+
+    # frob:ticket T-3506
+    def test_no_lock_primitive_refuses_loudly(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/tickets/_land_queue.py::LandQueueLockUnavailable kind="unit"  # noqa: E501
+        import frob.process._lock as _lock_mod
+        from frob.tickets._land_queue import LandQueueLockUnavailable
+
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", None)
+        with pytest.raises(LandQueueLockUnavailable):
+            with file_lock(tmp_path / ".frob" / "some.lock", label="test"):
+                pass
 
 
 class TestWriteJsonRecords:

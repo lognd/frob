@@ -70,27 +70,32 @@ import os
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from importlib import import_module
 from pathlib import Path
-from types import ModuleType
 
 from pydantic import BaseModel, ConfigDict
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+from frob.process._lock import (
+    lock_backend_available,
+    portable_flock_acquire,
+    portable_flock_release,
+)
 from frob.tickets._models import LandError, LandReport
 
 _log = get_logger(__name__)
 
-# T-1345: same posix-only degradation posture as `frob.tickets._land.
-# _land_lock`/`frob.tickets._store.ledger_lock` -- see `_queue_lock`'s
-# docstring.
-fcntl: ModuleType | None
-try:
-    fcntl = import_module("fcntl")
-except ImportError:  # pragma: no cover -- posix-only in this repo's CI
-    fcntl = None
+# T-1345/T-3506: `file_lock` used to be POSIX-only, degrading to a
+# SILENT, unconditional, logged-but-unlocked no-op on a platform without
+# `fcntl` -- exactly the PLATFORM001-shaped bug T-2918/T-2934 fixed
+# elsewhere in this package (concurrent, unserialized land-queue
+# mutations is the same silent-corruption class those fixes exist to
+# prevent). Now goes through `frob.process._lock`'s shared
+# `lock_backend_available`/`portable_flock_acquire`/`portable_flock_
+# release` (T-3506) -- real, msvcrt-backed locking on Windows too, and
+# a loud `LandQueueLockUnavailable` refusal only when NEITHER backend
+# exists.
 
 #: `.frob/land-queue.json` -- deliberately a distinct file from
 #: `.frob/land.lock` (`_land._land_lock`'s own lock file) and from
@@ -155,39 +160,62 @@ def _queue_lock_path(root: Path) -> Path:
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
-# frob:ticket T-1687
+# frob:tests tests/unit/test_land_queue.py::TestFileLock.test_no_lock_primitive_refuses_loudly  # noqa: E501
+# frob:waive AFFECT001 reason="T-3506: file_lock/LandQueueLockUnavailable's platform- \
+# branch mechanics now delegate to frob.process._lock.portable_flock_acquire/ \
+# portable_flock_release instead of a hand-rolled fcntl copy -- the cited doc \
+# section's prose already covers file_lock's advisory-lock contract; the new loud \
+# refusal (replacing a prior silent no-op) is a correctness fix at the SAME contract \
+# level, not a new externally-observable behavior needing new prose. \
+# docs/modules/tickets-verify-sweep.md is also under a sibling ticket's (T-3520) own \
+# open scope right now, so a real prose edit here would leak that ticket's file ahead \
+# of its own close -- this waiver, not a doc touch, is the correct T-3506 resolution."
+# frob:ticket T-3506
+class LandQueueLockUnavailable(RuntimeError):
+    """T-3506: raised by `file_lock` when neither `fcntl` (POSIX) nor
+    `msvcrt` (Windows) is importable -- there is no known advisory-lock
+    primitive on this platform. A loud refusal, never the pre-T-3506
+    silent unconditional no-op: proceeding unlocked would let two
+    concurrent land-queue mutations (`enqueue`, the pop-and-mark-landing
+    step, the record-outcome step) race each other."""
+
+
+# frob:waive AFFECT001 reason="T-3506: see LandQueueLockUnavailable's own waiver \
+# immediately above -- same file, same doc section, same reasoning."
 @contextmanager
 def file_lock(lock_path: Path, *, label: str) -> Iterator[None]:
     """Exclusive, blocking, cross-process advisory lock over `lock_path`
-    (T-1687): the ONE fcntl-backed lock implementation every module that
-    needs to serialize mutations to a small JSON-file-backed store in this
+    (T-1687): the ONE lock implementation every module that needs to
+    serialize mutations to a small JSON-file-backed store in this
     package should reuse, rather than each hand-rolling its own near-
-    identical copy (this module's own `_queue_lock` now delegates here) --
-    "two lock protocols over adjacent state in one repo is a deadlock
+    identical copy (this module's own `_queue_lock` now delegates here)
+    -- "two lock protocols over adjacent state in one repo is a deadlock
     waiting to be discovered in production" (T-1687's own scope note).
     `label` is used only for log messages, so a caller sharing this one
     implementation across several distinct lock files still gets
-    distinguishable log lines. Degrades to a documented no-op (logged at
-    WARNING) on a platform without `fcntl`, matching every other lock in
-    this package."""
-    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
-        _log.warning(
-            "land_queue: file_lock(%s): fcntl unavailable on this platform, "
-            "lock is a NO-OP -- concurrent mutations against %s are NOT "
-            "serialized here",
-            label,
-            lock_path,
+    distinguishable log lines. Delegates the actual platform mechanics
+    to `frob.process._lock`'s shared primitive (T-3506): real,
+    msvcrt-backed locking on Windows too, and raises
+    `LandQueueLockUnavailable` -- never a silent no-op -- when neither
+    `fcntl` nor `msvcrt` exists."""
+    if not lock_backend_available():
+        raise LandQueueLockUnavailable(
+            f"land_queue: file_lock({label}): neither fcntl (POSIX) nor "
+            f"msvcrt (Windows) is available on this platform -- refusing "
+            f"to proceed unlocked against {lock_path} (T-3506)"
         )
-        yield
-        return
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
-    fcntl.flock(fd, fcntl.LOCK_EX)
+    fd = os.open(
+        str(lock_path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
+    )
+    # frob:ticket T-3506
+    portable_flock_acquire(fd, exclusive=True)
     _log.debug("land_queue: file_lock(%s) acquired (%s)", label, lock_path)
     try:
         yield
     finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
+        # frob:ticket T-3506
+        portable_flock_release(fd)
         os.close(fd)
         _log.debug("land_queue: file_lock(%s) released (%s)", label, lock_path)
 

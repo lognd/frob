@@ -53,7 +53,6 @@ T-2833's Done report, for the exact grant added).
 
 from __future__ import annotations
 
-import importlib
 import json
 import os
 import re
@@ -65,7 +64,6 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
-from types import ModuleType
 
 from pydantic import BaseModel
 from typani.error_set import ErrorSet
@@ -75,18 +73,24 @@ import frob.gitio as gitio
 from frob.gitio import GitError, ProcResult
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
+from frob.process._lock import (
+    lock_backend_available,
+    portable_flock_acquire,
+    portable_flock_release,
+)
 from frob.tickets._models import TicketError
 
 # frob:ticket T-1619
-# Same posix-only degradation as `frob.tickets._land`'s own `fcntl` import
-# (T-0577) -- `refuse_if_land_in_progress` degrades to a logged-once no-op
-# (never refuses) on a platform without `fcntl`, matching how the land.lock
-# it probes already degrades on the same platform.
-fcntl: ModuleType | None
-try:
-    fcntl = importlib.import_module("fcntl")
-except ImportError:  # pragma: no cover -- posix-only in this repo's CI
-    fcntl = None
+# frob:ticket T-3506
+# `_land_flock_probe` is a non-blocking PROBE of `_land.py`'s own
+# `LAND_LOCK_REL` file (never a real critical section -- see its
+# docstring), so it degrades to `Ok(None)` ("no live land detected") when
+# NO backend exists at all, same posture as before T-3506. It now goes
+# through `frob.process._lock`'s shared `lock_backend_available`/
+# `portable_flock_acquire`/`portable_flock_release` instead of its own
+# POSIX-only `fcntl` import, so it correctly detects a HELD land lock on
+# Windows too (msvcrt-backed) -- pre-T-3506 this probe always reported
+# "no land in progress" on Windows, even while one genuinely was.
 
 _log = get_logger(__name__)
 
@@ -161,23 +165,22 @@ def _land_flock_probe(
     T-2406: `exclude_pid` is threaded straight to `_refuse_for_held_land_
     lock` -- see that function's docstring for the exact, single-pid
     scoping rule."""
-    if fcntl is None:
+    if not lock_backend_available():
         return Ok(None)
     path = root / LAND_LOCK_REL
     if not path.exists():
         return Ok(None)
     try:
-        fd = os.open(path, os.O_RDWR)
+        fd = os.open(str(path), os.O_RDWR | getattr(os, "O_BINARY", 0))
     except OSError:
         return Ok(None)
-    try:
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
+    # frob:ticket T-3506
+    if not portable_flock_acquire(fd, exclusive=True, blocking=False):
         os.close(fd)
         return _refuse_for_held_land_lock(
             root, path, quiet=quiet, exclude_pid=exclude_pid
         )
-    fcntl.flock(fd, fcntl.LOCK_UN)
+    portable_flock_release(fd)
     os.close(fd)
     return Ok(None)
 

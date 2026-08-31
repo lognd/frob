@@ -76,7 +76,6 @@ identity count alone be misread as a completeness claim."""
 
 from __future__ import annotations
 
-import importlib
 import json
 import os
 import re
@@ -87,31 +86,26 @@ import time
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+from frob.process._lock import (
+    lock_backend_available,
+    portable_flock_acquire,
+    portable_flock_release,
+)
 
-# T-2595/T-2918: `fcntl` is POSIX-only. `_baseline_lock` used to degrade
-# to a logged NO-OP for the whole runtime of a process without it (i.e.
-# every Windows process, unconditionally, not just under rare contention)
-# -- T-2918 replaced that with a genuine `msvcrt.locking`-based lock on
-# Windows (see `_baseline_lock`'s docstring), so `msvcrt` is imported here
-# as the second of the two real platform backends.
-fcntl: ModuleType | None
-try:
-    fcntl = importlib.import_module("fcntl")
-except ImportError:  # pragma: no cover -- posix-only in this repo's CI
-    fcntl = None
-
-msvcrt: ModuleType | None
-try:
-    msvcrt = importlib.import_module("msvcrt")
-except ImportError:  # pragma: no cover -- windows-only in this repo's CI
-    msvcrt = None
+# T-2595/T-2918/T-3506: `_baseline_lock` used to degrade to a logged
+# NO-OP for the whole runtime of a process without `fcntl` (i.e. every
+# Windows process, unconditionally, not just under rare contention) --
+# T-2918 replaced that with a genuine `msvcrt.locking`-based lock on
+# Windows. T-3506 moved that dual-path acquire/release itself to
+# `frob.process._lock`'s shared `portable_flock_acquire`/`portable_
+# flock_release`/`lock_backend_available` (see `_baseline_lock`'s
+# docstring) rather than re-deriving its own `fcntl`/`msvcrt` pair.
 
 if TYPE_CHECKING:
     # frob:ticket T-2312
@@ -665,7 +659,7 @@ def _baseline_lock(
     is a reduced guarantee, never a silent corruption -- unlike the
     platform-wide no-op T-2918 removed, this branch only fires when a
     real lock exists and is contended, not merely absent."""
-    if fcntl is None and msvcrt is None:  # pragma: no cover -- via monkeypatch
+    if not lock_backend_available():  # pragma: no cover -- via monkeypatch
         raise BaselineLockUnavailable(
             f"rapid sweep: _baseline_lock: neither fcntl (POSIX) nor "
             f"msvcrt (Windows) is available on this platform -- refusing "
@@ -676,51 +670,29 @@ def _baseline_lock(
         )
     path = _baseline_lock_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    if msvcrt is not None and fcntl is None:  # pragma: no cover -- windows-only
-        # `os.O_BINARY` only exists on Windows; `getattr` keeps this branch
-        # importable (though never taken) on POSIX for testability.
-        fd = os.open(
-            str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
+    # `os.O_BINARY` only exists on Windows; `getattr` keeps this portable
+    # (a no-op on POSIX) rather than branching on the backend to decide.
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644)
+    if os.fstat(fd).st_size < 1:
+        os.write(fd, b"\0")
+        os.fsync(fd)
+    # frob:ticket T-3506
+    acquired = portable_flock_acquire(fd, exclusive=True, timeout=timeout)
+    if not acquired:
+        _log.warning(
+            "rapid sweep: _baseline_lock: %s still held after "
+            "%.0fs -- proceeding WITHOUT the lock (the CAS "
+            "ancestry check is the correctness backstop, this "
+            "is a reduced guarantee, not corruption)",
+            path,
+            timeout,
         )
-        if os.fstat(fd).st_size < 1:
-            os.write(fd, b"\0")
-            os.fsync(fd)
-    else:
-        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-    deadline = time.monotonic() + timeout
-    acquired = False
     try:
-        while True:
-            try:
-                if fcntl is not None:
-                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                else:  # pragma: no cover -- windows-only
-                    assert msvcrt is not None
-                    os.lseek(fd, 0, os.SEEK_SET)
-                    msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
-                acquired = True
-                break
-            except OSError:
-                if time.monotonic() >= deadline:
-                    _log.warning(
-                        "rapid sweep: _baseline_lock: %s still held after "
-                        "%.0fs -- proceeding WITHOUT the lock (the CAS "
-                        "ancestry check is the correctness backstop, this "
-                        "is a reduced guarantee, not corruption)",
-                        path,
-                        timeout,
-                    )
-                    break
-                time.sleep(0.05)
         yield
     finally:
         if acquired:
-            if fcntl is not None:
-                fcntl.flock(fd, fcntl.LOCK_UN)
-            else:  # pragma: no cover -- windows-only
-                assert msvcrt is not None
-                os.lseek(fd, 0, os.SEEK_SET)
-                msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+            # frob:ticket T-3506
+            portable_flock_release(fd)
         os.close(fd)
 
 

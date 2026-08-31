@@ -1281,19 +1281,25 @@ class TestLedgerLock:
 
 # frob:ticket T-2934
 class TestLedgerLockPlatformBackends:
-    """T-2934: `ledger_lock`'s msvcrt (Windows) backend and its loud
-    refusal (`TicketLockUnavailable`) when neither `fcntl` nor `msvcrt`
-    exists -- the same PLATFORM001-shaped fix T-2918 applied to
-    `_baseline_lock`."""
+    """T-2934/T-3506: `ledger_lock`'s msvcrt (Windows) backend and its
+    loud refusal (`TicketLockUnavailable`) when neither `fcntl` nor
+    `msvcrt` exists -- the same PLATFORM001-shaped fix T-2918 applied to
+    `_baseline_lock`. T-3506 moved the actual dual-path primitive to
+    `frob.process._lock` (`ledger_lock` now calls `portable_flock_
+    acquire`/`portable_flock_release`), so the platform fakes here patch
+    THAT module's `fcntl`/`msvcrt` bindings, not `frob.tickets._store`'s
+    own (which no longer exist as module attributes) -- `ledger_lock`
+    itself still raises its own `TicketLockUnavailable`, unchanged."""
 
     def test_no_lock_primitive_refuses_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends.test_no_lock_primitive_refuses_loudly  # noqa: E501
+        import frob.process._lock as _lock_mod
         import frob.tickets._store as _store_mod
 
-        monkeypatch.setattr(_store_mod, "fcntl", None)
-        monkeypatch.setattr(_store_mod, "msvcrt", None)
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", None)
         with pytest.raises(_store_mod.TicketLockUnavailable):
             with ledger_lock(tmp_path):
                 pass
@@ -1307,7 +1313,7 @@ class TestLedgerLockPlatformBackends:
         # frob:tests tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends.test_windows_backend_round_trips  # noqa: E501
         import fcntl as _real_fcntl
 
-        import frob.tickets._store as _store_mod
+        import frob.process._lock as _lock_mod
 
         class _FakeMsvcrt:
             LK_NBLCK = 1
@@ -1325,8 +1331,8 @@ class TestLedgerLockPlatformBackends:
                 except OSError as exc:
                     raise PermissionError(str(exc)) from exc
 
-        monkeypatch.setattr(_store_mod, "fcntl", None)
-        monkeypatch.setattr(_store_mod, "msvcrt", _FakeMsvcrt)
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", _FakeMsvcrt)
 
         entered = False
         with ledger_lock(tmp_path):

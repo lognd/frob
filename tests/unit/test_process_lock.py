@@ -154,6 +154,107 @@ def _hold_exclusive_then_signal(
         release.wait(timeout=10)
 
 
+# frob:ticket T-3506
+class TestPortableFlock:
+    """T-3506: `portable_flock_acquire`/`portable_flock_release` --
+    the shared primitive `derived_state_lock` used to hand-roll on its
+    own, now extracted and ported to by every other lock call site in
+    this codebase (`frob.tickets._store`/`_new_renumber`/`_land`/
+    `_leases`/`_land_queue`/`_mutation_sweep_queue`/`_land_git_ops`,
+    `frob.serve._socketd`, `frob.app.ticket_runner._rapid_sweep`,
+    `frob.testing._coverage_wait`)."""
+
+    def test_posix_blocking_acquire_release_round_trips(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_lock.py::TestPortableFlock::test_posix_blocking_acquire_release_round_trips  # noqa: E501
+        import frob.process._lock as _lock_mod
+
+        path = tmp_path / "x.lock"
+        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+        try:
+            assert _lock_mod.portable_flock_acquire(fd, exclusive=True) is True
+            _lock_mod.portable_flock_release(fd)
+            # A second round-trip proves release genuinely happened --
+            # a still-held lock would hang (or, on a re-entrant flock
+            # over the SAME fd, silently re-acquire) rather than
+            # cleanly reacquiring.
+            assert _lock_mod.portable_flock_acquire(fd, exclusive=True) is True
+            _lock_mod.portable_flock_release(fd)
+        finally:
+            os.close(fd)
+
+    def test_posix_nonblocking_contended_returns_false(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_lock.py::TestPortableFlock::test_posix_nonblocking_contended_returns_false  # noqa: E501
+        import frob.process._lock as _lock_mod
+
+        path = tmp_path / "x.lock"
+        holder_fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+        contender_fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+        try:
+            assert _lock_mod.portable_flock_acquire(holder_fd, exclusive=True) is True
+            assert (
+                _lock_mod.portable_flock_acquire(
+                    contender_fd, exclusive=True, blocking=False
+                )
+                is False
+            )
+            _lock_mod.portable_flock_release(holder_fd)
+            # Freed now -- the same non-blocking attempt succeeds.
+            assert (
+                _lock_mod.portable_flock_acquire(
+                    contender_fd, exclusive=True, blocking=False
+                )
+                is True
+            )
+            _lock_mod.portable_flock_release(contender_fd)
+        finally:
+            os.close(holder_fd)
+            os.close(contender_fd)
+
+    def test_windows_branch_selected_when_fcntl_absent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Structural per-brief requirement: assert the msvcrt path is
+        selected when `fcntl` is absent, via a monkeypatched module
+        absence -- a fake `msvcrt` (backed by real `fcntl.flock` under
+        the hood, T-3244's precedent) proves the branch actually runs,
+        not merely that it exists in source."""
+        # frob:tests tests/unit/test_process_lock.py::TestPortableFlock::test_windows_branch_selected_when_fcntl_absent  # noqa: E501
+        import fcntl as _real_fcntl
+
+        import frob.process._lock as _lock_mod
+
+        calls: list[str] = []
+
+        class _FakeMsvcrt:
+            LK_NBLCK = 1
+            LK_UNLCK = 2
+
+            @staticmethod
+            def locking(fd: int, mode: int, _nbytes: int) -> None:
+                if sys.platform == "win32":
+                    pytest.skip("POSIX-only (T-3244)")
+                calls.append("unlock" if mode == _FakeMsvcrt.LK_UNLCK else "lock")
+                if mode == _FakeMsvcrt.LK_UNLCK:
+                    _real_fcntl.flock(fd, _real_fcntl.LOCK_UN)
+                    return
+                try:
+                    _real_fcntl.flock(fd, _real_fcntl.LOCK_EX | _real_fcntl.LOCK_NB)
+                except OSError as exc:
+                    raise PermissionError(str(exc)) from exc
+
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", _FakeMsvcrt)
+
+        path = tmp_path / "x.lock"
+        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+        try:
+            assert _lock_mod.portable_flock_acquire(fd, exclusive=True) is True
+            _lock_mod.portable_flock_release(fd)
+        finally:
+            os.close(fd)
+        assert calls == ["lock", "unlock"]
+
+
 class TestDerivedStateLockPlatformBackends:
     """T-2934: `derived_state_lock`'s msvcrt (Windows) backend and its
     loud refusal when neither `fcntl` nor `msvcrt` exists -- the same
@@ -723,11 +824,15 @@ class TestSharedIdCounter:
 
 
 class TestSharedIdCounterPlatformBackends:
-    """T-2952: `_next_ticket_id_shared`'s msvcrt (Windows) backend and its
-    loud refusal when neither `fcntl` nor `msvcrt` exists -- the same
-    PLATFORM001-shaped fix T-2918/T-2934 applied elsewhere, closing this
-    module's own former bare, unconditional `import fcntl` (which crashed
-    every caller's import on Windows, not just this allocation path)."""
+    """T-2952/T-3506: `_next_ticket_id_shared`'s msvcrt (Windows) backend
+    and its loud refusal when neither `fcntl` nor `msvcrt` exists -- the
+    same PLATFORM001-shaped fix T-2918/T-2934 applied elsewhere, closing
+    this module's own former bare, unconditional `import fcntl` (which
+    crashed every caller's import on Windows, not just this allocation
+    path). T-3506 moved the actual dual-path primitive to `frob.process.
+    _lock` (`_open_and_lock_counter_file` now calls `portable_flock_
+    acquire`/`portable_flock_release`/`lock_backend_available`), so the
+    platform fakes here patch THAT module's `fcntl`/`msvcrt` bindings."""
 
     @staticmethod
     def _git(*args: str, cwd: Path) -> None:
@@ -751,10 +856,11 @@ class TestSharedIdCounterPlatformBackends:
         # frob:tests \
         # tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends.test_no_\
         # lock_primitive_refuses_loudly
+        import frob.process._lock as _lock_mod
         import frob.tickets._new_renumber as _renumber_mod
 
-        monkeypatch.setattr(_renumber_mod, "fcntl", None)
-        monkeypatch.setattr(_renumber_mod, "msvcrt", None)
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", None)
         primary = tmp_path / "primary"
         self._init_repo_on_main(primary)
         with pytest.raises(_renumber_mod.TicketLockUnavailable):
@@ -773,7 +879,7 @@ class TestSharedIdCounterPlatformBackends:
         # dows_backend_round_trips
         import fcntl as _real_fcntl
 
-        import frob.tickets._new_renumber as _renumber_mod
+        import frob.process._lock as _lock_mod
 
         class _FakeMsvcrt:
             LK_NBLCK = 1
@@ -791,8 +897,8 @@ class TestSharedIdCounterPlatformBackends:
                 except OSError as exc:
                     raise PermissionError(str(exc)) from exc
 
-        monkeypatch.setattr(_renumber_mod, "fcntl", None)
-        monkeypatch.setattr(_renumber_mod, "msvcrt", _FakeMsvcrt)
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", _FakeMsvcrt)
 
         primary = tmp_path / "primary"
         self._init_repo_on_main(primary)
@@ -801,3 +907,46 @@ class TestSharedIdCounterPlatformBackends:
         assert first != second, (
             "windows backend round-trip did not advance the shared counter"
         )
+
+
+# frob:ticket T-3506
+class TestNoDirectFcntlOutsideSharedPrimitive:
+    """T-3506's must-fire acceptance: no module under `src/frob` imports
+    `fcntl` directly except the shared primitive's own home
+    (`frob.process._lock`) -- every OTHER lock call site (`frob.tickets.
+    _store`/`_new_renumber`/`_land`/`_leases`/`_land_queue`/
+    `_mutation_sweep_queue`/`_land_git_ops`, `frob.serve._socketd`,
+    `frob.app.ticket_runner._rapid_sweep`, `frob.testing._coverage_wait`)
+    now goes through `portable_flock_acquire`/`portable_flock_release`
+    instead."""
+
+    def test_no_direct_fcntl_import_outside_lock_module(self) -> None:
+        # frob:tests tests/unit/test_process_lock.py::TestNoDirectFcntlOutsideSharedPrimitive::test_no_direct_fcntl_import_outside_lock_module  # noqa: E501
+        import ast
+
+        repo_root = Path(__file__).resolve().parents[2]
+        src_root = repo_root / "src" / "frob"
+        allowed = {src_root / "process" / "_lock.py"}
+        offenders: list[str] = []
+        for path in sorted(src_root.rglob("*.py")):
+            if path in allowed:
+                continue
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            except SyntaxError:
+                continue
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    if any(alias.name == "fcntl" for alias in node.names):
+                        offenders.append(str(path.relative_to(repo_root)))
+                elif isinstance(node, ast.Call):
+                    func = node.func
+                    if (
+                        isinstance(func, ast.Attribute)
+                        and func.attr == "import_module"
+                        and node.args
+                        and isinstance(node.args[0], ast.Constant)
+                        and node.args[0].value == "fcntl"
+                    ):
+                        offenders.append(str(path.relative_to(repo_root)))
+        assert offenders == [], f"direct fcntl import(s) outside _lock.py: {offenders}"

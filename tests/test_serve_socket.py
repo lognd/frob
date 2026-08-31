@@ -192,8 +192,10 @@ class TestAcquireSingletonLockPlatformBackends:
         # frob:tests \
         # tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends.test_no_\
         # lock_primitive_refuses_loudly
-        monkeypatch.setattr(_socketd, "fcntl", None)
-        monkeypatch.setattr(_socketd, "msvcrt", None)
+        import frob.process._lock as _lock_mod
+
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", None)
         result = acquire_singleton_lock(root)
         assert result.is_err
         assert result.danger_err == DaemonError.LockUnavailable
@@ -211,6 +213,8 @@ class TestAcquireSingletonLockPlatformBackends:
         # dows_backend_round_trips
         import fcntl as _real_fcntl
 
+        import frob.process._lock as _lock_mod
+
         class _FakeMsvcrt:
             LK_NBLCK = 1
             LK_UNLCK = 2
@@ -227,8 +231,8 @@ class TestAcquireSingletonLockPlatformBackends:
                 except OSError as exc:
                     raise PermissionError(str(exc)) from exc
 
-        monkeypatch.setattr(_socketd, "fcntl", None)
-        monkeypatch.setattr(_socketd, "msvcrt", _FakeMsvcrt)
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", _FakeMsvcrt)
 
         first = acquire_singleton_lock(root)
         assert first.is_ok

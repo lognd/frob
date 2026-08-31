@@ -28,18 +28,32 @@ established, now just from a different caller module.
 
 from __future__ import annotations
 
-import importlib
 import os
 import re
-import time
 from datetime import date
 from pathlib import Path
-from types import ModuleType
 
 from typani.result import Err, Ok, Result
 
 from frob.gitio import git_common_dir, repo_root
 from frob.logging import get_logger
+
+# T-2952/T-3506: `fcntl` is POSIX-only. This module used to `import
+# fcntl` unconditionally at module scope, which crashed the import of
+# every caller (not just the shared-counter path) on Windows -- the
+# same PLATFORM001-shaped bug T-2918/T-2934 fixed elsewhere in
+# `frob.tickets` and `frob.app.ticket_runner`. `_open_and_lock_counter_
+# file`/`_unlock_and_close_counter_file` now delegate their actual
+# platform branch to `frob.process._lock`'s shared `portable_flock_
+# acquire`/`portable_flock_release`/`lock_backend_available` (T-3506)
+# rather than re-deriving their own `fcntl`/`msvcrt` pair -- still
+# raises `TicketLockUnavailable` (a loud refusal) only when NEITHER
+# exists, never a silent no-op.
+from frob.process._lock import (
+    lock_backend_available,
+    portable_flock_acquire,
+    portable_flock_release,
+)
 from frob.tickets._archive import _load_merged
 from frob.tickets._leases import is_lease_ttl_expired, read_all_leases, rename_lease
 from frob.tickets._models import (
@@ -70,26 +84,6 @@ from frob.tickets._store import (
     write_ticket,
 )
 from frob.tickets._worktree_guard import enforce_worktree_lease
-
-# T-2952: `fcntl` is POSIX-only. This module used to `import fcntl`
-# unconditionally at module scope, which crashed the import of every
-# caller (not just the shared-counter path) on Windows -- the same
-# PLATFORM001-shaped bug T-2918/T-2934 fixed elsewhere in `frob.tickets`
-# and `frob.app.ticket_runner`. Mirrors `frob.tickets._store`'s own
-# fcntl/msvcrt pair exactly: a real `msvcrt.locking`-based backend on
-# Windows, and `TicketLockUnavailable` (a loud refusal) only when
-# NEITHER exists -- never a silent no-op.
-fcntl: ModuleType | None
-try:
-    fcntl = importlib.import_module("fcntl")
-except ImportError:  # pragma: no cover -- posix-only in this repo's CI
-    fcntl = None
-
-msvcrt: ModuleType | None
-try:
-    msvcrt = importlib.import_module("msvcrt")
-except ImportError:  # pragma: no cover -- windows-only in this repo's CI
-    msvcrt = None
 
 # T-1103: shared "frob.tickets" logger name kept explicit (not get_logger(__name__),
 # which would read "frob.tickets._new_renumber") -- several tests filter caplog
@@ -272,7 +266,7 @@ def _next_ticket_id_shared(root: Path, existing: dict[str, Ticket]) -> str:
     path = _shared_id_counter_path(root)
     if path is None:
         return _next_ticket_id(existing)
-    fd, windows_backend = _open_and_lock_counter_file(path)
+    fd = _open_and_lock_counter_file(path)
     try:
         os.lseek(fd, 0, os.SEEK_SET)
         raw = os.read(fd, 64).decode("utf-8", errors="replace").strip()
@@ -283,7 +277,7 @@ def _next_ticket_id_shared(root: Path, existing: dict[str, Ticket]) -> str:
         os.write(fd, f"{new_max}\n".encode("utf-8"))
         os.fsync(fd)
     finally:
-        _unlock_and_close_counter_file(fd, windows_backend)
+        _unlock_and_close_counter_file(fd)
     _log.info(
         "tickets: allocated T-%04d from the shared id counter at %s", new_max, path
     )
@@ -293,55 +287,33 @@ def _next_ticket_id_shared(root: Path, existing: dict[str, Ticket]) -> str:
 # frob:ticket T-3026
 # frob:waive ARCH103 reason="T-2952's cross-platform (fcntl/msvcrt) exclusive-lock acquire: the platform branch, the retry loop, and the fd-create-if-needed I/O are all part of ONE atomic acquire-or-raise operation on a single fd -- splitting the platform branches into separate helpers would hand each an fd/windows_backend pair to thread back together, adding indirection without removing any of the actual decision points this gate counts, and splitting the raise-if-neither-backend guard out would separate it from the very fd it guards. Matches the identical mixed-concern-lock-acquire shape already waived at src/frob/app/ticket_runner/_rapid_sweep.py:2722"  # noqa: E501
 # frob:waive EXHAUST002 reason="T-3475 triage: TicketLockUnavailable is this function's OWN documented raise (docstring: 'Raises TicketLockUnavailable -- never a silent unlocked no-op -- when neither exists', T-2952) -- deliberate fail-closed propagation to the caller, not a gap. The one caller (_next_ticket_id_shared_counter) intentionally does not catch it either: no fcntl/msvcrt on the platform means allocation genuinely cannot proceed safely, and that must abort the allocation loudly, not be swallowed into a silent unlocked fallback here or a blind catch-all at the call site."  # noqa: E501
-def _open_and_lock_counter_file(path: Path) -> tuple[int, bool]:
+def _open_and_lock_counter_file(path: Path) -> int:
     """Open (creating if needed) and take an exclusive, blocking lock on
-    the shared counter file at `path` (T-2952): a real `msvcrt.locking`
-    backend on Windows, or `fcntl.flock` on POSIX, matching every other
-    platform-backend pair in this repo (T-2918/T-2934). Raises
+    the shared counter file at `path` (T-2952), via `frob.process._lock`'s
+    shared platform-backend primitive (T-3506). Raises
     `TicketLockUnavailable` -- never a silent unlocked no-op -- when
-    neither exists. Returns `(fd, windows_backend)`; the caller is
+    neither `fcntl` nor `msvcrt` exists. Returns `fd`; the caller is
     responsible for pairing this with `_unlock_and_close_counter_file`."""
-    if fcntl is None and msvcrt is None:
+    if not lock_backend_available():
         raise TicketLockUnavailable(
             f"tickets: {path}: neither fcntl (POSIX) nor msvcrt (Windows) "
             f"is available on this platform -- refusing to allocate a "
             f"shared ticket id unlocked (T-2952)"
         )
     path.parent.mkdir(parents=True, exist_ok=True)
-    windows_backend = msvcrt is not None and fcntl is None
-    if windows_backend:  # pragma: no cover -- windows-only
-        fd = os.open(
-            str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
-        )
-        if os.fstat(fd).st_size < 1:
-            os.write(fd, b"\0")
-            os.fsync(fd)
-        assert msvcrt is not None
-        while True:
-            try:
-                os.lseek(fd, 0, os.SEEK_SET)
-                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
-                break
-            except OSError:
-                time.sleep(0.05)
-    else:
-        assert fcntl is not None
-        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-        fcntl.flock(fd, fcntl.LOCK_EX)
-    return fd, windows_backend
+    # frob:ticket T-3506
+    # msvcrt byte-seeding (when that backend is the one in use) happens
+    # inside portable_flock_acquire itself.
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644)
+    portable_flock_acquire(fd, exclusive=True)
+    return fd
 
 
-def _unlock_and_close_counter_file(fd: int, windows_backend: bool) -> None:
+def _unlock_and_close_counter_file(fd: int) -> None:
     """Release the lock `_open_and_lock_counter_file` took on `fd` and
     close it -- the mirror operation, always called from the caller's
     `finally` block (T-2952)."""
-    if windows_backend:  # pragma: no cover -- windows-only
-        assert msvcrt is not None
-        os.lseek(fd, 0, os.SEEK_SET)
-        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
-    else:
-        assert fcntl is not None
-        fcntl.flock(fd, fcntl.LOCK_UN)
+    portable_flock_release(fd)
     os.close(fd)
 
 

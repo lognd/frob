@@ -7219,7 +7219,6 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
 
 
 class TestDoneReportThenLandRealClosuresEndToEnd:
-
     """T-0754 review round 2 fix #2: exercises the REAL production
     closures (`_run_tests_count_fn`/`_check_gates_summary_fn`/
     `_land_passed_fn`/`_land_collected_fn` -- the exact ones `frob ticket
@@ -11494,11 +11493,15 @@ class TestLandStatus:
 
 # frob:ticket T-2934
 class TestLandLockPlatformBackends:
-    """T-2934: `_land_lock`'s msvcrt (Windows) backend and its loud
-    refusal (`LandLockTimeout(root, None)`) when neither `fcntl` nor
-    `msvcrt` exists -- the same PLATFORM001-shaped fix T-2918 applied to
-    `_baseline_lock`, reusing `land()`'s own existing typed error rather
-    than inventing a second exception for "no lock primitive at all"."""
+    """T-2934/T-3506: `_land_lock`'s msvcrt (Windows) backend and its
+    loud refusal (`LandLockTimeout(root, None)`) when neither `fcntl`
+    nor `msvcrt` exists -- the same PLATFORM001-shaped fix T-2918
+    applied to `_baseline_lock`, reusing `land()`'s own existing typed
+    error rather than inventing a second exception for "no lock
+    primitive at all". T-3506 moved the actual dual-path primitive to
+    `frob.process._lock`, so the platform fakes here patch THAT
+    module's `fcntl`/`msvcrt` bindings, not `frob.tickets._land`'s own
+    (which no longer exist as module attributes)."""
 
     # frob:tests \
     # tests/test_ticket_land.py::TestLandLockPlatformBackends.test_no_lock_primitive_ra\
@@ -11506,10 +11509,11 @@ class TestLandLockPlatformBackends:
     def test_no_lock_primitive_raises_land_lock_timeout(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        import frob.process._lock as _lock_mod
         from frob.tickets._land import LandLockTimeout, _land_lock
 
-        monkeypatch.setattr(_land_mod, "fcntl", None)
-        monkeypatch.setattr(_land_mod, "msvcrt", None)
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", None)
         with pytest.raises(LandLockTimeout) as excinfo:
             with _land_lock(tmp_path):
                 pass  # pragma: no cover -- must never be reached
@@ -11529,6 +11533,7 @@ class TestLandLockPlatformBackends:
         import fcntl as _real_fcntl
         import json
 
+        import frob.process._lock as _lock_mod
         from frob.tickets._land import _LAND_LOCK_REL, _land_lock
 
         class _FakeMsvcrt:
@@ -11547,8 +11552,8 @@ class TestLandLockPlatformBackends:
                 except OSError as exc:
                     raise PermissionError(str(exc)) from exc
 
-        monkeypatch.setattr(_land_mod, "fcntl", None)
-        monkeypatch.setattr(_land_mod, "msvcrt", _FakeMsvcrt)
+        monkeypatch.setattr(_lock_mod, "fcntl", None)
+        monkeypatch.setattr(_lock_mod, "msvcrt", _FakeMsvcrt)
 
         entered = False
         with _land_lock(tmp_path):

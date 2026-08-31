@@ -21,9 +21,10 @@ this concern allows (same lock discipline, same "never silently drop an
 entry" posture):
 
 - **Storage.** `.frob/mutation-sweep-queue.json`, a flat JSON array of
-  `SweepEntry` records, guarded by an `fcntl` advisory lock
-  (`_sweep_lock`) exactly like `_land_queue._queue_lock` -- same
-  degrade-to-logged-no-op posture on a platform without `fcntl`.
+  `SweepEntry` records, guarded by a `frob.process._lock`-backed
+  advisory lock (`_sweep_lock`, T-3506) exactly like `_land_queue.
+  _queue_lock` -- a loud `SweepQueueLockUnavailable` refusal, never a
+  silent no-op, on a platform with neither `fcntl` nor `msvcrt`.
 - **What gets queued.** One entry per deferred land: `ticket_id`, the
   `base_ref` the mutation check should diff against (the ticket's
   pre-land parent, so the batch run reproduces exactly what `_check_
@@ -51,24 +52,21 @@ import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from importlib import import_module
 from pathlib import Path
-from types import ModuleType
 
 from pydantic import BaseModel, ConfigDict
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+from frob.process._lock import (
+    lock_backend_available,
+    portable_flock_acquire,
+    portable_flock_release,
+)
 from frob.tickets._models import Origin, TicketKind, TicketSpec
 
 _log = get_logger(__name__)
-
-fcntl: ModuleType | None
-try:
-    fcntl = import_module("fcntl")
-except ImportError:  # pragma: no cover -- posix-only in this repo's CI
-    fcntl = None
 
 #: distinct from `_land_queue`'s `.frob/land-queue.json` and `.frob/
 #: land.lock` -- a separate concern, a separate file, per this package's
@@ -129,29 +127,47 @@ def _sweep_lock_path(root: Path) -> Path:
     return root / _SWEEP_LOCK_REL
 
 
+# frob:doc docs/modules/tickets-landing.md#batch-mutation-evidence-sweep-test016-t-1518
+# frob:tests tests/unit/test_mutation_sweep_queue.py::TestSweepLockPlatformBackend.test_no_lock_primitive_refuses_loudly  # noqa: E501
+# frob:waive AFFECT001 reason="T-3506: this new exception class is purely the loud- \
+# refusal case of _sweep_lock's existing advisory-lock discipline, which the cited doc \
+# section's prose already covers -- no new externally-observable contract to describe \
+# beyond what is there. docs/modules/tickets-landing.md is also under a sibling \
+# ticket's (T-3520) own open scope right now, so a real prose edit here would leak \
+# that ticket's file ahead of its own close -- this waiver, not a doc touch, is the \
+# correct T-3506 resolution."
+# frob:ticket T-3506
+class SweepQueueLockUnavailable(RuntimeError):
+    """T-3506: raised by `_sweep_lock` when neither `fcntl` (POSIX) nor
+    `msvcrt` (Windows) is importable -- a loud refusal, never the
+    pre-T-3506 silent unconditional no-op: proceeding unlocked would let
+    two concurrent sweep-queue mutations race each other."""
+
+
 @contextmanager
 def _sweep_lock(root: Path) -> Iterator[None]:
     """Exclusive, blocking, cross-process lock serializing every sweep-
     queue-file mutation against `root` -- same posture as `frob.tickets.
-    _land_queue._queue_lock`, degrading to a logged no-op on a platform
-    without `fcntl`."""
-    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
-        _log.warning(
-            "mutation_sweep_queue: _sweep_lock: fcntl unavailable on this "
-            "platform, lock is a NO-OP -- concurrent queue mutations "
-            "against %s are NOT serialized here",
-            root,
+    _land_queue._queue_lock`. Delegates the platform mechanics to
+    `frob.process._lock`'s shared primitive (T-3506): real, msvcrt-backed
+    locking on Windows too, and raises `SweepQueueLockUnavailable` --
+    never a silent no-op -- when neither `fcntl` nor `msvcrt` exists."""
+    if not lock_backend_available():
+        raise SweepQueueLockUnavailable(
+            f"mutation_sweep_queue: _sweep_lock: neither fcntl (POSIX) nor "
+            f"msvcrt (Windows) is available on this platform -- refusing "
+            f"to proceed unlocked against {root} (T-3506)"
         )
-        yield
-        return
     path = _sweep_lock_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-    fcntl.flock(fd, fcntl.LOCK_EX)
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644)
+    # frob:ticket T-3506
+    portable_flock_acquire(fd, exclusive=True)
     try:
         yield
     finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
+        # frob:ticket T-3506
+        portable_flock_release(fd)
         os.close(fd)
 
 
