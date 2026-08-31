@@ -2,7 +2,7 @@
 id: T-3557
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3552):
   1 new (rule, file) identit(ies), 1 finding(s) (REG008)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -46,3 +46,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 
 ## Failure log
 - 2026-08-31 attempt 1: Re-measured: 'uv run frob check --only registry' against this checkout's HEAD reports ZERO REG008 findings (registry=0.09s, no REG008 output). Root cause: commit 349ffd1b3 (T-3554, landed after this sweep's commit 7d590d79ae87c788c3d0f703421cc012c34d5f95) already fixed the exact gap this REG008 finding named -- 'fix(tickets): land T-3554 check-coverage registry missing entry for AUTOFIX001 (T-3526)'. This is pre-existing residue the rolling baseline had not recorded as fixed yet (T-1935/T-1690 lag between the sweep's frozen commit and a later, already-landed fix), not a live regression to fix here.
+
+## Drop reason
+- 2026-08-31: Stale: frob check --only registry shows zero REG008 findings at HEAD; T-3554 (349ffd1b3) fixed the exact check-coverage.yaml gap this sweep ticket named (series DD measurement).
