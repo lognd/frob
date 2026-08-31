@@ -195,7 +195,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7c83b1fbd9a97ddea5a90cc77015a84ac7515ae1
 ---
 T-2368 closed PLACE001 (2 findings fixed, directive placement) and promoted PLACE001/PII011 WARN -> ERROR (both at genuine zero unwaived findings). The remaining codes in T-2368's original family are NOT fixed and NOT promoted -- their counts have grown since T-2368's own 2026-08-18 measurement. Re-measured 2026-08-30 via uv run frob check --json --budget 500:
 
