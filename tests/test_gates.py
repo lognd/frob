@@ -14082,13 +14082,20 @@ class TestAutofixManifest:
         snapshot = self._snap(root)
         with pytest.raises(RuntimeError, match="simulated kill mid-handler"):
             apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
-        # the manifest was never reached for THIS handler (it raised before
-        # apply_tier_a_fixes's own write_autofix_manifest call), and the
-        # loop never reached clear_autofix_manifest either -- exactly the
-        # "died mid-phase" state T-1348 describes; no manifest existing yet
-        # here is itself correct (nothing completed to record), and no
-        # exception escaping as a garbled write is the property under test.
-        assert not _autofix_manifest_path(root).is_file()
+        # T-3526: apply_tier_a_fixes now writes the manifest ONCE before
+        # the loop starts (empty applied list), not only after each
+        # handler completes -- so a kill during the very FIRST handler
+        # is also detectable as an abandoned state, not just kills after
+        # handler N>=1. The manifest therefore legitimately exists here,
+        # with an empty rewritten_paths and fix_count=0, even though the
+        # first handler raised before completing; the loop never reached
+        # clear_autofix_manifest, so this pre-first-mutation journal is
+        # exactly the "died mid-phase" state T-1348 describes.
+        manifest_path = _autofix_manifest_path(root)
+        assert manifest_path.is_file()
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert manifest["rewritten_paths"] == []
+        assert manifest["fix_count"] == 0
 
 
 # frob:ticket T-1348

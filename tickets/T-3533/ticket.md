@@ -2,7 +2,7 @@
 id: T-3533
 title: Update TestAutofixManifest.test_killed_mid_handler_leaves_manifest_naming_completed_fixes
   for T-3526's pre-first-mutation journal
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -20,6 +20,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_gates.py::TestAutofixManifest::test_killed_mid_handler_leaves_manifest_naming_completed_fixes
 designated_repro_test: null
 threat: null
 component: null
