@@ -48,3 +48,6 @@ a consistent ledger (no torn multi-ticket commit conflicts with the land
 splice; reuse the T-3297 merge driver). ACCEPTANCE: the maintenance share
 of new main commits drops below 1 maintenance commit per land on average,
 measured over 20 consecutive lands.
+
+## Failure log
+- 2026-08-31 attempt 1: measured/re-scoped, not implemented: (1) mirror_ledger_change_to_primary commits synchronously per-call from ANY worktree's process against the shared primary under ledger_lock -- batching to one-commit-per-flush-event requires a genuine cross-process queue+flush redesign; too large/risky to build and land safely against a live fleet in one pass without a dedicated design ticket. (2) sweep filings: read _file_regression_ticket's only 2 call sites -- each sweep run already files AT MOST ONE regression ticket in one call, not N tickets per run as the ticket's own body assumes; the 41-commit figure needs re-measurement against the real code path before there is a real batching target here. Recommend re-scoping as (a) a design ticket for the mirror-commit queue and (b) re-measuring the 41 sweep-filing commits.
