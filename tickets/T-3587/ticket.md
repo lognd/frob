@@ -16,10 +16,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/refactor/**
+- tests/test_refactor.py
+- docs/commands/refactor.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_refactor.py
+  reason: closure requires the new frob:doc anchors and frob:tests targets landed
+    in this same diff
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/commands/refactor.md
+  reason: closure requires the new frob:doc anchors and frob:tests targets landed
+    in this same diff
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
