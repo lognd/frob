@@ -57,7 +57,17 @@ name = "mincrate"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.22", features = ["extension-module"] }
+# T-3551: `abi3-py311` (mirroring this repo's own frob-core/strata-core
+# crates) pins pyo3 to the STABLE Python ABI instead of pyo3's own
+# per-version bindings -- without it, pyo3 0.22.6 refuses to build at
+# all against a Python newer than the maximum version it shipped
+# bindings for (`error: the configured Python interpreter version (3.14)
+# is newer than PyO3's maximum supported version (3.13)`, ground-truthed
+# on CI run 33361224273's macOS job, which runs Python 3.14). abi3 mode
+# builds ONE binary that is forward-compatible with every Python >= the
+# pinned minor version's stable ABI, so it does not need to know about
+# 3.14 specifically to build against it.
+pyo3 = { version = "0.22", features = ["extension-module", "abi3-py311"] }
 """
 
 # frob:ticket T-0993

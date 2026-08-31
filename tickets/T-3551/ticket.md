@@ -2,7 +2,7 @@
 id: T-3551
 title: 'macOS: mincrate fixture crate fails to build on Python 3.14 (pyo3 lacks abi3
   feature)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -27,6 +27,8 @@ body_changes:
   at: '2026-08-31'
   old_length: 0
   new_length: 469
+evidence:
+- tests/system/test_natives_build_integration.py::test_build_natives_compiles_and_imports_real_crate
 designated_repro_test: null
 threat: null
 component: null
