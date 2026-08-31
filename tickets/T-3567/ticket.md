@@ -2,7 +2,7 @@
 id: T-3567
 title: T-3522's reconcile cache write leaves .frob/unlanded-summary-cache.json untracked,
   breaking T-1936 leaves-clean contract
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reconcile.py
+- tests/test_ticket_reconcile.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_reconcile.py
+  reason: T-3522's own cache-population tests need a .gitignore precondition to match
+    the new _frob_dir_is_gitignored guard
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
