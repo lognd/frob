@@ -27,6 +27,13 @@ scope_changes:
     ledger-commit failure'
   actor: logan
   at: '2026-08-31'
+body_changes:
+- mode: append
+  reason: cross-platform finding + diagnostic fix landed, root cause still open
+  actor: logan
+  at: '2026-08-31'
+  old_length: 3190
+  new_length: 4482
 designated_repro_test: null
 threat: null
 component: null
@@ -47,3 +54,24 @@ i.e. either git add or git commit itself returned nonzero inside _add_and_commit
 Fix hermetically: at minimum, log_ledger_commit_failure should capture and surface the actual git stderr/returncode from the failed add/commit call (currently swallowed), so a recurrence is diagnosable from CI output alone without re-fetching raw job logs; and _retry_commit_with_fallback_identity should be re-audited for a darwin-specific gap (e.g. global git config discovery differing between macos-latest runner image and the other two). If the underlying cause is confirmed macOS-CI-environment-only (not a real cross-platform correctness bug), frob:waive BUG002 with that reasoning is acceptable per this tickets own instructions.
 
 Also FYI (same run, other tests, NOT this ticket, no action needed here): tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero and tests/test_frob_self_model.py (SELFAUDIT001 SYS111 ratchet) and tests/test_docptr_gate.py (DOC006) also failed in this run -- unrelated pre-existing/other-ticket territory (DOC006/SYS111 is T-3575s subject), listed here only for run-context completeness.
+
+Cross-platform update (coordinator, run 33380974368 ubuntu-latest): the
+SIBLING test test_force_overrides_the_live_lease_refusal fails identically
+on ubuntu-latest, not just macos-latest -- run both node ids 10x locally
+(serial and -n 4) against tests/test_ticket_runner_archive_force.py alone:
+did NOT reproduce (13/13 green every time), so the trigger needs the FULL
+suite's env/fs state, not just this file in isolation -- could not isolate
+the exact trigger within this ticket's budget. T-3528/T-3567 (the two lands
+coordinator named as suspects) do not touch src/frob/tickets/_leases.py or
+this commit path at all (checked via git show --stat on both landing
+commits) -- ruled out as the direct cause.
+
+Implemented instead: _log_ledger_commit_failure now names WHICH step (add
+vs commit) failed and the real git returncode/stderr (or GitError) instead
+of a generic 'the commit step failed' with no detail -- so the NEXT
+occurrence is diagnosable from CI output alone. Root cause of why git
+add/commit itself fails in this CI fixture remains OPEN; recommend
+re-running CI with this diagnostic land in place to capture the real
+stderr next time, and treating this as still-open (NOT closed/waived) per
+the coordinator's explicit instruction not to mark it macOS-only or
+BUG002-waive it.
