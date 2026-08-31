@@ -190,8 +190,19 @@ def run(*args, input=None, cwd=None, env=None, timeout=None):
                 capture_output=True,
                 check=False,
             )
+            # T-3589: capture whatever the drain read DID recover
+            # (post-taskkill, the child is dead or dying, so this second
+            # communicate() usually returns fast) instead of discarding
+            # it -- a hang's own partial stdout/stderr is exactly the
+            # diagnostic a bare "timed out" message cannot provide, and
+            # every prior windows-latest hang round (T-3549/T-3560/
+            # T-3577) had to re-derive this from CI log archaeology
+            # instead of the error itself.
+            drained_stdout = drained_stderr = ""
             try:
-                proc.communicate(timeout=effective_timeout)
+                drained_stdout, drained_stderr = proc.communicate(
+                    timeout=effective_timeout
+                )
             except subprocess.TimeoutExpired:
                 pass
             raise RuntimeError(
@@ -199,7 +210,10 @@ def run(*args, input=None, cwd=None, env=None, timeout=None):
                 f"on {FROB + list(args)!r} (T-2980/T-3577: this command either "
                 "hung, or legitimately needs longer -- pass an explicit "
                 "timeout= at the call site rather than raising "
-                "DEFAULT_RUN_TIMEOUT_S)"
+                "DEFAULT_RUN_TIMEOUT_S). Drained child stdout/stderr after "
+                f"taskkill (T-3589, may be partial/empty):\n"
+                f"--- stdout ---\n{drained_stdout}\n"
+                f"--- stderr ---\n{drained_stderr}"
             ) from None
         return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
 
@@ -228,11 +242,24 @@ def run(*args, input=None, cwd=None, env=None, timeout=None):
         except ProcessLookupError:
             pass
         proc.wait()
+        # T-3589: same drained-output-in-the-error idea as the win32
+        # branch above -- `exc` (raised by `communicate`'s own timeout
+        # path) already carries whatever partial stdout/stderr its
+        # reader threads had buffered at the moment it fired (cpython's
+        # `Popen.communicate` populates `TimeoutExpired.stdout`/`.stderr`
+        # from `self._fileobj2output` before raising), so no second read
+        # is needed here -- the process is dead now, a second
+        # `communicate()` would just return `(b"", b"")`.
+        drained_stdout = exc.stdout or ""
+        drained_stderr = exc.stderr or ""
         raise RuntimeError(
             f"system-test run() timed out after {effective_timeout}s waiting on "
             f"{FROB + list(args)!r} (T-2980: this command either hung, or "
             "legitimately needs longer -- pass an explicit timeout= at the "
-            "call site rather than raising DEFAULT_RUN_TIMEOUT_S)"
+            "call site rather than raising DEFAULT_RUN_TIMEOUT_S). Drained "
+            f"child stdout/stderr at timeout (T-3589, may be partial/empty):\n"
+            f"--- stdout ---\n{drained_stdout}\n"
+            f"--- stderr ---\n{drained_stderr}"
         ) from exc
     return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
 

@@ -343,6 +343,67 @@ jobs:
       # kind) while this leg stays advisory -- every future run needs the
       # trace until Windows is actually green; removing it again before
       # then repeats the T-3560 premature-revert mistake.
+      # T-3589 (Windows round 6): run 33390218738 (full-trace active)
+      # narrowed the hang further than T-3582's round-5 guess -- the
+      # interrupt fires while tests/system/conftest.py:182's
+      # `proc.communicate(timeout=...)` waits on the suite's FIRST `python
+      # -m frob check` child (`test_cli_check.py:67`), not inside pytest's
+      # own machinery at all. `frob check` itself hangs on win32 --
+      # plausibly it has NEVER completed there (the `standalone-install`
+      # job above only ever runs `frob --help`, never a real `frob
+      # check`). This step isolates that ONE call, standalone, with a
+      # watchdog armed INSIDE the child process (not an external
+      # Wait-Process bound, which only proves the OUTER process eventually
+      # dies, never names the frame it was stuck in) -- if this hangs, the
+      # step's own output names the exact Python frame `frob check` was
+      # blocked in on win32, closing the open question T-3582 left
+      # unanswered. Runs against a tiny fixture repo (the `standalone-
+      # install` job's own recipe, reused rather than re-derived) so a
+      # slow REAL repo scan cannot be confused with a genuine hang.
+      - name: Diagnose frob check hang on windows (T-3589)
+        if: matrix.os == 'windows-latest'
+        timeout-minutes: 5
+        run: |
+          $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
+          New-Item -ItemType Directory -Force -Path (Join-Path $fixture "src\demo") | Out-Null
+          Set-Content -Path (Join-Path $fixture "src\demo\__init__.py") -Value '"""Empty demo package."""'
+          Push-Location $fixture
+          git init -q
+          Pop-Location
+          # T-3589: built as a joined array (not a PowerShell here-string)
+          # so every line stays a normal, YAML-indented `run:` statement --
+          # a here-string's closing `"@` must sit at column 0, which
+          # cannot coexist with this block's own required indentation.
+          $codeLines = @(
+            "import faulthandler",
+            "import sys",
+            "",
+            "# T-3589: dumps every thread's stack to stderr and exits",
+            "# nonzero if 'frob check' has not returned within the budget --",
+            "# the watchdog runs INSIDE this process, so the dump names the",
+            "# real frame, unlike an external Wait-Process timeout that only",
+            "# proves the outer process eventually died.",
+            "faulthandler.dump_traceback_later(240, exit=True)",
+            "",
+            "from frob.__main__ import main",
+            "",
+            'sys.argv = ["frob", "check", "--budget", "180"]',
+            "raise SystemExit(main())"
+          )
+          Set-Content -Path (Join-Path $env:RUNNER_TEMP "frob_check_diag.py") -Value $codeLines
+          Push-Location $fixture
+          uv run python (Join-Path $env:RUNNER_TEMP "frob_check_diag.py")
+          $exitCode = $LASTEXITCODE
+          Pop-Location
+          Write-Host "frob check diag exit code: $exitCode"
+          # Not asserted nonzero-fails-the-job: a real repo can
+          # legitimately fail gates (T-0135's `standalone-install`
+          # precedent). What this step locks down is that the process
+          # itself RETURNS at all within the watchdog budget -- a
+          # `faulthandler`-triggered `exit=True` termination is a
+          # nonzero exit this step's own timeout-minutes cap backstops
+          # regardless.
+
       - name: Test (windows, timed with hang guard)
         if: matrix.os == 'windows-latest'
         env:
