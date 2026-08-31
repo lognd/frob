@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/arch/_concurrency.py
 - tests/unit/test_arch.py
+- docs/modules/arch.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_arch.py
   reason: tests for the correlation narrowing
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/modules/arch.md
+  reason: self-join-deadlock section documents the correlation narrowing
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
