@@ -21,6 +21,8 @@ scope:
 - tests/test_check_runner.py
 - tests/unit/test_claude_runner.py
 - tests/unit/test_sync_claude_config_stale_guard_t3408.py
+- docs/guides/claude-hooks.md
+- docs/modules/cli.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -56,7 +58,24 @@ scope_changes:
     and each layer's own test file
   actor: logan
   at: '2026-08-31'
-designated_repro_test: null
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: frob:doc anchors for the new home_claude_missing public symbols
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/modules/cli.md
+  reason: frob:doc anchors for the new home_claude_missing public symbols
+  actor: logan
+  at: '2026-08-31'
+evidence:
+- tests/test_check_runner.py::TestClaudeConfigDriftStage::test_not_applicable_when_home_claude_root_absent
+- tests/test_check_runner.py::TestClaudeConfigDriftStage::test_reports_drift_when_home_claude_present_but_file_differs
+- tests/unit/test_claude_runner.py::TestHomeClaudeMissing::test_true_when_home_claude_absent
+- tests/unit/test_claude_runner.py::TestHomeClaudeMissing::test_false_when_home_claude_present
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestHomeClaudeMissingNotApplicable::test_check_exits_0_when_root_absent_even_with_drifted_actions
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestHomeClaudeMissingNotApplicable::test_check_still_fails_when_root_present_but_file_differs
+designated_repro_test: tests/test_check_runner.py::TestClaudeConfigDriftStage::test_not_applicable_when_home_claude_root_absent
 threat: null
 component: null
 anchor: false
