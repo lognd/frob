@@ -154,7 +154,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4b566117b4049574f15ca2a303ba26168413dbba
 ---
 found while working T-1602: cuda gets a real frob.lang grammar/walker but the capability dangerous-op registry, dup clone-detection exhaustiveness table, and DOC004 fenced-code-block bucket have no cuda entry yet -- mirrors T-2906's bash/csharp and T-1601's java facet-wiring follow-ups exactly (T-3492). frob.lang._support marks these three facets KNOWN_GAP for cuda citing this ticket in the interim.
 
