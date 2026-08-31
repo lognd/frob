@@ -22,6 +22,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'mark no-behavior-change: CI/test-infra-only fix'
+  actor: logan
+  at: '2026-08-31'
+  old_length: 922
+  new_length: 1218
+evidence:
+- tests/integration/test_gitlog.py::TestGitlogGrouping::test_features_grouped_separately
 designated_repro_test: null
 threat: null
 component: null
@@ -30,3 +39,5 @@ anchor_reason: null
 land_commit: null
 ---
 Run 33385515507, HEAD 94931dde1: windows-latest still dies with KeyboardInterrupt at [1%] despite T-3577's bounded msvcrt lock + bounded run() wrapper in tests/system/conftest.py. Two-part fix: (a) re-add -v --full-trace to the windows-latest Test step in .github/workflows/ci.yml as a PERSISTENT setting while the leg is advisory (comment: stays until Windows is green -- the T-3560 revert was premature given the interrupt survived); (b) serial collection position ~130 falls in tests/integration/ (test_gitlog.py area), NOT tests/system/ -- T-3577's bounded-communicate/taskkill wrapper only fixed tests/system/conftest.py. Survey every subprocess helper the first ~200 collection positions use (tests/integration conftest or per-file helpers, tests/gates helpers, anything invoking frob/git with capture) and apply the same win32-bounded shape (or route them all through the one fixed run() helper -- prefer one home).
+
+frob:no-behavior-change reason="test-only infra change: routes tests/integration subprocess calls through a bounded win32-safe helper (same shape as tests/system/conftest.py's existing run()) and re-adds -v --full-trace to the windows-latest CI step; no production src/frob/ code path changes"
