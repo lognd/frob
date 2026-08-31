@@ -2,7 +2,7 @@
 id: T-3603
 title: 'post-land sweep regression from T-3600: 1 new (rule, file) identit(ies), 3
   finding(s) (DRIFT002)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -48,3 +48,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 ## Failure log
 - 2026-08-31 attempt 1: Already resolved: the DRIFT002 finding (src/frob/app/check_runner.py::_claude_config_drift_result -> tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_managed_copy_absent no longer resolves) was caused by T-3600's own land renaming that test to test_not_applicable_when_home_claude_root_absent / test_reports_drift_when_home_claude_present_but_file_differs without updating the OLDER frob:tests directive block above _claude_config_drift_result that still cited the pre-rename name. Fixed as part of T-3590's DRIFT burn-down (worktree .claude/worktrees/t-3590): updated that directive block to cite the two correct current test names. Re-measured with a scoped frob check --only tickets on this worktree: zero DRIFT findings on check_runner.py remain. Not a genuinely new regression needing its own separate land -- landing via T-3590.
 - 2026-08-31 attempt 2: Already resolved: the DRIFT002 finding (check_runner.py::_claude_config_drift_result -> old test name) was caused by T-3600's own land renaming a test without updating an older frob:tests directive citing the pre-rename name. Fixed in T-3590's worktree (same fix, landing there): updated the stale directive to the two current test names. Re-measured: zero DRIFT findings on check_runner.py remain.
+
+## Drop reason
+- 2026-08-31: Resolved via T-3590 (commit aa76ec77f): the DRIFT002 was T-3600's test-rename breaking an older frob:tests directive on _claude_config_drift_result; directive updated to the two current test names, re-measured zero DRIFT on check_runner.py. HH fail-logged it twice with the same evidence; fail requeues, so terminal drop is the coordinator's.
