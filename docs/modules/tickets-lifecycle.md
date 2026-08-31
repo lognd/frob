@@ -1263,6 +1263,19 @@ best-effort performance cache under `.frob/`, not ticket state, so it
 sits outside `reconcile`'s own "dry-run mutates nothing" guarantee the
 same way `frob check`'s caches do.
 
+**T-3567: the write only happens when `.frob/` is already gitignored.**
+`_frob_dir_is_gitignored` (`git check-ignore --quiet .frob/`) gates the
+call -- writing the cache into a repo that has NOT gitignored `.frob/`
+left an untracked `.frob/unlanded-summary-cache.json` `git status`
+sees as dirty, regressing T-1936's own "`reconcile --apply` leaves the
+ledger clean" contract (measured: windows-latest run 33370059331, a
+bare test fixture with no `.gitignore` at all). Every REAL frob-managed
+repo already gitignores `.frob/` (this project's own `.gitignore`
+template), so this guard only ever actually skips the write against a
+bare fixture that has not set that up -- a skipped write just means
+`doable`'s cache stays cold there, not an error; `reconcile` itself
+still succeeds and every OTHER anomaly class above is unaffected.
+
 ## Atomic ledger writes (T-0456 hardening)
 
 `frob.tickets._store.atomic_write` (every `tickets.md`/`.frob-release.json`

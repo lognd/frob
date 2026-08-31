@@ -2,7 +2,7 @@
 id: T-3567
 title: T-3522's reconcile cache write leaves .frob/unlanded-summary-cache.json untracked,
   breaking T-1936 leaves-clean contract
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -35,6 +35,12 @@ scope_changes:
     precondition'
   actor: logan
   at: '2026-08-31'
+evidence:
+- tests/unit/test_reconcile_auto_commit_t1936.py::TestReconcileAutoCommit::test_apply_leaves_the_ledger_clean
+- tests/unit/test_reconcile_auto_commit_t1936.py::TestReconcileRemoveOrphansAutoCommit::test_apply_with_remove_orphans_still_leaves_ledger_clean
+- tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork::test_skips_the_cache_write_when_frob_dir_is_not_gitignored
+- tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork::test_populates_the_doable_summary_cache
+- tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork::test_populates_the_cache_even_on_a_dry_run
 designated_repro_test: null
 threat: null
 component: null

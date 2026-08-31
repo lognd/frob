@@ -40,7 +40,7 @@ from frob.tickets._leases import (
 )
 from frob.tickets._models import TicketError, TicketState
 from frob.tickets._store import load_all
-from frob.tickets._unlanded import _unlanded_branch_work
+from frob.tickets._unlanded import _unlanded_branch_work, _UnlandedWork
 
 _log = get_logger(__name__)
 
@@ -329,6 +329,69 @@ def _refuse_apply_if_land_in_progress(
     return Ok(None)
 
 
+# frob:ticket T-3567
+def _frob_dir_is_gitignored(root: Path) -> bool:
+    """Whether `root`'s own git configuration (`.gitignore` at any level
+    `git check-ignore` consults, including a repo-root `.gitignore`, a
+    global `core.excludesFile`, or `.git/info/exclude`) already excludes
+    `.frob/` -- the precondition `reconcile` requires before writing
+    `.frob/unlanded-summary-cache.json` (T-3522).
+
+    T-3567: every OTHER `.frob/` writer this repo's own tests exercise
+    (`ledger_lock`'s `.frob/tickets.lock`, principally) only ever appears
+    clean in a bare test fixture with no `.gitignore` at all because an
+    EARLIER `git add -A` in that same test's own setup already staged and
+    committed it as ordinary tracked content before the write this test
+    actually measures runs -- not because `.frob/` is genuinely ignored
+    there. A first-time write to a path `git add -A` never touched before
+    (this cache file, in a fixture exactly like T-1936's) has no such
+    accidental cover, and writing it unconditionally regressed T-1936's
+    own "reconcile --apply leaves the ledger clean" contract (measured:
+    windows-latest run 33370059331). Every REAL frob-managed repo already
+    gitignores `.frob/` (this project's own `.gitignore` template, `docs/
+    guides/*` and this file's own module docstring elsewhere both assume
+    it) -- this guard only ever actually skips the write in a bare test
+    fixture that has not set that up, matching `_save_unlanded_summary_
+    cache`'s own existing best-effort, log-and-swallow posture (a skipped
+    write here just means `doable`'s cache stays cold, not an error)."""
+    checked = run_argv(["git", "-C", str(root), "check-ignore", "--quiet", ".frob/"])
+    return checked.is_ok and checked.danger_ok.returncode == 0
+
+
+# frob:ticket T-3567
+def _maybe_save_unlanded_summary_cache(
+    root: Path, unlanded_findings: tuple[_UnlandedWork, ...]
+) -> None:
+    """`reconcile`'s own ARCH001 split (T-3567): populate the TTL cache
+    `doable` reads (`frob.app.ticket_runner._query.
+    _load_unlanded_summary_cache`) with the branch names `unlanded_
+    findings` (`_unlanded_branch_work`'s own output, T-2127) just found --
+    lazy import to avoid a core (`frob.tickets`) -> app-layer (`frob.app.
+    ticket_runner`) import at module load time, same posture as `_land.
+    py`'s own lazy `frob.app._check_chunking` import. This was the
+    missing production write side `_save_unlanded_summary_cache`'s own
+    docstring already documented as the intended caller; `doable` itself
+    never scans branches inline (T-2629), so this reconcile call is now
+    the only thing that keeps the cache fresh.
+
+    T-3567: gated on `_frob_dir_is_gitignored` -- see that function's own
+    docstring for why an unconditional write regressed T-1936."""
+    from frob.app.ticket_runner._query import _save_unlanded_summary_cache
+
+    branches = tuple(dict.fromkeys(finding.branch for finding in unlanded_findings))
+    if _frob_dir_is_gitignored(root):
+        _save_unlanded_summary_cache(root, branches)
+    else:
+        _log.debug(
+            "reconcile: skipping unlanded-summary cache write under %s -- "
+            ".frob/ is not gitignored here (T-3567), writing it would leave "
+            "an untracked file `git status` (and every ledger-cleanliness "
+            "contract this function's own callers rely on, T-1936) would "
+            "see as dirty",
+            root,
+        )
+
+
 # frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-reconcile-t-0476
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_apply_requeues_stale_hold_and_releases_lease kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_apply_and_remove_orphans_actually_removes_it kind="unit"  # noqa: E501
@@ -412,21 +475,7 @@ def reconcile(
     unlanded = tuple(
         f"{finding.ticket_id}@{finding.branch}" for finding in unlanded_findings
     )
-    # frob:ticket T-3522
-    # T-2127: populate the TTL cache `doable` reads (`frob.app.
-    # ticket_runner._query._load_unlanded_summary_cache`) with the branch
-    # names this same scan just found -- lazy import to avoid a core
-    # (frob.tickets) -> app-layer (frob.app.ticket_runner) import at
-    # module load time, same posture as `_land.py`'s own lazy `frob.app.
-    # _check_chunking` import. This was the missing production write side
-    # `_save_unlanded_summary_cache`'s own docstring already documented as
-    # the intended caller; `doable` itself never scans branches inline
-    # (T-2629), so this reconcile call is now the only thing that keeps
-    # the cache fresh.
-    from frob.app.ticket_runner._query import _save_unlanded_summary_cache
-
-    branches = tuple(dict.fromkeys(finding.branch for finding in unlanded_findings))
-    _save_unlanded_summary_cache(root, branches)
+    _maybe_save_unlanded_summary_cache(root, unlanded_findings)
 
     requeued = _requeue_stale_holds(root, stale_ids) if apply else stale_ids
     removed = (

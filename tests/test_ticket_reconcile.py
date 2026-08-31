@@ -603,6 +603,21 @@ def _write_finished_ticket_on_branch(
     _run(["git", "clean", "-fdq", "--", "tickets"], repo)
 
 
+def _gitignore_frob_dir(repo: Path) -> None:
+    """T-3567 fixture helper: gitignore `.frob/` and commit that change --
+    the precondition `reconcile`'s own `_frob_dir_is_gitignored` guard
+    requires before it will write `.frob/unlanded-summary-cache.json`.
+    Every REAL frob-managed repo already has this (this project's own
+    `.gitignore`); this fixture's own bare `repo`/`_git_init` does not,
+    by design (T-1936's own tests need to see EVERY write `reconcile`
+    makes, `.frob/` included, to prove nothing untracked is left behind
+    when the precondition is genuinely absent -- see the sibling
+    `test_skips_the_cache_write_when_frob_dir_is_not_gitignored`)."""
+    gitignore = repo / ".gitignore"
+    gitignore.write_text(".frob/\n", encoding="utf-8")
+    _commit_all(repo, "gitignore .frob/")
+
+
 class TestReconcileUnlandedBranchWork:
     """T-1934: reconcile's THIRD anomaly class -- finished-on-a-branch,
     not-terminal-on-main ticket work, report-only (never healed by
@@ -645,12 +660,16 @@ class TestReconcileUnlandedBranchWork:
         """T-3522: reconcile now calls `_save_unlanded_summary_cache` with
         the branches its own scan just found -- the production write side
         `frob.app.ticket_runner._query._load_unlanded_summary_cache`
-        (`doable`'s read side) was documented but never actually wired."""
+        (`doable`'s read side) was documented but never actually wired.
+        T-3567: the write only happens when `.frob/` is gitignored (a
+        precondition every real frob-managed repo already meets, unlike
+        this bare fixture's default) -- set that up explicitly here."""
         # frob:tests \
         # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populate\
         # s_the_doable_summary_cache
         from frob.app.ticket_runner._query import _load_unlanded_summary_cache
 
+        _gitignore_frob_dir(repo)
         _write_finished_ticket_on_branch(repo, "runner-wiring", "T-1315")
 
         result = reconcile(repo)
@@ -664,12 +683,14 @@ class TestReconcileUnlandedBranchWork:
         """The cache write is a best-effort performance memoization, not
         ticket state -- it refreshes on `apply=False` dry-runs too, unlike
         the ticket-state anomalies `reconcile`'s own docstring says a
-        dry-run leaves untouched."""
+        dry-run leaves untouched. T-3567: same `.frob/`-gitignored
+        precondition as the sibling test above."""
         # frob:tests \
         # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_populate\
         # s_the_cache_even_on_a_dry_run
         from frob.app.ticket_runner._query import _load_unlanded_summary_cache
 
+        _gitignore_frob_dir(repo)
         _write_finished_ticket_on_branch(repo, "runner-wiring", "T-1315")
 
         result = reconcile(repo, apply=False)
@@ -678,3 +699,27 @@ class TestReconcileUnlandedBranchWork:
         cached = _load_unlanded_summary_cache(repo)
         assert cached is not None
         assert cached.branches == ("runner-wiring",)
+
+    def test_skips_the_cache_write_when_frob_dir_is_not_gitignored(
+        self, repo: Path
+    ) -> None:
+        """T-3567's own regression: the T-1936 incident this ticket fixed
+        -- writing the cache into a repo that has NOT gitignored `.frob/`
+        (this fixture's own default) must not happen at all, since it
+        would leave an untracked file `git status` sees as dirty. Best-
+        effort skip, matching `_save_unlanded_summary_cache`'s own
+        existing log-and-swallow posture -- `reconcile` itself still
+        succeeds."""
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_skips_th\
+        # e_cache_write_when_frob_dir_is_not_gitignored
+        from frob.app.ticket_runner._query import _load_unlanded_summary_cache
+
+        _write_finished_ticket_on_branch(repo, "runner-wiring", "T-1315")
+
+        result = reconcile(repo)
+        assert result.is_ok
+
+        assert _load_unlanded_summary_cache(repo) is None
+        status = _run(["git", "status", "--porcelain"], repo).stdout
+        assert ".frob" not in status
