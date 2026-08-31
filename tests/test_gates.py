@@ -18146,6 +18146,151 @@ class TestSelfauditFindingsTouching:
         assert findings == ()
 
 
+class TestSys111FindingsTouching:
+    """`frob.gates._sys.sys111_findings_touching` (T-3575): SYS111
+    (capability-ratchet growth) findings, attributed to the `.strata`
+    file that DECLARES the tripped node rather than by message-substring
+    match -- a SYS111 message has no file path in it at all (see the
+    function's own docstring for the root cause)."""
+
+    # frob:tests src/frob/gates/_sys.py::sys111_findings_touching kind="unit"
+    def test_no_design_dir_returns_empty(self, tmp_path: Path) -> None:
+        from frob.gates._sys import sys111_findings_touching
+
+        _write(tmp_path, "src/a.py", "def f(): pass\n")
+        assert sys111_findings_touching(tmp_path, frozenset({"src/a.py"})) == ()
+
+    def _mock_ratchet_trip(self, monkeypatch, tmp_path: Path):
+        """Common fixture for the two mock-boundary tests below: a fake
+        design dir (so the early-exit is skipped), one fake SYS111
+        violation on node `widget`/atom `exec`, and a fake `.strata` file
+        declaring that node -- every strata_core-native call
+        (`load_design_ids`/`merge_models`/`capability_ratchet_violations`/
+        `parse_module`) is mocked so this exercises the attribution logic
+        alone, independent of whether strata_core natives are built in
+        the current environment (mirrors `TestSelfauditFindingsTouching.
+        test_substring_filter_is_exact_regardless_of_native_availability`'s
+        own convention)."""
+        from typani import Ok
+
+        import frob.strata as strata_mod
+        from frob.strata import NodeDecl
+        from frob.strata._ast import Module as RawModule
+        from frob.strata._effects import CapabilityRatchetViolation
+
+        (tmp_path / "design").mkdir()
+        strata_file = tmp_path / "design" / "m.strata"
+        strata_file.write_text(
+            'module m\nnode widget : trusted { code "src/frob/widget/**"; '
+            'may "exec" via "src/frob/widget/_run.py"; }\n'
+        )
+
+        trip = CapabilityRatchetViolation(
+            node="widget",
+            atom="exec",
+            observed_count=5,
+            accepted_count=3,
+            detail="exec via-list on widget grew to 5 site(s), above the "
+            "committed ratchet ceiling of 3",
+        )
+        raw_module = RawModule(
+            name="m",
+            nodes=(NodeDecl(id="widget", trust="trusted"),),
+        )
+
+        monkeypatch.setattr(
+            strata_mod, "load_design_ids", lambda root, design_dir: object()
+        )
+        monkeypatch.setattr(strata_mod, "merge_models", lambda models: object())
+        monkeypatch.setattr(
+            strata_mod, "capability_ratchet_violations", lambda model, root: (trip,)
+        )
+        monkeypatch.setattr(strata_mod, "parse_module", lambda text: Ok(raw_module))
+        monkeypatch.setattr(
+            strata_mod,
+            "load_design_ids",
+            lambda root, design_dir: type(
+                "DesignIds", (), {"errors": (), "models": (object(),)}
+            )(),
+        )
+        return strata_file
+
+    # frob:tests src/frob/gates/_sys.py::sys111_findings_touching kind="unit"
+    def test_ratchet_trip_in_declaring_file_is_returned(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        from frob.gates._sys import sys111_findings_touching
+
+        self._mock_ratchet_trip(monkeypatch, tmp_path)
+        findings = sys111_findings_touching(
+            tmp_path, frozenset({"design/m.strata"})
+        )
+        assert len(findings) == 1
+        assert "SYS111" in findings[0].message
+        assert "widget" in findings[0].message
+
+    # frob:tests src/frob/gates/_sys.py::sys111_findings_touching kind="unit"
+    def test_ratchet_trip_in_untouched_file_is_filtered_out(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        from frob.gates._sys import sys111_findings_touching
+
+        self._mock_ratchet_trip(monkeypatch, tmp_path)
+        findings = sys111_findings_touching(
+            tmp_path, frozenset({"design/unrelated.strata"})
+        )
+        assert findings == ()
+
+
+class TestDocptrFindingsTouching:
+    """`frob.gates._sys.docptr_findings_touching` (T-3575): DOC004/DOC006
+    (dangling doc anchor / unresolved file-path pointer) findings,
+    attributed to `files` via EITHER the finding's own doc file or a
+    path/anchor named in its message -- the gap T-3324's original land-
+    time check left open entirely (a different gate module, never
+    evaluated at land time at all)."""
+
+    # frob:tests src/frob/gates/_sys.py::docptr_findings_touching kind="unit"
+    def test_finding_in_touched_doc_is_returned(self, tmp_path: Path) -> None:
+        from frob.gates._sys import docptr_findings_touching
+
+        _git_init(tmp_path)
+        _write(tmp_path, "docs/broken.md", "See `src/frob/gone_forever.py` here.\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        findings = docptr_findings_touching(tmp_path, frozenset({"docs/broken.md"}))
+        assert any(v.file == "docs/broken.md" for v in findings)
+
+    # frob:tests src/frob/gates/_sys.py::docptr_findings_touching kind="unit"
+    def test_finding_naming_a_touched_target_is_returned(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.gates._sys import docptr_findings_touching
+
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "docs/pointer.md",
+            "See `src/frob/deleted_module.py` for details.\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        findings = docptr_findings_touching(
+            tmp_path, frozenset({"src/frob/deleted_module.py"})
+        )
+        assert any("src/frob/deleted_module.py" in v.message for v in findings)
+
+    # frob:tests src/frob/gates/_sys.py::docptr_findings_touching kind="unit"
+    def test_finding_in_untouched_files_is_filtered_out(self, tmp_path: Path) -> None:
+        from frob.gates._sys import docptr_findings_touching
+
+        _git_init(tmp_path)
+        _write(tmp_path, "docs/broken.md", "See `src/frob/gone_forever.py` here.\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        findings = docptr_findings_touching(
+            tmp_path, frozenset({"docs/unrelated.md"})
+        )
+        assert findings == ()
+
+
 def _complex_function_source(fn_name: str) -> str:
     """A python module with one function long enough to trip the 30-line
     default `max_function_lines` but short enough to stay under the

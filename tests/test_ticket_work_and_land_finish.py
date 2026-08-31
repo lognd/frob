@@ -2761,3 +2761,89 @@ class TestSelfauditFindingsInTouchedFiles:
             frozenset({"unrelated/other.py"}),
         )
         assert result.is_ok
+
+    # frob:ticket T-3575
+    def test_sys111_finding_in_touched_files_refuses_and_unwinds(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles.test_sys111_finding_in_touched_files_refuses_and_unwinds  # noqa: E501
+        """T-3575: the SAME refusal/unwind path as SELFAUDIT001's own
+        must-fire test above, now also driven by `sys111_findings_
+        touching` -- proving the extension is actually wired into
+        `_refuse_if_selfaudit_findings_in_touched_files`, not merely
+        defined and unused."""
+        from frob.gates._models import Severity, Violation
+
+        finding = Violation(
+            rule="SELFAUDIT001",
+            severity=Severity.ERROR,
+            file="design",
+            line=1,
+            message=(
+                "SELFAUDIT001: self-audit family SYS111 node=widget: exec "
+                "via-list on widget grew to 5 site(s), above the committed "
+                "ratchet ceiling of 3"
+            ),
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.selfaudit_findings_touching", lambda root, files: ()
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.sys111_findings_touching",
+            lambda root, files: (finding,),
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.docptr_findings_touching", lambda root, files: ()
+        )
+        (repo / "src" / "feature.py").write_text("# a change the unwind must undo\n")
+        _run(["git", "add", "-A"], repo)
+        tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        result = _refuse_if_selfaudit_findings_in_touched_files(
+            repo, "T-0001", "T-0001", tip, frozenset({"design/m.strata"})
+        )
+
+        assert result.is_err
+        assert result.danger_err == LandError.PreLandUnscopedSweepFailed
+        status = _run(["git", "status", "--porcelain"], repo).stdout
+        assert "feature.py" not in status
+
+    # frob:ticket T-3575
+    def test_docptr_finding_in_touched_files_refuses_and_unwinds(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles.test_docptr_finding_in_touched_files_refuses_and_unwinds  # noqa: E501
+        """T-3575: same wiring proof as the SYS111 test above, for
+        `docptr_findings_touching` -- the DOC004/DOC006 family T-3324's
+        original check never evaluated at all."""
+        from frob.gates._models import Severity, Violation
+
+        finding = Violation(
+            rule="DOC006",
+            severity=Severity.ERROR,
+            file="docs/guide.md",
+            line=3,
+            message="DOC006: file/path pointer in docs/guide.md:3 does not resolve",
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.selfaudit_findings_touching", lambda root, files: ()
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.sys111_findings_touching", lambda root, files: ()
+        )
+        monkeypatch.setattr(
+            "frob.gates._sys.docptr_findings_touching",
+            lambda root, files: (finding,),
+        )
+        (repo / "src" / "feature.py").write_text("# a change the unwind must undo\n")
+        _run(["git", "add", "-A"], repo)
+        tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        result = _refuse_if_selfaudit_findings_in_touched_files(
+            repo, "T-0001", "T-0001", tip, frozenset({"docs/guide.md"})
+        )
+
+        assert result.is_err
+        assert result.danger_err == LandError.PreLandUnscopedSweepFailed
+        status = _run(["git", "status", "--porcelain"], repo).stdout
+        assert "feature.py" not in status

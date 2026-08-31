@@ -1597,6 +1597,13 @@ def _refuse_if_selfaudit_findings_in_touched_files(
     repo-wide drift this land did not cause and must not be blamed for;
     it is left to the periodic full sweep, unchanged.
 
+    T-3575: also runs `sys111_findings_touching` (SYS111 capability-
+    ratchet growth, message-substring-invisible per T-3574's own root
+    cause -- see that function's docstring) and `docptr_findings_touching`
+    (DOC004/DOC006, a wholly separate gate family `selfaudit_findings_
+    touching` never evaluated at all) alongside the original check, same
+    diff-scoped/unconditional posture, same combined refusal below.
+
     On a hit, unwinds via `_verified_reset_root` -- the same free,
     before-any-commit-exists shape `_apply_pre_commit_sweep_or_unwind`
     already uses -- and reuses `LandError.PreLandUnscopedSweepFailed`
@@ -1604,9 +1611,17 @@ def _refuse_if_selfaudit_findings_in_touched_files(
     narrowed to the self-conformance surface; a dedicated error variant
     would live in `frob.tickets._models`, outside this ticket's declared
     scope)."""
-    from frob.gates._sys import selfaudit_findings_touching
+    from frob.gates._sys import (
+        docptr_findings_touching,
+        selfaudit_findings_touching,
+        sys111_findings_touching,
+    )
 
-    findings = selfaudit_findings_touching(stage, touched_files)
+    findings = (
+        selfaudit_findings_touching(stage, touched_files)
+        + sys111_findings_touching(stage, touched_files)
+        + docptr_findings_touching(stage, touched_files)
+    )
     if not findings:
         return Ok(None)
     unwound = _verified_reset_root(stage, pre_land_tip, ticket_id)

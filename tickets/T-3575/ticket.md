@@ -2,7 +2,7 @@
 id: T-3575
 title: extend T-3324 land-time selfaudit gate to catch SYS111 ratchet growth and DOC006
   doc-pointer drift
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-08-31'
@@ -17,25 +17,15 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_sys.py
 - src/frob/tickets/_land_squash.py
-- tests/test_gates.py
-- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-scope_changes:
-- op: add
-  glob: tests/test_gates.py
-  reason: adding frob:tests coverage for sys111_findings_touching/docptr_findings_touching
-    and updating the existing land-time refusal test's mocks to cover both new checks
-  actor: logan
-  at: '2026-08-31'
-- op: add
-  glob: tests/test_ticket_work_and_land_finish.py
-  reason: adding frob:tests coverage for sys111_findings_touching/docptr_findings_touching
-    and updating the existing land-time refusal test's mocks to cover both new checks
-  actor: logan
-  at: '2026-08-31'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_sys111_finding_in_touched_files_refuses_and_unwinds
+- tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_docptr_finding_in_touched_files_refuses_and_unwinds
+- tests/test_gates.py::TestSys111FindingsTouching::test_ratchet_trip_in_declaring_file_is_returned
+- tests/test_gates.py::TestDocptrFindingsTouching::test_finding_in_touched_doc_is_returned
 designated_repro_test: null
 threat: null
 component: null

@@ -606,3 +606,184 @@ def selfaudit_findings_touching(
     design_ids = load_design_ids(root, design_dir)
     violations = _selfaudit_violations(root, design_ids, design_dir)
     return tuple(v for v in violations if any(f in v.message for f in files))
+
+
+# frob:ticket T-3575
+# frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
+# frob:tests tests/test_gates.py::TestSys111FindingsTouching.test_no_design_dir_returns_empty  # noqa: E501
+# frob:tests tests/test_gates.py::TestSys111FindingsTouching.test_ratchet_trip_in_declaring_file_is_returned  # noqa: E501
+# frob:tests tests/test_gates.py::TestSys111FindingsTouching.test_ratchet_trip_in_untouched_file_is_filtered_out  # noqa: E501
+def sys111_findings_touching(
+    root: Path, files: frozenset[str]
+) -> tuple[Violation, ...]:
+    """T-3575: the subset of `capability_ratchet_violations`'s (SYS111,
+    T-1628) findings attributable to `files` -- `selfaudit_findings_
+    touching`'s substring-over-`Violation.message` filter can NEVER match
+    a SYS111 finding (T-3574's own root-cause): each finding's message is
+    an AGGREGATE count keyed by `node::atom` ('exec via-list on testsuite
+    grew to 235 site(s)...') with no source file path anywhere in the
+    text, because `capability_via_site_counts` counts the LENGTH of each
+    `MayGrant.via` tuple -- a count of declared globs/symbols in the
+    node's OWN `.strata` declaration, not a scan of real source sites.
+    Ratchet growth therefore always originates in an edit to the `.strata`
+    file that DECLARES (or, T-2502, `extend`s) the tripped node, so this
+    resolves each violation's `node` id back to its declaring file(s) by
+    re-parsing every `.strata` file under the design dir (the SAME per-
+    file walk `_strata_files` already performs, since `load_design_ids`'s
+    OWN `DesignIds.models` only keeps the cross-file-ELABORATED merge,
+    which has no node-to-file provenance left to read -- `frob.strata.
+    _models.Node` carries no `source_file` field) and filtering on that
+    file, not the message text.
+
+    Fails OPEN (empty tuple) under the exact same conditions
+    `selfaudit_findings_touching` does: no design dir, a design-load
+    error, or (here also) no ratchet violations at all -- each checked
+    before the per-file re-parse to keep the common (clean) case cheap."""
+    root = Path(root)
+    design_dir = _design_dir(root)
+    if not (root / design_dir).is_dir():
+        return ()
+
+    from frob.strata import (
+        capability_ratchet_violations,
+        load_design_ids,
+        merge_models,
+        parse_module,
+    )
+    from frob.strata._design_load import _strata_files
+
+    design_ids = load_design_ids(root, design_dir)
+    if design_ids.errors or not design_ids.models:
+        return ()
+
+    model = merge_models(design_ids.models)
+    ratchet = capability_ratchet_violations(model, root)
+    if not ratchet:
+        return ()
+
+    from frob.gates._sys_selfaudit import _selfaudit_violation
+
+    node_files = _node_declaring_files(root, design_dir, parse_module, _strata_files)
+    found = []
+    for v in ratchet:
+        declaring_files = node_files.get(v.node, set())
+        if declaring_files & files:
+            found.append(
+                _selfaudit_violation("SYS111", v.node, v.detail, design_dir, root)
+            )
+    return tuple(found)
+
+
+def _node_declaring_files(
+    root: Path, design_dir: str, parse_module, strata_files
+) -> dict[str, set[str]]:
+    """`sys111_findings_touching`'s own per-file re-parse, split out to
+    keep that function under ARCH001's threshold (T-3575): `{node_id:
+    {every .strata file whose top-level `node ID { ... }` or `extend node
+    ID { ... }` declares it}}`, built fresh (never cached -- this runs
+    once per land, not a hot path) since `load_design_ids`'s own merged
+    model has no node-to-file provenance left to read (see caller's
+    docstring). `parse_module`/`strata_files` are passed in rather than
+    imported here purely so this stays a plain helper the caller's own
+    deferred imports already resolved, not a second import site."""
+    from frob.excludes import load_exclude_globs
+
+    exclude_globs = load_exclude_globs(root)
+    node_files: dict[str, set[str]] = {}
+    for path in strata_files(root, root / design_dir, exclude_globs):
+        rel = path.relative_to(root).as_posix()
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        parsed = parse_module(text)
+        if parsed.is_err:
+            continue
+        raw_module = parsed.danger_ok
+        for node in raw_module.nodes:
+            node_files.setdefault(node.id, set()).add(rel)
+        for extend in raw_module.extends:
+            node_files.setdefault(extend.id, set()).add(rel)
+    return node_files
+
+
+# frob:ticket T-3575
+# frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
+# frob:tests tests/test_gates.py::TestDocptrFindingsTouching.test_finding_in_touched_doc_is_returned  # noqa: E501
+# frob:tests tests/test_gates.py::TestDocptrFindingsTouching.test_finding_naming_a_touched_target_is_returned  # noqa: E501
+# frob:tests tests/test_gates.py::TestDocptrFindingsTouching.test_finding_in_untouched_files_is_filtered_out  # noqa: E501
+def docptr_findings_touching(
+    root: Path, files: frozenset[str]
+) -> tuple[Violation, ...]:
+    """T-3575: the subset of `frob.gates._docblocks.doc004_gate`/
+    `frob.gates._docptr.doc006_gate` (DOC004/DOC006, dangling/unresolved
+    doc-pointer) findings attributable to `files` -- T-3324's original
+    land-time check (`selfaudit_findings_touching`) never evaluated this
+    gate family at all (T-3574's own root-cause): it lives in a wholly
+    separate module (`frob.gates._docblocks`/`_docptr`, not `frob.gates.
+    _sys`/`_sys_selfaudit`), so a doc-pointer break a land itself
+    introduces (or a land that deletes/renames a file some OTHER doc's
+    pointer still names) went undetected here even though `frob check`
+    itself already reports it -- exactly the gap the T-1691-shaped
+    incident T-3324 closed for SELFAUDIT001 left open for this family.
+
+    Builds a fresh `GraphSnapshot` over `root` (a throwaway cache db, not
+    the repo's own -- this runs against the staged post-squash tree, a
+    different tree than whatever the caller's own cache was last built
+    against) and applies waivers the same way `frob check` itself does,
+    so a legitimately waived DOC004/DOC006 finding here agrees with what
+    `frob check` would report. A finding matches `files` if EITHER its
+    own `Violation.file` (the doc carrying the pointer) is in `files`, or
+    `files` contains the specific path/anchor text the finding's message
+    names (the target the pointer names, e.g. a file this land deleted or
+    renamed) -- catching both "this land broke its own doc" and "this
+    land broke someone else's doc's pointer at it".
+
+    Fails OPEN (empty tuple) on any `OSError` building the graph
+    (`build_graph` acquires `frob.process._lock.derived_state_write_
+    lock`, a HOME-keyed lock this land-time context has no guarantee is
+    writable in -- e.g. a sandboxed/isolated test HOME) rather than
+    letting an infra fault crash the whole land: this check is a diff-
+    scoped ADDITION to land-time enforcement, and a land must not start
+    failing on a check that cannot even run, on top of whatever it was
+    already refusing before this ticket."""
+    kept = _docptr_kept_violations(Path(root))
+    return tuple(
+        v
+        for v in kept
+        if v.rule in ("DOC004", "DOC006")
+        and (v.file in files or any(f in v.message for f in files))
+    )
+
+
+def _docptr_kept_violations(root: Path) -> tuple[Violation, ...]:
+    """`docptr_findings_touching`'s own graph-build/gate-run step, split
+    out to keep that function under ARCH001's threshold (T-3575): builds
+    a throwaway `GraphSnapshot` over `root`, runs `doc004_gate`/
+    `doc006_gate`, and applies waivers -- see the caller's own docstring
+    for why a throwaway snapshot and why this fails OPEN on `OSError`."""
+    import tempfile
+
+    from frob.gates import _apply_waivers, doc004_gate
+    from frob.gates._docptr import doc006_gate
+    from frob.graph import build_graph
+
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            built = build_graph(root, Path(tmp) / "cache.db")
+            if built.is_err:
+                return ()
+            snapshot = built.danger_ok
+            raw = tuple(doc004_gate(root, snapshot)) + tuple(
+                doc006_gate(root, snapshot)
+            )
+            kept, _waived = _apply_waivers(raw, snapshot)
+            return kept
+    except OSError:
+        _log.warning(
+            "docptr_findings_touching: could not build a graph snapshot for "
+            "%s, skipping this land-time check (T-3575: fails open on infra "
+            "faults)",
+            root,
+        )
+        return ()
