@@ -1747,9 +1747,9 @@ each per-grammar walker implements to produce it:
 | `NormalizedField` | one class-level or instance field: name, type, first-assignment line |
 | `NormalizedFunction` | one function/method: name, params, return type, `is_method`, `overrides` (base-method name, when determinable), and its flattened body events below |
 | `NormalizedParam` | one parameter: name, optional type, whether it has a default |
-| `NormalizedBranch` | one decision point (`if`/`elif`/ternary/short-circuit): line + condition source text |
+| `NormalizedBranch` | one decision point (`if`/`elif`/ternary/short-circuit): line + condition source text, plus `comprehension_id` (T-3474 -- `None` outside a comprehension/generator expression, otherwise an id shared with every branch/call inside the SAME comprehension node) |
 | `NormalizedLoop` | one `for`/`while`: line + kind |
-| `NormalizedCall` | one call site: callee name, line, `args`, and `declared_raises` (T-0689 -- a `# frob:callee-raises A, B` comment's parsed exception-name set, renamed from `frob:raises` by T-0931; `None` when absent; see [may-raise resolver](#may-raise-resolver)) |
+| `NormalizedCall` | one call site: callee name, line, `args`, `declared_raises` (T-0689 -- a `# frob:callee-raises A, B` comment's parsed exception-name set, renamed from `frob:raises` by T-0931; `None` when absent; see [may-raise resolver](#may-raise-resolver)), and `comprehension_id` (T-3474 -- mirrors `NormalizedBranch.comprehension_id`) |
 | `NormalizedCallArg` | one call argument: position/keyword, `ident` (bare-identifier text only, `None` for any other shape), and `text` (T-2568 -- the argument expression's raw source text regardless of shape; `ident`'s superset, used by the [may-raise resolver](#may-raise-resolver)'s isdigit-guard discharge to match a call's own argument against a preceding branch's condition text) |
 | `NormalizedFieldAccess` | one field read/write inside a body: name, line, `is_write` |
 | `NormalizedReturn` | one `return`: line, optional value text |

@@ -2,7 +2,7 @@
 id: T-3581
 title: 'WAIVE009: _normalized.py AFFECT001 waivers promise follow-up work that already
   landed (T-3473/T-3474); remove or convert'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'

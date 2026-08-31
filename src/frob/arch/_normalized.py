@@ -123,10 +123,6 @@ class NormalizedCallArg(BaseModel):
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
-# frob:waive AFFECT001 follow_up="T-3481" reason="added comprehension_id (T-3474); \
-# docs/modules/arch.md is under another ticket's LIVE lease (T-3481) at the time of \
-# this change, so the doc table row cannot be updated here -- re-verify and update \
-# once that lease clears"
 class NormalizedCall(BaseModel):
     """A call site inside a function/method body: the callee name (bare
     identifier or `obj.method` dotted form), the source line it occurs at,
@@ -157,10 +153,6 @@ class NormalizedCall(BaseModel):
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
-# frob:waive AFFECT001 follow_up="T-3481" reason="added comprehension_id (T-3474); \
-# docs/modules/arch.md is under another ticket's LIVE lease (T-3481) at the time of \
-# this change, so the doc table row cannot be updated here -- re-verify and update \
-# once that lease clears"
 class NormalizedBranch(BaseModel):
     """One decision point (`if`/`elif`/`else`, a ternary, a boolean
     short-circuit) inside a function/method body -- the shared unit the
