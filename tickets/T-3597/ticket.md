@@ -2,7 +2,7 @@
 id: T-3597
 title: Windows CI diagnostic step resolves fixture project instead of frob checkout
   (ModuleNotFoundError)
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -16,11 +16,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .github/workflows/ci.yml
-- scripts/frob_check_diag.py
+- tests/test_ci_workflow_matrix.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: scripts/frob_check_diag.py
+  reason: diag script lives inline in ci.yml, not a separate file; add the regression
+    test file
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/test_ci_workflow_matrix.py
+  reason: diag script lives inline in ci.yml, not a separate file; add the regression
+    test file
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
