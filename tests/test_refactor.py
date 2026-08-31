@@ -45,7 +45,7 @@ from frob.refactor import (
     validate_module_destination,
 )
 from frob.refactor._commit import commit_wip, run_verify_outcomes
-from frob.refactor._resolve import module_to_path
+from frob.refactor._resolve import import_roots, module_to_path, root_for_path
 
 
 # frob:waive DUP001 reason="the git-init/config trio is the established \
@@ -1509,13 +1509,77 @@ class TestGitOps:
         assert result.danger_err == RefactorError.GitError
 
 
+# frob:ticket T-3587
 class TestModuleToPath:
-    def test_maps_dotted_module_under_src(self, tmp_path):
-        # frob:tests \
-        # tests/test_refactor.py::TestModuleToPath.test_maps_dotted_module_under_src
+    # frob:ticket T-3587
+    def test_maps_module_under_src(self, tmp_path):
+        # frob:tests tests/test_refactor.py::TestModuleToPath.test_maps_module_under_src
         (tmp_path / "src").mkdir()
         path = module_to_path(tmp_path, "pkg.sub.mod")
         assert path == tmp_path / "src" / "pkg" / "sub" / "mod.py"
+
+    # frob:ticket T-3587
+    def test_maps_module_under_root(self, tmp_path):
+        """T-3587: a `tests/**`-shaped module resolves under `repo_root`
+        (not `src/`) when a real file already exists there, even though
+        `src/` also exists -- the fix's must-fire case."""
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleToPath.test_maps_module_under_root
+        (tmp_path / "src").mkdir()
+        pkg_dir = tmp_path / "tests" / "sub"
+        pkg_dir.mkdir(parents=True)
+        (pkg_dir / "mod.py").write_text("x = 1\n")
+        path = module_to_path(tmp_path, "tests.sub.mod")
+        assert path == tmp_path / "tests" / "sub" / "mod.py"
+
+
+# frob:ticket T-3587
+class TestImportRoots:
+    # frob:ticket T-3587
+    def test_src_first_then_repo_root(self, tmp_path):
+        """T-3587: `src/` when present is always tried before
+        `repo_root`, and `repo_root` is always the last candidate."""
+        # frob:tests \
+        # tests/test_refactor.py::TestImportRoots.test_src_first_then_repo_root
+        (tmp_path / "src").mkdir()
+        roots = import_roots(tmp_path)
+        assert roots == [tmp_path / "src", tmp_path]
+
+    # frob:ticket T-3587
+    def test_repo_root_only_when_no_src(self, tmp_path):
+        """T-3587: no `src/` directory means `repo_root` is the sole
+        candidate, matching the pre-fix `else repo_root` fallback."""
+        # frob:tests \
+        # tests/test_refactor.py::TestImportRoots.test_repo_root_only_when_no_src
+        roots = import_roots(tmp_path)
+        assert roots == [tmp_path]
+
+
+# frob:ticket T-3587
+class TestRootForPath:
+    # frob:ticket T-3587
+    def test_finds_owning_root(self, tmp_path):
+        """T-3587: `root_for_path` is `module_to_path`'s inverse -- a
+        file under `repo_root` resolves to `repo_root`, not `src/`,
+        even when `src/` also exists."""
+        # frob:tests tests/test_refactor.py::TestRootForPath.test_finds_owning_root
+        (tmp_path / "src").mkdir()
+        target = tmp_path / "tests" / "mod.py"
+        target.parent.mkdir(parents=True)
+        target.write_text("x = 1\n")
+        assert root_for_path(tmp_path, target) == tmp_path
+
+    # frob:ticket T-3587
+    def test_none_when_outside_every_root(self, tmp_path):
+        """T-3587: a path outside both `src/` and `repo_root` (e.g. a
+        sibling directory) resolves to `None`, never a false match."""
+        # frob:tests \
+        # tests/test_refactor.py::TestRootForPath.test_none_when_outside_every_root
+        (tmp_path / "src").mkdir()
+        outside = tmp_path.parent / "elsewhere" / "mod.py"
+        outside.parent.mkdir(parents=True, exist_ok=True)
+        outside.write_text("x = 1\n")
+        assert root_for_path(tmp_path, outside) is None
 
 
 class TestPlanProperties:

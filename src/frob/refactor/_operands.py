@@ -147,6 +147,7 @@ def parse_module_operand(text: str) -> Result[ModuleRef, OperandError]:
     return Ok(ModuleRef(module=text))
 
 
+# frob:ticket T-3587
 # frob:doc docs/commands/refactor.md#validate_module_destination
 # frob:tests tests/test_refactor.py::TestOperands.test_validate_destination_refuses_non_identifier_segment  # noqa: E501
 # frob:tests tests/test_refactor.py::TestOperands.test_validate_destination_refuses_existing_module  # noqa: E501
@@ -155,13 +156,15 @@ def validate_module_destination(
 ) -> Result[Path, OperandError]:
     """Validate `ref` as a legal Python module DESTINATION before any
     file is written: every `.`-separated segment must be a valid Python
-    identifier, the mapped path must land inside the repo's declared
-    source root (`src/` when present, else `repo_root`) and end in
-    `.py`, and -- absent `allow_existing=True` -- the destination must
-    not already exist. Returns the destination `Path` on success; every
-    failure is a typed `OperandError`, never a partial write (this is a
-    pure check, nothing here touches the filesystem beyond `is_file`)."""
-    from frob.refactor._resolve import module_to_path
+    identifier, the mapped path must land inside one of the repo's
+    declared import roots (`src/` when present, or `repo_root` itself
+    for a `tests/**`/`scripts/**` destination -- `_resolve.import_roots`)
+    and end in `.py`, and -- absent `allow_existing=True` -- the
+    destination must not already exist. Returns the destination `Path`
+    on success; every failure is a typed `OperandError`, never a
+    partial write (this is a pure check, nothing here touches the
+    filesystem beyond `is_file`)."""
+    from frob.refactor._resolve import module_to_path, root_for_path
 
     if not _is_dotted_identifier_chain(ref.module):
         return Err(OperandError.InvalidDestination)
@@ -170,11 +173,7 @@ def validate_module_destination(
     if dest_path.suffix != ".py":
         return Err(OperandError.InvalidDestination)
 
-    src_root = repo_root / "src"
-    base = src_root if src_root.is_dir() else repo_root
-    try:
-        dest_path.relative_to(base)
-    except ValueError:
+    if root_for_path(repo_root, dest_path) is None:
         return Err(OperandError.InvalidDestination)
 
     if dest_path.is_file() and not allow_existing:

@@ -19,18 +19,81 @@ from frob.refactor._models import RefactorError, ResolvedSymbol, SymbolRef
 
 _log = get_logger(__name__)
 
-__all__ = ["module_to_path", "resolve_symbol"]
+__all__ = ["import_roots", "module_to_path", "root_for_path", "resolve_symbol"]
 
 
+# frob:ticket T-3587
+# frob:doc docs/commands/refactor.md#import_roots
+# frob:tests \
+#   tests/test_refactor.py::TestImportRoots.test_src_first_then_repo_root  # noqa: E501
+def import_roots(repo_root: Path) -> list[Path]:
+    """The ordered list of package roots this repo's dotted-module<->path
+    mapping tries, most-specific first: `src/` when it exists, then
+    `repo_root` itself (the `pythonpath = ["."]` pytest root, covering
+    `tests/`, `scripts/`, and any other repo-root-relative package).
+    This is the SINGLE list every site in this package that maps a
+    dotted module to a path, or a path back to a dotted module, must
+    build on -- `module_to_path`, `root_for_path`, `_module_resolve`'s
+    non-`.py` fallback, `_module_scan_python`'s relative-import
+    resolution, `_operands.validate_module_destination`, and
+    `_verify`'s import-check `PYTHONPATH` -- so `src/` keeps resolving
+    exactly as it always has while a `tests/**`/`scripts/**` module
+    becomes resolvable too, instead of five call sites independently
+    deciding (and risking disagreeing on) the same rule."""
+    src_root = repo_root / "src"
+    roots = [src_root] if src_root.is_dir() else []
+    roots.append(repo_root)
+    return roots
+
+
+# frob:ticket T-3587
 # frob:doc docs/commands/refactor.md#module_to_path
-# frob:tests tests/test_refactor.py::TestModuleToPath.test_maps_dotted_module_under_src  # noqa: E501
+# frob:tests \
+#   tests/test_refactor.py::TestModuleToPath.test_maps_module_under_src  # noqa: E501
+# frob:tests \
+#   tests/test_refactor.py::TestModuleToPath.test_maps_module_under_root  # noqa: E501
 def module_to_path(repo_root: Path, module: str) -> Path:
     """The single place a dotted module path (`pkg.sub.mod`) becomes a
-    `src/pkg/sub/mod.py` filesystem path, so Resolve/Apply never diverge
-    on the mapping."""
-    src_root = repo_root / "src"
-    base = src_root if src_root.is_dir() else repo_root
-    return base.joinpath(*module.split(".")).with_suffix(".py")
+    filesystem path, so Resolve/Apply never diverge on the mapping.
+    Tries every `import_roots` candidate (src/ first) and returns the
+    first one that names a real file; if none exists yet (a brand-new
+    destination module), prefers a root whose top-level package segment
+    already exists as a directory, else falls back to the first
+    candidate root."""
+    roots = import_roots(repo_root)
+    parts = module.split(".")
+    for base in roots:
+        candidate = base.joinpath(*parts).with_suffix(".py")
+        if candidate.is_file():
+            return candidate
+    for base in roots:
+        if (base / parts[0]).is_dir():
+            return base.joinpath(*parts).with_suffix(".py")
+    return roots[0].joinpath(*parts).with_suffix(".py")
+
+
+# frob:ticket T-3587
+# frob:doc docs/commands/refactor.md#root_for_path
+# frob:tests \
+#   tests/test_refactor.py::TestRootForPath.test_finds_owning_root  # noqa: E501
+def root_for_path(repo_root: Path, path: Path) -> Path | None:
+    """The `import_roots` entry that contains `path`, or `None` if
+    `path` is outside every known root -- the inverse lookup
+    `_importing_package`/`_path_to_module`/the import-check
+    `PYTHONPATH` builder need, sharing the identical root list
+    `module_to_path` uses so a file this engine can resolve one
+    direction always resolves the other."""
+    try:
+        resolved = path.resolve()
+    except OSError:
+        return None
+    for base in import_roots(repo_root):
+        try:
+            resolved.relative_to(base.resolve())
+        except (OSError, ValueError):
+            continue
+        return base
+    return None
 
 
 def _find_def(

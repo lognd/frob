@@ -52,6 +52,7 @@ from typing import TYPE_CHECKING
 
 from frob.logging import get_logger
 from frob.refactor._models import AliasRecord, RewriteOp
+from frob.refactor._resolve import root_for_path
 from frob.refactor._scan import _rename_usages, find_python_files
 
 if TYPE_CHECKING:
@@ -81,14 +82,18 @@ def _ancestor(package: str, levels_up: int) -> str:
     return ".".join(parts[:remaining]) if remaining > 0 else ""
 
 
+# frob:ticket T-3587
 def _importing_package(repo_root: Path, file_path: Path) -> str:
     """The dotted package a `.py` file under `src/` (or `repo_root`)
     itself belongs to -- `src/frob/gates/decisions.py` ->
     `"frob.gates"`, `src/frob/legacy_io.py` -> `"frob"`. Used to resolve
     that FILE's own relative imports to an absolute target, and to
-    decide whether a rewritten import can stay relative."""
-    src_root = repo_root / "src"
-    base = src_root if src_root.is_dir() else repo_root
+    decide whether a rewritten import can stay relative. Shares
+    `_resolve.root_for_path`'s root list so a `tests/**`/`scripts/**`
+    file resolves its own package exactly as a `src/**` file does."""
+    base = root_for_path(repo_root, file_path)
+    if base is None:
+        return ""
     try:
         rel = file_path.relative_to(base)
     except ValueError:

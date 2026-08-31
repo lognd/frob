@@ -2,7 +2,7 @@
 id: T-3587
 title: frob refactor verbs cannot address any module outside src/ -- module_to_path
   hardcodes src/ as sole root
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-08-31'

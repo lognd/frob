@@ -463,10 +463,29 @@ pass or a failure verdict rather than silently folded into either.
 way -- the plan, every verify outcome, and whether it committed or
 rolled back.
 
+<a id="import_roots"></a>
+<!-- frob:describes src/frob/refactor/_resolve.py::import_roots -->
+**`import_roots`**: the ordered list of package roots this engine's
+dotted-module<->path mapping tries -- `src/` first when it exists, then
+`repo_root` itself (the `pythonpath = ["."]` pytest root, covering
+`tests/`, `scripts/`, and any other repo-root-relative package). The
+single list `module_to_path`, `root_for_path`, and every other
+module<->path site in this package build on, so `src/` keeps resolving
+exactly as before while `tests/**`/`scripts/**` become resolvable too.
+
 <a id="module_to_path"></a>
 <!-- frob:describes src/frob/refactor/_resolve.py::module_to_path -->
 **`module_to_path`**: the single place a dotted module path becomes a
-`src/**.py` filesystem path.
+filesystem path. Tries every `import_roots` candidate (src/ first) for
+an existing file; for a brand-new destination module, prefers a root
+whose top-level package segment already exists as a directory, else
+falls back to the first candidate root.
+
+<a id="root_for_path"></a>
+<!-- frob:describes src/frob/refactor/_resolve.py::root_for_path -->
+**`root_for_path`**: the inverse of `module_to_path` -- the
+`import_roots` entry that contains a given file path, or `None` if the
+path is outside every known root.
 
 <a id="resolve_symbol"></a>
 <!-- frob:describes src/frob/refactor/_resolve.py::resolve_symbol -->

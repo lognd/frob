@@ -21,6 +21,7 @@ from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
 from frob.process._pytest_spawn import resolve_pytest_argv
 from frob.refactor._models import VerifyOutcome
+from frob.refactor._resolve import import_roots, root_for_path
 
 _log = get_logger(__name__)
 
@@ -116,16 +117,19 @@ def _local_import_gaps(repo_root: Path, path: Path, tree: ast.Module) -> list[st
     return gaps
 
 
+# frob:ticket T-3587
 def _path_to_module(repo_root: Path, path: Path) -> str | None:
     """Inverse of `_resolve.module_to_path`: the dotted module name a
-    file path resolves to, or `None` if `path` is not inside this
-    repo's own import root (`src/` if it exists, else `repo_root`
-    itself -- the identical layout convention `module_to_path` already
-    encodes) or is not a plain importable module file (a `__init__.py`
-    collapses to its package's own dotted name; anything else that
-    fails to resolve under the root, or is not `.py`, is `None`)."""
-    src_root = repo_root / "src"
-    base = src_root if src_root.is_dir() else repo_root
+    file path resolves to, or `None` if `path` is not inside any of
+    this repo's own import roots (`_resolve.import_roots` -- `src/` if
+    it exists, plus `repo_root` itself, the identical layout convention
+    `module_to_path` already encodes) or is not a plain importable
+    module file (a `__init__.py` collapses to its package's own dotted
+    name; anything else that fails to resolve under a root, or is not
+    `.py`, is `None`)."""
+    base = root_for_path(repo_root, path)
+    if base is None:
+        return None
     try:
         rel = path.resolve().relative_to(base.resolve())
     except (OSError, ValueError):
@@ -143,21 +147,24 @@ def _path_to_module(repo_root: Path, path: Path) -> str | None:
 
 
 # frob:ticket T-3395
+# frob:ticket T-3587
 # frob:waive ARCH103 reason="single cohesive unit: builds one subprocess env dict, each branch a distinct env-var decision (PYTHONPATH prepend, bytecode-write suppression, coverage-var stripping) documented inline -- splitting it would scatter one env-construction concern across artificial helper boundaries with no real complexity reduction"  # noqa: E501
 def _import_check_env(repo_root: Path) -> dict[str, str]:
     """The subprocess `env` `verify_module_import` runs a real `import`
-    under: the current environment plus this repo's own import root
-    (`src/` if it exists, else `repo_root`) prepended onto `PYTHONPATH`
-    -- the same layout convention `_resolve.module_to_path` and
-    `_path_to_module` both already encode, so a module this repo's own
-    refactor engine can RESOLVE by dotted name is also one a real
-    subprocess interpreter can actually `import`, whether or not the
-    target repo happens to be installed editable in the current venv."""
-    src_root = repo_root / "src"
-    import_root = str(src_root if src_root.is_dir() else repo_root)
+    under: the current environment plus every one of this repo's own
+    import roots (`_resolve.import_roots` -- `src/` if it exists, plus
+    `repo_root`) prepended onto `PYTHONPATH`, same layout convention
+    `_resolve.module_to_path` and `_path_to_module` both already
+    encode, so a module this repo's own refactor engine can RESOLVE by
+    dotted name (whether it lives under `src/` or is a `tests/**`/
+    `scripts/**` module resolved via the repo-root candidate) is also
+    one a real subprocess interpreter can actually `import`, whether or
+    not the target repo happens to be installed editable in the
+    current venv."""
+    roots = os.pathsep.join(str(root) for root in import_roots(repo_root))
     env = os.environ.copy()
     existing = env.get("PYTHONPATH")
-    env["PYTHONPATH"] = import_root + os.pathsep + existing if existing else import_root
+    env["PYTHONPATH"] = roots + os.pathsep + existing if existing else roots
     # Never write a `__pycache__/*.pyc` into the target repo's own
     # working tree as a side effect of this check -- a refactor verb
     # must not dirty the tree it is verifying.
