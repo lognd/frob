@@ -2,7 +2,7 @@
 id: T-3526
 title: Killed frob check --fix leaves a silent half-applied Tier-A rewrite (deleted
   _build_parser, broke the CLI); make the fix pass transactional/journaled
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -21,6 +21,7 @@ scope:
 - tests/unit/test_check.py
 - tests/unit/test_fix_engine_journal.py
 - src/frob/gates/_waive.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -74,6 +75,23 @@ scope_changes:
     before this diff can land
   actor: logan
   at: '2026-08-30'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001/SYS100: tests/unit/test_fix_engine_journal.py''s real path.write_text
+    calls (journal fixtures) need declaring in the testsuite node''s fs.write via
+    list'
+  actor: logan
+  at: '2026-08-31'
+evidence:
+- tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal::test_absent_manifest_is_not_abandoned
+- tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal::test_live_pid_manifest_is_not_abandoned
+- tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal::test_dead_pid_manifest_is_abandoned
+- tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal::test_malformed_journal_is_abandoned
+- tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal::test_no_journal_is_not_a_violation
+- tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal::test_abandoned_journal_fails_check_loudly
+- tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal::test_completed_apply_tier_a_fixes_leaves_no_journal
+- tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal::test_run_check_is_unaffected_with_no_journal
+- tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournalSigkillSubprocess::test_sigkilled_journal_writer_is_detected_and_refused
 designated_repro_test: null
 threat: null
 component: null
