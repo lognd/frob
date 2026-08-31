@@ -20,12 +20,12 @@ pytestmark = pytest.mark.skip(
 )
 
 
-# frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_succeeds_when_faulthandler_register_is_absent_on_simulated_win32  # noqa: E501
-# frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_installs_a_signal_handler_when_register_is_absent  # noqa: E501
-# frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_dump_then_chain_calls_dump_traceback_then_previous_handler  # noqa: E501
-# frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_still_prefers_faulthandler_register_when_it_exists  # noqa: E501
-# frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_noop_off_win32  # noqa: E501
-# frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_noop_when_no_sigbreak_attribute  # noqa: E501
+# frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety.test_succeeds_when_faulthandler_register_is_absent_on_simulated_win32  # noqa: E501
+# frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety.test_installs_a_signal_handler_when_register_is_absent  # noqa: E501
+# frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety.test_dump_then_chain_calls_dump_traceback_then_previous_handler  # noqa: E501
+# frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety.test_still_prefers_faulthandler_register_when_it_exists  # noqa: E501
+# frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety.test_noop_off_win32  # noqa: E501
+# frob:tests tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety.test_noop_when_no_sigbreak_attribute  # noqa: E501
 class TestSigbreakFaultHandlerCrossPlatformSafety:
     """Superseded by T-3577's revert -- every case below is a fixed skip."""
 
