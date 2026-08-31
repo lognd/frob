@@ -2,7 +2,7 @@
 id: T-3549
 title: 'Windows CI KeyboardInterrupt round 2: execnet gateway teardown interrupt_main(),
   not console sharing'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'

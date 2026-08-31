@@ -271,23 +271,37 @@ jobs:
       # step only closes the teardown-window gap with a TIMED FAILURE and
       # an explicit message, not a stack dump, on that one platform.
       # T-3540: deliberately NOT `-NoNewWindow` any more -- that flag made
-      # the child share THIS step's own console, and GitHub's hosted
-      # Windows runners are known to broadcast a CTRL_BREAK_EVENT to their
-      # console for heartbeat/cancellation handling; anything attached to
-      # that console (the `-NoNewWindow` child included) received it too,
-      # and CPython maps a console-break event to a `KeyboardInterrupt` on
-      # the main thread -- the measured T-3540 incident (run 33353658750:
-      # the whole suite aborted at ~1%, 49s in, nowhere near this step's
-      # own budget or pytest-timeout's own 120s per-test timeout). Without
-      # `-NoNewWindow`, `Start-Process` gives the child its OWN console /
-      # process group by default, so it is no longer reachable by that
-      # broadcast; `Stop-Process -Id $p.Id` (the hang-guard's own
-      # terminator below) still works identically regardless of which
-      # console/process-group the target process is in. The tradeoff:
-      # output is no longer inherited live into this step's log (a
-      # separate console has nothing to inherit), so stdout/stderr are
-      # redirected to files and replayed with Get-Content once the run
-      # finishes (or is force-terminated) instead.
+      # the child share THIS step's own console, a real (but, per T-3549,
+      # NOT the dominant) contributor to Windows-only `KeyboardInterrupt`
+      # aborts here; without `-NoNewWindow`, `Start-Process` gives the
+      # child its own console/process group instead, so `Stop-Process -Id
+      # $p.Id` (the hang-guard's own terminator below) still works
+      # identically regardless of which console/process-group the target
+      # process is in. Output is redirected to files and replayed with
+      # Get-Content once the run finishes (or is force-terminated) since a
+      # separate console has nothing live to inherit into this step's log.
+      # T-3549: re-measured AFTER T-3540's fix landed (run 33361224273) --
+      # the suite still aborted at the SAME ~1% point via the SAME
+      # `KeyboardInterrupt` at `threading.py:359`, with no
+      # "::error::...exceeded" message (so `Wait-Process` never timed
+      # out -- the interrupt is raised INSIDE the pytest process, not
+      # delivered externally), ruling console-sharing out as the dominant
+      # cause. Root cause (read directly from the installed package):
+      # execnet's (pytest-xdist's transport) `Gateway._terminate_
+      # execution` (`execnet/gateway_base.py`) calls `_thread.
+      # interrupt_main()` on win32 when a worker gateway's channel closes
+      # uncleanly and its execution pool has not drained within 5s --
+      # exactly this `KeyboardInterrupt`-on-`threading.py` shape,
+      # internal to execnet/xdist's own teardown machinery, not this
+      # repo's code. `-p no:xdist` below removes xdist (and therefore
+      # execnet) from the windows-latest leg entirely, trading Windows'
+      # own parallelism for actually completing; ubuntu-latest/macos-
+      # latest keep `-n auto --dist=loadgroup` (pyproject.toml addopts)
+      # unchanged, since this mechanism has not been observed to misfire
+      # on either. Unverified against a real windows-latest run at the
+      # time this landed (no local Windows box) -- if the interrupt
+      # recurs even single-process, the mechanism above needs revisiting
+      # by someone who can reproduce interactively.
       - name: Test (windows, timed with hang guard)
         if: matrix.os == 'windows-latest'
         env:
@@ -296,7 +310,7 @@ jobs:
           $budget = 1500  # 25m, same budget/rationale as ubuntu's step above
           $stdout = Join-Path $env:RUNNER_TEMP "pytest-stdout.log"
           $stderr = Join-Path $env:RUNNER_TEMP "pytest-stderr.log"
-          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q","-p","no:xdist" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
             Wait-Process -Id $p.Id -Timeout $budget -ErrorAction Stop
           } catch {
