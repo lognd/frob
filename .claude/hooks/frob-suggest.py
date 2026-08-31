@@ -605,6 +605,14 @@ def _escalate(
     attempt = _record_attempt(key)
 
     if attempt == 1:
+        # T-3071: the ack is checked on EVERY path, first block included --
+        # a caller who already knows the raw command is right should not
+        # have to eat one denial just to prove it by re-running the exact
+        # same string. Still records the attempt above (so a later
+        # unacknowledged repeat of the same command is not misread as a
+        # first encounter), but does not deny when acked.
+        if acked:
+            return
         reason = (
             f"BLOCKED ONCE by frob-suggest [{name}] -- this looks like work frob "
             f"should account for.\n\n{suggestion}\n\n{first_hint}"
@@ -651,9 +659,11 @@ def _handle_edit(payload: dict) -> None:
         suggestion,
         acked,
         "If you are SURE the hand edit is right, make the same edit again "
-        "and it will be allowed; this hook blocks only the first attempt at "
-        "a given rename shape. Set `FROB_SUGGEST_ACK=1` in the environment "
-        "to bypass on a later repeat too.",
+        "and it will be allowed; this hook blocks only the first "
+        "unacknowledged attempt at a given rename shape. Set "
+        "`FROB_SUGGEST_ACK=1` in the environment beforehand to skip the "
+        "re-edit and pass on this very first attempt -- the ack is checked "
+        "on every path, first block included.",
         "If this genuinely is not a repeated habit and the hand edit is "
         "still the right call, set `FROB_SUGGEST_ACK=1` in the environment "
         "(consistent with the Bash-command escape) -- that acknowledgement "
@@ -688,8 +698,13 @@ def _handle_bash(payload: dict, root: Path) -> None:
         acked,
         "If you are SURE the raw command is right, re-run it EXACTLY as "
         "written and it will be allowed; this hook blocks only the first "
-        "attempt at a given command. Do not paraphrase to get around the "
-        "block -- a reworded command is a new command and blocks again.",
+        "unacknowledged attempt at a given command. Do not paraphrase to "
+        "get around the block -- a reworded command is a new command and "
+        "blocks again. Or prefix it with `FROB_SUGGEST_ACK=1 ` up front "
+        "(e.g. "
+        f"`FROB_SUGGEST_ACK=1 {command}`) to skip the re-run and pass on "
+        "this very first attempt -- the ack is checked on every path, this "
+        "first block included.",
         "If this genuinely is not a repeated habit and the raw command is "
         "still the right call, prefix it with `FROB_SUGGEST_ACK=1 ` (e.g. "
         f"`FROB_SUGGEST_ACK=1 {command}`) to run it anyway -- that "

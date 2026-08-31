@@ -1,7 +1,7 @@
 ---
 id: T-3071
 title: frob-suggest ignores FROB_SUGGEST_ACK=1 on the first block of a new command
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -90,4 +90,4 @@ ACCEPTANCE
 - Hooks are MATERIALIZED from `.claude/hooks/` into `~/.claude/`: edit the
   source, run the sync, and confirm `frob claude sync --check` reports no drift.
 
-frob:waive BUG002 reason="T-3071's scope is .claude/hooks/frob-suggest.py only, so no new fail-at-parent/pass-at-fix test could be added within scope (a follow-up ticket T-draft-7aab845e was filed for the missing tests/test_hook_frob_suggest.py fixtures). The fix was manually verified via the hooks real stdin/stdout contract: FROB_SUGGEST_ACK=1 <command> now passes silently on the FIRST encounter (previously denied), and the same command without the ack still denies on first encounter -- both confirmed against this worktree's built commit before landing."
+frob:waive BUG002 reason="T-3071's scope is .claude/hooks/frob-suggest.py only, so no new fail-at-parent/pass-at-fix test could be added within scope (a follow-up ticket T-3601 was filed for the missing tests/test_hook_frob_suggest.py fixtures). The fix was manually verified via the hooks real stdin/stdout contract: FROB_SUGGEST_ACK=1 <command> now passes silently on the FIRST encounter (previously denied), and the same command without the ack still denies on first encounter -- both confirmed against this worktree's built commit before landing."
