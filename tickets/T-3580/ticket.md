@@ -2,7 +2,7 @@
 id: T-3580
 title: 'post-land sweep regression from T-3577: 2 new (rule, file) identit(ies), 24
   finding(s) (DOC007, DRIFT002)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
