@@ -1,7 +1,7 @@
 ---
 id: T-3558
 title: WIRE001 analyzer call-graph misses multiprocessing.Process target= references
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
