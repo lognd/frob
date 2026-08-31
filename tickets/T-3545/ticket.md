@@ -47,6 +47,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 35e48831b8c88df1ae7d9ebd3291d05694e5e8fb
 ---
 MEASURED run 33353658750: tests/unit/graph/test_dsl_markdown_waive.py::TestChangelogMultiLineCodeSpanMention::test_real_changelog_has_no_malformed_markdown_directive fails: assert [MalformedDir...ses nothing')] == []. A recently landed changelog.d/ fragment or CHANGELOG.md entry contains a frob directive inside a code span that the markdown DSL parser reads as malformed. Find it (run the test locally, it names the file/line), fix the FRAGMENT via the sanctioned path (regenerate or reword; changelog.d is land-owned) or, if the generator produced it, fix the generator note sanitization; state which.
