@@ -5811,19 +5811,44 @@ class TestFleetStatusLarge001WaiverParses:
     """
 
     def test_waiver_still_suppresses_large001(self, tmp_path: Path) -> None:
-        """arch_gate() + _apply_waivers() against a live build_graph()
-        snapshot of this repo report zero KEPT LARGE001 findings for
-        scripts/fleet_status.py -- proving the corrected, multi-line
-        frob:quote(frob:waive reason) still parses as one directive and still
-        binds, rather than silently regressing to a bare unwaived LARGE001
-        error the way a malformed directive would."""
+        """arch_gate() + _apply_waivers() against a SCOPED fixture repo
+        containing a real, byte-for-byte copy of scripts/fleet_status.py
+        report zero KEPT LARGE001 findings for it -- proving the
+        corrected, multi-line frob:quote(frob:waive reason) still parses
+        as one directive and still binds, rather than silently
+        regressing to a bare unwaived LARGE001 error the way a malformed
+        directive would.
+
+        T-3532: this used to `build_graph`/`arch_gate` the WHOLE live
+        repo tree per test invocation, outside the T-3495 shared
+        `frob_self_scan_heavy` artifacts and paying its own private
+        multi-minute scan on a slow CI runner. The subject under test is
+        the WAIVER-BINDING mechanism, not "does this repo have zero
+        LARGE001 findings repo-wide" (that property belongs to
+        `test_sys_gate_zero_violations` and friends, which already share
+        `frob_self_scan_artifacts`) -- `arch_gate` also has no snapshot
+        parameter to piggyback on that shared session fixture the way
+        `test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses`
+        (T-3532, `tests/test_gates.py`) now does for `perf_gate`. A
+        SCOPED one-file fixture repo is the right substitute per this
+        ticket's own accepted alternative: the real file's real waiver
+        directive still binds through the real `arch_gate`/
+        `_apply_waivers` machinery, at a cost of one small-tree AST parse
+        instead of the whole repo."""
         from frob.gates._arch import arch_gate  # noqa: PLC0415
         from frob.gates._waive import _apply_waivers  # noqa: PLC0415
         from frob.graph import build_graph  # noqa: PLC0415
 
         repo_root = Path(__file__).resolve().parents[2]
-        snapshot = build_graph(repo_root, tmp_path / "cache.db").danger_ok
-        raw = arch_gate(repo_root)
+        real_file = repo_root / "scripts" / "fleet_status.py"
+        scoped_root = tmp_path / "scoped_repo"
+        scoped_scripts = scoped_root / "scripts"
+        scoped_scripts.mkdir(parents=True)
+        (scoped_scripts / "fleet_status.py").write_text(
+            real_file.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        snapshot = build_graph(scoped_root, tmp_path / "cache.db").danger_ok
+        raw = arch_gate(scoped_root)
         kept, waived = _apply_waivers(raw, snapshot)
         kept_offenders = [
             v for v in kept if v.rule == "LARGE001" and "fleet_status.py" in v.file

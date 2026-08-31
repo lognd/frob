@@ -2,7 +2,7 @@
 id: T-3532
 title: Two frob_self_scan_heavy waiver tests still run private whole-repo scans outside
   the T-3495 shared artifacts
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'

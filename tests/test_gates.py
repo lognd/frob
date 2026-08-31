@@ -83,7 +83,7 @@ from frob.gates._rule_id_scan import (
 )
 from frob.gates.invariants import InvariantError, _Criticality, load_invariants
 from frob.gitio import Diff, Hunk, working_diff
-from frob.graph import build_graph
+from frob.graph import GraphSnapshot, build_graph
 from frob.graph._models import LockEntry, LockFile
 from frob.strata import CMPL_REGISTRY_UNIT_IDS
 from frob.testing import CollectedTests
@@ -17032,7 +17032,7 @@ class TestOptInGates:
 
     # frob:ticket T-2314
     def test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses(
-        self,
+        self, frob_self_scan_snapshot: GraphSnapshot
     ) -> None:
         # frob:tests src/frob/gates/__init__.py::perf_gate
         """POSITIVE CONTROL 3 (T-2314 acceptance): the ALREADY-EXISTING
@@ -17040,12 +17040,21 @@ class TestOptInGates:
         `src/frob/app/ticket_runner/_rapid_sweep.py:1652` -- the decisive
         control that proved this was a real mechanism defect, not one
         agent's malformed directive -- now actually suppresses its own
-        finding when run against the real repo tree."""
+        finding when run against the real repo tree.
+
+        T-3532: consumes the session-scoped `frob_self_scan_snapshot`
+        fixture (this test's own name is already in `tests/conftest.py`'s
+        `_SELF_SCAN_HEAVY_NAME_SUBSTRINGS`, pinning it to the same
+        `frob_self_scan_heavy` xdist worker as every other consumer of
+        that fixture) instead of this module's own `_snapshot(repo_root)`
+        helper, which rebuilt a whole-repo `build_graph` snapshot
+        independently AND pointed at this repo's real `.frob/cache.db`
+        rather than a throwaway one."""
         from frob.gates import perf_gate
         from frob.gates._waive import _apply_waivers
 
         repo_root = Path(__file__).resolve().parents[1]
-        snap = _snapshot(repo_root)
+        snap = frob_self_scan_snapshot
         kept, waived = _apply_waivers(perf_gate(repo_root, snap), snap)
         assert not any(
             v.rule == "PERF008"

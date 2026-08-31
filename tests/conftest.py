@@ -1,8 +1,11 @@
 import os
 from pathlib import Path
-from typing import Any, Iterator
+from typing import TYPE_CHECKING, Any, Iterator
 
 import pytest
+
+if TYPE_CHECKING:
+    from frob.graph import GraphSnapshot
 
 import frob.lang as lang_mod
 from frob.lang import PARSE_ARTIFACT_CACHE_ENV, reset_parse_cache
@@ -1154,6 +1157,38 @@ def frob_self_scan_artifacts(
     return FrobSelfScanArtifacts(
         repo_root=_REPO_ROOT, build_result=None, violations=violations
     )
+
+
+# frob:ticket T-3532
+@pytest.fixture(scope="session")
+def frob_self_scan_snapshot(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> "GraphSnapshot":
+    """T-3532: ONE `build_graph(_REPO_ROOT, ...)` snapshot object, shared
+    by every `frob_self_scan_heavy` consumer that needs the raw graph
+    (not just `frob_self_scan_artifacts`'s derived `sys_gate` violations
+    tuple) -- e.g. a gate taking an explicit snapshot argument like
+    `perf_gate(root, snap)`. Same "at most once per worker session"
+    guarantee `frob_self_scan_artifacts` already gives (T-3495), reusing
+    the SAME `frob_self_scan_heavy` xdist-group pinning
+    (`pytest_collection_modifyitems`) so every consumer lands on one
+    worker. Deliberately NOT threaded through the T-3525 on-disk
+    violations cache: a `graph.Snapshot` object does not round-trip that
+    cache cheaply the way a plain violations tuple does, so a worker that
+    restarts mid-group still pays one fresh build here -- this fixture
+    only removes the "N separate builds within the SAME worker session"
+    cost T-3495 diagnosed, the same cost class T-3532 measured a second
+    time in `tests/test_gates.py`'s `_snapshot(repo_root)` call (which
+    also, incidentally, pointed at this repo's real `.frob/cache.db`
+    instead of a throwaway one -- fixed here too by using
+    `tmp_path_factory`, matching `frob_self_scan_artifacts`'s own
+    reasoning for never touching the real cache)."""
+    from frob.graph import build_graph
+
+    cache_dir = tmp_path_factory.mktemp("frob_self_scan_snapshot")
+    build_result = build_graph(_REPO_ROOT, cache_dir / "cache.db")
+    assert build_result.is_ok, f"graph build failed: {build_result.err}"
+    return build_result.danger_ok
 
 
 PY_SAMPLE = b"""\
