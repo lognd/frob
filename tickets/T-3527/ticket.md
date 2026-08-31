@@ -29,3 +29,6 @@ anchor_reason: null
 land_commit: null
 ---
 T-2016 (done) produced only the DESIGN for a growth-rate declaration on Node.users/rate (docs/strata/kernel.md#growth-rate-declarations-t-2016) -- the grammar itself was never implemented, so frob sys capacity --at DATE (docs/strata/reliability.md's own Disclosed scope cut section) remains not yet implemented with no ticket currently tracking the implementation. Found while reviewing NEGEXIST001 for T-3519 (a doc claim needs a real frob:until binding, and none existed). Build the growth-rate grammar per T-2016's design and wire --at DATE into project_capacity.
+
+## Failure log
+- 2026-08-31 attempt 1: Grammar parsing is Rust-side only: strata_core.parse_source (strata-core/src/parse/*.rs) is the sole source of NodeDecl fields -- no Python lexer/parser exists for users/rate clauses to extend. Adding 'growth PERCENT per PERIOD' requires modifying strata-core's Rust parser and rebuilding the native extension, outside this ticket's declared scope (docs/strata/kernel.md, docs/strata/reliability.md, src/frob/strata/_capacity.py only) -- a materially larger cross-boundary change than the scope grant covers, exactly the under-scoping risk the ticket body's own UNMISSABLE warning flags. Re-file with strata-core/src/parse/** in declared scope before attempting implementation.
