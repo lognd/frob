@@ -21,6 +21,11 @@ scope:
 - src/frob/vet/_capability_core.py
 - src/frob/vet/_capability_scan.py
 - src/frob/gates/_docblocks_refs.py
+- docs/modules/vet.md
+- docs/modules/dup.md
+- docs/modules/gates.md
+- docs/modules/lang.md
+- docs/guides/extending/capability-registry.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -55,6 +60,36 @@ scope_changes:
     that function and its _CSHARP_USING_RE-sibling regex live in _docblocks_refs.py,
     not _docblocks.py (which only re-exports/dispatches). Same minimal, mechanical
     mirroring as the _capability_core.py/_capability_scan.py additions.
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/vet.md
+  reason: T-2906's own precedent touched exactly these 5 doc files to update the facet-wiring
+    narrative for the new language; mirroring that for java's own wiring.
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/dup.md
+  reason: T-2906's own precedent touched exactly these 5 doc files to update the facet-wiring
+    narrative for the new language; mirroring that for java's own wiring.
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-2906's own precedent touched exactly these 5 doc files to update the facet-wiring
+    narrative for the new language; mirroring that for java's own wiring.
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/lang.md
+  reason: T-2906's own precedent touched exactly these 5 doc files to update the facet-wiring
+    narrative for the new language; mirroring that for java's own wiring.
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/guides/extending/capability-registry.md
+  reason: T-2906's own precedent touched exactly these 5 doc files to update the facet-wiring
+    narrative for the new language; mirroring that for java's own wiring.
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
