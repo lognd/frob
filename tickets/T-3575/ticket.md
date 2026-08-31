@@ -17,10 +17,25 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_sys.py
 - src/frob/tickets/_land_squash.py
+- tests/test_gates.py
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: adding frob:tests coverage for sys111_findings_touching/docptr_findings_touching
+    and updating the existing land-time refusal test's mocks to cover both new checks
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: adding frob:tests coverage for sys111_findings_touching/docptr_findings_touching
+    and updating the existing land-time refusal test's mocks to cover both new checks
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
