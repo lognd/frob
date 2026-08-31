@@ -25,6 +25,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'mark no-behavior-change: directive-syntax-only fix'
+  actor: logan
+  at: '2026-08-31'
+  old_length: 1600
+  new_length: 1803
+evidence:
+- tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety::test_succeeds_when_faulthandler_register_is_absent_on_simulated_win32
 designated_repro_test: null
 threat: null
 component: null
@@ -47,3 +56,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DRIFT002  tests/unit/test_conftest_sigbreak_faulthandler.py  -> attributed to T-3577 (commit fb00ce659393, already closed/dropped -- filed below) via tests/unit/test_conftest_sigbreak_faulthandler.py::TestSigbreakFaultHandlerCrossPlatformSafety
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:no-behavior-change reason="fixes only the frob:tests directive separator syntax (Class::method -> Class.method) on an already-skipped stub test class; no test behavior or production code changes"
