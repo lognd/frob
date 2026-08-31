@@ -2,7 +2,7 @@
 id: T-3535
 title: 'macOS: identity-fallback test still sees the runner git identity; scrub system-level
   gitconfig too'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'

@@ -79,6 +79,32 @@ def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
     )
 
 
+def _scrub_host_git_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T-3535: isolate a subprocess `git` spawn from every host-provided
+    identity source so an "identity-less environment" test genuinely
+    reproduces a bare CI runner. `GIT_CONFIG_GLOBAL=os.devnull` alone
+    (T-3488) is not enough on macOS: `git` also reads a system-level
+    config (`/etc/gitconfig` or the Homebrew-prefixed equivalent) that a
+    CI image can ship a real `user.name`/`user.email` in, and
+    `GIT_CONFIG_NOSYSTEM=1` alone does not stop `GIT_CONFIG_SYSTEM`
+    itself from being consulted if a runner happens to export it. Pin
+    both `GIT_CONFIG_SYSTEM` and `GIT_CONFIG_GLOBAL` to `os.devnull`,
+    keep `GIT_CONFIG_NOSYSTEM=1` as a second, independent belt-and-
+    braces guard, and clear any `GIT_AUTHOR_*`/`GIT_COMMITTER_*` env vars
+    the calling process might carry -- shared by every test in this
+    module that needs a hermetically identity-less `git`."""
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
+    monkeypatch.setenv("GIT_CONFIG_SYSTEM", os.devnull)
+    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    for var in (
+        "GIT_AUTHOR_NAME",
+        "GIT_AUTHOR_EMAIL",
+        "GIT_COMMITTER_NAME",
+        "GIT_COMMITTER_EMAIL",
+    ):
+        monkeypatch.delenv(var, raising=False)
+
+
 def _run_with_bound(fn, *, bound_s: float) -> None:
     """Run `fn()` on a daemon thread and assert it returns within
     `bound_s` seconds (T-2093). A regression in `refuse_if_land_in_
@@ -1204,23 +1230,14 @@ class TestCommitTicketLedgerChange:
         fake_home = tmp_path / "fake-home"
         fake_home.mkdir()
         monkeypatch.setenv("HOME", str(fake_home))
-        monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
-        # T-3488: the macOS CI runner image ships a global user.name/
-        # user.email (e.g. "Anka <runner@...92399F.local>") that HOME
-        # alone does not shadow -- git also consults GIT_CONFIG_GLOBAL
-        # (and, when unset, XDG_CONFIG_HOME/.config/git/config) before
-        # falling back to $HOME/.gitconfig, so a real global file outside
-        # fake_home can still be read. Pin GIT_CONFIG_GLOBAL to /dev/null
-        # so this test is hermetic to the runner's own identity on any
-        # platform, not just ones where HOME happens to be authoritative.
-        monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
-        for var in (
-            "GIT_AUTHOR_NAME",
-            "GIT_AUTHOR_EMAIL",
-            "GIT_COMMITTER_NAME",
-            "GIT_COMMITTER_EMAIL",
-        ):
-            monkeypatch.delenv(var, raising=False)
+        # T-3488/T-3535: the macOS CI runner image ships BOTH a global
+        # user.name/user.email (e.g. "Anka <runner@...92399F.local>")
+        # that HOME alone does not shadow, AND a system-level gitconfig
+        # that GIT_CONFIG_GLOBAL alone does not silence -- scrub every
+        # host identity source via the shared helper so this test is
+        # hermetic to the runner's own identity on any platform, not
+        # just ones where HOME happens to be authoritative.
+        _scrub_host_git_identity(monkeypatch)
 
         result = commit_ticket_ledger_change(
             repo, "T-0001", "chore(tickets): drop T-0001"
