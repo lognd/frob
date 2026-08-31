@@ -2,7 +2,7 @@
 id: T-3544
 title: Batch worktree-ledger mirrors and sweep filings into per-event sync commits
   (109+41 of last 300)
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-31'
@@ -51,3 +51,6 @@ measured over 20 consecutive lands.
 
 ## Failure log
 - 2026-08-31 attempt 1: measured/re-scoped, not implemented: (1) mirror_ledger_change_to_primary commits synchronously per-call from ANY worktree's process against the shared primary under ledger_lock -- batching to one-commit-per-flush-event requires a genuine cross-process queue+flush redesign; too large/risky to build and land safely against a live fleet in one pass without a dedicated design ticket. (2) sweep filings: read _file_regression_ticket's only 2 call sites -- each sweep run already files AT MOST ONE regression ticket in one call, not N tickets per run as the ticket's own body assumes; the 41-commit figure needs re-measurement against the real code path before there is a real batching target here. Recommend re-scoping as (a) a design ticket for the mirror-commit queue and (b) re-measuring the 41 sweep-filing commits.
+
+## Drop reason
+- 2026-08-31: Re-scoped per series AA's measured attempt: mirror-commit batching needs a cross-process queue+flush design against the live shared ledger (too risky in one implementation pass), and the sweep-filing half's premise was wrong (_file_regression_ticket already files at most one ticket per sweep run; the 41-commit figure needs re-measurement). Superseded by the redesign ticket filed next.
