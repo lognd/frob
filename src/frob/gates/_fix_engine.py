@@ -1163,6 +1163,14 @@ def _snapshot_dirty_files(root: Path) -> dict[str, bytes]:
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:tests tests/test_gates.py::TestFixEngineTierA.test_doc007_dotted_form_rewrite_applies_and_reverifies_clean kind="unit"  # noqa: E501
+# frob:waive AFFECT001 reason="T-3526 only strengthens WHEN write_autofix_manifest is \
+# called (now once more, before the first handler, not only after each one) -- the \
+# documented contract at this anchor (a killed run leaves an accurate, on-disk \
+# breadcrumb of what Tier-A has rewritten so far) is unchanged from a caller/reader \
+# perspective, so no doc content update is needed; docs/modules/gates.md is under a \
+# concurrent T-3492 lease this ticket cannot take, so even a no-op touch is blocked -- \
+# filed as a disclosed gap (T-3534), same T-1371/T-1372/T-2466 precedent \
+# src/frob/gates/_wire.py already carries elsewhere"
 def apply_tier_a_fixes(
     root: Path,
     snapshot: GraphSnapshot,
@@ -1236,6 +1244,17 @@ def apply_tier_a_fixes(
     behavior."""
     applied: list[FixApplied] = []
     pre_fix_snapshot = _snapshot_dirty_files(root)
+    # T-3526: journal BEFORE the first handler's own mutation, not only
+    # after each one completes -- a kill during the FIRST handler used to
+    # leave zero trace on disk (the manifest previously only existed once
+    # at least one handler had already returned), which is exactly the
+    # measured incident (a killed run mid-DOC007/DOC002 pass left ~14
+    # files half-rewritten with nothing under `.frob/` naming it). An
+    # empty-`applied` write here is itself the "a pass started, has
+    # touched nothing confirmed yet" breadcrumb `read_abandoned_autofix_
+    # manifest` needs to detect an abandonment at any point in the loop,
+    # not just after the first handler.
+    write_autofix_manifest(root, applied)
     for rule_id, handler in TIER_A_HANDLERS.items():
         if rule_id in exclude:
             _log.info("tier-a fixes: %s excluded by caller", rule_id)

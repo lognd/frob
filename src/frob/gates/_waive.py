@@ -525,6 +525,11 @@ _KNOWN_GATE_RULES = frozenset(
         # now (`run_gates`'s early `_native_unavailable_report` short-
         # circuit) -- see `frob.gates.__init__._native_unavailable_report`.
         "NATIVE001",
+        # frob:ticket T-3526
+        # T-3526: an abandoned Tier-A auto-fix journal (a killed `frob
+        # check --fix`/pre-land Tier-A pass) -- see
+        # `frob.check._abandoned_autofix_result`.
+        "AUTOFIX001",
         "SEC001",
         "SEC002",
         "SEC003",

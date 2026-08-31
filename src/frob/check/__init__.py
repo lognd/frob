@@ -481,6 +481,66 @@ def _native_staleness_result(root: Path) -> ToolResult | None:
     )
 
 
+# frob:ticket T-3526
+# frob:tests tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_abandoned_journal_fails_check_loudly kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_fix_engine_journal.py::TestAbandonedAutofixJournal.test_no_journal_is_not_a_violation kind="unit"  # noqa: E501
+def _abandoned_autofix_result(root: Path) -> ToolResult | None:
+    """`None` if `frob.gates._fix_engine_shared.
+    read_abandoned_autofix_manifest` finds no abandoned Tier-A autofix
+    journal; a single hard-ERROR `ToolResult` naming the abandoned state
+    otherwise (T-3526).
+
+    Mirrors `_native_staleness_result`/`_derived_state_integrity_result`'s
+    own posture: checked once, synchronously, before any stage dispatches
+    -- a killed `frob check --fix` (or a killed `frob ticket land` pre-
+    land Tier-A phase) can leave an arbitrary PREFIX of a rewrite applied
+    across many files with no marker distinguishing it from an operator's
+    own uncommitted edits (the measured T-3526 incident: `_build_parser`
+    deleted from `src/frob/_cli_parsers/_root.py`, breaking the CLI,
+    twice in one session, only caught because the operator happened to
+    notice). Refusing loudly here -- rather than silently proceeding to
+    run gates against a half-rewritten tree -- is deliberate: this is not
+    a state `frob check` can safely auto-repair (it does not know which
+    prefix of which handler's rewrite is trustworthy), only surface, with
+    enough detail (`rewritten_paths`) for the operator to inspect `git
+    diff` on exactly those files and decide revert-vs-keep by hand."""
+    from frob.gates._fix_engine_shared import read_abandoned_autofix_manifest
+
+    abandoned = read_abandoned_autofix_manifest(root)
+    if abandoned is None:
+        return None
+    paths = ", ".join(abandoned.rewritten_paths) or "(none recorded yet)"
+    pid_note = (
+        f"pid {abandoned.pid}" if abandoned.pid is not None else "no pid recorded"
+    )
+    message = (
+        "AUTOFIX001: an abandoned Tier-A auto-fix journal was found at "
+        ".frob/land-autofix-manifest.json -- a previous `frob check --fix` "
+        f"(or `frob ticket land` pre-land fix pass, {pid_note}) was killed "
+        "or crashed mid-rewrite and never reached its own success-path "
+        "cleanup, leaving an UNKNOWN prefix of its rewrite applied on "
+        f"disk with no other marker. Files it had confirmed rewriting so "
+        f"far: {paths}. Inspect `git diff` on those paths by hand (revert "
+        "with `git checkout -- <path>` per file, or keep if the partial "
+        "rewrite looks complete and correct), then remove the journal "
+        "with `rm -f .frob/land-autofix-manifest.json` to clear this "
+        "refusal -- `frob check` will not guess which prefix is safe."
+    )
+    return ToolResult(
+        tool="autofix-journal",
+        exit_code=1,
+        diagnostics=[
+            Diagnostic(
+                file=str(root / ".frob" / "land-autofix-manifest.json"),
+                severity="error",
+                code="AUTOFIX001",
+                message=message,
+            )
+        ],
+        summary="autofix-journal FAILED: abandoned Tier-A fix journal detected",
+    )
+
+
 # frob:ticket T-0603
 # frob:tests tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_corrupt_artifact_fails_closed_before_any_stage_runs  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_absent_artifact_is_not_a_violation  # noqa: E501
@@ -1309,6 +1369,14 @@ def _run_check_with_skips(
         staleness_failure = _native_staleness_result(root)
         if staleness_failure is not None:
             return CheckResult(path=str(root), results=[staleness_failure])
+
+        # T-3526: same posture -- run once, synchronously, before any
+        # stage (including a `--fix` run itself) can start against a
+        # tree a PRIOR, abandoned `--fix`/pre-land Tier-A pass left
+        # half-rewritten. See `_abandoned_autofix_result`'s docstring.
+        autofix_failure = _abandoned_autofix_result(root)
+        if autofix_failure is not None:
+            return CheckResult(path=str(root), results=[autofix_failure])
 
         # T-0414: fresh parse-cache instrumentation per invocation (see
         # `frob.lang.reset_parse_cache`'s docstring) -- correctness never

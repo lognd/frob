@@ -1565,7 +1565,10 @@ node testsuite : trusted {
     // monkeypatched tmp_path dirs, and its TestWorkerCrashReportIntegration
     // tests write a synthetic conftest.py/test module under tmp_path for a
     // real subprocess pytest run.
-    may "fs.write" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py";
+    // T-3526: TestAbandonedAutofixJournal's fixtures write the T-1348
+    // autofix journal directly (a plain path.write_text, no frob helper
+    // involved) to set up dead-pid/malformed-journal test states.
+    may "fs.write" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/unit/test_fix_engine_journal.py";
     // T-3516: _infer_worker_crash_cause reads back its own marker file.
     may "fs.read" via "tests/conftest.py";
     // T-3516: TestWorkerCrashReportIntegration spawns a real

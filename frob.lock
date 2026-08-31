@@ -2681,6 +2681,24 @@
       "old_digest": null,
       "reason": "T-2957 de-dup: extracted the shared reason-required guard into _set_reasoned_field and trimmed the repeated T-2353 docstring paragraph to a cross-reference; behavior and public contract described in docs/modules/tickets.md#public-api are unchanged, re-verified against the current docstrings/signatures",
       "ref": "src/frob/tickets/_setters.py::set_kind"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "body",
+      "new_digest": "6d380aaa2ac22bd255795cbddbfd82d53b18a88343a1af79791dae0669cded1f",
+      "old_digest": "c85d3888efb55c3f2f6356ad13b4f598682d491b5535ec950c5c7224ce84cadf",
+      "reason": "T-3526: body digest moved because write_autofix_manifest is now also called once before the loop (empty applied, pre-first-mutation journal) instead of only after each handler -- the existing docs/modules/gates.md anchor's description of a T-1348 manifest breadcrumb is still accurate in substance; the added pre-first-mutation nuance and AUTOFIX001 detection are tracked to land in that doc via frob:debt AFFECT001 citing T-3534 (docs/modules/gates.md was leased by in-progress T-3492 at filing time)",
+      "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-30",
+      "facet": "sig",
+      "new_digest": "0a9fa734ad8c65af73ff54ea2cf3a07b90d77235985bf09af7304aa352fbfdc7",
+      "old_digest": "0a9fa734ad8c65af73ff54ea2cf3a07b90d77235985bf09af7304aa352fbfdc7",
+      "reason": "T-3526: body digest moved because write_autofix_manifest is now also called once before the loop (empty applied, pre-first-mutation journal) instead of only after each handler -- the existing docs/modules/gates.md anchor's description of a T-1348 manifest breadcrumb is still accurate in substance; the added pre-first-mutation nuance and AUTOFIX001 detection are tracked to land in that doc via frob:debt AFFECT001 citing T-3534 (docs/modules/gates.md was leased by in-progress T-3492 at filing time)",
+      "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
     }
   ],
   "entries": [
@@ -3080,7 +3098,7 @@
       "ref": "src/frob/gates/_fix_engine.py::_snapshot_dirty_files"
     },
     {
-      "digest": "c85d3888efb55c3f2f6356ad13b4f598682d491b5535ec950c5c7224ce84cadf",
+      "digest": "6d380aaa2ac22bd255795cbddbfd82d53b18a88343a1af79791dae0669cded1f",
       "facet": "body",
       "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
     },
