@@ -157,17 +157,62 @@ jobs:
       # T-3516: collect, do not scatter -- and stay loud even off the raw
       # log: an xdist worker crash today (see tests/conftest.py's
       # `WORKER-CRASH-REPORT:` section, T-3516) is otherwise only visible
-      # by scrolling the full ubuntu Test step's log. `always()` so this
-      # still runs (and still reports) on a failing/timed-out Test step,
-      # the exact run this exists to make visible without scrolling.
-      - name: Surface WORKER-CRASH-REPORT in step summary (T-3516)
-        if: always() && runner.os == 'Linux'
+      # by scrolling the full Test step's log. `always()` so this still
+      # runs (and still reports) on a failing/timed-out Test step, the
+      # exact run this exists to make visible without scrolling.
+      #
+      # T-3531: widened from ubuntu-only to every platform, and from
+      # WORKER-CRASH-REPORT-only to ALSO surfacing the SUITE-RESULT /
+      # SUITE-RESULT-FAILED block (tests/conftest.py's own per-node-id
+      # pass/fail summary) -- previously the failing test set was only
+      # readable by scrolling the raw job log, on every platform. Runs
+      # under `shell: bash` explicitly (GitHub's hosted Windows runners
+      # ship Git Bash, and `RUNNER_TEMP` resolves identically across all
+      # three shells) so one step covers all three Test steps' log files
+      # rather than three near-duplicate platform-specific steps.
+      - name: Surface WORKER-CRASH-REPORT and SUITE-RESULT in step summary (T-3516/T-3531)
+        if: always()
+        shell: bash
         run: |
-          if [ -f /tmp/pytest-ubuntu.log ] && grep -q '^WORKER-CRASH-REPORT:' /tmp/pytest-ubuntu.log; then
+          case "$RUNNER_OS" in
+            Linux) log=/tmp/pytest-ubuntu.log ;;
+            macOS) log=/tmp/pytest-macos.log ;;
+            Windows)
+              # T-3531: stdout/stderr were captured to two separate files
+              # (the Windows Test step's own Start-Process redirection,
+              # T-3250) -- concatenate them in the order a reader expects
+              # (stdout's SUITE-RESULT lines, then stderr's own tail) into
+              # one combined file this step can grep the same way as the
+              # other two platforms'.
+              log="$RUNNER_TEMP/pytest-combined.log"
+              cat "$RUNNER_TEMP/pytest-stdout.log" "$RUNNER_TEMP/pytest-stderr.log" \
+                > "$log" 2>/dev/null || true
+              ;;
+          esac
+          if [ -f "$log" ] && grep -q '^WORKER-CRASH-REPORT:' "$log"; then
             {
               echo '## Worker crash report (T-3516)'
               echo '```'
-              grep '^WORKER-CRASH-REPORT:' /tmp/pytest-ubuntu.log
+              grep '^WORKER-CRASH-REPORT:' "$log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          # T-3531: NOT `^`-anchored -- pytest's own `-q` progress output
+          # ("......[100%]") and the FIRST `SUITE-RESULT:` summary line
+          # (tests/conftest.py) print with no newline between them
+          # (measured directly off a real run's raw log: both share one
+          # timestamped line), so a `^SUITE-RESULT` anchor silently misses
+          # exactly that one line. `-o` extracts the matched suffix from
+          # wherever it starts, dropping the leading dots/percentage
+          # instead of anchoring past them. Every `SUITE-RESULT-FAILED:`
+          # line (the per-test failing-set detail, the actual signal this
+          # ticket cares about) already starts its own line and matches
+          # either way.
+          if [ -f "$log" ] && grep -qE 'SUITE-RESULT(-FAILED)?:' "$log"; then
+            {
+              echo '## Suite result (T-3531)'
+              echo '```'
+              grep -oE 'SUITE-RESULT(-FAILED)?:.*' "$log"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -192,7 +237,13 @@ jobs:
         run: |
           set -uo pipefail
           budget=2400  # 40m, same budget/rationale as ubuntu's step above (T-3426/T-3482)
-          uv run pytest -q &
+          # T-3531: process substitution (not a plain `| tee` pipeline) so
+          # `$!` below still captures pytest's OWN pid, not tee's -- the
+          # SIGABRT-for-a-faulthandler-dump targeting below needs the real
+          # pytest process, exactly like ubuntu's own `tee` step but without
+          # ubuntu's `timeout`/pipefail shape (macOS has no GNU `timeout`,
+          # T-3250) to lean on for that distinction.
+          uv run pytest -q > >(tee /tmp/pytest-macos.log) 2>&1 &
           pid=$!
           (
             sleep "$budget"

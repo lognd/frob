@@ -205,17 +205,42 @@ testpaths = ["tests"]
 # docs/guides+config-only scope).
 # T-1433: pytest's BUILTIN faulthandler plugin dumps every thread's stack
 # to stderr for any single test that runs past faulthandler_timeout
-# seconds, BEFORE --timeout-method=thread above kills it at 120s -- a
-# within-test hang now self-diagnoses (which function, which lock) instead
-# of surfacing only as a bare kill with no traceback. Deliberately shorter
-# than the 120s kill deadline so the dump has time to land first. This
+# seconds -- a within-test hang now self-diagnoses (which function, which
+# lock) instead of surfacing only as a bare kill with no traceback. This
 # complements (does not replace) T-1433's SIGUSR1 handler in
 # tests/conftest.py, which targets the OTHER wedge shape T-1433's two
 # incidents actually hit -- a hang BETWEEN tests / in
 # session-teardown/coverage-save machinery, outside any single test's
 # --timeout watch window, where only an external signal reaches the
 # stuck process.
-faulthandler_timeout = 100
+#
+# T-3531: raised 100 -> 600. At 100, this fired its FULL all-threads dump
+# (a 60+ line stack spray per hit) for every HEALTHY test past 100s, which
+# now includes the T-3525 frob_self_scan_heavy group (its own
+# @pytest.mark.timeout(1200) override runs legitimately past 100s on a
+# clean pass) -- measured on run 33353658750: 4 such healthy-but-slow
+# dumps sprayed ~260 of the job's 1518 log lines, burying the run's 2
+# actual failures. 600 sits above that group's healthy runtime and below
+# its own 1200s cap, so a genuine hang in that group still dumps well
+# before its kill; for every ORDINARY test (still killed at the global
+# --timeout=120 below, unrelated to this setting) losing the redundant
+# early dump costs nothing diagnostically -- --timeout-method=thread's own
+# kill at 120s already emits its own per-thread traceback (T-0692's "fails
+# on its own... with a named traceback dump" above), this dump was always
+# a supplementary EARLY copy of that same information for the ordinary
+# case, never the only source of it.
+faulthandler_timeout = 600
+# T-3531: bounds pytest's own "Captured log call" section (a SEPARATE
+# reporter from frob's own stdout/stderr handlers -- see
+# src/frob/logging/logger.py's own T-1621 comment on the two independent
+# paths a record can reach a failing test's output through) to WARNING+.
+# Without this, pytest's LogCaptureHandler inherits frob's own root
+# logger level (config.toml's `[root] level = "DEBUG"`, deliberately
+# verbose for real diagnostic use), so a failing test's captured-log
+# block could carry every DEBUG/INFO record frob logged during that
+# test, not just the WARNING+ ones actually relevant to triaging the
+# failure.
+log_level = "WARNING"
 addopts = "-q -n auto --dist=loadgroup --timeout=120 --timeout-method=thread"
 pythonpath = ["."]
 markers = [

@@ -251,9 +251,9 @@
       "ticket": "T-3506"
     },
     "testsuite::fs.write": {
-      "accepted_count": 415,
-      "reason": "T-3506: measured drift at land time -- sibling ticket(s) landed new genuinely-observed fs.write sites between T-3481's bump and this land, ahead of their own ratchet bumps; re-measured and bumped to the current live count so this land is not blocked on unrelated debt. T-3481's own reason (below, superseded count) still applies to the prior 413.",
-      "ticket": "T-3481"
+      "accepted_count": 417,
+      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 416 to 417 site(s) (fix_sys111_capability_ratchet_sync)",
+      "ticket": "T-2001"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
