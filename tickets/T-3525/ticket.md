@@ -65,7 +65,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 879dfc9da84311299b53ceca79048e7723c4f3cc
 ---
 MEASURED on GitHub Actions run 33342928809 (ubuntu-latest, HEAD cde32a2d0,
 2026-08-31), the FIRST run carrying T-3495's session-scoped
