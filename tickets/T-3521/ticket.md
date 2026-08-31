@@ -1,7 +1,7 @@
 ---
 id: T-3521
 title: 'DEAD001 WARN burn-down: 23 unwired private symbols across 15 files'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
