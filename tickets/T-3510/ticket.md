@@ -1,7 +1,7 @@
 ---
 id: T-3510
 title: Force UTF-8 for the remaining charmap-vulnerable text I/O path(s)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -30,6 +30,17 @@ scope_changes:
     in TestObfuscationEnsemble.test_bidi_override_detected_in_c_file/kotlin_file
   actor: logan
   at: '2026-08-30'
+body_changes:
+- mode: append
+  reason: 'BUG002 waiver: charmap defect is Windows-only, unreproducible on POSIX
+    CI/mutation infra'
+  actor: logan
+  at: '2026-08-30'
+  old_length: 2486
+  new_length: 2971
+evidence:
+- tests/test_vet.py::TestObfuscationEnsemble::test_bidi_override_detected_in_c_file
+- tests/test_vet.py::TestObfuscationEnsemble::test_bidi_override_detected_in_kotlin_file
 designated_repro_test: null
 threat: null
 component: null
@@ -84,3 +95,5 @@ MUST-STAY-QUIET
 SCOPE GROUPING: scope-disjoint from the fcntl, os.sysconf, AF_UNIX and
 fork-context leaves -- dispatchable in parallel with all four. Smallest
 leaf; good candidate to dispatch first if agent capacity is scarce.
+
+<!-- frob:waive BUG002 reason="the charmap UnicodeEncodeError this ticket fixes is Windows-only -- on any POSIX CI runner (including this repo's own gate/mutation infrastructure), the default codec is already UTF-8, so test_bidi_override_detected_in_c_file/kotlin_file pass identically at the parent commit and at the fix; the defect genuinely cannot be reproduced by a test running on this platform, only observed on windows-latest CI (T-3076 run 33035660969, job 98397679871)" -->
