@@ -2746,6 +2746,16 @@ def _land_check_with_optional_rollback(
 
 
 # frob:ticket T-2937
+# frob:ticket T-3578
+# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commit_failure_names_the_failing_step_and_git_detail  # noqa: E501
+def _proc_result_failed(result: Result[ProcResult, GitError]) -> bool:
+    """`True` iff a `gitio.run_argv` `Result` represents failure -- either
+    the spawn itself errored, or it ran but exited nonzero. Split out
+    (T-3578) so `_add_and_commit_tickets_md`'s own failure check reads as
+    one condition instead of the four-way boolean it used to be."""
+    return result.is_err or result.danger_ok.returncode != 0
+
+
 def _add_and_commit_tickets_md(
     root: Path,
     ticket_id: str,
@@ -2799,13 +2809,10 @@ def _add_and_commit_tickets_md(
             committed = added
     finally:
         _clear_ledger_commit_repair_marker(root, ticket_id)
-    if (
-        added.is_err
-        or added.danger_ok.returncode != 0
-        or committed.is_err
-        or committed.danger_ok.returncode != 0
-    ):
-        _log_ledger_commit_failure(ticket_id, root, message, pathspecs)
+    if _proc_result_failed(added) or _proc_result_failed(committed):
+        _log_ledger_commit_failure(
+            ticket_id, root, message, pathspecs, added=added, committed=committed
+        )
         return Err(LeaseError.CommitFailed)
 
     _log.info(
@@ -2817,25 +2824,67 @@ def _add_and_commit_tickets_md(
     return Ok(None)
 
 
+# frob:ticket T-3578
+# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commit_failure_names_the_failing_step_and_git_detail  # noqa: E501
 def _log_ledger_commit_failure(
-    ticket_id: str, root: Path, message: str, pathspecs: tuple[str, ...]
+    ticket_id: str,
+    root: Path,
+    message: str,
+    pathspecs: tuple[str, ...],
+    *,
+    added: Result[ProcResult, GitError],
+    committed: Result[ProcResult, GitError],
 ) -> None:
     """The DirtyMain-causing failure log `_add_and_commit_tickets_md`
     emits when its own `git add`/`git commit` step fails -- split out
     only to keep that function under the ARCH001 line threshold, names
-    the exact recovery command every time."""
+    the exact recovery command every time.
+
+    T-3578: also names WHICH step failed and its real `stderr`/`returncode`
+    (or the `GitError` itself, if the spawn never produced a
+    `ProcResult` at all) -- before this, both failure shapes collapsed
+    into the same generic "the commit step failed" line with no way to
+    tell "git add" from "git commit" apart, or a genuine git-level error
+    (a signing failure, a hook refusal, a missing identity the T-1321
+    retry did not match) from CI output alone without re-fetching raw
+    job logs and reading the captured pytest log separately."""
+    step, detail = _ledger_commit_failure_step_and_detail(added, committed)
     _log.error(
-        "tickets: %s ledger change left %s DIRTY -- the commit step "
-        "failed. Run this by hand before anything else lands: "
+        "tickets: %s ledger change left %s DIRTY -- the %s step "
+        "failed (%s). Run this by hand before anything else lands: "
         'git -C %s add %s && git -C %s commit -m "%s" -- %s',
         ticket_id,
         root,
+        step,
+        detail,
         root,
         " ".join(pathspecs),
         root,
         message,
         " ".join(pathspecs),
     )
+
+
+def _ledger_commit_failure_step_and_detail(
+    added: Result[ProcResult, GitError], committed: Result[ProcResult, GitError]
+) -> tuple[str, str]:
+    """T-3578: which of `git add`/`git commit` failed, plus a one-line
+    detail (the process's `stderr` and `returncode`, or the `GitError`
+    itself when the spawn never produced a `ProcResult`) -- split out of
+    `_log_ledger_commit_failure` purely to keep that function's own
+    logging call readable. `git add` is checked first: `_add_and_commit_
+    tickets_md` never even attempts the commit when `add` itself failed
+    (see its own `if added.is_ok and ... else: committed = added` shape),
+    so a failing `add` is always the true cause when both are failing."""
+    if added.is_err:
+        return "add", f"GitError: {added.danger_err}"
+    if added.danger_ok.returncode != 0:
+        rc, err = added.danger_ok.returncode, added.danger_ok.stderr
+        return "add", f"returncode={rc} stderr={err!r}"
+    if committed.is_err:
+        return "commit", f"GitError: {committed.danger_err}"
+    rc, err = committed.danger_ok.returncode, committed.danger_ok.stderr
+    return "commit", f"returncode={rc} stderr={err!r}"
 
 
 # frob:ticket T-1130

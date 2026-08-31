@@ -986,6 +986,34 @@ class TestCommitTicketLedgerChange:
         log = _run(["git", "log", "-1", "--pretty=%s"], repo)
         assert log.stdout.strip() == "chore(tickets): drop T-0001"
 
+    # frob:ticket T-3578
+    def test_commit_failure_names_the_failing_step_and_git_detail(
+        self, repo: Path, caplog
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commit_failure_names_the_failing_step_and_git_detail  # noqa: E501
+        """T-3578: before this, a `git add`/`git commit` failure inside
+        `_add_and_commit_tickets_md` collapsed into the same generic 'the
+        commit step failed' line regardless of WHICH step failed or WHY --
+        a real CI-only failure (run 33376126399/33380974368) was only
+        diagnosable by re-fetching raw job logs. Same stale-`index.lock`
+        trigger `TestCommitStartTransition.test_reports_exact_recovery_
+        command_on_commit_failure` uses, applied to this function's own
+        `commit_ticket_ledger_change` entry point."""
+        from frob.tickets import transition
+        from frob.tickets._leases import LeaseError, commit_ticket_ledger_change
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+        (repo / ".git" / "index.lock").write_text("")
+
+        with caplog.at_level("ERROR"):
+            result = commit_ticket_ledger_change(
+                repo, "T-0001", "chore(tickets): drop T-0001"
+            )
+        assert result.is_err
+        assert result.danger_err == LeaseError.CommitFailed
+        assert "the add step failed" in caplog.text
+        assert "returncode=" in caplog.text
+
     def test_no_op_when_ledger_already_clean(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_op_when_ledger_already_clean  # noqa: E501
         from frob.tickets._leases import commit_ticket_ledger_change
