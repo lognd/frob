@@ -69,15 +69,22 @@ class TestEntityArchitectureFixtures:
         assert ast["configurations"] == []
 
     def test_architecture_referencing_undeclared_entity_is_refused(self) -> None:
-        """SYS300 must-fire, at the Python boundary: an undeclared `of ENTITY` name is a parse error, not a silently-accepted architecture."""
-        result = json.loads(
-            strata_core.parse_source(
-                "module m\nnode n : trusted { }\n"
-                "architecture a of ghost_entity {\n    binds m;\n}\n"
-            )
+        """An `of ENTITY` name absent from THIS file parses cleanly at the
+        Python boundary (T-3529: it may still resolve against a sibling
+        loaded design file, so `strata_core.parse_source` alone -- which
+        only ever sees one file -- cannot refuse it outright); it is
+        marked `entity_resolved: false` instead. Whether it is genuinely
+        refused (SYS300, "declared nowhere at all") is answered one layer
+        up, by `frob.strata._design_load` once every file in a design is
+        known (`tests/unit/strata/test_design_load.py::
+        TestCrossFileArchitectureResolution`)."""
+        ast = _parse_text(
+            "module m\nnode n : trusted { }\n"
+            "architecture a of ghost_entity {\n    binds m;\n}\n"
         )
-        assert "err" in result
-        assert "undeclared entity" in result["err"]["message"]
+        arch = ast["architectures"][0]
+        assert arch["of_entity"] == "ghost_entity"
+        assert arch["entity_resolved"] is False
 
 
 def _parse_text(text: str) -> dict:

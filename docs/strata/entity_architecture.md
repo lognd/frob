@@ -59,31 +59,41 @@ next without inventing separate machinery -- see
 
 ## Scope of this first slice (deliberately narrow)
 
-<!-- frob:until T-3529 -->
-
-- **Single-file resolution.** `of ENTITY` and `binds MODULE` resolve only
-  against entities/the module already parsed earlier in the SAME file.
-  Cross-file entity references (an architecture in one file satisfying an
-  entity declared in another) are not yet supported -- each file that
-  wants to offer an architecture for a shared entity currently repeats
-  that entity's declaration verbatim (see the worked example: both
-  `storage_fast.strata` and `storage_cheap.strata` declare
-  `storage_component` identically). A follow-up ticket is needed before
-  that duplication is worth removing structurally (a cross-file entity
-  registry needs a home in the loader, which this ticket does not touch).
-- **Parse-time enforcement, not a new `frob check` gate row.** SYS300-303
-  below are structural refusals returned by `strata_core.parse_source`
-  itself (the same `err{line,col,message}` shape every existing parse
-  error uses), not new entries in `src/frob/gates/_sys.py` or
-  `src/frob/gates/__init__.py`. This was a deliberate scope decision: both
-  files were owned by a concurrently-live agent (the gates dict + docs
-  narrative work) during this ticket, and parse-time refusal is at least
-  as strict as a post-hoc gate finding -- a malformed entity/architecture
-  pairing cannot exist in a parsed AST at all, the same "type-checked, not
-  discovered later" posture T-3004 section 4 asks for. Promoting these to
-  first-class `SYS3xx` gate rows (for a `frob check --only sys` summary
-  line, waiver support via `frob:waive`, etc.) is real follow-up work, not
-  done here.
+- **Cross-file entity resolution (T-3529).** `of ENTITY` no longer has to
+  resolve against entities declared in the SAME file -- an architecture in
+  one file may now satisfy an entity declared in a sibling loaded design
+  file (see the worked example: `storage_fast.strata` and
+  `storage_cheap.strata` no longer need to repeat `storage_component`'s
+  declaration verbatim, though the fixture pair still does so for its own
+  documentation purposes). `binds MODULE` stays single-file -- an
+  architecture still only binds the module declared in its own file, only
+  entity *resolution* crosses files.
+  `strata_core.parse_source` (`grammar_core.rs::parse_architecture`) still
+  resolves an entity IMMEDIATELY when it is declared in the same file
+  (unchanged from the original slice, SYS302's ceiling check runs there
+  too); when it is not, the architecture parses with `entity_resolved:
+  false` instead of failing closed at that point. The cross-file loader
+  (`src/frob/strata/_design_load.py::_resolve_cross_file_architectures`)
+  builds one entity registry from every loaded file, THEN judges every
+  unresolved architecture: SYS300 fires when the name resolves in no
+  file at all; SYS302's ceiling check re-runs there once the entity is
+  known cross-file. Two different files declaring an entity under the
+  same name is a new, ambiguous case this cross-file resolution
+  introduces -- refused (deny-by-default) rather than silently picking
+  whichever file happened to load first.
+- **Parse-time enforcement for the SAME-FILE case; loader-time for the
+  CROSS-FILE case.** SYS300-303 below are structural refusals: when an
+  architecture resolves locally, `strata_core.parse_source` still refuses
+  it inline, the same `err{line,col,message}` shape every other parse
+  error uses, not a `src/frob/gates/_sys.py` gate row. When resolution
+  needs another file (T-3529), the refusal necessarily moves one layer
+  up, to `_design_load.py`'s cross-file pass -- the parser alone only
+  ever sees one file, so it cannot itself judge "declared nowhere in the
+  WHOLE design" or a cross-file SYS302 ceiling. Both layers report through
+  the same `DesignLoadError` shape callers already handle for parse/
+  elaborate failures. Promoting either layer's findings to first-class
+  `SYS3xx` `frob check --only sys` gate rows (summary line, `frob:waive`
+  support, etc.) remains real follow-up work, not done here.
 - **No cross-cutting obligation verification.** An `obligation` string is
   today pure declared intent with no verifier attached -- T-3004 section 1
   ("requirement <-> customer test" pairing) and section 7 (TDD ordering)
@@ -92,14 +102,16 @@ next without inventing separate machinery -- see
   type-checked construct; it does not yet check that an obligation is
   fulfilled.
 
-## What SYS300-303 catch (both fixture directions live in
-`strata-core/src/parse/mod.rs`, `#[cfg(test)] mod tests`)
+## What SYS300-303 catch (same-file fixtures live in
+`strata-core/src/parse/mod.rs`, `#[cfg(test)] mod tests`; cross-file
+fixtures live in `tests/unit/strata/test_design_load.py::
+TestCrossFileArchitectureResolution`, T-3529)
 
 | Rule | Fires on (must-fire fixture) | Stays quiet on (must-stay-quiet fixture) |
 | --- | --- | --- |
-| SYS300 | `architecture a of ghost_entity` where `ghost_entity` is never declared | `architecture a of real_entity` where `real_entity` was declared earlier |
-| SYS301 | `architecture a of e { binds some_other_module; }` where `some_other_module` != this file's own `module` name | `binds` names this file's own module |
-| SYS302 | a node inside the bound module grants a `may` atom the entity's ceiling never declared | the bound module's grants are a subset of (or equal to) the entity's ceiling |
+| SYS300 | `architecture a of ghost_entity` where `ghost_entity` is declared in NO loaded file (checked same-file at parse time, cross-file at load time) | `architecture a of real_entity` where `real_entity` was declared earlier in this file, OR in any other loaded design file |
+| SYS301 | `architecture a of e { binds some_other_module; }` where `some_other_module` != this file's own `module` name | `binds` names this file's own module -- unaffected by T-3529, `binds` never crosses files |
+| SYS302 | a node inside the bound module grants a `may` atom the entity's ceiling never declared (checked same-file at parse time when the entity resolves locally, at load time once it resolves cross-file) | the bound module's grants are a subset of (or equal to) the entity's ceiling, wherever the entity is declared |
 | SYS303 | `configuration c { entity e2; architecture a; }` where `a` is declared `of e1`, not `e2` | `entity`/`architecture` in the configuration actually match |
 
 Each row above is one must-fire test paired with one must-stay-quiet test

@@ -215,3 +215,131 @@ class TestUnbound:
         )
         result = unbound_constructs(ids, snapshot)
         assert result == ((EdgeKind.BOUNDARY, "b1"), (EdgeKind.SECRET, "s1"))
+
+
+class TestCrossFileArchitectureResolution:
+    """T-3529: an `architecture ... of ENTITY` may now name an entity
+    declared in a SIBLING loaded file, not only its own -- these exercise
+    the loader-side resolution pass (`_resolve_cross_file_architectures`)
+    that runs once every file's raw entity/architecture JSON is known."""
+
+    # frob:ticket T-3529
+    # frob:tests src/frob/strata/_design_load.py::load_design_ids kind="unit"
+    def test_architecture_resolves_against_a_sibling_files_entity(
+        self, tmp_path: Path
+    ) -> None:
+        """An entity declared in one file and an architecture of it
+        declared in another must load with zero errors, the same as an
+        architecture resolving its entity within its own file."""
+        _write(
+            tmp_path,
+            "design/entity.strata",
+            "module entity_only\n"
+            "entity entity_component {\n"
+            '    may "net.out:s3.amazonaws.com";\n'
+            '    obligation "do the thing";\n'
+            "}\n",
+        )
+        _write(
+            tmp_path,
+            "design/impl.strata",
+            "module impl\n"
+            "node writer : trusted {\n"
+            '    may "net.out:s3.amazonaws.com";\n'
+            "}\n"
+            "architecture a of entity_component {\n"
+            "    binds impl;\n"
+            "}\n",
+        )
+        ids = load_design_ids(tmp_path)
+        assert ids.errors == ()
+        assert len(ids.models) == 1
+
+    # frob:ticket T-3529
+    # frob:tests src/frob/strata/_design_load.py::load_design_ids kind="unit"
+    def test_architecture_of_entity_declared_nowhere_is_sys300(
+        self, tmp_path: Path
+    ) -> None:
+        """An entity name that resolves in NO loaded file (not even a
+        sibling) is still refused -- SYS300's question, now answered by
+        the loader instead of the single-file parser."""
+        _write(
+            tmp_path,
+            "design/impl.strata",
+            "module impl\n"
+            "node writer : trusted { }\n"
+            "architecture a of ghost_entity {\n"
+            "    binds impl;\n"
+            "}\n",
+        )
+        ids = load_design_ids(tmp_path)
+        assert len(ids.errors) == 1
+        assert ids.errors[0].path == "design/impl.strata"
+        assert ids.errors[0].error is StrataError.UnknownReference
+        assert "ghost_entity" in (ids.errors[0].detail or "")
+
+    # frob:ticket T-3529
+    # frob:tests src/frob/strata/_design_load.py::load_design_ids kind="unit"
+    def test_cross_file_architecture_exceeding_ceiling_is_sys302(
+        self, tmp_path: Path
+    ) -> None:
+        """SYS302's shrink-only ratchet still applies once the entity
+        resolves cross-file: a node granting a `may` atom outside the
+        sibling entity's declared ceiling is refused, not silently
+        accepted just because the entity lives in another file."""
+        _write(
+            tmp_path,
+            "design/entity.strata",
+            "module entity_only\n"
+            "entity entity_component {\n"
+            '    may "net.out:s3.amazonaws.com";\n'
+            '    obligation "do the thing";\n'
+            "}\n",
+        )
+        _write(
+            tmp_path,
+            "design/impl.strata",
+            "module impl\n"
+            "node writer : trusted {\n"
+            '    may "net.out:evil.example.com";\n'
+            "}\n"
+            "architecture a of entity_component {\n"
+            "    binds impl;\n"
+            "}\n",
+        )
+        ids = load_design_ids(tmp_path)
+        assert len(ids.errors) == 1
+        assert ids.errors[0].path == "design/impl.strata"
+        assert ids.errors[0].error is StrataError.UnknownReference
+        assert "evil.example.com" in (ids.errors[0].detail or "")
+
+    # frob:ticket T-3529
+    # frob:tests src/frob/strata/_design_load.py::load_design_ids kind="unit"
+    def test_same_entity_name_in_two_files_is_ambiguous(self, tmp_path: Path) -> None:
+        """Two different files declaring an entity under the SAME name is
+        a brand-new cross-file question this ticket introduces (no
+        single-file precedent) -- refused as ambiguous (deny-by-default)
+        rather than silently picking whichever file loaded first."""
+        _write(
+            tmp_path,
+            "design/entity_a.strata",
+            'module entity_a\nentity dup {\n    may "net.out:a.example.com";\n    obligation "a";\n}\n',
+        )
+        _write(
+            tmp_path,
+            "design/entity_b.strata",
+            'module entity_b\nentity dup {\n    may "net.out:b.example.com";\n    obligation "b";\n}\n',
+        )
+        _write(
+            tmp_path,
+            "design/impl.strata",
+            "module impl\n"
+            "node writer : trusted { }\n"
+            "architecture a of dup {\n"
+            "    binds impl;\n"
+            "}\n",
+        )
+        ids = load_design_ids(tmp_path)
+        assert len(ids.errors) == 1
+        assert ids.errors[0].path == "design/impl.strata"
+        assert ids.errors[0].error is StrataError.DuplicateId

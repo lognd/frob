@@ -535,17 +535,30 @@ impl Parser {
         Ok(())
     }
 
-    /// T-3006: `architecture NAME of ENTITY { binds MODULE; }` -- the
-    /// IMPLEMENTATION half. `of ENTITY` must name an entity already
-    /// declared earlier in THIS file (SYS300: undeclared entity, single-
-    /// file scope for this slice); `binds MODULE` must name THIS file's
-    /// own `module` (SYS301: an architecture cannot claim to realize a
-    /// module it does not contain -- cross-file binding is future work).
-    /// Refuses (SYS302, the shrink-only ratchet carried into this model,
-    /// T-2920/T-2922) if any node in the bound module grants a `may` atom
-    /// the entity's ceiling never declared -- an architecture may realize
-    /// a SUBSET of its entity's ceiling, never exceed it, and this is
-    /// never auto-widened.
+    /// T-3006/T-3529: `architecture NAME of ENTITY { binds MODULE; }` --
+    /// the IMPLEMENTATION half. `of ENTITY` names the entity this
+    /// architecture realizes; `binds MODULE` must name THIS file's own
+    /// `module` (SYS301: an architecture cannot claim to realize a module
+    /// it does not contain -- binding stays single-file, only entity
+    /// RESOLUTION crosses files now).
+    ///
+    /// T-3529 (docs/strata/entity_architecture.md#scope-of-this-first-
+    /// slice): `entity_name` no longer has to resolve against THIS file's
+    /// own `ast.entities` at parse time -- an entity declared in a
+    /// sibling file is now a legal target. When the name resolves
+    /// locally, resolution is immediate and SYS302's may-ceiling check
+    /// runs here exactly as the single-file slice always did. When it
+    /// does NOT resolve locally, this architecture is emitted with
+    /// `"entity_resolved": false` and no SYS302 check here (the entity's
+    /// own `may` ceiling is unknown until the cross-file registry
+    /// resolves it) -- SYS300's "is this name declared ANYWHERE" question
+    /// plus a deferred SYS302 check against the resolved entity's ceiling
+    /// move to the Python loader (`src/frob/strata/_design_load.py`), the
+    /// one place that already sees every file in a design together. A
+    /// single file naming a truly nonexistent entity therefore no longer
+    /// errors AT PARSE TIME; it is caught by the loader once the whole
+    /// design is known, the same posture the loader already takes for
+    /// SYS002's unbound-construct question.
     fn parse_architecture(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
         self.advance(); // 'architecture'
         let name = self.expect_ident("architecture name")?;
@@ -561,20 +574,8 @@ impl Parser {
             .entities
             .iter()
             .find(|e| e["name"] == json!(entity_name))
-            .cloned()
-            .ok_or_else(|| {
-                let t = self.cur();
-                ParseError {
-                    line: t.line,
-                    col: t.col,
-                    message: format!(
-                        "architecture {:?} references undeclared entity {:?} -- an entity must \
-                         be declared earlier in this file before an architecture can bind it \
-                         (SYS300)",
-                        name, entity_name
-                    ),
-                }
-            })?;
+            .cloned();
+        let entity_resolved = entity.is_some();
         self.expect_symbol('{')?;
         let mut binds: Option<String> = None;
         while !self.at_symbol('}') {
@@ -611,24 +612,30 @@ impl Parser {
             }
         })?;
 
-        let ceiling: BTreeSet<String> = entity["may"]
-            .as_array()
-            .into_iter()
-            .flatten()
-            .filter_map(|v| v.as_str().map(str::to_string))
-            .collect();
-        for node in &ast.nodes {
-            let node_id = node["id"].as_str().unwrap_or("<unknown>");
-            for atom in node["may"].as_array().into_iter().flatten() {
-                let atom = atom.as_str().unwrap_or_default();
-                if !ceiling.contains(atom) {
-                    return self.err(format!(
-                        "architecture {:?} (binding module {:?}) grants may \"{}\" on node {:?}, \
-                         which exceeds entity {:?}'s may ceiling {:?} -- an architecture may only \
-                         realize a SUBSET of its entity's ceiling, never widen it (SYS302, the \
-                         shrink-only ratchet, T-2920/T-2922)",
-                        name, binds, atom, node_id, entity_name, ceiling
-                    ));
+        // SYS302 (the shrink-only may-ceiling ratchet) only runs when the
+        // entity resolved IN THIS FILE -- its ceiling is unknowable
+        // otherwise, and the loader re-runs this exact check once cross-
+        // file resolution finds the entity (T-3529).
+        if let Some(entity) = &entity {
+            let ceiling: BTreeSet<String> = entity["may"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect();
+            for node in &ast.nodes {
+                let node_id = node["id"].as_str().unwrap_or("<unknown>");
+                for atom in node["may"].as_array().into_iter().flatten() {
+                    let atom = atom.as_str().unwrap_or_default();
+                    if !ceiling.contains(atom) {
+                        return self.err(format!(
+                            "architecture {:?} (binding module {:?}) grants may \"{}\" on node \
+                             {:?}, which exceeds entity {:?}'s may ceiling {:?} -- an \
+                             architecture may only realize a SUBSET of its entity's ceiling, \
+                             never widen it (SYS302, the shrink-only ratchet, T-2920/T-2922)",
+                            name, binds, atom, node_id, entity_name, ceiling
+                        ));
+                    }
                 }
             }
         }
@@ -637,6 +644,7 @@ impl Parser {
             "name": name,
             "of_entity": entity_name,
             "binds": binds,
+            "entity_resolved": entity_resolved,
         }));
         Ok(())
     }

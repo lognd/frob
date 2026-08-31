@@ -1,7 +1,7 @@
 ---
 id: T-3529
 title: cross-file entity/architecture resolution for strata
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-30'
@@ -57,6 +57,13 @@ scope_changes:
     parse_source() behavior and must be updated to match
   actor: logan
   at: '2026-08-31'
+evidence:
+- tests/unit/strata/test_design_load.py::TestCrossFileArchitectureResolution::test_architecture_resolves_against_a_sibling_files_entity
+- tests/unit/strata/test_design_load.py::TestCrossFileArchitectureResolution::test_architecture_of_entity_declared_nowhere_is_sys300
+- tests/unit/strata/test_design_load.py::TestCrossFileArchitectureResolution::test_cross_file_architecture_exceeding_ceiling_is_sys302
+- tests/unit/strata/test_design_load.py::TestCrossFileArchitectureResolution::test_same_entity_name_in_two_files_is_ambiguous
+- strata-core/src/parse/mod.rs::tests::architecture_of_entity_not_in_this_file_stays_unresolved_at_parse_time
+- strata-core/src/parse/mod.rs::tests::architecture_of_unresolved_entity_skips_sys302_locally
 designated_repro_test: null
 threat: null
 component: null

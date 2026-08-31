@@ -158,25 +158,33 @@ mod tests {
     }
 
     #[test]
-    // frob:ticket T-3006
-    fn architecture_of_undeclared_entity_is_refused_sys300() {
-        // must-fire: SYS300, the entity name architecture references does
-        // not exist anywhere earlier in the file.
-        let e = err(r#"
+    // frob:ticket T-3529
+    fn architecture_of_entity_not_in_this_file_stays_unresolved_at_parse_time() {
+        // must-stay-quiet at the PARSE level (T-3529): a single file
+        // naming an entity it does not itself declare no longer errors
+        // here -- SYS300's "declared ANYWHERE" question, and SYS302's
+        // ceiling check, both move to the cross-file loader
+        // (`src/frob/strata/_design_load.py`), which is the only place
+        // that can tell "declared in a sibling file" apart from "declared
+        // nowhere". This file-local parse must still succeed and record
+        // `entity_resolved: false` so the loader knows to chase it.
+        let v = ok(r#"
             module m
             node n : trusted { }
             architecture a of ghost_entity {
                 binds m;
             }
         "#);
-        assert!(e["message"].as_str().unwrap().contains("undeclared entity"));
+        assert_eq!(v["architectures"][0]["of_entity"], "ghost_entity");
+        assert_eq!(v["architectures"][0]["entity_resolved"], false);
     }
 
     #[test]
     // frob:ticket T-3006
     fn architecture_of_declared_entity_is_accepted() {
-        // must-stay-quiet twin of the SYS300 fixture above: identical
-        // shape, entity actually declared.
+        // must-stay-quiet twin of the unresolved-entity fixture above:
+        // identical shape, entity actually declared in THIS file --
+        // resolves immediately, same as the original single-file slice.
         let v = ok(r#"
             entity real_entity {
                 obligation "do the thing";
@@ -188,6 +196,27 @@ mod tests {
             }
         "#);
         assert_eq!(v["architectures"][0]["of_entity"], "real_entity");
+        assert_eq!(v["architectures"][0]["entity_resolved"], true);
+    }
+
+    #[test]
+    // frob:ticket T-3529
+    fn architecture_of_unresolved_entity_skips_sys302_locally() {
+        // must-stay-quiet: a node granting a `may` atom would trip SYS302
+        // if the entity resolved locally with an empty ceiling -- but
+        // since the entity is not declared in THIS file at all, SYS302
+        // cannot run here (no ceiling to compare against) and this must
+        // parse cleanly, deferring the ceiling check to the loader.
+        let v = ok(r#"
+            module m
+            node n : trusted {
+                may "net.out:s3.amazonaws.com";
+            }
+            architecture a of elsewhere_entity {
+                binds m;
+            }
+        "#);
+        assert_eq!(v["architectures"][0]["entity_resolved"], false);
     }
 
     #[test]

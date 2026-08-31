@@ -23,8 +23,11 @@ finding 1).
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import importlib
+import json
+from dataclasses import dataclass, field
 from pathlib import Path
+from types import ModuleType
 
 from frob.excludes import is_excluded, iter_files, load_exclude_globs
 from frob.graph import EdgeKind, GraphSnapshot
@@ -35,6 +38,21 @@ from ._errors import StrataError
 from ._models import KernelModel
 from ._multifile import FileModule, elaborate_merged
 from ._parse import parse_module, strata_core_import_error
+
+# T-3529: a second guarded `strata_core` import, mirroring `_parse.py`'s
+# own pattern exactly. This module needs it directly (not just through
+# `parse_module`) because `_ast.py::Module` does not model the
+# entity/architecture/configuration JSON fields `strata_core.parse_source`
+# emits (docs/strata/entity_architecture.md's own "Parse-time enforcement,
+# not a new gate row" scope note: entities/architectures have no
+# `KernelModel` consequence, so nothing upstream of this cross-file join
+# point ever needed them modeled). Reaching under `parse_module` here,
+# rather than widening `_ast.py::Module`'s surface for one feature, keeps
+# this ticket's file scope exactly what it declared.
+try:
+    strata_core: ModuleType | None = importlib.import_module("strata_core")
+except ImportError:  # pragma: no cover - environment-dependent
+    strata_core = None
 
 _log = get_logger(__name__)
 
@@ -173,22 +191,18 @@ def _load_all_design_files(
     cross-file reference or elaboration fault fails the WHOLE load closed
     (reported as one `DesignLoadError` per file named by
     `elaborate_merged`) rather than producing a silent partial model --
-    the only per-file-recoverable failure is a parse error."""
-    parsed_files: list[FileModule] = []
-    store_ids: set[str] = set()
-    resources: list[ResourceDecl] = []
-    policies: list[PolicyDecl] = []
-    errors: list[DesignLoadError] = []
-    for path in paths:
-        rel, module, error = _parse_one_design_file(root, path)
-        if error is not None:
-            errors.append(error)
-            continue
-        assert module is not None
-        parsed_files.append((rel, module))
-        store_ids.update(store.id for store in module.stores)
-        resources.extend(module.resources)
-        policies.extend(module.policies)
+    the only per-file-recoverable failure is a parse error.
+
+    T-3529: cross-file entity/architecture resolution runs as a second
+    pass after every file has parsed (`_resolve_cross_file_architectures`)
+    -- it needs every file's entity registry built before any architecture
+    can be judged truly unresolved, the same "whole design known first"
+    shape `elaborate_merged` already uses for node/flow references."""
+    parsed_files, store_ids, resources, policies, errors, arch_facts = (
+        _parse_and_collect_files(root, paths)
+    )
+    errors = list(errors)
+    errors.extend(_resolve_cross_file_architectures(arch_facts))
 
     channels: set[str] = set()
     boundaries: set[str] = set()
@@ -217,13 +231,228 @@ def _load_all_design_files(
     return channels, boundaries, secrets, store_ids, resources, errors, models, policies
 
 
+def _parse_and_collect_files(
+    root: Path, paths: list[Path]
+) -> tuple[
+    list[FileModule],
+    set[str],
+    list[ResourceDecl],
+    list[PolicyDecl],
+    list[DesignLoadError],
+    list[_FileArchitectureFacts],
+]:
+    """The per-file half of `_load_all_design_files` (T-3529 split, ARCH001):
+    parse every file in `paths`, collecting each success into a
+    `FileModule` plus its store/resource/policy decls and raw
+    entity/architecture facts, and each failure into a `DesignLoadError`.
+    Never raises -- one bad file's `DesignLoadError` is collected and every
+    other file still parses."""
+    parsed_files: list[FileModule] = []
+    store_ids: set[str] = set()
+    resources: list[ResourceDecl] = []
+    policies: list[PolicyDecl] = []
+    errors: list[DesignLoadError] = []
+    arch_facts: list[_FileArchitectureFacts] = []
+    for path in paths:
+        rel, module, error = _parse_one_design_file(root, path)
+        if error is not None:
+            errors.append(error)
+            continue
+        assert module is not None
+        parsed_files.append((rel, module))
+        store_ids.update(store.id for store in module.stores)
+        resources.extend(module.resources)
+        policies.extend(module.policies)
+        facts = _raw_architecture_facts(rel, path)
+        if facts is not None:
+            arch_facts.append(facts)
+    return parsed_files, store_ids, resources, policies, errors, arch_facts
+
+
+@dataclass(frozen=True)
+class _FileArchitectureFacts:
+    """T-3529: one file's raw entity/architecture JSON (straight off
+    `strata_core.parse_source`, `_ast.py::Module` does not model these --
+    see the guarded `strata_core` import comment above), enough to resolve
+    an `entity_resolved: false` architecture (`grammar_core.rs::
+    parse_architecture`) against a SIBLING file's entity declaration."""
+
+    path: str
+    #: entity name -> its `may` ceiling (`frozenset`), one entry per
+    #: entity this file declares.
+    entities: dict[str, frozenset[str]] = field(default_factory=dict)
+    #: every architecture this file declares, as the raw parser JSON
+    #: (`name`/`of_entity`/`binds`/`entity_resolved`).
+    architectures: tuple[dict, ...] = ()
+    #: every node id -> its `may` atoms, straight off this file's raw
+    #: parsed `nodes` list (pre-elaboration) -- SYS302's ceiling check
+    #: (`binds` stays single-file, T-3529) reads THIS file's own nodes,
+    #: same as the Rust parser's original same-file check did.
+    node_may: dict[str, frozenset[str]] = field(default_factory=dict)
+
+
+def _raw_architecture_facts(rel: str, path: Path) -> _FileArchitectureFacts | None:
+    """One file's `_FileArchitectureFacts`, reading+re-parsing `path`
+    directly through `strata_core.parse_source` (T-3529) since
+    `_ast.py::Module` (built by `_parse.py::parse_module`, already called
+    successfully for this same file by `_parse_one_design_file`) does not
+    carry entity/architecture JSON. Reads the file a second time rather
+    than growing `_parse_one_design_file`'s return shape, which
+    `frob.gates._coverage_sites` also calls directly outside this
+    ticket's declared scope. Returns `None` when `strata_core` is
+    unavailable or this second read/parse somehow fails -- unreachable in
+    practice since the first parse (by `_parse_one_design_file`) already
+    succeeded on this same file moments earlier, but never raises either
+    way (T-0134's guarded-native-extension posture, applied here)."""
+    if strata_core is None:
+        return None
+    try:
+        text = path.read_text(encoding="utf-8")
+        payload = json.loads(strata_core.parse_source(text))
+    except (OSError, ValueError, TypeError) as exc:  # pragma: no cover - defensive
+        _log.warning("_raw_architecture_facts: %s re-parse failed: %s", rel, exc)
+        return None
+    ok = payload.get("ok")
+    if ok is None:
+        return None
+    entities: dict[str, frozenset[str]] = {
+        str(e["name"]): frozenset(e.get("may") or ()) for e in ok.get("entities", ())
+    }
+    node_may: dict[str, frozenset[str]] = {
+        str(n["id"]): frozenset(n.get("may") or ()) for n in ok.get("nodes", ())
+    }
+    return _FileArchitectureFacts(
+        path=rel,
+        entities=entities,
+        architectures=tuple(ok.get("architectures", ())),
+        node_may=node_may,
+    )
+
+
+def _build_entity_registry(
+    files: list[_FileArchitectureFacts],
+) -> tuple[dict[str, frozenset[str]], set[str]]:
+    """T-3529: one global entity name -> `may` ceiling registry across
+    EVERY loaded file (mirroring `elaborate_merged`'s "whole design known
+    before any cross-file reference is judged" order). Returns the
+    registry plus the set of entity names declared in more than one
+    file -- a brand-new cross-file question with no single-file
+    precedent, so BOTH declarations are refused (deny-by-default) rather
+    than silently picking whichever file loaded first; a duplicate name
+    is popped from the registry too, so `entity_name in duplicate_names`
+    is `_check_one_architecture`'s only reason to special-case it."""
+    registry: dict[str, frozenset[str]] = {}
+    declared_in: dict[str, str] = {}
+    duplicate_names: set[str] = set()
+    for f in files:
+        for entity_name, ceiling in f.entities.items():
+            if entity_name in declared_in and declared_in[entity_name] != f.path:
+                duplicate_names.add(entity_name)
+                _log.error(
+                    "_build_entity_registry: entity %r declared in both %s and "
+                    "%s -- ambiguous, refusing both",
+                    entity_name,
+                    declared_in[entity_name],
+                    f.path,
+                )
+                continue
+            declared_in[entity_name] = f.path
+            registry[entity_name] = ceiling
+    for entity_name in duplicate_names:
+        registry.pop(entity_name, None)
+    return registry, duplicate_names
+
+
+def _check_one_architecture(
+    path: str,
+    arch: dict,
+    node_may: dict[str, frozenset[str]],
+    registry: dict[str, frozenset[str]],
+    duplicate_names: set[str],
+) -> DesignLoadError | None:
+    """T-3529: SYS300/SYS302 for one `entity_resolved: false` architecture,
+    now that `registry` (`_build_entity_registry`) knows every file's
+    entities. `None` when the architecture resolves cleanly."""
+    entity_name = arch["of_entity"]
+    arch_name = arch["name"]
+    if entity_name in duplicate_names:
+        return DesignLoadError(
+            path=path,
+            error=StrataError.DuplicateId,
+            detail=(
+                f"architecture {arch_name!r} references entity {entity_name!r}, "
+                f"which is declared in more than one file -- ambiguous, cannot "
+                f"resolve cross-file"
+            ),
+        )
+    ceiling = registry.get(entity_name)
+    if ceiling is None:
+        return DesignLoadError(
+            path=path,
+            error=StrataError.UnknownReference,
+            detail=(
+                f"architecture {arch_name!r} references undeclared entity "
+                f"{entity_name!r} -- not declared in this file or any other "
+                f"loaded design file (SYS300)"
+            ),
+        )
+    for node_id, atoms in node_may.items():
+        exceeded = atoms - ceiling
+        if exceeded:
+            return DesignLoadError(
+                path=path,
+                error=StrataError.UnknownReference,
+                detail=(
+                    f"architecture {arch_name!r} (binding module "
+                    f"{arch.get('binds')!r}) grants may {sorted(exceeded)!r} on "
+                    f"node {node_id!r}, which exceeds entity {entity_name!r}'s "
+                    f"may ceiling {sorted(ceiling)!r} -- an architecture may only "
+                    f"realize a SUBSET of its entity's ceiling, never widen it "
+                    f"(SYS302)"
+                ),
+            )
+    return None
+
+
+# frob:ticket T-3529
+def _resolve_cross_file_architectures(
+    files: list[_FileArchitectureFacts],
+) -> list[DesignLoadError]:
+    """T-3529: cross-file SYS300/SYS302 for every architecture the Rust
+    parser left `entity_resolved: false` (its own entity name is not
+    declared in its own file) -- `_build_entity_registry` first, then
+    `_check_one_architecture` per unresolved architecture, once every
+    file's entities are known. No more specific `StrataError` enum member
+    than `UnknownReference` exists in this ticket's declared scope
+    (`src/frob/strata/_errors.py`); the `detail` field on each returned
+    `DesignLoadError` names the real SYS300/SYS302 violation."""
+    registry, duplicate_names = _build_entity_registry(files)
+    errors: list[DesignLoadError] = []
+    for f in files:
+        for arch in f.architectures:
+            if arch.get("entity_resolved"):
+                continue  # already validated locally by the Rust parser
+            error = _check_one_architecture(
+                f.path, arch, f.node_may, registry, duplicate_names
+            )
+            if error is not None:
+                errors.append(error)
+    return errors
+
+
 def _parse_one_design_file(
     root: Path, path: Path
 ) -> tuple[str, Module, None] | tuple[str, None, DesignLoadError]:
     """Read+parse (no elaboration) one `.strata` file; returns `(rel_path,
     module, None)` on success or `(rel_path, None, error)` on any failure,
     never raising. Elaboration is deferred to `elaborate_merged` (T-1196)
-    since it now runs once across every parsed file, not per file."""
+    since it now runs once across every parsed file, not per file.
+
+    Signature UNCHANGED by T-3529 on purpose: `frob.gates._coverage_sites`
+    also calls this directly, outside this ticket's declared scope --
+    `_raw_architecture_facts` (T-3529) reads its own file text separately
+    rather than growing this return tuple, so every existing caller keeps
+    working unmodified."""
     rel = path.relative_to(root).as_posix()
     try:
         text = path.read_text(encoding="utf-8")
@@ -247,11 +476,15 @@ def _parse_one_design_file(
 
 
 # frob:doc docs/strata/surface.md#directives-t-0080
+# frob:doc \
+# docs/strata/entity_architecture.md#scope-of-this-first-slice-deliberately-narrow
 # frob:ticket T-0080
+# frob:ticket T-3529
 # frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_merges_ids
 # frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_no_dir_empty
 # frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_bad_file_reported
 # frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_excluded_no_ids
+# frob:tests tests/unit/strata/test_design_load.py::TestCrossFileArchitectureResolution.test_architecture_resolves_against_a_sibling_files_entity  # noqa: E501
 def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignIds:
     """Parse+elaborate every `.strata` file under `root/design_dir` and merge
     their Flow/Boundary/Secret-clearance-Node ids into one `DesignIds`.
