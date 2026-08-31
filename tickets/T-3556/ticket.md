@@ -1,7 +1,7 @@
 ---
 id: T-3556
 title: TestAutofixManifest must-fire is CI-flaky
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -31,3 +31,6 @@ MEASURED run 33361224273 (HEAD 8d4c18055): tests/test_gates.py::TestAutofixManif
 
 ## Failure log
 - 2026-08-31 attempt 1: already resolved by T-3533 (dab160e5e, landed after the coordinator's measurement) -- was a stale pre-T-3526 test assertion, not a race. Verified 10/10 + 3x under -n 4 --dist=loadgroup.
+
+## Drop reason
+- 2026-08-31: Already resolved by a concurrent land (series Z verification: fresh whole-repo selfconform scan clean / T-3533 fixed the assertion; 10x + 3x -n 4 local runs green).
