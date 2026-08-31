@@ -19,6 +19,7 @@ scope:
 - tests/unit/test_wire001_multiprocessing_target.py
 - tests/unit/test_fix_engine_journal.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +41,11 @@ scope_changes:
   glob: design/frob.strata
   reason: declare fs.write/exec capability for the new fixture test file, needed by
     the strata self-conformance gate
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: bump testsuite exec/fs.write ratchet ceilings by 1 for the new fixture file
   actor: logan
   at: '2026-08-31'
 evidence:
