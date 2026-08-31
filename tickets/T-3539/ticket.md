@@ -51,7 +51,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 204e75805820e62401b0213d213b4a98e5560228
 ---
 found while working T-3511 (Windows CI re-measurement): tests/gates/test_comment_placement.py::TestCplace001::test_symref_binds_to_the_enclosing_function fails on windows-latest -- AssertionError: assert 'src\\frob\\x.py::handler' == 'src/frob/x.py::handler'. Root cause: src/frob/gates/_comment_placement.py:179 and :278 both do `rel = str(path)` and then build the Violation's `symref`/`file` as f"{rel}::{symbol}" (line 205) -- `str(path)` on a `pathlib.Path` uses the platform's native separator (`os.sep`), so on Windows the same input `Path("src/frob/x.py")` stringifies with backslashes, breaking the symref's cross-platform forward-slash-joined convention every other part of this graph (frob:tests/frob:doc directive targets, waiver matching) assumes is forward-slash-joined.
 
