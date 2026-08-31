@@ -57,7 +57,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e6f3dca024a2dad6c6784475e9b4cf7ebfdb9ea1
 ---
 Remainder from T-3483's WARN family burn-down. Measured 2026-08-30 via
 uv run frob check --only dead_symbols --json, filtering severity=warning
