@@ -15,12 +15,58 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/gates/**
 - src/frob/check/__init__.py
+- src/frob/gates/_fix_engine_shared.py
+- src/frob/gates/_fix_engine.py
+- tests/unit/test_check.py
+- tests/unit/test_fix_engine_journal.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: T-3526 only touches the manifest-journal infra, apply_tier_a_fixes loop,
+    and check's pre-dispatch integrity checks; new fixture file for the abandoned-journal
+    must-fire test
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_fix_engine_shared.py
+  reason: T-3526 only touches the manifest-journal infra, apply_tier_a_fixes loop,
+    and check's pre-dispatch integrity checks; new fixture file for the abandoned-journal
+    must-fire test
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: T-3526 only touches the manifest-journal infra, apply_tier_a_fixes loop,
+    and check's pre-dispatch integrity checks; new fixture file for the abandoned-journal
+    must-fire test
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: T-3526 only touches the manifest-journal infra, apply_tier_a_fixes loop,
+    and check's pre-dispatch integrity checks; new fixture file for the abandoned-journal
+    must-fire test
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: T-3526 only touches the manifest-journal infra, apply_tier_a_fixes loop,
+    and check's pre-dispatch integrity checks; new fixture file for the abandoned-journal
+    must-fire test
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_fix_engine_journal.py
+  reason: T-3526 only touches the manifest-journal infra, apply_tier_a_fixes loop,
+    and check's pre-dispatch integrity checks; new fixture file for the abandoned-journal
+    must-fire test
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
