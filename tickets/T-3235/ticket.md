@@ -1,7 +1,7 @@
 ---
 id: T-3235
 title: frob.policy duplicates frob.lang.extract_imports per-language regex
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -19,6 +19,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_policy.py::TestRules::test_forbidden_import_fires
+- tests/test_policy.py::TestRules::test_forbidden_import_passes_outside_glob
 designated_repro_test: null
 threat: null
 component: null
