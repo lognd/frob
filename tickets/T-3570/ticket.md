@@ -22,6 +22,7 @@ scope:
 - src/frob/mutate/_journal.py
 - tests/system/test_cli_vet.py
 - src/frob/logging/logger.py
+- tests/unit/test_logging_module.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,12 @@ scope_changes:
   reason: the general hook-mode WARNING suppression belongs at the logging init layer
     (mirrors T-3438's own sys.argv-scan pattern), not in the app/vet-hook-entry files
     alone
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/test_logging_module.py
+  reason: add unit coverage for the new _is_vet_hook_mode helper to kill the boolop-swap
+    TEST016 mutant
   actor: logan
   at: '2026-08-31'
 body_changes:
