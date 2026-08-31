@@ -17,6 +17,7 @@ scope:
 - src/frob/tickets/_reconcile.py
 - src/frob/app/ticket_runner/_query.py
 - tests/test_ticket_reconcile.py
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,12 @@ scope_changes:
 - op: add
   glob: tests/test_ticket_reconcile.py
   reason: add coverage for the new reconcile->_save_unlanded_summary_cache wiring
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: 'AFFECT001: reconcile''s affects()-closure docs need touching since this
+    ticket changes reconcile''s behavior (populates the doable summary cache)'
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
