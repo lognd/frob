@@ -2,7 +2,7 @@
 id: T-3533
 title: Update TestAutofixManifest.test_killed_mid_handler_leaves_manifest_naming_completed_fixes
   for T-3526's pre-first-mutation journal
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
