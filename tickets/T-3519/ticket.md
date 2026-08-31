@@ -19,7 +19,6 @@ scope:
 - docs/guides/coordinator-scripts.md
 - docs/modules/tickets-verify-sweep.md
 - docs/design/macos-portability.md
-- docs/modules/lang.md
 - docs/modules/process.md
 - docs/modules/testing.md
 - docs/strata/entity_architecture.md
@@ -34,6 +33,11 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: collides with in-progress T-3492's lease; drop from this burn-down, NEGEXIST001
     finding there stays unaddressed for now
+  actor: logan
+  at: '2026-08-30'
+- op: remove
+  glob: docs/modules/lang.md
+  reason: collides with in-progress T-3492's lease; drop from this burn-down
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
