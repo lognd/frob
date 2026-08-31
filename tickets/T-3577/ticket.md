@@ -20,10 +20,17 @@ scope:
 - tests/conftest.py
 - .github/workflows/ci.yml
 - tests/unit/test_process_lock.py
+- docs/modules/process.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/process.md
+  reason: 'scope closure: frob:doc target for touched symbols'
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
