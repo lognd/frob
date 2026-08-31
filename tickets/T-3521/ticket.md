@@ -24,7 +24,6 @@ scope:
 - src/frob/gates/_fix_engine.py
 - src/frob/graph/summary.py
 - src/frob/lang/_common.py
-- src/frob/serve/_socketd.py
 - src/frob/strata/_selfconform_surface_rules.py
 - src/frob/tickets/_unlanded.py
 - tests/test_measure_evidence_reach.py
@@ -33,6 +32,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/serve/_socketd.py
+  reason: collides with in-progress T-3506's lease; drop from this burn-down (re-applying
+    after an illegal-transition land retry)
+  actor: logan
+  at: '2026-08-30'
 body_changes:
 - mode: append
   reason: T-3521's fix is comment/docstring-only plus dead-code deletion; no behavioral
