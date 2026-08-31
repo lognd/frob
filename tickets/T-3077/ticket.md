@@ -1,7 +1,7 @@
 ---
 id: T-3077
 title: CI still shells to make coverage instead of frob coverage --full
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -15,10 +15,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .github/workflows/ci.yml
+- tests/test_ci_workflow_matrix.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ci_workflow_matrix.py
+  reason: bug-kind tickets require pytest evidence node ids (--evidence-cmd is docs-kind
+    only); tests/test_ci_workflow_matrix.py is the repo's established frob:tests binding
+    location for .github/workflows/ci.yml content assertions
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
