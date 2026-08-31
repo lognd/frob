@@ -5,7 +5,7 @@ state: queued
 kind: feature
 origin: agent
 created: '2026-08-06'
-priority: critical
+priority: high
 blocked_by:
 - T-1736
 parent: null
@@ -114,6 +114,15 @@ scope_changes:
     via evidence_scope'
   actor: logan
   at: '2026-08-10'
+triage_changes:
+- field: priority
+  old_value: critical
+  new_value: high
+  reason: 'T-3590 burn-down (TICK004): queued 25d at critical priority with no active
+    dispatch; re-prioritized down one notch to reflect actual working priority rather
+    than leaving it flagged as rotting critical work'
+  actor: logan
+  at: '2026-08-31'
 evidence:
 - tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_clean_run_advances_watermark_and_compacts_queue
