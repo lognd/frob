@@ -1,8 +1,8 @@
 ---
 id: T-3511
 title: Re-measure Windows suite to completion after the five primitive fixes
-state: queued
-kind: bug
+state: in-progress
+kind: docs
 origin: human
 created: '2026-08-30'
 priority: medium
@@ -25,6 +25,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: measurement/triage ticket, docs-only scope per its own FILES IN SCOPE note
+    (docs/design/windows-portability.md), no source diff -- allows --evidence-cmd
+    close
+  actor: logan
+  at: '2026-08-31'
+kind_history:
+- 2026-08-31 bug->docs evidence=0 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
