@@ -27,6 +27,9 @@ scope:
 - docs/design/macos-portability.md
 - docs/design/land-splice-test-then-impl.md
 - docs/design/ledger-mirror-batching.md
+- frob.lock
+- tickets/archive/T-1809/ticket.md
+- tickets/archive/T-1969/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
@@ -109,6 +112,24 @@ scope_changes:
   glob: docs/design/ledger-mirror-batching.md
   reason: DOC/DRIFT/COV/PII/OPAQUE burn-down fixes span all these files -- stale test-rename
     directives, missing doc anchors, opaque argparse waiver, PII false-positive waiver
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: frob.lock
+  reason: frob ack lockfile entries + archived-ticket evidence re-pointing for the
+    check_runner.py test rename orphaning
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tickets/archive/T-1809/ticket.md
+  reason: frob ack lockfile entries + archived-ticket evidence re-pointing for the
+    check_runner.py test rename orphaning
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tickets/archive/T-1969/ticket.md
+  reason: frob ack lockfile entries + archived-ticket evidence re-pointing for the
+    check_runner.py test rename orphaning
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
