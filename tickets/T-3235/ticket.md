@@ -1,7 +1,7 @@
 ---
 id: T-3235
 title: frob.policy duplicates frob.lang.extract_imports per-language regex
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'

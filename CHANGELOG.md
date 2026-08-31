@@ -590,6 +590,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3227: post-land sweep regression from an unattributed source (sweep spawned by T-2878): 2 new (rule, file) identit(ies), 1 finding(s) (CLAUDE001, OPAQUE001)
 - T-3228: LOUD gate failure for ratchet/deprecated-baseline lock producer abandonment
 - T-3230: Audit failed-subprocess-folded-into-positive-finding sites (T-3216 sibling survey)
+- T-3235: Replaced policy._IMPORT_PATTERNS per-language regex with frob.lang.extract_imports, the same grammar-driven walk frob.cycle already uses, per T-2996's NO-DUPLICATION finding. Line numbers for reporting are recovered by a plain text lookup over the already-identified specifier, not a second import grammar. Evidence cites pre-existing tests/test_policy.py forbidden-import tests since scope is src/frob/policy/** only (no test-file edits). Filed: none. Gates: gate:SCOPE/gate:PREWORK clean; other gate families show pre-existing repo-wide failures unrelated to src/frob/policy.
 - T-3236: post-land sweep regression from T-2885: 1 new (rule, file) identit(ies) (OPAQUE001)
 - T-3238: post-land sweep regression from T-3220: 1 new (rule, file) identit(ies), 2 finding(s) (DRIFT002)
 - T-3242: Recovered from T-3031's phantom TICK006 citation of T-draft-36006d55

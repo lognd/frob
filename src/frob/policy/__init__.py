@@ -2,11 +2,12 @@
 
 (docs/modules/gates.md is authoritative.)
 
-Three rule kinds at alpha: `forbidden-import` (regex over import syntax,
-documented duplicate of language-specific import grammar rather than a
-second tree-sitter query per language), `pattern` (a real tree-sitter
-query compiled against `frob.lang`'s grammars), and `norm` (diff-shape
-rules over `frob.gitio.Diff`). Taint analysis is out of scope for 0.1.0.
+Three rule kinds at alpha: `forbidden-import` (specifiers sourced from
+`frob.lang.extract_imports` -- the SAME grammar-driven walk `frob.lang`
+and `frob.cycle` already use, per NO-DUPLICATION; see T-3235, T-2996),
+`pattern` (a real tree-sitter query compiled against `frob.lang`'s
+grammars), and `norm` (diff-shape rules over `frob.gitio.Diff`). Taint
+analysis is out of scope for 0.1.0.
 
 `load_policy` eagerly compiles every `pattern` query so a bad query is a
 load-time `Err(BadQuery)`, never a silent no-op at scan time.
@@ -15,7 +16,6 @@ load-time `Err(BadQuery)`, never a silent no-op at scan time.
 from __future__ import annotations
 
 import fnmatch
-import re
 import tomllib
 from pathlib import Path
 
@@ -28,24 +28,11 @@ from typani.result import Result
 from frob.gates._models import Severity, Violation, WaiverRef
 from frob.gitio import Diff
 from frob.graph import GraphSnapshot
-from frob.lang import language_for_extension
+from frob.lang import extract_imports as _lang_extract_imports
 from frob.logging import get_logger
 from frob.policy._models import PolicyError, PolicyKind, PolicyRule
 
 _log = get_logger(__name__)
-
-# Import-syntax regexes, one per language label; deliberately line-based rather
-# than tree-sitter (a second grammar-driven pass per forbidden-import rule was
-# judged unnecessary complexity for a check this shallow).
-_IMPORT_PATTERNS: dict[str, re.Pattern[str]] = {
-    "python": re.compile(r"^\s*(?:import\s+([\w.]+)|from\s+([\w.]+)\s+import)"),
-    "typescript": re.compile(
-        r"""(?:from\s+['"]([^'"]+)['"]|require\(\s*['"]([^'"]+)['"]\s*\))"""
-    ),
-    "rust": re.compile(r"^\s*use\s+([\w:]+)"),
-    "c": re.compile(r'^\s*#include\s*[<"]([^">]+)[">]'),
-    "cpp": re.compile(r'^\s*#include\s*[<"]([^">]+)[">]'),
-}
 
 
 def _files_under(root: Path, snapshot: GraphSnapshot, pattern: str) -> tuple[str, ...]:
@@ -188,22 +175,53 @@ def _severity(rule: PolicyRule) -> Severity:
     return Severity.WARN if rule.severity == "warn" else Severity.ERROR
 
 
-def _first_group(match) -> str:
-    """The first non-empty capture group of a regex match (`""` if none)."""
-    return next((g for g in match.groups() if g), "")
+def _import_violates(imported: str, module: str) -> bool:
+    """True if extracted specifier `imported` matches or nests under `module`."""
+    return imported == module or imported.startswith(module + ".")
 
 
-def _import_violations_in_file(
-    rule: PolicyRule, rel_path: str, text: str, pattern
-) -> list[Violation]:
-    """Forbidden-import violations for the lines of one already-read file."""
-    violations: list[Violation] = []
+def _line_for_specifier(text: str, imported: str) -> int:
+    """1-based line number of `imported`'s first occurrence in `text` (0 if absent).
+
+    Reporting-only lookup over an already grammar-identified specifier
+    (`frob.lang.extract_imports` did the actual import-syntax parsing) --
+    not a re-implementation of any language's import grammar.
+    """
     for lineno, line in enumerate(text.splitlines(), start=1):
-        match = pattern.match(line) or pattern.search(line)
-        if match is None:
+        if imported in line:
+            return lineno
+    return 0
+
+
+def _forbidden_import_violations(
+    rule: PolicyRule, root: Path, snapshot: GraphSnapshot
+) -> tuple[Violation, ...]:
+    """Every import in a `within`-matched file that imports `rule.module`.
+
+    T-3235: import specifiers come from `frob.lang.extract_imports`, the
+    same grammar-driven walk `frob.cycle` builds its dependency graph
+    from, rather than a second, parallel set of per-language regexes --
+    two implementations of "what counts as an import" is the exact
+    NO-DUPLICATION violation T-2996 measured here.
+    """
+    violations: list[Violation] = []
+    for rel_path in _files_under(root, snapshot, rule.within):
+        path = root / rel_path
+        result = _lang_extract_imports(path)
+        if result.is_err:
+            # Unsupported language (or unreadable/unparsable file) for the
+            # grammar layer -- nothing for a forbidden-import rule to check.
             continue
-        imported = _first_group(match)
-        if imported == rule.module or imported.startswith(rule.module + "."):
+        specifiers = result.danger_ok
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.warning("policy: could not read %s: %s", rel_path, exc)
+            continue
+        for imported in specifiers:
+            if not _import_violates(imported, rule.module):
+                continue
+            lineno = _line_for_specifier(text, imported)
             _log.info(
                 "policy: %s violated at %s:%d (imports %s)",
                 rule.id,
@@ -225,25 +243,6 @@ def _import_violations_in_file(
                     ),
                 )
             )
-    return violations
-
-
-def _forbidden_import_violations(
-    rule: PolicyRule, root: Path, snapshot: GraphSnapshot
-) -> tuple[Violation, ...]:
-    """Every import line in a `within`-matched file that imports `rule.module`."""
-    violations: list[Violation] = []
-    for rel_path in _files_under(root, snapshot, rule.within):
-        language = language_for_extension(Path(rel_path).suffix.lower())
-        pattern = _IMPORT_PATTERNS.get(language or "")
-        if pattern is None:
-            continue
-        try:
-            text = (root / rel_path).read_text(encoding="utf-8")
-        except OSError as exc:
-            _log.warning("policy: could not read %s: %s", rel_path, exc)
-            continue
-        violations.extend(_import_violations_in_file(rule, rel_path, text, pattern))
     return tuple(violations)
 
 
