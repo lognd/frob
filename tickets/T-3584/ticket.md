@@ -2,7 +2,7 @@
 id: T-3584
 title: flaky JSONDecodeError in test_unpinned_polyglot_runs_python_stage (ubuntu,
   frob check --json empty stdout)
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'

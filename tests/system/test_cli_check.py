@@ -758,7 +758,20 @@ class TestCheckPolyglot:
         )
         import json
 
-        data = json.loads(r.stdout)
+        # T-3584 (T-3578 pattern): a JSONDecodeError here previously
+        # named nothing but "line 1 column 1" -- the CI-observed shape,
+        # empty stdout -- with no clue WHY `frob check --json` returned
+        # nothing. Name the real returncode/stderr/stdout on failure so
+        # the next occurrence (CI-transient or not) is diagnosable from
+        # the test failure alone, not a re-run-and-hope.
+        try:
+            data = json.loads(r.stdout)
+        except json.JSONDecodeError as exc:
+            raise AssertionError(
+                f"frob check --json returned non-JSON stdout (T-3584): "
+                f"returncode={r.returncode!r} "
+                f"stdout={r.stdout!r} stderr={r.stderr!r}"
+            ) from exc
         tools = {res["tool"] for res in data["results"]}
         # ruff-check only runs as part of the python stage -- its presence
         # proves the python stage actually ran, not just the rust stage
