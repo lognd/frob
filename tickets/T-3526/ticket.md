@@ -20,6 +20,7 @@ scope:
 - src/frob/gates/_fix_engine.py
 - tests/unit/test_check.py
 - tests/unit/test_fix_engine_journal.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -65,6 +66,12 @@ scope_changes:
   reason: T-3526 only touches the manifest-journal infra, apply_tier_a_fixes loop,
     and check's pre-dispatch integrity checks; new fixture file for the abandoned-journal
     must-fire test
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: GATERULE001 requires registering the new AUTOFIX001 rule id in _KNOWN_GATE_RULES
+    before this diff can land
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
