@@ -132,6 +132,18 @@ scope_changes:
     check_runner.py test rename orphaning
   actor: logan
   at: '2026-08-31'
+body_changes:
+- mode: append
+  reason: 'unblock BUG002 land gate: this ticket makes no behavior changes, only directive/waiver/doc
+    corrections'
+  actor: logan
+  at: '2026-08-31'
+  old_length: 499
+  new_length: 875
+evidence:
+- tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_identity_less_environment_falls_back_to_throwaway_git_identity
+- tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_empty_candidates_refuses
+- tests/unit/verify/test_bisect.py::TestBisectUnattributedFinding::test_converges_to_the_known_culprit_within_log2_n_steps
 designated_repro_test: null
 threat: null
 component: null
@@ -140,3 +152,5 @@ anchor_reason: null
 land_commit: null
 ---
 Measured 2026-08-31 on main via budgeted frob check --json: 73 live errors led by DRIFT002 24, DRIFT001 10, DOC007 8, CLAUDE001 5. Re-measure per family with frob check --only <family> --budget 300, fix real findings at their source (DRIFT = re-verify the doc paragraph then frob ack, never blanket-ack; DOC = fix the pointer or the doc; CLAUDE001 = frob claude sync drift; TICK004 = queue hygiene), and record the remainder per rule with disposition if zero is not honestly reachable in one ticket.
+
+frob:waive BUG002 reason="burn-down umbrella ticket: directive/waiver/doc corrections (stale test-name citations after T-3600s rename, missing doc anchors, argparse OPAQUE001 false-positive waiver, PII012 git-config-key-name false-positive waiver, TICK004 triage) -- no code behavior change for a mutation-killing test to target, so no evidence can genuinely fail at parent"
