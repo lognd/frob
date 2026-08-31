@@ -536,12 +536,59 @@ def _claude_config_drift_result(root: Path) -> ToolResult | None:
     (T-1808), run by hand or from CI; this stage is what makes silent
     drift a `frob check` failure instead of something only discovered the
     next time a hook mysteriously does not fire."""
-    from frob.app.claude_runner import drift_report
+    from frob.app.claude_runner import drift_report, home_claude_missing
 
     report = drift_report(root)
     if report is None:
         return None
     drifted, missing = report
+    # T-3600: `~/.claude` not existing at all (a fresh CI runner, a fresh
+    # dev machine) makes every managed destination read identically as
+    # "absent" in `drifted` -- a platform-shape fact, not a real
+    # reconciliation failure. Report that as NOT_APPLICABLE (a single
+    # `info`-severity diagnostic, exit_code=0 -- `Severity="info"` never
+    # counts toward `error_count`/`ToolResult.measurement`'s "not_measured"
+    # doctrine) instead of one CLAUDE001 error per managed file. A
+    # genuinely missing SOURCE still reports as a real error regardless
+    # (that is this repo's own tracked tree lacking a file it claims to
+    # manage, unrelated to whether ~/.claude exists), and a PRESENT-but-
+    # drifted copy is unaffected -- still every drifted file, still FAIL.
+    if drifted and home_claude_missing(root):
+        diagnostics = [
+            Diagnostic(
+                file=str(root / ".claude" / "hooks" / "sync-claude-config.py"),
+                severity="info",
+                code="CLAUDE001",
+                message=(
+                    f"NOT_APPLICABLE: ~/.claude does not exist on this "
+                    f"machine -- {len(drifted)} managed file(s) cannot be "
+                    "checked for drift here (run `frob claude sync` to "
+                    "materialize it, or ignore this on a machine that "
+                    "never runs Claude Code)"
+                ),
+            )
+        ]
+        diagnostics.extend(
+            Diagnostic(
+                file=str(root / ".claude" / "hooks" / "sync-claude-config.py"),
+                severity="error",
+                code="CLAUDE001",
+                message=f"managed source missing: {source_rel}",
+            )
+            for source_rel in missing
+        )
+        n_bad = len(missing)
+        summary = (
+            f"NOT_APPLICABLE: no ~/.claude on this machine "
+            f"({len(drifted)} managed file(s) unchecked)"
+            + (f"; {n_bad} managed source(s) missing" if n_bad else "")
+        )
+        return ToolResult(
+            tool="claude-config-drift",
+            exit_code=1 if n_bad else 0,
+            diagnostics=diagnostics,
+            summary=summary,
+        )
     diagnostics = [
         Diagnostic(
             file=str(root / ".claude" / "hooks" / "sync-claude-config.py"),

@@ -43,6 +43,11 @@ def _rendered(source_rel, dest):
     return _BANNER + source.read_text(encoding="utf-8")
 
 
+def home_claude_missing():
+    """T-3600: mirrors the real script's own public predicate."""
+    return not _HOME_CLAUDE.exists()
+
+
 def plan():
     actions = []
     missing = []
@@ -137,6 +142,36 @@ class TestDriftReport:
         bare = tmp_path / "bare2"
         bare.mkdir()
         assert claude_runner.drift_report(bare) is None
+
+
+class TestHomeClaudeMissing:
+    """T-3600: `claude_runner.home_claude_missing` -- the adapter half of
+    the "fresh machine, no ~/.claude yet" vs "present but drifted"
+    discriminator `check_runner._claude_config_drift_result` needs."""
+
+    # frob:tests \
+    # tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_true_when_home_claud\
+    # e_absent
+    def test_true_when_home_claude_absent(self, _repo_and_home: Path) -> None:
+        """`_repo_and_home`'s own `$HOME` fixture never creates
+        `~/.claude` -- exactly the fresh-machine shape this predicate
+        exists to detect."""
+        assert claude_runner.home_claude_missing(_repo_and_home) is True
+
+    # frob:tests \
+    # tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_false_when_home_clau\
+    # de_present
+    def test_false_when_home_claude_present(self, _repo_and_home: Path) -> None:
+        (Path.home() / ".claude").mkdir(parents=True, exist_ok=True)
+        assert claude_runner.home_claude_missing(_repo_and_home) is False
+
+    # frob:tests \
+    # tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_none_for_repo_with_n\
+    # o_managed_config
+    def test_none_for_repo_with_no_managed_config(self, tmp_path: Path) -> None:
+        bare = tmp_path / "bare3"
+        bare.mkdir()
+        assert claude_runner.home_claude_missing(bare) is None
 
 
 class TestDriftWarning:

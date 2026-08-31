@@ -81,7 +81,9 @@ class TestIsSourceStaleVsMain:
     def test_source_matches_main_is_not_stale(self, hook) -> None:  # noqa: ANN001
         """The ordinary in-sync case -- nothing to refuse."""
         assert (
-            hook._is_source_stale_vs_main("same content", "same content", "same content")
+            hook._is_source_stale_vs_main(
+                "same content", "same content", "same content"
+            )
             is False
         )
 
@@ -221,3 +223,67 @@ def _load_hook_module_at(repo: Path) -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+class TestHomeClaudeMissingNotApplicable:
+    """T-3600: `home_claude_missing`/`--check`'s NOT_APPLICABLE reporting
+    on the REAL, on-disk `sync-claude-config.py` -- `~/.claude` not
+    existing at all (a fresh CI runner, a fresh dev machine) must not
+    read as every managed file having "drifted"."""
+
+    # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestHomeClaudeMissingNotApplicable.test_home_claude_missing_true_when_root_absent  # noqa: E501
+    def test_home_claude_missing_true_when_root_absent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        home = tmp_path / "home"
+        home.mkdir()  # HOME exists, but ~/.claude under it does not
+        monkeypatch.setattr(Path, "home", staticmethod(lambda: home))
+        module = _load_hook_module()
+        assert module.home_claude_missing() is True
+
+    # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestHomeClaudeMissingNotApplicable.test_home_claude_missing_false_when_root_present  # noqa: E501
+    def test_home_claude_missing_false_when_root_present(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        home = tmp_path / "home"
+        (home / ".claude").mkdir(parents=True)
+        monkeypatch.setattr(Path, "home", staticmethod(lambda: home))
+        module = _load_hook_module()
+        assert module.home_claude_missing() is False
+
+    # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestHomeClaudeMissingNotApplicable.test_check_exits_0_when_root_absent_even_with_drifted_actions  # noqa: E501
+    def test_check_exits_0_when_root_absent_even_with_drifted_actions(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        """MUST-FIRE-THE-FIX: real `MANAGED` files exist on disk (so
+        `plan()` genuinely produces `actions`), `~/.claude` does not
+        exist at all -- before T-3600 this exited 1 (FAIL); the fix
+        prints NOT_APPLICABLE and exits 0."""
+        home = tmp_path / "home"
+        home.mkdir()
+        monkeypatch.setattr(Path, "home", staticmethod(lambda: home))
+        module = _load_hook_module()
+        assert module.plan()[0], "expected at least one drifted action to prove this"
+        exit_code = module.main(["--check"])
+        assert exit_code == 0
+        captured = capsys.readouterr()
+        assert "NOT_APPLICABLE" in captured.err
+
+    # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestHomeClaudeMissingNotApplicable.test_check_still_fails_when_root_present_but_file_differs  # noqa: E501
+    def test_check_still_fails_when_root_present_but_file_differs(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        """MUST-STAY-QUIET (i.e. must still fire the ORIGINAL check): a
+        PRESENT `~/.claude` with a genuinely stale/absent managed file
+        underneath it is a real reconciliation failure, unaffected by
+        the T-3600 NOT_APPLICABLE branch -- still exits 1."""
+        home = tmp_path / "home"
+        (home / ".claude").mkdir(parents=True)
+        monkeypatch.setattr(Path, "home", staticmethod(lambda: home))
+        module = _load_hook_module()
+        assert module.plan()[0], "expected at least one drifted action to prove this"
+        exit_code = module.main(["--check"])
+        assert exit_code == 1
+        captured = capsys.readouterr()
+        assert "NOT_APPLICABLE" not in captured.err
+        assert "DRIFT:" in captured.err

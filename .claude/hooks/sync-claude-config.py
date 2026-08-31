@@ -117,6 +117,7 @@ MANAGED: list[tuple[str, str]] = [
     ("docs/guides/agent-playbook.md", "refs/agent-playbook.md"),
 ]
 
+
 # frob:ticket T-3408
 def _git_show(ref: str, path: str) -> str | None:
     """`git show <ref>:<path>`'s stdout, or `None` on ANY failure (not a
@@ -262,6 +263,28 @@ def _rendered(source_rel: str, dest: Path) -> str | None:
     return _banner_for(source_rel, dest) + source.read_text(encoding="utf-8")
 
 
+# T-3600: `~/.claude` (the whole materialization ROOT) not existing at all
+# is a different verdict than a present copy that has drifted -- a fresh
+# CI runner or a fresh dev machine has no `~/.claude` yet, which is a
+# platform-shape fact, not a reconciliation failure. Every managed
+# destination reads as `have=None` -> `state="absent"` in `plan()` either
+# way (that per-file decision is unchanged and still correct for a REAL
+# sync, which must create the directory regardless) -- this predicate lets
+# `--check`'s reporting (and `frob check`'s own CLAUDE001 stage, `frob.
+# app.check_runner._claude_config_drift_result`) tell the two situations
+# apart and report NOT_APPLICABLE, loudly, instead of FAIL when the root
+# itself is simply missing. Public (no leading underscore), matching
+# `plan()`'s own convention, so `frob.app.claude_runner` can call it
+# without reaching into "private" script internals.
+# frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
+# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestHomeClaudeMissingNotApplicable.test_home_claude_missing_true_when_root_absent  # noqa: E501
+# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestHomeClaudeMissingNotApplicable.test_home_claude_missing_false_when_root_present  # noqa: E501
+def home_claude_missing() -> bool:
+    """True if `_HOME_CLAUDE` (`~/.claude` or wherever `Path.home()`
+    resolves to on this machine) does not exist at all -- T-3600."""
+    return not _HOME_CLAUDE.exists()
+
+
 # frob:doc docs/guides/claude-hooks.md#sync-claude-configpy
 def plan() -> tuple[list[tuple[str, Path, str]], list[str]]:
     """`(actions, missing)` -- what the sync would do, decided without doing
@@ -302,7 +325,31 @@ def _materialize(dest: Path, want: str) -> None:
 def _report_check(actions: list[tuple[str, Path, str]], missing: list[str]) -> int:
     """`--check`'s reporting half: name every drifted path, never just a
     count. An error that does not name its own cause has cost this repo
-    three separate fleet stalls."""
+    three separate fleet stalls.
+
+    T-3600: when `~/.claude` does not exist AT ALL (`home_claude_missing`),
+    every managed destination unavoidably reads as "absent" in `actions`
+    -- that is a platform-shape fact (a fresh CI runner, a fresh dev
+    machine), not a reconciliation failure, so this reports NOT_APPLICABLE
+    loudly and exits 0 for that half rather than FAILing on every managed
+    file. A genuinely missing SOURCE (a managed file this repo's own
+    tracked tree lacks) is a real, separate problem -- still reported and
+    still exits 1, regardless of whether the home root exists. A PRESENT-
+    but-drifted copy (the root exists, at least one file's content
+    differs) is unaffected by this branch and still exits 1."""
+    if actions and home_claude_missing():
+        print(
+            "NOT_APPLICABLE: sync-claude-config --check: ~/.claude does "
+            f"not exist on this machine -- {len(actions)} managed file(s) "
+            "cannot be checked for drift here (run "
+            "`python3 .claude/hooks/sync-claude-config.py` to materialize "
+            "it, or ignore this on a machine that never runs Claude Code)",
+            file=sys.stderr,
+        )
+        # `missing` (source files this repo's own tree lacks) is already
+        # printed by `main()` before this function is ever called -- do
+        # not duplicate it here.
+        return 1 if missing else 0
     for entry, _dest, _want in actions:
         print(f"DRIFT: {entry}", file=sys.stderr)
     if actions or missing:

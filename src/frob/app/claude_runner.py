@@ -79,6 +79,27 @@ def drift_report(repo_root: Path) -> tuple[list[str], list[str]] | None:
     return [entry for entry, _dest, _want in actions], missing
 
 
+# frob:ticket T-3600
+# frob:doc docs/modules/cli.md#frob-claude-sync-t-1808
+# frob:tests tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_true_when_home_claude_absent  # noqa: E501
+# frob:tests tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_false_when_home_claude_present  # noqa: E501
+# frob:tests tests/unit/test_claude_runner.py::TestHomeClaudeMissing.test_none_for_repo_with_no_managed_config  # noqa: E501
+def home_claude_missing(repo_root: Path) -> bool | None:
+    """Whether `repo_root`'s managed-config materialization root
+    (`~/.claude`, or wherever `Path.home()` resolves) does not exist at
+    all on THIS machine -- `None` if `repo_root` has no `sync-claude-
+    config.py` at all (same "not this repo" convention `drift_report`
+    uses). T-3600: distinguishes "nothing to check against here" (a
+    fresh CI runner, a fresh dev machine -- NOT_APPLICABLE) from a
+    present-but-drifted copy (a real FAIL), which `drift_report` alone
+    cannot tell apart -- every managed destination reads identically as
+    "absent" in `drift_report`'s own `drifted_entries` either way."""
+    module = _load_sync_module(repo_root)
+    if module is None:
+        return None
+    return bool(module.home_claude_missing())
+
+
 # frob:ticket T-1808
 # frob:tests \
 # tests/unit/test_claude_runner.py::TestDriftWarning.test_warns_when_managed_file_diffe\

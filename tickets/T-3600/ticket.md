@@ -2,7 +2,7 @@
 id: T-3600
 title: 'claude-config-drift fails structurally on CI: 9 managed files read as missing
   where ~/.claude does not exist'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'

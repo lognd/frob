@@ -378,6 +378,20 @@ dispatch window) -- it is one more opt-in extra stage `check_runner.run`
 folds into `CheckResult`, the identical shape `_deploy_drift_result`/
 `_deploy_conformance_result` already use for a repo with no `deploy/`.
 
+T-3600: `~/.claude` (the whole materialization ROOT) not existing at all
+is a DIFFERENT verdict from a present copy that has drifted -- a fresh
+CI runner or a fresh dev machine has no `~/.claude` yet, which is a
+platform-shape fact, not a reconciliation failure, but every managed
+destination reads identically as "absent" in `plan()`'s own `actions`
+either way. `home_claude_missing()` (public, mirrored by `frob.app.
+claude_runner.home_claude_missing`) tells the two situations apart:
+`_report_check` (this script's own `--check` reporting) and CLAUDE001
+(`_claude_config_drift_result`) both report NOT_APPLICABLE, loudly, and
+exit/pass clean when the root itself is simply absent, instead of one
+error per managed file -- a genuinely missing SOURCE file still errors
+regardless (a real repo-tree defect), and a present-but-drifted
+`~/.claude` is unaffected, still FAILing exactly as before.
+
 ## The `claude_hooks` design node
 
 T-1838 declared a `claude_hooks : trusted` node (`code ".claude/hooks/**"`)

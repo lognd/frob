@@ -404,6 +404,11 @@ MANAGED: list[tuple[str, str]] = [
 _BANNER = "# GENERATED COPY -- DO NOT EDIT.\\n"
 
 
+def home_claude_missing():
+    """T-3600: mirrors the real script's own public predicate."""
+    return not _HOME_CLAUDE.exists()
+
+
 def plan():
     actions = []
     missing = []
@@ -447,22 +452,56 @@ def _claude_config_repo(tmp_path: Path, monkeypatch) -> Path:  # noqa: ANN001
 class TestClaudeConfigDriftStage:
     """`_claude_config_drift_result` (T-1809): the `frob check` extra
     stage gating T-1808's Claude-config sync drift. Acceptance shape: a
-    divergence MUST fail before any sync (`test_reports_drift_when_
-    managed_copy_absent`), and an in-sync tree MUST report clean, no
-    false positive (`test_clean_when_in_sync`)."""
+    divergence MUST fail when `~/.claude` is PRESENT but out of sync
+    (`test_reports_drift_when_home_claude_present_but_file_differs`), an
+    in-sync tree MUST report clean, no false positive
+    (`test_clean_when_in_sync`), and -- T-3600 -- `~/.claude` not
+    existing AT ALL (a fresh CI runner, a fresh dev machine) MUST report
+    NOT_APPLICABLE, loudly, never FAIL
+    (`test_not_applicable_when_home_claude_root_absent`)."""
 
     # frob:tests \
-    # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_ma\
-    # naged_copy_absent
-    def test_reports_drift_when_managed_copy_absent(
+    # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_not_applicable_when_h\
+    # ome_claude_root_absent
+    def test_not_applicable_when_home_claude_root_absent(
         self, tmp_path: Path, monkeypatch
     ) -> None:
+        """T-3600: `_claude_config_repo`'s own `$HOME` fixture never
+        creates `~/.claude` -- exactly a fresh CI runner's shape. Before
+        this ticket this FAILed (exit_code=1, one CLAUDE001 error per
+        managed file); the fix reports NOT_APPLICABLE (exit_code=0, a
+        single `info`-severity diagnostic) instead, since there is
+        nothing to reconcile against on this machine."""
         root = _claude_config_repo(tmp_path, monkeypatch)
+        result = _claude_config_drift_result(root)
+        assert result is not None
+        assert result.exit_code == 0
+        assert result.tool == "claude-config-drift"
+        assert len(result.diagnostics) == 1
+        assert result.diagnostics[0].severity == "info"
+        assert result.diagnostics[0].code == "CLAUDE001"
+        assert "NOT_APPLICABLE" in result.diagnostics[0].message
+        assert "NOT_APPLICABLE" in result.summary
+
+    # frob:tests \
+    # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_reports_drift_when_ho\
+    # me_claude_present_but_file_differs
+    def test_reports_drift_when_home_claude_present_but_file_differs(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-3600 discriminator: `~/.claude` EXISTS (unlike the
+        NOT_APPLICABLE case above) but the managed file under it is
+        still absent/stale -- this is a genuine reconciliation failure
+        and must still FAIL exactly as before this ticket."""
+        root = _claude_config_repo(tmp_path, monkeypatch)
+        (Path.home() / ".claude").mkdir(parents=True, exist_ok=True)
         result = _claude_config_drift_result(root)
         assert result is not None
         assert result.exit_code == 1
         assert result.tool == "claude-config-drift"
-        assert any(d.code == "CLAUDE001" for d in result.diagnostics)
+        assert any(
+            d.severity == "error" and d.code == "CLAUDE001" for d in result.diagnostics
+        )
 
     # frob:tests \
     # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_clean_when_in_sync
