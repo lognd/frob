@@ -999,7 +999,7 @@ are, by definition, in the exact same commit. Running `--check-repro`
 against ANY ref in main's history for such a test -- including the
 squash commit's own immediate parent, main's tip right before the land
 -- cannot produce a real verdict: pytest exits 5 ("no tests collected"),
-because the specific test method does not exist yet at that ref, and
+because the specific test method is absent from that ref, and
 `bug_repro_outcome_at_ref` reports this as `TEST_ABSENT_AT_PARENT`
 (T-2025; a prior, less specific `NO_VERDICT` covered this same case
 before T-2025 gave it its own outcome and an honest message pointing
@@ -1132,13 +1132,13 @@ only a named designation can. Not restricted to `bug`/`security` kind
 (unlike BUG002/TEST016): the narrowing-fix shape is not kind-specific,
 and the directive itself is the opt-in gate.
 
-**Not yet wired into any `frob ticket land`/`frob ticket close` call
-site** -- T-2193's own declared scope is `src/frob/gates/
-_mutation_evidence.py` alone (plus this doc and its own test file), the
-same one-file-at-a-time discipline its sibling ticket T-2205 used for
-`verify_imports`. Wiring `must_still_pass_violations` into
-`frob.tickets._land`/`frob.app.ticket_runner`'s existing BUG002/TEST016
-call sites is a follow-up ticket's job, not this one's.
+**Wired via T-2215.** T-2193's own declared scope was
+`src/frob/gates/_mutation_evidence.py` alone (plus this doc and its
+own test file), the same one-file-at-a-time discipline its sibling
+ticket T-2205 used for `verify_imports`; T-2215 (done) is the follow-up
+that wired `must_still_pass_violations` into `frob.tickets._land`'s
+and `frob.app.ticket_runner._close_cmd`'s own BUG002/TEST016 call
+sites (BUG003).
 
 ## Live-tracker citation preflight (T-0854)
 
@@ -2049,7 +2049,7 @@ off by default -- it never ran for a real land, so the defect class it
 targets still reached main. T-1675 closed the gap by requiring a SECOND,
 positive signal alongside the empty diff: the ticket's own ledger record,
 read directly off `base_ref`, must already claim `state: done` there. A
-ticket that has not yet landed cannot already be `done` on `base_ref` --
+ticket with no completed land can never already be `done` on `base_ref` --
 only `frob ticket close`/`land`'s own squash-apply ever write that state
 -- so this is genuine positive evidence the content made it to main, not
 an inference from silence. A docs-only, ledger-only, or scope-mismatched
@@ -2400,8 +2400,8 @@ evidence_scope` together, so evidence recorded there is exactly as
   Applied to T-1686 itself on 2026-08-10 as the mechanism's first real
   case: its lease on `tests/test_ticket_land.py` released, evidence
   coverage confirmed unaffected (`scope_lease_conflict` returns `None`
-  for that path afterward). Not yet wired to a `frob ticket scope` CLI
-  flag -- library-only for now (`T-1975` tracks the CLI surface).
+  for that path afterward). Now wired to `frob ticket scope
+  --demote-to-evidence-only` (`T-1975`, done).
 - **`ScopeRemoveOrphansEvidence` is UNCHANGED**: a plain `scope --remove`
   with no matching `evidence_scope` demotion still refuses exactly as
   before -- this fix adds a new, narrower escape hatch, it does not

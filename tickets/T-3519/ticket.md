@@ -1,7 +1,7 @@
 ---
 id: T-3519
 title: 'NEGEXIST001 WARN burn-down: 18 unbound negative-existence claims'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-30'
@@ -40,6 +40,9 @@ scope_changes:
   reason: collides with in-progress T-3492's lease; drop from this burn-down
   actor: logan
   at: '2026-08-30'
+evidence:
+- cmd:bash /tmp/claude-1000/-home-logan-projects-frob/f4d0128f-ef81-45f6-8336-64623fe5712f/scratchpad/check_negexist_zero.sh
+  exit=0 sha256=bc8e34f9dd85
 designated_repro_test: null
 threat: null
 component: null

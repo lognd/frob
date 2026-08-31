@@ -59,6 +59,8 @@ next without inventing separate machinery -- see
 
 ## Scope of this first slice (deliberately narrow)
 
+<!-- frob:until T-3529 -->
+
 - **Single-file resolution.** `of ENTITY` and `binds MODULE` resolve only
   against entities/the module already parsed earlier in the SAME file.
   Cross-file entity references (an architecture in one file satisfying an

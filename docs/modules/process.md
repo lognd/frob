@@ -447,7 +447,7 @@ instead of cleaning up after it:
   at MODULE LOAD (a default argument is evaluated once, when the `def`
   statement itself runs), crashing the IMPORT of `frob.process._reap`
   -- and therefore every module that imports it -- on Windows
-  (`signal.SIGKILL` does not exist there) with an `AttributeError`,
+  (`signal.SIGKILL` is unavailable there) with an `AttributeError`,
   before this function's own platform guard ever ran once. Measured for
   real via T-2917's windows-latest CI job: `frob --help` itself crashed
   in 54s, at `uv run frob natives build`'s own import of this module.

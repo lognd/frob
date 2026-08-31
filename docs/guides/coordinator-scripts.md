@@ -839,8 +839,8 @@ signal `ticket_readiness` exists to add.
 T-2213 (ARCH001 split off `ticket_readiness`). The `dispatchable` verdict
 predicate: `False` whenever a live lease is held, another worktree
 already carries commits for this ticket, `main` shows a
-`done`/`dropped`/`in-progress` state (or does not exist on `main` at
-all), an open blocker remains, the lease's scope has diverged from
+`done`/`dropped`/`in-progress` state (or is absent from `main`
+entirely), an open blocker remains, the lease's scope has diverged from
 `main`'s, or another live lease's scope files collide (T-2225); `True`
 only when every one of those checks passes.
 
@@ -943,7 +943,7 @@ dead attempt's residue (a killed land's staged diff is byte-identical
 across retries), but CPU time discriminates immediately.
 
 **T-2193 fix**: an earlier version looked for a `--ticket T-####` FLAG,
-which does not exist on `land`'s own argparse usage, so it matched
+which is absent from `land`'s own argparse usage, so it matched
 nothing against a real land and every row fell back to a
 `ticket_id=None` singleton -- reported live as 13 rows for ONE real
 land. Rows with no parseable ticket id are now DROPPED entirely, not

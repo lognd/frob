@@ -685,7 +685,7 @@ The resulting `_PytestPass.worker_crash` flag is recorded in
 `.frob/coverage-run.json` alongside `degraded`, so a reader can tell an
 ENVIRONMENT abort (a worker got killed, most often OOM) from an ordinary
 red suite -- treating the former as a real test regression sends the
-reader hunting for a bug that does not exist. An ordinary red suite
+reader hunting for a bug that was never real. An ordinary red suite
 (a genuine test failure, no crash signature) is never retried and never
 marked `worker_crash`.
 

@@ -1125,8 +1125,8 @@ SYS002 obligations anyway; a file-walking surface that does not consult
   model.
 - **SYS003** (error, T-2407): tier-2 `bind_code` + `check_import_
   conformance` (`## Code binding (tier 2, v0 implementation)` above), run
-  once per elaborated design model and surfaced as gate violations -- the
-  "not yet wired" cut noted in that section is now closed. An ambiguous
+  once per elaborated design model and surfaced as gate violations -- the wiring gap noted in that
+  section has since been closed. An ambiguous
   binding within one model is logged and skipped for that model only,
   never fatal to the whole gate. Started WARN, not ERROR, on landing
   (T-0080 REJECT round 1, severity item), the same warn-first-then-

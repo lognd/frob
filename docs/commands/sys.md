@@ -367,11 +367,15 @@ residue rather than force them into this ticket's own scope:
   `docs/strata/roadmap.md`'s CLI-surface list than by building a second,
   narrower duplicate of `frob sys audit` -- see the filed docs-decision
   ticket.
-- `capacity`: needs a real population/date-projected capacity evaluator
-  that does not exist anywhere in `frob.strata` yet -- new modeling work,
-  not a CLI-glue gap.
-- `threats`: needs a real join from `ThreatViolation.node` to a
-  boundary's flow endpoints that does not exist anywhere yet.
+- `capacity`: T-1927 (done) built `frob sys capacity --population N`;
+  `--at DATE` still needs a growth-rate grammar T-2016's own design
+  work never got implemented. Not yet built.
+  <!-- frob:until T-3527 -->
+- `threats`: T-3519 found this bullet stale -- T-1925 (done) built the
+  `ThreatViolation.node`-to-boundary join and wired `frob sys threats`
+  (`_run_threats`, `threat_violations_for_boundary`) for real; this
+  residue item is CLOSED, kept here only as the historical record of
+  what T-1480 originally deferred.
 
 
 ## `frob sys shrink` (T-2923)

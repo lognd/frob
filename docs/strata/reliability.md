@@ -1635,6 +1635,8 @@ already over capacity". Requesting a `population` when the model
 declares no baseline fails closed (`StrataError.UnknownReference`)
 rather than silently reporting a meaningless "no violations".
 
+<!-- frob:until T-3527 -->
+
 **Disclosed scope cut (T-2016, filed by T-1927):** the roadmap's target
 signature is `frob sys capacity [--population N | --at DATE]`; only
 `--population N` is implemented. `--at DATE` needs a growth-rate

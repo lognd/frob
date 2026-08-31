@@ -139,7 +139,7 @@ this epic's "done":**
   watermark-backed mechanism (`_land_cmd.py` was never in T-1686's own
   declared scope: `_land_queue.py`, `_daemon.py`, `_rapid_sweep.py`,
   `_land.py`, this doc).
-- **CLI visibility** (T-1697, queued, not yet built) -- `frob verify
+- **CLI visibility** (T-1697, done) -- `frob verify
   status`/`now`/`explain` for a human or CI step to see the unverified
   window (depth, age, quarantine, attribution) without reading
   `.frob/*.json` by hand. Deferred verification with an invisible
@@ -805,7 +805,7 @@ one tripping mid-search ends the bisect immediately. This matters
 because a naive binary search over a WRONG assumption (the batch is not
 actually monotonically good-then-bad -- a flaky finding, or two
 independent regressions in the same batch) can spin arbitrarily long
-chasing a culprit that does not exist in the shape the search expects;
+chasing a culprit shaped nothing like what the search expects;
 a bounded search converts that failure mode into a bounded, logged one
 instead of a hung or runaway process.
 

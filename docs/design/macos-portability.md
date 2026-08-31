@@ -71,6 +71,7 @@ follow-up's own first task is to measure against a macOS box or the
   `/proc` directly, which does not exist on macOS. Needs an `lsof -p`/
   `ps -o lstart` (or `psutil`) equivalent, or a declared PLATFORM001
   boundary.
+  <!-- frob:until T-3528 -->
 
 - **Bucket D -- citation/text scans return 0 (13 tests).**
   `tests/test_tickets_live_tracker.py` (11) and
