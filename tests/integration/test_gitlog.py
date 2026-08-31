@@ -15,25 +15,22 @@ from pathlib import Path
 
 import pytest
 
+from tests.conftest import run_bounded_subprocess
+
 FROB = [sys.executable, "-m", "frob"]
 
 
 def _git(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        ["git"] + args,
-        capture_output=True,
-        text=True,
-        cwd=str(cwd),
-    )
+    """Run a `git` subcommand against `cwd` (T-3582: routed through
+    `run_bounded_subprocess` -- see its docstring for why an unbounded
+    `subprocess.run` is unsafe on win32)."""
+    return run_bounded_subprocess(["git"] + args, cwd=str(cwd))
 
 
 def _frob(args: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        FROB + args,
-        capture_output=True,
-        text=True,
-        cwd=str(cwd) if cwd else None,
-    )
+    """Run the `frob` CLI against `cwd` (T-3582: routed through
+    `run_bounded_subprocess`)."""
+    return run_bounded_subprocess(FROB + args, cwd=str(cwd) if cwd else None)
 
 
 def _setup_repo(tmp_path: Path) -> Path:

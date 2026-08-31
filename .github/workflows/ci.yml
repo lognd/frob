@@ -333,6 +333,16 @@ jobs:
       # this same land per T-3560's own contract; `-p no:xdist` (T-3549)
       # stays, since it is still a real, independent risk-reduction even
       # though it was not the root cause here.
+      # T-3582 (round 5): the interrupt SURVIVED T-3577's bounded msvcrt
+      # lock + bounded win32 run() wrapper -- run 33385515507 (HEAD
+      # 94931dde1) still died with KeyboardInterrupt at [1%]. T-3577's
+      # fix only covers tests/system/conftest.py's win32 run() branch;
+      # the actual hang site this round is further into collection
+      # (tests/integration/, around test_gitlog.py). `-v --full-trace`
+      # is re-added here as a PERSISTENT setting (not the T-3560 TEMPORARY
+      # kind) while this leg stays advisory -- every future run needs the
+      # trace until Windows is actually green; removing it again before
+      # then repeats the T-3560 premature-revert mistake.
       - name: Test (windows, timed with hang guard)
         if: matrix.os == 'windows-latest'
         env:
@@ -341,7 +351,7 @@ jobs:
           $budget = 1500  # 25m, same budget/rationale as ubuntu's step above
           $stdout = Join-Path $env:RUNNER_TEMP "pytest-stdout.log"
           $stderr = Join-Path $env:RUNNER_TEMP "pytest-stderr.log"
-          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-p","no:xdist" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-p","no:xdist","-v","--full-trace" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
             Wait-Process -Id $p.Id -Timeout $budget -ErrorAction Stop
           } catch {

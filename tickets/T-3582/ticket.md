@@ -2,7 +2,7 @@
 id: T-3582
 title: 'Windows round 5: KeyboardInterrupt survives T-3577''s fix at collection pos
   ~130 (tests/integration)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'

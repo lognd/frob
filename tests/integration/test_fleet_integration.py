@@ -10,12 +10,20 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tests.conftest import run_bounded_subprocess
+
 FROB = [sys.executable, "-m", "frob"]
 
 
 def _git(args: list[str], cwd: Path) -> None:
-    """Run a git command in `cwd`, raising on failure."""
-    subprocess.run(["git", *args], cwd=str(cwd), check=True, capture_output=True)
+    """Run a git command in `cwd`, raising on failure (T-3582: routed
+    through `run_bounded_subprocess` -- see its docstring for why an
+    unbounded `subprocess.run` is unsafe on win32)."""
+    result = run_bounded_subprocess(["git", *args], cwd=str(cwd))
+    if result.returncode != 0:
+        raise subprocess.CalledProcessError(
+            result.returncode, result.args, result.stdout, result.stderr
+        )
 
 
 def _init_repo(path: Path) -> None:
@@ -46,7 +54,7 @@ class TestFleetIntegration:
             f'[[repo]]\nname = "repo-b"\npath = "{repo_b.as_posix()}"\n'
         )
 
-        result = subprocess.run(
+        result = run_bounded_subprocess(
             FROB
             + [
                 "fleet",
@@ -54,9 +62,7 @@ class TestFleetIntegration:
                 "--manifest",
                 str(manifest),
                 "--skip-gates",
-            ],
-            capture_output=True,
-            text=True,
+            ]
         )
         assert result.returncode == 0, result.stderr
         assert "repo-a" in result.stdout
@@ -79,7 +85,7 @@ class TestFleetIntegrationJson:
             f'[[repo]]\nname = "repo-a"\npath = "{repo_a.as_posix()}"\n'
         )
 
-        result = subprocess.run(
+        result = run_bounded_subprocess(
             FROB
             + [
                 "fleet",
@@ -88,9 +94,7 @@ class TestFleetIntegrationJson:
                 str(manifest),
                 "--skip-gates",
                 "--json",
-            ],
-            capture_output=True,
-            text=True,
+            ]
         )
         assert result.returncode == 0, result.stderr
         data = json.loads(result.stdout)

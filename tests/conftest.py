@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator
 
@@ -19,6 +21,90 @@ from frob.tickets._worktree_guard import (
     FROB_WORKTREE_ENV,
     PYTEST_XDIST_AUTO_NUM_WORKERS_ENV,
 )
+
+#: T-3582 (Windows round 5): the DEFAULT bound for `run_bounded_subprocess`
+#: whenever a caller does not pass its own `timeout=` -- never `None`
+#: (wait forever). Mirrors `tests/system/conftest.py`'s
+#: `DEFAULT_RUN_TIMEOUT_S`/`run()` (T-2980/T-3577): that helper only
+#: covers `tests/system/`, but the SAME `subprocess.run(..., timeout=...)`
+#: double-communicate hazard on win32 (a still-open grandchild pipe makes
+#: the untimed post-timeout drain read block forever) applies to any
+#: unbounded `subprocess.run`/`Popen` call anywhere in the suite --
+#: `tests/integration/*.py` had 13 such call sites with no timeout at all
+#: when this was added (a windows-latest run died with `KeyboardInterrupt`
+#: at collection position ~130, inside `tests/integration/test_gitlog.py`
+#: territory, with no exception raised in-process -- the exact "hung
+#: forever, no bound at all" shape `DEFAULT_RUN_TIMEOUT_S` was invented to
+#: close for `tests/system/`).
+DEFAULT_RUN_TIMEOUT_S = 100
+
+
+# frob:ticket T-3582
+# frob:tests tests/integration/test_gitlog.py::TestGitlogGrouping.test_features_grouped_separately  # noqa: E501
+def run_bounded_subprocess(
+    args: list[str], *, cwd: "Path | str | None" = None, timeout: float | None = None
+) -> subprocess.CompletedProcess:
+    """Run `args` as a subprocess and capture stdout/stderr, bounded on
+    every platform -- the shared home for a test's git/frob subprocess
+    helpers, so no call site needs its own timeout handling. On `win32`,
+    drives `Popen`/`communicate` directly so BOTH the first read and any
+    post-timeout drain are bounded, and kills the WHOLE process tree
+    (`taskkill /T /F`) on expiry rather than relying on `Popen.kill()`'s
+    single-pid reach -- `subprocess.run`'s own internal timeout handling
+    retries `communicate()` a second time with NO timeout, and Windows
+    inherits pipe handles into every grandchild a command spawns, so a
+    live grandchild can keep that second, untimed read blocked forever.
+    On POSIX, plain `subprocess.run(..., timeout=...)` is sufficient
+    (close-on-exec is the default there, so a killed child cannot keep
+    the pipe open past its own death). See `tests/system/conftest.py::run`
+    for the sibling helper this mirrors, and T-3582 for the incident that
+    motivated it."""
+    effective_timeout = DEFAULT_RUN_TIMEOUT_S if timeout is None else timeout
+
+    if sys.platform == "win32":
+        proc = subprocess.Popen(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            cwd=cwd,
+        )
+        try:
+            stdout, stderr = proc.communicate(timeout=effective_timeout)
+        except subprocess.TimeoutExpired:
+            subprocess.run(
+                ["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                capture_output=True,
+                check=False,
+            )
+            try:
+                proc.communicate(timeout=effective_timeout)
+            except subprocess.TimeoutExpired:
+                pass
+            raise RuntimeError(
+                f"run_bounded_subprocess timed out after {effective_timeout}s "
+                f"waiting on {args!r} (T-3582: this command either hung, or "
+                "legitimately needs longer -- pass an explicit timeout= at "
+                "the call site rather than raising DEFAULT_RUN_TIMEOUT_S)"
+            ) from None
+        return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
+
+    try:
+        return subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            cwd=cwd,
+            timeout=effective_timeout,
+            start_new_session=True,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"run_bounded_subprocess timed out after {effective_timeout}s "
+            f"waiting on {args!r} (T-3582: this command either hung, or "
+            "legitimately needs longer -- pass an explicit timeout= at the "
+            "call site rather than raising DEFAULT_RUN_TIMEOUT_S)"
+        ) from exc
 
 """T-1433/T-1466: the SIGUSR1 stack-dump handler itself now lives in
 `frob.testing._stackdump` (any frob process can opt in, not just pytest --

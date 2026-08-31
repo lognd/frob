@@ -9,11 +9,16 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tests.conftest import run_bounded_subprocess
+
 FROB = [sys.executable, "-m", "frob"]
 
 
 def _frob(args: list[str]) -> subprocess.CompletedProcess:
-    return subprocess.run(FROB + args, capture_output=True, text=True)
+    """Run the `frob` CLI (T-3582: routed through `run_bounded_subprocess`
+    -- see its docstring for why an unbounded `subprocess.run` is unsafe
+    on win32)."""
+    return run_bounded_subprocess(FROB + args)
 
 
 def _make_pkg(tmp_path: Path, files: dict[str, str], pkg_name: str = "mypkg") -> Path:
@@ -152,14 +157,12 @@ class TestExportsWriteUpdate:
 
         # The generated __init__.py should be valid Python
         init = pkg / "__init__.py"
-        r = subprocess.run(
+        r = run_bounded_subprocess(
             [
                 sys.executable,
                 "-c",
                 f"import ast; ast.parse(open({str(init)!r}).read())",
-            ],
-            capture_output=True,
-            text=True,
+            ]
         )
         assert r.returncode == 0, (
             f"generated __init__.py is not valid Python: {r.stderr}"

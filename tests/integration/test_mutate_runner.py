@@ -9,9 +9,10 @@ stdout parses as clean JSON.
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
 from pathlib import Path
+
+from tests.conftest import run_bounded_subprocess
 
 FROB = [sys.executable, "-m", "frob"]
 
@@ -31,7 +32,7 @@ class TestMutateRunnerJson:
         `guarded_subprocess_run` DEBUG spawn lines mixed into the payload."""
         # frob:tests src/frob/mutate kind="integration"
         target = _write_target(tmp_path)
-        result = subprocess.run(
+        result = run_bounded_subprocess(
             FROB
             + [
                 "mutate",
@@ -43,9 +44,7 @@ class TestMutateRunnerJson:
                 sys.executable,
                 "-c",
                 "raise SystemExit(1)",
-            ],
-            capture_output=True,
-            text=True,
+            ]
         )
         assert result.returncode == 0, result.stderr
         data = json.loads(result.stdout)
@@ -56,7 +55,7 @@ class TestMutateRunnerJson:
     def test_human_mode_still_shows_diagnostics(self, tmp_path: Path) -> None:
         """Without `--json`, human-mode output is unaffected by the guard."""
         target = _write_target(tmp_path)
-        result = subprocess.run(
+        result = run_bounded_subprocess(
             FROB
             + [
                 "mutate",
@@ -67,9 +66,7 @@ class TestMutateRunnerJson:
                 sys.executable,
                 "-c",
                 "raise SystemExit(1)",
-            ],
-            capture_output=True,
-            text=True,
+            ]
         )
         assert result.returncode == 0, result.stderr
         assert "mutation score" in result.stdout
