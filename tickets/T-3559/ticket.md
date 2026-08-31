@@ -7,6 +7,8 @@ kind: feature
 origin: human
 created: '2026-08-31'
 priority: medium
+blocked_by:
+- T-3550
 parent: null
 tier: ticket
 sprint: null
