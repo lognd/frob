@@ -43,6 +43,9 @@ scope:
 - docs/modules/process.md
 - docs/modules/serve.md
 - docs/modules/tickets-verify-sweep.md
+- docs/modules/tickets-landing.md
+- docs/modules/tickets-data-storage.md
+- docs/modules/tickets.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: one shared lock primitive genuinely fans out to every fcntl
   call site plus its lease/land/gate test files; T-3076's own by-file breakdown is
@@ -115,6 +118,24 @@ scope_changes:
   reason: 'AFFECT001 closure: derived_state_lock/portable_flock_acquire, acquire_singleton_lock,
     and file_lock/LandQueueLockUnavailable all changed and their frob:doc-anchored
     docs must reflect the T-3506 primitive extraction'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'AFFECT001 closure: SweepQueueLockUnavailable and ledger_lock changed and
+    their frob:doc-anchored docs must reflect the T-3506 primitive extraction'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'AFFECT001 closure: SweepQueueLockUnavailable and ledger_lock changed and
+    their frob:doc-anchored docs must reflect the T-3506 primitive extraction'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'AFFECT001 closure: SweepQueueLockUnavailable and ledger_lock changed and
+    their frob:doc-anchored docs must reflect the T-3506 primitive extraction'
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
