@@ -21,6 +21,7 @@ scope:
 - .github/workflows/ci.yml
 - tests/unit/test_process_lock.py
 - docs/modules/process.md
+- tests/unit/test_conftest_sigbreak_faulthandler.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +30,12 @@ scope_changes:
 - op: add
   glob: docs/modules/process.md
   reason: 'scope closure: frob:doc target for touched symbols'
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/test_conftest_sigbreak_faulthandler.py
+  reason: 'T-3560 revert fallout: deleting this file crashes frob check via T-3565
+    own scope glob citing it; keeping the path present as a skip-stub avoids the crash'
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
