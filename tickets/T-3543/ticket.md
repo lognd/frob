@@ -21,6 +21,7 @@ scope:
 - scripts/verify_lands.py
 - src/frob/app/ticket_runner/_lifecycle.py
 - tests/unit/test_land_record_commit.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -51,6 +52,13 @@ scope_changes:
   glob: tests/unit/test_land_record_commit.py
   reason: add tests for derive_land_commit_by_grep + verify the removed follow-up
     commit stays removed
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: TestRecordLandCommit.test_records_land_commit_field_in_a_follow_up_commit
+    directly encodes the pre-T-3543 land_commit-write behavior this ticket removes;
+    must update in the same change
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
