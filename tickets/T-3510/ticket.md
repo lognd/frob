@@ -15,12 +15,21 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/design/windows-portability.md
+- tests/test_vet.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: exact file(s) not yet identified from T-3076's log; placeholder
   scope, first step of the ticket body is pinning down the real file(s) then narrowing
   via scope --add/--remove
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_vet.py
+  reason: T-3076 CI log (run 33035660969, job 98397679871) pins the exact charmap
+    failures to tests/test_vet.py:5124 and :5134 -- write_text() missing encoding='utf-8'
+    in TestObfuscationEnsemble.test_bidi_override_detected_in_c_file/kotlin_file
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
