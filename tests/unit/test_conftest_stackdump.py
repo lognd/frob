@@ -7,12 +7,13 @@ from __future__ import annotations
 
 import os
 import signal
+import subprocess
 import sys
 from pathlib import Path
 
 import pytest
 
-from tests.unit._conftest_test_helpers import load_conftest_module
+from tests.unit._conftest_test_helpers import _CONFTEST_PATH, load_conftest_module
 
 if sys.platform == "win32":  # pragma: no cover - POSIX-only feature
     pytest.skip("SIGUSR1 is POSIX-only", allow_module_level=True)
@@ -28,7 +29,9 @@ def _load_conftest():
 class TestStackdumpHandler:
     """T-1433: `_install_stackdump_handler`/`_dump_all_thread_stacks`."""
 
-    # frob:tests tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_sigusr1_writes_all_thread_stacks_when_enabled  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_sigusr1_writes_a\
+    # ll_thread_stacks_when_enabled
     def test_sigusr1_writes_all_thread_stacks_when_enabled(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -54,7 +57,9 @@ class TestStackdumpHandler:
         finally:
             signal.signal(signal.SIGUSR1, previous)
 
-    # frob:tests tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_handler_not_installed_when_env_unset  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestStackdumpHandler.test_handler_not_inst\
+    # alled_when_env_unset
     def test_handler_not_installed_when_env_unset(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -81,7 +86,9 @@ class TestSelfScanHeavyGrouping:
     Not properly terminated" worker deaths (kernel OOM-kill, no
     faulthandler fault trace captured, matching an uncatchable SIGKILL)."""
 
-    # frob:tests tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_self_scan_heavy_tests_share_one_xdist_group  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_self_scan_h\
+    # eavy_tests_share_one_xdist_group
     def test_self_scan_heavy_tests_share_one_xdist_group(self) -> None:
         """A collected item whose name matches one of the known full-repo
         self-scan tests gets the SAME `xdist_group` marker as the others --
@@ -129,7 +136,9 @@ class TestHeavySubprocessGrouping:
     budget from cross-worker git contention, while the same file finishes
     well under that budget run serially."""
 
-    # frob:tests tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping.test_heavy_subprocess_marker_groups_per_file  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping.test_heavy_sub\
+    # process_marker_groups_per_file
     def test_heavy_subprocess_marker_groups_per_file(self) -> None:
         """A collected item whose module carries the `heavy_subprocess`
         marker gets its OWN `xdist_group`, keyed by module name -- so two
@@ -226,8 +235,14 @@ class TestSuiteResultLine:
             self.config = config
             self.testscollected = collected
             self.testsfailed = failed
+            # T-3516: real `pytest.Session` always carries `exitstatus`;
+            # `pytest_sessionfinish`'s own WORKER-CRASH-REPORT block reads
+            # (and can overwrite) it, so the fake carries it too.
+            self.exitstatus = 0
 
-    # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_prints_greppable_line_at_any_verbosity  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_pri\
+    # nts_greppable_line_at_any_verbosity
     def test_sessionfinish_prints_greppable_line_at_any_verbosity(self) -> None:
         """On the controller (no `workerinput`), the hook writes exactly one
         `SUITE-RESULT:` line carrying the real exit status and counts --
@@ -245,7 +260,9 @@ class TestSuiteResultLine:
         line = reporter.lines[0]
         assert line == "SUITE-RESULT: exitstatus=1 collected=50 failed=2"
 
-    # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_skips_on_xdist_worker  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_ski\
+    # ps_on_xdist_worker
     def test_sessionfinish_skips_on_xdist_worker(self) -> None:
         """On an xdist WORKER (`workerinput` present, mirroring
         `pytest_configure`'s own controller-only guard above the hook),
@@ -276,7 +293,9 @@ class TestSuiteResultLine:
             super().__init__()
             self.stats = stats
 
-    # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_lists_failing_node_ids  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_lis\
+    # ts_failing_node_ids
     def test_sessionfinish_lists_failing_node_ids(self) -> None:
         """T-1673: alongside the count-only `SUITE-RESULT:` line, the hook
         writes one `SUITE-RESULT-FAILED:` line per failing/erroring node id
@@ -296,7 +315,9 @@ class TestSuiteResultLine:
         assert "SUITE-RESULT-FAILED: tests/a.py::test_one (failed)" in reporter.lines
         assert "SUITE-RESULT-FAILED: tests/b.py::test_two (error)" in reporter.lines
 
-    # frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_caps_failing_node_ids_with_and_n_more  # noqa: E501
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_cap\
+    # s_failing_node_ids_with_and_n_more
     def test_sessionfinish_caps_failing_node_ids_with_and_n_more(self) -> None:
         """T-1673: past `_SUITE_RESULT_MAX_NODE_IDS` failures, the hook
         collapses the remainder into a single 'and N more' line instead of
@@ -316,3 +337,322 @@ class TestSuiteResultLine:
         ]
         assert len(failed_lines) == cap + 1
         assert failed_lines[-1] == "SUITE-RESULT-FAILED: and 3 more"
+
+
+class TestWorkerCrashReport:
+    """T-3516: `pytest_runtest_logstart`/`pytest_runtest_logfinish`'s
+    per-worker crash marker, `pytest_handlecrashitem`'s collect-and-cap
+    logic, and `pytest_sessionfinish`'s `WORKER-CRASH-REPORT:` section."""
+
+    class _FakeGateway:
+        def __init__(self, gateway_id: str) -> None:
+            self.id = gateway_id
+
+    class _FakeWorker:
+        def __init__(self, gateway_id: str) -> None:
+            self.gateway = TestWorkerCrashReport._FakeGateway(gateway_id)
+
+    class _FakeCrashReport:
+        """Minimal stand-in for the synthetic `TestReport` xdist's own
+        `DSession.handle_crashitem` builds and passes to
+        `pytest_handlecrashitem`."""
+
+        def __init__(self, node: object) -> None:
+            self.node = node
+            self.longrepr: str | None = "worker crashed"
+
+    class _FakeSched:
+        """Records every `mark_test_pending` call; `raise_on_mark` lets a
+        test exercise the reschedule-failed fallback message."""
+
+        def __init__(self, *, raise_on_mark: bool = False) -> None:
+            self.marked: list[str] = []
+            self._raise = raise_on_mark
+
+        def mark_test_pending(self, nodeid: str) -> None:
+            if self._raise:
+                raise RuntimeError("reschedule boom")
+            self.marked.append(nodeid)
+
+    class _FakeHookConfig:
+        """Stand-in for the `pytest.Config` stashed onto
+        `_worker_crash_hook_config` by `pytest_configure` (T-3516) --
+        `is_worker=True` mirrors an xdist worker (`workerinput` present),
+        `is_worker=False` mirrors the controller (attribute absent)."""
+
+        def __init__(self, *, worker_id: str = "gw0", is_worker: bool = True) -> None:
+            if is_worker:
+                self.workerinput = {"workerid": worker_id}
+
+        def getoption(self, name: str, default: object = None) -> object:
+            assert name == "timeout"
+            return default
+
+        def getini(self, name: str) -> str:
+            assert name == "timeout"
+            return ""
+
+    def setup_method(self) -> None:
+        """Every test loads its OWN fresh conftest module instance via
+        `_load_conftest()` (module-level state starts empty each time), so
+        no explicit cross-test reset is needed here -- kept as a no-op
+        hook purely so a future shared-instance refactor of this test
+        file fails loudly instead of silently leaking crash state."""
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_logstart_writes\
+    # _marker_only_on_worker
+    def test_logstart_writes_marker_only_on_worker(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`pytest_runtest_logstart` writes a per-worker marker file when
+        `workerinput` is present (an actual xdist worker), and is a no-op
+        on the controller (no `workerinput`) or when no config has been
+        stashed at all."""
+        module = _load_conftest()
+        monkeypatch.setattr(module, "_XDIST_CRASH_MARKER_DIR", tmp_path / "markers")
+
+        module._worker_crash_hook_config = self._FakeHookConfig(
+            worker_id="gw1", is_worker=True
+        )
+        module.pytest_runtest_logstart("tests/x.py::test_a", None)
+        assert module._xdist_crash_marker_path("gw1").exists()
+
+        module._worker_crash_hook_config = self._FakeHookConfig(is_worker=False)
+        module.pytest_runtest_logstart("tests/x.py::test_b", None)
+        assert not module._xdist_crash_marker_path("gw0").exists()
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_logfinish_clear\
+    # s_marker
+    def test_logfinish_clears_marker(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A test that finishes normally (any outcome) clears its worker's
+        marker via `pytest_runtest_logfinish` -- only a worker that dies
+        WITHOUT reaching this hook leaves a marker behind for
+        `pytest_handlecrashitem` to find."""
+        module = _load_conftest()
+        monkeypatch.setattr(module, "_XDIST_CRASH_MARKER_DIR", tmp_path / "markers")
+        module._worker_crash_hook_config = self._FakeHookConfig(worker_id="gw1")
+
+        module.pytest_runtest_logstart("tests/x.py::test_a", None)
+        assert module._xdist_crash_marker_path("gw1").exists()
+        module.pytest_runtest_logfinish("tests/x.py::test_a", None)
+        assert not module._xdist_crash_marker_path("gw1").exists()
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_handlecrashitem\
+    # _records_one_entry_and_marks_failed
+    def test_handlecrashitem_records_one_entry_and_marks_failed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A single crash records exactly one `WORKER-CRASH-REPORT` entry
+        (naming the worker and nodeid), does NOT reschedule at the default
+        `_WORKER_CRASH_RERUN_CAP=0` (MUST-FIRE: a deterministic crasher
+        must produce exactly one entry, not a reschedule-and-crash-again
+        cascade), and never clears/sets `report.outcome` away from
+        xdist's own default `\"failed\"` -- so the crash is never a
+        silent skip."""
+        module = _load_conftest()
+        monkeypatch.setattr(module, "_XDIST_CRASH_MARKER_DIR", tmp_path / "markers")
+        module._worker_crash_hook_config = self._FakeHookConfig(is_worker=False)
+        sched = self._FakeSched()
+        report = self._FakeCrashReport(self._FakeWorker("gw2"))
+
+        module.pytest_handlecrashitem("tests/x.py::test_crash", report, sched)
+
+        assert len(module._worker_crash_entries) == 1
+        entry = module._worker_crash_entries[0]
+        assert "worker=gw2" in entry
+        assert "nodeid=tests/x.py::test_crash" in entry
+        assert sched.marked == []
+        assert "not rescheduled" in entry
+        assert not hasattr(report, "outcome") or report.outcome != "passed"
+        assert report.longrepr != "worker crashed"  # T-3516's own message replaced it
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_handlecrashitem\
+    # _respects_a_raised_rerun_cap
+    def test_handlecrashitem_respects_a_raised_rerun_cap(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The reschedule mechanism itself (`_WORKER_CRASH_RERUN_CAP` > 0,
+        not this repo's own default of 0) reschedules exactly once per
+        nodeid and then stops -- a THIRD crash of the same nodeid past
+        the cap is still recorded as its own entry but is not rescheduled
+        again."""
+        module = _load_conftest()
+        monkeypatch.setattr(module, "_XDIST_CRASH_MARKER_DIR", tmp_path / "markers")
+        monkeypatch.setattr(module, "_WORKER_CRASH_RERUN_CAP", 1)
+        module._worker_crash_hook_config = self._FakeHookConfig(is_worker=False)
+        sched = self._FakeSched()
+        nodeid = "tests/x.py::test_flaky"
+
+        module.pytest_handlecrashitem(
+            nodeid, self._FakeCrashReport(self._FakeWorker("gw3")), sched
+        )
+        module.pytest_handlecrashitem(
+            nodeid, self._FakeCrashReport(self._FakeWorker("gw3")), sched
+        )
+
+        assert sched.marked == [nodeid]
+        assert len(module._worker_crash_entries) == 2
+        assert "rescheduled (1/1)" in module._worker_crash_entries[0]
+        assert "not rescheduled" in module._worker_crash_entries[1]
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_sessionfinish_p\
+    # rints_report_and_forces_failing_exit
+    def test_sessionfinish_prints_report_and_forces_failing_exit(self) -> None:
+        """`pytest_sessionfinish` prints exactly one `WORKER-CRASH-REPORT:`
+        header plus one line per recorded crash, and forces
+        `session.exitstatus` to a failing value if it would otherwise read
+        as clean (0) -- a crash whose one capped rerun happened to pass
+        must not let the whole run look green."""
+        module = _load_conftest()
+        module._worker_crash_entries.append(
+            "WORKER-CRASH-REPORT: worker=gw0 nodeid=tests/x.py::test_a "
+            "cause=... disposition=rescheduled (1/1)"
+        )
+        reporter = TestSuiteResultLine._StatsReporter({"failed": [], "error": []})
+        config = TestSuiteResultLine._FakeConfig(reporter=reporter, is_worker=False)
+        session = TestSuiteResultLine._FakeSession(config=config, collected=5, failed=0)
+        session.exitstatus = 0
+
+        module.pytest_sessionfinish(session=session, exitstatus=0)
+
+        crash_lines = [
+            line for line in reporter.lines if line.startswith("WORKER-CRASH-REPORT:")
+        ]
+        assert crash_lines[0] == "WORKER-CRASH-REPORT: 1 worker crash(es)"
+        assert len(crash_lines) == 2
+        assert session.exitstatus == 1
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_sessionfinish_s\
+    # tays_quiet_on_a_clean_run
+    def test_sessionfinish_stays_quiet_on_a_clean_run(self) -> None:
+        """MUST-STAY-QUIET (T-3516): a run with no recorded worker crashes
+        prints no `WORKER-CRASH-REPORT:` line at all, and does not touch
+        `session.exitstatus`."""
+        module = _load_conftest()
+        assert module._worker_crash_entries == []
+        reporter = TestSuiteResultLine._StatsReporter({"failed": [], "error": []})
+        config = TestSuiteResultLine._FakeConfig(reporter=reporter, is_worker=False)
+        session = TestSuiteResultLine._FakeSession(config=config, collected=5, failed=0)
+        session.exitstatus = 0
+
+        module.pytest_sessionfinish(session=session, exitstatus=0)
+
+        assert not any(
+            line.startswith("WORKER-CRASH-REPORT:") for line in reporter.lines
+        )
+        assert session.exitstatus == 0
+
+
+class TestWorkerCrashReportIntegration:
+    """T-3516 MUST-FIRE/MUST-STAY-QUIET: real subprocess `pytest -n`
+    runs exercising the FULL pipeline (`pytest_runtest_logstart` ->
+    a worker's `os._exit` -> xdist's own crash machinery ->
+    `pytest_handlecrashitem` -> `pytest_sessionfinish`) end-to-end, not
+    just the unit-level fakes above -- the shape of bug this ticket
+    exists for (an xdist worker actually dying) cannot be reproduced by
+    calling the hooks directly in-process."""
+
+    @staticmethod
+    def _run(tmp_path: Path, test_body: str) -> "subprocess.CompletedProcess[str]":
+        """Run a real, isolated `python -m pytest -n 2` over a synthetic
+        one-module suite under `tmp_path`, with THIS repo's real
+        `tests/conftest.py` copied in as the suite's own conftest --
+        `tmp_path` has no `pyproject.toml`/`frob.toml` of its own, so
+        pytest never inherits this repo's real `addopts`/rootdir, only
+        the plugin logic under test."""
+        (tmp_path / "conftest.py").write_text(
+            _CONFTEST_PATH.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        (tmp_path / "test_planted.py").write_text(test_body, encoding="utf-8")
+        env = dict(os.environ)
+        env.pop("PYTEST_ADDOPTS", None)
+        return subprocess.run(
+            [sys.executable, "-m", "pytest", str(tmp_path), "-n", "2", "-q"],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+            timeout=90,
+            env=env,
+        )
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration.test_must\
+    # _fire_planted_os_exit_produces_one_report_and_failing_exit
+    def test_must_fire_planted_os_exit_produces_one_report_and_failing_exit(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE (T-3516): a planted test that `os._exit()`s its own
+        worker produces exactly one `WORKER-CRASH-REPORT` entry naming it,
+        a `FAILED` entry in `SUITE-RESULT-FAILED`, and a failing process
+        exit status -- with no `INTERNALERROR` abort."""
+        body = (
+            "import os\n\n"
+            "def test_ok():\n"
+            "    assert True\n\n"
+            "def test_crash():\n"
+            "    os._exit(1)\n"
+        )
+        result = self._run(tmp_path, body)
+        combined = result.stdout + result.stderr
+        lines = combined.splitlines()
+
+        assert result.returncode != 0, combined
+        assert "INTERNALERROR" not in combined, combined
+
+        crash_lines = [
+            line for line in lines if line.startswith("WORKER-CRASH-REPORT: worker=")
+        ]
+        assert len(crash_lines) == 1, combined
+        assert "test_planted.py::test_crash" in crash_lines[0]
+
+        failed_lines = [
+            line
+            for line in lines
+            if line.startswith("SUITE-RESULT-FAILED:")
+            and "test_planted.py::test_crash" in line
+        ]
+        assert len(failed_lines) == 1, combined
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration.test_must\
+    # _stay_quiet_on_a_clean_run
+    def test_must_stay_quiet_on_a_clean_run(self, tmp_path: Path) -> None:
+        """MUST-STAY-QUIET (T-3516): a clean run (no crash) prints no
+        `WORKER-CRASH-REPORT` section at all."""
+        body = "def test_one():\n    assert True\n\ndef test_two():\n    assert True\n"
+        result = self._run(tmp_path, body)
+        combined = result.stdout + result.stderr
+
+        assert result.returncode == 0, combined
+        assert "WORKER-CRASH-REPORT" not in combined, combined
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration.test_must\
+    # _stay_quiet_normal_failure_reporting_unchanged
+    def test_must_stay_quiet_normal_failure_reporting_unchanged(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET (T-3516): an ordinary (non-crashing) failing
+        test's `SUITE-RESULT-FAILED` line is unchanged -- no crash-cause
+        suffix, no `WORKER-CRASH-REPORT` section."""
+        body = "def test_fails():\n    assert False\n"
+        result = self._run(tmp_path, body)
+        combined = result.stdout + result.stderr
+        lines = combined.splitlines()
+
+        assert result.returncode != 0, combined
+        assert "WORKER-CRASH-REPORT" not in combined, combined
+        failed_lines = [
+            line for line in lines if line.startswith("SUITE-RESULT-FAILED:")
+        ]
+        assert failed_lines == [
+            "SUITE-RESULT-FAILED: test_planted.py::test_fails (failed)"
+        ], combined

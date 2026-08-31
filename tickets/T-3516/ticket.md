@@ -2,7 +2,7 @@
 id: T-3516
 title: Collect xdist worker crashes into one loud end-of-run WORKER-CRASH-REPORT instead
   of mid-stream node-down spam and INTERNALERROR aborts
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -31,7 +31,17 @@ scope_changes:
     testsuite node
   actor: logan
   at: '2026-08-30'
-designated_repro_test: null
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport::test_logstart_writes_marker_only_on_worker
+- tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport::test_logfinish_clears_marker
+- tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport::test_handlecrashitem_records_one_entry_and_marks_failed
+- tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport::test_handlecrashitem_respects_a_raised_rerun_cap
+- tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport::test_sessionfinish_prints_report_and_forces_failing_exit
+- tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport::test_sessionfinish_stays_quiet_on_a_clean_run
+- tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration::test_must_fire_planted_os_exit_produces_one_report_and_failing_exit
+- tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration::test_must_stay_quiet_on_a_clean_run
+- tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration::test_must_stay_quiet_normal_failure_reporting_unchanged
+designated_repro_test: tests/unit/test_conftest_stackdump.py::TestWorkerCrashReportIntegration::test_must_fire_planted_os_exit_produces_one_report_and_failing_exit
 threat: null
 component: null
 anchor: false

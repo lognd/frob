@@ -146,7 +146,31 @@ jobs:
         if: runner.os == 'Linux'
         env:
           PYTHONFAULTHANDLER: "1"
-        run: timeout -s ABRT 40m uv run pytest -q
+        # T-3516: `tee` a copy of the run's own output to a log file so the
+        # step below can grep it for `WORKER-CRASH-REPORT:` -- `pipefail`
+        # keeps `timeout ... | tee ...`'s own exit code as pytest's real
+        # one (a plain test failure or the 40m ABRT timeout), not tee's
+        # always-0 exit, so this step still fails exactly as before.
+        run: |
+          set -o pipefail
+          timeout -s ABRT 40m uv run pytest -q 2>&1 | tee /tmp/pytest-ubuntu.log
+      # T-3516: collect, do not scatter -- and stay loud even off the raw
+      # log: an xdist worker crash today (see tests/conftest.py's
+      # `WORKER-CRASH-REPORT:` section, T-3516) is otherwise only visible
+      # by scrolling the full ubuntu Test step's log. `always()` so this
+      # still runs (and still reports) on a failing/timed-out Test step,
+      # the exact run this exists to make visible without scrolling.
+      - name: Surface WORKER-CRASH-REPORT in step summary (T-3516)
+        if: always() && runner.os == 'Linux'
+        run: |
+          if [ -f /tmp/pytest-ubuntu.log ] && grep -q '^WORKER-CRASH-REPORT:' /tmp/pytest-ubuntu.log; then
+            {
+              echo '## Worker crash report (T-3516)'
+              echo '```'
+              grep '^WORKER-CRASH-REPORT:' /tmp/pytest-ubuntu.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
       # T-3250: macOS has bash but not GNU coreutils' `timeout`. `kill -ABRT`
       # is a POSIX shell builtin present in macOS's own bash, so it reaches
       # the same faulthandler dump-then-die mechanism as ubuntu's step

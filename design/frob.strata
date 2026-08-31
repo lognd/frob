@@ -1556,6 +1556,20 @@ node testsuite : trusted {
     // so the T-1439-incident waive clause this comment used to carry is
     // removed in favor of an honest `may` declaration below.
     may "process-control" via "tests/conftest.py", "tests/test_serve_socket.py";
+    // T-3516: tests/conftest.py's worker-crash marker (pytest_runtest_
+    // logstart/logfinish, T-3516) writes/removes .frob/xdist-crash-marker/
+    // <workerid>.json; tests/unit/test_conftest_stackdump.py's own
+    // TestWorkerCrashReport.* unit tests exercise the same helper via
+    // monkeypatched tmp_path dirs, and its TestWorkerCrashReportIntegration
+    // tests write a synthetic conftest.py/test module under tmp_path for a
+    // real subprocess pytest run.
+    may "fs.write" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py";
+    // T-3516: _infer_worker_crash_cause reads back its own marker file.
+    may "fs.read" via "tests/conftest.py";
+    // T-3516: TestWorkerCrashReportIntegration spawns a real
+    // `python -m pytest -n 2` subprocess per MUST-FIRE/MUST-STAY-QUIET
+    // case -- the only way to exercise an actual xdist worker crash.
+    may "exec" via "tests/unit/test_conftest_stackdump.py";
     // T-1478: tests/unit/strata/test_effects.py's own new argument-level
     // `of`-scoping fixtures contain real `os.environ.get(...)` needle
     // literals (exercising the SAME env-read observation the `of` join
@@ -1567,7 +1581,11 @@ node testsuite : trusted {
     // which covers `os.environ.get(...)`).
     // T-3029: 7 test files with real, new env.read sites added below (same sweep).
     // T-3283: tests/test_perf.py added below -- a real, new env.read site (T-3283's post-close-drift sweep).
-    may "env.read" via "tests/test_coverage.py", "tests/test_hook_frob_suggest.py", "tests/test_hook_frob_timeout_guard.py", "tests/test_release.py", "tests/unit/test_check.py", "tests/unit/test_confinement_lattice.py", "tests/unit/test_conftest_color_env.py", "tests/unit/test_sync_claude_config_stale_guard_t3408.py", "tests/unit/verify/test_watermark.py", "tests/unit/verify/test_worker.py", "tests/gates/test_env_absent_bug002_repro.py", "tests/system/test_ci_hang_guard_positive_control.py", "tests/test_ghio.py", "tests/test_refactor_corpus.py", "tests/test_worktree_guard.py", "tests/test_worktree_lease_env_ambient.py", "tests/unit/test_main_entry.py", "tests/test_perf.py", "tests/system/test_coverage_sigterm.py";
+    // T-3516: TestWorkerCrashReportIntegration._run pops PYTHONFAULTHANDLER/
+    // PYTEST_ADDOPTS from a COPY of os.environ before spawning its
+    // subprocess pytest run, so the synthetic tmp_path suite never
+    // inherits this repo's own real addopts.
+    may "env.read" via "tests/test_coverage.py", "tests/test_hook_frob_suggest.py", "tests/test_hook_frob_timeout_guard.py", "tests/test_release.py", "tests/unit/test_check.py", "tests/unit/test_confinement_lattice.py", "tests/unit/test_conftest_color_env.py", "tests/unit/test_sync_claude_config_stale_guard_t3408.py", "tests/unit/verify/test_watermark.py", "tests/unit/verify/test_worker.py", "tests/gates/test_env_absent_bug002_repro.py", "tests/system/test_ci_hang_guard_positive_control.py", "tests/test_ghio.py", "tests/test_refactor_corpus.py", "tests/test_worktree_guard.py", "tests/test_worktree_lease_env_ambient.py", "tests/unit/test_main_entry.py", "tests/test_perf.py", "tests/system/test_coverage_sigterm.py", "tests/unit/test_conftest_stackdump.py";
     may "eval" via "tests/test_capability_registry.py", "tests/test_fuzz.py", "tests/test_gates.py", "tests/test_graph_lock.py", "tests/test_refs_gate.py", "tests/test_serve.py", "tests/test_telemetry_hook_script.py", "tests/test_tickets_acceptance.py", "tests/test_tickets_collision.py", "tests/test_vet.py", "tests/unit/strata/test_audit.py", "tests/unit/strata/test_conform_eval_needle.py", "tests/unit/strata/test_selfconform.py", "tests/unit/test_arch.py", "tests/unit/test_conftest_stackdump.py";
     // T-2503: exec/fs.read/fs.write collapsed from per-file `via` enumeration (676 sites combined) to ambient (whole-node, `because`-
     // justified) grants -- every file under this node's `tests/**` code binding legitimately exercises all three, so listing each site

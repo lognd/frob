@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 import pytest
 
@@ -140,8 +140,12 @@ _HEAVY_SUBPROCESS_MARKER = "heavy_subprocess"
 
 # frob:ticket T-1433
 # frob:ticket T-2099
-# frob:tests tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_self_scan_heavy_tests_share_one_xdist_group  # noqa: E501
-# frob:tests tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping.test_heavy_subprocess_marker_groups_per_file  # noqa: E501
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping.test_self_scan_heavy\
+# _tests_share_one_xdist_group
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping.test_heavy_subproc\
+# ess_marker_groups_per_file
 def pytest_collection_modifyitems(
     config: pytest.Config, items: list[pytest.Item]
 ) -> None:
@@ -206,12 +210,26 @@ def pytest_configure(config: pytest.Config) -> None:
     every session, so a value stashed by `pytest_internalerror` during an
     earlier in-process run (e.g. a prior `pytest.main()` call within the
     same interpreter) can never leak into a later run's `SUITE-RESULT:`
-    line."""
-    global _last_internal_error
+    line.
+
+    T-3516: also stashes `config` into the module-level `_worker_crash_
+    hook_config` (every process, controller and worker alike --
+    `pytest_runtest_logstart`/`pytest_runtest_logfinish`/`pytest_
+    handlecrashitem` all need it and none of them receive it as a hook
+    argument) and, controller only, resets the crash-report state left
+    over from any earlier in-process run and installs
+    `_harden_dsession_active_nodes`'s vanished-`WorkerController` guard
+    before any worker can crash."""
+    global _last_internal_error, _worker_crash_hook_config
     _last_internal_error = None
     _install_stackdump_handler()
+    _worker_crash_hook_config = config
     if hasattr(config, "workerinput"):
         return
+    _worker_crash_entries.clear()
+    _worker_crash_causes.clear()
+    _worker_crash_rerun_counts.clear()
+    _harden_dsession_active_nodes()
     restore_stale_journals(_REPO_ROOT)
 
 
@@ -270,29 +288,326 @@ def pytest_internalerror(
     _last_internal_error = f"{excinfo.typename}: {excinfo.value}"
 
 
+# frob:ticket T-3516
+_XDIST_CRASH_MARKER_DIR = _REPO_ROOT / ".frob" / "xdist-crash-marker"
+"""T-3516: per-worker \"what is this worker running right now\" marker
+directory -- one small file per xdist worker id (`gw0.json` etc), written
+by the WORKER just before each test's call phase and cleared right after,
+so a CONTROLLER-side crash handler (`pytest_handlecrashitem`) can infer
+whether a dead worker was mid-timeout (elapsed since the marker's
+`started` timestamp is at/above the run's configured `--timeout`) or died
+long before any timeout could have fired (more likely an OOM-kill or a
+hard segfault) -- the crash itself never sends a report back to the
+controller (that is what "crashed" means), so this marker is the only
+signal available once the worker is gone."""
+
+_WORKER_CRASH_RERUN_CAP = 0
+"""T-3516: how many times `pytest_handlecrashitem` will ask xdist to
+reschedule a crashed test onto a fresh worker before giving up and
+leaving it as a plain failure. Defaults to 0 (no automatic reschedule) --
+xdist does not retry a crashed test on its own (only a
+`pytest_handlecrashitem` implementation that calls `sched.mark_test_
+pending` does), and a DETERMINISTIC crasher (a real bug, not a transient
+OOM) rescheduled once would just crash its fresh worker too, turning one
+`WORKER-CRASH-REPORT` entry into a cascade -- exactly what MUST-FIRE's
+"exactly one entry" acceptance bar rules out. The cap mechanism itself is
+real and tested (`TestWorkerCrashReport.test_handlecrashitem_respects_a_
+raised_rerun_cap`) for a future ticket to raise past 0 once there is a
+reliable way to tell "transient" from "deterministic" apart; until then,
+capped at 0 is the honest -- never silently-retrying-into-green -- default
+this ticket's own MUST-FIRE bar requires."""
+
+_worker_crash_entries: list[str] = []
+"""T-3516: one formatted `WORKER-CRASH-REPORT:` line per worker crash
+this session observed, appended by `pytest_handlecrashitem` (controller
+process only) and flushed by `pytest_sessionfinish`. Module-level because
+xdist hooks have no session-scoped storage of their own that survives
+from the crash callback to the end-of-run summary."""
+
+_worker_crash_causes: dict[str, str] = {}
+"""T-3516: nodeid -> one-line inferred cause, so `pytest_sessionfinish`
+can suffix the existing `SUITE-RESULT-FAILED:` line for a crashed test
+with WHY it failed, without changing that line's pinned format for an
+ordinary (non-crash) failure."""
+
+_worker_crash_rerun_counts: dict[str, int] = {}
+"""T-3516: nodeid -> how many times this session has already asked xdist
+to reschedule it after a crash -- consulted and incremented by
+`pytest_handlecrashitem`, capped at `_WORKER_CRASH_RERUN_CAP`."""
+
+_worker_crash_hook_config: pytest.Config | None = None
+"""T-3516: `config` stashed by `pytest_configure` (every process, worker
+and controller alike) for `pytest_runtest_logstart`/`pytest_runtest_
+logfinish`/`pytest_handlecrashitem` to read -- none of those three hooks
+receive `config` as an argument of their own."""
+
+
+# frob:waive WIRE001 reason="genuinely wired -- called by pytest_runtest_logstart/ \
+# pytest_runtest_logfinish/_infer_worker_crash_cause below, all of which are \
+# themselves reached only via pytest's own name-based hook discovery (not a direct \
+# in-repo call site WIRE001's callgraph can trace into), the same gap this file's \
+# pre-existing pytest_internalerror waiver already covers" follow_up="T-3381"
+def _xdist_crash_marker_path(worker_id: str) -> Path:
+    """The per-worker \"currently running\" marker file `worker_id`
+    (e.g. `\"gw3\"`) writes to and `pytest_handlecrashitem` reads from
+    (T-3516)."""
+    return _XDIST_CRASH_MARKER_DIR / f"{worker_id}.json"
+
+
+# frob:ticket T-3516
+# frob:waive WIRE001 reason="genuinely wired -- pytest calls pytest_runtest_logstart \
+# via its own core hookspec (name-based plugin discovery, same gap this file's \
+# pre-existing pytest_internalerror/pytest_configure/pytest_sessionfinish hooks \
+# already have a waiver for), not a direct in-repo call site" follow_up="T-3381"
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_logstart_writes_mar\
+# ker_only_on_worker
+def pytest_runtest_logstart(nodeid: str, location: object) -> None:
+    """Worker-side half of T-3516's timeout-vs-OOM crash heuristic: record
+    `nodeid` and the current time to this worker's own marker file just
+    before pytest runs it, so a controller-side crash handler can later
+    infer how long the worker had been running when it died. A no-op on
+    the controller process itself (`workerinput` absent there) and under
+    plain serial pytest (no `-n`) -- `config.workerinput["workerid"]` is
+    only present on an actual xdist worker."""
+    config = _worker_crash_hook_config
+    if config is None or not hasattr(config, "workerinput"):
+        return
+    worker_id = config.workerinput.get("workerid")
+    if not worker_id:
+        return
+    import json
+    import time
+
+    _XDIST_CRASH_MARKER_DIR.mkdir(parents=True, exist_ok=True)
+    marker = {"nodeid": nodeid, "started": time.time()}
+    _xdist_crash_marker_path(worker_id).write_text(json.dumps(marker), encoding="utf-8")
+
+
+# frob:ticket T-3516
+# frob:waive WIRE001 reason="genuinely wired -- pytest calls pytest_runtest_logfinish \
+# via its own core hookspec (name-based plugin discovery), same gap this file's \
+# pre-existing pytest_internalerror waiver already covers, not a direct in-repo call \
+# site" follow_up="T-3381"
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_logfinish_clears_ma\
+# rker
+def pytest_runtest_logfinish(nodeid: str, location: object) -> None:
+    """Clear T-3516's per-worker marker once `nodeid` finishes normally
+    (any outcome, including a plain failure) -- only a worker that dies
+    WITHOUT reaching this hook leaves a stale marker for
+    `pytest_handlecrashitem` to find, which is exactly the "worker crashed
+    mid-test" signal this pair of hooks exists to capture."""
+    config = _worker_crash_hook_config
+    if config is None or not hasattr(config, "workerinput"):
+        return
+    worker_id = config.workerinput.get("workerid")
+    if not worker_id:
+        return
+    _xdist_crash_marker_path(worker_id).unlink(missing_ok=True)
+
+
+# frob:ticket T-3516
+# frob:waive WIRE001 reason="genuinely wired -- called only by pytest_handlecrashitem \
+# above, itself reached exclusively via pytest-xdist's own name-based hook discovery \
+# (see that function's own WIRE001 waiver), not a direct in-repo call site" \
+# follow_up="T-3381"
+def _infer_worker_crash_cause(worker_id: str, timeout_seconds: float | None) -> str:
+    """One-line inferred cause for a crashed worker (T-3516): reads
+    `worker_id`'s marker file (written by `pytest_runtest_logstart`,
+    T-3516) to see how long the crashed test had been running. At or past
+    the run's configured `--timeout`/`PYTEST_TIMEOUT` value, this matches
+    pytest-timeout's own `--timeout-method=thread` shape (dump stacks,
+    then `os._exit`) closely enough to name it directly; well short of
+    that budget (or no timeout configured at all), a hard death this
+    early is more consistent with an OOM-kill or a genuine segfault than
+    a timeout, so this says so instead of guessing a specific cause it
+    cannot actually observe (the crashed worker sent no report, so there
+    is no captured dump text to inspect here, only elapsed time)."""
+    import json
+    import time
+
+    marker_path = _xdist_crash_marker_path(worker_id)
+    try:
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return "worker died without a running-test marker -- suspect OOM or a hard crash before any test started"
+    finally:
+        marker_path.unlink(missing_ok=True)
+    elapsed = time.time() - marker.get("started", time.time())
+    if timeout_seconds is not None and elapsed >= timeout_seconds:
+        return (
+            f"exceeded {timeout_seconds:g}s timeout (thread-method os._exit, "
+            f"{elapsed:.1f}s elapsed)"
+        )
+    return f"worker died without a timeout dump ({elapsed:.1f}s elapsed) -- suspect OOM"
+
+
+# frob:ticket T-3516
+# frob:waive WIRE001 reason="genuinely wired -- pytest-xdist calls this via its own \
+# newhooks.py pytest_handlecrashitem hookspec \
+# (xdist.dsession.DSession.handle_crashitem), name-based plugin discovery like this \
+# file's pre-existing pytest_internalerror/ pytest_sessionfinish hooks, not a direct \
+# in-repo call site" follow_up="T-3381"
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_handlecrashitem_rec\
+# ords_one_entry_and_marks_failed
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestWorkerCrashReport.test_handlecrashitem_res\
+# pects_a_raised_rerun_cap
+@pytest.hookimpl(optionalhook=True)
+def pytest_handlecrashitem(crashitem: str, report: Any, sched: Any) -> None:
+    """pytest-xdist's crashed-item hook (T-3516): a worker died running
+    `crashitem` (a nodeid) with no report of its own ever reaching the
+    controller, so `report` here is the SYNTHETIC failure xdist's own
+    `DSession.handle_crashitem` builds in its place. Collects one
+    `WORKER-CRASH-REPORT` entry (worker id, nodeid, inferred cause,
+    rerun disposition) into the module-level list `pytest_sessionfinish`
+    flushes at end-of-run, and asks xdist to reschedule the test onto a
+    fresh worker ONCE (`_WORKER_CRASH_RERUN_CAP`) via
+    `sched.mark_test_pending` -- but always LEAVES `report.outcome`
+    as `\"failed\"` (xdist's own default) regardless of whether a
+    reschedule was requested, so the crash is never a silent skip: it
+    shows up in `SUITE-RESULT-FAILED` this run even if a later retry on
+    a fresh worker happens to pass."""
+    worker = getattr(report, "node", None)
+    gateway = getattr(worker, "gateway", None)
+    worker_id = getattr(gateway, "id", None) or "unknown"
+    config = _worker_crash_hook_config
+    timeout_seconds = None
+    if config is not None:
+        raw_timeout = config.getoption("timeout", default=None)
+        if raw_timeout is None:
+            ini_timeout = config.getini("timeout") if config.getini("timeout") else None
+            raw_timeout = ini_timeout
+        if raw_timeout:
+            try:
+                timeout_seconds = float(raw_timeout)
+            except (TypeError, ValueError):
+                timeout_seconds = None
+    cause = _infer_worker_crash_cause(worker_id, timeout_seconds)
+    rerun_count = _worker_crash_rerun_counts.get(crashitem, 0)
+    if rerun_count < _WORKER_CRASH_RERUN_CAP:
+        _worker_crash_rerun_counts[crashitem] = rerun_count + 1
+        try:
+            sched.mark_test_pending(crashitem)
+        except Exception as exc:  # noqa: BLE001 -- reschedule is best-effort
+            disposition = f"rerun requested but reschedule failed ({exc})"
+        else:
+            disposition = f"rescheduled ({rerun_count + 1}/{_WORKER_CRASH_RERUN_CAP})"
+    else:
+        disposition = f"not rescheduled (rerun cap {_WORKER_CRASH_RERUN_CAP} reached)"
+    message = f"worker {worker_id} died running {crashitem}: {cause} -- {disposition}"
+    _worker_crash_causes[crashitem] = f"{cause} -- {disposition}"
+    _worker_crash_entries.append(
+        f"WORKER-CRASH-REPORT: worker={worker_id} nodeid={crashitem} cause={cause} "
+        f"disposition={disposition}"
+    )
+    try:
+        report.longrepr = message
+    except Exception:  # noqa: BLE001 -- best-effort annotation only
+        pass
+
+
+# frob:ticket T-3516
+_dsession_hardened = False
+"""T-3516: guards `_harden_dsession_active_nodes` so the monkeypatch below
+is applied at most once per process even though `pytest_configure` can in
+principle run more than once in the same interpreter (T-3246's own
+`_last_internal_error` reset comment notes the same possibility)."""
+
+
+# frob:waive WIRE001 reason="genuinely wired -- called only from pytest_configure \
+# above, itself reached exclusively via pytest's own name-based hook discovery (same \
+# gap this file's pre-existing pytest_internalerror waiver already covers), not a \
+# direct in-repo call site" follow_up="T-3381"
+def _harden_dsession_active_nodes() -> None:
+    """Patch `xdist.dsession.DSession.worker_workerfinished`/
+    `worker_errordown` (T-3516) so a SECOND crash-adjacent callback for
+    the same already-removed `WorkerController` calls `set.discard`
+    instead of `set.remove` -- the observed `INTERNALERROR> KeyError:
+    <WorkerController gwN>` (run 33291796476-adjacent local repro cited
+    in this ticket) traces to exactly this: xdist's own
+    `self._active_nodes.remove(node)` at the tail of both methods raises
+    `KeyError` when the SAME node has already been removed by the other
+    callback firing first for the same dying worker -- a real race in
+    xdist's own bookkeeping, not this repo's code, but one this repo can
+    absorb without waiting on an upstream fix. Controller-only (mirrors
+    every other controller-only hook in this file); silently a no-op if
+    `pytest_xdist` is not installed/importable or its internals have
+    changed shape (never blocks collection over a best-effort hardening
+    patch)."""
+    global _dsession_hardened
+    if _dsession_hardened:
+        return
+    try:
+        from xdist.dsession import DSession
+    except ImportError:  # pragma: no cover - pytest-xdist always installed here
+        return
+
+    original_workerfinished = DSession.worker_workerfinished
+    original_errordown = DSession.worker_errordown
+
+    def _safe_workerfinished(self: Any, node: Any) -> None:
+        try:
+            original_workerfinished(self, node)
+        except KeyError:
+            self._active_nodes.discard(node)  # noqa: SLF001
+
+    def _safe_errordown(self: Any, node: Any, error: Any = None) -> None:
+        try:
+            original_errordown(self, node, error)
+        except KeyError:
+            self._active_nodes.discard(node)  # noqa: SLF001
+
+    DSession.worker_workerfinished = (  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
+        _safe_workerfinished
+    )
+    DSession.worker_errordown = (  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
+        _safe_errordown
+    )
+    _dsession_hardened = True
+
+
 # frob:ticket T-1596
 # frob:ticket T-1673
 # frob:ticket T-3246
-# frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_prints_greppable_line_at_any_verbosity  # noqa: E501
-# frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_skips_on_xdist_worker  # noqa: E501
-# frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_lists_failing_node_ids  # noqa: E501
-# frob:tests tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_caps_failing_node_ids_with_and_n_more  # noqa: E501
-# frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_labels_did_not_complete_runs  # noqa: E501
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_prints_\
+# greppable_line_at_any_verbosity
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_skips_o\
+# n_xdist_worker
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_lists_f\
+# ailing_node_ids
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_caps_fa\
+# iling_node_ids_with_and_n_more
+# frob:tests \
+# tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_s\
+# essionfinish_labels_did_not_complete_runs
 # frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
 # id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
 # unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
 # waivers"
-# frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_marks_failing_set_incomplete_on_abort  # noqa: E501
+# frob:tests \
+# tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_s\
+# essionfinish_marks_failing_set_incomplete_on_abort
 # frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
 # id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
 # unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
 # waivers"
-# frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_names_internalerror_cause  # noqa: E501
+# frob:tests \
+# tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_s\
+# essionfinish_names_internalerror_cause
 # frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
 # id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
 # unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
 # waivers"
-# frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_sessionfinish_completed_run_format_is_unchanged  # noqa: E501
+# frob:tests \
+# tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete.test_s\
+# essionfinish_completed_run_format_is_unchanged
 # frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
 # id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
 # unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
@@ -392,7 +707,15 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
                 for report in stats.get(outcome, []):
                     nodeid = getattr(report, "nodeid", None)
                     if nodeid is not None:
-                        failing_ids.append(f"{nodeid} ({outcome})")
+                        node_line = f"{nodeid} ({outcome})"
+                        # T-3516: a crashed test's own FAILED line gets its
+                        # inferred cause appended -- an ordinary (non-crash)
+                        # failure's line is byte-for-byte unchanged, so this
+                        # never disturbs the pinned completed-run format.
+                        cause = _worker_crash_causes.get(nodeid)
+                        if cause is not None:
+                            node_line += f" -- {cause}"
+                        failing_ids.append(node_line)
             if failing_ids and not completed:
                 reporter.write_line(
                     "SUITE-RESULT: failing set INCOMPLETE -- run aborted before "
@@ -404,6 +727,24 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             remaining = len(failing_ids) - len(shown)
             if remaining > 0:
                 reporter.write_line(f"SUITE-RESULT-FAILED: and {remaining} more")
+        # T-3516: ONE end-of-run collected report of every worker crash this
+        # session observed, on the SAME always-visible channel as
+        # SUITE-RESULT -- MUST-STAY-QUIET: a clean run (empty
+        # `_worker_crash_entries`) prints nothing here at all.
+        if _worker_crash_entries:
+            reporter.write_line(
+                f"WORKER-CRASH-REPORT: {len(_worker_crash_entries)} worker crash(es)"
+            )
+            for entry in _worker_crash_entries:
+                reporter.write_line(entry)
+            # T-3516: a crash must never let the run's own exit status read
+            # as clean, even if every crashed test's one capped rerun went
+            # on to pass on a fresh worker -- `session.exitstatus` is read
+            # by pytest's own `wrap_session` AFTER this hook returns, so
+            # mutating it here is what actually changes the process's exit
+            # code.
+            if session.exitstatus == 0:
+                session.exitstatus = 1
     else:  # pragma: no cover - defensive only, terminalreporter always registered
         print(line)
 
@@ -429,7 +770,9 @@ def _neutralize_inherited_color_env(
 
 
 # frob:ticket T-0926
-# frob:tests tests/unit/test_conftest_parse_reset.py::TestConftestParseReset.test_reset_before_each_test_isolates_partial_parse_state  # noqa: E501
+# frob:tests \
+# tests/unit/test_conftest_parse_reset.py::TestConftestParseReset.test_reset_before_eac\
+# h_test_isolates_partial_parse_state
 @pytest.fixture(autouse=True)
 def _reset_parse_cache_before_test() -> None:
     """Clear `frob.lang`'s process-lifetime parse memo/`partial_parse_files`
@@ -614,7 +957,9 @@ class FrobSelfScanArtifacts:
 
     __slots__ = ("repo_root", "build_result", "violations")
 
-    def __init__(self, repo_root: Path, build_result: object, violations: tuple) -> None:
+    def __init__(
+        self, repo_root: Path, build_result: object, violations: tuple
+    ) -> None:
         """Store one shared self-scan's repo root, raw build `Result`, and
         the `sys_gate` violations tuple every consuming test filters."""
         self.repo_root = repo_root
@@ -671,7 +1016,6 @@ def frob_self_scan_artifacts(
     return FrobSelfScanArtifacts(
         repo_root=_REPO_ROOT, build_result=build_result, violations=violations
     )
-
 
 
 PY_SAMPLE = b"""\
