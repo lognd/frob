@@ -35,6 +35,13 @@ scope_changes:
     in this same diff
   actor: logan
   at: '2026-08-31'
+evidence:
+- tests/test_refactor.py::TestModuleToPath::test_maps_module_under_src
+- tests/test_refactor.py::TestModuleToPath::test_maps_module_under_root
+- tests/test_refactor.py::TestImportRoots::test_src_first_then_repo_root
+- tests/test_refactor.py::TestImportRoots::test_repo_root_only_when_no_src
+- tests/test_refactor.py::TestRootForPath::test_finds_owning_root
+- tests/test_refactor.py::TestRootForPath::test_none_when_outside_every_root
 designated_repro_test: null
 threat: null
 component: null
