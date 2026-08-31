@@ -712,17 +712,88 @@ def _land_commit_details(root: Path) -> tuple[str | None, tuple[str, ...]]:
     return sha_str, files
 
 
+# frob:ticket T-3543
+# frob:doc docs/modules/tickets-landing.md#frob-ticket-land
+# frob:tests tests/unit/test_land_record_commit.py::TestDeriveLandCommitByGrep.test_finds_the_squash_apply_commit_by_id_and_title_grep  # noqa: E501
+# frob:tests tests/unit/test_land_record_commit.py::TestDeriveLandCommitByGrep.test_returns_none_when_no_matching_commit_exists  # noqa: E501
+def derive_land_commit_by_grep(
+    root: Path, final_id: str, ref: str = "HEAD"
+) -> str | None:
+    """T-3543: the full sha of `ref`'s history's most recent commit whose
+    subject contains the literal substring `"land {final_id} "` (note the
+    trailing space, disambiguating `T-3539` from `T-35390` -- a `-F`
+    fixed-string `git log --grep`, never a lexical/regex guess at commit
+    text beyond that one literal token), or `None` if no such commit
+    exists. `_commit_message` (`frob.tickets._land_merge`) is the ONLY
+    producer of this exact subject shape
+    (`f"{commit_type}(tickets): land {final_id} {ticket.title}"`) for a
+    real (non-`--plan`) squash-apply land -- this function's own literal
+    match string is deliberately kept in lockstep with that format, not
+    duplicated logic guessing at it independently.
+
+    Read-only fallback for `Ticket.land_commit` (T-2220) being `None`:
+    since T-3543, a squash-apply land no longer writes a dedicated follow-
+    up commit recording its own sha onto the ticket (`_record_land_commit`
+    below still exists and is still exercised by its own tests, but is no
+    longer called from the primary land path) -- callers that need the
+    landing sha for an OLD ticket (recorded before T-3543) get it from
+    `land_commit` directly; callers asking about a ticket landed AFTER
+    T-3543 derive it here instead, from the commit history itself, which
+    already durably carries the ticket id in its own subject. Does NOT
+    cover a `--plan` land's finalized tickets (`chore(tickets): land
+    --plan` carries no ticket id in its subject at all) -- those still
+    get `land_commit` written in-memory before their one commit, per
+    `_land_plan_finalize_drafts`'s own T-2220 docstring, so they never
+    need this fallback. Best-effort: any git failure (unreadable repo,
+    detached `ref`, `root` not a git worktree) returns `None`, exactly
+    like a real "no match", never raises -- this is a display/lookup
+    convenience, not load-bearing land state."""
+    result = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "log",
+            ref,
+            f"--grep=land {final_id} ",
+            "--fixed-strings",
+            "--format=%H",
+            "-n",
+            "1",
+        ]
+    )
+    if result.is_err or result.danger_ok.returncode != 0:
+        return None
+    sha = result.danger_ok.stdout.strip()
+    return sha or None
+
+
 # frob:ticket T-2220
 # frob:ticket T-2274
 # frob:ticket T-3126
-# frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_records_land_commit_field_in_a_follow_up_commit  # noqa: E501
+# frob:ticket T-3543
 # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_plan_land_finalized_ticket_is_resolvable_by_ticket_id  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_record_land_commit_never_absorbs_a_bystanders_dirty_file  # noqa: E501
 # frob:tests tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree.test_root_never_goes_dirty_while_the_record_is_made  # noqa: E501
 # frob:tests tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree.test_probe_catches_the_in_root_write_positive_control  # noqa: E501
 # frob:tests tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree.test_record_publishes_by_cas_and_refuses_a_moved_ref  # noqa: E501
 def _record_land_commit(root: Path, final_id: str, land_sha: str) -> str | None:
-    """Persist `land_sha` (the squash-apply commit that just landed
+    """T-3543: no longer called from the primary squash-apply land path
+    (`_finish_real_land_report` below) -- 53 of the last 300 `main`
+    commits were exactly this function's own trailing follow-up commit,
+    pure bookkeeping with no code content of its own; `derive_land_
+    commit_by_grep` (above) recovers the same sha on demand, from the
+    squash-apply commit's own subject, for any reader that needs it,
+    without a dedicated stub commit per land. Left defined (and still
+    covered by its own frob:tests below) rather than deleted: the out-of-
+    tree, compare-and-swap-published write it performs is real, tested
+    machinery a future caller that genuinely cannot derive from history
+    (a squash-apply subject shape change, a `--plan`-adjacent case this
+    ticket did not need to touch) may still need -- deleting a correct,
+    tested primitive to chase a lower line count is not this ticket's
+    goal, only removing its call from the hot land path is.
+
+    Persists `land_sha` (the squash-apply commit that just landed
     `final_id`'s code) onto that ticket's own `land_commit` field, in a
     small follow-up commit composed in a DISPOSABLE worktree checked out
     at `land_sha` and published onto `root`'s current branch by
@@ -1886,6 +1957,8 @@ def _land_squash_apply_finish(
 
 
 # frob:ticket T-2220
+# frob:ticket T-3543
+# frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_land_commit_is_derivable_with_no_follow_up_commit  # noqa: E501
 def _finish_real_land_report(
     root: Path,
     ticket_id: str,
@@ -1901,13 +1974,19 @@ def _finish_real_land_report(
 ) -> Result[LandReport, LandError]:
     """`_land_squash_apply_finish`'s own tail (T-2220, split out to keep
     that function under ARCH001's 60-line threshold): the just-made
-    commit's sha/files, `_record_land_commit`'s best-effort follow-up
-    write (see that function's own docstring for why it cannot be baked
-    into the commit it names), and the final `LandReport`."""
+    commit's sha/files and the final `LandReport`.
+
+    T-3543: no longer calls `_record_land_commit` here -- that was the
+    dedicated trailing "chore(tickets): record land commit for T-####"
+    stub commit, 53 of the last 300 `main` commits, pure bookkeeping.
+    `Ticket.land_commit` simply stays `None` for a ticket landed through
+    this path from here on; any reader that needs the sha derives it via
+    `derive_land_commit_by_grep` instead (the squash-apply commit's own
+    subject already durably carries `final_id`, see that function's own
+    docstring) -- this land produces exactly ONE commit total now, never
+    a second one just to name the first."""
     sha_str, files = _land_commit_details(root)
     _log.info("land: %s landed as %s onto %s at %s", ticket_id, final_id, root, sha_str)
-    if sha_str is not None:
-        _record_land_commit(root, final_id, sha_str)
     return Ok(
         LandReport(
             ticket_id=ticket_id,

@@ -1673,21 +1673,30 @@ resolved commit is the one they meant.
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#load_land_commit -->
 
-Resolves a ticket id to the sha it landed at, by reading that ticket's own
-persisted `land_commit` field (`frob.tickets._models.Ticket.land_commit`) --
-never by grepping git history for the id. Returns the sha string when the
-ticket landed, `None` when the ticket exists but was never landed (or
-landed before this field existed), or a `KeyError` instance (returned, not
-raised) when no such ticket exists at all -- three outcomes kept lexically
-distinct in `main`'s own output, the same "never conflate unknown with
-missing" discipline `resolve`/`is_ancestor` already apply to a plain sha.
+Resolves a ticket id to the sha it landed at. Tries that ticket's own
+persisted `land_commit` field first
+(`frob.tickets._models.Ticket.land_commit`) -- still authoritative when
+present (a ticket landed before T-3543, or a `--plan` land's finalized
+ticket, which stamps this field in-memory before its own one commit).
+T-3543: a per-ticket squash-apply land no longer writes this field at
+all (its old dedicated follow-up commit, pure bookkeeping, is gone), so
+when the field is `None`, this falls back to `derive_land_commit_by_grep`
+(`frob.tickets._land_squash`) -- a fixed-string `git log --grep` for the
+literal `"land <id> "` substring every per-ticket land's own commit
+subject already durably carries. Returns the sha string when either path
+resolves, `None` when the ticket exists but neither path finds one, or a
+`KeyError` instance (returned, not raised) when no such ticket exists at
+all -- three outcomes kept lexically distinct in `main`'s own output, the
+same "never conflate unknown with missing" discipline `resolve`/
+`is_ancestor` already apply to a plain sha.
 
-This is why a ticket id resolves correctly even for a `frob ticket land
---plan` land: that land's own commit subject is `chore(tickets): land
---plan finalize ...`, with no ticket id in it at all, so nothing short of a
-structured field the land itself wrote could ever resolve it (see
-`docs/modules/tickets-landing.md#frob-ticket-land---plan-t-1269` for how
-`--plan` writes it).
+This is still why a `frob ticket land --plan` land's finalized tickets
+resolve correctly: that land's own commit subject is `chore(tickets):
+land --plan finalize ...`, with no ticket id in it at all, so the grep
+fallback above cannot reach it either -- only the persisted `land_commit`
+field (written in-memory by that path itself, see
+`docs/modules/tickets-landing.md#frob-ticket-land---plan-t-1269`) resolves
+that case, unaffected by T-3543.
 
 ### verify_lands-main
 

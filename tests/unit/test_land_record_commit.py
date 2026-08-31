@@ -266,3 +266,61 @@ class TestRecordLandCommitOutOfTree:
         assert new_sha is None
         assert _head(landed_root) == sibling_tip
         assert _porcelain(landed_root) == ""
+
+
+# frob:ticket T-3543
+class TestDeriveLandCommitByGrep:
+    """T-3543: `derive_land_commit_by_grep` recovers a squash-apply land's
+    own sha from its commit subject (`land <final_id> <title>`,
+    `_land_merge._commit_message`'s own literal shape) now that the
+    trailing `_record_land_commit` follow-up commit is no longer written
+    from the primary land path -- this is the fallback readers use in its
+    place."""
+
+    def test_finds_the_squash_apply_commit_by_id_and_title_grep(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_land_record_commit.py::TestDeriveLandCommitByGrep.test_finds_the_squash_apply_commit_by_id_and_title_grep  # noqa: E501
+        """MUST FIRE: a real `fix(tickets): land T-3000 Some title` subject
+        (the exact shape `_commit_message` produces) resolves by grep to
+        that commit's own sha, with no `land_commit` field write at all."""
+        root = tmp_path / "root"
+        root.mkdir(parents=True)
+        _run(["git", "init", "-q", "-b", "main"], root)
+        _run(["git", "config", "user.email", "test@example.com"], root)
+        _run(["git", "config", "user.name", "Test"], root)
+        (root / "src").mkdir()
+        (root / "src" / "feature.py").write_text("# landed feature\n")
+        _run(["git", "add", "-A"], root)
+        _run(
+            ["git", "commit", "-q", "-m", f"fix(tickets): land {TICKET_ID} Some title"],
+            root,
+        )
+        expected_sha = _head(root)
+
+        found = _land_squash_mod.derive_land_commit_by_grep(root, TICKET_ID)
+
+        assert found == expected_sha
+
+    def test_returns_none_when_no_matching_commit_exists(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_land_record_commit.py::TestDeriveLandCommitByGrep.test_returns_none_when_no_matching_commit_exists  # noqa: E501
+        """MUST-STAY-QUIET: an ordinary commit history with no matching
+        `land <id> ` subject substring (including a DIFFERENT ticket id
+        that shares a numeric prefix, e.g. T-30000 vs T-3000) never
+        false-positives to a wrong sha."""
+        root = tmp_path / "root"
+        root.mkdir(parents=True)
+        _run(["git", "init", "-q", "-b", "main"], root)
+        _run(["git", "config", "user.email", "test@example.com"], root)
+        _run(["git", "config", "user.name", "Test"], root)
+        (root / "src").mkdir()
+        (root / "src" / "feature.py").write_text("# unrelated feature\n")
+        _run(["git", "add", "-A"], root)
+        _run(
+            ["git", "commit", "-q", "-m", "fix(tickets): land T-30000 A different ticket"],
+            root,
+        )
+
+        found = _land_squash_mod.derive_land_commit_by_grep(root, TICKET_ID)
+
+        assert found is None

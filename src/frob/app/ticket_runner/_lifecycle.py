@@ -143,24 +143,30 @@ def _auto_plan_if_queued(root: Path, ticket_id: str, ticket):  # noqa: ANN201
 
 
 def _find_landing_commit(root: Path, ticket_id: str) -> str | None:
-    """The full hash of the commit that landed `ticket_id`, from its own
-    persisted `Ticket.land_commit` field (T-2220) -- NOT a `git log
-    --grep` for a `land <id>` commit subject. A grep-based lookup used to
-    live here and was the exact defect T-2220 fixed: `frob ticket land
-    --plan` commits as `chore(tickets): land --plan`, with no ticket id in
-    the subject at all, so a grep silently found nothing for every ticket
-    a `--plan` land finalized -- see `Ticket.land_commit`'s own docstring
-    for who writes this field and why it cannot be baked into its own
-    commit. Best-effort: `None` when the ticket cannot be loaded, or when
-    it was never landed at all (field still `None`) -- a terminal-state
-    refusal must still fire even when the commit cannot be named, just
-    without the extra detail."""
+    """The full hash of the commit that landed `ticket_id`. Tries `Ticket.
+    land_commit` (T-2220) first -- the persisted field, never stale once
+    written. T-3543: a squash-apply land no longer WRITES that field (the
+    dedicated follow-up commit that used to record it, 53 of the last 300
+    `main` commits, is gone) so a ticket landed after T-3543 falls back to
+    `derive_land_commit_by_grep` (`frob.tickets._land_squash`), which
+    finds the same sha from the squash-apply commit's own subject
+    instead -- that subject durably carries `ticket_id` (unlike a
+    `--plan` land's `chore(tickets): land --plan`, which never has, and
+    still gets `land_commit` written in-memory before its own one commit,
+    so it never needs this fallback either). Best-effort throughout:
+    `None` when the ticket cannot be loaded, was never landed, or no
+    commit history matches -- a terminal-state refusal must still fire
+    even when the commit cannot be named, just without the extra detail."""
     from frob.tickets import _load_one
+    from frob.tickets._land_squash import derive_land_commit_by_grep
 
     loaded = _load_one(root, ticket_id)
     if loaded.is_err:
         return None
-    return loaded.danger_ok.land_commit
+    recorded = loaded.danger_ok.land_commit
+    if recorded is not None:
+        return recorded
+    return derive_land_commit_by_grep(root, ticket_id)
 
 
 def _refuse_if_terminal(root: Path, ticket_id: str, ticket) -> None:  # noqa: ANN001

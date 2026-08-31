@@ -481,37 +481,40 @@ Order of operations, and why it is this order:
     `ticket.kind`; `feature`->`feat`, `bug`/`security`/`ux`/`incident`->
     `fix`, `docs`->`docs`, `invariant`->`test`). ASCII only, no
     `Co-Authored-By` line, matching repo convention.
-10.5. **Record `land_commit`** (T-2220, best-effort, immediately after step
-    10's commit sha is known): `_record_land_commit`
-    (`frob.tickets._land_squash`) loads `final_id` fresh from `root` (now
-    holding step 10's committed content), and sets its `land_commit`
-    field to step 10's own sha -- structurally the earliest point this can
-    happen, since a commit cannot embed its own hash in its own tree (see
-    `Ticket.land_commit`'s own docstring). T-3126 moved HOW that write
-    reaches `root`'s history out of tree: it composes the write in a
-    DISPOSABLE worktree checked out at step 10's own sha, folds it into a
-    follow-up commit there (`chore(tickets): record land commit for
-    <final-id>`), and publishes that commit onto `root`'s branch by
-    compare-and-swap (`publish_ref_cas`) rather than a plain fast-forward
-    `git commit` in `root` under `FROB_LAND_INTERNAL=1` -- `root`'s
-    working tree is never written to for this step, only the one atomic
-    `update-ref` moves its branch, then `resync_root_to_published_tip`
-    brings `root`'s index/working tree up to the new tip. A failure here
-    (ticket not found post-squash, disposable-worktree/plumbing failure, a
-    lost CAS because a sibling published first) is logged loudly and
-    swallowed, never turned into a `LandError` -- step 10's land is
-    already sealed on `root` by this point, and an already-sealed land is
-    never failed over a missing convenience field. `root`'s tip after a
-    successful `land()` call is therefore this record commit, one ahead
-    of `LandReport.commit_sha` (step 10's own sha, unchanged) -- both are
-    ancestors of `main` either way, so nothing downstream that already
-    checks `LandReport.commit_sha` needs to change.
+10.5. **`land_commit` is no longer WRITTEN here** (T-3543 -- was T-2220's
+    best-effort follow-up write; superseded): step 10's own commit is now
+    the LAST commit `land()` makes for a per-ticket land -- `root`'s tip
+    after a successful call IS `LandReport.commit_sha`, never one ahead of
+    it. The dedicated follow-up commit this step used to compose (via
+    `_record_land_commit`, `frob.tickets._land_squash`, out-of-tree/CAS-
+    published per T-3126) was pure bookkeeping with no code content of
+    its own -- 53 of the last 300 `main` commits at the time T-3543
+    measured it -- and step 10's own commit subject
+    (`<type>(tickets): land <final-id> <title>`, step 10 above) already
+    durably names `final_id`, making the field DERIVABLE rather than
+    requiring its own commit to persist. `Ticket.land_commit` stays `None`
+    on a ticket landed this way from T-3543 onward (still set the OLD way
+    -- a real, persisted sha -- for any ticket landed before it, and for a
+    `--plan` land's finalized tickets, step 2 below, which stamps it
+    in-memory before its own one commit rather than via a follow-up).
+    `_record_land_commit` itself is left defined and still covered by its
+    own tests (not deleted -- correct, tested out-of-tree/CAS machinery a
+    future caller that genuinely cannot derive from history may still
+    need), simply no longer called from this path.
+
     `scripts/verify_lands.py` and `_find_landing_commit`
-    (`frob.app.ticket_runner._lifecycle`) both resolve a ticket id to a
-    commit by reading this field directly -- see
-    `docs/guides/coordinator-scripts.md#load_land_commit` -- never by
-    grepping a commit subject for the ticket id, which cannot match a
-    `--plan` land (below) at all.
+    (`frob.app.ticket_runner._lifecycle`) both try the persisted
+    `land_commit` field FIRST (still authoritative when present -- an old
+    ticket, or a `--plan`-finalized one), then fall back to
+    `derive_land_commit_by_grep` (`frob.tickets._land_squash`) -- a
+    fixed-string `git log --grep` for the literal `"land <final-id> "`
+    substring step 10's own subject always carries for a per-ticket land
+    -- see `docs/guides/coordinator-scripts.md#load_land_commit` and
+    `derive_land_commit_by_grep`'s own docstring. This still cannot
+    resolve a `--plan` land's own merge commit by grep (its subject,
+    `chore(tickets): land --plan`, carries no ticket id at all) -- that
+    case is unaffected by T-3543 and keeps using its already-persisted
+    `land_commit` field, step 2 below.
 11. **`--push`** (T-0631, CLI-only, opt-in): once `frob ticket land`'s
     entire chain above has actually succeeded -- step 10's commit exists
     and every check before it passed, never on a `--dry-run` (nothing

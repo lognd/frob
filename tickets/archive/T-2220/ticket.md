@@ -102,7 +102,7 @@ scope_changes:
   actor: logan
   at: '2026-08-16'
 evidence:
-- tests/test_ticket_land.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit
+- tests/test_ticket_land.py::TestRecordLandCommit::test_land_commit_is_derivable_with_no_follow_up_commit
 - tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit
 - tests/test_ticket_land.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id
 - tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_never_landed_ticket_id_refused_distinguishably_from_a_typo_sha
@@ -111,11 +111,11 @@ acceptance:
 - text: Landing a ticket persists the resulting merge_commit as a structured field
     on the ticket record, written by the land path itself
   evidence:
-  - tests/test_ticket_land.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit
+  - tests/test_ticket_land.py::TestRecordLandCommit::test_land_commit_is_derivable_with_no_follow_up_commit
 - text: verify_lands.py accepts a ticket id and resolves via that field, and a SHA
     argument MUST STILL WORK (must-still-pass control)
   evidence:
-  - tests/test_ticket_land.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit
+  - tests/test_ticket_land.py::TestRecordLandCommit::test_land_commit_is_derivable_with_no_follow_up_commit
   - tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit
 - text: A --plan land (no ticket id in the commit subject) is resolvable by ticket
     id -- the case a log grep cannot reach
@@ -126,6 +126,15 @@ acceptance:
   evidence:
   - tests/test_ticket_land.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id
   - tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_never_landed_ticket_id_refused_distinguishably_from_a_typo_sha
+evidence_changes:
+- old_node: tests/test_ticket_land.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit
+  new_node: tests/test_ticket_land.py::TestRecordLandCommit::test_land_commit_is_derivable_with_no_follow_up_commit
+  reason: T-3543 folded the record-land-commit follow-up commit into the primary land
+    itself; the test asserting T-2220's own field-write behavior was renamed and rewritten
+    to assert the new derive-on-read behavior instead -- same underlying capability
+    (a landed ticket's commit is resolvable by id), different mechanism
+  actor: logan
+  at: '2026-08-31'
 threat: null
 component: null
 anchor: false

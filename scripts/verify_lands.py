@@ -55,18 +55,31 @@ _TICKET_ID_RE = re.compile(r"^T-[0-9]+$")
 # frob:tests tests/unit/test_coordinator_scripts.py::TestLoadLandCommit.test_returns_none_for_an_unlanded_ticket  # noqa: E501
 # frob:tests tests/unit/test_coordinator_scripts.py::TestLoadLandCommit.test_returns_missing_for_an_unknown_ticket_id  # noqa: E501
 def load_land_commit(ticket_id: str) -> str | None | Exception:
-    """`ticket_id`'s persisted `land_commit` field: a sha string if it
-    landed, `None` if the ticket exists but was never landed (or predates
-    this field), or a `KeyError` INSTANCE (never raised -- returned, so the
-    caller can print a distinct message) if no such ticket exists at all.
-    Imports `frob.tickets` lazily so a plain-sha invocation of this script
-    never pays for it."""
+    """`ticket_id`'s landing sha: its persisted `land_commit` field first,
+    a `KeyError` INSTANCE (never raised -- returned, so the caller can
+    print a distinct message) if no such ticket exists at all, or `None`
+    if the ticket exists but no sha can be found for it either way.
+
+    T-3543: a squash-apply land no longer WRITES `land_commit` (the
+    dedicated follow-up commit that used to record it, 53 of the last 300
+    `main` commits, is gone) -- when the field is absent, this falls back
+    to `derive_land_commit_by_grep` (`frob.tickets._land_squash`), which
+    finds the same sha from the squash-apply commit's own subject (it
+    durably carries the ticket id there; unlike a `--plan` land's
+    `chore(tickets): land --plan` subject, which never has, and still
+    gets `land_commit` written in-memory before its own one commit, so it
+    never needs this fallback). Imports `frob.tickets` lazily so a
+    plain-sha invocation of this script never pays for it."""
     from frob.tickets import _load_one
+    from frob.tickets._land_squash import derive_land_commit_by_grep
 
     loaded = _load_one(REPO, ticket_id)
     if loaded.is_err:
         return KeyError(ticket_id)
-    return loaded.danger_ok.land_commit
+    recorded = loaded.danger_ok.land_commit
+    if recorded is not None:
+        return recorded
+    return derive_land_commit_by_grep(REPO, ticket_id)
 
 
 def _git(args: list[str]) -> subprocess.CompletedProcess:

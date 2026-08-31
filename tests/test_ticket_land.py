@@ -1432,21 +1432,26 @@ class TestLand:
 
 # frob:ticket T-2220
 class TestRecordLandCommit:
-    """T-2220: a landed ticket persists the commit that landed it, in its
-    own `land_commit` field, written by the land path itself -- never
-    inferrable afterward from a `git log --grep` (the `--plan` case below
-    is the one that grep structurally cannot reach at all)."""
+    """T-2220: a landed ticket's landing commit is resolvable after the
+    fact -- via its own `land_commit` field for a `--plan` land (`git log
+    --grep` structurally cannot reach that case, no ticket id in the
+    subject at all) and, since T-3543, via `derive_land_commit_by_grep`
+    for a per-ticket squash-apply land (the field is no longer written at
+    all there -- see `_finish_real_land_report`'s own T-3543 docstring)."""
 
     # frob:ticket T-2220
-    # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_records_land_commit_field_in_a_follow_up_commit  # noqa: E501
-    def test_records_land_commit_field_in_a_follow_up_commit(self, repo: Path) -> None:
-        """MUST-FAIL-FIRST (acceptance criterion 1): landing a ticket must
-        leave `land_commit` set on the ticket's OWN record, naming the
-        commit `land()`'s own `LandReport.commit_sha` names -- and that
-        sha must genuinely be an ancestor of `root`'s post-land HEAD (the
-        T-2220 follow-up-commit design: `root` ends one commit AHEAD of
-        `commit_sha`, never behind it, so `merge-base --is-ancestor` still
-        holds)."""
+    # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_land_commit_is_derivable_with_no_follow_up_commit  # noqa: E501
+    def test_land_commit_is_derivable_with_no_follow_up_commit(
+        self, repo: Path
+    ) -> None:
+        """T-3543 (was MUST-FAIL-FIRST acceptance criterion 1 for T-2220's
+        follow-up-commit design; superseded): landing a ticket no longer
+        writes `land_commit` at all via a trailing bookkeeping commit --
+        `root`'s HEAD after `land()` returns IS `report.commit_sha`
+        itself, exactly one commit, and `derive_land_commit_by_grep`
+        recovers that same sha from the commit's own subject on demand."""
+        from frob.tickets._land_squash import derive_land_commit_by_grep
+
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-record", str(wt)], repo)
         created = new_ticket(wt, _spec("Add thingamajig", scope=("src/t.py",)))
@@ -1461,16 +1466,20 @@ class TestRecordLandCommit:
         report = result.danger_ok
         assert report.commit_sha is not None
 
+        # exactly ONE commit for this land -- HEAD IS the landing commit,
+        # not one commit ahead of it (the old follow-up-commit shape).
+        assert (
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+            == report.commit_sha
+        )
+
         landed = load_all(repo)
         assert landed.is_ok
         ticket = landed.danger_ok[report.final_id]
-        assert ticket.land_commit == report.commit_sha
-        assert (
-            _run(
-                ["git", "merge-base", "--is-ancestor", report.commit_sha, "HEAD"], repo
-            ).returncode
-            == 0
-        )
+        assert ticket.land_commit is None
+
+        derived = derive_land_commit_by_grep(repo, report.final_id)
+        assert derived == report.commit_sha
 
     # frob:ticket T-2274
     # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_record_land_commit_never_absorbs_a_bystanders_dirty_file  # noqa: E501
