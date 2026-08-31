@@ -2,7 +2,7 @@
 id: T-3576
 title: teach WIRE001 call-graph analyzer to resolve multiprocessing.Process target=
   kwarg references
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-08-31'
@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/_wire.py
 - tests/unit/test_wire001_multiprocessing_target.py
 - tests/unit/test_fix_engine_journal.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,16 @@ scope_changes:
     resolution; removes the now-obsolete waiver from the real file
   actor: logan
   at: '2026-08-31'
+- op: add
+  glob: design/frob.strata
+  reason: declare fs.write/exec capability for the new fixture test file, needed by
+    the strata self-conformance gate
+  actor: logan
+  at: '2026-08-31'
+evidence:
+- tests/unit/test_wire001_multiprocessing_target.py::TestWire001MultiprocessingProcessTarget::test_function_passed_as_process_target_kwarg_is_not_flagged
+- tests/unit/test_wire001_multiprocessing_target.py::TestWire001MultiprocessingProcessTarget::test_function_passed_as_context_process_target_kwarg_is_not_flagged
+- tests/unit/test_wire001_multiprocessing_target.py::TestWire001MultiprocessingProcessTarget::test_function_with_no_process_target_caller_anywhere_still_flagged
 designated_repro_test: null
 threat: null
 component: null
