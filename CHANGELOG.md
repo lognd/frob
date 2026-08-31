@@ -501,6 +501,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3069: Hook: nudge hand-performed renames toward frob refactor, without misfiring on ordinary import edits
 - T-3072: Forkserver orphans persist after T-2880: 23 detected with no live check ancestry, and no command reaps them
 - T-3075: Five tests read ambient developer state (global git identity, real ~/.claude) and so pass locally but fail in CI
+- T-3077: Changed the T-1366 coverage-stamp CI step and its two error-message references to invoke 'uv run frob coverage --full' (preceded by 'frob ticket reconcile --apply' and 'frob doctor', replicating the Makefile coverage target's exact recipe) instead of shelling to 'make coverage', which windows-latest never installs. Added TestCoverageStepUsesFrobNotMake to tests/test_ci_workflow_matrix.py (the repo's established frob:tests binding location for ci.yml content assertions) asserting no CI step spells make coverage and that the T-1366 step calls frob coverage --full directly. Scope expanded via frob ticket scope --add (reasoned) to include that test file since bug-kind tickets require pytest evidence node ids.
 - T-3078: TEST001 gap: T-3044's new graph::model attrs API has no bound unit test
 - T-3079: post-land sweep regression from T-3044: 2 new (rule, file) identit(ies), 2 finding(s) (LARGE001)
 - T-3080: Remaining T-2394 empty-scope fixture drift (10 tests, T-3037 residue)

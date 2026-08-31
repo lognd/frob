@@ -101,3 +101,40 @@ class TestWindowsDiagStepResolvesFrobCheckoutEnv:
             "resolution only, not also move frob check's scan target off "
             "the fixture and onto the real repo"
         )
+
+
+class TestCoverageStepUsesFrobNotMake:
+    """T-3077 (T-1382 epic: decouple frob from the Makefile): the T-1366
+    "coverage stamp + delta baseline" step used to shell out to `make
+    coverage`, which depends on a `make` binary that windows-latest never
+    installs -- so the one job that would prove the make-free path works
+    never actually exercised it. The step must call `uv run frob coverage
+    --full` directly instead."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_coverage_step_does_not_shell_to_make(self) -> None:
+        """No CI step may spell `make coverage`/`make <target>` -- T-1382's
+        whole point is that workflows never depend on a Makefile."""
+        workflow = _load_ci_workflow()
+        raw = yaml.safe_dump(workflow)
+        assert "make coverage" not in raw, (
+            "a CI step still shells to `make coverage`, which depends on a "
+            "`make` binary no step installs on windows-latest (T-3077)"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_coverage_step_calls_frob_coverage_full(self) -> None:
+        """The T-1366 coverage-stamp step's `run:` block must invoke the
+        frob subcommand `make coverage` used to alias, not the make target
+        itself."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        coverage_step = next(
+            step
+            for step in steps
+            if "coverage stamp" in step.get("name", "")
+        )
+        assert "uv run frob coverage --full" in coverage_step["run"], (
+            "the T-1366 coverage-stamp step must call `uv run frob "
+            "coverage --full` directly (T-3077)"
+        )

@@ -471,7 +471,7 @@ jobs:
           for d in hits:
               print(f\"{d.get('file', '?')}: {d.get('message', '')}\")
           if hits:
-              print('::error::frob-coverage.lock.json is missing or drifted (TEST012) -- run: make coverage')
+              print('::error::frob-coverage.lock.json is missing or drifted (TEST012) -- run: uv run frob coverage --full')
           sys.exit(1 if hits else 0)
           "
       # T-1366 (T-1265 successor): the step above only checks the ONE
@@ -493,7 +493,9 @@ jobs:
       # TEST006 evaluation against it still finds a violation.
       - name: coverage stamp + delta baseline must be freshly measurable and clean (T-1366)
         run: |
-          make coverage
+          uv run frob ticket reconcile --apply
+          uv run frob doctor
+          uv run frob coverage --full
           uv run frob check --stamp-baseline --only gates-native
           uv run frob check --stamp-baseline --only gates-security
           uv run frob check --stamp-baseline --only test
@@ -516,7 +518,7 @@ jobs:
 
           stamp = load_stamp(root)
           if stamp is None:
-              failures.append('.frob/coverage-stamp is missing after a fresh make coverage run')
+              failures.append('.frob/coverage-stamp is missing after a fresh frob coverage --full run')
           elif is_stamp_stale(root, stamp):
               failures.append('.frob/coverage-stamp is stale (content-hash mismatch) immediately after stamping -- tampered or a stamp/measurement race')
 

@@ -1,7 +1,7 @@
 ---
 id: T-3077
 title: CI still shells to make coverage instead of frob coverage --full
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-27'
@@ -28,6 +28,9 @@ scope_changes:
     location for .github/workflows/ci.yml content assertions
   actor: logan
   at: '2026-08-31'
+evidence:
+- tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_does_not_shell_to_make
+- tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_calls_frob_coverage_full
 designated_repro_test: null
 threat: null
 component: null
