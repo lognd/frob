@@ -111,11 +111,18 @@ def _write_mincrate(root: Path) -> None:
 @pytest.mark.skipif(not _toolchain_available(), reason="cargo/uvx not on PATH")
 # T-0993: measured ~7s locally with a warm crates.io/pyo3 cache (shared
 # with this repo's own strata_core/frob_core crates, which already pull
-# the same pyo3 dependency tree) -- 180s gives headroom for a fully cold
-# cache (crates.io index clone + pyo3 dependency compile) on a fresh CI
-# runner without approaching the minutes-long real-crate build this
-# module's docstring explains this test deliberately avoids.
-@pytest.mark.timeout(180)
+# the same pyo3 dependency tree). T-3536: 180s was not enough headroom on
+# a macOS CI runner -- `report.ok` came back False with the captured
+# stderr showing only "Updating crates.io index"/"Locking N packages"
+# chatter, i.e. pytest-timeout(180) was killing the subprocess mid
+# crates.io-index-clone on a slow/cold runner network, not a genuine
+# compile failure (the truncated tail after the chatter was the
+# in-flight `rustc`/link-args invocation, never a real error). 420s gives
+# real headroom for a fully cold cache (crates.io index clone + pyo3
+# dependency compile) on a slow CI runner without approaching the
+# minutes-long real-crate build this module's docstring explains this
+# test deliberately avoids.
+@pytest.mark.timeout(420)
 # frob:ticket T-0993
 def test_build_natives_compiles_and_imports_real_crate(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -137,8 +144,26 @@ def test_build_natives_compiles_and_imports_real_crate(
 
     assert result.is_ok, result
     report = result.danger_ok
-    assert report.ok, [_ANSI.sub("", r.stderr) for r in report.results if not r.ok]
     assert {r.name for r in report.results} == {"mincrate"}
+    # T-3536: the outcome IS the assertion -- returncode/wheel-built,
+    # never the presence/absence of cargo's own progress chatter
+    # ("Updating crates.io index", "Locking N packages") on stderr. That
+    # chatter is expected, harmless noise on every platform regardless of
+    # CARGO_TERM_COLOR; asserting against it (or surfacing a raw,
+    # untruncated stderr dump as the failure reason) produced misleading
+    # macOS-CI failures whose real cause (T-3536: too-tight timeout, see
+    # above) had nothing to do with the chatter text itself. On a
+    # genuine failure, report per-crate returncode plus a short,
+    # ANSI-stripped stderr tail -- enough to diagnose without the noise
+    # dominating the message.
+    if not report.ok:
+        failures = [
+            f"{r.name}: exit {r.returncode}\n"
+            + "\n".join(_ANSI.sub("", r.stderr).strip().splitlines()[-20:])
+            for r in report.results
+            if not r.ok
+        ]
+        pytest.fail(f"build_natives outcome failed: {failures}")
 
     # The crate is installed editable into THIS test process's own venv
     # (`maturin develop`'s contract) -- import it fresh and call the one

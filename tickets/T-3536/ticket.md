@@ -2,7 +2,7 @@
 id: T-3536
 title: 'macOS: natives-build test asserts on cargo progress chatter; assert the outcome
   instead'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -39,6 +39,8 @@ body_changes:
   at: '2026-08-31'
   old_length: 918
   new_length: 1244
+evidence:
+- tests/system/test_natives_build_integration.py::test_build_natives_compiles_and_imports_real_crate
 designated_repro_test: null
 threat: null
 component: null
