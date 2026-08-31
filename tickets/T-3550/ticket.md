@@ -2,7 +2,7 @@
 id: T-3550
 title: 'Design ledger-mirror batching (T-3544 successor): pending-queue + per-event
   sync commit, hazards enumerated'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-31'
@@ -28,6 +28,9 @@ triage_changes:
     no code change in this ticket per its own body (do not implement in this ticket)
   actor: logan
   at: '2026-08-31'
+evidence:
+- cmd:bash -c "grep -n \"Re-measurement\\|Hazard needing an owner call\\|Deliverable
+  status\" docs/design/ledger-mirror-batching.md" exit=0 sha256=c83bc0e4e94f
 designated_repro_test: null
 threat: null
 component: null
