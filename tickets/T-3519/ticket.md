@@ -19,7 +19,6 @@ scope:
 - docs/guides/coordinator-scripts.md
 - docs/modules/tickets-verify-sweep.md
 - docs/design/macos-portability.md
-- docs/modules/gates.md
 - docs/modules/lang.md
 - docs/modules/process.md
 - docs/modules/testing.md
@@ -30,6 +29,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/gates.md
+  reason: collides with in-progress T-3492's lease; drop from this burn-down, NEGEXIST001
+    finding there stays unaddressed for now
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
