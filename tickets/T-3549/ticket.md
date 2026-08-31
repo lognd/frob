@@ -2,7 +2,7 @@
 id: T-3549
 title: 'Windows CI KeyboardInterrupt round 2: execnet gateway teardown interrupt_main(),
   not console sharing'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -20,6 +20,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: BUG002 cannot be satisfied by a local test
+  actor: logan
+  at: '2026-08-31'
+  old_length: 5337
+  new_length: 5943
+evidence:
+- tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_build_job_continue_on_error_is_windows_only
 designated_repro_test: null
 threat: null
 component: null
@@ -55,3 +64,7 @@ RULED OUT this round: pytest-timeout thread-method (T-3540's own diagnosis, re-c
 FIX (implemented in this ticket, since it is a small, low-risk, already-touched-by-T-3540 CI-config change -- NOT a code fix to execnet, which is third-party): drop `-n auto --dist=loadgroup` from the windows-latest Test step specifically (still runs with xdist on ubuntu-latest/macos-latest, where this mechanism has not been observed to misfire) -- eliminates the entire execnet-gateway-teardown/interrupt_main() pathway on Windows by not spawning any xdist worker gateways there at all. Verify by re-running windows-latest and confirming the suite reaches a stable completed (not INTERRUPTED) result -- I cannot verify this fix's real-world effect without a real Windows CI run (no local Windows box), so treat this as diagnosed-and-attempted, not confirmed, until the next windows-latest run reports back. If it does NOT resolve this (e.g. some other execnet/threading interaction persists even single-process), the next step needs someone with an actual Windows dev box to reproduce interactively and bisect further -- this diagnosis is as far as log analysis alone can go.
 
 Filed under T-3505 (Windows portability epic).
+
+
+
+frob:waive BUG002 reason="this defect (execnet gateway teardown interrupt_main() on a Windows worker gateway close) only reproduces on real windows-latest CI infrastructure -- there is no local, deterministic way to force an xdist worker gateway close race in a pytest node id; the fix (dropping xdist entirely on the windows leg via -p no:xdist) is verified by re-running windows-latest and observing whether the suite completes, tracked as a windows-portability re-measurement follow-up, not by a unit test -- and is explicitly disclosed as unverified in this ticket's own body pending that real run"
