@@ -1238,6 +1238,30 @@ class TestCommitTicketLedgerChange:
         # hermetic to the runner's own identity on any platform, not
         # just ones where HOME happens to be authoritative.
         _scrub_host_git_identity(monkeypatch)
+        # T-3552: T-3535's env/config scrub above still left this test
+        # flaky on macOS -- CI run 33361224273 showed the FIRST `git
+        # commit` (production's own call inside `commit_ticket_ledger_
+        # change`, no `-c` override) SUCCEEDING as "Anka <runner@...
+        # local>" instead of failing "Author identity unknown" at all,
+        # so `_retry_commit_with_fallback_identity`'s throwaway-identity
+        # path was never even reached. Root cause: when git finds NO
+        # user.name/user.email in ANY config source (exactly what the
+        # scrub above achieves), it does not simply refuse to commit --
+        # it falls back to synthesizing an identity from the OS account
+        # (`getpwuid`'s gecos full name) plus hostname. A real macOS user
+        # account always has a real gecos name, so this OS-level fallback
+        # silently succeeds there; a minimal Linux CI container's account
+        # usually has no gecos name, so the SAME missing-config state
+        # fails loudly instead -- purely a platform difference in libc's
+        # account database, invisible to any git CONFIG or env var this
+        # test scrubs. `user.useConfigOnly=true` (git's own documented
+        # switch for exactly this: "avoid trying to guess defaults for
+        # user.email/user.name... retrieve the values only from the
+        # configuration") disables that OS-fallback outright, so `git
+        # commit` genuinely fails "Author identity unknown" on every
+        # platform whenever no identity is configured -- the SOURCE fix,
+        # not another identity source to chase down.
+        _run(["git", "config", "user.useConfigOnly", "true"], repo)
 
         result = commit_ticket_ledger_change(
             repo, "T-0001", "chore(tickets): drop T-0001"

@@ -2,7 +2,7 @@
 id: T-3552
 title: 'macOS: identity-less-environment test still resolves the runner OS identity,
   not just git config'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -27,6 +27,8 @@ body_changes:
   at: '2026-08-31'
   old_length: 0
   new_length: 361
+evidence:
+- tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_identity_less_environment_falls_back_to_throwaway_git_identity
 designated_repro_test: null
 threat: null
 component: null
