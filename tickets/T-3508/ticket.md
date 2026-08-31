@@ -15,13 +15,29 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/_daemon_proxy.py
-- src/frob/serve/_socketd.py
-- src/frob/serve/_events.py
 - tests/test_app_daemon_proxy.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/serve/_socketd.py
+  reason: T-3506 holds a live lease on _socketd.py; T-3508's actual fix touched only
+    _daemon_proxy.py and its test file -- both AF_UNIX guards in _socketd.py/_events.py
+    were already correct (T-2961), no edit needed there
+  actor: logan
+  at: '2026-08-30'
+- op: remove
+  glob: src/frob/serve/_events.py
+  reason: T-3506 holds a live lease on _socketd.py; T-3508's actual fix touched only
+    _daemon_proxy.py and its test file -- both AF_UNIX guards in _socketd.py/_events.py
+    were already correct (T-2961), no edit needed there
+  actor: logan
+  at: '2026-08-30'
+evidence:
+- tests/test_app_daemon_proxy.py::TestQuery::test_win32_refuses_before_touching_af_unix
+- tests/test_app_daemon_proxy.py::TestProbeDaemon::test_win32_refuses_before_touching_af_unix
 designated_repro_test: null
 threat: null
 component: null
