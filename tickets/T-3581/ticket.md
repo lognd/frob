@@ -28,6 +28,15 @@ scope_changes:
     for comprehension_id
   actor: logan
   at: '2026-08-31'
+body_changes:
+- mode: append
+  reason: 'mark no-behavior-change: doc/waiver-only fix'
+  actor: logan
+  at: '2026-08-31'
+  old_length: 197
+  new_length: 369
+evidence:
+- tests/unit/test_arch.py::TestNormalizedModel::test_hand_built_python_snippet_shape
 designated_repro_test: null
 threat: null
 component: null
@@ -36,3 +45,5 @@ anchor_reason: null
 land_commit: null
 ---
 Run 33380974368 macos self-gate: two WAIVE009 ERRORs on NormalizedCall/NormalizedBranch. Check AFFECT001 scoped first; remove the waivers if quiet, else close the doc drift or convert to frob:debt.
+
+frob:no-behavior-change reason="removes two frob:waive AFFECT001 directives (comments) and documents an existing field in a markdown table; no runtime code path changes"
