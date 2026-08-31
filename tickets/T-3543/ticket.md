@@ -22,6 +22,8 @@ scope:
 - src/frob/app/ticket_runner/_lifecycle.py
 - tests/unit/test_land_record_commit.py
 - tests/test_ticket_land.py
+- docs/modules/tickets-landing.md
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -59,6 +61,18 @@ scope_changes:
   reason: TestRecordLandCommit.test_records_land_commit_field_in_a_follow_up_commit
     directly encodes the pre-T-3543 land_commit-write behavior this ticket removes;
     must update in the same change
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: COV001/AFFECT001 need doc anchors for derive_land_commit_by_grep and load_land_commit's
+    updated fallback behavior
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: COV001/AFFECT001 need doc anchors for derive_land_commit_by_grep and load_land_commit's
+    updated fallback behavior
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
