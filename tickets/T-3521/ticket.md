@@ -1,7 +1,7 @@
 ---
 id: T-3521
 title: 'DEAD001 WARN burn-down: 23 unwired private symbols across 15 files'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -57,7 +57,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: 41635dde86c64946deeff1bbcf299e07d44177dc
+land_commit: null
 ---
 Remainder from T-3483's WARN family burn-down. Measured 2026-08-30 via
 uv run frob check --only dead_symbols --json, filtering severity=warning
