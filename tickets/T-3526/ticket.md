@@ -97,7 +97,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7fb25e371a9ef185fce140a4a3d022aeffa4c8e7
 ---
 INCIDENT (series X, 2026-08-31, during T-3516 work): a `frob check --fix`
 (unscoped Tier-A pass) that was KILLED mid-run (shell timeout) left
