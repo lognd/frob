@@ -231,9 +231,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 234,
-      "reason": "T-3484: tests/unit/verify/test_bisect.py (T-1691, real git repos + worktree snapshots) added 4 exec site(s); measured on CI run 33308245923",
-      "ticket": "T-3484"
+      "accepted_count": 235,
+      "reason": "T-3574: T-3561/T-3569/T-3570/T-3546-era test files and the reconcile cache work grew this pair's via-list by 1 site (234 -> 235); measured on CI run 33376126399, re-measured locally via TestFrobSelfModel::test_sys_gate_zero_violations against this checkout's own HEAD, not assumed from the ticket title alone.",
+      "ticket": "T-3574"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -251,9 +251,9 @@
       "ticket": "T-3506"
     },
     "testsuite::fs.write": {
-      "accepted_count": 417,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 416 to 417 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 418,
+      "reason": "T-3574: T-3561/T-3569/T-3570/T-3546-era test files and the reconcile cache work grew this pair's via-list by 1 site (417 -> 418); measured on CI run 33376126399, re-measured locally via TestFrobSelfModel::test_sys_gate_zero_violations against this checkout's own HEAD, not assumed from the ticket title alone.",
+      "ticket": "T-3574"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
@@ -281,9 +281,9 @@
       "ticket": "T-1628"
     },
     "tickets_ledger::env": {
-      "accepted_count": 5,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 6,
+      "reason": "T-3574: the reconcile cache work grew this pair's via-list by 1 site (5 -> 6); measured on CI run 33376126399, re-measured locally via TestFrobSelfModel::test_sys_gate_zero_violations against this checkout's own HEAD, not assumed from the ticket title alone.",
+      "ticket": "T-3574"
     },
     "tickets_ledger::env.read": {
       "accepted_count": 2,
@@ -306,9 +306,9 @@
       "ticket": "T-2986"
     },
     "tickets_ledger::fs.write": {
-      "accepted_count": 21,
-      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
-      "ticket": "T-3029"
+      "accepted_count": 22,
+      "reason": "T-3574: the reconcile cache work grew this pair's via-list by 1 site (21 -> 22); measured on CI run 33376126399, re-measured locally via TestFrobSelfModel::test_sys_gate_zero_violations against this checkout's own HEAD, not assumed from the ticket title alone.",
+      "ticket": "T-3574"
     },
     "verify::exec": {
       "accepted_count": 2,

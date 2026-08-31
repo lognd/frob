@@ -72,8 +72,8 @@ N never changes how many ref moves happen, and it stays exactly one.**
 
 ## Consequence 1: `--check-repro` becomes verifiable post-land
 
-Today's gap (`docs/modules/tickets.md#check-repro-post-land-limitation-
-t-2025`, `TEST_ABSENT_AT_PARENT`): a squash commit contains the test and
+Today's gap (`docs/modules/tickets-landing.md#--check-repro-cannot-verify-a-squashed-tickets-repro-test-after-it-lands-t-2025`,
+`TEST_ABSENT_AT_PARENT`): a squash commit contains the test and
 its fix atomically, so no ref in main's history ever holds the test
 WITHOUT the fix -- `bug_repro_outcome_at_ref` run against any ref in
 main's history collects zero items for a newly-added test's node id.

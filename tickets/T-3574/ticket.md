@@ -2,7 +2,7 @@
 id: T-3574
 title: Declare the 3 SYS111 ratchet bumps + fix T-3546 doc DOC006; extend T-3324's
   land gate to refuse diff-attributable SYS111/DOC006
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -24,6 +24,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
+- tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
 designated_repro_test: null
 threat: null
 component: null
