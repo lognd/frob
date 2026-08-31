@@ -2,7 +2,7 @@
 id: T-3572
 title: 'frob-arch type-dispatch-smell: _claims.py''s isinstance chain needs a real
   Protocol/dispatch design'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
