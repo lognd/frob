@@ -209,7 +209,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0cebc2819d90ec650e424422313ab2c3cc41e3cf
 ---
 Adopt a single portable process-lock primitive for the OTHER fcntl call
 sites, mirroring the dual-path (fcntl/msvcrt) approach
