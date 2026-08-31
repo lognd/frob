@@ -18,6 +18,7 @@ scope:
 - src/frob/tickets/_land_squash.py
 - src/frob/tickets/_land.py
 - docs/design/land-splice-test-then-impl.md
+- tests/unit/test_land_splice_test_then_impl.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,11 @@ scope_changes:
   glob: docs/design/land-splice-test-then-impl.md
   reason: 'design deliverable per the coordinator''s brief (T-3550 precedent: design
     first)'
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/test_land_splice_test_then_impl.py
+  reason: test coverage for the new unwired mechanical primitives
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
