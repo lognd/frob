@@ -2,7 +2,7 @@
 id: T-3560
 title: 'Windows KeyboardInterrupt round 3: serial mode falsified execnet; land -v
   --full-trace + SIGBREAK faulthandler instrumentation, then fix the named culprit'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -21,6 +21,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: BUG002 needs an explicit waiver for a CI-only diagnostics land with no reproducible
+    in-repo test
+  actor: logan
+  at: '2026-08-31'
+  old_length: 2467
+  new_length: 2888
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
+- tests/unit/test_release_workflow_gate.py::TestReleaseWorkflowNoAutomaticTrigger::test_only_workflow_dispatch_trigger
 designated_repro_test: null
 threat: null
 component: null
@@ -69,3 +80,5 @@ DELIVERABLE (two lands):
 ACCEPTANCE: a windows-latest run proceeds past 5% (any failure shape is
 fine -- the interrupt specifically is gone), and the instrumentation is
 reverted.
+
+frob:waive BUG002 reason="this is a temporary CI diagnostics-only land (adds -v --full-trace and a win32-only SIGBREAK faulthandler registration to observe an intermittent windows-latest-only interrupt); the defect itself is an external Windows CI runner condition that cannot be reproduced by this suite -- no in-repo test can fail-at-main/pass-at-fix for it, same posture as frob ticket land --skip-mutation-evidence"
