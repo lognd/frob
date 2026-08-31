@@ -5,7 +5,7 @@ state: queued
 kind: feature
 origin: agent
 created: '2026-08-06'
-priority: high
+priority: medium
 blocked_by:
 - T-1736
 parent: null
@@ -121,6 +121,14 @@ triage_changes:
   reason: 'T-3590 burn-down (TICK004): queued 25d at critical priority with no active
     dispatch; re-prioritized down one notch to reflect actual working priority rather
     than leaving it flagged as rotting critical work'
+  actor: logan
+  at: '2026-08-31'
+- field: priority
+  old_value: high
+  new_value: medium
+  reason: 'T-3590 burn-down (TICK004): still rotting at high priority (25d queued,
+    7d threshold) with no active dispatch; lowering to medium (30d threshold) to reflect
+    actual working priority'
   actor: logan
   at: '2026-08-31'
 evidence:
