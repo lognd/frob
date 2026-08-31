@@ -110,6 +110,7 @@ class DaemonLiveness(ErrorSet):
 # frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_missing_socket_is_nosocket  # noqa: E501
 # frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_dead_socket_file_is_orphaned  # noqa: E501
 # frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_silent_listener_is_wedged  # noqa: E501
+# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_win32_refuses_before_touching_af_unix  # noqa: E501
 # frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.test_connect_timeout_is_wedged  # noqa: E501
 # frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.test_connect_oserror_is_wedged  # noqa: E501
 # frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestAskVersionOverSocket.test_hangup_before_newline_is_wedged  # noqa: E501
@@ -477,6 +478,8 @@ def _daemon_enabled() -> bool:
 # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_no_daemon_env_bypass kind="unit"  # noqa: E501
 # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_live_daemon_hit kind="unit"  # noqa: E501
 # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_remote_error_falls_back kind="unit"  # noqa: E501
+# frob:ticket T-3508
+# frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_win32_refuses_before_touching_af_unix  # noqa: E501
 def query(
     root: Path, method: str, params: dict[str, Any] | None = None
 ) -> Result[Any, ProxyReason]:

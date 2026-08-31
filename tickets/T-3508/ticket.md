@@ -1,7 +1,7 @@
 ---
 id: T-3508
 title: Fix AF_UNIX degradation-direction asserts and verify the loud Windows refusal
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'

@@ -70,6 +70,28 @@ class TestQuery:
         assert result.is_err
         assert result.danger_err is ProxyReason.Unreachable
 
+    # frob:ticket T-3508
+    # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_win32_refuses_before_touching_af_unix  # noqa: E501
+    def test_win32_refuses_before_touching_af_unix(self, root: Path, monkeypatch) -> None:
+        """T-2961's win32 guard runs before `ensure_daemon`/`send_request`
+        ever touch `socket.AF_UNIX`. Exercised structurally on POSIX (this
+        repo's own CI runner) by monkeypatching `sys.platform`, mirroring
+        how a live Windows run reaches this branch -- no real Windows box
+        required to prove the guard fires and returns the documented
+        `ProxyReason.PlatformUnsupported` instead of an
+        `AttributeError: module 'socket' has no attribute 'AF_UNIX'`."""
+        monkeypatch.setattr(_daemon_proxy.sys, "platform", "win32")
+
+        def _fail(*_args, **_kwargs):
+            raise AssertionError(
+                "query() must refuse before calling ensure_daemon on win32"
+            )
+
+        monkeypatch.setattr(_daemon_proxy, "ensure_daemon", _fail)
+        result = query(root, "frob_doable_tickets")
+        assert result.is_err
+        assert result.danger_err is ProxyReason.PlatformUnsupported
+
     @pytest.mark.skipif(
         sys.platform == "win32",
         reason=(
@@ -931,6 +953,22 @@ class TestProbeDaemon:
         _clear_orphaned_socket(root)
         assert not path.exists()
         assert probe_daemon(root)[0] is DaemonLiveness.NoSocket
+
+    # frob:ticket T-3508
+    # frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemon.test_win32_refuses_before_touching_af_unix  # noqa: E501
+    def test_win32_refuses_before_touching_af_unix(self, tmp_path, monkeypatch):
+        """T-2961's win32 guard in `probe_daemon` (and its own defense-in-
+        depth copy in `_ask_version_over_socket`) runs before either ever
+        touches `socket.AF_UNIX`. Exercised structurally on POSIX by
+        monkeypatching `sys.platform`, the same way `TestQuery`'s sibling
+        test does -- proves the guard yields the documented
+        `DaemonLiveness.PlatformUnsupported`, not an `AttributeError`."""
+        from frob.app._daemon_proxy import DaemonLiveness, probe_daemon
+
+        monkeypatch.setattr(_daemon_proxy.sys, "platform", "win32")
+        liveness, version = probe_daemon(self._socket_dir(tmp_path))
+        assert liveness is DaemonLiveness.PlatformUnsupported
+        assert version is None
 
 
 # frob:ticket T-1377
