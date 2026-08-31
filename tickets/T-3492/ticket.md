@@ -1,7 +1,7 @@
 ---
 id: T-3492
 title: Wire java into vet/dup/docblock capability facets
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -18,10 +18,35 @@ scope:
 - src/frob/dup/_exhaustiveness.py
 - src/frob/gates/_docblocks.py
 - src/frob/lang/_support.py
+- src/frob/vet/_capability_core.py
+- src/frob/vet/_capability_scan.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/vet/_capability_core.py
+  reason: 'T-2906''s own precedent (the exact same bash/csharp facet-wiring pattern
+    this ticket mirrors) needed both files: _capability_core.py''s _EXT_LANGUAGE dict
+    (extension->language dispatch, without a .java entry the new java DANGEROUS_OPERATIONS
+    table is never reached by a real scan) and _capability_scan.py''s _SELF_PATTERN_SUFFIXES
+    (self-match exemption list for the new _dangerous_ops_java.py file''s own needle
+    literals). Both are minimal, mechanical additions mirroring T-2906''s identical
+    diff shape, not a scope expansion into unrelated work.'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/vet/_capability_scan.py
+  reason: 'T-2906''s own precedent (the exact same bash/csharp facet-wiring pattern
+    this ticket mirrors) needed both files: _capability_core.py''s _EXT_LANGUAGE dict
+    (extension->language dispatch, without a .java entry the new java DANGEROUS_OPERATIONS
+    table is never reached by a real scan) and _capability_scan.py''s _SELF_PATTERN_SUFFIXES
+    (self-match exemption list for the new _dangerous_ops_java.py file''s own needle
+    literals). Both are minimal, mechanical additions mirroring T-2906''s identical
+    diff shape, not a scope expansion into unrelated work.'
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
