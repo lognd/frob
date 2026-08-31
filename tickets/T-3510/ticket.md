@@ -46,7 +46,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1fd2374274ed90555d21aa748e46c9a6c8c0ed69
 ---
 Force UTF-8 for text I/O that currently relies on the platform default
 encoding, so Windows' narrower default 'charmap' codec never raises on
