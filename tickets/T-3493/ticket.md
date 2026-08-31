@@ -135,6 +135,20 @@ scope_changes:
     the same mid-flight scope-collision churn.
   actor: logan
   at: '2026-08-30'
+body_changes:
+- mode: append
+  reason: 'BUG002 waiver: same shape as T-3492, no pre-existing failing state to repro
+    for a new-language wiring ticket'
+  actor: logan
+  at: '2026-08-31'
+  old_length: 402
+  new_length: 1057
+evidence:
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
+- tests/test_lang_support.py::TestDeriveLanguageRegistry::test_cuda_capability_dup_docblock_are_implemented
+- tests/test_vet.py::TestCapabilityScan::test_cuda_host_system_call_detected
+- tests/test_vet.py::TestCapabilityScan::test_cuda_dlopen_detected
+- tests/test_vet.py::TestCapabilityScan::test_cuda_benign_kernel_has_no_capabilities
 designated_repro_test: null
 threat: null
 component: null
@@ -143,3 +157,5 @@ anchor_reason: null
 land_commit: null
 ---
 found while working T-1602: cuda gets a real frob.lang grammar/walker but the capability dangerous-op registry, dup clone-detection exhaustiveness table, and DOC004 fenced-code-block bucket have no cuda entry yet -- mirrors T-2906's bash/csharp and T-1601's java facet-wiring follow-ups exactly (T-3492). frob.lang._support marks these three facets KNOWN_GAP for cuda citing this ticket in the interim.
+
+<!-- frob:waive BUG002 reason="facet-wiring/feature ticket (mirrors T-3492's identical java precedent and its own accepted BUG002 waiver), not a defect with a pre-existing failing behavior -- at the parent commit cuda simply had zero cells in the capability/dup/docblock matrices (no LANGUAGES entry existed yet), so test_no_unexcused_empty_cells trivially holds at parent (nothing to be unexcused when the language does not exist in the matrix at all) and again at the fix (every new cell is now patterned or excused). No failing-at-parent state exists to reproduce because the gap being closed is an absence of entries, not a wrong existing one." -->
