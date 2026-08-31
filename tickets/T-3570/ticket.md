@@ -21,10 +21,19 @@ scope:
 - src/frob/tickets/_worktree_guard.py
 - src/frob/mutate/_journal.py
 - tests/system/test_cli_vet.py
+- src/frob/logging/logger.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/logging/logger.py
+  reason: the general hook-mode WARNING suppression belongs at the logging init layer
+    (mirrors T-3438's own sys.argv-scan pattern), not in the app/vet-hook-entry files
+    alone
+  actor: logan
+  at: '2026-08-31'
 body_changes:
 - mode: append
   reason: record macOS-only BUG002 waiver
@@ -32,6 +41,8 @@ body_changes:
   at: '2026-08-31'
   old_length: 642
   new_length: 1266
+evidence:
+- tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
 designated_repro_test: null
 threat: null
 component: null
