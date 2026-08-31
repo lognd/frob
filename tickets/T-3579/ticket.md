@@ -1,7 +1,7 @@
 ---
 id: T-3579
 title: frob check crashes with FileNotFoundError on a stale closed-ticket scope glob
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -34,3 +34,6 @@ Reproduced with --ticket-scoped, --only gates-fast, and other family combination
 
 ## Failure log
 - 2026-08-31 attempt 1: Could not reproduce the crash with current HEAD (faithful repro: T-3565-shaped closed ticket, scope+evidence naming a deleted file, frob check --only coverage/tickets/cross_ticket_leakage/prework/debt/scope + --ticket T-3565 all report clean COV003, never crash). Ruled out _cov003, glob-filtered scope helpers, DOC006 terminal-ticket exemption, and collect_python_tests as crash sites by code reading. Untested: a mid-land-squash pre/post tree comparison inside frob.tickets._land*/frob.testing._collect*, which may be outside src/frob/tickets scope and needs a real in-flight land or a mocked squash-divergence unit test to reproduce safely -- recommend re-scoping to include src/frob/testing and _land_squash.py before retrying.
+
+## Drop reason
+- 2026-08-31: Could not reproduce at HEAD (series FF): a faithful repro of the deleted-scope-glob scenario reports a clean COV003 finding, not a FileNotFoundError crash -- the crash path appears incidentally fixed. FF's candidate-site analysis is recorded on the ticket; refile with the new T-3578/T-3584 diagnostics output if it recurs.
