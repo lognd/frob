@@ -43,3 +43,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - REG008  docs/design/registry/check-coverage.yaml  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Failure log
+- 2026-08-31 attempt 1: Re-measured: 'uv run frob check --only registry' against this checkout's HEAD reports ZERO REG008 findings (registry=0.09s, no REG008 output). Root cause: commit 349ffd1b3 (T-3554, landed after this sweep's commit 7d590d79ae87c788c3d0f703421cc012c34d5f95) already fixed the exact gap this REG008 finding named -- 'fix(tickets): land T-3554 check-coverage registry missing entry for AUTOFIX001 (T-3526)'. This is pre-existing residue the rolling baseline had not recorded as fixed yet (T-1935/T-1690 lag between the sweep's frozen commit and a later, already-landed fix), not a live regression to fix here.
