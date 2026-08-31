@@ -1,7 +1,7 @@
 ---
 id: T-3579
 title: frob check crashes with FileNotFoundError on a stale closed-ticket scope glob
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
