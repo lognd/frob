@@ -34,7 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9cd4122ed19a65b5eebc8de74220c8bcbaa45875
 ---
 found while working T-3511 (re-measurement after the five T-3505 primitive fixes): the newest completed windows-latest run (33353658750, HEAD 2654ca1ff, job id 99371614987) again DID-NOT-COMPLETE -- exitstatus=2 INTERRUPTED, collected=12924 tests, only reached ~1% (129/12924) before a bare KeyboardInterrupt killed the whole pytest session at threading.py:359, only ~49s after xdist finished "bringing up nodes" (03:26:42 -> 03:27:31) and nowhere near the step's own 1500s (25m) Wait-Process budget or pytest-timeout's --timeout=120 per-test threshold. Only 3 failures were visible before the interrupt, all tests/gates/test_comment_placement.py (the known os.sep symref bug, filed separately -- see docs/design/windows-portability.md).
 
