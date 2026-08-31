@@ -62,16 +62,29 @@ not fully pinned down for any of these from a Linux box, so each
 follow-up's own first task is to measure against a macOS box or the
 `-vv` CI log before attempting a fix.
 
-- **Bucket C -- live-process / cwd detection (7 tests).** The scanner
-  behind `tests/unit/test_land_finish_guard.py` (4), `tests/
-  test_ticket_leases.py::TestRemoveWorktree::
+- **Bucket C -- live-process / cwd detection (7 tests) -- RESOLVED
+  (T-3528).** The scanner behind `tests/unit/test_land_finish_guard.py`
+  (4), `tests/test_ticket_leases.py::TestRemoveWorktree::
   test_keeps_a_live_process_worktree`, `tests/test_worktree_guard.py`
   (1), and `tests/test_mutate_journal.py::
-  test_recycled_pid_with_mismatched_starttime_is_treated_stale` reads
-  `/proc` directly, which does not exist on macOS. Needs an `lsof -p`/
-  `ps -o lstart` (or `psutil`) equivalent, or a declared PLATFORM001
-  boundary.
-  <!-- frob:until T-3528 -->
+  test_recycled_pid_with_mismatched_starttime_is_treated_stale` used to
+  read `/proc` directly, which does not exist on macOS. T-3500 already
+  added a `sys.platform == "darwin"` dispatch for every one of these
+  code paths -- `_pid_starttime_darwin` (`ps -o lstart=`,
+  `src/frob/mutate/_journal.py`), `_proc_cmdline_darwin` (`ps -ww -o
+  command=`) and `_proc_cwd_darwin`/`_live_pids_with_cwd`'s `lsof -a -d
+  cwd -Fpn` branch (`src/frob/tickets/_leases.py`), which
+  `scan_for_live_worktree_process`/`_scan_for_live_land_process`
+  (the scanners `tests/unit/test_land_finish_guard.py` and
+  `tests/test_worktree_guard.py` exercise) and `_is_stale`
+  (`tests/test_mutate_journal.py`) already call through. T-3528
+  re-measured this bucket (2026-08-31) and found the fallback fully
+  wired on every scoped file except one: the bucket's own file list
+  named `src/frob/tickets/_land_finish_guard.py`, which never existed
+  as a separate module -- the guard logic these tests cover lives in
+  `src/frob/tickets/_leases.py` and `_worktree_guard.py` instead, both
+  already covered above. No PLATFORM001 boundary needed; this bucket
+  is closed.
 
 - **Bucket D -- citation/text scans return 0 (13 tests).**
   `tests/test_tickets_live_tracker.py` (11) and
