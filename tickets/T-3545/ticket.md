@@ -15,12 +15,31 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- changelog.d/**
 - tests/unit/graph/test_dsl_markdown_waive.py
+- changelog.d/T-3520.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: changelog.d/**
+  reason: 'measured: CHANGELOG.md:752 traces to changelog.d/T-3520.md''s own fragment
+    text, which mentions ''<!-- frob:waive INV003/INV004 reason=...'' as bare prose
+    (not backtick-fenced), so the markdown DSL parser reads it as a live directive
+    attempt instead of a mention -- narrowing from the 738-file changelog.d/** glob
+    to the single actual source file.'
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: changelog.d/T-3520.md
+  reason: 'measured: CHANGELOG.md:752 traces to changelog.d/T-3520.md''s own fragment
+    text, which mentions ''<!-- frob:waive INV003/INV004 reason=...'' as bare prose
+    (not backtick-fenced), so the markdown DSL parser reads it as a live directive
+    attempt instead of a mention -- narrowing from the 738-file changelog.d/** glob
+    to the single actual source file.'
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
