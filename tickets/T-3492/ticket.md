@@ -26,6 +26,12 @@ scope:
 - docs/modules/gates.md
 - docs/modules/lang.md
 - docs/guides/extending/capability-registry.md
+- tests/test_capability_registry.py
+- tests/test_dup.py
+- tests/test_dup_exhaustiveness.py
+- tests/test_gates.py
+- tests/test_vet.py
+- tests/test_lang_support.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -90,6 +96,48 @@ scope_changes:
   glob: docs/guides/extending/capability-registry.md
   reason: T-2906's own precedent touched exactly these 5 doc files to update the facet-wiring
     narrative for the new language; mirroring that for java's own wiring.
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_capability_registry.py
+  reason: T-2906's own precedent updated exactly these 6 test files with per-language
+    fixture entries for the new adapter language; mirroring for java's own wiring
+    tests.
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_dup.py
+  reason: T-2906's own precedent updated exactly these 6 test files with per-language
+    fixture entries for the new adapter language; mirroring for java's own wiring
+    tests.
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_dup_exhaustiveness.py
+  reason: T-2906's own precedent updated exactly these 6 test files with per-language
+    fixture entries for the new adapter language; mirroring for java's own wiring
+    tests.
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-2906's own precedent updated exactly these 6 test files with per-language
+    fixture entries for the new adapter language; mirroring for java's own wiring
+    tests.
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_vet.py
+  reason: T-2906's own precedent updated exactly these 6 test files with per-language
+    fixture entries for the new adapter language; mirroring for java's own wiring
+    tests.
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/test_lang_support.py
+  reason: T-2906's own precedent updated exactly these 6 test files with per-language
+    fixture entries for the new adapter language; mirroring for java's own wiring
+    tests.
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
