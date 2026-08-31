@@ -1,7 +1,7 @@
 ---
 id: T-3514
 title: 'frob-dup: triage the src/ renamed-duplicate residue (non-test family)'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -119,3 +119,6 @@ tool=="frob-dup", partition by whether every fragment path starts with
 
 ## Failure log
 - 2026-08-31 attempt 2: Measured: frob-dup's docstring-inflation is real, but the correct fix requires either a repo-wide RawSymbol.body_tokens semantic change (call-graph/digest/perf consumers all depend on it verbatim) or new dup-local node-at-span infrastructure frob.lang does not expose yet -- infeasible-in-one-pass without a dedicated repo-wide regression pass; see ticket body for the full measurement.
+
+## Drop reason
+- 2026-08-31: Infeasible in one pass (measured by series CC): the docstring-inflation lives in R4's near-miss hash over RawSymbol.body_tokens, a repo-wide shared primitive (call-graph, digests, perf checks consume it verbatim); a correct fix needs dup-local node-at-span infrastructure frob.lang does not expose. Refile as a designed campaign when that infrastructure exists.
