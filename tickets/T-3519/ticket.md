@@ -1,7 +1,7 @@
 ---
 id: T-3519
 title: 'NEGEXIST001 WARN burn-down: 18 unbound negative-existence claims'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-30'
