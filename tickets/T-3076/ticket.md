@@ -35,6 +35,12 @@ body_changes:
   at: '2026-08-27'
   old_length: 0
   new_length: 4360
+- mode: append
+  reason: record T-3511's re-measurement
+  actor: logan
+  at: '2026-08-31'
+  old_length: 4360
+  new_length: 5513
 designated_repro_test: null
 threat: null
 component: null
@@ -126,3 +132,10 @@ ACCEPTANCE
   direction are separated out and fixed as their own small change.
 - Post-fix re-measurement of the windows-only count, so the downstream buckets
   are re-triaged against reality rather than guessed at now.
+
+
+
+
+## T-3511 re-measurement (2026-08-31)
+
+After all five primitive fixes (T-3506/T-3507/T-3508/T-3509/T-3510) landed, run 33353658750 (HEAD 2654ca1ff, job 99371614987) again DID-NOT-COMPLETE: exitstatus=2 INTERRUPTED, collected=12924 (partial), only ~1% ran before a bare KeyboardInterrupt killed the session ~49s in -- unrelated to any of the five primitives, and not the old 278/365-shaped failure set (too little of the suite ran to compare). Per this ticket's own acceptance criterion (a completed, not-interrupted run with a stable count), this is NOT yet met -- the 278/365 numbers are retired as stale, not replaced by a new stable count, since none exists yet. See docs/design/windows-portability.md's 'Re-measurement after the five primitive fixes (T-3511)' section for the full diagnosis. New leaf tickets filed: T-draft-d5e33f04 (the KeyboardInterrupt root cause -- Start-Process/Wait-Process console-sharing hypothesis) and T-draft-4bd701c9 (Cplace symref os.sep bug, 3 of the failures visible before the interrupt). The KeyboardInterrupt bucket blocks re-measuring the rest of the suite and should be treated as this ticket's next blocker.
