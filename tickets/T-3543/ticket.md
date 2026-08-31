@@ -20,6 +20,7 @@ scope:
 - src/frob/tickets/_land_squash.py
 - scripts/verify_lands.py
 - src/frob/app/ticket_runner/_lifecycle.py
+- tests/unit/test_land_record_commit.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +45,12 @@ scope_changes:
   reason: the actual record-land-commit stub (_record_land_commit) and its readers
     live in these files, not the three declared -- _land.py/_land_finalize.py/_land_cmd.py
     only orchestrate the call
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/test_land_record_commit.py
+  reason: add tests for derive_land_commit_by_grep + verify the removed follow-up
+    commit stays removed
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
