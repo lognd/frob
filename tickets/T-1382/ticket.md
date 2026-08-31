@@ -6,7 +6,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-08-01'
-priority: high
+priority: medium
 parent: null
 tier: epic
 sprint: null
@@ -125,6 +125,15 @@ scope_changes:
     them.'
   actor: logan
   at: '2026-08-16'
+triage_changes:
+- field: priority
+  old_value: high
+  new_value: medium
+  reason: 'T-3590 burn-down (TICK004): queued 30d, no active dispatch or blocking
+    dependency identified; re-prioritized to reflect actual working priority rather
+    than leaving it flagged as rotting critical/high work'
+  actor: logan
+  at: '2026-08-31'
 body_changes:
 - mode: append
   reason: 'record the owner''s scheduling decision (pre-1.0.0, NOT required for the
