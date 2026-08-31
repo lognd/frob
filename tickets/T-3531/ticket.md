@@ -2,7 +2,7 @@
 id: T-3531
 title: 'CI output hygiene: faulthandler dumps at 100s spray 260 lines on healthy runs;
   raise the threshold and surface SUITE-RESULT in the step summary'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -17,10 +17,19 @@ runs_last_parallel_safe_reason: null
 scope:
 - pyproject.toml
 - .github/workflows/ci.yml
+- tests/system/test_faulthandler_ci_hygiene.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/system/test_faulthandler_ci_hygiene.py
+  reason: MUST-FIRE/MUST-STAY-QUIET regression coverage for the faulthandler_timeout/log_level
+    config change requires a new test file proving the mechanism (scaled-down timing,
+    not the real 600s) rather than only editing config.
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
