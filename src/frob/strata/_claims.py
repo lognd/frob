@@ -11,6 +11,7 @@ from __future__ import annotations
 import calendar
 import datetime as _dt
 import math
+from typing import Callable, cast
 
 from typani.result import Err, Ok, Result
 
@@ -22,6 +23,7 @@ from ._models import (
     BoundClaim,
     Capacity,
     Claim,
+    ClaimBody,
     ClaimResult,
     Independent,
     KernelModel,
@@ -152,9 +154,13 @@ def _expand(facts: FactBase, ref: str) -> Result[tuple[str, ...], StrataError]:
 
 
 def _eval_noflow(
-    facts: FactBase, claim: Claim, body: NoFlow
+    facts: FactBase, claim: Claim, body: NoFlow, current: _dt.date
 ) -> Result[ClaimResult, StrataError]:
-    """REFUTED with the first witness path; PROVED forall when the closure is empty."""
+    """REFUTED with the first witness path; PROVED forall when the closure is empty.
+
+    `current` is unused (NoFlow has no time dimension) but is threaded
+    through for a uniform dispatch-table call signature."""
+    del current
     sources = _expand(facts, body.src)
     if sources.is_err:
         return Err(sources.danger_err)
@@ -199,9 +205,13 @@ def _first_noflow_witness(
 
 
 def _eval_reach(
-    facts: FactBase, claim: Claim, body: Reach
+    facts: FactBase, claim: Claim, body: Reach, current: _dt.date
 ) -> Result[ClaimResult, StrataError]:
-    """PROVED (exists) with a witness path; its refutation is a forall (no path)."""
+    """PROVED (exists) with a witness path; its refutation is a forall (no path).
+
+    `current` is unused (Reach has no time dimension) but is threaded
+    through for a uniform dispatch-table call signature."""
+    del current
     sources = _expand(facts, body.src)
     if sources.is_err:
         return Err(sources.danger_err)
@@ -245,7 +255,7 @@ def _first_reach_witness(
 
 
 def _eval_independent(
-    facts: FactBase, claim: Claim, body: Independent
+    facts: FactBase, claim: Claim, body: Independent, current: _dt.date
 ) -> Result[ClaimResult, StrataError]:
     """`independent(p, n)`: PROVED forall when no src->dst witness path touches
     avoid's reach closure; REFUTED with the offending path on the first overlap
@@ -256,7 +266,11 @@ def _eval_independent(
     `dst == avoid` (the common breach case) must not trivially refute
     every claim -- what independence forbids is the path touching
     anything ELSE `avoid` can also reach.
+
+    `current` is unused (Independent has no time dimension) but is
+    threaded through for a uniform dispatch-table call signature.
     """
+    del current
     expanded = _expand_independent_sets(facts, body)
     if expanded.is_err:
         return Err(expanded.danger_err)
@@ -336,7 +350,7 @@ def _first_independence_overlap(
 
 
 def _eval_set_equality(
-    facts: FactBase, claim: Claim, body: SetEquality
+    facts: FactBase, claim: Claim, body: SetEquality, current: _dt.date
 ) -> Result[ClaimResult, StrataError]:
     """`readers(target) == expected`: PROVED forall on an exact closure match.
 
@@ -348,7 +362,11 @@ def _eval_set_equality(
     (extra readers the closure reaches but `expected` did not declare, and
     missing readers `expected` declared but the closure never reaches) so a
     counterexample is self-explanatory without re-deriving the closure.
+
+    `current` is unused (SetEquality has no time dimension) but is
+    threaded through for a uniform dispatch-table call signature.
     """
+    del current
     if body.target not in facts.nodes:
         _log.error("readers claim %s: unknown target %r", claim.id, body.target)
         return Err(StrataError.UnknownReference)
@@ -424,7 +442,7 @@ def _proved(claim: Claim, detail: str) -> ClaimResult:
 
 
 def _eval_bound(
-    facts: FactBase, claim: Claim, body: BoundClaim, today: _dt.date
+    facts: FactBase, claim: Claim, body: BoundClaim, current: _dt.date
 ) -> Result[ClaimResult, StrataError]:
     """Arithmetic bounds: age/rate/utilization on nodes, latency/size on flows."""
     if body.metric is Metric.AGE:
@@ -432,7 +450,7 @@ def _eval_bound(
     if body.metric is Metric.RATE:
         return _eval_bound_rate(facts, claim, body)
     if body.metric is Metric.UTILIZATION:
-        return _eval_bound_utilization(facts, claim, body, today)
+        return _eval_bound_utilization(facts, claim, body, current)
     return _eval_bound_latency_or_size(facts, claim, body)
 
 
@@ -668,6 +686,24 @@ def _cascade_detail(
     return f"soundness dependency {EXTRACTION_SOUNDNESS} waived via {enabling_ids[0]}"
 
 
+# frob:ticket T-3572
+#: Uniform per-body-kind evaluator signature: every arm takes (facts, claim,
+#: body, current) and returns a Result, even the three kinds with no time
+#: dimension (they `del current` immediately) -- so dispatch is one dict
+#: lookup by exact body type, not an isinstance chain (T-3572).
+_ClaimEvaluator = Callable[
+    [FactBase, Claim, ClaimBody, _dt.date], Result[ClaimResult, StrataError]
+]
+
+_CLAIM_EVALUATORS: dict[type[ClaimBody], _ClaimEvaluator] = {
+    NoFlow: cast(_ClaimEvaluator, _eval_noflow),
+    Reach: cast(_ClaimEvaluator, _eval_reach),
+    Independent: cast(_ClaimEvaluator, _eval_independent),
+    SetEquality: cast(_ClaimEvaluator, _eval_set_equality),
+    BoundClaim: cast(_ClaimEvaluator, _eval_bound),
+}
+
+
 def _eval_one_claim(
     facts: FactBase,
     claim: Claim,
@@ -679,16 +715,8 @@ def _eval_one_claim(
     if claim.assumed:
         return Ok(_eval_assumed(claim, current))
     body = claim.body
-    if isinstance(body, NoFlow):
-        outcome = _eval_noflow(facts, claim, body)
-    elif isinstance(body, Reach):
-        outcome = _eval_reach(facts, claim, body)
-    elif isinstance(body, Independent):
-        outcome = _eval_independent(facts, claim, body)
-    elif isinstance(body, SetEquality):
-        outcome = _eval_set_equality(facts, claim, body)
-    else:
-        outcome = _eval_bound(facts, claim, body, current)
+    evaluator = _CLAIM_EVALUATORS[type(body)]
+    outcome = evaluator(facts, claim, body, current)
     if outcome.is_err:
         return Err(outcome.danger_err)
     result = outcome.danger_ok

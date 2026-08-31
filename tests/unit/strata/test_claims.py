@@ -304,3 +304,37 @@ class TestAssumes:
             ),
         )
         assert "overdue since 2026-01-01" in _one(model).detail
+
+
+class TestClaimDispatchTable:
+    """T-3572: `_eval_one_claim` dispatches by a dict keyed on exact claim
+    body type instead of an isinstance chain -- these guard the invariants
+    that made the isinstance chain safe in the first place."""
+
+    # frob:tests src/frob/strata/_claims.py::_CLAIM_EVALUATORS kind="unit"
+    # frob:ticket T-3572
+    # frob:waive COV006 reason="dict-of-callables dispatch, same callgraph blind spot \
+    # as dsl.py's _VERB_ATTRS_VALIDATORS COV006 waiver"
+    def test_dispatch_table_covers_every_claim_body_kind(self):
+        from frob.strata._claims import _CLAIM_EVALUATORS
+        from frob.strata._models import ClaimBody
+
+        body_kinds = set(ClaimBody.__args__)
+        assert set(_CLAIM_EVALUATORS) == body_kinds
+
+    # frob:tests src/frob/strata/_claims.py::_CLAIM_EVALUATORS kind="unit"
+    # frob:ticket T-3572
+    # frob:waive COV006 reason="dict-of-callables dispatch, same callgraph blind spot \
+    # as dsl.py's _VERB_ATTRS_VALIDATORS COV006 waiver"
+    def test_dispatch_table_evaluators_share_one_call_signature(self):
+        import inspect
+
+        from frob.strata._claims import _CLAIM_EVALUATORS
+
+        signatures = {
+            tuple(inspect.signature(fn).parameters) for fn in _CLAIM_EVALUATORS.values()
+        }
+        assert len(signatures) == 1, (
+            "every dispatch-table evaluator must take the same "
+            "(facts, claim, body, current) shape"
+        )
