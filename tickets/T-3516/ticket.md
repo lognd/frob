@@ -2,7 +2,7 @@
 id: T-3516
 title: Collect xdist worker crashes into one loud end-of-run WORKER-CRASH-REPORT instead
   of mid-stream node-down spam and INTERNALERROR aborts
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -18,10 +18,19 @@ scope:
 - tests/conftest.py
 - tests/unit/test_conftest_stackdump.py
 - .github/workflows/ci.yml
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001 requires declaring the fs.write/fs.read/exec/env.read capabilities
+    T-3516's new crash-marker + subprocess-integration-test code introduces on the
+    testsuite node
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
