@@ -1,7 +1,7 @@
 ---
 id: T-3528
 title: add a macOS live-process detection fallback (no /proc)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
