@@ -2,7 +2,7 @@
 id: T-3497
 title: 'macOS-only: pre-existing-violation shifted-lines attribution raises (bucket
   H, T-3488)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-30'

@@ -4260,12 +4260,34 @@ def _ruff_diagnostic_identity(  # noqa: ANN001
     file shortcut. This function instead re-derives the relative path
     from `diag.file` via `os.path.relpath(diag.file, base)`, so identity
     is anchored to the file's path WITHIN whichever tree produced it,
-    not to that tree's own absolute location."""
+    not to that tree's own absolute location.
+
+    T-3497 (T-3488 bucket H, MEASURED via reasoning about the only
+    platform-dependent step here -- `os.path.relpath` is a purely
+    LEXICAL string computation, no filesystem awareness/symlink
+    resolution at all): macOS's `/tmp` is a symlink to `/private/tmp`
+    (and `tempfile.gettempdir()`/pytest's own `tmp_path` commonly
+    resolve under `/private/var/folders/...`), while `ruff check
+    --output-format json`'s own `"filename"` field is the process's
+    already-OS-resolved absolute path. If `base` (the `worktree`/
+    `snapshot` directory a caller passes in, built from whatever raw
+    path string it was handed) is not resolved through the same
+    symlink chain `diag.file` already went through, `os.path.relpath`
+    -- being purely lexical -- silently computes a WRONG relative path
+    (e.g. climbing back out through `../../../private/...` instead of
+    landing on the real `src/bad_lint.py`), which never round-trips
+    back to the SAME identity between the baseline pass (built off
+    `snapshot`) and the current pass (built off `worktree`) even for a
+    file whose content is byte-identical -- exactly this bucket's
+    measured `SystemExit: 1` symptom (a merely-shifted, pre-existing
+    violation misclassified as genuinely new). `base.resolve()` makes
+    this symlink-consistent with `diag.file` regardless of platform,
+    not just on a host where the two happened to already agree."""
     import os
 
     if diag.file is None:
         return (None, diag.code, diag.message)
-    return (os.path.relpath(diag.file, base), diag.code, diag.message)
+    return (os.path.relpath(diag.file, base.resolve()), diag.code, diag.message)
 
 
 # frob:ticket T-3132
@@ -4587,8 +4609,8 @@ def _assert_diff_does_not_worsen_long_functions_pre_land(
 # checker(worktree, rel_path, text)) -- the same indirect-dispatch shape WIRE001 \
 # cannot trace that frob.gates._arch's own analogous waiver documents; genuinely \
 # wired, not dead. Permanent by design (T-2280's own extension point), so this waiver \
-# does not expire -- follow_up points at T-3504 (open, unrelated), not the \
-# ticket landing this change: a waiver citing its own landing ticket blocks its close \
+# does not expire -- follow_up points at T-3504 (open, unrelated), not the ticket \
+# landing this change: a waiver citing its own landing ticket blocks its close \
 # (T-2280's own LiveTrackerCited lesson)" follow_up="T-3504"
 def _render001_checker(
     worktree: Path, rel_path: str, text: str
