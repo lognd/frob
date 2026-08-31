@@ -43,7 +43,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b0ee39a285f0ea23bd157a7f265b75cff5d8688e
 ---
 Fix the direction of the platform-degradation assertions around
 socket.AF_UNIX so the daemon proxy's existing loud-refusal path is
