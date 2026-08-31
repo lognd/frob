@@ -2,7 +2,7 @@
 id: T-3525
 title: 'T-3495 fixture scan exceeds the 300s per-test timeout on CI: worker is killed
   mid-fixture and the fresh worker restarts the scan, looping until the step budget'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-30'
@@ -22,6 +22,28 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/conftest.py
+  reason: 'T-3495 fixture scan timeout fix: raised timeout marker for the frob_self_scan_heavy
+    group plus tree-hash-keyed persistence of the scan artifacts, both in the same
+    conftest hook'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/system/test_frob_self_model.py
+  reason: 'T-3495 fixture scan timeout fix: raised timeout marker for the frob_self_scan_heavy
+    group plus tree-hash-keyed persistence of the scan artifacts, both in the same
+    conftest hook'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: tests/unit/test_conftest_stackdump.py
+  reason: 'T-3495 fixture scan timeout fix: raised timeout marker for the frob_self_scan_heavy
+    group plus tree-hash-keyed persistence of the scan artifacts, both in the same
+    conftest hook'
+  actor: logan
+  at: '2026-08-30'
 designated_repro_test: null
 threat: null
 component: null
