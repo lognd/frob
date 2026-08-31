@@ -1,7 +1,7 @@
 ---
 id: T-3520
 title: 'INV003/INV004 WARN burn-down: 12 doc files, unbound normative claims'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-30'
