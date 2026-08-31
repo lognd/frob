@@ -20,6 +20,7 @@ scope:
 - src/frob/lang/_support.py
 - src/frob/vet/_capability_core.py
 - src/frob/vet/_capability_scan.py
+- src/frob/gates/_docblocks_refs.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +46,15 @@ scope_changes:
     (self-match exemption list for the new _dangerous_ops_java.py file''s own needle
     literals). Both are minimal, mechanical additions mirroring T-2906''s identical
     diff shape, not a scope expansion into unrelated work.'
+  actor: logan
+  at: '2026-08-30'
+- op: add
+  glob: src/frob/gates/_docblocks_refs.py
+  reason: DOC004's fenced-block checker for java needs its own import-statement violation
+    function (mirrors _csharp_using_violations exactly, T-2906's own precedent) --
+    that function and its _CSHARP_USING_RE-sibling regex live in _docblocks_refs.py,
+    not _docblocks.py (which only re-exports/dispatches). Same minimal, mechanical
+    mirroring as the _capability_core.py/_capability_scan.py additions.
   actor: logan
   at: '2026-08-30'
 designated_repro_test: null
