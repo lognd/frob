@@ -15,8 +15,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: burn-down umbrella tracking ticket spanning DOC/DRIFT/ARCH/COV/PII/LARGE/OPAQUE/TICK/REF/REL
+  families across many unrelated files; scope is added per-family as each fix lands
 designated_repro_test: null
 threat: null
 component: null
