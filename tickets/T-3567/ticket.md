@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reconcile.py
 - tests/test_ticket_reconcile.py
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,12 @@ scope_changes:
   glob: tests/test_ticket_reconcile.py
   reason: T-3522's own cache-population tests need a .gitignore precondition to match
     the new _frob_dir_is_gitignored guard
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: 'AFFECT001: reconcile changed again, doc needs the new .frob/-gitignored
+    precondition'
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
