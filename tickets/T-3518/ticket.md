@@ -1,7 +1,7 @@
 ---
 id: T-3518
 title: 'macOS-only: 3 unmeasured bucket-F failures (T-3499 follow-up)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -21,6 +21,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 waiver: all 3 fixed defects are macOS-only, unreproducible on Linux
+    CI'
+  actor: logan
+  at: '2026-08-30'
+  old_length: 2240
+  new_length: 3105
+evidence:
+- tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_shell_metacharacters_do_not_reach_a_shell
+- tests/test_app_daemon_proxy.py::TestQuery::test_remote_error_falls_back
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_produces_coverage_xml_after_worker_crash_recovery
 designated_repro_test: null
 threat: null
 component: null
@@ -65,3 +77,5 @@ killpg PermissionError, landed at c8013b0b3c4cc3f48871ed0dec3b3184d5da36ad).
 ACCEPTANCE: each of the 3 above measured (via a macOS box or a -vv CI
 log for that node id) and either fixed (hermetic, no unconditional
 skip) or a PLATFORM001 declared boundary with the reason stated.
+
+<!-- frob:waive BUG002 reason="all 3 defects this ticket fixes are macOS-only: (1) the printf argv-shape difference is BSD-printf-vs-GNU-printf, both this ticket's designated repro test and the other 2 evidence tests pass identically at the parent commit and at the fix on this repo's own Linux CI runner, because GNU printf and Linux thread-scheduling/memory-measurement never hit the failure mode being fixed; (2) the daemon-readiness race is specific to macOS's slower thread scheduling relative to query()'s 1.5s _SPAWN_GRACE_S window; (3) the worker-count/-n-flag test depends on _available_memory_mb's real /proc/meminfo read, which only degrades to None on non-Linux. None of these can be reproduced by a test running on this platform -- only observed on macos-latest CI (T-3076-family macOS bucket F, T-3499 follow-up, runs 33342928809/33340976639)." -->
