@@ -1,7 +1,7 @@
 ---
 id: T-3522
 title: Wire _save_unlanded_summary_cache into the reconcile path
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-30'
@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reconcile.py
+- src/frob/app/ticket_runner/_query.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: removing the stale DEAD001 waiver on _save_unlanded_summary_cache that itself
+    cites T-3522, now that this ticket wires its real production caller
+  actor: logan
+  at: '2026-08-31'
 designated_repro_test: null
 threat: null
 component: null
