@@ -1,7 +1,7 @@
 ---
 id: T-3601
 title: add control-flow fixtures for frob-suggest ack-on-first-block (T-3071)
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-31'
@@ -19,6 +19,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_hook_frob_suggest.py::test_ack_prefixed_first_attempt_is_allowed_through
+- tests/test_hook_frob_suggest.py::test_unacked_first_attempt_is_still_blocked
 designated_repro_test: null
 threat: null
 component: null

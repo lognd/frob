@@ -803,6 +803,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3597: Windows CI diagnostic step resolves fixture project instead of frob checkout (ModuleNotFoundError)
 - T-3598: ARCH103 waiver-stays-effective regression: waived function no longer fires raw on refactor/_verify.py
 - T-3600: claude-config-drift fails structurally on CI: 9 managed files read as missing where ~/.claude does not exist
+- T-3601: Added test_ack_prefixed_first_attempt_is_allowed_through (must-stay-quiet) and test_unacked_first_attempt_is_still_blocked (must-fire) to tests/test_hook_frob_suggest.py, matching T-3071's own acceptance criteria. Verified the must-stay-quiet fixture genuinely fails against the pre-T-3071 hook (git show 1aafb6b96~1:.claude/hooks/frob-suggest.py run directly against the same payload denies even with the ack), confirming this is a real regression pin, not a vacuous test. Full tests/test_hook_frob_suggest.py suite (49 tests) passes.
 
 ## [0.530.0] - unreleased
 

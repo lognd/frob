@@ -242,6 +242,40 @@ def test_fourth_attempt_needs_the_ack_again(tmp_path: Path):
 
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+def test_ack_prefixed_first_attempt_is_allowed_through(tmp_path: Path):
+    """T-3071: `FROB_SUGGEST_ACK=1 <command>` passes on the FIRST
+    encounter of that command string, not only from the third attempt
+    onward -- a caller who already knows the raw command is right should
+    not have to eat a block and blindly re-run the exact same string
+    just to prove it. Must FAIL against pre-T-3071 main: the old
+    `_escalate` denied unconditionally on attempt 1 regardless of
+    `acked`."""
+    # frob:tests tests/test_hook_frob_suggest.py::test_ack_prefixed_first_attempt_is_allowed_through  # noqa: E501
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    command = "git status --porcelain && ps aux | grep frob"
+    first = _run_hook(f"FROB_SUGGEST_ACK=1 {command}", home=home, cwd=root)
+    assert first.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+def test_unacked_first_attempt_is_still_blocked(tmp_path: Path):
+    """T-3071's must-fire sibling: the SAME command WITHOUT the ack is
+    still denied on its first encounter -- the ack fix must not weaken
+    the ordinary first-block nudge for a caller who never opted in."""
+    # frob:tests tests/test_hook_frob_suggest.py::test_unacked_first_attempt_is_still_blocked  # noqa: E501
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    command = "git status --porcelain && ps aux | grep frob"
+    first = _run_hook(command, home=home, cwd=root)
+    reason = _denial_reason(first)
+    assert reason is not None, "expected the unacknowledged first attempt to be blocked"
+    assert "BLOCKED ONCE" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 def test_plain_check_only_gates_is_not_blocked(tmp_path: Path):
     """`uv run frob check --only gates` alone, with no counting pipeline,
     must NOT be blocked -- T-2031 acceptance criterion 4/7 (the
