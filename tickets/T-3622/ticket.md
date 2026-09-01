@@ -1,7 +1,7 @@
 ---
 id: T-3622
 title: 'ARCH103: split _leases.py mixed-concern helpers (_land_flock_probe, _live_pids_with_cwd)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-31'
