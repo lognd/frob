@@ -6048,12 +6048,17 @@ def _relativize_perf_violation_file(root: Path, violation: Violation) -> Violati
     currently carries an absolute path under `root` -- a no-op for a
     violation that is already relative, or whose `.file` does not resolve
     under `root` at all (never raises; a mismatch just means no
-    relativization is possible, not a fatal error worth surfacing here)."""
+    relativization is possible, not a fatal error worth surfacing here).
+    T-3662: `.as_posix()`, not `str()` -- `str()` on a Windows `Path`
+    renders native `\\` separators, which broke this exact repo-relative-
+    POSIX contract this docstring already promises on win32 (a
+    `PERF00x` finding's `.file` never matched an `frob:waive PERF00x`
+    directive's graph-derived, always-POSIX edge `src` there)."""
     try:
         rel = Path(violation.file).relative_to(root)
     except ValueError:
         return violation
-    rel_str = str(rel)
+    rel_str = rel.as_posix()
     if rel_str == violation.file:
         return violation
     return violation.model_copy(update={"file": rel_str})

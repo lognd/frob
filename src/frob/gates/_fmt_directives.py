@@ -773,12 +773,20 @@ def _write_formatted(path: Path, rewritten: str) -> None:
 
 
 # frob:ticket T-0979
+# frob:ticket T-3662
 def _relpath_for_change(path: Path, root: Path) -> str:
     """`_format_one_path`'s reported-path half: `path` relative to `root`
     when possible, else `path` unchanged -- the display string an
-    `FmtChange` carries."""
+    `FmtChange` carries. T-3662: `.as_posix()`, not `str()`, for the
+    relative case -- `str()` on a Windows `Path` renders native `\\`
+    separators, which broke every `FixApplied.file`/exact-string
+    consumer that assumes a repo-relative POSIX path (every other gate's
+    own convention, per T-2314's `_relativize_perf_violation_file`).
+    The `else` branch (`path` outside `root` entirely) is left as `str
+    (path)` unchanged -- an absolute-path display fallback, not the
+    repo-relative identity this fix targets."""
     if path.is_relative_to(root):
-        return str(path.relative_to(root))
+        return path.relative_to(root).as_posix()
     return str(path)
 
 

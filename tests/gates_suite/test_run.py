@@ -851,6 +851,36 @@ class TestOptInGates:
             )
             assert v.file == "src/a.py"
 
+    # frob:ticket T-3662
+    # frob:tests src/frob/gates/__init__.py::_relativize_perf_violation_file kind="unit"
+    def test_perf_gate_file_is_posix_shaped_for_a_nested_path(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3662 (win32 gates_suite campaign, T-3659): a NESTED PERF004
+        site's `Violation.file` must always be POSIX-shaped (never a
+        native separator) -- `test_perf_gate_reports_a_repo_relative_
+        file_not_absolute`'s single-level `src/a.py` fixture cannot
+        distinguish `str()` from `.as_posix()` on any platform (no
+        separator appears either way); a nested path is where the two
+        WOULD differ if `_relativize_perf_violation_file` regressed back
+        to bare `str(rel)`."""
+        from frob.gates import perf_gate
+
+        _write(
+            tmp_path,
+            "src/nested/a.py",
+            "def scan(items):\n"
+            "    for group in items:\n"
+            "        for x in sorted(group):\n"
+            "            pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = perf_gate(tmp_path, snap)
+        assert violations, "expected at least one PERF004 violation"
+        for v in violations:
+            assert v.file == "src/nested/a.py"
+            assert "\\" not in v.file
+
     # frob:ticket T-2314
     def test_frob_waive_perf004_suppresses_the_named_finding(
         self, tmp_path: Path

@@ -1,7 +1,7 @@
 ---
 id: T-3662
 title: 'win32: FMT001/PERF004 file fields carry native-separator paths'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -22,7 +22,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_file_is_posix_shaped_for_a_nested_path
+- tests/gates_suite/test_run.py::TestOptInGates::test_perf_gate_file_is_posix_shaped_for_a_nested_path
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_relative_to_as_posix_normalizes_a_windows_shaped_path
+designated_repro_test: tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_file_is_posix_shaped_for_a_nested_path
 threat: null
 component: null
 anchor: false

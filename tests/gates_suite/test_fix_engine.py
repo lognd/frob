@@ -1772,6 +1772,44 @@ class TestFixEngineTierABatch2:
         # idempotent: canonicalize_text agrees this is already canonical
         assert canonicalize_text(rewritten, path="src/m.py", limit=limit) == rewritten
 
+    # frob:ticket T-3662
+    # frob:tests src/frob/gates/_fmt_directives.py::_relpath_for_change kind="unit"
+    def test_fmt001_file_is_posix_shaped_for_a_nested_path(self, tmp_path: Path) -> None:
+        """T-3662 (win32 gates_suite campaign, T-3659): a NESTED FMT001
+        target's `applied[0].file` must always be POSIX-shaped
+        (`"src/nested/m.py"`, never a native separator) -- the single-
+        level fixture above cannot distinguish `str()` from `.as_posix()`
+        on any platform (no separator appears either way), so this uses
+        a nested directory where the two WOULD differ if `_relpath_for_
+        change` regressed back to bare `str(path.relative_to(root))`."""
+        from frob.gates._fix_engine import fix_fmt001_directive_wrap
+
+        root = tmp_path / "repo"
+        (root / "src" / "nested").mkdir(parents=True)
+        long_reason = "x" * 100
+        original = f'# frob:waive SCOPE001 reason="{long_reason}"\ndef f():\n    pass\n'
+        (root / "src" / "nested" / "m.py").write_text(original, encoding="utf-8")
+
+        applied = fix_fmt001_directive_wrap(root)
+
+        assert len(applied) == 1
+        assert applied[0].file == "src/nested/m.py"
+        assert "\\" not in applied[0].file
+
+    # frob:ticket T-3662
+    def test_relative_to_as_posix_normalizes_a_windows_shaped_path(self) -> None:
+        """T-3662: pins the exact hazard `_relpath_for_change`/
+        `_relativize_perf_violation_file` both had -- `str()` on a
+        Windows path object renders native `\\` separators, while
+        `.as_posix()` always normalizes to `/`. `PureWindowsPath` is a
+        PURE path type (no filesystem calls), exercisable on any
+        platform unlike the concrete `WindowsPath` class."""
+        from pathlib import PureWindowsPath
+
+        rel = PureWindowsPath("src") / "nested" / "m.py"
+        assert str(rel) == "src\\nested\\m.py"
+        assert rel.as_posix() == "src/nested/m.py"
+
     def test_fmt001_already_canonical_is_a_no_op(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_fix_engine_text.py::fix_fmt001_directive_wrap \
         # kind="unit"
