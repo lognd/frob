@@ -29,6 +29,15 @@ scope_changes:
     two-process test, T-3669''s acceptance evidence'
   actor: logan
   at: '2026-09-01'
+evidence:
+- tests/unit/test_graph_cache.py::TestHandleIdentity::test_replaced_away_handle_is_reopened_before_the_next_read
+- tests/unit/test_graph_cache.py::TestHandleIdentity::test_fingerprint_read_after_a_replace_lands_on_the_live_file
+- tests/unit/test_graph_cache.py::TestHandleIdentity::test_store_file_data_after_a_replace_lands_on_the_live_file
+- tests/unit/test_graph_cache.py::TestHandleIdentity::test_lock_retry_lets_a_readonly_fault_escape_to_the_reopen_layer
+- tests/unit/test_graph_cache.py::TestHandleIdentity::test_readonly_database_is_classified_as_a_handle_fault
+- tests/unit/test_graph_cache.py::TestHandleIdentity::test_identity_changes_after_os_replace
+- tests/unit/test_graph_cache.py::TestHandleIdentity::test_live_handle_is_not_reopened
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_two_processes_connecting_concurrently_never_see_no_such_table_meta
 designated_repro_test: null
 threat: null
 component: null
