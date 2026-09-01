@@ -37,9 +37,31 @@ def _init_repo(root: Path) -> None:
     (root / "frob.toml").write_text("", encoding="utf-8")
 
 
+# T-3375: the hook itself only ever treats `FROB_SUGGEST_ACK` as an
+# ambient environment READ for the Edit-tool path (`_handle_edit`'s
+# `os.environ.get("FROB_SUGGEST_ACK") == "1"`) -- the Bash-command path
+# reads the ack from an explicit command-string PREFIX instead, never
+# from the environment. That makes `_run_edit_hook` the one place a
+# spawning shell's own exported `FROB_SUGGEST_ACK=1` (e.g. an agent that
+# ran `FROB_SUGGEST_ACK=1 bash -c "...uv run pytest..."` to bypass ONE
+# blocked command, not knowing the export leaks into every subprocess
+# that shell's pytest then spawns) can silently change a test's observed
+# behaviour: a base `{**os.environ, ...}` merge inherits whatever this
+# runner process's OWN environment happens to hold. Popping it from the
+# base snapshot before layering each test's explicit `env` override means
+# a test controls its own acked/unacked cases regardless of what any
+# future runner's shell habits export -- fixing MEASURED acceptance
+# criterion (b), the more durable of the two options the ticket names.
+_BASE_ENV_NO_ACK = {k: v for k, v in os.environ.items() if k != "FROB_SUGGEST_ACK"}
+
+
 def _run_hook(command: str, *, home: Path, cwd: Path):
     """Invoke the hook's real PreToolUse stdin/stdout contract for a Bash
-    `command`, with `home` isolating the O_EXCL marker state dir per test."""
+    `command`, with `home` isolating the O_EXCL marker state dir per test.
+    `FROB_SUGGEST_ACK` is never inherited ambiently (T-3375): the
+    Bash-command path only ever reads the ack from the command string's
+    own `FROB_SUGGEST_ACK=1 ` prefix, so a caller wanting the ack passes
+    it as part of `command`, not via the runner's own environment."""
     payload = {"tool_input": {"command": command}, "cwd": str(cwd)}
     return subprocess.run(
         [sys.executable, str(_HOOK)],
@@ -47,7 +69,7 @@ def _run_hook(command: str, *, home: Path, cwd: Path):
         capture_output=True,
         text=True,
         check=False,
-        env={**os.environ, "HOME": str(home)},
+        env={**_BASE_ENV_NO_ACK, "HOME": str(home)},
     )
 
 
@@ -63,7 +85,10 @@ def _run_edit_hook(
     """Invoke the hook's Edit-tool PreToolUse contract (T-3069): same
     stdin/stdout shape as `_run_hook`, but a `tool_name: "Edit"` payload
     carrying `file_path`/`old_string`/`new_string` instead of a Bash
-    `command`."""
+    `command`. `FROB_SUGGEST_ACK` is stripped from the inherited base
+    environment (T-3375) so an ambient exported value in the RUNNER's own
+    shell can never leak into a test's observed behaviour -- each call
+    controls its own acked/unacked case explicitly via `env`."""
     payload = {
         "tool_name": "Edit",
         "tool_input": {
@@ -79,7 +104,7 @@ def _run_edit_hook(
         capture_output=True,
         text=True,
         check=False,
-        env={**os.environ, "HOME": str(home), **(env or {})},
+        env={**_BASE_ENV_NO_ACK, "HOME": str(home), **(env or {})},
     )
 
 

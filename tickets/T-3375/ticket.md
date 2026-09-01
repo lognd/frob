@@ -2,7 +2,7 @@
 id: T-3375
 title: Exported FROB_SUGGEST_ACK=1 leaks into pytest subprocesses and false-fails
   its own bypass test
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'
