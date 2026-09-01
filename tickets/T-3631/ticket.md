@@ -40,6 +40,11 @@ scope_changes:
     1:1 to their new tests/gates_suite/test_compliance.py home
   actor: logan
   at: '2026-09-01'
+evidence:
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_rejects_empty_directory_level_evidence
+- tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_off_by_default
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+- tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_ts_interface_email_field_fires
 designated_repro_test: null
 threat: null
 component: null
