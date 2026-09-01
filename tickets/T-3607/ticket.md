@@ -1,7 +1,7 @@
 ---
 id: T-3607
 title: 'cache rebuild unlinks live WAL sidecars: sibling reader SIGBUS in load_parsed_artifact'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
