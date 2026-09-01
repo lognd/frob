@@ -1,7 +1,7 @@
 ---
 id: T-3654
 title: 'cache round 5: exponential backoff for readonly-database contention on darwin'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
