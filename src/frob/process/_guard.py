@@ -18,6 +18,8 @@ process this component spawns, without a redeploy or a code change.
 
 from __future__ import annotations
 
+import contextlib
+import ctypes
 import os
 import subprocess
 import sys
@@ -29,7 +31,7 @@ from typani.result import Result
 from frob.logging import get_logger
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Generator, Sequence
 
 _log = get_logger(__name__)
 
@@ -65,6 +67,28 @@ NET_KILL_SWITCH_ENV = "FROB_DISABLE_NET"
 #: run, since the crash cannot be reproduced locally (WSL has no win32).
 # frob:doc docs/modules/process.md#public-api
 FROB_WIN32_SPAWN_DEBUG_ENV = "FROB_WIN32_SPAWN_DEBUG"
+
+#: T-3657: env-gated mitigation, NOT enabled by default anywhere -- when
+#: truthy on win32, `win32_console_ctrl_ignore_scope()` installs a
+#: `SetConsoleCtrlHandler` callback that swallows `CTRL_C_EVENT`/
+#: `CTRL_BREAK_EVENT` for the lifetime of the `with` block. T-3651
+#: (round 14) proved `CREATE_NO_WINDOW` alone is INSUFFICIENT: run
+#: 33521416410's diag still caught `T-3648-SIGNAL: received SIGINT` even
+#: though every guarded tool spawn carried `creationflags=134218240`
+#: (`CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP`) -- a console-detached
+#: child cannot be signalling frob's own console, so the sender is NOT
+#: one of the four guarded tool children (round-14 hypothesis falsified,
+#: see T-3657's ticket body). Round 15's diag matrix (`.github/workflows/
+#: ci.yml`) exists to name the real sender before this switch is ever
+#: flipped in CI -- this flag is prepared in advance so the fix is one
+#: workflow-file line once that evidence lands, not a code change under
+#: pressure. NEVER set by default: swallowing Ctrl-C is only correct for
+#: a non-interactive CI runner where an external/unfixable sender is
+#: confirmed; a real user's Ctrl-C in an interactive `frob check` must
+#: keep working, which is why nothing in this repo sets this env var
+#: except a CI workflow step this ticket does NOT add.
+# frob:doc docs/modules/process.md#public-api
+FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV = "FROB_WIN32_IGNORE_CONSOLE_CTRL"
 
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
 
@@ -243,12 +267,101 @@ def _win32_isolate_console_group(kwargs: dict[str, object]) -> dict[str, object]
     return kwargs
 
 
+#: `CTRL_C_EVENT` and `CTRL_BREAK_EVENT` -- the two console control codes
+#: `SetConsoleCtrlHandler` delivers to every process attached to a shared
+#: console; returning `True` from a registered handler for either marks
+#: it handled and stops Windows from also invoking the default handler
+#: (which is what turns the event into a `SIGINT`-equivalent for a
+#: Python process, per CPython's `Modules/signalmodule.c`).
+_WIN32_CTRL_C_EVENT = 0
+_WIN32_CTRL_BREAK_EVENT = 1
+_WIN32_IGNORED_CTRL_EVENTS = frozenset({_WIN32_CTRL_C_EVENT, _WIN32_CTRL_BREAK_EVENT})
+
+
+def _win32_ignore_console_ctrl_requested() -> bool:
+    """True exactly when `FROB_WIN32_IGNORE_CONSOLE_CTRL` is set to a
+    truthy value AND this process is running on win32 -- both must hold
+    before `win32_console_ctrl_ignore_scope()` touches any win32 API."""
+    return sys.platform == "win32" and _env_flag_set(FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV)
+
+
+# frob:ticket T-3657
+# frob:tests tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope.test_no_op_on_non_win32  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope.test_no_op_when_env_unset  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope.test_installs_and_removes_handler_when_requested  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope.test_handler_swallows_ctrl_c_and_ctrl_break  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope.test_handler_passes_through_other_events  # noqa: E501
+# frob:doc docs/modules/process.md#public-api
+@contextlib.contextmanager
+def win32_console_ctrl_ignore_scope() -> Generator[None, None, None]:
+    """T-3657 round-15 mitigation, env-gated and OFF by default (see
+    `FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV`'s docstring for the full
+    rationale and the invariant that keeps it out of every default
+    path). A no-op `with` block on any non-win32 platform, or on win32
+    whenever the env var is unset/falsy -- both checked once, fresh, at
+    entry (`_win32_ignore_console_ctrl_requested`), the same posture
+    `exec_enabled()`/`net_enabled()` use.
+
+    When both conditions hold, installs a `ctypes.WINFUNCTYPE` callback
+    via `kernel32.SetConsoleCtrlHandler` that returns `True` (handled,
+    suppressing the default action) for `CTRL_C_EVENT`/`CTRL_BREAK_EVENT`
+    and `False` (not handled, falls through) for any other control code
+    (`CTRL_CLOSE_EVENT`/`CTRL_LOGOFF_EVENT`/`CTRL_SHUTDOWN_EVENT` still
+    terminate the process normally -- this scope only silences the two
+    codes this repo's win32 CI saga has actually measured arriving
+    unexpectedly). The handler is unregistered
+    (`SetConsoleCtrlHandler(handler, False)`) in a `finally` so a caller
+    that only wants the pipeline's own duration protected (not the whole
+    process lifetime) gets that, and so a real user's interactive
+    Ctrl-C keeps working the instant this scope exits."""
+    if not _win32_ignore_console_ctrl_requested():
+        yield
+        return
+
+    # `ctypes.windll`/`ctypes.WINFUNCTYPE` are win32-only stdlib members --
+    # typeshed only declares them under a win32 platform guard, so a
+    # static `ctypes.windll` attribute access is an error on every OTHER
+    # platform's type-check pass and (inconsistently) an "unused ignore"
+    # on win32's own pass; `getattr` sidesteps static attribute
+    # resolution entirely instead of chasing a suppression comment that
+    # cannot be correct on all three checked platforms at once (T-3657).
+    kernel32 = getattr(ctypes, "windll").kernel32  # noqa: B009
+    handler_type = getattr(ctypes, "WINFUNCTYPE")(ctypes.c_bool, ctypes.c_ulong)  # noqa: B009
+
+    def _handler(ctrl_type: int) -> bool:
+        """Swallow `CTRL_C_EVENT`/`CTRL_BREAK_EVENT` (T-3657); let every
+        other console control code fall through to Windows' default
+        handling."""
+        if ctrl_type in _WIN32_IGNORED_CTRL_EVENTS:
+            _log.warning(
+                "process: win32 console ctrl event %r suppressed via %s",
+                ctrl_type,
+                FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV,
+            )
+            return True
+        return False
+
+    handler = handler_type(_handler)
+    kernel32.SetConsoleCtrlHandler(handler, True)
+    _log.warning(
+        "process: %s active -- CTRL_C_EVENT/CTRL_BREAK_EVENT will be "
+        "suppressed for this scope's duration",
+        FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV,
+    )
+    try:
+        yield
+    finally:
+        kernel32.SetConsoleCtrlHandler(handler, False)
+
+
 __all__ = [
     "EXEC_KILL_SWITCH_ENV",
     "NET_KILL_SWITCH_ENV",
     "FROB_WIN32_SPAWN_DEBUG_ENV",
+    "FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV",
     "ProcessGuardError",
     "exec_enabled",
     "net_enabled",
     "guarded_subprocess_run",
+    "win32_console_ctrl_ignore_scope",
 ]

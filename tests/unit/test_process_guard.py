@@ -10,11 +10,16 @@ stops every check-stage tool invocation without a redeploy.
 from __future__ import annotations
 
 import subprocess
+from typing import TYPE_CHECKING
 
 import pytest
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 from frob.process._guard import (
     EXEC_KILL_SWITCH_ENV,
+    FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV,
     NET_KILL_SWITCH_ENV,
     ProcessGuardError,
     _default_text_encoding,
@@ -22,6 +27,7 @@ from frob.process._guard import (
     exec_enabled,
     guarded_subprocess_run,
     net_enabled,
+    win32_console_ctrl_ignore_scope,
 )
 
 
@@ -197,6 +203,124 @@ class TestWin32IsolateConsoleGroup:
         monkeypatch.setattr("frob.process._guard.sys.platform", "win32")
         result = _win32_isolate_console_group({"creationflags": 42})
         assert result["creationflags"] == 42
+
+
+class _FakeKernel32:
+    """Records `SetConsoleCtrlHandler` calls in place of the real win32
+    API (T-3657) -- lets `TestWin32ConsoleCtrlIgnoreScope` exercise the
+    install/remove/callback contract on any host platform, not only
+    win32."""
+
+    def __init__(self) -> None:
+        """Start with no recorded calls."""
+        self.calls: list[tuple[Callable[[int], bool], bool]] = []
+
+    def SetConsoleCtrlHandler(  # noqa: N802
+        self, handler: Callable[[int], bool], add: bool
+    ) -> bool:
+        """Record `(handler, add)` and report success, mirroring the real
+        `kernel32.SetConsoleCtrlHandler`'s boolean return."""
+        self.calls.append((handler, add))
+        return True
+
+
+class _FakeWindll:
+    """Stand-in for `ctypes.windll` exposing only `.kernel32` (T-3657)."""
+
+    def __init__(self, kernel32: _FakeKernel32) -> None:
+        """Wrap the given fake kernel32."""
+        self.kernel32 = kernel32
+
+
+class _FakeCtypes:
+    """Stand-in for the `ctypes` module used inside
+    `win32_console_ctrl_ignore_scope` (T-3657): real `WINFUNCTYPE`/
+    `c_bool`/`c_ulong` don't exist off win32, so the scope's own `ctypes`
+    reference is monkeypatched to this fake for non-win32 test hosts."""
+
+    def __init__(self) -> None:
+        """Build a fresh fake kernel32/windll pair for this instance."""
+        self.kernel32 = _FakeKernel32()
+        self.windll = _FakeWindll(self.kernel32)
+
+    def WINFUNCTYPE(self, *_args: object, **_kwargs: object):  # noqa: N802
+        """Return an identity factory: wrapping a plain Python callable
+        with it just returns that callable, since the fake kernel32 never
+        actually crosses the ctypes FFI boundary."""
+        return lambda fn: fn
+
+    c_bool = bool
+    c_ulong = int
+
+
+# frob:ticket T-3657
+class TestWin32ConsoleCtrlIgnoreScope:
+    """T-3657 round 15: `win32_console_ctrl_ignore_scope` is the prepared
+    (env-gated, off-by-default) mitigation for the sender T-3651 (round
+    14) proved is NOT one of the four guarded tool children -- see
+    `FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV`'s docstring for the falsified
+    round-14 hypothesis and this ticket's full evidence chain."""
+
+    # frob:tests src/frob/process/_guard.py::win32_console_ctrl_ignore_scope
+    def test_no_op_on_non_win32(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("frob.process._guard.sys.platform", "linux")
+        monkeypatch.setenv(FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV, "1")
+        entered = False
+        with win32_console_ctrl_ignore_scope():
+            entered = True
+        assert entered
+
+    # frob:tests src/frob/process/_guard.py::win32_console_ctrl_ignore_scope
+    def test_no_op_when_env_unset(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("frob.process._guard.sys.platform", "win32")
+        monkeypatch.delenv(FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV, raising=False)
+        fake_ctypes = _FakeCtypes()
+        monkeypatch.setattr("frob.process._guard.ctypes", fake_ctypes)
+        with win32_console_ctrl_ignore_scope():
+            pass
+        assert fake_ctypes.kernel32.calls == []
+
+    # frob:tests src/frob/process/_guard.py::win32_console_ctrl_ignore_scope
+    def test_installs_and_removes_handler_when_requested(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("frob.process._guard.sys.platform", "win32")
+        monkeypatch.setenv(FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV, "1")
+        fake_ctypes = _FakeCtypes()
+        monkeypatch.setattr("frob.process._guard.ctypes", fake_ctypes)
+        with win32_console_ctrl_ignore_scope():
+            assert fake_ctypes.kernel32.calls == [
+                (fake_ctypes.kernel32.calls[0][0], True)
+            ]
+        assert fake_ctypes.kernel32.calls == [
+            (fake_ctypes.kernel32.calls[0][0], True),
+            (fake_ctypes.kernel32.calls[0][0], False),
+        ]
+
+    # frob:tests src/frob/process/_guard.py::win32_console_ctrl_ignore_scope
+    def test_handler_swallows_ctrl_c_and_ctrl_break(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("frob.process._guard.sys.platform", "win32")
+        monkeypatch.setenv(FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV, "1")
+        fake_ctypes = _FakeCtypes()
+        monkeypatch.setattr("frob.process._guard.ctypes", fake_ctypes)
+        with win32_console_ctrl_ignore_scope():
+            handler = fake_ctypes.kernel32.calls[0][0]
+            assert handler(0) is True  # CTRL_C_EVENT
+            assert handler(1) is True  # CTRL_BREAK_EVENT
+
+    # frob:tests src/frob/process/_guard.py::win32_console_ctrl_ignore_scope
+    def test_handler_passes_through_other_events(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("frob.process._guard.sys.platform", "win32")
+        monkeypatch.setenv(FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV, "1")
+        fake_ctypes = _FakeCtypes()
+        monkeypatch.setattr("frob.process._guard.ctypes", fake_ctypes)
+        with win32_console_ctrl_ignore_scope():
+            handler = fake_ctypes.kernel32.calls[0][0]
+            assert handler(2) is False  # CTRL_CLOSE_EVENT, not ours to swallow
 
 
 class TestDefaultTextEncoding:

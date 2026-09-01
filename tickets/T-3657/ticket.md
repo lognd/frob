@@ -2,7 +2,7 @@
 id: T-3657
 title: 'win32 round 15: SIGINT persists under CREATE_NO_WINDOW; discriminate in-process
   vs child sender'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -19,25 +19,10 @@ scope:
 - src/frob/process/_guard.py
 - src/frob/check/**
 - tests/test_ci_workflow_matrix.py
-- tests/unit/test_process_guard.py
-- docs/modules/process.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-scope_changes:
-- op: add
-  glob: tests/unit/test_process_guard.py
-  reason: own frob:tests directives cite this test file; new public constant needs
-    its doc target in scope
-  actor: logan
-  at: '2026-09-01'
-- op: add
-  glob: docs/modules/process.md
-  reason: own frob:tests directives cite this test file; new public constant needs
-    its doc target in scope
-  actor: logan
-  at: '2026-09-01'
 evidence:
 - tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope::test_no_op_on_non_win32
 - tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope::test_no_op_when_env_unset

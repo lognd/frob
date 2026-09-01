@@ -287,6 +287,37 @@ stderr before it runs -- diagnostic-only, harmless when unset (the
 default everywhere except the temporary win32 CI diag step T-3648 added
 to iterate on the T-3589 saga above without a local win32 repro).
 
+Round 14 (T-3651) escalated the win32 `creationflags` default to also
+include `CREATE_NO_WINDOW` -- a new process group still shares the
+console with its parent, so any console-attached child (or its own
+runtime) sending `GenerateConsoleCtrlEvent` reaches frob's own main
+process too; detaching the child from any console entirely closes that
+path. Round 15 (T-3657) measured this as INSUFFICIENT: run 33521416410
+still caught `SIGINT` in frob's own main thread even with every guarded
+tool spawn carrying `creationflags=134218240` (`CREATE_NO_WINDOW |
+CREATE_NEW_PROCESS_GROUP`) -- a console-detached child cannot signal
+frob's own console, so the sender is not one of the four guarded tool
+children this saga had assumed. `win32_console_ctrl_ignore_scope()` is
+the prepared (env-gated, off by default) mitigation for once the real
+sender is named: set `FROB_WIN32_IGNORE_CONSOLE_CTRL=1`
+(`FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV`) to install a
+`SetConsoleCtrlHandler` callback that swallows `CTRL_C_EVENT`/
+`CTRL_BREAK_EVENT` for the scope's duration -- `run_check` wraps its
+whole pipeline in this scope, so it covers every stage when active. NOT
+set by any code path in this repo yet: swallowing Ctrl-C is only
+correct for a non-interactive CI runner with a confirmed external/
+unfixable sender, never as a default a real user's interactive Ctrl-C
+could be silently swallowed by. `.github/workflows/ci.yml`'s windows
+diag step now runs a 2-variant matrix to name the sender before this
+switch is ever flipped in CI: variant (a) is the diag above, unchanged;
+variant (b) additionally sets `FROB_DISABLE_EXEC=1` (this module's own
+exec kill switch) before `frob.__main__.main()` runs, so none of the 4
+guarded tool children are spawned at all -- if variant (b) still logs a
+signal, the sender is in-process or one of `frob.gates`'s
+`ProcessPoolExecutor` workers (multiprocessing `spawn`-context children,
+NOT gated by `FROB_DISABLE_EXEC`, since they are frob's own internal
+worker processes rather than a guarded tool spawn).
+
 <!-- frob:invariant INV-019 -->
 
 ## Derived-state lock (T-0859)

@@ -561,6 +561,117 @@ jobs:
           Write-Host "frob check diag: no hang (returned in $($elapsed.TotalSeconds)s, well under the 240s watchdog budget) -- exit code $exitCode is an ordinary gate result, not a failure of this diagnostic step."
           exit 0
 
+      # T-3657 (round 15): T-3651 (round 14) proved CREATE_NO_WINDOW alone
+      # is INSUFFICIENT -- run 33521416410's diag still caught SIGINT even
+      # though every guarded tool spawn (git/ruff, the only 4 the diag
+      # exercises) carried creationflags=134218240 (CREATE_NO_WINDOW |
+      # CREATE_NEW_PROCESS_GROUP). A console-detached child cannot signal
+      # frob's own console, so the round-14 "tool child is the sender"
+      # hypothesis is FALSIFIED. This step is variant (b) of the 2-variant
+      # matrix: the SAME diag script as the step above, but with
+      # FROB_DISABLE_EXEC=1 set BEFORE frob.__main__.main() runs, so
+      # guarded_subprocess_run (src/frob/process/_guard.py) refuses to
+      # spawn any of the 4 guarded tool children -- ZERO of THOSE children
+      # exist in this run. Caveat (see T-3657's ticket body's spawn audit):
+      # frob.gates's ProcessPoolExecutor workers (multiprocessing, spawn
+      # start method on win32) are NOT gated by FROB_DISABLE_EXEC -- they
+      # are frob's own internal worker processes, not "tool" spawns, and
+      # this variant does not silence them. So: if THIS variant still logs
+      # T-3648-SIGNAL, the sender is either in-process (signal.raise_signal/
+      # _thread.interrupt_main/a SetConsoleCtrlHandler installed somewhere)
+      # or one of those ProcessPoolExecutor workers -- NOT a guarded tool
+      # child, since none were spawned. If this variant is clean while the
+      # variant above still receives SIGINT, a guarded tool child (git or
+      # ruff, bisect by re-enabling one at a time) is the sender after all,
+      # despite the console-detached-child reasoning above -- an important,
+      # actionable surprise either way.
+      - name: Diagnose frob check hang on windows -- zero-tool-spawn variant (T-3657)
+        if: matrix.os == 'windows-latest'
+        timeout-minutes: 5
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
+          # Reuses the SAME fixture the step above already created (repo
+          # scan target, git init, initial commit) -- no need to rebuild it.
+          $codeLines = @(
+            'print("diag-python-alive", flush=True)',
+            "import faulthandler",
+            "import os",
+            "import signal",
+            "import sys",
+            "import traceback",
+            "",
+            "# T-3657: refuse every guarded tool spawn up front (see this",
+            "# step's own comment in ci.yml for what this does and does not",
+            "# cover) -- set BEFORE importing frob.__main__ so no earlier",
+            "# import-time code path can spawn anything first.",
+            "os.environ['FROB_DISABLE_EXEC'] = '1'",
+            "os.environ['FROB_WIN32_SPAWN_DEBUG'] = '1'",
+            "",
+            "def _t3657_log_signal(signum, frame):",
+            "    try:",
+            "        name = signal.Signals(signum).name",
+            "    except ValueError:",
+            "        name = repr(signum)",
+            "    print(f'T-3648-SIGNAL: received {name} (signum={signum}) at frame={frame!r}', flush=True)",  # noqa: E501
+            "    traceback.print_stack(frame)",
+            "    raise KeyboardInterrupt",
+            "signal.signal(signal.SIGINT, _t3657_log_signal)",
+            "if hasattr(signal, 'SIGBREAK'):",
+            "    signal.signal(signal.SIGBREAK, _t3657_log_signal)",
+            "",
+            "faulthandler.dump_traceback_later(240, exit=True)",
+            "",
+            "from frob.__main__ import main",
+            "",
+            'sys.argv = ["frob", "check"]',
+            "print('diag-python: about to call main()', flush=True)",
+            "try:",
+            "    raise SystemExit(main())",
+            "except BaseException as exc:",
+            "    print(f'diag-python: main() raised {exc!r}', flush=True)",
+            "    traceback.print_exc()",
+            "    raise"
+          )
+          Set-Content -Path (Join-Path $env:RUNNER_TEMP "frob_check_diag_zerospawn.py") -Value $codeLines
+          Write-Host "T-3657 breadcrumb: zero-spawn diag python file written"
+          $diagOut = Join-Path $env:RUNNER_TEMP "diag_zerospawn.out"
+          $diagErr = Join-Path $env:RUNNER_TEMP "diag_zerospawn.err"
+          $diagPy = Join-Path $env:RUNNER_TEMP "frob_check_diag_zerospawn.py"
+          $started = Get-Date
+          $elapsed = [TimeSpan]::Zero
+          $exitCode = -1
+          Write-Host "T-3657 breadcrumb: about to invoke uv via Start-Process"
+          try {
+            $p = Start-Process -FilePath "uv" `
+              -ArgumentList "run", "--project", "$env:GITHUB_WORKSPACE", "python", "$diagPy" `
+              -WorkingDirectory $fixture `
+              -PassThru -RedirectStandardOutput $diagOut -RedirectStandardError $diagErr
+            try {
+              Wait-Process -Id $p.Id -Timeout 290 -ErrorAction Stop
+              $exitCode = $p.ExitCode
+            } catch {
+              Write-Host "T-3657 breadcrumb: Wait-Process timed out at 290s -- terminating"
+              Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            }
+          } catch {
+            Write-Host "T-3657: invoke threw: $_"
+          } finally {
+            $elapsed = (Get-Date) - $started
+            Write-Host "T-3657 breadcrumb: Start-Process invocation returned (elapsed: $($elapsed.TotalSeconds)s)"
+            Write-Host "--- diag_zerospawn.out ---"
+            if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "--- diag_zerospawn.err ---"
+            if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "zero-tool-spawn diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          }
+          if ($elapsed.TotalSeconds -ge 235) {
+            Write-Host "::error::zero-tool-spawn diag ran $($elapsed.TotalSeconds)s, at/past the 240s faulthandler watchdog budget -- treating as a HANG (T-3657). See the thread dump above."
+            exit 1
+          }
+          Write-Host "zero-tool-spawn diag: no hang (returned in $($elapsed.TotalSeconds)s) -- exit code $exitCode is FROB_DISABLE_EXEC=1 refusing every guarded tool spawn (CHECK-family gate errors expected), not a failure of this diagnostic step."
+          exit 0
+
       - name: Test (windows, timed with hang guard)
         if: matrix.os == 'windows-latest'
         env:

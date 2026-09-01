@@ -64,6 +64,7 @@ from frob.gitio import git_common_dir
 from frob.lang import reset_parse_cache
 from frob.logging import get_logger
 from frob.logging.quiet import _stdout_stream_handlers as _stdout_log_handlers
+from frob.process._guard import win32_console_ctrl_ignore_scope
 from frob.process._lock import derived_state_lock
 from frob.process.parsers.common import Diagnostic, ToolResult
 
@@ -1346,6 +1347,16 @@ def _run_check_with_skips(
     # why it lives here (the one seam every Python-mode check run passes
     # through, upstream of `frob.gates`'s `os.cpu_count()`-sized pool).
     with (
+        # T-3657: env-gated, OFF by default -- see `win32_console_ctrl_
+        # ignore_scope`'s and `FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV`'s
+        # docstrings. A no-op everywhere except a win32 process that has
+        # `FROB_WIN32_IGNORE_CONSOLE_CTRL=1` set, which no code path in
+        # this repo does yet -- that flip belongs to the CI workflow
+        # ONLY, and only once the round-15 diag matrix names an
+        # external/unfixable console-ctrl sender. Placed outermost so it
+        # covers the pipeline's full duration, including every stage
+        # dispatched below.
+        win32_console_ctrl_ignore_scope(),
         _admission_budget(root),
         # T-0859: hold a SHARED `derived_state_lock` for the run's entire
         # duration -- precheck through the last stage's read -- so a

@@ -138,14 +138,119 @@ class TestCoverageStepUsesFrobNotMake:
 
 def _windows_diag_step() -> dict:
     """The "Diagnose frob check hang on windows (T-3589)" step's own
-    dict from the parsed workflow -- shared by every test below."""
+    dict from the parsed workflow -- shared by every test below. This is
+    variant (a) of the T-3657 round-15 2-variant matrix (current `frob
+    check` as-is); matches FIRST since `_windows_zerospawn_diag_step`'s
+    step name is a superstring of this substring and sorts after it in
+    the steps list."""
     workflow = _load_ci_workflow()
     steps = workflow["jobs"]["build"]["steps"]
     return next(
         step
         for step in steps
         if "Diagnose frob check hang on windows" in step.get("name", "")
+        and "zero-tool-spawn" not in step.get("name", "")
     )
+
+
+def _windows_zerospawn_diag_step() -> dict:
+    """T-3657 round 15: variant (b) of the 2-variant matrix -- the same
+    windows diag as `_windows_diag_step`, but with `FROB_DISABLE_EXEC=1`
+    set before `frob.__main__.main()` runs, so none of the 4 guarded
+    tool children (git/ruff) this diag exercises are ever spawned. See
+    the step's own comment in `.github/workflows/ci.yml` for what
+    remains unguarded (frob.gates's ProcessPoolExecutor workers) and
+    what a clean vs. still-SIGINT'd run each discriminate."""
+    workflow = _load_ci_workflow()
+    steps = workflow["jobs"]["build"]["steps"]
+    return next(
+        step
+        for step in steps
+        if "Diagnose frob check hang on windows" in step.get("name", "")
+        and "zero-tool-spawn" in step.get("name", "")
+    )
+
+
+class TestWindowsZeroSpawnDiagVariant:
+    """T-3657 round 15: the SIGINT sender is not one of the 4 guarded
+    tool children (T-3651's round-14 hypothesis is falsified -- see this
+    module's own docstring and the ticket body for the CREATE_NO_WINDOW
+    evidence). This step names whether the sender survives with ZERO
+    guarded tool spawns in play."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_zerospawn_diag_step_exists_and_runs_on_windows(self) -> None:
+        step = _windows_zerospawn_diag_step()
+        assert step.get("if") == "matrix.os == 'windows-latest'"
+
+    # frob:tests .github/workflows/ci.yml
+    def test_zerospawn_diag_step_has_a_bounded_timeout(self) -> None:
+        step = _windows_zerospawn_diag_step()
+        assert step.get("timeout-minutes") == 5, (
+            "the zero-tool-spawn diag step must carry its own bounded "
+            "timeout-minutes, same as variant (a), so a genuinely wedged "
+            "child cannot hang the whole job"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_zerospawn_diag_step_sets_frob_disable_exec_before_main(self) -> None:
+        run_text = _windows_zerospawn_diag_step()["run"]
+        env_idx = run_text.find("FROB_DISABLE_EXEC'] = '1'")
+        main_idx = run_text.find("from frob.__main__ import main")
+        assert env_idx != -1, (
+            "the zero-tool-spawn diag step must set FROB_DISABLE_EXEC=1 "
+            "so guarded_subprocess_run refuses every guarded tool spawn "
+            "(T-3657 round 15's variant (b))"
+        )
+        assert main_idx != -1
+        assert env_idx < main_idx, (
+            "FROB_DISABLE_EXEC=1 must be set BEFORE importing "
+            "frob.__main__ -- an import-time spawn (if one ever existed) "
+            "must also be covered, not just main()'s own dispatch"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_zerospawn_diag_step_reuses_the_same_fixture(self) -> None:
+        run_text = _windows_zerospawn_diag_step()["run"]
+        assert "-WorkingDirectory $fixture" in run_text, (
+            "the zero-tool-spawn variant must scan the SAME diag fixture "
+            "as variant (a), not the real repo"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_zerospawn_diag_step_pins_project_to_checkout(self) -> None:
+        run_text = _windows_zerospawn_diag_step()["run"]
+        assert '"--project", "$env:GITHUB_WORKSPACE",' in run_text, (
+            "the zero-tool-spawn diag step must pin --project the same "
+            "way variant (a) does (T-3597), or uv resolves the venv from "
+            "the fixture cwd and the diag process dies with "
+            "ModuleNotFoundError before it ever runs"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_zerospawn_diag_step_precedes_the_windows_test_step(self) -> None:
+        """Both diag variants must run before the real Windows Test step,
+        as cheap, sequential pre-flight diagnostics (T-3657's plan item
+        2: "extend the diag into a 2-variant matrix ... cheap,
+        sequential"), not interleaved with or after it."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        names = [step.get("name", "") for step in steps]
+        original_idx = next(
+            i
+            for i, name in enumerate(names)
+            if "Diagnose frob check hang on windows" in name
+            and "zero-tool-spawn" not in name
+        )
+        zerospawn_idx = next(
+            i
+            for i, name in enumerate(names)
+            if "zero-tool-spawn" in name
+        )
+        test_idx = next(
+            i for i, name in enumerate(names) if name.startswith("Test (windows")
+        )
+        assert original_idx < zerospawn_idx < test_idx
 
 
 class TestWindowsDiagStepFixtureIsAClassifiableProject:
