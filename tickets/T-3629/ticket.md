@@ -17,6 +17,7 @@ scope:
 - src/frob/tickets/_land_squash.py
 - tests/unit/test_land_squash_residue_reclaim.py
 - tests/unit/test_land_squash_stage.py
+- src/frob/tickets/_land_splice.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,11 @@ scope_changes:
   glob: tests/unit/test_land_squash_stage.py
   reason: narrow overbroad glob that phantom-matches T-1661s live lease on tests/unit/strata/**;
     the real test files live in tests/unit/
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: src/frob/tickets/_land_splice.py
+  reason: new module created by the split
   actor: logan
   at: '2026-09-01'
 body_changes:
