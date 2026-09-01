@@ -2,7 +2,7 @@
 id: T-3649
 title: 'post-land sweep regression from T-3648: 1 new (rule, file) identit(ies), 1
   finding(s) (COV001)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-01'
@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_guard.py
+- docs/modules/process.md
 findings:
 - - COV001
   - src/frob/process/_guard.py
@@ -23,6 +24,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/process.md
+  reason: documenting FROB_WIN32_SPAWN_DEBUG resolves the ENV001/COV001 finding this
+    ticket was filed for
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
