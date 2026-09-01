@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import threading
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator
@@ -111,6 +112,7 @@ def run_bounded_subprocess(
             "legitimately needs longer -- pass an explicit timeout= at the "
             "call site rather than raising DEFAULT_RUN_TIMEOUT_S)"
         ) from exc
+
 
 """T-1433/T-1466: the SIGUSR1 stack-dump handler itself now lives in
 `frob.testing._stackdump` (any frob process can opt in, not just pytest --
@@ -329,6 +331,8 @@ def pytest_configure(config: pytest.Config) -> None:
     `_harden_dsession_active_nodes`'s vanished-`WorkerController` guard
     before any worker can crash."""
     global _last_internal_error, _worker_crash_hook_config
+    global _last_progress_ts, _stall_watchdog_stop, _stall_watchdog_thread
+    global _last_node_death_ts
     _last_internal_error = None
     _install_stackdump_handler()
     _worker_crash_hook_config = config
@@ -337,8 +341,24 @@ def pytest_configure(config: pytest.Config) -> None:
     _worker_crash_entries.clear()
     _worker_crash_causes.clear()
     _worker_crash_rerun_counts.clear()
+    _last_node_death_ts = None
     _harden_dsession_active_nodes()
     restore_stale_journals(_REPO_ROOT)
+    # T-3608: only under pytest-xdist is a "worker died, nothing ever
+    # rescheduled or ended the session" stall even possible -- plain serial
+    # pytest has no separate controller/worker split for a stall to hide in.
+    if getattr(getattr(config, "option", None), "numprocesses", None):
+        import time
+
+        _last_progress_ts = time.time()
+        _stall_watchdog_stop = threading.Event()
+        _stall_watchdog_thread = threading.Thread(
+            target=_run_stall_watchdog,
+            args=(config, _stall_watchdog_stop),
+            name="frob-xdist-stall-watchdog",
+            daemon=True,
+        )
+        _stall_watchdog_thread.start()
 
 
 _SUITE_RESULT_MAX_NODE_IDS = 50
@@ -448,6 +468,230 @@ _worker_crash_hook_config: pytest.Config | None = None
 and controller alike) for `pytest_runtest_logstart`/`pytest_runtest_
 logfinish`/`pytest_handlecrashitem` to read -- none of those three hooks
 receive `config` as an argument of their own."""
+
+
+# frob:ticket T-3608
+_last_node_death_ts: float | None = None
+"""T-3608: wall-clock time of the most recent `pytest_testnodedown` this
+controller observed -- xdist's own `DSession.worker_errordown` fires this
+hook FIRST, before its own (sometimes-buggy) reschedule/crash-report
+bookkeeping, so it is a signal of "a worker died" independent of whether
+`pytest_handlecrashitem` (T-3516's own `WORKER-CRASH-REPORT`) ever actually
+ran -- run 33451274911's own incident is exactly a death where the latter
+never fired at all. The stall watchdog treats either this OR a recorded
+`WORKER-CRASH-REPORT` entry as "a crash happened"."""
+
+
+# frob:ticket T-3608
+_STALL_POLL_SECONDS = float(os.environ.get("FROB_XDIST_STALL_POLL_SECONDS", "5"))
+"""T-3608: how often the controller-only stall watchdog thread wakes up to
+re-check for forward progress. Env-overridable so a test can shrink it to
+make the watchdog's own loop observable in bounded time."""
+
+_STALL_ABORT_SECONDS = float(os.environ.get("FROB_XDIST_STALL_ABORT_SECONDS", "180"))
+"""T-3608: how long the controller may see NO completed test (`pytest_
+runtest_logreport` with `when==\"call\"`) after at least one recorded
+worker crash before the watchdog declares a stall and aborts. Run
+33451274911's incident idled ~20 minutes before the CI budget killed it;
+180s is a deliberately small default so a real stall costs minutes, not a
+whole job's budget -- env-overridable for a slower CI image or a test."""
+
+_last_progress_ts: float | None = None
+"""T-3608: wall-clock time of the most recent `pytest_runtest_logreport`
+(`when==\"call\"`) the controller observed, updated by `pytest_runtest_
+logreport` and read by the stall watchdog -- `None` until the first such
+report or when the watchdog is not running (plain serial pytest)."""
+
+_stall_watchdog_stop: "threading.Event | None" = None
+"""T-3608: signals the stall watchdog thread to stop -- set by `pytest_
+sessionfinish` on a normal (non-stalled) end-of-run so the daemon thread
+never fires a spurious abort after the session has already finished
+cleanly."""
+
+_stall_watchdog_thread: "threading.Thread | None" = None
+"""T-3608: the running stall watchdog thread, started by `pytest_configure`
+controller-only under `pytest-xdist`; `None` under plain serial pytest."""
+
+
+# frob:ticket T-3608
+# frob:waive WIRE001 reason="genuinely wired -- called only by _run_stall_watchdog \
+# below, itself reached exclusively via threading.Thread(target=...) (a runtime \
+# indirection WIRE's static callgraph cannot trace, the same class of gap this file's \
+# pre-existing pytest_internalerror/pytest_handlecrashitem waivers already cover), not \
+# a direct in-repo call site" follow_up="T-3381"
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_stall_detected_requires\
+# _both_a_crash_and_a_progress_gap
+def _stall_detected(
+    now: float, last_progress_ts: float | None, has_crash: bool, abort_seconds: float
+) -> bool:
+    """Pure predicate (T-3608): true only when the controller has recorded
+    at least one worker crash (`has_crash`, i.e. `_worker_crash_entries` is
+    non-empty) AND no test has completed for at least `abort_seconds` --
+    exactly the shape of run 33451274911's incident (every surviving
+    worker idle in xdist's own `remote.py:run_one_test -> get`, forever,
+    with no forward progress and no session end). Requiring BOTH keeps a
+    merely-slow (but still progressing) suite from ever tripping this --
+    only a stall that started at or after a crash is the deadlock this
+    exists to break."""
+    if not has_crash or last_progress_ts is None:
+        return False
+    return (now - last_progress_ts) >= abort_seconds
+
+
+# frob:ticket T-3608
+# frob:waive WIRE001 reason="genuinely wired -- called only by \
+# _announce_stall_and_abort below, itself reached exclusively via \
+# _run_stall_watchdog's threading.Thread(target=...) indirection, same gap this file's \
+# own _stall_detected WIRE001 waiver above already covers, not a direct in-repo call \
+# site" follow_up="T-3381"
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_format_stalled_item_lin\
+# es_reads_surviving_markers
+def _format_stalled_item_lines(marker_dir: Path, now: float) -> list[str]:
+    """T-3608: one `STALL-CRASH-REPORT:` line per T-3516 per-worker marker
+    file still present in `marker_dir` at the moment a stall is declared.
+    `pytest_runtest_logstart` writes a marker just before a worker starts a
+    test and `pytest_runtest_logfinish` clears it on normal completion, so
+    a marker still on disk here names a nodeid that was in flight on some
+    worker when the whole session stopped making progress -- extending
+    T-3516's `WORKER-CRASH-REPORT` naming to a death whose own
+    `pytest_handlecrashitem` was never called (the exact gap run
+    33451274911 exposed: no `WORKER-CRASH-REPORT` line was emitted at
+    all)."""
+    lines: list[str] = []
+    if not marker_dir.is_dir():
+        return lines
+    import json
+
+    for marker_path in sorted(marker_dir.glob("*.json")):
+        worker_id = marker_path.stem
+        try:
+            marker = json.loads(marker_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        nodeid = marker.get("nodeid", "<unknown>")
+        started = marker.get("started", now)
+        lines.append(
+            f"STALL-CRASH-REPORT: worker={worker_id} nodeid={nodeid} "
+            f"in-flight for {now - started:.1f}s when the session stalled"
+        )
+    return lines
+
+
+# frob:ticket T-3608
+# frob:waive WIRE001 reason="genuinely wired -- called only by _run_stall_watchdog \
+# below, itself reached exclusively via threading.Thread(target=...), same gap this \
+# file's own _stall_detected WIRE001 waiver above already covers, not a direct in-repo \
+# call site" follow_up="T-3381"
+def _announce_stall_and_abort(config: pytest.Config, now: float) -> None:
+    """T-3608: builds and prints the loud stall report (a `SUITE-RESULT:
+    STALL-DETECTED` line, one `STALL-CRASH-REPORT:` per still-in-flight
+    marker, and every `WORKER-CRASH-REPORT:` entry recorded so far), then
+    hard-exits the controller process via `os._exit`. A clean pytest
+    teardown is not attempted on purpose: the failure mode this responds
+    to is every surviving worker permanently blocked in xdist's own
+    `remote.py:run_one_test -> get` -- there is no reachable graceful path
+    out of that, only an external kill, which is exactly the ~20 minute
+    CI-budget kill this replaces with a prompt, self-inflicted, and
+    NAMED one."""
+    lines = [
+        f"SUITE-RESULT: STALL-DETECTED no test has completed for "
+        f">={_STALL_ABORT_SECONDS:g}s after a worker crash -- aborting now "
+        f"instead of waiting for an external budget to kill this job (T-3608)",
+    ]
+    lines.extend(_format_stalled_item_lines(_XDIST_CRASH_MARKER_DIR, now))
+    lines.extend(_worker_crash_entries)
+    lines.append(
+        "SUITE-RESULT: exitstatus=1 collected=0 (partial, stall-abort) "
+        "failed=0 (partial, stall-abort)"
+    )
+    reporter = config.pluginmanager.get_plugin("terminalreporter")
+    for line in lines:
+        if reporter is not None:
+            reporter.write_line(line)
+        else:  # pragma: no cover - defensive only, terminalreporter always registered
+            print(line)
+    # T-3608: `os._exit` skips Python's normal buffered-stream flush -- an
+    # explicit flush here is the only reason the STALL-DETECTED report a
+    # caller greps for actually reaches the captured log instead of being
+    # lost in an unflushed buffer at the moment of the hard exit.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(1)
+
+
+# frob:ticket T-3608
+# frob:waive WIRE001 reason="genuinely wired -- passed as threading.Thread(target=...) \
+# by pytest_configure below (a runtime indirection, not a direct in-repo call WIRE's \
+# static callgraph can trace), same class of gap this file's pre-existing \
+# pytest_internalerror/pytest_handlecrashitem waivers already cover" follow_up="T-3381"
+def _run_stall_watchdog(config: pytest.Config, stop_event: "threading.Event") -> None:
+    """T-3608: the controller-only background thread body, started by
+    `pytest_configure` under `pytest-xdist`. Wakes every `_STALL_POLL_
+    SECONDS` and checks `_stall_detected`; the first time it fires, calls
+    `_announce_stall_and_abort` and returns (the process is gone by then).
+    `stop_event` is set by `pytest_sessionfinish` on a normal end-of-run so
+    this loop exits quietly instead of polling a session that no longer
+    exists."""
+    import time
+
+    while not stop_event.wait(_STALL_POLL_SECONDS):
+        now = time.time()
+        has_crash = bool(_worker_crash_entries) or _last_node_death_ts is not None
+        if _stall_detected(now, _last_progress_ts, has_crash, _STALL_ABORT_SECONDS):
+            _announce_stall_and_abort(config, now)
+            return
+
+
+# frob:ticket T-3608
+# frob:waive WIRE001 reason="genuinely wired -- pytest-xdist calls this via its own \
+# newhooks.py pytest_testnodedown hookspec (DSession.worker_errordown/worker_ \
+# workerfinished), name-based plugin discovery like this file's pre-existing \
+# pytest_handlecrashitem waiver, not a direct in-repo call site" follow_up="T-3381"
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_testnodedown_marks_a_de\
+# ath_controller_only
+def pytest_testnodedown(node: object, error: object) -> None:
+    """T-3608: records that SOME worker went down, independent of whether
+    `pytest_handlecrashitem` (T-3516's `WORKER-CRASH-REPORT`) ever actually
+    ran for it -- xdist's own `DSession.worker_errordown`/`worker_
+    workerfinished` fire this hook first, ahead of their own reschedule/
+    crash-report bookkeeping, so it is the one signal that survives even
+    the exact gap run 33451274911 exposed (a death for which no
+    `WORKER-CRASH-REPORT` line was ever emitted). Controller-only (mirrors
+    every other controller-only hook in this file)."""
+    config = _worker_crash_hook_config
+    if config is not None and hasattr(config, "workerinput"):
+        return
+    global _last_node_death_ts
+    import time
+
+    _last_node_death_ts = time.time()
+
+
+# frob:ticket T-3608
+# frob:waive WIRE001 reason="genuinely wired -- pytest calls pytest_runtest_logreport \
+# via its own core hookspec (name-based plugin discovery), same gap this file's \
+# pre-existing pytest_internalerror/pytest_runtest_logstart hooks already have a \
+# waiver for, not a direct in-repo call site" follow_up="T-3381"
+def pytest_runtest_logreport(report: pytest.TestReport) -> None:
+    """T-3608: marks forward progress for the stall watchdog -- updates
+    `_last_progress_ts` to now whenever a test's call phase finishes
+    (`report.when == \"call\"`), on the controller only (`workerinput`
+    absent there; a worker's own local notion of progress is not what the
+    watchdog needs -- it needs to know the CONTROLLER is still hearing
+    from *some* worker). A no-op under plain serial pytest (the watchdog
+    is never started there, but the hook still fires harmlessly)."""
+    config = _worker_crash_hook_config
+    if config is not None and hasattr(config, "workerinput"):
+        return
+    if report.when != "call":
+        return
+    global _last_progress_ts
+    import time
+
+    _last_progress_ts = time.time()
 
 
 # frob:waive WIRE001 reason="genuinely wired -- called by pytest_runtest_logstart/ \
@@ -783,6 +1027,12 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     ran before the abort) -- only the missing label is fixed."""
     if hasattr(session.config, "workerinput"):
         return
+    # T-3608: the session is ending normally (or aborting through a path
+    # OTHER than the stall watchdog's own os._exit) -- stop the watchdog
+    # thread so it never fires a spurious abort against a session that has
+    # already finished.
+    if _stall_watchdog_stop is not None:
+        _stall_watchdog_stop.set()
     total = getattr(session, "testscollected", 0)
     failed = getattr(session, "testsfailed", 0)
     completed = exitstatus in _COMPLETED_EXIT_STATUSES

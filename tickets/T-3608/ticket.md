@@ -2,7 +2,7 @@
 id: T-3608
 title: worker death with pinned serial-group items deadlocks the suite until budget
   kill; extend T-3516 crash reporting
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -28,6 +28,12 @@ scope_changes:
     file, per the ticket's own MUST-FIRE requirement
   actor: logan
   at: '2026-08-31'
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestStallWatchdog::test_stall_detected_requires_both_a_crash_and_a_progress_gap
+- tests/unit/test_conftest_stackdump.py::TestStallWatchdog::test_format_stalled_item_lines_reads_surviving_markers
+- tests/unit/test_conftest_stackdump.py::TestStallWatchdog::test_format_stalled_item_lines_is_empty_when_the_marker_dir_is_absent
+- tests/unit/test_conftest_stackdump.py::TestStallWatchdog::test_testnodedown_marks_a_death_controller_only
+- tests/unit/test_conftest_stackdump.py::TestStallWatchdogIntegration::test_kills_a_worker_mid_item_and_ends_promptly_with_a_loud_report
 designated_repro_test: null
 threat: null
 component: null

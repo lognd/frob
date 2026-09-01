@@ -5,10 +5,12 @@ handler -- the between-tests/session-teardown wedge diagnostic the two
 
 from __future__ import annotations
 
+import json
 import os
 import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -663,6 +665,186 @@ class TestWorkerCrashReportIntegration:
         assert failed_lines == [
             "SUITE-RESULT-FAILED: test_planted.py::test_fails (failed)"
         ], combined
+
+
+# frob:ticket T-3608
+class TestStallWatchdog:
+    """T-3608: `_stall_detected`/`_format_stalled_item_lines` -- the pure
+    predicate and marker-report builder behind the stall watchdog, decoupled
+    from the actual thread/process-exit machinery so they can be checked
+    with a fake clock instead of a real subprocess."""
+
+    # frob:ticket T-3608
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_stall_detected_requ\
+    # ires_both_a_crash_and_a_progress_gap
+    def test_stall_detected_requires_both_a_crash_and_a_progress_gap(self) -> None:
+        """No crash at all is never a stall, however long the gap; a crash
+        with no progress timestamp yet is never a stall; a crash with a gap
+        short of the threshold is not YET a stall; only a crash plus a gap
+        at/over the threshold is a stall."""
+        module = _load_conftest()
+        assert module._stall_detected(1000.0, 0.0, False, 180.0) is False
+        assert module._stall_detected(1000.0, None, True, 180.0) is False
+        assert module._stall_detected(100.0, 0.0, True, 180.0) is False
+        assert module._stall_detected(200.0, 0.0, True, 180.0) is True
+
+    # frob:ticket T-3608
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_format_stalled_item\
+    # _lines_reads_surviving_markers
+    def test_format_stalled_item_lines_reads_surviving_markers(
+        self, tmp_path: Path
+    ) -> None:
+        """A well-formed T-3516 marker still on disk becomes one
+        `STALL-CRASH-REPORT:` line naming its worker, nodeid, and how long
+        it had been in flight; a malformed marker (crash mid-write, say) is
+        skipped rather than raising."""
+        module = _load_conftest()
+        marker_dir = tmp_path / "markers"
+        marker_dir.mkdir()
+        (marker_dir / "gw1.json").write_text(
+            json.dumps({"nodeid": "tests/x.py::test_stuck", "started": 100.0}),
+            encoding="utf-8",
+        )
+        (marker_dir / "gw2.json").write_text("not json", encoding="utf-8")
+
+        lines = module._format_stalled_item_lines(marker_dir, 130.0)
+
+        assert len(lines) == 1
+        assert "STALL-CRASH-REPORT: worker=gw1" in lines[0]
+        assert "tests/x.py::test_stuck" in lines[0]
+        assert "30.0s" in lines[0]
+
+    # frob:ticket T-3608
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_format_stalled_item\
+    # _lines_is_empty_when_the_marker_dir_is_absent
+    def test_format_stalled_item_lines_is_empty_when_the_marker_dir_is_absent(
+        self, tmp_path: Path
+    ) -> None:
+        """A marker directory that was never created (no worker has started
+        a test yet this session) yields no lines, not an error."""
+        module = _load_conftest()
+        assert module._format_stalled_item_lines(tmp_path / "absent", 0.0) == []
+
+    # frob:ticket T-3608
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_testnodedown_marks_\
+    # a_death_controller_only
+    def test_testnodedown_marks_a_death_controller_only(self) -> None:
+        """`pytest_testnodedown` records `_last_node_death_ts` on the
+        controller (no `workerinput`) and is a no-op on a worker -- this is
+        the signal the watchdog treats as "a crash happened" even when
+        `pytest_handlecrashitem` (T-3516's own `WORKER-CRASH-REPORT`) never
+        actually runs for that death, which is exactly the gap run
+        33451274911 exposed."""
+        module = _load_conftest()
+        assert module._last_node_death_ts is None
+
+        module._worker_crash_hook_config = TestWorkerCrashReport._FakeHookConfig(
+            is_worker=True
+        )
+        module.pytest_testnodedown(node=object(), error=None)
+        assert module._last_node_death_ts is None
+
+        module._worker_crash_hook_config = TestWorkerCrashReport._FakeHookConfig(
+            is_worker=False
+        )
+        module.pytest_testnodedown(node=object(), error=None)
+        assert module._last_node_death_ts is not None
+
+
+# frob:ticket T-3608
+class TestStallWatchdogIntegration:
+    """T-3608 MUST-FIRE positive control: kills an xdist worker mid-item
+    against a stall the normal xdist crash machinery is made to never
+    recover from (no reschedule, no session end -- run 33451274911's own
+    observed shape), and asserts the session ends PROMPTLY with a loud
+    `SUITE-RESULT: STALL-DETECTED` report rather than hanging. A real
+    subprocess `pytest -n 2` run, not an in-process fake -- the shape of
+    bug this exists for (an xdist worker actually dying, and the
+    controller never noticing) cannot be reproduced by calling hooks
+    directly."""
+
+    # frob:ticket T-3608
+    @staticmethod
+    def _run(tmp_path: Path) -> "subprocess.CompletedProcess[str]":
+        """Runs an isolated `python -m pytest -n 2` suite whose conftest.py
+        is this repo's REAL `tests/conftest.py` (so the watchdog under
+        test is the genuine article) plus one appended `pytest_
+        sessionstart` hook that no-ops xdist's own `DSession.worker_
+        errordown` reschedule/replace logic on the controller -- simulating
+        exactly the failure this ticket describes: a worker dies and the
+        controller neither reschedules the pending item nor ends the
+        session. `FROB_XDIST_STALL_POLL_SECONDS`/`FROB_XDIST_STALL_ABORT_
+        SECONDS` are shrunk so the watchdog's own abort fires in low
+        single-digit seconds instead of the 180s production default,
+        keeping this test fast without changing what it proves."""
+        conftest_body = _CONFTEST_PATH.read_text(encoding="utf-8")
+        conftest_body += (
+            "\n\n"
+            "# T-3608 positive control: make a worker death UNRECOVERABLE by\n"
+            "# xdist's own normal crash machinery (no reschedule, no replacement\n"
+            "# worker, no session end) while still firing pytest_testnodedown --\n"
+            "# the one signal run 33451274911's own incident DID still leave (the\n"
+            "# controller knew a node died; it just never rescheduled or ended the\n"
+            "# session), so only the new stall watchdog can end this run.\n"
+            "def pytest_sessionstart(session):\n"
+            "    config = session.config\n"
+            "    if hasattr(config, 'workerinput'):\n"
+            "        return\n"
+            "    try:\n"
+            "        from xdist.dsession import DSession\n"
+            "    except ImportError:\n"
+            "        return\n"
+            "    def _never_recovers(self, node, error=None):\n"
+            "        self.config.hook.pytest_testnodedown(node=node, error=error)\n"
+            "    DSession.worker_errordown = _never_recovers\n"
+        )
+        (tmp_path / "conftest.py").write_text(conftest_body, encoding="utf-8")
+        (tmp_path / "test_planted.py").write_text(
+            "import os\n\n"
+            "def test_ok():\n"
+            "    assert True\n\n"
+            "def test_stall():\n"
+            "    os.kill(os.getpid(), 9)\n",
+            encoding="utf-8",
+        )
+        env = dict(os.environ)
+        env.pop("PYTEST_ADDOPTS", None)
+        env["FROB_XDIST_STALL_POLL_SECONDS"] = "1"
+        env["FROB_XDIST_STALL_ABORT_SECONDS"] = "3"
+        return subprocess.run(
+            [sys.executable, "-m", "pytest", str(tmp_path), "-n", "2", "-q"],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            env=env,
+        )
+
+    # frob:ticket T-3608
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdogIntegration.test_kills_a_\
+    # worker_mid_item_and_ends_promptly_with_a_loud_report
+    def test_kills_a_worker_mid_item_and_ends_promptly_with_a_loud_report(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE (T-3608): with xdist's own recovery neutralized, a
+        worker killed mid-item ends the run within seconds (well inside
+        this test's own 60s subprocess timeout, and worlds away from the
+        ~20 MINUTE idle run 33451274911 actually hit) via the watchdog's
+        own `SUITE-RESULT: STALL-DETECTED` line, with a failing process
+        exit -- not a hang."""
+        start = time.monotonic()
+        result = self._run(tmp_path)
+        elapsed = time.monotonic() - start
+        combined = result.stdout + result.stderr
+
+        assert result.returncode != 0, combined
+        assert elapsed < 30, (elapsed, combined)
+        assert "SUITE-RESULT: STALL-DETECTED" in combined, combined
 
 
 class TestRepoTreeHash:
