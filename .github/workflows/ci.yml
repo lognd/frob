@@ -669,7 +669,167 @@ jobs:
             Write-Host "::error::zero-tool-spawn diag ran $($elapsed.TotalSeconds)s, at/past the 240s faulthandler watchdog budget -- treating as a HANG (T-3657). See the thread dump above."
             exit 1
           }
-          Write-Host "zero-tool-spawn diag: no hang (returned in $($elapsed.TotalSeconds)s) -- exit code $exitCode is FROB_DISABLE_EXEC=1 refusing every guarded tool spawn (CHECK-family gate errors expected), not a failure of this diagnostic step."
+      # T-3670 (round 16): run 33533123354's round-15 verdict is decisive --
+      # variant (b) above (FROB_DISABLE_EXEC=1, zero guarded tool children)
+      # STILL received SIGINT (T-3648-SIGNAL printed BEFORE the 4 "refusing
+      # to spawn" warnings, elapsed 1.35s, exit 130) -- so the guarded-child
+      # class is now fully exonerated, not just the round-14 tool-child
+      # hypothesis. Two suspects remain, named by T-3657's own spawn audit:
+      # (1) frob.gates's ProcessPoolExecutor preload (multiprocessing spawn
+      # children share the console on win32, ungated by FROB_DISABLE_EXEC
+      # since they are frob's own internal workers, not a guarded tool
+      # spawn -- and the main-thread stack at interrupt time is
+      # executor.submit -> t.start(), i.e. right when workers/pool start);
+      # (2) uv itself -- `uv run` is the parent of the diag python in every
+      # variant above and could be delivering a console ctrl event at a
+      # roughly constant ~1.4s mark regardless of what frob does (both (a)
+      # and (b) died at ~1.4-1.6s). Variant (c) tests suspect 2: invoke the
+      # SAME diag script directly via the venv's own python.exe, with NO uv
+      # anywhere in the child's ancestry (uv sync already built this venv
+      # in an earlier step). If (c) is clean, uv is the sender; if (c)
+      # still gets SIGINT, uv is exonerated too and variant (d) below is
+      # the last remaining suspect.
+      - name: Diagnose frob check hang on windows -- direct-python variant, no uv ancestry (T-3670)
+        if: matrix.os == 'windows-latest'
+        timeout-minutes: 5
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
+          # Reuses the SAME fixture and diag script the variant (a) step
+          # above already wrote -- only the invocation changes.
+          $diagOut = Join-Path $env:RUNNER_TEMP "diag_directpython.out"
+          $diagErr = Join-Path $env:RUNNER_TEMP "diag_directpython.err"
+          $diagPy = Join-Path $env:RUNNER_TEMP "frob_check_diag.py"
+          $venvPython = Join-Path $env:GITHUB_WORKSPACE ".venv\Scripts\python.exe"
+          $started = Get-Date
+          $elapsed = [TimeSpan]::Zero
+          $exitCode = -1
+          if (-not (Test-Path $venvPython)) {
+            Write-Host "::error::T-3670 breadcrumb: venv python not found at $venvPython -- an earlier 'uv sync'/setup step must run first for this variant to mean anything"
+            exit 1
+          }
+          Write-Host "T-3670 breadcrumb: about to invoke $venvPython directly (no uv ancestry)"
+          try {
+            $p = Start-Process -FilePath $venvPython `
+              -ArgumentList "$diagPy" `
+              -WorkingDirectory $fixture `
+              -PassThru -RedirectStandardOutput $diagOut -RedirectStandardError $diagErr
+            try {
+              Wait-Process -Id $p.Id -Timeout 290 -ErrorAction Stop
+              $exitCode = $p.ExitCode
+            } catch {
+              Write-Host "T-3670 breadcrumb: Wait-Process timed out at 290s -- terminating"
+              Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            }
+          } catch {
+            Write-Host "T-3670: invoke threw: $_"
+          } finally {
+            $elapsed = (Get-Date) - $started
+            Write-Host "T-3670 breadcrumb: Start-Process invocation returned (elapsed: $($elapsed.TotalSeconds)s)"
+            Write-Host "--- diag_directpython.out ---"
+            if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "--- diag_directpython.err ---"
+            if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "direct-python diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          }
+          if ($elapsed.TotalSeconds -ge 235) {
+            Write-Host "::error::direct-python diag ran $($elapsed.TotalSeconds)s, at/past the 240s faulthandler watchdog budget -- treating as a HANG (T-3670). See the thread dump above."
+            exit 1
+          }
+          Write-Host "direct-python diag: no hang (returned in $($elapsed.TotalSeconds)s) -- exit code $exitCode is an ordinary gate result, not a failure of this diagnostic step. If this variant is CLEAN of T-3648-SIGNAL while variant (a) still gets it, uv is the sender."
+          exit 0
+
+      # T-3670 (round 16): variant (d) tests suspect 1 -- frob.gates's
+      # ProcessPoolExecutor preload. Same invocation shape as variant (a)
+      # (uv ancestry kept, so this isolates the pool alone, not uv), but
+      # with FROB_DISABLE_POOL_PRELOAD=1 set so _run_combined_jobs
+      # (src/frob/gates/__init__.py) runs every process-pool gate job
+      # serially in-process instead of constructing a ProcessPoolExecutor
+      # (src/frob/process/_guard.py::pool_preload_enabled). If (d) is
+      # clean, the pool's multiprocessing spawn children are the sender.
+      - name: Diagnose frob check hang on windows -- pool-preload-disabled variant (T-3670)
+        if: matrix.os == 'windows-latest'
+        timeout-minutes: 5
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
+          $codeLines = @(
+            'print("diag-python-alive", flush=True)',
+            "import faulthandler",
+            "import os",
+            "import signal",
+            "import sys",
+            "import traceback",
+            "",
+            "# T-3670: skip frob.gates's ProcessPoolExecutor preload entirely",
+            "# (src/frob/process/_guard.py::pool_preload_enabled) -- set",
+            "# BEFORE importing frob.__main__ so no earlier import-time code",
+            "# path can construct the pool first.",
+            "os.environ['FROB_DISABLE_POOL_PRELOAD'] = '1'",
+            "os.environ['FROB_WIN32_SPAWN_DEBUG'] = '1'",
+            "",
+            "def _t3670_log_signal(signum, frame):",
+            "    try:",
+            "        name = signal.Signals(signum).name",
+            "    except ValueError:",
+            "        name = repr(signum)",
+            "    print(f'T-3648-SIGNAL: received {name} (signum={signum}) at frame={frame!r}', flush=True)",  # noqa: E501
+            "    traceback.print_stack(frame)",
+            "    raise KeyboardInterrupt",
+            "signal.signal(signal.SIGINT, _t3670_log_signal)",
+            "if hasattr(signal, 'SIGBREAK'):",
+            "    signal.signal(signal.SIGBREAK, _t3670_log_signal)",
+            "",
+            "faulthandler.dump_traceback_later(240, exit=True)",
+            "",
+            "from frob.__main__ import main",
+            "",
+            'sys.argv = ["frob", "check"]',
+            "print('diag-python: about to call main()', flush=True)",
+            "try:",
+            "    raise SystemExit(main())",
+            "except BaseException as exc:",
+            "    print(f'diag-python: main() raised {exc!r}', flush=True)",
+            "    traceback.print_exc()",
+            "    raise"
+          )
+          Set-Content -Path (Join-Path $env:RUNNER_TEMP "frob_check_diag_nopoolpreload.py") -Value $codeLines
+          Write-Host "T-3670 breadcrumb: pool-preload-disabled diag python file written"
+          $diagOut = Join-Path $env:RUNNER_TEMP "diag_nopoolpreload.out"
+          $diagErr = Join-Path $env:RUNNER_TEMP "diag_nopoolpreload.err"
+          $diagPy = Join-Path $env:RUNNER_TEMP "frob_check_diag_nopoolpreload.py"
+          $started = Get-Date
+          $elapsed = [TimeSpan]::Zero
+          $exitCode = -1
+          Write-Host "T-3670 breadcrumb: about to invoke uv via Start-Process"
+          try {
+            $p = Start-Process -FilePath "uv" `
+              -ArgumentList "run", "--project", "$env:GITHUB_WORKSPACE", "python", "$diagPy" `
+              -WorkingDirectory $fixture `
+              -PassThru -RedirectStandardOutput $diagOut -RedirectStandardError $diagErr
+            try {
+              Wait-Process -Id $p.Id -Timeout 290 -ErrorAction Stop
+              $exitCode = $p.ExitCode
+            } catch {
+              Write-Host "T-3670 breadcrumb: Wait-Process timed out at 290s -- terminating"
+              Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            }
+          } catch {
+            Write-Host "T-3670: invoke threw: $_"
+          } finally {
+            $elapsed = (Get-Date) - $started
+            Write-Host "T-3670 breadcrumb: Start-Process invocation returned (elapsed: $($elapsed.TotalSeconds)s)"
+            Write-Host "--- diag_nopoolpreload.out ---"
+            if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "--- diag_nopoolpreload.err ---"
+            if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "pool-preload-disabled diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          }
+          if ($elapsed.TotalSeconds -ge 235) {
+            Write-Host "::error::pool-preload-disabled diag ran $($elapsed.TotalSeconds)s, at/past the 240s faulthandler watchdog budget -- treating as a HANG (T-3670). See the thread dump above."
+            exit 1
+          }
+          Write-Host "pool-preload-disabled diag: no hang (returned in $($elapsed.TotalSeconds)s) -- exit code $exitCode is FROB_DISABLE_POOL_PRELOAD=1 running process-pool gate jobs serially (CHECK-family gate errors expected), not a failure of this diagnostic step. If this variant is CLEAN of T-3648-SIGNAL while variant (a) still gets it, the pool's spawn children are the sender."
           exit 0
 
       - name: Test (windows, timed with hang guard)

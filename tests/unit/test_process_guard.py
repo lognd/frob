@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
 from frob.process._guard import (
     EXEC_KILL_SWITCH_ENV,
+    FROB_DISABLE_POOL_PRELOAD_ENV,
     FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV,
     NET_KILL_SWITCH_ENV,
     ProcessGuardError,
@@ -27,6 +28,7 @@ from frob.process._guard import (
     exec_enabled,
     guarded_subprocess_run,
     net_enabled,
+    pool_preload_enabled,
     win32_console_ctrl_ignore_scope,
 )
 
@@ -66,6 +68,29 @@ class TestNetEnabled:
         # frob:tests src/frob/process/_guard.py::net_enabled kind="unit"
         monkeypatch.setenv(NET_KILL_SWITCH_ENV, "1")
         assert net_enabled() is False
+
+
+# frob:ticket T-3670
+class TestPoolPreloadEnabled:
+    """T-3670 round 16: FROB_DISABLE_POOL_PRELOAD is frob.gates's own
+    internal ProcessPoolExecutor kill switch -- a different spawn family
+    from EXEC_KILL_SWITCH_ENV/NET_KILL_SWITCH_ENV above, which only ever
+    gate guarded_subprocess_run's EXTERNAL tool spawns."""
+
+    def test_unset_env_is_enabled(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # frob:tests src/frob/process/_guard.py::pool_preload_enabled kind="unit"
+        monkeypatch.delenv(FROB_DISABLE_POOL_PRELOAD_ENV, raising=False)
+        assert pool_preload_enabled() is True
+
+    def test_truthy_value_disables(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # frob:tests src/frob/process/_guard.py::pool_preload_enabled kind="unit"
+        monkeypatch.setenv(FROB_DISABLE_POOL_PRELOAD_ENV, "1")
+        assert pool_preload_enabled() is False
+
+    def test_falsy_value_stays_enabled(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # frob:tests src/frob/process/_guard.py::pool_preload_enabled kind="unit"
+        monkeypatch.setenv(FROB_DISABLE_POOL_PRELOAD_ENV, "0")
+        assert pool_preload_enabled() is True
 
 
 # frob:ticket T-0200

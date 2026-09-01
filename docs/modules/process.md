@@ -318,6 +318,36 @@ signal, the sender is in-process or one of `frob.gates`'s
 NOT gated by `FROB_DISABLE_EXEC`, since they are frob's own internal
 worker processes rather than a guarded tool spawn).
 
+Round 16 (T-3670): run 33533123354 measured variant (b) STILL catching
+`SIGINT` (`T-3648-SIGNAL` printed BEFORE the four "refusing to spawn"
+warnings, elapsed 1.35s, exit 130) -- with ZERO guarded tool children
+ever spawned, the guarded-child class is now fully exonerated, not
+merely the round-14 tool-child hypothesis. Two suspects remain: (1)
+`frob.gates`'s `ProcessPoolExecutor` preload itself (the main-thread
+stack at the moment of interrupt is `executor.submit -> t.start()`,
+right when workers/pool start); (2) `uv` itself, since `uv run` is the
+parent of the diag python in every variant tried and both (a) and (b)
+died at a roughly constant ~1.4-1.6s regardless of what frob does. The
+CI matrix grows to 4 variants to discriminate both at once: variant (c)
+invokes the SAME diag script directly via the venv's own `python.exe`
+(`.venv/Scripts/python.exe` under `$GITHUB_WORKSPACE`, built by an
+earlier `uv sync` step), with NO `uv` anywhere in the child's process
+ancestry -- if (c) is clean, `uv` is the sender. Variant (d) keeps
+variant (a)'s `uv run` invocation shape (isolating the pool alone) but
+sets `FROB_DISABLE_POOL_PRELOAD=1` (`pool_preload_enabled()`, this
+module) before `main()` runs -- `frob.gates._run_combined_jobs` checks
+this and, when disabled, runs every process-pool gate job serially via
+`_run_process_gate` in the calling process/thread instead of ever
+constructing a `ProcessPoolExecutor` (see
+`_run_process_jobs_serially_in_process`'s docstring in
+`src/frob/gates/__init__.py`) -- if (d) is clean, the pool's
+multiprocessing spawn children are the sender. Same posture as
+`FROB_WIN32_IGNORE_CONSOLE_CTRL`: `FROB_DISABLE_POOL_PRELOAD` is a real,
+live kill switch (never a no-op stub) but is NOT set by any default
+code path -- only this diagnostic CI step opts in, and disabling the
+pool trades parallelism for correctness (every gate still runs, just
+serially), never silently drops gate coverage.
+
 <!-- frob:invariant INV-019 -->
 
 ## Derived-state lock (T-0859)

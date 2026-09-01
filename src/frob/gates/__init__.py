@@ -286,6 +286,7 @@ from frob.lang._models import ParsedFile, RawSymbol
 from frob.lang._walk_rust import _MACRO_SYMBOL_SUFFIX
 from frob.logging import get_logger
 from frob.nodeid import symref_to_nodeid
+from frob.process._guard import FROB_DISABLE_POOL_PRELOAD_ENV, pool_preload_enabled
 
 # Import from frob.testing's submodules directly, not the frob.testing
 # package __init__ -- that __init__ imports frob.gates (via
@@ -7614,6 +7615,40 @@ def _submit_process_pool(
     }
 
 
+# frob:ticket T-3670
+# frob:tests tests/unit/test_gates_pool_preload.py::TestRunProcessJobsSerially.test_runs_every_job_and_populates_accumulators  # noqa: E501
+# frob:tests tests/unit/test_gates_pool_preload.py::TestRunProcessJobsSerially.test_empty_jobs_is_a_noop  # noqa: E501
+def _run_process_jobs_serially_in_process(
+    process_jobs: dict[str, _ProcessJob],
+    raw: dict[str, tuple[Violation, ...]],
+    counts: dict[str, int],
+    timing: dict[str, float],
+) -> None:
+    """T-3670 round 16: the `FROB_DISABLE_POOL_PRELOAD=1` degraded path --
+    run every `process_jobs` entry with `_run_process_gate` directly in
+    the CALLING process/thread instead of shipping it to a
+    `ProcessPoolExecutor` worker, populating the same `raw`/`counts`/
+    `timing` accumulators `_drain_futures` would from real futures.
+    `_run_process_gate` was always a plain, picklable-by-reference
+    function (not pool-specific machinery), so calling it here directly
+    is exactly as correct as calling it through the pool, only slower
+    (serial, no parallelism) and, on win32, without ever constructing
+    the `ProcessPoolExecutor` at all -- see `pool_preload_enabled`'s
+    docstring for why a CI diag run needs this lever to exist."""
+    for name, job in process_jobs.items():
+        result, cpu_elapsed = _run_process_gate(job.func, job.args)
+        raw[name] = result
+        timing[name] = cpu_elapsed
+        counts[name] = len(result)
+        _log.info(
+            "run_gates: %s -> %d violation(s) in %.3fs cpu (serial, no pool -- %s)",
+            name,
+            len(result),
+            cpu_elapsed,
+            FROB_DISABLE_POOL_PRELOAD_ENV,
+        )
+
+
 # frob:doc docs/modules/gates.md#error-types
 class GateOrderDriftError(RuntimeError):
     """T-0839: raised by `_merge_canonical_order` when `raw` names a gate
@@ -8144,7 +8179,12 @@ def _run_combined_jobs(
     of the whole-tree process-gate cache -- see
     `_seed_preloaded_process_cache`/`_store_pending_process_cache`'s own
     docstrings for what each does. Both default to `None`/empty and are
-    no-ops for every existing (non-T-1445) call site."""
+    no-ops for every existing (non-T-1445) call site.
+
+    T-3670: when `FROB_DISABLE_POOL_PRELOAD` is set (`pool_preload_
+    enabled()` returns `False`), `process_jobs` runs serially in this
+    process/thread instead of via a `ProcessPoolExecutor` -- see
+    `_run_process_jobs_serially_in_process`'s docstring."""
     counts: dict[str, int] = {}
     timing: dict[str, float] = {}
     raw: dict[str, tuple[Violation, ...]] = {}
@@ -8154,7 +8194,22 @@ def _run_combined_jobs(
 
     ppool: ProcessPoolExecutor | None = None
     process_futures: dict[str, Future[tuple[tuple[Violation, ...], float]]] = {}
-    if process_jobs:
+    # T-3670 round 16: FROB_DISABLE_POOL_PRELOAD=1 skips constructing the
+    # ProcessPoolExecutor entirely and runs process_jobs serially in this
+    # process/thread instead -- see pool_preload_enabled()'s docstring.
+    # This is the one spawn family guarded_subprocess_run's own kill
+    # switches (FROB_DISABLE_EXEC/FROB_DISABLE_NET) never covered, named
+    # by T-3657's spawn audit as a remaining win32 CI SIGINT suspect.
+    run_pool_serially = process_jobs and not pool_preload_enabled()
+    if run_pool_serially:
+        _log.warning(
+            "run_gates: %s set -- running %d process-pool gate job(s) "
+            "serially in-process instead of via ProcessPoolExecutor",
+            FROB_DISABLE_POOL_PRELOAD_ENV,
+            len(process_jobs),
+        )
+        _run_process_jobs_serially_in_process(process_jobs, raw, counts, timing)
+    elif process_jobs:
         ppool = _open_process_pool(
             process_jobs, root=root, max_workers=max_process_workers
         )

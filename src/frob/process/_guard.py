@@ -52,6 +52,24 @@ EXEC_KILL_SWITCH_ENV = "FROB_DISABLE_EXEC"
 # frob:doc docs/modules/process.md#public-api
 NET_KILL_SWITCH_ENV = "FROB_DISABLE_NET"
 
+#: T-3670 round 16: env-gated kill switch for `frob.gates`'s internal
+#: `ProcessPoolExecutor` gate-worker pool (`_open_process_pool`), NOT to
+#: be confused with `EXEC_KILL_SWITCH_ENV`/`NET_KILL_SWITCH_ENV` above --
+#: those gate EXTERNAL tool spawns through `guarded_subprocess_run`; this
+#: gates frob's OWN internal multiprocessing worker pool, which is a
+#: completely different spawn family `guarded_subprocess_run` never
+#: touches (T-3657's spawn audit named it as the one unguarded spawn
+#: site left in the check path). On win32, `multiprocessing`'s `spawn`
+#: start method launches worker processes that share frob's own console
+#: process group with no `CREATE_NO_WINDOW`/`CREATE_NEW_PROCESS_GROUP`
+#: equivalent applied -- a plausible sender for the win32 CI SIGINT
+#: saga's still-unexplained cases (T-3589/T-3648/T-3651/T-3657). Any of
+#: `_TRUTHY`'s values (case-insensitive) makes `pool_preload_enabled()`
+#: return `False`; unset or any other value leaves it enabled, the same
+#: permissive-unless-set posture the other two kill switches use.
+# frob:doc docs/modules/process.md#public-api
+FROB_DISABLE_POOL_PRELOAD_ENV = "FROB_DISABLE_POOL_PRELOAD"
+
 #: T-3648: env-gated debug switch -- when truthy, `guarded_subprocess_run`
 #: prints every spawn's argv AND `creationflags` to stderr before calling
 #: `subprocess.run`. Diagnostic-only, harmless when unset (the default
@@ -132,6 +150,26 @@ def net_enabled() -> bool:
     real, checked-in switch to wire into on day one instead of inventing
     one under deadline."""
     return not _env_flag_set(NET_KILL_SWITCH_ENV)
+
+
+# frob:ticket T-3670
+# frob:tests tests/unit/test_process_guard.py::TestPoolPreloadEnabled.test_unset_env_is_enabled  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestPoolPreloadEnabled.test_truthy_value_disables  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestPoolPreloadEnabled.test_falsy_value_stays_enabled  # noqa: E501
+# frob:doc docs/modules/process.md#public-api
+def pool_preload_enabled() -> bool:
+    """Whether `frob.gates`'s internal `ProcessPoolExecutor` gate-worker
+    pool is currently allowed to construct: `False` exactly when
+    `FROB_DISABLE_POOL_PRELOAD` (`FROB_DISABLE_POOL_PRELOAD_ENV`) is set
+    to a truthy value in the current process environment, checked fresh
+    on every call so a live flip takes effect immediately -- same
+    posture as `exec_enabled()`/`net_enabled()`. `frob.gates._run_
+    combined_jobs` checks this before calling `_open_process_pool`
+    (T-3670): when disabled, every CPU-bound process-pool gate job runs
+    serially in-process instead (slower, never silently skipped) so a
+    CI run that needs to prove the pool is/isn't the win32 SIGINT
+    sender can disable it without losing any gate coverage."""
+    return not _env_flag_set(FROB_DISABLE_POOL_PRELOAD_ENV)
 
 
 # frob:doc docs/modules/process.md#public-api
@@ -357,11 +395,13 @@ def win32_console_ctrl_ignore_scope() -> Generator[None, None, None]:
 __all__ = [
     "EXEC_KILL_SWITCH_ENV",
     "NET_KILL_SWITCH_ENV",
+    "FROB_DISABLE_POOL_PRELOAD_ENV",
     "FROB_WIN32_SPAWN_DEBUG_ENV",
     "FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV",
     "ProcessGuardError",
     "exec_enabled",
     "net_enabled",
+    "pool_preload_enabled",
     "guarded_subprocess_run",
     "win32_console_ctrl_ignore_scope",
 ]

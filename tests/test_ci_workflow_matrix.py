@@ -139,28 +139,31 @@ class TestCoverageStepUsesFrobNotMake:
 def _windows_diag_step() -> dict:
     """The "Diagnose frob check hang on windows (T-3589)" step's own
     dict from the parsed workflow -- shared by every test below. This is
-    variant (a) of the T-3657 round-15 2-variant matrix (current `frob
-    check` as-is); matches FIRST since `_windows_zerospawn_diag_step`'s
-    step name is a superstring of this substring and sorts after it in
-    the steps list."""
+    variant (a) of the T-3670 round-16 4-variant matrix (current `frob
+    check` as-is). Every other variant's name contains "variant" (b/c/d
+    below); (a)'s does not, which is what distinguishes it here."""
     workflow = _load_ci_workflow()
     steps = workflow["jobs"]["build"]["steps"]
     return next(
         step
         for step in steps
         if "Diagnose frob check hang on windows" in step.get("name", "")
-        and "zero-tool-spawn" not in step.get("name", "")
+        and "variant" not in step.get("name", "")
     )
 
 
 def _windows_zerospawn_diag_step() -> dict:
-    """T-3657 round 15: variant (b) of the 2-variant matrix -- the same
+    """T-3657 round 15: variant (b) of the 4-variant matrix -- the same
     windows diag as `_windows_diag_step`, but with `FROB_DISABLE_EXEC=1`
     set before `frob.__main__.main()` runs, so none of the 4 guarded
     tool children (git/ruff) this diag exercises are ever spawned. See
     the step's own comment in `.github/workflows/ci.yml` for what
     remains unguarded (frob.gates's ProcessPoolExecutor workers) and
-    what a clean vs. still-SIGINT'd run each discriminate."""
+    what a clean vs. still-SIGINT'd run each discriminate. T-3670: run
+    33533123354 measured this variant STILL receiving SIGINT, so the
+    guarded-child class is now fully exonerated -- see
+    `_windows_directpython_diag_step`/`_windows_nopoolpreload_diag_step`
+    for the two remaining suspects this ticket's round 16 discriminates."""
     workflow = _load_ci_workflow()
     steps = workflow["jobs"]["build"]["steps"]
     return next(
@@ -168,6 +171,41 @@ def _windows_zerospawn_diag_step() -> dict:
         for step in steps
         if "Diagnose frob check hang on windows" in step.get("name", "")
         and "zero-tool-spawn" in step.get("name", "")
+    )
+
+
+def _windows_directpython_diag_step() -> dict:
+    """T-3670 round 16: variant (c) of the 4-variant matrix -- the SAME
+    diag script and fixture as variant (a), but invoked directly via the
+    venv's own python.exe instead of `uv run python ...`, so `uv` never
+    appears in the diag child's process ancestry. If this variant is
+    clean of `T-3648-SIGNAL` while variant (a) still gets it, `uv` is
+    the sender."""
+    workflow = _load_ci_workflow()
+    steps = workflow["jobs"]["build"]["steps"]
+    return next(
+        step
+        for step in steps
+        if "Diagnose frob check hang on windows" in step.get("name", "")
+        and "direct-python" in step.get("name", "")
+    )
+
+
+def _windows_nopoolpreload_diag_step() -> dict:
+    """T-3670 round 16: variant (d) of the 4-variant matrix -- the same
+    invocation shape as variant (a) (uv ancestry kept, isolating the
+    pool alone), but with `FROB_DISABLE_POOL_PRELOAD=1` set before
+    `frob.__main__.main()` runs, so `frob.gates`'s `ProcessPoolExecutor`
+    preload never constructs. If this variant is clean of
+    `T-3648-SIGNAL` while variant (a) still gets it, the pool's
+    multiprocessing spawn children are the sender."""
+    workflow = _load_ci_workflow()
+    steps = workflow["jobs"]["build"]["steps"]
+    return next(
+        step
+        for step in steps
+        if "Diagnose frob check hang on windows" in step.get("name", "")
+        and "pool-preload-disabled" in step.get("name", "")
     )
 
 
@@ -229,28 +267,140 @@ class TestWindowsZeroSpawnDiagVariant:
 
     # frob:tests .github/workflows/ci.yml
     def test_zerospawn_diag_step_precedes_the_windows_test_step(self) -> None:
-        """Both diag variants must run before the real Windows Test step,
-        as cheap, sequential pre-flight diagnostics (T-3657's plan item
-        2: "extend the diag into a 2-variant matrix ... cheap,
-        sequential"), not interleaved with or after it."""
+        """All four diag variants must run before the real Windows Test
+        step, as cheap, sequential pre-flight diagnostics (T-3657's plan
+        item 2, extended by T-3670 to 4 variants), not interleaved with
+        or after it."""
         workflow = _load_ci_workflow()
         steps = workflow["jobs"]["build"]["steps"]
         names = [step.get("name", "") for step in steps]
         original_idx = next(
             i
             for i, name in enumerate(names)
-            if "Diagnose frob check hang on windows" in name
-            and "zero-tool-spawn" not in name
+            if "Diagnose frob check hang on windows" in name and "variant" not in name
         )
         zerospawn_idx = next(
-            i
-            for i, name in enumerate(names)
-            if "zero-tool-spawn" in name
+            i for i, name in enumerate(names) if "zero-tool-spawn" in name
+        )
+        directpython_idx = next(
+            i for i, name in enumerate(names) if "direct-python" in name
+        )
+        nopoolpreload_idx = next(
+            i for i, name in enumerate(names) if "pool-preload-disabled" in name
         )
         test_idx = next(
             i for i, name in enumerate(names) if name.startswith("Test (windows")
         )
-        assert original_idx < zerospawn_idx < test_idx
+        assert (
+            original_idx
+            < zerospawn_idx
+            < directpython_idx
+            < nopoolpreload_idx
+            < test_idx
+        )
+
+
+# frob:ticket T-3670
+class TestWindowsDirectPythonDiagVariant:
+    """T-3670 round 16: variant (c) -- discriminate `uv` as the SIGINT
+    sender by invoking the diag script with no `uv` anywhere in its
+    process ancestry."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_directpython_diag_step_exists_and_runs_on_windows(self) -> None:
+        step = _windows_directpython_diag_step()
+        assert step.get("if") == "matrix.os == 'windows-latest'"
+
+    # frob:tests .github/workflows/ci.yml
+    def test_directpython_diag_step_has_a_bounded_timeout(self) -> None:
+        step = _windows_directpython_diag_step()
+        assert step.get("timeout-minutes") == 5, (
+            "the direct-python diag step must carry its own bounded "
+            "timeout-minutes, same as the other variants, so a genuinely "
+            "wedged child cannot hang the whole job"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_directpython_diag_step_never_invokes_uv(self) -> None:
+        run_text = _windows_directpython_diag_step()["run"]
+        assert '-FilePath "uv"' not in run_text, (
+            "variant (c)'s whole point is NO uv in the diag child's "
+            "process ancestry -- a Start-Process -FilePath 'uv' here "
+            "would make this indistinguishable from variant (a)"
+        )
+        assert "-FilePath $venvPython" in run_text, (
+            "variant (c) must invoke the venv's own python.exe directly"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_directpython_diag_step_resolves_venv_python_under_workspace(self) -> None:
+        run_text = _windows_directpython_diag_step()["run"]
+        assert (
+            r'$venvPython = Join-Path $env:GITHUB_WORKSPACE ".venv\Scripts\python.exe"'
+            in run_text
+        ), (
+            "variant (c) must resolve the venv python.exe an earlier "
+            "'uv sync' step already built under $env:GITHUB_WORKSPACE, "
+            "not assume a bare 'python' on PATH"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_directpython_diag_step_reuses_the_same_diag_script_and_fixture(
+        self,
+    ) -> None:
+        run_text = _windows_directpython_diag_step()["run"]
+        assert "-WorkingDirectory $fixture" in run_text, (
+            "variant (c) must scan the SAME diag fixture as variant (a), "
+            "not the real repo"
+        )
+        assert (
+            'Join-Path $env:RUNNER_TEMP "frob_check_diag.py"' in run_text
+        ), "variant (c) must reuse variant (a)'s own diag script, not a fork of it"
+
+
+# frob:ticket T-3670
+class TestWindowsNoPoolPreloadDiagVariant:
+    """T-3670 round 16: variant (d) -- discriminate `frob.gates`'s
+    `ProcessPoolExecutor` preload as the SIGINT sender via
+    `FROB_DISABLE_POOL_PRELOAD=1`."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_nopoolpreload_diag_step_exists_and_runs_on_windows(self) -> None:
+        step = _windows_nopoolpreload_diag_step()
+        assert step.get("if") == "matrix.os == 'windows-latest'"
+
+    # frob:tests .github/workflows/ci.yml
+    def test_nopoolpreload_diag_step_has_a_bounded_timeout(self) -> None:
+        step = _windows_nopoolpreload_diag_step()
+        assert step.get("timeout-minutes") == 5
+
+    # frob:tests .github/workflows/ci.yml
+    def test_nopoolpreload_diag_step_sets_env_var_before_main(self) -> None:
+        run_text = _windows_nopoolpreload_diag_step()["run"]
+        env_idx = run_text.find("FROB_DISABLE_POOL_PRELOAD'] = '1'")
+        main_idx = run_text.find("from frob.__main__ import main")
+        assert env_idx != -1, (
+            "variant (d) must set FROB_DISABLE_POOL_PRELOAD=1 so "
+            "frob.gates never constructs its ProcessPoolExecutor"
+        )
+        assert main_idx != -1
+        assert env_idx < main_idx, (
+            "FROB_DISABLE_POOL_PRELOAD=1 must be set BEFORE importing "
+            "frob.__main__, same posture as variant (b)'s FROB_DISABLE_EXEC"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_nopoolpreload_diag_step_keeps_uv_ancestry(self) -> None:
+        """Unlike variant (c), variant (d) must NOT change the
+        invocation shape -- it isolates the pool alone, so it must still
+        go through `uv run`, exactly like variant (a)."""
+        run_text = _windows_nopoolpreload_diag_step()["run"]
+        assert '"--project", "$env:GITHUB_WORKSPACE",' in run_text
+
+    # frob:tests .github/workflows/ci.yml
+    def test_nopoolpreload_diag_step_reuses_the_same_fixture(self) -> None:
+        run_text = _windows_nopoolpreload_diag_step()["run"]
+        assert "-WorkingDirectory $fixture" in run_text
 
 
 class TestWindowsDiagStepFixtureIsAClassifiableProject:
