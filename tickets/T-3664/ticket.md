@@ -1,7 +1,7 @@
 ---
 id: T-3664
 title: 'win32: archgate examined-sites paths use native separators'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -20,7 +20,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/gates_suite/test_waive.py::TestWaive004ExaminedSitesGuard::test_files_examined_entries_are_always_posix_shaped
+- tests/gates_suite/test_waive.py::TestWaive004ExaminedSitesGuard::test_relative_to_as_posix_normalizes_a_windows_shaped_path
+designated_repro_test: tests/gates_suite/test_waive.py::TestWaive004ExaminedSitesGuard::test_files_examined_entries_are_always_posix_shaped
 threat: null
 component: null
 anchor: false

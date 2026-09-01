@@ -719,7 +719,13 @@ def analyze_project(
             )
             if examined:
                 try:
-                    files_examined.append(str(path.relative_to(scan_root)))
+                    # T-3664: `.as_posix()`, not `str()` -- on win32
+                    # `str(Path(...))` renders native `\` separators,
+                    # which broke every `site_examined("archgate", ...)`
+                    # membership check against a `Violation.file`-shaped
+                    # repo-relative POSIX string (see T-3659's win32
+                    # campaign, T-3664's own ticket body).
+                    files_examined.append(path.relative_to(scan_root).as_posix())
                 except ValueError:
                     pass
 

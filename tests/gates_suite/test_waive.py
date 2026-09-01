@@ -890,3 +890,53 @@ class TestWaive004ExaminedSitesGuard:
         assert "frob:waive ARCH001" in (root / "src" / "unexamined.bin").read_text(
             encoding="utf-8"
         )
+
+    # frob:ticket T-3664
+    # frob:tests src/frob/arch/__init__.py::analyze_project kind="unit"
+    def test_files_examined_entries_are_always_posix_shaped(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3664 (win32 gates_suite campaign, T-3659): `analyze_project`'s
+        `ArchResult.files_examined` must never carry a native path
+        separator -- `_drop_unexamined_archgate_candidates`'s `site_
+        examined(stats, "archgate", file)` membership test compares each
+        entry against a WAIVE004 `Violation.file`, which is ALWAYS
+        repo-relative POSIX (every other gate's own convention). Before
+        this fix, `analyze_project` built `files_examined` via bare
+        `str(path.relative_to(scan_root))`, which renders native `\\`
+        separators on win32 -- so `"src/examined.py" in files_examined`
+        would be `False` there even for a genuinely examined file (this
+        POSIX worktree cannot literally reproduce a backslash appearing,
+        since `str()` and `.as_posix()` coincide here -- this asserts
+        the INVARIANT the fix establishes, which CI's win32 leg is the
+        real end-to-end verifier for)."""
+        from frob.arch import analyze_project
+
+        root = tmp_path / "repo"
+        (root / "src" / "nested").mkdir(parents=True)
+        (root / "src" / "top.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        (root / "src" / "nested" / "inner.py").write_text(
+            "def g():\n    return 2\n", encoding="utf-8"
+        )
+
+        result = analyze_project(root)
+
+        assert result.files_examined, "expected at least one examined file"
+        for entry in result.files_examined:
+            assert "\\" not in entry, f"{entry!r} carries a native separator"
+            assert entry == Path(entry).as_posix() == entry.replace("\\", "/")
+        assert "src/top.py" in result.files_examined
+        assert "src/nested/inner.py" in result.files_examined
+
+    # frob:ticket T-3664
+    def test_relative_to_as_posix_normalizes_a_windows_shaped_path(self) -> None:
+        """T-3664: pins the exact hazard the fix closes -- `str()` on a
+        Windows path object renders native `\\` separators, while
+        `.as_posix()` always normalizes to `/`. `PureWindowsPath` is a
+        PURE path type (no filesystem calls), so this is exercisable on
+        any platform, unlike the concrete `WindowsPath` class."""
+        from pathlib import PureWindowsPath
+
+        rel = PureWindowsPath("src") / "nested" / "inner.py"
+        assert str(rel) == "src\\nested\\inner.py"
+        assert rel.as_posix() == "src/nested/inner.py"
