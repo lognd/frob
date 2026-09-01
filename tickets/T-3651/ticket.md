@@ -20,6 +20,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'waive BUG002: win32 console SIGINT defect cannot be reproduced outside
+    a real win32 CI runner'
+  actor: logan
+  at: '2026-09-01'
+  old_length: 1671
+  new_length: 2247
 evidence:
 - tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup::test_no_op_on_non_win32
 - tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup::test_sets_new_process_group_on_win32
@@ -61,3 +69,5 @@ result (not 130), and the Windows Test step completes without a
 KeyboardInterrupt abort. Keep the diag step in place until then.
 Scope: src/frob/process/_guard.py + tests/unit/test_process_guard.py
 (+ ci.yml only if the diag needs a tweak).
+
+frob:waive BUG002 reason="the win32 console-shared-CTRL_C defect this fix addresses can only be observed on a real win32 console under GitHub Actions CI (T-3589/T-3648's saga); this WSL/Linux dev environment has no win32 console to reproduce a GenerateConsoleCtrlEvent-delivered SIGINT against, so no local test can fail-at-main/pass-at-fix for the actual defect. The bound unit tests verify the creationflags mechanism itself (CREATE_NO_WINDOW is set on win32, left alone elsewhere); the next win32 CI run (per this ticket's Acceptance) is the real confirming measurement."
