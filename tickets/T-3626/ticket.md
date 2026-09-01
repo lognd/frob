@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/root-write-guard.py
 - tests/test_hook_root_write_guard.py
+- docs/guides/claude-hooks.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +38,12 @@ scope_changes:
   glob: tests/test_hook_root_write_guard.py
   reason: narrow overbroad globs that phantom-match T-1661s live lease on tests/unit/strata/**;
     the real test file is tests/test_hook_root_write_guard.py
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: likely need to repoint frob:describes anchors after splitting root-write-guard.py,
+    same pattern as T-3627
   actor: logan
   at: '2026-09-01'
 designated_repro_test: null
