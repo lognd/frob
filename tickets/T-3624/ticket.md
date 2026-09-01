@@ -1,7 +1,7 @@
 ---
 id: T-3624
 title: 'windows diag round 10: instrument the 1.6s frob-interrupted'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -20,6 +20,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_python_prints_liveness_marker_before_anything_else
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_python_wraps_main_call_in_baseexception_handler
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_step_has_breadcrumbs_around_every_major_block
 designated_repro_test: null
 threat: null
 component: null

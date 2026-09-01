@@ -384,17 +384,32 @@ jobs:
             'version = "0.0.0"',
             'requires-python = ">=3.11"'
           )
+          Write-Host "T-3624 breadcrumb: fixture dir + pyproject.toml written"
           Push-Location $fixture
           git init -q
           git -c user.email=ci@frob -c user.name=CI commit --allow-empty -q -m init  # T-3619: fixture needs a HEAD
           Pop-Location
+          Write-Host "T-3624 breadcrumb: fixture git init + initial commit done"
           # T-3589: built as a joined array (not a PowerShell here-string)
           # so every line stays a normal, YAML-indented `run:` statement --
           # a here-string's closing `"@` must sit at column 0, which
           # cannot coexist with this block's own required indentation.
+          #
+          # T-3624 round 10: FIRST line prints a liveness marker before
+          # anything else (including the `import faulthandler` itself)
+          # so the diag.out file proves the python process at least
+          # started -- and the frob.__main__.main() call is wrapped in
+          # try/except BaseException, writing the exception's repr +
+          # full traceback to diag.out before re-raising, so whatever
+          # "frob: interrupted" actually is gets a stack instead of
+          # dying silently. Suspect: T-3565's SIGBREAK handler
+          # (win32-only, registered at import/startup) or a console-
+          # control event delivered to the child process group.
           $codeLines = @(
+            'print("diag-python-alive", flush=True)',
             "import faulthandler",
             "import sys",
+            "import traceback",
             "",
             "# T-3589: dumps every thread's stack to stderr and exits",
             "# nonzero if 'frob check' has not returned within the budget --",
@@ -413,9 +428,16 @@ jobs:
             # actual reproduction attempt: all 5 stage groups against
             # the tiny fixture, still well inside the 240s watchdog.
             'sys.argv = ["frob", "check"]',
-            "raise SystemExit(main())"
+            "print('diag-python: about to call main()', flush=True)",
+            "try:",
+            "    raise SystemExit(main())",
+            "except BaseException as exc:",
+            "    print(f'diag-python: main() raised {exc!r}', flush=True)",
+            "    traceback.print_exc()",
+            "    raise",
           )
           Set-Content -Path (Join-Path $env:RUNNER_TEMP "frob_check_diag.py") -Value $codeLines
+          Write-Host "T-3624 breadcrumb: diag python file written"
           # T-3597: cwd is the FIXTURE (so frob check scans the tiny
           # fixture, not this whole repo) but the venv/deps must resolve
           # from the frob checkout itself, not from the fixture --
@@ -425,15 +447,35 @@ jobs:
           # diagnostic. --project pins dependency resolution to the
           # checkout while Push-Location above still leaves cwd (and
           # therefore frob check's scan target) at the fixture.
-          # T-3609: no `2>` redirect -- under pwsh's Stop preference
-          # that turns uv's own stderr chatter into a terminating error
-          # (run 33451274911). Interleaved stderr is fine here.
+          #
+          # T-3624 round 10: run the child through `cmd /c` instead of
+          # letting pwsh invoke it as a native command -- this removes
+          # pwsh's own native-command stream/signal handling entirely
+          # from the picture (T-3619 round 9's ErrorActionPreference fix
+          # did not stop the step from dying at ~1.6s with no output, so
+          # the suspect widened from "stderr promotion" to "pwsh's
+          # native-command handling generally"). Both streams are
+          # captured to files so output survives even if the killer is
+          # in pwsh's own stream plumbing; %ERRORLEVEL% is echoed
+          # explicitly since $LASTEXITCODE across a `cmd /c` boundary is
+          # not always reliable.
+          $diagOut = Join-Path $env:RUNNER_TEMP "diag.out"
+          $diagErr = Join-Path $env:RUNNER_TEMP "diag.err"
+          $diagPy = Join-Path $env:RUNNER_TEMP "frob_check_diag.py"
+          $cmdLine = "uv run --project `"$env:GITHUB_WORKSPACE`" python `"$diagPy`" 1>`"$diagOut`" 2>`"$diagErr`" & echo child-exit=%ERRORLEVEL%"
           $started = Get-Date
           Push-Location $fixture
-          uv run --project $env:GITHUB_WORKSPACE python (Join-Path $env:RUNNER_TEMP "frob_check_diag.py")
-          $exitCode = $LASTEXITCODE
+          Write-Host "T-3624 breadcrumb: about to invoke uv via cmd /c"
+          $cmdOutput = & cmd /c $cmdLine 2>&1 | Out-String
           $elapsed = (Get-Date) - $started
           Pop-Location
+          Write-Host "T-3624 breadcrumb: cmd /c returned (elapsed: $($elapsed.TotalSeconds)s)"
+          Write-Host "T-3624: cmd wrapper output: $cmdOutput"
+          $exitCode = if ($cmdOutput -match 'child-exit=(-?\d+)') { [int]$Matches[1] } else { -1 }
+          Write-Host "--- diag.out ---"
+          if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
+          Write-Host "--- diag.err ---"
+          if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
           Write-Host "frob check diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
           # T-3604: the ONLY true-failure signal this step exists to
           # catch is the 240s faulthandler watchdog actually firing --

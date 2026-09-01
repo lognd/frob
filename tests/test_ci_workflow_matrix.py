@@ -61,20 +61,19 @@ class TestWindowsDiagStepResolvesFrobCheckoutEnv:
     def test_windows_diag_step_uv_run_pins_project_to_checkout(self) -> None:
         # frob:tests .github/workflows/ci.yml
         text = (
-            Path(__file__).resolve().parents[1]
-            / ".github"
-            / "workflows"
-            / "ci.yml"
+            Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
         ).read_text(encoding="utf-8")
         idx = text.find("Diagnose frob check hang on windows")
         assert idx != -1, "windows diag step (T-3589) was removed/renamed"
-        step_text = text[idx : idx + 4400]
-        assert "uv run --project $env:GITHUB_WORKSPACE python" in step_text, (
+        step_text = text[idx : idx + 6200]
+        assert '--project `"$env:GITHUB_WORKSPACE`"' in step_text, (
             "the diag step's `uv run python <script>` has no --project "
             "pin -- uv resolves the venv from cwd (Push-Location'd into "
             "the throwaway fixture, which has no pyproject.toml/frob "
             "installed), so the diag process dies with ModuleNotFoundError "
-            "before its faulthandler watchdog ever arms (T-3597)"
+            "before its faulthandler watchdog ever arms (T-3597). T-3624 "
+            "round 10 moved the invocation into a `cmd /c` string, so the "
+            "`--project` value is now escaped-quoted rather than bare."
         )
 
     def test_windows_diag_step_still_scans_the_fixture_not_the_repo(self) -> None:
@@ -83,23 +82,29 @@ class TestWindowsDiagStepResolvesFrobCheckoutEnv:
         carries no explicit path) must stay at the fixture, not flip to
         scanning this whole repo."""
         # frob:tests .github/workflows/ci.yml
-        text = (
-            Path(__file__).resolve().parents[1]
-            / ".github"
-            / "workflows"
-            / "ci.yml"
-        ).read_text(encoding="utf-8")
-        idx = text.find("Diagnose frob check hang on windows")
-        assert idx != -1
-        step_text = text[idx : idx + 4400]
-        run_idx = step_text.find("uv run --project")
-        assert run_idx != -1
-        preceding = step_text[:run_idx]
-        assert preceding.rstrip().splitlines()[-1].strip() == "Push-Location $fixture", (
-            "the uv invocation must still be immediately preceded by "
-            "Push-Location $fixture -- --project must pin DEPENDENCY "
-            "resolution only, not also move frob check's scan target off "
-            "the fixture and onto the real repo"
+        step = _windows_diag_step()
+        run_lines = [line for line in step["run"].splitlines() if line.strip()]
+        invoke_idx = next(
+            i for i, line in enumerate(run_lines) if "& cmd /c $cmdLine" in line
+        )
+        preceding = [
+            line.strip()
+            for line in run_lines[:invoke_idx]
+            if not line.strip().startswith("#")
+        ]
+        assert "Push-Location $fixture" in preceding, (
+            "expected a Push-Location $fixture somewhere before the cmd "
+            "/c invocation -- --project must pin DEPENDENCY resolution "
+            "only, not also move frob check's scan target off the "
+            "fixture and onto the real repo"
+        )
+        last_push_idx = (
+            len(preceding) - 1 - preceding[::-1].index("Push-Location $fixture")
+        )
+        assert "Pop-Location" not in preceding[last_push_idx:], (
+            "a Pop-Location appears between the LAST Push-Location "
+            "$fixture and the cmd /c invocation -- the diag child would "
+            "no longer run with the fixture as its cwd"
         )
 
 
@@ -130,9 +135,7 @@ class TestCoverageStepUsesFrobNotMake:
         workflow = _load_ci_workflow()
         steps = workflow["jobs"]["build"]["steps"]
         coverage_step = next(
-            step
-            for step in steps
-            if "coverage stamp" in step.get("name", "")
+            step for step in steps if "coverage stamp" in step.get("name", "")
         )
         assert "uv run frob coverage --full" in coverage_step["run"], (
             "the T-1366 coverage-stamp step must call `uv run frob "
@@ -197,25 +200,31 @@ class TestWindowsDiagStepDoesNotGateTheJob:
         )
 
     # frob:tests .github/workflows/ci.yml
-    def test_diag_invocation_does_not_redirect_stderr(self) -> None:
-        """T-3609: pwsh runs with $ErrorActionPreference='Stop' --
-        redirecting a native command's stderr to a file under Stop
-        converts its first stderr line into a terminating
-        NativeCommandError, killing the script in ~2s before its first
-        Write-Host (run 33451274911). Stderr must interleave on the
-        console instead."""
+    def test_cmd_invocation_line_itself_has_no_native_pwsh_redirect(self) -> None:
+        """T-3609's original concern (a native pwsh command's stderr
+        redirect turning under Stop into a terminating NativeCommand
+        Error) still applies to whatever pwsh invokes NATIVELY. T-3624
+        round 10 moved the actual uv/python invocation inside a `cmd /c`
+        string -- redirects INSIDE that string are cmd's own, not pwsh's,
+        and are fine; the pwsh-level `& cmd /c $cmdLine` call itself must
+        still carry no bare `2>` of its own."""
         step = _windows_diag_step()
         run_lines = step["run"].splitlines()
-        uv_run_line = next(
-            line for line in run_lines if "uv run --project" in line
+        invoke_line = next(line for line in run_lines if "& cmd /c $cmdLine" in line)
+        assert "2>&1" in invoke_line, (
+            "the cmd /c invocation should merge stderr into the captured "
+            "output stream (2>&1) rather than leaving it to pwsh's "
+            "native-command handling under Stop"
         )
-        assert "2>" not in uv_run_line, (
-            "the diag invocation redirects the uv/python child's stderr "
-            "to a file -- under pwsh's default Stop error preference "
-            "this turns uv's own resolver-chatter stderr line into a "
-            "terminating error, killing the script before it ever "
-            "measures elapsed time (T-3609, run 33451274911)"
-        )
+
+    def test_cmd_line_string_redirects_uv_streams_to_files(self) -> None:
+        """The uv/python invocation, run through cmd /c rather than as a
+        native pwsh command, still captures both streams to files so
+        breadcrumb output survives even a killed step (T-3624 round 10
+        direction 2)."""
+        step = _windows_diag_step()
+        assert '1>`"$diagOut`"' in step["run"]
+        assert '2>`"$diagErr`"' in step["run"]
 
     # frob:tests .github/workflows/ci.yml
     def test_diag_step_sets_error_action_preference_continue_first(self) -> None:
@@ -234,8 +243,8 @@ class TestWindowsDiagStepDoesNotGateTheJob:
             if line.strip() and not line.strip().startswith("#")
         ]
         assert code_lines, "diag step has no run lines"
-        assert code_lines[0].strip().startswith(
-            "$ErrorActionPreference = 'Continue'"
+        assert (
+            code_lines[0].strip().startswith("$ErrorActionPreference = 'Continue'")
         ), (
             "the diag step's first non-blank run line must set "
             "$ErrorActionPreference = 'Continue' -- otherwise the "
@@ -255,9 +264,7 @@ class TestWindowsDiagStepDoesNotGateTheJob:
         must create one empty commit right after `git init`."""
         step = _windows_diag_step()
         run_lines = step["run"].splitlines()
-        init_idx = next(
-            i for i, line in enumerate(run_lines) if "git init" in line
-        )
+        init_idx = next(i for i, line in enumerate(run_lines) if "git init" in line)
         following = "\n".join(run_lines[init_idx + 1 : init_idx + 4])
         assert "commit" in following and "--allow-empty" in following, (
             "expected a `git commit --allow-empty` shortly after `git "
@@ -267,15 +274,62 @@ class TestWindowsDiagStepDoesNotGateTheJob:
         )
 
     # frob:tests .github/workflows/ci.yml
+    def test_diag_python_prints_liveness_marker_before_anything_else(self) -> None:
+        """T-3624 round 10: the diag python script's FIRST statement
+        prints a liveness marker (flushed) before even `import
+        faulthandler` -- if diag.out ever comes back empty, that proves
+        the interpreter itself never ran a single statement, ruling out
+        the whole python process as the kill point."""
+        step = _windows_diag_step()
+        code_line_idx = next(
+            i
+            for i, line in enumerate(step["run"].splitlines())
+            if "$codeLines = @(" in line
+        )
+        first_code_line = step["run"].splitlines()[code_line_idx + 1]
+        assert "diag-python-alive" in first_code_line, (
+            "the diag script's first $codeLines entry must print a "
+            "liveness marker -- otherwise an empty diag.out cannot "
+            "distinguish 'python never started' from 'python started and "
+            "then died silently'"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_diag_python_wraps_main_call_in_baseexception_handler(self) -> None:
+        """T-3624 round 10: main() is called inside try/except
+        BaseException that prints the exception's repr and a full
+        traceback before re-raising -- so whatever "frob: interrupted"
+        actually is gets a stack instead of dying with no diagnostic
+        information at all."""
+        run_text = _windows_diag_step()["run"]
+        assert "except BaseException as exc:" in run_text
+        assert "traceback.print_exc()" in run_text
+
+    # frob:tests .github/workflows/ci.yml
+    def test_diag_step_has_breadcrumbs_around_every_major_block(self) -> None:
+        """T-3624 round 10: Write-Host markers before/after fixture
+        setup, diag-file writing, and the child invocation -- whichever
+        marker is the LAST to print in a real run localizes the kill
+        point, since the step previously died with zero output of its
+        own at all."""
+        run_text = _windows_diag_step()["run"]
+        for marker in (
+            "fixture dir + pyproject.toml written",
+            "fixture git init + initial commit done",
+            "diag python file written",
+            "about to invoke uv via cmd /c",
+            "cmd /c returned",
+        ):
+            assert marker in run_text, f"expected a breadcrumb containing {marker!r}"
+
+    # frob:tests .github/workflows/ci.yml
     def test_test_step_is_untouched_and_still_windows_only(self) -> None:
         """Neither T-3604 nor T-3609 may touch the Test step itself --
         only the diagnostic step ahead of it."""
         workflow = _load_ci_workflow()
         steps = workflow["jobs"]["build"]["steps"]
         test_step = next(
-            step
-            for step in steps
-            if step.get("name", "").startswith("Test (windows")
+            step for step in steps if step.get("name", "").startswith("Test (windows")
         )
         assert test_step["if"] == "matrix.os == 'windows-latest'"
         assert "continue-on-error" not in test_step, (

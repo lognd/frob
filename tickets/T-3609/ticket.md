@@ -22,9 +22,17 @@ no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
 - tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_step_has_no_continue_on_error
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_invocation_does_not_redirect_stderr
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_cmd_invocation_line_itself_has_no_native_pwsh_redirect
 - tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_is_untouched_and_still_windows_only
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_invocation_does_not_redirect_stderr
+  new_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_cmd_invocation_line_itself_has_no_native_pwsh_redirect
+  reason: T-3624 round 10 moved the uv/python invocation inside a cmd /c string, renaming
+    the test that verifies pwsh's own native-command invocation carries no stray stderr
+    redirect
+  actor: logan
+  at: '2026-09-01'
 threat: null
 component: null
 anchor: false
