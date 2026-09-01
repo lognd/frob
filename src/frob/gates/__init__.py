@@ -7740,12 +7740,12 @@ def _stamp_worker_lock_keys_env() -> None:
     would issue a real, blocking `flock(LOCK_EX)` against that SHARED hold
     and deadlock forever (T-0982, lslocks-confirmed; the cross-process
     sibling of T-0918's same-process case). See
-    `frob.process._lock._worker_inherits_hold`'s docstring for the reader
+    `frob.process._derived_lock._worker_inherits_hold`'s docstring for the reader
     side of this marker. Split out of `_open_process_pool` (T-0990) -- see
     `_stamp_worker_stdout_log_level_env`'s docstring for why."""
+    from frob.process._derived_lock import held_registry_keys
     from frob.process._lock import _INHERITED_LOCK_KEYS_ENV as _LOCK_KEYS_ENV
     from frob.process._lock import _INHERITED_LOCK_KEYS_SEP as _LOCK_KEYS_SEP
-    from frob.process._lock import held_registry_keys
 
     held_keys = held_registry_keys()
     if held_keys:
@@ -7915,7 +7915,7 @@ def _open_process_pool(
     would issue a real, blocking `flock(LOCK_EX)` against that SHARED hold
     and deadlock forever (T-0982, lslocks-confirmed; the cross-process
     sibling of T-0918's same-process case). See
-    `frob.process._lock._worker_inherits_hold`'s docstring for the reader
+    `frob.process._derived_lock._worker_inherits_hold`'s docstring for the reader
     side of this marker. T-0990: the two env-marker stamps themselves now
     live in `_stamp_worker_stdout_log_level_env`/`_stamp_worker_lock_keys_env`
     (each a single, low-branch-count concern), called here before pool

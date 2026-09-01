@@ -3575,12 +3575,12 @@
     {
       "digest": "c01321041b8d5ca8f89276df41f16466634e6dd3b3ebe644d8de5ca6f441e5e1",
       "facet": "body",
-      "ref": "src/frob/process/_lock.py::_process_already_holds"
+      "ref": "src/frob/process/_derived_lock.py::_process_already_holds"
     },
     {
       "digest": "ee8d5f981171bf783a8760a534a5da2235478f1a9a9dea9a3bbacfc1aab5c8cb",
       "facet": "sig",
-      "ref": "src/frob/process/_lock.py::_process_already_holds"
+      "ref": "src/frob/process/_derived_lock.py::_process_already_holds"
     },
     {
       "digest": "1221ab65c3234d73b6b279eb3057c052c87c4db66624bd2550a6d71093c9129f",
