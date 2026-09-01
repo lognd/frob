@@ -2,7 +2,7 @@
 id: T-3608
 title: worker death with pinned serial-group items deadlocks the suite until budget
   kill; extend T-3516 crash reporting
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
