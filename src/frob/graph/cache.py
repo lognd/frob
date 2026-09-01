@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import threading
 import time
 import uuid
 from importlib.metadata import version
@@ -198,6 +199,34 @@ _LOCK_POLL_SECONDS = 2.0
 _LOCK_TOTAL_TIMEOUT_SECONDS = 30.0
 
 
+# frob:ticket T-3644
+# frob:tests tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
+# frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not_retried  # noqa: E501
+def _is_transient_lock_error(exc: sqlite3.OperationalError) -> bool:
+    """True iff `exc` is contention this module's lock-retry loops should
+    poll past rather than let escape (T-3644).
+
+    Under WAL (rounds 1-3 of this cache's atomicity work), the same-file
+    contention this file's retry loops exist to absorb (T-1423) always
+    surfaced as sqlite's ordinary `database is locked` (SQLITE_BUSY).
+    Retiring WAL for TRUNCATE journal mode (T-3644, to structurally
+    eliminate the WAL `-shm`-mmap SIGBUS class) means that SAME
+    contention can instead surface as `attempt to write a readonly
+    database` (SQLITE_READONLY) -- a documented SQLite/POSIX caveat: a
+    rollback-journal connection's locking uses `fcntl` advisory locks,
+    which are scoped per (process, inode) rather than per file
+    descriptor, so two `sqlite3.Connection` objects on the same file
+    within one process (exactly `test_two_processes_never_commit_to_
+    the_same_cache_concurrently`'s same-process two-thread shape) can
+    observe each other's locks as this shape instead of `locked`. Both
+    strings name the identical transient condition this module already
+    retries -- an op retried here is already required to be idempotent
+    under retry (`_with_lock_retry`'s own docstring), so treating the two
+    shapes alike is safe."""
+    msg = str(exc).lower()
+    return "locked" in msg or "readonly database" in msg
+
+
 # frob:ticket T-1423
 # frob:doc docs/modules/graph.md#lock-contention-t-1423
 # frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_raises_cache_locked_once_budget_exhausted  # noqa: E501
@@ -236,7 +265,7 @@ def _with_lock_retry(op, *, what: str):  # noqa: ANN001, ANN202
         try:
             return op()
         except sqlite3.OperationalError as exc:
-            if "locked" not in str(exc).lower():
+            if not _is_transient_lock_error(exc):
                 raise
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -267,6 +296,20 @@ def _open(path: Path) -> sqlite3.Connection:
     rather than raising `disk I/O error` (T-0029: two agents building the
     same worktree cache collided; sqlite's default is no wait at all).
 
+    T-3644 (SIGBUS round 4): journal mode is TRUNCATE, not WAL -- WAL mmaps
+    a per-connection `-shm` wal-index, and any cross-process db replace or
+    recover racing a live mapping (SQLite's own WAL recovery included) can
+    SIGBUS the sibling at the OS level, unreachable by python `except` (a
+    fatal signal, not an exception); three prior atomicity-hardening
+    rounds (T-3607/T-3623/T-3632/T-3634) still left a worker dying this
+    way (run 33491468339). TRUNCATE has no `-shm`, structurally eliminating
+    the class, while truncating the journal file in place each transaction
+    rather than DELETE mode's create/delete (cheaper, against the "timed
+    out under 4 parallel builders" regression rollback-journal mode hit
+    before WAL was adopted -- see `_inprocess_write_lock`'s docstring for
+    the other half of this fix, the intra-process locking gap TRUNCATE
+    reopens). Rounds 1-3's atomic-rebuild machinery is unchanged.
+
     T-0245: the malmberg pilot reported concurrent frob processes on /mnt/c
     stalling in D-state with no lock feedback -- a silent 30s blind wait is
     indistinguishable from a hang. Connecting in short polls instead of one
@@ -282,7 +325,7 @@ def _open(path: Path) -> sqlite3.Connection:
             break
         except sqlite3.OperationalError as exc:
             remaining = deadline - time.monotonic()
-            if "locked" not in str(exc).lower() or remaining <= 0:
+            if not _is_transient_lock_error(exc) or remaining <= 0:
                 raise
             if not warned:
                 _log.warning(
@@ -297,12 +340,14 @@ def _open(path: Path) -> sqlite3.Connection:
     # These pragmas can touch page structure, so on a non-sqlite file they
     # raise here -- swallow it and let connect()'s schema SELECT be the one
     # place that detects corruption and triggers recreate (T-0019/T-0029).
-    # WAL lets concurrent builds queue on a single writer instead of
-    # deadlocking on a shared->exclusive lock upgrade; rollback-journal mode
-    # timed out even at 30s under 4 parallel builders.
+    #
+    # T-3644: TRUNCATE, not WAL -- WAL's `-shm` mmap is a structural SIGBUS
+    # source under cross-process db replace/recover (unreachable by python
+    # `except`); see this function's own T-3644 docstring paragraph and
+    # `_inprocess_write_lock`'s docstring for the full rationale.
     try:
         conn.execute("PRAGMA busy_timeout = 30000")
-        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA journal_mode = TRUNCATE")
     except sqlite3.DatabaseError as exc:
         _log.debug("cache: pragma setup deferred (%s)", exc)
     conn.execute("PRAGMA foreign_keys = OFF")
@@ -908,7 +953,7 @@ def _apply_schema_with_recovery(
         try:
             return _apply_schema(conn, existing, path)
         except sqlite3.OperationalError as exc:
-            if "locked" not in str(exc).lower():
+            if not _is_transient_lock_error(exc):
                 raise
             conn, existing = _poll_and_reread(
                 conn, path, existing, deadline, "locked during schema application"
@@ -927,6 +972,43 @@ def _apply_schema_with_recovery(
             return _recreate_and_reapply(conn, path, exc)
 
 
+# frob:ticket T-3644
+_INPROCESS_WRITE_LOCKS: dict[str, threading.RLock] = {}
+_INPROCESS_WRITE_LOCKS_GUARD = threading.Lock()
+
+
+# frob:ticket T-3644
+# frob:tests tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
+# frob:tests tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_connect_after_forced_schema_rebuild_returns_a_fresh_live_connection  # noqa: E501
+def _inprocess_write_lock(path: Path) -> threading.RLock:
+    """The per-resolved-path lock serializing `connect()` calls WITHIN this
+    process (T-3644).
+
+    Retiring WAL (see `_open`'s T-3644 comment) moves this cache's writer
+    locking onto sqlite's rollback-journal `fcntl` advisory locks, which
+    are documented (SQLite's own "File Locking Notes") to be scoped per
+    `(process, inode)` rather than per file descriptor: two
+    `sqlite3.Connection` objects opened by the SAME process against the
+    SAME db file do not correctly exclude each other at the OS level
+    (`test_two_processes_never_commit_to_the_same_cache_concurrently`'s
+    same-process two-thread shape hit exactly this -- both connections
+    proceeding as if unlocked, then one losing an internal sqlite state
+    race and surfacing `attempt to write a readonly database` instead of
+    a plain retryable `database is locked`). A per-path Python lock closes
+    that gap the OS cannot: it only ever serializes THIS process's own
+    `connect()` callers against each other, leaving genuine cross-process
+    concurrency (real separate `frob` invocations, WAL's actual
+    audience) exactly as it was -- real OS processes still contend
+    correctly on the same fcntl locks."""
+    with _INPROCESS_WRITE_LOCKS_GUARD:
+        key = str(path.resolve())
+        lock = _INPROCESS_WRITE_LOCKS.get(key)
+        if lock is None:
+            lock = threading.RLock()
+            _INPROCESS_WRITE_LOCKS[key] = lock
+        return lock
+
+
 # frob:invariant INV-003
 # invariant spec: [INV-003](invariants/INV-003.md)
 # frob:invariant INV-050
@@ -934,7 +1016,10 @@ def _apply_schema_with_recovery(
 # frob:ticket T-0029
 # frob:ticket T-0141
 # frob:ticket T-1519
+# frob:ticket T-3644
 # frob:doc docs/modules/graph.md#cache
+# frob:tests tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
+# frob:tests tests/test_graph.py::TestConcurrentCache.test_connect_on_current_schema_does_not_block_on_a_held_write_lock  # noqa: E501
 def connect(path: Path) -> sqlite3.Connection:
     """Open (creating parent dirs) the cache db; wipe and rebuild on schema mismatch.
 
@@ -974,28 +1059,46 @@ def connect(path: Path) -> sqlite3.Connection:
     a caller of `connect()` can never receive, and no retry can ever
     reuse, a connection object that a recreate has since closed out from
     under it.
+
+    T-3644: holds this process's per-path write lock (`_inprocess_write_
+    lock`) for the DURATION OF THIS CALL ONLY -- acquired before opening
+    anything, released before returning (or on any exception) -- not for
+    the returned connection's whole lifetime. Serializing only this
+    function's own body is enough to close the intra-process fcntl-
+    aliasing gap `_inprocess_write_lock`'s docstring describes (the
+    schema/fingerprint DDL this function itself runs is exactly where
+    that race was measured, run 33491468339); holding it any longer would
+    make an already-open connection's mere existence block a SIBLING
+    THREAD's unrelated `connect()` at this same path even when neither is
+    actually racing -- which regressed T-0232's own pinned invariant
+    (`test_connect_on_current_schema_does_not_block_on_a_held_write_
+    lock`: a second connection to an already-current-schema db must
+    return promptly beside another connection's held-open write, not
+    queue behind it) when this was first tried holding the lock through
+    `close()`.
     """
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not path.exists():
-        # T-3623: the very first ever connect() at this path has the same
-        # schema-incomplete-but-visible window _recreate used to have --
-        # sqlite3.connect() creates a 0-byte file immediately, before any
-        # CREATE TABLE runs. Pre-building the schema at a temp path and
-        # atomically renaming it into place (same helper _recreate uses)
-        # means a racing sibling's connect_readonly (or its own connect())
-        # never observes a tableless file at all. A second racer that also
-        # sees `not path.exists()` just repeats this and loses the rename
-        # race harmlessly -- os.replace is atomic either way.
-        _create_schema_complete_db(path)
-    conn = _open(path)
-    conn, existing = _read_schema_version(conn, path)
-    conn = _apply_schema_with_recovery(conn, existing, path)
+    with _inprocess_write_lock(path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            # T-3623: the very first ever connect() at this path has the same
+            # schema-incomplete-but-visible window _recreate used to have --
+            # sqlite3.connect() creates a 0-byte file immediately, before any
+            # CREATE TABLE runs. Pre-building the schema at a temp path and
+            # atomically renaming it into place (same helper _recreate uses)
+            # means a racing sibling's connect_readonly (or its own connect())
+            # never observes a tableless file at all. A second racer that also
+            # sees `not path.exists()` just repeats this and loses the rename
+            # race harmlessly -- os.replace is atomic either way.
+            _create_schema_complete_db(path)
+        conn = _open(path)
+        conn, existing = _read_schema_version(conn, path)
+        conn = _apply_schema_with_recovery(conn, existing, path)
 
-    def _check_fingerprint_step() -> None:
-        nonlocal conn
-        conn = _check_fingerprint_with_recovery(conn, path)
+        def _check_fingerprint_step() -> None:
+            nonlocal conn
+            conn = _check_fingerprint_with_recovery(conn, path)
 
-    _with_lock_retry(_check_fingerprint_step, what="fingerprint check")
+        _with_lock_retry(_check_fingerprint_step, what="fingerprint check")
     return conn
 
 
