@@ -2,7 +2,7 @@
 id: T-3670
 title: 'win32 round 16: 4-variant diag matrix -- discriminate uv vs ProcessPoolExecutor
   sender'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -22,10 +22,18 @@ scope:
 - tests/test_ci_workflow_matrix.py
 - tests/unit/test_process_guard.py
 - docs/modules/process.md
+- tests/unit/test_gates_pool_preload.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_gates_pool_preload.py
+  reason: new unit test file for the FROB_DISABLE_POOL_PRELOAD serial-fallback path,
+    cited in the ticket body's plan
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
