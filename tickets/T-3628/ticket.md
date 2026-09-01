@@ -1,7 +1,7 @@
 ---
 id: T-3628
 title: 'ARCH102: split src/frob/process/_lock.py (12 exports, 3 clusters)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-01'
@@ -18,11 +18,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_lock.py
 - tests/unit/test_process_lock.py
-- src/frob/process/_derived_lock.py
-- src/frob/process/_lock_msvcrt.py
-- frob.lock
-- src/frob/gates/__init__.py
-- tickets/T-draft-d028adeb/ticket.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,57 +37,10 @@ scope_changes:
   actor: logan
   at: '2026-09-01'
 - op: add
-  glob: src/frob/process/_derived_lock.py
-  reason: ARCH102 cluster-3 split creates these new destination modules; docs anchor
-    already existed and moves with the symbols
-  actor: logan
-  at: '2026-09-01'
-- op: add
-  glob: src/frob/process/_lock_msvcrt.py
-  reason: ARCH102 cluster-3 split creates these new destination modules; docs anchor
-    already existed and moves with the symbols
-  actor: logan
-  at: '2026-09-01'
-- op: add
-  glob: docs/modules/process.md
-  reason: ARCH102 cluster-3 split creates these new destination modules; docs anchor
-    already existed and moves with the symbols
-  actor: logan
-  at: '2026-09-01'
-- op: remove
-  glob: docs/modules/process.md
-  reason: frob.lock/gates/__init__.py are genuinely touched by the split tool's own
-    reference-repoint pass (docstring/import citations of moved symbols); T-draft-d028adeb/ticket.md
-    is this ticket's own unblock dependency now promoted to T-3650 -- docs/modules/process.md
-    removed again, its SCOPE002 closure pulls in the whole process package (T-1010-precedent
-    scope-closure tension), out of proportion for this split
-  actor: logan
-  at: '2026-09-01'
-- op: add
-  glob: frob.lock
-  reason: frob.lock/gates/__init__.py are genuinely touched by the split tool's own
-    reference-repoint pass (docstring/import citations of moved symbols); T-draft-d028adeb/ticket.md
-    is this ticket's own unblock dependency now promoted to T-3650 -- docs/modules/process.md
-    removed again, its SCOPE002 closure pulls in the whole process package (T-1010-precedent
-    scope-closure tension), out of proportion for this split
-  actor: logan
-  at: '2026-09-01'
-- op: add
-  glob: src/frob/gates/__init__.py
-  reason: frob.lock/gates/__init__.py are genuinely touched by the split tool's own
-    reference-repoint pass (docstring/import citations of moved symbols); T-draft-d028adeb/ticket.md
-    is this ticket's own unblock dependency now promoted to T-3650 -- docs/modules/process.md
-    removed again, its SCOPE002 closure pulls in the whole process package (T-1010-precedent
-    scope-closure tension), out of proportion for this split
-  actor: logan
-  at: '2026-09-01'
-- op: add
-  glob: tickets/T-draft-d028adeb/ticket.md
-  reason: frob.lock/gates/__init__.py are genuinely touched by the split tool's own
-    reference-repoint pass (docstring/import citations of moved symbols); T-draft-d028adeb/ticket.md
-    is this ticket's own unblock dependency now promoted to T-3650 -- docs/modules/process.md
-    removed again, its SCOPE002 closure pulls in the whole process package (T-1010-precedent
-    scope-closure tension), out of proportion for this split
+  glob: design/frob.strata
+  reason: T-3628 moved _worker_inherits_hold's os.environ.get read from _lock.py (already
+    declared 'env' broadly) into _derived_lock.py; SELFAUDIT001/SYS100 requires the
+    specific env.read capability declared for the new file too
   actor: logan
   at: '2026-09-01'
 body_changes:
@@ -101,6 +50,12 @@ body_changes:
   at: '2026-09-01'
   old_length: 765
   new_length: 2455
+evidence:
+- tests/unit/test_process_lock.py::TestDerivedStateLock::test_two_threads_serialize_exclusive
+- tests/unit/test_process_lock.py::TestDerivedStateWriteLock::test_standalone_rebuild_takes_exclusive
+- tests/unit/test_process_lock.py::TestPortableFlock::test_windows_blocking_reentry_raises_instead_of_hanging_forever
+- tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_real_pool_worker_under_parent_shared_holder_completes
+- tests/unit/test_process_lock.py::TestDerivedStateLockPlatformBackends::test_no_lock_primitive_refuses_loudly
 designated_repro_test: null
 threat: null
 component: null
