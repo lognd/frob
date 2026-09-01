@@ -1,7 +1,7 @@
 ---
 id: T-3651
 title: 'win32: CREATE_NO_WINDOW on tool spawns to stop console-shared SIGINT'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'

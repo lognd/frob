@@ -200,37 +200,46 @@ def _default_text_encoding(kwargs: dict[str, object]) -> dict[str, object]:
     return kwargs
 
 
-# frob:ticket T-3648
+# frob:ticket T-3651
 # frob:tests tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup.test_no_op_on_non_win32  # noqa: E501
 # frob:tests tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup.test_sets_new_process_group_on_win32  # noqa: E501
 # frob:tests tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup.test_never_overrides_an_explicit_creationflags  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup.test_sets_create_no_window_on_win32  # noqa: E501
 def _win32_isolate_console_group(kwargs: dict[str, object]) -> dict[str, object]:
     """On win32, default every `guarded_subprocess_run` spawn into its own
-    console process group (T-3648), unless a caller already set its own
-    `creationflags`.
+    console process group AND off any console entirely (T-3648, T-3651),
+    unless a caller already set its own `creationflags`.
 
-    T-3589's win32 saga: a `KeyboardInterrupt` gets injected into frob's
-    OWN main thread ~1.5s into `frob check`, with nothing external sending
-    Ctrl-C. Without `CREATE_NEW_PROCESS_GROUP`, a spawned child inherits
-    the PARENT's console process group -- so a console ctrl event (job-
-    object teardown, a CI runner's own cancel signal, anything) delivered
-    to that group reaches frob's own main process too, not just the
-    child, exactly matching a spuriously-injected `KeyboardInterrupt` with
-    no visible external Ctrl-C. This is the leading, code-evidenced
-    candidate this ticket names (every `frob.check` tool runner spawns
-    through this module's `guarded_subprocess_run`, and none of them
-    passed `creationflags` before this change) -- landed alongside the
-    `FROB_WIN32_SPAWN_DEBUG` instrumentation as proof-of-diagnosis; the
-    NEXT win32 CI run is the confirming measurement (see the ticket body
-    for what a clean run should show). A no-op on every non-win32
-    platform and whenever a caller already supplies its own
-    `creationflags` (never override an explicit caller choice)."""
+    T-3589's win32 saga, round 14 (T-3651): T-3648's `CREATE_NEW_PROCESS_
+    GROUP`-only fix was NOT enough -- run 33513484322's diag caught the
+    real signal, `T-3648-SIGNAL: received SIGINT (signum=2)`, ~1.5s in,
+    immediately after the first tool spawns (`FROB_WIN32_SPAWN_DEBUG`
+    showed `git rev-parse` and `ruff format --check .` spawned with
+    `creationflags=512`, i.e. `CREATE_NEW_PROCESS_GROUP` alone was
+    applied). A NEW process group still SHARES THE CONSOLE with its
+    parent: any console-attached child (or its runtime, e.g. a `uv` shim)
+    that calls `GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0)` signals EVERY
+    process attached to that console, groups notwithstanding -- so the
+    tool child itself was the plausible sender, not an external source.
+    `CREATE_NO_WINDOW` (0x08000000) detaches the child from any console
+    at all, so it has no console to send a ctrl event through. frob's
+    check pipeline's children are all non-interactive with piped stdio
+    (`stdout`/`stderr` captured or redirected by every caller of
+    `guarded_subprocess_run`), so no functionality is lost by giving them
+    no console. Combined with `CREATE_NEW_PROCESS_GROUP` (kept for
+    defense in depth against any other ctrl-event path). A no-op on every
+    non-win32 platform and whenever a caller already supplies its own
+    `creationflags` (never override an explicit caller choice). The NEXT
+    win32 CI run is the confirming measurement (see T-3651's ticket body
+    for what a clean run should show)."""
     if sys.platform != "win32":
         return kwargs
     if "creationflags" in kwargs:
         return kwargs
     kwargs = dict(kwargs)
-    kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+    kwargs["creationflags"] = (  # type: ignore[attr-defined]
+        subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW
+    )
     return kwargs
 
 

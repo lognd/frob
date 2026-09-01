@@ -130,15 +130,21 @@ class TestGuardedSubprocessRun:
         assert result.danger_ok.stdout.strip() == "hi"
 
 
-# frob:ticket T-2953
+# frob:ticket T-3651
 class TestWin32IsolateConsoleGroup:
-    """T-3648: win32 frob check saga -- a spawned child inheriting frob's
-    own console process group lets a console ctrl event delivered to that
-    group reach frob's own main process too, not just the child, matching
-    the spuriously-injected `KeyboardInterrupt` T-3648's diag caught with
-    no visible external Ctrl-C. `guarded_subprocess_run` now defaults every
-    win32 spawn into its own process group unless a caller already set an
-    explicit `creationflags`."""
+    """T-3648/T-3651: win32 frob check saga -- a spawned child inheriting
+    frob's own console process group lets a console ctrl event delivered
+    to that group reach frob's own main process too, not just the child,
+    matching the spuriously-injected `KeyboardInterrupt` T-3648's diag
+    caught with no visible external Ctrl-C. T-3648's
+    `CREATE_NEW_PROCESS_GROUP`-only fix was NOT enough (run 33513484322
+    caught the real SIGINT immediately after a tool spawn) because a new
+    process group still SHARES THE CONSOLE with its parent -- any
+    console-attached child can signal every process on that console
+    regardless of group. `guarded_subprocess_run` now defaults every
+    win32 spawn into its own process group AND off any console entirely
+    (`CREATE_NO_WINDOW`), unless a caller already set an explicit
+    `creationflags`."""
 
     # frob:tests src/frob/process/_guard.py::_win32_isolate_console_group
     def test_no_op_on_non_win32(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -151,14 +157,38 @@ class TestWin32IsolateConsoleGroup:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setattr("frob.process._guard.sys.platform", "win32")
-        fake_flag = object()
         monkeypatch.setattr(
             "frob.process._guard.subprocess.CREATE_NEW_PROCESS_GROUP",
-            fake_flag,
+            0x00000200,
+            raising=False,
+        )
+        monkeypatch.setattr(
+            "frob.process._guard.subprocess.CREATE_NO_WINDOW",
+            0x08000000,
             raising=False,
         )
         result = _win32_isolate_console_group({"capture_output": True})
-        assert result["creationflags"] is fake_flag
+        assert result["creationflags"] == 0x00000200 | 0x08000000
+
+    # frob:tests src/frob/process/_guard.py::_win32_isolate_console_group
+    def test_sets_create_no_window_on_win32(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("frob.process._guard.sys.platform", "win32")
+        monkeypatch.setattr(
+            "frob.process._guard.subprocess.CREATE_NEW_PROCESS_GROUP",
+            0x00000200,
+            raising=False,
+        )
+        monkeypatch.setattr(
+            "frob.process._guard.subprocess.CREATE_NO_WINDOW",
+            0x08000000,
+            raising=False,
+        )
+        result = _win32_isolate_console_group({})
+        flags = result["creationflags"]
+        assert isinstance(flags, int)
+        assert flags & 0x08000000
 
     # frob:tests src/frob/process/_guard.py::_win32_isolate_console_group
     def test_never_overrides_an_explicit_creationflags(
