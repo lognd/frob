@@ -40,6 +40,15 @@ scope_changes:
     doc-anchor repoint fix
   actor: logan
   at: '2026-09-01'
+body_changes:
+- mode: append
+  reason: BUG002 no-behavior-change for a doc-anchor-only fix
+  actor: logan
+  at: '2026-09-01'
+  old_length: 1861
+  new_length: 2410
+evidence:
+- tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
 designated_repro_test: null
 threat: null
 component: null
@@ -66,3 +75,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DOC006  docs/modules/gates.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:no-behavior-change reason="pure doc-text fix: repoints 5 stale tests/test_gates.py::Class citations in docs/modules/gates.md to their post-T-3586-split tests/gates_suite/ homes; the COV008 and 3-file DOC006 findings this ticket was filed for do not reproduce statically (COV008 is diff-scoped to the moment of the split commit itself; DOC006 already resolved to 0 for check-fix-engine.md/macos-portability.md by the time this ticket started -- only gates.md carried live stale pointers, now fixed). No gate logic or runtime behavior changes."
