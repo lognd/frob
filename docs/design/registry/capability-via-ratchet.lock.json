@@ -226,14 +226,14 @@
       "ticket": "T-3029"
     },
     "testsuite::eval": {
-      "accepted_count": 14,
-      "reason": "T-3618: T-3586's split removed the now-dead tests/test_gates.py via entry (the file no longer exists, its content moved to tests/gates_suite/*.py, none of which observe eval); measured live via-list count.",
-      "ticket": "T-3618"
+      "accepted_count": 26,
+      "reason": "T-3592: T-1201 split of tests/unit/test_arch.py into tests/unit/arch_suite/ moved its eval/exec/fs.read/fs.write/net-observing test code across 11 new files plus conftest.py; via-list entries relocated 1:1 in the same diff. Measured live via-list count.",
+      "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 261,
-      "reason": "T-3591: same split, exec via-list relocation -- measured live via-list count.",
-      "ticket": "T-3591"
+      "accepted_count": 273,
+      "reason": "T-3592: same split, exec via-list relocation -- measured live via-list count.",
+      "ticket": "T-3592"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -246,14 +246,14 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 196,
-      "reason": "T-3591: same split, fs.read via-list relocation -- measured live via-list count.",
-      "ticket": "T-3591"
+      "accepted_count": 208,
+      "reason": "T-3592: same split, fs.read via-list relocation -- measured live via-list count.",
+      "ticket": "T-3592"
     },
     "testsuite::fs.write": {
-      "accepted_count": 446,
-      "reason": "T-3591: same split, fs.write via-list relocation -- measured live via-list count.",
-      "ticket": "T-3591"
+      "accepted_count": 458,
+      "reason": "T-3592: same split, fs.write via-list relocation -- measured live via-list count.",
+      "ticket": "T-3592"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
@@ -261,9 +261,9 @@
       "ticket": "T-1628"
     },
     "testsuite::net": {
-      "accepted_count": 14,
-      "reason": "T-3618: T-3586's tests/test_gates.py split relocated content into tests/gates_suite/*.py -- removes the now-dead tests/test_gates.py via entry and adds the real net(.connect) sites the split's own files exercise (test_fix_engine.py, test_sys.py); measured live via-list count.",
-      "ticket": "T-3618"
+      "accepted_count": 26,
+      "reason": "T-3592: same split, net via-list relocation -- measured live via-list count.",
+      "ticket": "T-3592"
     },
     "testsuite::net-mutate": {
       "accepted_count": 1,

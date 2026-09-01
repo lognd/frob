@@ -92,9 +92,9 @@ evidence:
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_does_not_mark_unresolved_public_looking_call
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_default_preserves_old_silent_omission_behavior
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_resolved_private_callee_is_not_also_unresolved
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_resource_declarations_populate_acquired_released_escaped
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_resource_sets_join_transitively_through_a_caller
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_resource_sets_join_across_a_recursive_cluster
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_leaf_resource_declarations_populate_acquired_released_escaped
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_resource_sets_join_transitively_through_a_caller
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_resource_sets_join_across_a_recursive_cluster
 - tests/unit/graph/test_dsl.py::TestResourceDirectives::test_acquire_release_escapes_round_trip
 - tests/unit/graph/test_dsl.py::TestResourceDirectives::test_acquire_missing_target_is_malformed
 designated_repro_test: null

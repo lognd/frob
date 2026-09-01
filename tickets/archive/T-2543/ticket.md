@@ -69,19 +69,19 @@ scope_changes:
   actor: logan
   at: '2026-08-18'
 evidence:
-- tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
-- tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing
-- tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration
-- tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
-- tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_provenance_propagates_through_callees
-- tests/unit/test_arch.py::TestSubscriptProvenance::test_type_with_a_confirmed_source_is_not_subscript_derived
-- tests/unit/test_arch.py::TestSubscriptProvenance::test_slice_only_function_has_no_subscript_provenance
+- tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
+- tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing
+- tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration
+- tests/unit/arch_suite/test_guards.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
+- tests/unit/arch_suite/test_guards.py::TestSubscriptProvenance::test_subscript_provenance_propagates_through_callees
+- tests/unit/arch_suite/test_guards.py::TestSubscriptProvenance::test_type_with_a_confirmed_source_is_not_subscript_derived
+- tests/unit/arch_suite/test_guards.py::TestSubscriptProvenance::test_slice_only_function_has_no_subscript_provenance
 - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_subscript_only_leak_fires_exhaust004_not_exhaust002
 - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_confirmed_and_subscript_leaks_split_across_both_rules
-designated_repro_test: tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
+designated_repro_test: tests/unit/arch_suite/test_guards.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
 designated_repro_changes:
-- old_value: tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
-  new_value: tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
+- old_value: tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
+  new_value: tests/unit/arch_suite/test_guards.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
   reason: 'The previous designation (test_int_does_not_contribute_type_error) belonged
     to the Class B half, which split out to T-2552 and landed there; it can no longer
     fail at this ticket''s parent because its fix is already on main. This ticket''s
@@ -101,11 +101,11 @@ acceptance:
 - text: given a python function whose only subscript indexes a statically list-shaped
     value, when compute_may_raise resolves it, then the leaked set does not name KeyError
   evidence:
-  - tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
+  - tests/unit/arch_suite/test_guards.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
 - text: given a python function that calls int() on a statically str-typed value,
     when compute_may_raise resolves it, then the leaked set does not name TypeError
   evidence:
-  - tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
+  - tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
 - text: given this repo's own source, when the exhaustive_handling gate runs unbudgeted
     with the gate cache bypassed, then the EXHAUST002 count is below 25
   evidence:

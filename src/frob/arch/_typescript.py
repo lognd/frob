@@ -696,7 +696,7 @@ def _ts_build_module(tree: object, rel: str) -> NormalizedModule:
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
-# frob:tests tests/unit/test_arch.py::TestTypeScriptAdapter.test_adapt_stays_sane_on_realistic_snippet  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter.test_adapt_stays_sane_on_realistic_snippet  # noqa: E501
 class TypeScriptAdapter:
     """`LanguageAdapter` (T-0609) for TypeScript (T-0611, phase 2 T-0681):
     maps a `raw_tree`-parsed `.ts`/`.tsx` file's tree-sitter `Tree` onto a
@@ -709,7 +709,7 @@ class TypeScriptAdapter:
     language = "typescript"
 
     # frob:doc docs/modules/arch.md#normalized-code-model
-    # frob:tests tests/unit/test_arch.py::TestTypeScriptAdapter.test_adapt_stays_sane_on_realistic_snippet  # noqa: E501
+    # frob:tests tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter.test_adapt_stays_sane_on_realistic_snippet  # noqa: E501
     def adapt(self, tree: object, source: bytes, rel: str) -> NormalizedModule:
         """Build the `NormalizedModule` for one parsed TypeScript file
         (`tree`, `rel`) -- `source` is unused since tree-sitter `Node.text`

@@ -123,12 +123,12 @@ every merge-touched file.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_dataclass_boilerplate_recommends_dataclass` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLayeringViolations::test_disallowed_cross_layer_edge_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestModuleDependencyCycles::test_two_file_import_cycle_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_dataclass_boilerplate_recommends_dataclass` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestLayeringViolations::test_disallowed_cross_layer_edge_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestModuleDependencyCycles::test_two_file_import_cycle_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_honors_graph_excludes` (pytest node id, verified passing when recorded)
 - `tests/test_gates_fmt_directives.py::TestFormatPaths::test_check_mode_reports_without_writing` (pytest node id, verified passing when recorded)
 - `tests/test_pii_structural_gate.py::TestFieldNames::test_password_field_fires` (pytest node id, verified passing when recorded)

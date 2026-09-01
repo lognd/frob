@@ -69,7 +69,7 @@ diffstat again -- corrected here to `git diff main --stat` scoped to
 this ticket's own three files, run and observed directly.)
 
 ### Evidence
-- `tests/unit/test_arch.py::TestRustAdapter::test_adapt_enum_variant_payload_shapes` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestRustAdapter::test_adapt_enum_variant_payload_shapes` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s), plus the full

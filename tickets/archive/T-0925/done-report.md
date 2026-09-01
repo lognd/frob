@@ -16,7 +16,7 @@ evidence surface) per the playbook's recurring gotcha.
 (no changed files detected)
 
 ### Evidence
-- `tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

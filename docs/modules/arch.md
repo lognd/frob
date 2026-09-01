@@ -1361,7 +1361,7 @@ could quiet it); T-0767 discharged the real-repo hit the only sanctioned
 way -- restructuring, hoisting each pool's construction into its own
 helper (`_open_process_pool` / `_run_thread_jobs`) so no single function
 contains the co-occurrence -- and
-`tests/unit/test_arch.py::TestForkPoolHazards.
+`tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards.
 test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs` now
 regression-locks `src/frob/gates` at zero hazard findings, while the
 synthetic fixtures keep proving each detector fires.
@@ -2045,7 +2045,7 @@ into the `"archgate"` entry of `GateStats.examined_sites`.
 <!-- frob:describes src/frob/arch/_models.py::ArchResult.as_text -->
 <!-- frob:describes src/frob/arch/_models.py::ArchResult.as_json -->
 `as_text`/`as_json` are the two render paths every CLI output mode uses;
-covered by `tests/unit/test_arch.py::TestArchResultFormat`.
+covered by `tests/unit/arch_suite/test_dispatch.py::TestArchResultFormat`.
 
 ## Configuration: `frob.toml` `[arch]` table (T-0373)
 

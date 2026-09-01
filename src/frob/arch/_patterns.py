@@ -203,7 +203,7 @@ _MIN_MANUAL_DECORATOR_WRAPS = 3
 
 
 # frob:doc docs/modules/arch.md#design-pattern-registry
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_isinstance_chain_recommends_strategy  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_isinstance_chain_recommends_strategy  # noqa: E501
 @dataclass(frozen=True)
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 class _PatternRuleSpec:
@@ -533,7 +533,7 @@ def _find_if_statements(node: Node) -> list[Node]:
 
 
 # frob:doc docs/modules/arch.md#ocp-checks
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_isinstance_chain_recommends_strategy  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_isinstance_chain_recommends_strategy  # noqa: E501
 # frob:tests tests/unit/test_arch_ocp.py::TestTypeDispatchSmell.test_isinstance_chain_flags_ocp_violation  # noqa: E501
 def iter_type_switch_chains(
     tree: object, if_stmts: list[Node] | None = None
@@ -605,7 +605,7 @@ def _check_type_switch(
 _STATE_ATTR_HINTS = ("state", "status", "mode", "phase", "stage")
 
 
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_state_field_chain_recommends_state_machine  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_state_field_chain_recommends_state_machine  # noqa: E501
 def _check_state_field_chain(
     tree: object,
     rel: str,
@@ -662,7 +662,7 @@ def _init_params(func_node: Node) -> list[Node]:
     ]
 
 
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_telescoping_ctor_recommends_builder  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_telescoping_ctor_recommends_builder  # noqa: E501
 def _check_telescoping_ctor(tree: object, rel: str, out: list[ArchSuggestion]) -> None:
     """HALLMARK->PATTERN: an `__init__` with many (>=6) parameters, most
     (>=4) of them defaulted, recommends a Builder (T-0332) -- a handful of
@@ -735,7 +735,7 @@ def _collect_constructions(node: Node, out: set[str]) -> None:
         _collect_constructions(c, out)
 
 
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_scattered_construction_across_files_recommends_factory  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_scattered_construction_across_files_recommends_factory  # noqa: E501
 def _collect_file_constructions(
     tree: object, rel: str, out: dict[str, set[str]]
 ) -> None:
@@ -853,7 +853,7 @@ def _find_inner_attr(init_func: Node) -> str | None:
     return None
 
 
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_wrap_delegate_recommends_decorator  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_wrap_delegate_recommends_decorator  # noqa: E501
 def _check_wrap_delegate(tree: object, rel: str, out: list[ArchSuggestion]) -> None:
     """HALLMARK->PATTERN: a class that stores one constructor-parameter
     object as `self.<attr>` and has >=3 methods whose entire body is a
@@ -902,7 +902,7 @@ def _check_wrap_delegate(tree: object, rel: str, out: list[ArchSuggestion]) -> N
         )
 
 
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_god_class_pairs_with_srp_escape  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_god_class_pairs_with_srp_escape  # noqa: E501
 def _check_god_object_escape(
     suggestions: list[ArchSuggestion], out: list[ArchSuggestion]
 ) -> None:
@@ -932,7 +932,7 @@ def _identifier_string_equality(cond: Node) -> tuple[str, str] | None:
     return lhs, literal
 
 
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_stringly_typed_recommends_newtype  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_stringly_typed_recommends_newtype  # noqa: E501
 def _check_stringly_typed(
     tree: object,
     rel: str,
@@ -1008,8 +1008,8 @@ def _translation_target(func_node: Node, inner_attr: str, own_name: str) -> bool
     return bool(called_name) and called_name != own_name
 
 
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_translating_wrapper_recommends_adapter  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_mixed_delegate_and_translate_methods_fires_both  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_translating_wrapper_recommends_adapter  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_mixed_delegate_and_translate_methods_fires_both  # noqa: E501
 def _check_interface_translate(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:
@@ -1162,7 +1162,7 @@ def _calls_var(node: Node, var: str) -> bool:
 
 
 # frob:ticket T-0972
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_manual_callback_list_recommends_observer  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_manual_callback_list_recommends_observer  # noqa: E501
 def _check_manual_callback_list(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:
@@ -1259,7 +1259,7 @@ def _is_trivial_setter(func_node: Node) -> bool:
     )
 
 
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_anemic_accessors_recommends_move_behavior  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_anemic_accessors_recommends_move_behavior  # noqa: E501
 def _check_anemic_accessors(tree: object, rel: str, out: list[ArchSuggestion]) -> None:
     """ANTI-PATTERN->ESCAPE (T-0605): a class with >=3 non-`__init__`,
     non-dunder methods where EVERY one is a trivial getter or setter (no
@@ -1300,7 +1300,7 @@ def _check_anemic_accessors(tree: object, rel: str, out: list[ArchSuggestion]) -
         )
 
 
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_dataclass_boilerplate_recommends_dataclass  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_dataclass_boilerplate_recommends_dataclass  # noqa: E501
 def _check_dataclass_boilerplate(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:
@@ -1481,7 +1481,7 @@ def _is_manual_decorator_wrap(c: Node, nxt: Node | None) -> bool:
     )
 
 
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_manual_decorator_wrap_recommends_decorator_syntax  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_manual_decorator_wrap_recommends_decorator_syntax  # noqa: E501
 def _check_manual_decorator_wrap(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:
@@ -1522,7 +1522,7 @@ def _check_manual_decorator_wrap(
 
 
 # frob:doc docs/modules/arch.md#design-pattern-registry
-# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_scattered_construction_across_files_recommends_factory  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.test_scattered_construction_across_files_recommends_factory  # noqa: E501
 def new_construction_accumulator() -> dict[str, set[str]]:
     """A fresh, empty accumulator for `_collect_file_constructions`'s
     cross-file class-construction corpus (T-0332) -- exposed so

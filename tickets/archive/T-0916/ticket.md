@@ -27,12 +27,12 @@ scope_changes:
   actor: logan
   at: '2026-07-26'
 evidence:
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_unresolvable_call_yields_unknown
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_reraise_resolves_to_caught_type
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_except_reraise_is_unknown
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_recursive_cycle_converges
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_ambiguous_method_name_across_classes_is_unresolved
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_unresolvable_call_yields_unknown
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_bare_reraise_resolves_to_caught_type
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_bare_except_reraise_is_unknown
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_recursive_cycle_converges
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_ambiguous_method_name_across_classes_is_unresolved
 designated_repro_test: null
 threat: null
 component: null

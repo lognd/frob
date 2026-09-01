@@ -16,11 +16,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestLargeFile::test_large_test_file_not_flagged
-- tests/unit/test_arch.py::TestLargeFile::test_large_src_file_still_flagged
-- tests/unit/test_arch.py::TestLargeFile::test_fixtures_json_not_flagged
-- tests/unit/test_arch.py::TestDeepNestingExemption::test_deeply_nested_test_file_no_finding
-- tests/unit/test_arch.py::TestDeepNestingExemption::test_equivalent_src_file_still_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_test_file_not_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_src_file_still_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_fixtures_json_not_flagged
+- tests/unit/arch_suite/test_complexity.py::TestDeepNestingExemption::test_deeply_nested_test_file_no_finding
+- tests/unit/arch_suite/test_complexity.py::TestDeepNestingExemption::test_equivalent_src_file_still_flagged
 designated_repro_test: null
 threat: null
 component: null

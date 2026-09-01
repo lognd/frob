@@ -74,8 +74,8 @@ class LayeringConfig(BaseModel):
     allow: dict[str, list[str]] = {}
 
     # frob:doc docs/modules/arch.md#dip-layering-contract
-    # frob:tests tests/unit/test_arch.py::TestLayeringConfig.test_layer_for_longest_prefix_match  # noqa: E501
-    # frob:tests tests/unit/test_arch.py::TestLayeringConfig.test_layer_for_unmatched_path_is_none  # noqa: E501
+    # frob:tests tests/unit/arch_suite/test_type_design.py::TestLayeringConfig.test_layer_for_longest_prefix_match  # noqa: E501
+    # frob:tests tests/unit/arch_suite/test_type_design.py::TestLayeringConfig.test_layer_for_unmatched_path_is_none  # noqa: E501
     def layer_for(self, rel: str) -> str | None:
         """The declared layer `rel` (a repo-relative POSIX path) belongs
         to, or `None` if no declared prefix matches (T-0620). When more
@@ -95,8 +95,8 @@ class LayeringConfig(BaseModel):
 
 
 # frob:doc docs/modules/arch.md#dip-layering-contract
-# frob:tests tests/unit/test_arch.py::TestLoadLayeringConfig.test_missing_frob_toml_returns_none  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestLoadLayeringConfig.test_parses_declared_layers_and_allow_table  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestLoadLayeringConfig.test_missing_frob_toml_returns_none  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestLoadLayeringConfig.test_parses_declared_layers_and_allow_table  # noqa: E501
 def load_layering_config(root: Path) -> LayeringConfig | None:
     """Read the `[arch.layering]` table from `root/frob.toml` (T-0620), or
     `None` if the file/table is absent or malformed -- same posture as
@@ -162,9 +162,9 @@ def _has_dynamic_import(path: Path) -> bool:
 
 
 # frob:doc docs/modules/arch.md#dip-layering-contract
-# frob:tests tests/unit/test_arch.py::TestLayeringViolations.test_disallowed_cross_layer_edge_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestLayeringViolations.test_allowed_cross_layer_edge_not_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestLayeringViolations.test_dynamic_import_in_layered_file_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestLayeringViolations.test_disallowed_cross_layer_edge_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestLayeringViolations.test_allowed_cross_layer_edge_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestLayeringViolations.test_dynamic_import_in_layered_file_flagged  # noqa: E501
 def check_layering_violations(
     root: Path, config: LayeringConfig
 ) -> list[ArchSuggestion]:
@@ -335,9 +335,9 @@ def _is_constructor_call(callee: str, class_names: frozenset[str]) -> str | None
 
 
 # frob:doc docs/modules/arch.md#no-di-construction-smell
-# frob:tests tests/unit/test_arch.py::TestNoDiConstructionSmell.test_inline_construction_outside_init_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestNoDiConstructionSmell.test_construction_inside_init_not_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestNoDiConstructionSmell.test_construction_inside_factory_function_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell.test_inline_construction_outside_init_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell.test_construction_inside_init_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell.test_construction_inside_factory_function_not_flagged  # noqa: E501
 def check_no_di_construction(module: NormalizedModule) -> list[ArchSuggestion]:
     """ARCHxxx (T-0620): flag every method whose OWN body (not counting
     nested functions) constructs a same-file concrete class inline

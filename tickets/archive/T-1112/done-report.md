@@ -11,7 +11,7 @@ Changed:
 - src/frob/arch/_python.py::_check_abstraction_opportunities -- added
   `_is_check_registry_family(members)` as a third skip alongside the
   existing dispatch-family/language-parity-family exclusions.
-- tests/unit/test_arch.py::TestCheckRegistryExclusion (new, 3 tests):
+- tests/unit/arch_suite/test_abstraction.py::TestCheckRegistryExclusion (new, 3 tests):
   a check_*+run_*_checks group is not flagged; a non-registry-named group
   with the identical shape still flags; the helper's regex matches both
   name shapes directly.
@@ -43,9 +43,9 @@ Re-measured per T-1068's before/after methodology:
   spot-checked.
 
 Evidence:
-- `tests/unit/test_arch.py::TestCheckRegistryExclusion::test_check_and_run_checks_names_not_flagged`
-- `tests/unit/test_arch.py::TestCheckRegistryExclusion::test_non_registry_named_group_still_flagged`
-- `tests/unit/test_arch.py::TestCheckRegistryExclusion::test_check_registry_regex_matches_both_shapes`
+- `tests/unit/arch_suite/test_abstraction.py::TestCheckRegistryExclusion::test_check_and_run_checks_names_not_flagged`
+- `tests/unit/arch_suite/test_abstraction.py::TestCheckRegistryExclusion::test_non_registry_named_group_still_flagged`
+- `tests/unit/arch_suite/test_abstraction.py::TestCheckRegistryExclusion::test_check_registry_regex_matches_both_shapes`
 - `pytest tests/unit/test_arch.py -q`: 260 passed, 0 failed (full file, not
   just the new class -- confirms no regression to the existing
   `_is_dispatch_family`/`_is_language_parity_family` exclusion tests or any
@@ -70,9 +70,9 @@ tests/unit/test_arch.py.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestCheckRegistryExclusion::test_check_and_run_checks_names_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestCheckRegistryExclusion::test_non_registry_named_group_still_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestCheckRegistryExclusion::test_check_registry_regex_matches_both_shapes` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestCheckRegistryExclusion::test_check_and_run_checks_names_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestCheckRegistryExclusion::test_non_registry_named_group_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestCheckRegistryExclusion::test_check_registry_regex_matches_both_shapes` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

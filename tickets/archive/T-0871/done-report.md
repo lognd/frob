@@ -21,7 +21,7 @@ mentions) across the repo:
   (tests/unit/test_arch.py), and documented as deliberate public
   advisory categories not yet wired into analyze_project's dispatch
   loop, same shape as the DIP-layering family which IS load-bearing in
-  tests/unit/test_arch.py::TestLayeringConfig etc; vet's
+  tests/unit/arch_suite/test_type_design.py::TestLayeringConfig etc; vet's
   resolve_capability_kind/canonical_declared_kind/expand_declared_kind/
   CapabilityModeError/non_executable_line_numbers, consumed by
   frob.strata; frob.tomlio.read_toml_lenient, consumed by frob.perf/

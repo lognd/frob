@@ -36,8 +36,8 @@ series), COV/DEPR/OPAQUE/REL/TEST/WAIVE items in unrelated files.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestMayRaiseResolver::test_curated_stdlib_c_extension_table_resolves_precisely` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_curated_stdlib_c_extension_table_resolves_precisely` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

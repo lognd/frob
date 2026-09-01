@@ -46,11 +46,11 @@ tests/unit/test_arch.py       | 5 new tests across 3 new test classes
 Collected via `pytest tests/unit/test_arch.py -p no:cacheprovider -q`
 (94 passed, full file) and `--collect-only` (all 5 node ids below
 resolved):
-- tests/unit/test_arch.py::TestFatInterface::test_mostly_stubbed_implementers_flag_fat_interface
-- tests/unit/test_arch.py::TestFatInterface::test_mostly_implemented_methods_not_flagged
-- tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_small_method_subset_flagged
-- tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_most_of_interface_not_flagged
-- tests/unit/test_arch.py::TestRunIspChecks::test_combines_both_checks
+- tests/unit/arch_suite/test_lsp.py::TestFatInterface::test_mostly_stubbed_implementers_flag_fat_interface
+- tests/unit/arch_suite/test_lsp.py::TestFatInterface::test_mostly_implemented_methods_not_flagged
+- tests/unit/arch_suite/test_lsp.py::TestNarrowClientUsage::test_client_using_small_method_subset_flagged
+- tests/unit/arch_suite/test_lsp.py::TestNarrowClientUsage::test_client_using_most_of_interface_not_flagged
+- tests/unit/arch_suite/test_lsp.py::TestRunIspChecks::test_combines_both_checks
 
 `frob check --only <lint|static|gates-fast|gates-native|gates-security>
 --ticket T-0619` (chunked loop): all five stage groups 0 errors.
@@ -76,11 +76,11 @@ scope cut T-0618/T-0616 already carry.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestFatInterface::test_mostly_stubbed_implementers_flag_fat_interface` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestFatInterface::test_mostly_implemented_methods_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_small_method_subset_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_most_of_interface_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestRunIspChecks::test_combines_both_checks` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestFatInterface::test_mostly_stubbed_implementers_flag_fat_interface` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestFatInterface::test_mostly_implemented_methods_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestNarrowClientUsage::test_client_using_small_method_subset_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestNarrowClientUsage::test_client_using_most_of_interface_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestRunIspChecks::test_combines_both_checks` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

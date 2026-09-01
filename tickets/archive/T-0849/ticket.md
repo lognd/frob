@@ -43,14 +43,14 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/unit/test_arch.py::TestPatternRecommender::test_dataclass_boilerplate_recommends_dataclass
-- tests/unit/test_arch.py::TestPatternRecommender::test_dataclass_boilerplate_with_computed_field_not_flagged
-- tests/unit/test_arch.py::TestPatternRecommender::test_dataclass_boilerplate_with_extra_method_not_flagged
-- tests/unit/test_arch.py::TestPatternRecommender::test_dataclass_boilerplate_with_decorated_extra_method_not_flagged
-- tests/unit/test_arch.py::TestPatternRecommender::test_already_dataclass_not_flagged
-- tests/unit/test_arch.py::TestPatternRecommender::test_manual_decorator_wrap_recommends_decorator_syntax
-- tests/unit/test_arch.py::TestPatternRecommender::test_two_manual_decorator_wraps_not_flagged
-- tests/unit/test_arch.py::TestPatternRecommender::test_decorator_syntax_wrap_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_dataclass_boilerplate_recommends_dataclass
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_dataclass_boilerplate_with_computed_field_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_dataclass_boilerplate_with_extra_method_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_dataclass_boilerplate_with_decorated_extra_method_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_already_dataclass_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_manual_decorator_wrap_recommends_decorator_syntax
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_two_manual_decorator_wraps_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_decorator_syntax_wrap_not_flagged
 - tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness::test_declared_total_is_346
 - tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness::test_audit_reports_exhausted
 - tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness::test_every_deferred_entry_targets_an_open_ticket

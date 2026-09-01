@@ -73,13 +73,13 @@ scope_changes:
   at: '2026-07-27'
 evidence:
 - tests/unit/perf/test_hotgraph.py::TestStackSampler::test_collects_at_least_one_sample_over_a_hot_loop
-- tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
-- tests/unit/test_arch.py::TestOverBroadExcept::test_bare_except_flagged
-- tests/unit/test_arch.py::TestDataClumps::test_same_three_keyword_group_at_three_sites_flagged
-- tests/unit/test_arch.py::TestTemporalCoupling::test_guard_clause_on_initialized_flag_flagged
-- tests/unit/test_arch.py::TestOverrideStrengthenedPrecondition::test_added_guard_raise_on_shared_param_flagged
-- tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_cross_field_guard_flagged
-- tests/unit/test_arch.py::TestPatternRecommender::test_manual_callback_list_recommends_observer
+- tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
+- tests/unit/arch_suite/test_logging.py::TestOverBroadExcept::test_bare_except_flagged
+- tests/unit/arch_suite/test_smells.py::TestDataClumps::test_same_three_keyword_group_at_three_sites_flagged
+- tests/unit/arch_suite/test_smells.py::TestTemporalCoupling::test_guard_clause_on_initialized_flag_flagged
+- tests/unit/arch_suite/test_lsp.py::TestOverrideStrengthenedPrecondition::test_added_guard_raise_on_shared_param_flagged
+- tests/unit/arch_suite/test_type_design.py::TestIllegalStatesRepresentable::test_bool_field_cross_field_guard_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_manual_callback_list_recommends_observer
 - tests/unit/test_arch_ocp.py::TestNonExhaustiveEnumMatch::test_missing_member_flagged
 - tests/test_gates_fmt_directives.py::TestCanonicalizeText::test_idempotent_on_already_canonical_text
 - tests/gates_suite/test_protocol.py::TestProtocolSummaryGate::test_real_repo_scan_runs_end_to_end_without_crashing

@@ -977,7 +977,7 @@ def _py_build_module(
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
-# frob:tests tests/unit/test_arch.py::TestPythonAdapter.test_adapt_arch_python_fixture_shape  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter.test_adapt_arch_python_fixture_shape  # noqa: E501
 class PythonAdapter:
     """`LanguageAdapter` (T-0609) for python: maps a `raw_tree`-parsed
     python file's tree-sitter `Tree` onto a `NormalizedModule` by reusing
@@ -991,7 +991,7 @@ class PythonAdapter:
     language = "python"
 
     # frob:doc docs/modules/arch.md#normalized-code-model
-    # frob:tests tests/unit/test_arch.py::TestPythonAdapter.test_adapt_arch_python_fixture_shape  # noqa: E501
+    # frob:tests tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter.test_adapt_arch_python_fixture_shape  # noqa: E501
     def adapt(self, tree: object, source: bytes, rel: str) -> NormalizedModule:
         """Build the `NormalizedModule` for one parsed python file (`tree`,
         `rel`) -- `source`'s decoded lines (T-0689) feed `_py_build_module`

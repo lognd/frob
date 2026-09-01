@@ -36,7 +36,7 @@ body_changes:
   old_length: 197
   new_length: 369
 evidence:
-- tests/unit/test_arch.py::TestNormalizedModel::test_hand_built_python_snippet_shape
+- tests/unit/arch_suite/test_lang_adapters.py::TestNormalizedModel::test_hand_built_python_snippet_shape
 designated_repro_test: null
 threat: null
 component: null

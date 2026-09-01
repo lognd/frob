@@ -54,8 +54,8 @@ Tests added (tests/unit/test_arch.py, class `TestDispatchFamilySuppression`):
   flags, and the message names all three functions.
 
 Evidence:
-- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity
-- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged
+- tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity
+- tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged
 - `uv run pytest tests/unit/test_arch.py -q -p no:cacheprovider` -- 24 passed
   (all of test_arch.py, including the two new tests above).
 - `uv run frob check --only arch 2>&1 | grep -c abstraction-opportunity` --

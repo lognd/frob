@@ -18,8 +18,8 @@ collect_cpp_tests family no longer false-positives).
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_form_language_spellings_normalize_to_short_tag` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_and_short_form_parity_group_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_long_form_language_spellings_normalize_to_short_tag` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_long_and_short_form_parity_group_not_flagged` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

@@ -128,8 +128,8 @@ def _has_nearby_log_call(calls: list[NormalizedCall], line: int) -> bool:
 
 
 # frob:doc docs/modules/arch.md#logging-discipline-checks
-# frob:tests tests/unit/test_arch.py::TestUnloggedErrorPath.test_catch_with_no_nearby_log_call_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestUnloggedErrorPath.test_catch_with_nearby_log_call_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestUnloggedErrorPath.test_catch_with_no_nearby_log_call_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestUnloggedErrorPath.test_catch_with_nearby_log_call_not_flagged  # noqa: E501
 def check_unlogged_error_path(module: NormalizedModule) -> list[ArchSuggestion]:
     """Unlogged error path (T-0622): flag an `except`/`catch` clause
     (`NormalizedFunction.catches`) or a `return`-of-`Err(...)` statement
@@ -196,9 +196,9 @@ def check_unlogged_error_path(module: NormalizedModule) -> list[ArchSuggestion]:
 
 
 # frob:doc docs/modules/arch.md#logging-discipline-checks
-# frob:tests tests/unit/test_arch.py::TestUnloggedBoundary.test_public_entry_point_with_no_log_call_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestUnloggedBoundary.test_boundary_call_with_no_nearby_log_call_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestUnloggedBoundary.test_private_function_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestUnloggedBoundary.test_public_entry_point_with_no_log_call_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestUnloggedBoundary.test_boundary_call_with_no_nearby_log_call_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestUnloggedBoundary.test_private_function_not_flagged  # noqa: E501
 def check_unlogged_boundary(module: NormalizedModule) -> list[ArchSuggestion]:
     """Unlogged boundary (T-0622): flag (a) a PUBLIC function/method (name
     not starting with `_`) whose own body has no log call anywhere
@@ -266,8 +266,8 @@ def check_unlogged_boundary(module: NormalizedModule) -> list[ArchSuggestion]:
 
 
 # frob:doc docs/modules/arch.md#logging-discipline-checks
-# frob:tests tests/unit/test_arch.py::TestPrintAsDiagnostic.test_print_call_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestPrintAsDiagnostic.test_print_call_in_cli_module_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestPrintAsDiagnostic.test_print_call_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestPrintAsDiagnostic.test_print_call_in_cli_module_not_flagged  # noqa: E501
 def check_print_as_diagnostic(module: NormalizedModule) -> list[ArchSuggestion]:
     """Print-as-diagnostic (T-0622): flag a `print(...)` call
     (`_is_print_call`) in a module whose repo-relative path is NOT a
@@ -314,7 +314,7 @@ def check_print_as_diagnostic(module: NormalizedModule) -> list[ArchSuggestion]:
 
 
 # frob:doc docs/modules/arch.md#logging-discipline-checks
-# frob:tests tests/unit/test_arch.py::TestRunLoggingChecks.test_combines_all_three_checks  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestRunLoggingChecks.test_combines_all_three_checks  # noqa: E501
 def run_logging_checks(module: NormalizedModule) -> list[ArchSuggestion]:
     """Run every ARCH1xx logging-discipline check (T-0622:
     `check_unlogged_error_path`, `check_unlogged_boundary`,

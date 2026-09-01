@@ -34,22 +34,22 @@ scope_changes:
   actor: logan
   at: '2026-07-26'
 evidence:
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_undeclared_ctypes_style_call_is_unknown
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_declared_raises_substitutes_for_opaque_boundary_call
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_declared_raises_empty_set_is_honored_not_treated_as_absent
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_curated_stdlib_c_extension_table_resolves_precisely
-- tests/unit/test_arch.py::TestPythonAdapter::test_adapt_parses_frob_raises_declaration_on_call_line
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_undeclared_ctypes_style_call_is_unknown
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_declared_raises_substitutes_for_opaque_boundary_call
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_declared_raises_empty_set_is_honored_not_treated_as_absent
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_curated_stdlib_c_extension_table_resolves_precisely
+- tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_parses_frob_raises_declaration_on_call_line
 designated_repro_test: null
 acceptance:
 - text: GIVEN a call into an undeclared ctypes function WHEN the resolver runs THEN
     Unknown appears in the caller's may-raise set; GIVEN the same call with a frob:raises
     declaration THEN the declared set substitutes
   evidence:
-  - tests/unit/test_arch.py::TestMayRaiseResolver::test_undeclared_ctypes_style_call_is_unknown
-  - tests/unit/test_arch.py::TestMayRaiseResolver::test_declared_raises_substitutes_for_opaque_boundary_call
-  - tests/unit/test_arch.py::TestMayRaiseResolver::test_declared_raises_empty_set_is_honored_not_treated_as_absent
-  - tests/unit/test_arch.py::TestMayRaiseResolver::test_curated_stdlib_c_extension_table_resolves_precisely
-  - tests/unit/test_arch.py::TestPythonAdapter::test_adapt_parses_frob_raises_declaration_on_call_line
+  - tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_undeclared_ctypes_style_call_is_unknown
+  - tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_declared_raises_substitutes_for_opaque_boundary_call
+  - tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_declared_raises_empty_set_is_honored_not_treated_as_absent
+  - tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_curated_stdlib_c_extension_table_resolves_precisely
+  - tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_parses_frob_raises_declaration_on_call_line
 threat: null
 component: null
 ---

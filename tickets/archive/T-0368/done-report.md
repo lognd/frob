@@ -23,11 +23,11 @@ Changed:
 
 Evidence (fresh `pytest --collect-only`, all pass under
 `uv run pytest tests/unit/test_arch.py -q`, 31/31):
-- tests/unit/test_arch.py::TestLargeFile::test_large_test_file_not_flagged
-- tests/unit/test_arch.py::TestLargeFile::test_large_src_file_still_flagged
-- tests/unit/test_arch.py::TestLargeFile::test_fixtures_json_not_flagged
-- tests/unit/test_arch.py::TestDeepNestingExemption::test_deeply_nested_test_file_no_finding
-- tests/unit/test_arch.py::TestDeepNestingExemption::test_equivalent_src_file_still_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_test_file_not_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_src_file_still_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_fixtures_json_not_flagged
+- tests/unit/arch_suite/test_complexity.py::TestDeepNestingExemption::test_deeply_nested_test_file_no_finding
+- tests/unit/arch_suite/test_complexity.py::TestDeepNestingExemption::test_equivalent_src_file_still_flagged
 
 Verification (measured, not estimated):
 - `uv run frob check --only arch 2>&1 | grep -E "large-file|deep-nesting" | grep -c "tests/"` -> 0

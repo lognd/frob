@@ -450,11 +450,11 @@ def _find_cycle(
 
 
 # frob:ticket T-0694
-# frob:tests tests/unit/test_arch.py::TestLockOrderingHazards.test_two_lock_ab_ba_cycle_fires_within_one_function  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestLockOrderingHazards.test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestLockOrderingHazards.test_consistent_global_order_does_not_fire  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestLockOrderingHazards.test_reentrant_same_lock_does_not_fire  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestLockOrderingHazards.test_unresolvable_lock_identity_is_advisory  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards.test_two_lock_ab_ba_cycle_fires_within_one_function  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards.test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards.test_consistent_global_order_does_not_fire  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards.test_reentrant_same_lock_does_not_fire  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards.test_unresolvable_lock_identity_is_advisory  # noqa: E501
 def _check_lock_ordering_hazards(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:

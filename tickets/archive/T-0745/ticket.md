@@ -36,32 +36,32 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_caller_summary_includes_callee_transitions
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_requires_and_transitions_join_across_two_hops
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_self_recursive_function_converges
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unresolved_callee_poisons_the_summary
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_poisoning_propagates_transitively_through_a_clean_caller
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_caller_summary_includes_callee_transitions
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_requires_and_transitions_join_across_two_hops
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_self_recursive_function_converges
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_unresolved_callee_poisons_the_summary
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_poisoning_propagates_transitively_through_a_clean_caller
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
 designated_repro_test: null
 acceptance:
 - text: GIVEN a recursive call cluster with transitions WHEN the fixpoint runs THEN
     summaries converge and match hand-computed values; GIVEN an unresolvable callee
     THEN the summary is poisoned and surfaces as an ERROR downstream, never silence
   evidence:
-  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
-  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_caller_summary_includes_callee_transitions
-  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_requires_and_transitions_join_across_two_hops
-  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint
-  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_self_recursive_function_converges
-  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unresolved_callee_poisons_the_summary
-  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_poisoning_propagates_transitively_through_a_clean_caller
-  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent
-  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned
-  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
+  - tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
+  - tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_caller_summary_includes_callee_transitions
+  - tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_requires_and_transitions_join_across_two_hops
+  - tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint
+  - tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_self_recursive_function_converges
+  - tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_unresolved_callee_poisons_the_summary
+  - tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_poisoning_propagates_transitively_through_a_clean_caller
+  - tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent
+  - tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned
+  - tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
 threat: null
 component: null
 ---

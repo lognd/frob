@@ -43,8 +43,8 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
-- tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
 - tests/gates_suite/test_run.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
 - tests/gates_suite/test_run.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
 - tests/gates_suite/test_run.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
@@ -54,8 +54,8 @@ acceptance:
     zero fork/pool-hazard warnings on src/frob/gates while the T-0581 process-pool/thread-pool
     split behavior is preserved and the real-repo negative case is a regression test
   evidence:
-  - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
-  - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
+  - tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
+  - tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
   - tests/gates_suite/test_run.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
   - tests/gates_suite/test_run.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
   - tests/gates_suite/test_run.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process

@@ -9,12 +9,12 @@ Coordinator widened scope to include _normalized.py and _python.py. Minimal mode
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestComprehensionGuardOrdering::test_trailing_if_clause_discharges_its_own_leading_expression` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestComprehensionGuardOrdering::test_different_comprehension_ids_do_not_discharge` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestComprehensionGuardOrdering::test_comprehension_branch_does_not_discharge_a_non_comprehension_call` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestComprehensionGuardOrdering::test_real_proc_scan_corpus_site_has_no_leaked_value_error` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPythonAdapter::test_adapt_tags_comprehension_branch_and_call_with_shared_id` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_guarded_int_call_discharges_value_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestComprehensionGuardOrdering::test_trailing_if_clause_discharges_its_own_leading_expression` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestComprehensionGuardOrdering::test_different_comprehension_ids_do_not_discharge` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestComprehensionGuardOrdering::test_comprehension_branch_does_not_discharge_a_non_comprehension_call` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestComprehensionGuardOrdering::test_real_proc_scan_corpus_site_has_no_leaked_value_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_tags_comprehension_branch_and_call_with_shared_id` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestIsdigitGuardDischarge::test_guarded_int_call_discharges_value_error` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 6 passed (from 6 evidence id(s))

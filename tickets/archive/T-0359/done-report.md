@@ -16,8 +16,8 @@ files -- only long-function, god-class, and abstraction-opportunity (the
 three categories T-0204/T-0359 named as test-nature noise) are exempted.
 
 Evidence:
-- tests/unit/test_arch.py::TestTestFileExemption::test_test_file_no_long_function_or_god_class
-- tests/unit/test_arch.py::TestTestFileExemption::test_equivalent_src_file_still_flagged
+- tests/unit/arch_suite/test_dispatch.py::TestTestFileExemption::test_test_file_no_long_function_or_god_class
+- tests/unit/arch_suite/test_dispatch.py::TestTestFileExemption::test_equivalent_src_file_still_flagged
 - tests/unit/test_arch.py::test_arch_end_to_end_analyze_then_render
 
 Measured counts (uv run frob check --only arch, full repo):

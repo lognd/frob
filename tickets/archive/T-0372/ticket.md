@@ -15,11 +15,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestLargeFile::test_large_json_data_not_flagged
-- tests/unit/test_arch.py::TestLargeFile::test_large_md_ledger_not_flagged
-- tests/unit/test_arch.py::TestLargeFile::test_large_py_src_still_flagged
-- tests/unit/test_arch.py::TestLargeFile::test_large_src_file_still_flagged
-- tests/unit/test_arch.py::TestLargeFile::test_large_test_file_not_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_json_data_not_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_md_ledger_not_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_py_src_still_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_src_file_still_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_test_file_not_flagged
 designated_repro_test: null
 threat: null
 component: null

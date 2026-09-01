@@ -471,11 +471,11 @@ def _unguarded_shared_write_finding(
 
 
 # frob:ticket T-0697
-# frob:tests tests/unit/test_arch.py::TestSharedStateRaceHazards.test_unguarded_write_from_thread_submitted_function_fires  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestSharedStateRaceHazards.test_same_write_under_with_lock_does_not_fire  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestSharedStateRaceHazards.test_write_reachable_via_callee_of_dispatched_function_fires  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestSharedStateRaceHazards.test_write_not_reachable_from_any_dispatch_does_not_fire  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestSharedStateRaceHazards.test_async_create_task_dispatch_fires_same_as_thread_submit  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards.test_unguarded_write_from_thread_submitted_function_fires  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards.test_same_write_under_with_lock_does_not_fire  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards.test_write_reachable_via_callee_of_dispatched_function_fires  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards.test_write_not_reachable_from_any_dispatch_does_not_fire  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards.test_async_create_task_dispatch_fires_same_as_thread_submit  # noqa: E501
 def _check_shared_state_race_hazards(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:

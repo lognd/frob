@@ -54,10 +54,10 @@ No file under src/frob/gates/** was touched.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_one_member_per_language_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[duplicate_rust_tag]` (pytest node id, renamed by T-1195's DUP002 fix; verified passing)
-- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[untagged_member]` (pytest node id, renamed by T-1195's DUP002 fix; verified passing)
-- `tests/unit/test_arch.py::TestLanguageParityExclusion::test_tag_requires_underscore_boundary` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_one_member_per_language_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[duplicate_rust_tag]` (pytest node id, renamed by T-1195's DUP002 fix; verified passing)
+- `tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[untagged_member]` (pytest node id, renamed by T-1195's DUP002 fix; verified passing)
+- `tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_tag_requires_underscore_boundary` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

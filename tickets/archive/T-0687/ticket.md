@@ -26,18 +26,18 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
-- tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_with_catch_all_does_not_fire
-- tests/unit/test_arch.py::TestCppMayThrow::test_non_noexcept_function_never_fires
-- tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_vector_at_fires_curated_thrower
+- tests/unit/arch_suite/test_misc.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
+- tests/unit/arch_suite/test_misc.py::TestCppMayThrow::test_noexcept_with_catch_all_does_not_fire
+- tests/unit/arch_suite/test_misc.py::TestCppMayThrow::test_non_noexcept_function_never_fires
+- tests/unit/arch_suite/test_misc.py::TestCppMayThrow::test_noexcept_calling_vector_at_fires_curated_thrower
 designated_repro_test: null
 acceptance:
 - text: GIVEN a noexcept function calling a may-throw callee WHEN the analysis runs
     THEN an error finding names the call site AND a try/catch(...) boundary discharges
     Unknown
   evidence:
-  - tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
-  - tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_with_catch_all_does_not_fire
+  - tests/unit/arch_suite/test_misc.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
+  - tests/unit/arch_suite/test_misc.py::TestCppMayThrow::test_noexcept_with_catch_all_does_not_fire
 threat: null
 component: null
 ---

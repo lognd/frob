@@ -49,8 +49,8 @@ def _bool_field_names(cls: NormalizedClass) -> set[str]:
 
 # frob:doc docs/modules/arch.md#type-driven-design-checks
 # frob:ticket T-0972
-# frob:tests tests/unit/test_arch.py::TestIllegalStatesRepresentable.test_bool_field_cross_field_guard_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestIllegalStatesRepresentable.test_bool_field_alone_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestIllegalStatesRepresentable.test_bool_field_cross_field_guard_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestIllegalStatesRepresentable.test_bool_field_alone_not_flagged  # noqa: E501
 def check_illegal_states_representable(
     module: NormalizedModule,
 ) -> list[ArchSuggestion]:
@@ -136,8 +136,8 @@ def _primitive_param_names(func: NormalizedFunction) -> list[str]:
 
 
 # frob:doc docs/modules/arch.md#type-driven-design-checks
-# frob:tests tests/unit/test_arch.py::TestPrimitiveObsession.test_three_plus_raw_params_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestPrimitiveObsession.test_two_raw_params_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestPrimitiveObsession.test_three_plus_raw_params_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestPrimitiveObsession.test_two_raw_params_not_flagged  # noqa: E501
 def check_primitive_obsession(module: NormalizedModule) -> list[ArchSuggestion]:
     """Primitive obsession (T-0621): flag a function/method whose
     signature carries at least `PRIMITIVE_OBSESSION_MIN_PARAMS` (3) raw
@@ -188,8 +188,8 @@ def check_primitive_obsession(module: NormalizedModule) -> list[ArchSuggestion]:
 
 
 # frob:doc docs/modules/arch.md#type-driven-design-checks
-# frob:tests tests/unit/test_arch.py::TestParseDontValidate.test_validates_then_returns_same_type_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestParseDontValidate.test_validates_then_returns_refined_type_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestParseDontValidate.test_validates_then_returns_same_type_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestParseDontValidate.test_validates_then_returns_refined_type_not_flagged  # noqa: E501
 def check_parse_dont_validate(module: NormalizedModule) -> list[ArchSuggestion]:
     """Parse-dont-validate (T-0621): flag a function/method with EXACTLY
     one non-receiver parameter whose body guards it (a branch mentioning
@@ -255,8 +255,8 @@ def check_parse_dont_validate(module: NormalizedModule) -> list[ArchSuggestion]:
 
 
 # frob:doc docs/modules/arch.md#type-driven-design-checks
-# frob:tests tests/unit/test_arch.py::TestBooleanFlagParam.test_public_function_branching_on_bool_param_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestBooleanFlagParam.test_private_function_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestBooleanFlagParam.test_public_function_branching_on_bool_param_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestBooleanFlagParam.test_private_function_not_flagged  # noqa: E501
 def check_boolean_flag_param(module: NormalizedModule) -> list[ArchSuggestion]:
     """Boolean/flag parameter (T-0621): flag a PUBLIC (name not starting
     with `_`) function/method with a `bool`-typed parameter that its OWN
@@ -312,7 +312,7 @@ def check_boolean_flag_param(module: NormalizedModule) -> list[ArchSuggestion]:
 
 
 # frob:doc docs/modules/arch.md#type-driven-design-checks
-# frob:tests tests/unit/test_arch.py::TestRunTypeDesignChecks.test_combines_all_four_checks  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_type_design.py::TestRunTypeDesignChecks.test_combines_all_four_checks  # noqa: E501
 def run_typedesign_checks(module: NormalizedModule) -> list[ArchSuggestion]:
     """Run every ARCH1xx type-driven-design check (T-0621:
     `check_illegal_states_representable`, `check_primitive_obsession`,

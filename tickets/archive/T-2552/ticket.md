@@ -39,24 +39,24 @@ scope_changes:
   actor: logan
   at: '2026-08-18'
 evidence:
-- tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
-- tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing
-- tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration
-designated_repro_test: tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
+- tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
+- tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing
+- tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration
+designated_repro_test: tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
 acceptance:
 - text: given a function that calls int() or float(), when compute_may_raise resolves
     it, then the leaked set contains ValueError and not TypeError
   evidence:
-  - tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
+  - tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
 - text: given a function that calls getattr() with a default argument, when compute_may_raise
     resolves it, then the leaked set does not contain AttributeError, while the two-argument
     form still contributes it
   evidence:
-  - tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing
+  - tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing
 - text: given a function that calls next() with a default argument, when compute_may_raise
     resolves it, then the leaked set does not contain StopIteration
   evidence:
-  - tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration
+  - tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration
 threat: null
 component: null
 anchor: false

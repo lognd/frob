@@ -31,16 +31,16 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/unit/test_arch.py::TestUnhandledResult::test_bare_statement_call_to_result_function_flagged
-- tests/unit/test_arch.py::TestUnhandledResult::test_returned_call_to_result_function_not_flagged
-- tests/unit/test_arch.py::TestSwallowedException::test_bare_except_with_no_reaction_flagged
-- tests/unit/test_arch.py::TestSwallowedException::test_except_with_nearby_log_call_not_flagged
-- tests/unit/test_arch.py::TestRecoverableErrorWrongSignature::test_raises_value_error_without_result_signature_flagged
-- tests/unit/test_arch.py::TestRecoverableErrorWrongSignature::test_raises_value_error_with_result_signature_not_flagged
-- tests/unit/test_arch.py::TestOverBroadExcept::test_bare_except_flagged
-- tests/unit/test_arch.py::TestOverBroadExcept::test_specific_except_not_flagged
-- tests/unit/test_arch.py::TestOverBroadExcept::test_reraise_with_different_type_loses_context_flagged
-- tests/unit/test_arch.py::TestRunFallibilityChecks::test_combines_all_four_checks
+- tests/unit/arch_suite/test_logging.py::TestUnhandledResult::test_bare_statement_call_to_result_function_flagged
+- tests/unit/arch_suite/test_logging.py::TestUnhandledResult::test_returned_call_to_result_function_not_flagged
+- tests/unit/arch_suite/test_logging.py::TestSwallowedException::test_bare_except_with_no_reaction_flagged
+- tests/unit/arch_suite/test_logging.py::TestSwallowedException::test_except_with_nearby_log_call_not_flagged
+- tests/unit/arch_suite/test_logging.py::TestRecoverableErrorWrongSignature::test_raises_value_error_without_result_signature_flagged
+- tests/unit/arch_suite/test_logging.py::TestRecoverableErrorWrongSignature::test_raises_value_error_with_result_signature_not_flagged
+- tests/unit/arch_suite/test_logging.py::TestOverBroadExcept::test_bare_except_flagged
+- tests/unit/arch_suite/test_logging.py::TestOverBroadExcept::test_specific_except_not_flagged
+- tests/unit/arch_suite/test_logging.py::TestOverBroadExcept::test_reraise_with_different_type_loses_context_flagged
+- tests/unit/arch_suite/test_logging.py::TestRunFallibilityChecks::test_combines_all_four_checks
 designated_repro_test: null
 threat: null
 component: null

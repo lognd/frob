@@ -18,10 +18,10 @@ Extended NormalizedCallArg with a raw text field (ident's superset -- entry.name
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_guarded_int_call_discharges_value_error` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_unguarded_int_call_still_raises_value_error` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_isdigit_guard_on_a_different_expression_does_not_discharge` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_guard_several_unrelated_branches_before_the_call_still_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestIsdigitGuardDischarge::test_guarded_int_call_discharges_value_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestIsdigitGuardDischarge::test_unguarded_int_call_still_raises_value_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestIsdigitGuardDischarge::test_isdigit_guard_on_a_different_expression_does_not_discharge` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestIsdigitGuardDischarge::test_guard_several_unrelated_branches_before_the_call_still_discharges` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

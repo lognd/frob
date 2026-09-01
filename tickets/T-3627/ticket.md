@@ -49,8 +49,8 @@ scope_changes:
   actor: logan
   at: '2026-09-01'
 evidence:
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_curated_stdlib_c_extension_table_resolves_precisely
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_curated_stdlib_c_extension_table_resolves_precisely
 designated_repro_test: null
 threat: null
 component: null

@@ -43,12 +43,12 @@ pydantic round-trip check.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_interface_declaration` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_enum_declaration` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_type_alias_declaration` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_exported_interface_enum_type_alias` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_tsx_component` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_class_bases_and_fields` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_interface_declaration` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_enum_declaration` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_type_alias_declaration` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_exported_interface_enum_type_alias` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_tsx_component` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_class_bases_and_fields` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: full `tests/unit/test_arch.py` suite (100 tests) passed; `uv run frob test --base main` also passed on the touched set

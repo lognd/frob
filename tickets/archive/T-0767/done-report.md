@@ -81,8 +81,8 @@ sibling ticket's block intact and byte-identical to main's.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process` (pytest node id, verified passing when recorded)

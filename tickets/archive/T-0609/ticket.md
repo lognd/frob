@@ -17,8 +17,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestNormalizedModel::test_hand_built_python_snippet_shape
-- tests/unit/test_arch.py::TestNormalizedModel::test_language_adapter_is_a_runtime_checkable_protocol
+- tests/unit/arch_suite/test_lang_adapters.py::TestNormalizedModel::test_hand_built_python_snippet_shape
+- tests/unit/arch_suite/test_lang_adapters.py::TestNormalizedModel::test_language_adapter_is_a_runtime_checkable_protocol
 designated_repro_test: null
 threat: null
 component: null

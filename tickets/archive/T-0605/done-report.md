@@ -122,23 +122,23 @@ Fixed:
   dual-fire is two advisory suggestions on the unwaivable channel, never
   a gate error). `git diff main --diff-filter=D --stat` still empty.
 - Recorded the new test as evidence (`frob ticket evidence T-0605
-  tests/unit/test_arch.py::TestPatternRecommender::
+  tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::
   test_mixed_delegate_and_translate_methods_fires_both --accepts 0`,
   bound to the ticket's single UNBOUND acceptance criterion).
 
 ## Evidence
 
-- `tests/unit/test_arch.py::TestPatternRecommender::test_translating_wrapper_recommends_adapter` (fires)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_same_name_wrapper_not_flagged_adapter` (near-miss: same-name -> wrap-delegate/Decorator territory, disjointness proof)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_two_translating_methods_not_flagged_adapter` (near-miss: below floor)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_manual_callback_list_recommends_observer` (fires)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_append_only_list_not_flagged_observer` (near-miss: append with no notify loop)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_iterate_without_append_not_flagged_observer` (near-miss: notify loop with no append)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_anemic_accessors_recommends_move_behavior` (fires)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_class_with_real_method_not_flagged_anemic` (near-miss: one real method disqualifies)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_two_accessor_class_not_flagged_anemic` (near-miss: below floor)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_translating_wrapper_recommends_adapter` (fires)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_same_name_wrapper_not_flagged_adapter` (near-miss: same-name -> wrap-delegate/Decorator territory, disjointness proof)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_two_translating_methods_not_flagged_adapter` (near-miss: below floor)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_manual_callback_list_recommends_observer` (fires)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_append_only_list_not_flagged_observer` (near-miss: append with no notify loop)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_iterate_without_append_not_flagged_observer` (near-miss: notify loop with no append)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_anemic_accessors_recommends_move_behavior` (fires)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_class_with_real_method_not_flagged_anemic` (near-miss: one real method disqualifies)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_two_accessor_class_not_flagged_anemic` (near-miss: below floor)
 - `tests/test_registry_reconciliation_patterns.py::TestExhaustivenessGateOverRealPatterns::test_no_patterns_violations` (reconciliation pin test, kept green)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_mixed_delegate_and_translate_methods_fires_both` (reviewer round 1 pin: legitimate dual-fire is intentional, not a bug)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_mixed_delegate_and_translate_methods_fires_both` (reviewer round 1 pin: legitimate dual-fire is intentional, not a bug)
 
 `uv run pytest tests/unit/test_arch.py tests/test_registry_reconciliation_patterns.py -q -o addopts=""`:
 147 passed (post-review-round-1; was 146 pre-round-1).
@@ -187,17 +187,17 @@ Worktree: /home/logan/projects/frob/.claude/worktrees/agent-a17965924e60aad20
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestPatternRecommender::test_translating_wrapper_recommends_adapter` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_same_name_wrapper_not_flagged_adapter` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_two_translating_methods_not_flagged_adapter` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_manual_callback_list_recommends_observer` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_append_only_list_not_flagged_observer` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_iterate_without_append_not_flagged_observer` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_anemic_accessors_recommends_move_behavior` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_class_with_real_method_not_flagged_anemic` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_two_accessor_class_not_flagged_anemic` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_translating_wrapper_recommends_adapter` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_same_name_wrapper_not_flagged_adapter` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_two_translating_methods_not_flagged_adapter` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_manual_callback_list_recommends_observer` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_append_only_list_not_flagged_observer` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_iterate_without_append_not_flagged_observer` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_anemic_accessors_recommends_move_behavior` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_class_with_real_method_not_flagged_anemic` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_two_accessor_class_not_flagged_anemic` (pytest node id, verified passing when recorded)
 - `tests/test_registry_reconciliation_patterns.py::TestExhaustivenessGateOverRealPatterns::test_no_patterns_violations` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_mixed_delegate_and_translate_methods_fires_both` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_mixed_delegate_and_translate_methods_fires_both` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 11 passed (from 11 evidence id(s))

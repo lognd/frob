@@ -264,7 +264,8 @@ class ArchResult(BaseModel):
 
     # frob:ticket T-0588
     # frob:tests \
-    # tests/unit/test_arch.py::TestArchResultFormat.test_as_text_clean_project
+    # tests/unit/arch_suite/test_dispatch.py::TestArchResultFormat.test_as_text_clean_p\
+    # roject
     def as_text(self) -> str:
         # frob:doc docs/modules/arch.md#arch-result
         if not self.suggestions:
@@ -282,7 +283,8 @@ class ArchResult(BaseModel):
 
     # frob:ticket T-0588
     # frob:tests \
-    # tests/unit/test_arch.py::TestArchResultFormat.test_as_json_has_suggestions_key
+    # tests/unit/arch_suite/test_dispatch.py::TestArchResultFormat.test_as_json_has_sug\
+    # gestions_key
     def as_json(self) -> str:
         # frob:doc docs/modules/arch.md#arch-result
         return json.dumps(self.model_dump(), indent=2)

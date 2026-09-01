@@ -48,18 +48,18 @@ tests/unit/test_arch.py       | 12 new tests across 6 new test classes
 Collected via `pytest tests/unit/test_arch.py -p no:cacheprovider -q`
 (89 passed, full file) and `--collect-only` (all 12 node ids below
 resolved):
-- tests/unit/test_arch.py::TestOverrideRaisesNotImplemented::test_concrete_override_raising_not_implemented_flagged
-- tests/unit/test_arch.py::TestOverrideRaisesNotImplemented::test_base_itself_raising_not_implemented_is_not_flagged
-- tests/unit/test_arch.py::TestOverrideSignatureVariance::test_narrower_required_params_flagged
-- tests/unit/test_arch.py::TestOverrideSignatureVariance::test_wider_return_type_flagged
-- tests/unit/test_arch.py::TestOverrideSignatureVariance::test_same_shape_signature_not_flagged
-- tests/unit/test_arch.py::TestOverrideStrengthenedPrecondition::test_added_guard_raise_on_shared_param_flagged
-- tests/unit/test_arch.py::TestOverrideStrengthenedPrecondition::test_guard_raise_present_in_base_too_not_flagged
-- tests/unit/test_arch.py::TestOverrideWeakenedPostcondition::test_bare_return_where_base_always_returns_value_flagged
-- tests/unit/test_arch.py::TestOverrideWeakenedPostcondition::test_override_also_always_returning_value_not_flagged
-- tests/unit/test_arch.py::TestNoOpOverride::test_empty_body_override_of_value_returning_base_flagged
-- tests/unit/test_arch.py::TestNoOpOverride::test_override_with_real_body_not_flagged
-- tests/unit/test_arch.py::TestRunLspChecks::test_combines_multiple_checks
+- tests/unit/arch_suite/test_lsp.py::TestOverrideRaisesNotImplemented::test_concrete_override_raising_not_implemented_flagged
+- tests/unit/arch_suite/test_lsp.py::TestOverrideRaisesNotImplemented::test_base_itself_raising_not_implemented_is_not_flagged
+- tests/unit/arch_suite/test_lsp.py::TestOverrideSignatureVariance::test_narrower_required_params_flagged
+- tests/unit/arch_suite/test_lsp.py::TestOverrideSignatureVariance::test_wider_return_type_flagged
+- tests/unit/arch_suite/test_lsp.py::TestOverrideSignatureVariance::test_same_shape_signature_not_flagged
+- tests/unit/arch_suite/test_lsp.py::TestOverrideStrengthenedPrecondition::test_added_guard_raise_on_shared_param_flagged
+- tests/unit/arch_suite/test_lsp.py::TestOverrideStrengthenedPrecondition::test_guard_raise_present_in_base_too_not_flagged
+- tests/unit/arch_suite/test_lsp.py::TestOverrideWeakenedPostcondition::test_bare_return_where_base_always_returns_value_flagged
+- tests/unit/arch_suite/test_lsp.py::TestOverrideWeakenedPostcondition::test_override_also_always_returning_value_not_flagged
+- tests/unit/arch_suite/test_lsp.py::TestNoOpOverride::test_empty_body_override_of_value_returning_base_flagged
+- tests/unit/arch_suite/test_lsp.py::TestNoOpOverride::test_override_with_real_body_not_flagged
+- tests/unit/arch_suite/test_lsp.py::TestRunLspChecks::test_combines_multiple_checks
 
 `frob check --only lint/static/gates-fast/gates-native/gates-security
 --ticket T-0618` (chunked loop): all five stage groups 0 errors after the
@@ -91,18 +91,18 @@ out of this ticket's declared scope, same disclosed cut.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestOverrideRaisesNotImplemented::test_concrete_override_raising_not_implemented_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestOverrideRaisesNotImplemented::test_base_itself_raising_not_implemented_is_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestOverrideSignatureVariance::test_narrower_required_params_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestOverrideSignatureVariance::test_wider_return_type_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestOverrideSignatureVariance::test_same_shape_signature_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestOverrideStrengthenedPrecondition::test_added_guard_raise_on_shared_param_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestOverrideStrengthenedPrecondition::test_guard_raise_present_in_base_too_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestOverrideWeakenedPostcondition::test_bare_return_where_base_always_returns_value_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestOverrideWeakenedPostcondition::test_override_also_always_returning_value_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestNoOpOverride::test_empty_body_override_of_value_returning_base_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestNoOpOverride::test_override_with_real_body_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestRunLspChecks::test_combines_multiple_checks` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestOverrideRaisesNotImplemented::test_concrete_override_raising_not_implemented_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestOverrideRaisesNotImplemented::test_base_itself_raising_not_implemented_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestOverrideSignatureVariance::test_narrower_required_params_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestOverrideSignatureVariance::test_wider_return_type_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestOverrideSignatureVariance::test_same_shape_signature_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestOverrideStrengthenedPrecondition::test_added_guard_raise_on_shared_param_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestOverrideStrengthenedPrecondition::test_guard_raise_present_in_base_too_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestOverrideWeakenedPostcondition::test_bare_return_where_base_always_returns_value_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestOverrideWeakenedPostcondition::test_override_also_always_returning_value_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestNoOpOverride::test_empty_body_override_of_value_returning_base_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestNoOpOverride::test_override_with_real_body_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestRunLspChecks::test_combines_multiple_checks` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 12 passed (from 12 evidence id(s))

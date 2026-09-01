@@ -17,21 +17,21 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
-- tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
-- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep
-- tests/unit/test_arch.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires
-- tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
+- tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
+- tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep
+- tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires
+- tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
 designated_repro_test: null
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on fixtures reproducing each
     hazard class THEN each fires per its own acceptance
   evidence:
-  - tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
-  - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
-  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep
-  - tests/unit/test_arch.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires
-  - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
+  - tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
+  - tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
+  - tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep
+  - tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires
+  - tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
 threat: null
 component: null
 ---

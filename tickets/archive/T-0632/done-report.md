@@ -78,11 +78,11 @@ diffstat -- corrected here to `git diff main --stat` scoped to this
 ticket's three files, run and observed directly.)
 
 ### Evidence
-- `tests/unit/test_arch.py::TestPythonAdapter::test_adapt_call_args_capture_position_keyword_and_identifier` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_unrelated_bodies_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_specific_signature_genuine_family_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_call_args_capture_position_keyword_and_identifier` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_unrelated_bodies_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators::test_specific_signature_genuine_family_still_flagged` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s), plus the full

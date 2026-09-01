@@ -73,7 +73,7 @@ Worktree: .claude/worktrees/agent-a51a11716781a450c
 
 ### Evidence
 - `tests/unit/graph/test_dsl.py::TestProtocolDeclarations::test_declared_protocol_round_trips` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestProtocolVerificationGate::test_state_never_established_is_an_error` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error` (pytest node id, verified passing when recorded)
 

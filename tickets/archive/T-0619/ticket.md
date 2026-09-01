@@ -19,11 +19,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestFatInterface::test_mostly_stubbed_implementers_flag_fat_interface
-- tests/unit/test_arch.py::TestFatInterface::test_mostly_implemented_methods_not_flagged
-- tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_small_method_subset_flagged
-- tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_most_of_interface_not_flagged
-- tests/unit/test_arch.py::TestRunIspChecks::test_combines_both_checks
+- tests/unit/arch_suite/test_lsp.py::TestFatInterface::test_mostly_stubbed_implementers_flag_fat_interface
+- tests/unit/arch_suite/test_lsp.py::TestFatInterface::test_mostly_implemented_methods_not_flagged
+- tests/unit/arch_suite/test_lsp.py::TestNarrowClientUsage::test_client_using_small_method_subset_flagged
+- tests/unit/arch_suite/test_lsp.py::TestNarrowClientUsage::test_client_using_most_of_interface_not_flagged
+- tests/unit/arch_suite/test_lsp.py::TestRunIspChecks::test_combines_both_checks
 designated_repro_test: null
 threat: null
 component: null

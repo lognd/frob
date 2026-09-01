@@ -113,8 +113,8 @@ def _result_returning_names(module: NormalizedModule) -> set[str]:
 
 
 # frob:doc docs/modules/arch.md#fallibility-checks
-# frob:tests tests/unit/test_arch.py::TestUnhandledResult.test_bare_statement_call_to_result_function_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestUnhandledResult.test_returned_call_to_result_function_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestUnhandledResult.test_bare_statement_call_to_result_function_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestUnhandledResult.test_returned_call_to_result_function_not_flagged  # noqa: E501
 def check_unhandled_result(module: NormalizedModule) -> list[ArchSuggestion]:
     """Unhandled Result (T-0623): flag a call to a same-module function
     whose `return_type` text contains `"Result["` (`_result_returning_names`)
@@ -189,8 +189,8 @@ def _catch_does_something(func: NormalizedFunction, catch: NormalizedCatch) -> b
 
 
 # frob:doc docs/modules/arch.md#fallibility-checks
-# frob:tests tests/unit/test_arch.py::TestSwallowedException.test_bare_except_with_no_reaction_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestSwallowedException.test_except_with_nearby_log_call_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestSwallowedException.test_bare_except_with_no_reaction_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestSwallowedException.test_except_with_nearby_log_call_not_flagged  # noqa: E501
 def check_swallowed_exception(module: NormalizedModule) -> list[ArchSuggestion]:
     """Swallowed exception (T-0623): flag a bare `except:`/`catch (...)`
     or an `except Exception:` clause (`exception_type` is `None` or
@@ -240,8 +240,8 @@ def check_swallowed_exception(module: NormalizedModule) -> list[ArchSuggestion]:
 
 
 # frob:doc docs/modules/arch.md#fallibility-checks
-# frob:tests tests/unit/test_arch.py::TestRecoverableErrorWrongSignature.test_raises_value_error_without_result_signature_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestRecoverableErrorWrongSignature.test_raises_value_error_with_result_signature_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestRecoverableErrorWrongSignature.test_raises_value_error_without_result_signature_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestRecoverableErrorWrongSignature.test_raises_value_error_with_result_signature_not_flagged  # noqa: E501
 def check_recoverable_error_wrong_signature(
     module: NormalizedModule,
 ) -> list[ArchSuggestion]:
@@ -303,9 +303,9 @@ def check_recoverable_error_wrong_signature(
 
 # frob:doc docs/modules/arch.md#fallibility-checks
 # frob:ticket T-0972
-# frob:tests tests/unit/test_arch.py::TestOverBroadExcept.test_bare_except_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestOverBroadExcept.test_specific_except_not_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestOverBroadExcept.test_reraise_with_different_type_loses_context_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestOverBroadExcept.test_bare_except_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestOverBroadExcept.test_specific_except_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestOverBroadExcept.test_reraise_with_different_type_loses_context_flagged  # noqa: E501
 # frob:waive ARCH001 reason="one closure (_scan) walking every catch clause and, per catch, emitting both the bare-except finding and the adjacent-lost-context finding off the same c/qualname locals; splitting the two emits into separate helpers would require passing c, qualname, module, and out across a new boundary for two three-line append blocks that already share the same loop variable"  # noqa: E501
 def check_over_broad_except(module: NormalizedModule) -> list[ArchSuggestion]:
     """Over-broad except / re-raise-losing-context (T-0623, one category
@@ -379,7 +379,7 @@ def check_over_broad_except(module: NormalizedModule) -> list[ArchSuggestion]:
 
 
 # frob:doc docs/modules/arch.md#fallibility-checks
-# frob:tests tests/unit/test_arch.py::TestRunFallibilityChecks.test_combines_all_four_checks  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_logging.py::TestRunFallibilityChecks.test_combines_all_four_checks  # noqa: E501
 def run_fallibility_checks(module: NormalizedModule) -> list[ArchSuggestion]:
     """Run every ARCH1xx fallibility check (T-0623:
     `check_unhandled_result`, `check_swallowed_exception`,

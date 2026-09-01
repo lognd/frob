@@ -16,9 +16,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestGateRuleBuilderExclusion::test_violation_returning_group_not_flagged
-- tests/unit/test_arch.py::TestGateRuleBuilderExclusion::test_non_violation_returning_group_still_flagged
-- tests/unit/test_arch.py::TestGateRuleBuilderExclusion::test_return_type_membership_matches_all_three_shapes
+- tests/unit/arch_suite/test_abstraction.py::TestGateRuleBuilderExclusion::test_violation_returning_group_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestGateRuleBuilderExclusion::test_non_violation_returning_group_still_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestGateRuleBuilderExclusion::test_return_type_membership_matches_all_three_shapes
 designated_repro_test: null
 threat: null
 component: null

@@ -6,4 +6,4 @@ Discharge T-0695's self-join-deadlock advisory on vet/_scan.py::_run_with_timeou
 (no changed files detected)
 
 ### Evidence
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_vet_scan` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_vet_scan` (pytest node id, verified passing when recorded)

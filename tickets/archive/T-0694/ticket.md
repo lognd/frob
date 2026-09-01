@@ -16,22 +16,22 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
-- tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees
-- tests/unit/test_arch.py::TestLockOrderingHazards::test_consistent_global_order_does_not_fire
-- tests/unit/test_arch.py::TestLockOrderingHazards::test_reentrant_same_lock_does_not_fire
-- tests/unit/test_arch.py::TestLockOrderingHazards::test_unresolvable_lock_identity_is_advisory
+- tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
+- tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees
+- tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_consistent_global_order_does_not_fire
+- tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_reentrant_same_lock_does_not_fire
+- tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_unresolvable_lock_identity_is_advisory
 designated_repro_test: null
 acceptance:
 - text: GIVEN two functions acquiring locks A-then-B and B-then-A WHEN the check runs
     THEN a finding names both call paths; GIVEN consistent global ordering THEN silence
   evidence:
-  - tests/unit/test_arch.py::TestLockOrderingHazards.test_two_lock_ab_ba_cycle_fires_within_one_function
-  - tests/unit/test_arch.py::TestLockOrderingHazards.test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees
-  - tests/unit/test_arch.py::TestLockOrderingHazards.test_consistent_global_order_does_not_fire
-  - tests/unit/test_arch.py::TestLockOrderingHazards.test_reentrant_same_lock_does_not_fire
-  - tests/unit/test_arch.py::TestLockOrderingHazards.test_unresolvable_lock_identity_is_advisory
-  - tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
+  - tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards.test_two_lock_ab_ba_cycle_fires_within_one_function
+  - tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards.test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees
+  - tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards.test_consistent_global_order_does_not_fire
+  - tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards.test_reentrant_same_lock_does_not_fire
+  - tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards.test_unresolvable_lock_identity_is_advisory
+  - tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
 threat: null
 component: null
 ---

@@ -26,7 +26,7 @@ these ride the same land):
    surfaced by the move, not introduced by it. Fixed with a
    frob:waive DUP001 naming both counterparts.
 3. DUP002 (unwaived, two 100%-identical tests in
-   tests/unit/test_arch.py::TestLanguageParityExclusion): collapsed
+   tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion): collapsed
    test_duplicate_tag_within_group_still_flagged and
    test_untagged_member_within_group_still_flagged into one
    parametrized test_non_parity_group_still_flagged; updated T-1068's
@@ -80,7 +80,7 @@ commits; T-1195 itself was not reopened).
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity` (pytest node id, verified passing when recorded)
 - `tests/test_arch_near_duplicate_native.py::test_near_duplicate_cluster_dispatches_to_native_and_matches_reference` (pytest node id, verified passing when recorded)
 - `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_mode_calls_stamp_and_returns` (pytest node id, verified passing when recorded)
 - `tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_runs_selected_chunks_and_reports_result` (pytest node id, verified passing when recorded)

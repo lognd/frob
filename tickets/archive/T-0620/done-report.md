@@ -57,16 +57,16 @@ tests/unit/test_arch.py       | 10 new tests across 4 new test classes
 Collected via `pytest tests/unit/test_arch.py -p no:cacheprovider -q`
 (104 passed, full file) and `--collect-only` (all 10 node ids below
 resolved):
-- tests/unit/test_arch.py::TestLayeringConfig::test_layer_for_longest_prefix_match
-- tests/unit/test_arch.py::TestLayeringConfig::test_layer_for_unmatched_path_is_none
-- tests/unit/test_arch.py::TestLoadLayeringConfig::test_missing_frob_toml_returns_none
-- tests/unit/test_arch.py::TestLoadLayeringConfig::test_parses_declared_layers_and_allow_table
-- tests/unit/test_arch.py::TestLayeringViolations::test_disallowed_cross_layer_edge_flagged
-- tests/unit/test_arch.py::TestLayeringViolations::test_allowed_cross_layer_edge_not_flagged
-- tests/unit/test_arch.py::TestLayeringViolations::test_dynamic_import_in_layered_file_flagged
-- tests/unit/test_arch.py::TestNoDiConstructionSmell::test_inline_construction_outside_init_flagged
-- tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_init_not_flagged
-- tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_factory_function_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestLayeringConfig::test_layer_for_longest_prefix_match
+- tests/unit/arch_suite/test_type_design.py::TestLayeringConfig::test_layer_for_unmatched_path_is_none
+- tests/unit/arch_suite/test_type_design.py::TestLoadLayeringConfig::test_missing_frob_toml_returns_none
+- tests/unit/arch_suite/test_type_design.py::TestLoadLayeringConfig::test_parses_declared_layers_and_allow_table
+- tests/unit/arch_suite/test_type_design.py::TestLayeringViolations::test_disallowed_cross_layer_edge_flagged
+- tests/unit/arch_suite/test_type_design.py::TestLayeringViolations::test_allowed_cross_layer_edge_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestLayeringViolations::test_dynamic_import_in_layered_file_flagged
+- tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell::test_inline_construction_outside_init_flagged
+- tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell::test_construction_inside_init_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell::test_construction_inside_factory_function_not_flagged
 
 `frob check --only <lint|static|gates-fast|gates-native|gates-security>
 --ticket T-0620` (chunked loop), measured after a `git merge main` (main
@@ -105,16 +105,16 @@ made; not a regression from this ticket.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestLayeringConfig::test_layer_for_longest_prefix_match` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLayeringConfig::test_layer_for_unmatched_path_is_none` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLoadLayeringConfig::test_missing_frob_toml_returns_none` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLoadLayeringConfig::test_parses_declared_layers_and_allow_table` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLayeringViolations::test_disallowed_cross_layer_edge_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLayeringViolations::test_allowed_cross_layer_edge_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLayeringViolations::test_dynamic_import_in_layered_file_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestNoDiConstructionSmell::test_inline_construction_outside_init_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_init_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_factory_function_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestLayeringConfig::test_layer_for_longest_prefix_match` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestLayeringConfig::test_layer_for_unmatched_path_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestLoadLayeringConfig::test_missing_frob_toml_returns_none` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestLoadLayeringConfig::test_parses_declared_layers_and_allow_table` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestLayeringViolations::test_disallowed_cross_layer_edge_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestLayeringViolations::test_allowed_cross_layer_edge_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestLayeringViolations::test_dynamic_import_in_layered_file_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell::test_inline_construction_outside_init_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell::test_construction_inside_init_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell::test_construction_inside_factory_function_not_flagged` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 10 passed (from 10 evidence id(s))

@@ -93,9 +93,9 @@ Deletion-filter (`git diff main --diff-filter=D --stat`) empty.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_one_class_hierarchy_per_language` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_derived_class_has_the_field_and_one_method` (pytest node id, verified passing when recorded; T-0727 folded the former `test_python_field_detection_is_a_documented_waiver` waiver assertion into this test's now-4-way parity assertion once the underlying adapter bug was fixed)
-- `tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_override_captured_except_pythons_documented_waiver` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_shared_complexity_check_fires_identically_four_ways` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_dispatch_branch_counts_pin_the_documented_per_language_divergence` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_every_module_agrees_the_dispatch_function_exists_and_is_flat` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_one_class_hierarchy_per_language` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_derived_class_has_the_field_and_one_method` (pytest node id, verified passing when recorded; T-0727 folded the former `test_python_field_detection_is_a_documented_waiver` waiver assertion into this test's now-4-way parity assertion once the underlying adapter bug was fixed)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_override_captured_except_pythons_documented_waiver` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_shared_complexity_check_fires_identically_four_ways` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_dispatch_branch_counts_pin_the_documented_per_language_divergence` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_every_module_agrees_the_dispatch_function_exists_and_is_flat` (pytest node id, verified passing when recorded)

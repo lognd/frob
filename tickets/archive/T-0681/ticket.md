@@ -18,23 +18,23 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_interface_declaration
-- tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_enum_declaration
-- tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_type_alias_declaration
-- tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_exported_interface_enum_type_alias
-- tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_tsx_component
-- tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_class_bases_and_fields
+- tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_interface_declaration
+- tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_enum_declaration
+- tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_type_alias_declaration
+- tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_exported_interface_enum_type_alias
+- tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_tsx_component
+- tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_class_bases_and_fields
 designated_repro_test: null
 acceptance:
 - text: GIVEN TS fixtures with interface, type alias, enum, and a TSX component WHEN
     TypeScriptAdapter.adapt runs THEN each is represented in the NormalizedModule
     and asserted by a test
   evidence:
-  - tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_interface_declaration
-  - tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_enum_declaration
-  - tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_type_alias_declaration
-  - tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_exported_interface_enum_type_alias
-  - tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_tsx_component
+  - tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_interface_declaration
+  - tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_enum_declaration
+  - tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_type_alias_declaration
+  - tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_exported_interface_enum_type_alias
+  - tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_tsx_component
 threat: null
 component: null
 ---

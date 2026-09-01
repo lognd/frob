@@ -105,8 +105,8 @@ def _qualname(
 
 
 # frob:doc docs/modules/arch.md#lsp-checks
-# frob:tests tests/unit/test_arch.py::TestOverrideRaisesNotImplemented.test_concrete_override_raising_not_implemented_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestOverrideRaisesNotImplemented.test_base_itself_raising_not_implemented_is_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestOverrideRaisesNotImplemented.test_concrete_override_raising_not_implemented_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestOverrideRaisesNotImplemented.test_base_itself_raising_not_implemented_is_not_flagged  # noqa: E501
 def check_override_raises_not_implemented(
     module: NormalizedModule, out: list[ArchSuggestion]
 ) -> None:
@@ -165,9 +165,9 @@ def _required_param_count(func: NormalizedFunction) -> int:
 
 
 # frob:doc docs/modules/arch.md#lsp-checks
-# frob:tests tests/unit/test_arch.py::TestOverrideSignatureVariance.test_narrower_required_params_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestOverrideSignatureVariance.test_wider_return_type_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestOverrideSignatureVariance.test_same_shape_signature_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestOverrideSignatureVariance.test_narrower_required_params_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestOverrideSignatureVariance.test_wider_return_type_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestOverrideSignatureVariance.test_same_shape_signature_not_flagged  # noqa: E501
 def check_override_signature_variance(
     module: NormalizedModule, out: list[ArchSuggestion]
 ) -> None:
@@ -272,8 +272,8 @@ def _raise_or_assert_param_mentions(
 
 # frob:doc docs/modules/arch.md#lsp-checks
 # frob:ticket T-0972
-# frob:tests tests/unit/test_arch.py::TestOverrideStrengthenedPrecondition.test_added_guard_raise_on_shared_param_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestOverrideStrengthenedPrecondition.test_guard_raise_present_in_base_too_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestOverrideStrengthenedPrecondition.test_added_guard_raise_on_shared_param_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestOverrideStrengthenedPrecondition.test_guard_raise_present_in_base_too_not_flagged  # noqa: E501
 def check_override_strengthened_precondition(
     module: NormalizedModule, out: list[ArchSuggestion]
 ) -> None:
@@ -346,8 +346,8 @@ def _has_a_bare_return(func: NormalizedFunction) -> bool:
 
 
 # frob:doc docs/modules/arch.md#lsp-checks
-# frob:tests tests/unit/test_arch.py::TestOverrideWeakenedPostcondition.test_bare_return_where_base_always_returns_value_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestOverrideWeakenedPostcondition.test_override_also_always_returning_value_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestOverrideWeakenedPostcondition.test_bare_return_where_base_always_returns_value_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestOverrideWeakenedPostcondition.test_override_also_always_returning_value_not_flagged  # noqa: E501
 def check_override_weakened_postcondition(
     module: NormalizedModule, out: list[ArchSuggestion]
 ) -> None:
@@ -391,8 +391,8 @@ def check_override_weakened_postcondition(
 
 
 # frob:doc docs/modules/arch.md#lsp-checks
-# frob:tests tests/unit/test_arch.py::TestNoOpOverride.test_empty_body_override_of_value_returning_base_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestNoOpOverride.test_override_with_real_body_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestNoOpOverride.test_empty_body_override_of_value_returning_base_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestNoOpOverride.test_override_with_real_body_not_flagged  # noqa: E501
 def check_noop_override(module: NormalizedModule, out: list[ArchSuggestion]) -> None:
     """ARCH108: flag every override (T-0618) whose OWN body is empty of any
     structural event (no branches/loops/calls/field-accesses/raises/
@@ -443,7 +443,7 @@ def check_noop_override(module: NormalizedModule, out: list[ArchSuggestion]) -> 
 
 
 # frob:doc docs/modules/arch.md#lsp-checks
-# frob:tests tests/unit/test_arch.py::TestRunLspChecks.test_combines_multiple_checks  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestRunLspChecks.test_combines_multiple_checks  # noqa: E501
 def run_lsp_checks(module: NormalizedModule) -> list[ArchSuggestion]:
     """Run every ARCH1xx LSP check (T-0618: `check_override_raises_
     not_implemented`, `check_override_signature_variance`,
@@ -533,8 +533,8 @@ def _resolved_implementers(
 
 
 # frob:doc docs/modules/arch.md#isp-checks
-# frob:tests tests/unit/test_arch.py::TestFatInterface.test_mostly_stubbed_implementers_flag_fat_interface  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestFatInterface.test_mostly_implemented_methods_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestFatInterface.test_mostly_stubbed_implementers_flag_fat_interface  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestFatInterface.test_mostly_implemented_methods_not_flagged  # noqa: E501
 def check_fat_interface(module: NormalizedModule, out: list[ArchSuggestion]) -> None:
     """ARCH109: flag every same-file interface-marked class (`ABC`/
     `Protocol`-family base, T-0619) with at least `FAT_INTERFACE_MIN_
@@ -669,8 +669,8 @@ def _iter_wide_param_clients(
 
 
 # frob:doc docs/modules/arch.md#isp-checks
-# frob:tests tests/unit/test_arch.py::TestNarrowClientUsage.test_client_using_small_method_subset_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestNarrowClientUsage.test_client_using_most_of_interface_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestNarrowClientUsage.test_client_using_small_method_subset_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestNarrowClientUsage.test_client_using_most_of_interface_not_flagged  # noqa: E501
 def check_narrow_client_usage(
     module: NormalizedModule, out: list[ArchSuggestion]
 ) -> None:
@@ -715,7 +715,7 @@ def check_narrow_client_usage(
 
 
 # frob:doc docs/modules/arch.md#isp-checks
-# frob:tests tests/unit/test_arch.py::TestRunIspChecks.test_combines_both_checks  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lsp.py::TestRunIspChecks.test_combines_both_checks  # noqa: E501
 def run_isp_checks(module: NormalizedModule) -> list[ArchSuggestion]:
     """Run every ARCH1xx ISP check (T-0619: `check_fat_interface`,
     `check_narrow_client_usage`) against one `NormalizedModule` and return

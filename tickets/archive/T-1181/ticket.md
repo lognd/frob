@@ -16,8 +16,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_form_language_spellings_normalize_to_short_tag
-- tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_and_short_form_parity_group_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_long_form_language_spellings_normalize_to_short_tag
+- tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_long_and_short_form_parity_group_not_flagged
 designated_repro_test: null
 acceptance:
 - text: GIVEN same-signature groups whose member names differ only by language tag
@@ -25,8 +25,8 @@ acceptance:
     python/typescript/kotlin/cplusplus alongside the short forms, measured before/after
     on the T-1083 finding set
   evidence:
-  - tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_form_language_spellings_normalize_to_short_tag
-  - tests/unit/test_arch.py::TestLanguageParityExclusion::test_long_and_short_form_parity_group_not_flagged
+  - tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_long_form_language_spellings_normalize_to_short_tag
+  - tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_long_and_short_form_parity_group_not_flagged
 threat: null
 component: null
 ---

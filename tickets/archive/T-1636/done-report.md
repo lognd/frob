@@ -164,8 +164,8 @@ separately verified unscoped above).
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestMayRaiseResolver::test_qualified_except_clause_discharges_bare_named_leak` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_reraise_of_qualified_catch_type_is_normalized` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_qualified_except_clause_discharges_bare_named_leak` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_bare_reraise_of_qualified_catch_type_is_normalized` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_relative_base_dir_level_walks_exactly_to_root_returns_none` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_relative_base_dir_outside_root_returns_none_via_value_error` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_relative_base_dir_within_root_resolves` (pytest node id, verified passing when recorded)

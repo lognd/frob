@@ -18,19 +18,19 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_unresolvable_call_yields_unknown
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_reraise_resolves_to_caught_type
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_except_reraise_is_unknown
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_recursive_cycle_converges
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_ambiguous_method_name_across_classes_is_unresolved
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_unresolvable_call_yields_unknown
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_bare_reraise_resolves_to_caught_type
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_bare_except_reraise_is_unknown
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_recursive_cycle_converges
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_ambiguous_method_name_across_classes_is_unresolved
 designated_repro_test: null
 acceptance:
 - text: GIVEN a fixture chain f->g->h where h raises ValueError and g catches it and
     f calls dict subscript WHEN the resolver runs THEN f's may-raise is exactly {KeyError}
     plus the ubiquitous tier and a fixture with an unresolvable call yields Unknown
   evidence:
-  - tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
+  - tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
 threat: null
 component: null
 ---

@@ -16,10 +16,10 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity
-- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged
-- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_init_reexport_does_not_suppress
-- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_test_file_co_mention_does_not_suppress
+- tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity
+- tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged
+- tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_init_reexport_does_not_suppress
+- tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_test_file_co_mention_does_not_suppress
 designated_repro_test: null
 threat: null
 component: null

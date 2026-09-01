@@ -22,11 +22,11 @@ second list to keep in sync with `frob.lang.tree_sitter_extensions()`.
 
 Evidence (fresh `pytest --collect-only` resolved, `uv run frob test --base
 main` selected and ran all 6 exactly, exit=0):
-- tests/unit/test_arch.py::TestLargeFile::test_large_json_data_not_flagged
-- tests/unit/test_arch.py::TestLargeFile::test_large_md_ledger_not_flagged
-- tests/unit/test_arch.py::TestLargeFile::test_large_py_src_still_flagged
-- tests/unit/test_arch.py::TestLargeFile::test_large_src_file_still_flagged
-- tests/unit/test_arch.py::TestLargeFile::test_large_test_file_not_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_json_data_not_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_md_ledger_not_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_py_src_still_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_src_file_still_flagged
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_large_test_file_not_flagged
 - tests/unit/test_arch.py::test_arch_end_to_end_analyze_then_render (pre-existing, unaffected, still passes)
 
 Measured before/after (`uv run frob check --only arch`, large-file findings

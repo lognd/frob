@@ -64,11 +64,11 @@ T-2377's own two-part closure, with 197 findings still standing.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestCaughtTypeNames::test_tuple_clause_reports_every_member` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestCaughtTypeNames::test_python_adapter_records_every_tuple_member` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestCaughtTypeNames::test_tuple_except_discharges_every_member` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSliceSubscriptRaisesNothing::test_python_adapter_marks_slice_subscripts` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSliceSubscriptRaisesNothing::test_slice_only_function_leaks_no_key_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames::test_tuple_clause_reports_every_member` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames::test_python_adapter_records_every_tuple_member` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames::test_tuple_except_discharges_every_member` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestSliceSubscriptRaisesNothing::test_python_adapter_marks_slice_subscripts` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestSliceSubscriptRaisesNothing::test_slice_only_function_leaks_no_key_error` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

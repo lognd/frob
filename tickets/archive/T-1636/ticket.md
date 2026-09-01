@@ -24,8 +24,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_qualified_except_clause_discharges_bare_named_leak
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_reraise_of_qualified_catch_type_is_normalized
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_qualified_except_clause_discharges_bare_named_leak
+- tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver::test_bare_reraise_of_qualified_catch_type_is_normalized
 - tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_relative_base_dir_level_walks_exactly_to_root_returns_none
 - tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_relative_base_dir_outside_root_returns_none_via_value_error
 - tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_relative_base_dir_within_root_resolves

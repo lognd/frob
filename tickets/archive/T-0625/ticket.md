@@ -26,8 +26,8 @@ scope_changes:
   actor: logan
   at: '2026-07-26'
 evidence:
-- tests/unit/test_arch.py::TestModuleDependencyCycles::test_two_file_import_cycle_flagged
-- tests/unit/test_arch.py::TestModuleDependencyCycles::test_acyclic_imports_not_flagged
+- tests/unit/arch_suite/test_misc.py::TestModuleDependencyCycles::test_two_file_import_cycle_flagged
+- tests/unit/arch_suite/test_misc.py::TestModuleDependencyCycles::test_acyclic_imports_not_flagged
 designated_repro_test: null
 threat: null
 component: null

@@ -48,11 +48,11 @@ DOCUMENT AS YOU GO requires the new checks follow the same pattern.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_fork_after_threads_fires_when_fork_follows_thread_start` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_fork_before_threads_does_not_fire` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_pipe_wait_deadlock_fires_without_communicate` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_pipe_wait_deadlock_does_not_fire_with_communicate` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_undispatched_join` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_fork_after_threads_fires_when_fork_follows_thread_start` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_fork_before_threads_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pipe_wait_deadlock_fires_without_communicate` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pipe_wait_deadlock_does_not_fire_with_communicate` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_undispatched_join` (pytest node id, verified passing when recorded)

@@ -57,7 +57,7 @@ evidence:
 - tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_imports_only_the_requested_subcommands_module
 - tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others
 - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketFlagParsing::test_flag_sets_the_namespace_dest
-- tests/unit/test_arch.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
+- tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
 designated_repro_test: null
 acceptance:
 - text: GIVEN main after T-1270 WHEN an UNSCOPED frob check runs THEN it reports zero
@@ -66,21 +66,21 @@ acceptance:
   - tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_imports_only_the_requested_subcommands_module
   - tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others
   - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketFlagParsing::test_flag_sets_the_namespace_dest
-  - tests/unit/test_arch.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
+  - tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
 - text: GIVEN _build_external_config_kwargs WHEN the arch gate runs THEN it is under
     the 60-line threshold by genuine decomposition, not a waiver
   evidence:
   - tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_imports_only_the_requested_subcommands_module
   - tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others
   - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketFlagParsing::test_flag_sets_the_namespace_dest
-  - tests/unit/test_arch.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
+  - tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
 - text: GIVEN each re-acked doc edge WHEN reviewed THEN the doc still accurately describes
     the symbol it points at, confirmed per edge rather than blanket-acked
   evidence:
   - tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_imports_only_the_requested_subcommands_module
   - tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others
   - tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketFlagParsing::test_flag_sets_the_namespace_dest
-  - tests/unit/test_arch.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
+  - tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
 threat: null
 component: null
 ---

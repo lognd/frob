@@ -61,10 +61,10 @@ new file are clean.
 (no changed files detected)
 
 ### Evidence
-- `tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_io_bound_socket_read_in_threadpool_does_not_fire` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_trivial_io_task_in_processpool_fires_ipc_overhead` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_mixed_loop_and_io_function_never_fires_either_advisory` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_io_bound_socket_read_in_threadpool_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_trivial_io_task_in_processpool_fires_ipc_overhead` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_mixed_loop_and_io_function_never_fires_either_advisory` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

@@ -2,7 +2,7 @@
 
 T-0849 worked or dispositioned all 41 patterns.yaml rows T-0605 left pointed at deferred:T-0849 (9 DDD-II-*, 24 RELEASEIT-*, 8 PYIDIOM-*).
 
-Two new real, precision-checked detectors shipped in src/frob/arch/_patterns.py, both PYIDIOM-* rows: dataclass-boilerplate (PYIDIOM-DATACLASS -> @dataclass, fires on an undecorated class whose ONLY member is an __init__ doing nothing but self.<attr> = <attr> for 3+ same-named params) and manual-decorator-wrap (PYIDIOM-DECORATOR-SYNTAX -> decorator syntax, fires on 3+ module-level def f(...) / f = wrapper(f) reassignment pairs in one file). Both wired into frob.arch.__init__'s python check pass, both documented in docs/modules/arch.md's design-pattern-registry table and a "T-0849 phase 3" narrative section, both carry fires + near-miss tests in tests/unit/test_arch.py::TestPatternRecommender.
+Two new real, precision-checked detectors shipped in src/frob/arch/_patterns.py, both PYIDIOM-* rows: dataclass-boilerplate (PYIDIOM-DATACLASS -> @dataclass, fires on an undecorated class whose ONLY member is an __init__ doing nothing but self.<attr> = <attr> for 3+ same-named params) and manual-decorator-wrap (PYIDIOM-DECORATOR-SYNTAX -> decorator syntax, fires on 3+ module-level def f(...) / f = wrapper(f) reassignment pairs in one file). Both wired into frob.arch.__init__'s python check pass, both documented in docs/modules/arch.md's design-pattern-registry table and a "T-0849 phase 3" narrative section, both carry fires + near-miss tests in tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender.
 
 Reviewer round 1 rejected the first pass for a real precision defect in dataclass-boilerplate: the class-body member scan only collected function_definition nodes, so a decorated extra method (a @property, @staticmethod, @classmethod, @cached_property, etc.) is a decorated_definition node and silently vanished from the extra-member count -- an __init__-only-looking class with an extra @property method wrongly fired "consider @dataclass" even though the detector's own docstring promised any extra method disqualifies the class. Fixed by collecting both function_definition and decorated_definition nodes as class members, only proceeding when there is exactly one member and it is a plain (undecorated) function_definition named __init__. Added the exact near-miss fixture the reviewer specified (__init__ with 3 param assignments plus a separate @property method) as test_dataclass_boilerplate_with_decorated_extra_method_not_flagged, and hand-verified it is load-bearing: reverting the member-collection filter back to function_definition-only made the new test fail with the false positive firing again, then restored the fix and reran the full TestPatternRecommender suite (36 tests) green.
 
@@ -37,14 +37,14 @@ No blockers. No new tickets filed -- all 41 rows were genuinely resolvable withi
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestPatternRecommender::test_dataclass_boilerplate_recommends_dataclass` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_dataclass_boilerplate_with_computed_field_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_dataclass_boilerplate_with_extra_method_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_dataclass_boilerplate_with_decorated_extra_method_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_already_dataclass_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_manual_decorator_wrap_recommends_decorator_syntax` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_two_manual_decorator_wraps_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_decorator_syntax_wrap_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_dataclass_boilerplate_recommends_dataclass` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_dataclass_boilerplate_with_computed_field_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_dataclass_boilerplate_with_extra_method_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_dataclass_boilerplate_with_decorated_extra_method_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_already_dataclass_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_manual_decorator_wrap_recommends_decorator_syntax` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_two_manual_decorator_wraps_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_decorator_syntax_wrap_not_flagged` (pytest node id, verified passing when recorded)
 - `tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness::test_declared_total_is_346` (pytest node id, verified passing when recorded)
 - `tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness::test_audit_reports_exhausted` (pytest node id, verified passing when recorded)
 - `tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness::test_every_deferred_entry_targets_an_open_ticket` (pytest node id, verified passing when recorded)

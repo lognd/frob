@@ -20,12 +20,12 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_one_class_hierarchy_per_language
-- tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_derived_class_has_the_field_and_one_method
-- tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_override_captured_except_pythons_documented_waiver
-- tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_shared_complexity_check_fires_identically_four_ways
-- tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_dispatch_branch_counts_pin_the_documented_per_language_divergence
-- tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_every_module_agrees_the_dispatch_function_exists_and_is_flat
+- tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_one_class_hierarchy_per_language
+- tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_derived_class_has_the_field_and_one_method
+- tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_override_captured_except_pythons_documented_waiver
+- tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_shared_complexity_check_fires_identically_four_ways
+- tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_dispatch_branch_counts_pin_the_documented_per_language_divergence
+- tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_every_module_agrees_the_dispatch_function_exists_and_is_flat
 designated_repro_test: null
 threat: null
 component: null

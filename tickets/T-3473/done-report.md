@@ -9,14 +9,14 @@ Coordinator widened scope to include src/frob/arch/_normalized.py and src/frob/a
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestRegexGroupGuardDischarge::test_digit_only_group_after_none_guard_discharges_value_error` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestRegexGroupGuardDischarge::test_non_digit_group_still_raises_value_error` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestRegexGroupGuardDischarge::test_missing_none_guard_still_raises_value_error` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestRegexGroupGuardDischarge::test_ambiguous_regex_call_candidates_does_not_discharge` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestRegexGroupGuardDischarge::test_real_require_python_corpus_site_has_no_leaked_value_error` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPythonAdapter::test_adapt_records_top_level_regex_compile_pattern_text` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPythonAdapter::test_adapt_ignores_non_regex_top_level_assignments` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestIsdigitGuardDischarge::test_guarded_int_call_discharges_value_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestRegexGroupGuardDischarge::test_digit_only_group_after_none_guard_discharges_value_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestRegexGroupGuardDischarge::test_non_digit_group_still_raises_value_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestRegexGroupGuardDischarge::test_missing_none_guard_still_raises_value_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestRegexGroupGuardDischarge::test_ambiguous_regex_call_candidates_does_not_discharge` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestRegexGroupGuardDischarge::test_real_require_python_corpus_site_has_no_leaked_value_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_records_top_level_regex_compile_pattern_text` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_ignores_non_regex_top_level_assignments` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestIsdigitGuardDischarge::test_guarded_int_call_discharges_value_error` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 8 passed (from 8 evidence id(s))

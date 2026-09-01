@@ -17,8 +17,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestTestFileExemption::test_test_file_no_long_function_or_god_class
-- tests/unit/test_arch.py::TestTestFileExemption::test_equivalent_src_file_still_flagged
+- tests/unit/arch_suite/test_dispatch.py::TestTestFileExemption::test_test_file_no_long_function_or_god_class
+- tests/unit/arch_suite/test_dispatch.py::TestTestFileExemption::test_equivalent_src_file_still_flagged
 - tests/unit/test_arch.py::test_arch_end_to_end_analyze_then_render
 - tests/test_excludes.py::test_is_test_file_typescript_naming
 designated_repro_test: null

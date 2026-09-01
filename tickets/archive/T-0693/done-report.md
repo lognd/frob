@@ -53,11 +53,11 @@ actual measured result at close time.
 (no changed files detected)
 
 ### Evidence
-- `tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

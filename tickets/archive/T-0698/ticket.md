@@ -17,20 +17,20 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
-- tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_io_bound_socket_read_in_threadpool_does_not_fire
-- tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_trivial_io_task_in_processpool_fires_ipc_overhead
-- tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_mixed_loop_and_io_function_never_fires_either_advisory
+- tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
+- tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_io_bound_socket_read_in_threadpool_does_not_fire
+- tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_trivial_io_task_in_processpool_fires_ipc_overhead
+- tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_mixed_loop_and_io_function_never_fires_either_advisory
 designated_repro_test: null
 acceptance:
 - text: GIVEN a pure-arithmetic loop function submitted to ThreadPoolExecutor WHEN
     advisories run THEN a GIL-bound suggestion fires naming the loop; GIVEN a socket-read
     function under threads THEN silence
   evidence:
-  - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
-  - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_io_bound_socket_read_in_threadpool_does_not_fire
-  - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_trivial_io_task_in_processpool_fires_ipc_overhead
-  - tests/unit/test_arch.py::TestConcurrencyModelMismatch::test_mixed_loop_and_io_function_never_fires_either_advisory
+  - tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_cpu_bound_loop_in_threadpool_fires_gil_bound
+  - tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_io_bound_socket_read_in_threadpool_does_not_fire
+  - tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_trivial_io_task_in_processpool_fires_ipc_overhead
+  - tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch::test_mixed_loop_and_io_function_never_fires_either_advisory
 threat: null
 component: null
 ---

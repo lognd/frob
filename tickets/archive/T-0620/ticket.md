@@ -43,16 +43,16 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/unit/test_arch.py::TestLayeringConfig::test_layer_for_longest_prefix_match
-- tests/unit/test_arch.py::TestLayeringConfig::test_layer_for_unmatched_path_is_none
-- tests/unit/test_arch.py::TestLoadLayeringConfig::test_missing_frob_toml_returns_none
-- tests/unit/test_arch.py::TestLoadLayeringConfig::test_parses_declared_layers_and_allow_table
-- tests/unit/test_arch.py::TestLayeringViolations::test_disallowed_cross_layer_edge_flagged
-- tests/unit/test_arch.py::TestLayeringViolations::test_allowed_cross_layer_edge_not_flagged
-- tests/unit/test_arch.py::TestLayeringViolations::test_dynamic_import_in_layered_file_flagged
-- tests/unit/test_arch.py::TestNoDiConstructionSmell::test_inline_construction_outside_init_flagged
-- tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_init_not_flagged
-- tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_factory_function_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestLayeringConfig::test_layer_for_longest_prefix_match
+- tests/unit/arch_suite/test_type_design.py::TestLayeringConfig::test_layer_for_unmatched_path_is_none
+- tests/unit/arch_suite/test_type_design.py::TestLoadLayeringConfig::test_missing_frob_toml_returns_none
+- tests/unit/arch_suite/test_type_design.py::TestLoadLayeringConfig::test_parses_declared_layers_and_allow_table
+- tests/unit/arch_suite/test_type_design.py::TestLayeringViolations::test_disallowed_cross_layer_edge_flagged
+- tests/unit/arch_suite/test_type_design.py::TestLayeringViolations::test_allowed_cross_layer_edge_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestLayeringViolations::test_dynamic_import_in_layered_file_flagged
+- tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell::test_inline_construction_outside_init_flagged
+- tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell::test_construction_inside_init_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell::test_construction_inside_factory_function_not_flagged
 designated_repro_test: null
 threat: null
 component: null

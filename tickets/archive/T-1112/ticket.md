@@ -15,9 +15,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestCheckRegistryExclusion::test_check_and_run_checks_names_not_flagged
-- tests/unit/test_arch.py::TestCheckRegistryExclusion::test_non_registry_named_group_still_flagged
-- tests/unit/test_arch.py::TestCheckRegistryExclusion::test_check_registry_regex_matches_both_shapes
+- tests/unit/arch_suite/test_abstraction.py::TestCheckRegistryExclusion::test_check_and_run_checks_names_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestCheckRegistryExclusion::test_non_registry_named_group_still_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestCheckRegistryExclusion::test_check_registry_regex_matches_both_shapes
 designated_repro_test: null
 threat: null
 component: null

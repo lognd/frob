@@ -18,24 +18,24 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestPatternRecommender::test_translating_wrapper_recommends_adapter
-- tests/unit/test_arch.py::TestPatternRecommender::test_same_name_wrapper_not_flagged_adapter
-- tests/unit/test_arch.py::TestPatternRecommender::test_two_translating_methods_not_flagged_adapter
-- tests/unit/test_arch.py::TestPatternRecommender::test_manual_callback_list_recommends_observer
-- tests/unit/test_arch.py::TestPatternRecommender::test_append_only_list_not_flagged_observer
-- tests/unit/test_arch.py::TestPatternRecommender::test_iterate_without_append_not_flagged_observer
-- tests/unit/test_arch.py::TestPatternRecommender::test_anemic_accessors_recommends_move_behavior
-- tests/unit/test_arch.py::TestPatternRecommender::test_class_with_real_method_not_flagged_anemic
-- tests/unit/test_arch.py::TestPatternRecommender::test_two_accessor_class_not_flagged_anemic
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_translating_wrapper_recommends_adapter
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_same_name_wrapper_not_flagged_adapter
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_two_translating_methods_not_flagged_adapter
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_manual_callback_list_recommends_observer
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_append_only_list_not_flagged_observer
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_iterate_without_append_not_flagged_observer
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_anemic_accessors_recommends_move_behavior
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_class_with_real_method_not_flagged_anemic
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_two_accessor_class_not_flagged_anemic
 - tests/test_registry_reconciliation_patterns.py::TestExhaustivenessGateOverRealPatterns::test_no_patterns_violations
-- tests/unit/test_arch.py::TestPatternRecommender::test_mixed_delegate_and_translate_methods_fires_both
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_mixed_delegate_and_translate_methods_fires_both
 designated_repro_test: null
 acceptance:
 - text: GIVEN each of the 6 rows WHEN this ticket closes THEN the row is either detected
     by a tested high-precision detector or carries a reasoned not-checkable/out-of-scope
     disposition AND the patterns reconciliation pin test passes
   evidence:
-  - tests/unit/test_arch.py::TestPatternRecommender::test_mixed_delegate_and_translate_methods_fires_both
+  - tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_mixed_delegate_and_translate_methods_fires_both
 threat: null
 component: null
 ---

@@ -18,13 +18,13 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_unrelated_bodies_not_flagged
-- tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_near_duplicate_bodies_still_flagged
-- tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_specific_signature_genuine_family_still_flagged
-- tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_only_two_bodies_similar_reports_pair
-- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged
-- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_init_reexport_does_not_suppress
-- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_test_file_co_mention_does_not_suppress
+- tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_unrelated_bodies_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_near_duplicate_bodies_still_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators::test_specific_signature_genuine_family_still_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_only_two_bodies_similar_reports_pair
+- tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged
+- tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_init_reexport_does_not_suppress
+- tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_test_file_co_mention_does_not_suppress
 designated_repro_test: null
 threat: null
 component: null

@@ -37,7 +37,7 @@ detected" for an uncommitted working tree against main -- the stat above
 is `git diff main --stat` run directly and observed, not estimated.)
 
 ### Evidence
-- `tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_derived_class_has_the_field_and_one_method` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestFourWayCrossLanguageEquivalence::test_derived_class_has_the_field_and_one_method` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s), plus the full

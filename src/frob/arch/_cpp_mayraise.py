@@ -281,8 +281,8 @@ def _scan_body_raises(
 
 # frob:doc docs/modules/arch.md#cpp-may-throw-analysis-t-0687
 # frob:ticket T-0687
-# frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_calling_throwing_function_fires_error  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_calling_vector_at_fires_curated_thrower  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_noexcept_calling_throwing_function_fires_error  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_noexcept_calling_vector_at_fires_curated_thrower  # noqa: E501
 # frob:waive COV007 reason="T-0871: same -- see COV005 waiver above"
 def _scan_cpp_functions(source: str) -> tuple[_CppFunctionRaises, ...]:
     """Every function DEFINITION (a signature followed by `{`, not a bare
@@ -407,9 +407,9 @@ def _propagate_callee_raises(
 
 # frob:doc docs/modules/arch.md#cpp-may-throw-analysis-t-0687
 # frob:ticket T-0687
-# frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_calling_throwing_function_fires_error  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_with_catch_all_does_not_fire  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_non_noexcept_function_never_fires  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_noexcept_calling_throwing_function_fires_error  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_noexcept_with_catch_all_does_not_fire  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_non_noexcept_function_never_fires  # noqa: E501
 def check_cpp_noexcept_violations(
     source: str, rel: str, suggestions: list[ArchSuggestion]
 ) -> None:

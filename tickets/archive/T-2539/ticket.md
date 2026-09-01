@@ -63,30 +63,30 @@ scope_changes:
   actor: logan
   at: '2026-08-18'
 evidence:
-- tests/unit/test_arch.py::TestCaughtTypeNames::test_tuple_clause_reports_every_member
-- tests/unit/test_arch.py::TestCaughtTypeNames::test_python_adapter_records_every_tuple_member
-- tests/unit/test_arch.py::TestCaughtTypeNames::test_tuple_except_discharges_every_member
-- tests/unit/test_arch.py::TestSliceSubscriptRaisesNothing::test_python_adapter_marks_slice_subscripts
-- tests/unit/test_arch.py::TestSliceSubscriptRaisesNothing::test_slice_only_function_leaks_no_key_error
-designated_repro_test: tests/unit/test_arch.py::TestSliceSubscriptRaisesNothing::test_python_adapter_marks_slice_subscripts
+- tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames::test_tuple_clause_reports_every_member
+- tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames::test_python_adapter_records_every_tuple_member
+- tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames::test_tuple_except_discharges_every_member
+- tests/unit/arch_suite/test_guards.py::TestSliceSubscriptRaisesNothing::test_python_adapter_marks_slice_subscripts
+- tests/unit/arch_suite/test_guards.py::TestSliceSubscriptRaisesNothing::test_slice_only_function_leaks_no_key_error
+designated_repro_test: tests/unit/arch_suite/test_guards.py::TestSliceSubscriptRaisesNothing::test_python_adapter_marks_slice_subscripts
 acceptance:
 - text: given a python function whose sole handler is a multi-type `except (A, B):`,
     when compute_may_raise resolves it, then no member of the tuple appears in the
     leaked set
   evidence:
-  - tests/unit/test_arch.py::TestCaughtTypeNames::test_tuple_clause_reports_every_member
-  - tests/unit/test_arch.py::TestCaughtTypeNames::test_python_adapter_records_every_tuple_member
-  - tests/unit/test_arch.py::TestCaughtTypeNames::test_tuple_except_discharges_every_member
-  - tests/unit/test_arch.py::TestSliceSubscriptRaisesNothing::test_python_adapter_marks_slice_subscripts
-  - tests/unit/test_arch.py::TestSliceSubscriptRaisesNothing::test_slice_only_function_leaks_no_key_error
+  - tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames::test_tuple_clause_reports_every_member
+  - tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames::test_python_adapter_records_every_tuple_member
+  - tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames::test_tuple_except_discharges_every_member
+  - tests/unit/arch_suite/test_guards.py::TestSliceSubscriptRaisesNothing::test_python_adapter_marks_slice_subscripts
+  - tests/unit/arch_suite/test_guards.py::TestSliceSubscriptRaisesNothing::test_slice_only_function_leaks_no_key_error
 - text: given a python function whose only subscript is a slice, when compute_may_raise
     resolves it, then KeyError is not in the leaked set
   evidence:
-  - tests/unit/test_arch.py::TestCaughtTypeNames::test_tuple_clause_reports_every_member
-  - tests/unit/test_arch.py::TestCaughtTypeNames::test_python_adapter_records_every_tuple_member
-  - tests/unit/test_arch.py::TestCaughtTypeNames::test_tuple_except_discharges_every_member
-  - tests/unit/test_arch.py::TestSliceSubscriptRaisesNothing::test_python_adapter_marks_slice_subscripts
-  - tests/unit/test_arch.py::TestSliceSubscriptRaisesNothing::test_slice_only_function_leaks_no_key_error
+  - tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames::test_tuple_clause_reports_every_member
+  - tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames::test_python_adapter_records_every_tuple_member
+  - tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames::test_tuple_except_discharges_every_member
+  - tests/unit/arch_suite/test_guards.py::TestSliceSubscriptRaisesNothing::test_python_adapter_marks_slice_subscripts
+  - tests/unit/arch_suite/test_guards.py::TestSliceSubscriptRaisesNothing::test_slice_only_function_leaks_no_key_error
 threat: null
 component: null
 anchor: false

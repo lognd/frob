@@ -60,10 +60,10 @@ explicitly asked for, not a to-be-improved placeholder in this ticket.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_with_catch_all_does_not_fire` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestCppMayThrow::test_non_noexcept_function_never_fires` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_vector_at_fires_curated_thrower` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestCppMayThrow::test_noexcept_with_catch_all_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestCppMayThrow::test_non_noexcept_function_never_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestCppMayThrow::test_noexcept_calling_vector_at_fires_curated_thrower` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

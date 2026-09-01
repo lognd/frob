@@ -21,10 +21,10 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/unit/test_arch.py::TestLanguageParityExclusion::test_one_member_per_language_not_flagged
-- tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[duplicate_rust_tag]
-- tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[untagged_member]
-- tests/unit/test_arch.py::TestLanguageParityExclusion::test_tag_requires_underscore_boundary
+- tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_one_member_per_language_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[duplicate_rust_tag]
+- tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[untagged_member]
+- tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_tag_requires_underscore_boundary
 designated_repro_test: null
 threat: null
 component: null

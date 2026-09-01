@@ -37,9 +37,9 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/unit/test_arch.py::TestDeepNestingArchExempt::test_reasoned_exempt_suppresses_finding
-- tests/unit/test_arch.py::TestDeepNestingArchExempt::test_unreasoned_exempt_still_fires
-- tests/unit/test_arch.py::TestDeepNestingArchExempt::test_exempt_on_unrelated_function_does_not_leak
+- tests/unit/arch_suite/test_complexity.py::TestDeepNestingArchExempt::test_reasoned_exempt_suppresses_finding
+- tests/unit/arch_suite/test_complexity.py::TestDeepNestingArchExempt::test_unreasoned_exempt_still_fires
+- tests/unit/arch_suite/test_complexity.py::TestDeepNestingArchExempt::test_exempt_on_unrelated_function_does_not_leak
 designated_repro_test: null
 threat: null
 component: null

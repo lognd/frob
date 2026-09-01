@@ -238,7 +238,7 @@ class NormalizedCatch(BaseModel):
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
-# frob:tests tests/unit/test_arch.py::TestCaughtTypeNames.test_tuple_clause_reports_every_member  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_guards.py::TestCaughtTypeNames.test_tuple_clause_reports_every_member  # noqa: E501
 # frob:ticket T-2539
 def caught_type_names(catch: NormalizedCatch) -> tuple[str | None, ...]:
     """Every exception type name `catch` discharges -- the single-element
@@ -480,7 +480,7 @@ class NormalizedModule(BaseModel):
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
-# frob:tests tests/unit/test_arch.py::TestNormalizedModel.test_language_adapter_is_a_runtime_checkable_protocol  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lang_adapters.py::TestNormalizedModel.test_language_adapter_is_a_runtime_checkable_protocol  # noqa: E501
 @runtime_checkable
 class LanguageAdapter(Protocol):
     """The per-grammar contract a language walker implements to produce a
@@ -503,7 +503,7 @@ class LanguageAdapter(Protocol):
     language: Language
 
     # frob:doc docs/modules/arch.md#normalized-code-model
-    # frob:tests tests/unit/test_arch.py::TestNormalizedModel.test_language_adapter_is_a_runtime_checkable_protocol  # noqa: E501
+    # frob:tests tests/unit/arch_suite/test_lang_adapters.py::TestNormalizedModel.test_language_adapter_is_a_runtime_checkable_protocol  # noqa: E501
     def adapt(self, tree: object, source: bytes, rel: str) -> NormalizedModule:
         """Map one parsed source file's tree-sitter `Tree` (`tree`, typed
         `object` here to keep this module import-free of `tree_sitter` --

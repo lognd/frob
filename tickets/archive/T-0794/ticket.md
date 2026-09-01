@@ -16,13 +16,13 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_vet_scan
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_vet_scan
 designated_repro_test: null
 acceptance:
 - text: GIVEN main WHEN frob check runs THEN zero self-join-deadlock warnings on src/frob/vet
     while the timeout behavior is preserved and a regression test locks the discharge
   evidence:
-  - tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_vet_scan
+  - tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_vet_scan
 threat: null
 component: null
 ---

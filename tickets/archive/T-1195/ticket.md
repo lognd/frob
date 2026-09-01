@@ -43,11 +43,11 @@ scope_changes:
   actor: logan
   at: '2026-07-29'
 evidence:
-- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity
+- tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity
 - tests/test_arch_near_duplicate_native.py::test_near_duplicate_cluster_dispatches_to_native_and_matches_reference
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_mode_calls_stamp_and_returns
 - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_runs_selected_chunks_and_reports_result
-- tests/unit/test_arch.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[duplicate_rust_tag]
+- tests/unit/arch_suite/test_abstraction.py::TestLanguageParityExclusion::test_non_parity_group_still_flagged[duplicate_rust_tag]
 designated_repro_test: null
 threat: null
 component: null

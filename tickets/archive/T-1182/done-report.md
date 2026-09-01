@@ -25,9 +25,9 @@ removed to confirm it is the specific mechanism suppressing the finding.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestCallThroughForwarderExclusion::test_distinct_named_self_forwarders_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestCallThroughForwarderExclusion::test_group_with_one_non_self_named_member_still_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestCallThroughForwarderExclusion::test_forwarder_helper_requires_self_named_short_body` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestCallThroughForwarderExclusion::test_distinct_named_self_forwarders_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestCallThroughForwarderExclusion::test_group_with_one_non_self_named_member_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestCallThroughForwarderExclusion::test_forwarder_helper_requires_self_named_short_body` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

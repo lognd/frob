@@ -35,7 +35,7 @@ etc.) and were present identically before this change.
 Project-wide (src/frob) abstraction-opportunity count after this
 change: 68 findings (measured directly, not a claimed estimate).
 
-Added tests/unit/test_arch.py::TestGateRuleBuilderExclusion (3 cases:
+Added tests/unit/arch_suite/test_abstraction.py::TestGateRuleBuilderExclusion (3 cases:
 a Violation-returning 3-member group is suppressed; a same-shaped
 non-Violation-returning group still flags; the return-type-membership
 predicate itself matches the three declared shapes and rejects a
@@ -55,9 +55,9 @@ Filed: none.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestGateRuleBuilderExclusion::test_violation_returning_group_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestGateRuleBuilderExclusion::test_non_violation_returning_group_still_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestGateRuleBuilderExclusion::test_return_type_membership_matches_all_three_shapes` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestGateRuleBuilderExclusion::test_violation_returning_group_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestGateRuleBuilderExclusion::test_non_violation_returning_group_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestGateRuleBuilderExclusion::test_return_type_membership_matches_all_three_shapes` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

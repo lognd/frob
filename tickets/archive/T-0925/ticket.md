@@ -23,7 +23,7 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
+- tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
 designated_repro_test: null
 threat: null
 component: null

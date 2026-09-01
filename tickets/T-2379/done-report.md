@@ -107,8 +107,8 @@ Done report's before/after counts above.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

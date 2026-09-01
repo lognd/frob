@@ -2,7 +2,7 @@
 id: T-3592
 title: Split tests/unit/test_arch.py (8910 lines) into a per-gate-family package,
   reusing T-3586's recipe
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-08-31'
@@ -19,8 +19,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_arch.py
 - tests/unit/arch_suite/**
-- design/frob.strata
-- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,16 +36,12 @@ scope_changes:
     helpers per recipe fallback
   actor: logan
   at: '2026-09-01'
-- op: add
-  glob: design/frob.strata
-  reason: split relocates capability-observing test code 1:1
-  actor: logan
-  at: '2026-09-01'
-- op: add
-  glob: docs/design/registry/capability-via-ratchet.lock.json
-  reason: split relocates capability-observing test code 1:1
-  actor: logan
-  at: '2026-09-01'
+evidence:
+- tests/unit/arch_suite/test_lang_adapters.py::TestNormalizedModel::test_hand_built_python_snippet_shape
+- tests/unit/arch_suite/test_complexity.py::TestGodClass::test_big_class_triggers_god_class
+- tests/unit/arch_suite/test_lsp.py::TestOverrideRaisesNotImplemented::test_concrete_override_raising_not_implemented_flagged
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_self_recursive_function_converges
+- tests/unit/test_arch.py::test_arch_end_to_end_analyze_then_render
 designated_repro_test: null
 threat: null
 component: null

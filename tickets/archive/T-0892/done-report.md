@@ -17,11 +17,11 @@ Changed:
   `TypeDesignSuggestion::describes` doc anchor
 
 Evidence:
-- tests/unit/test_arch.py::TestIllegalStatesRepresentable (2 cases)
-- tests/unit/test_arch.py::TestPrimitiveObsession (2 cases)
-- tests/unit/test_arch.py::TestParseDontValidate (2 cases)
-- tests/unit/test_arch.py::TestBooleanFlagParam (2 cases)
-- tests/unit/test_arch.py::TestRunTypeDesignChecks::test_combines_all_four_checks
+- tests/unit/arch_suite/test_type_design.py::TestIllegalStatesRepresentable (2 cases)
+- tests/unit/arch_suite/test_type_design.py::TestPrimitiveObsession (2 cases)
+- tests/unit/arch_suite/test_type_design.py::TestParseDontValidate (2 cases)
+- tests/unit/arch_suite/test_type_design.py::TestBooleanFlagParam (2 cases)
+- tests/unit/arch_suite/test_type_design.py::TestRunTypeDesignChecks::test_combines_all_four_checks
 - full tests/unit/test_arch.py (215 tests) green
 - frob test --base main: [PASS] python exit=0 30.15s (touched-set selection)
 Filed: none

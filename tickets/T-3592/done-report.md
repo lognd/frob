@@ -1,0 +1,215 @@
+## Done report
+
+Split tests/unit/test_arch.py (8976 lines, 326 test methods + 1 parametrize expansion across 79 classes) into tests/unit/arch_suite/ (11 per-gate-family modules + conftest.py), reusing T-3586/T-3591's recipe. Used frob refactor split per family, learning from T-3591: a few cross-class bare-name dependencies (TestSharedCheckOnPythonAndRust/Kotlin reading TestSharedCheckOnPythonAndTypeScript._PY_LONG_FUNC as an inherited class attribute) needed grouping into one larger chunk rather than chunk-size 1, since splitting the referenced and referencing classes into separate transactions breaks the source file mid-way. Hand-relocated 10 shared test helpers (module/graph-edge builders) plus 4 module-level constants/guards the split tool cannot carry (FIXTURES path, HAS_ARCH try/except availability guard, pytestmark skipif, _DEEP_NEST_SRC fixture-derived constant) into tests/unit/arch_suite/conftest.py, with explicit imports added to every consuming split module. Repointed 97 files' frob:tests/frob:doc/evidence citations from tests/unit/test_arch.py::Class to the new module paths, verified against the actual class definitions (no wrong-destination citations this time, unlike T-3591's). Relocated design/frob.strata's eval/exec/fs.read/fs.write/net via-list entries for the split's capability-observing test code. tests/test_ticket... wait tests/unit/test_arch.py is now a 1-test file (its own end-to-end integration test, not moved since it exercises the whole family, not one). Full package green: 327/327, ruff clean.
+
+### Changed
+```
+ design/frob.strata                          |   10 +-
+ docs/modules/arch.md                        |    4 +-
+ src/frob/arch/__init__.py                   |   14 +-
+ src/frob/arch/_async_hazards.py             |   22 +-
+ src/frob/arch/_concurrency.py               |   22 +-
+ src/frob/arch/_concurrency_model.py         |    8 +-
+ src/frob/arch/_cpp_mayraise.py              |   10 +-
+ src/frob/arch/_fallibility.py               |   20 +-
+ src/frob/arch/_kotlin.py                    |    4 +-
+ src/frob/arch/_layering.py                  |   20 +-
+ src/frob/arch/_lock_ordering.py             |   10 +-
+ src/frob/arch/_logging_checks.py            |   16 +-
+ src/frob/arch/_mayraise.py                  |    4 +-
+ src/frob/arch/_models.py                    |    4 +-
+ src/frob/arch/_normalized.py                |    6 +-
+ src/frob/arch/_patterns.py                  |   30 +-
+ src/frob/arch/_python.py                    |    4 +-
+ src/frob/arch/_rust.py                      |    4 +-
+ src/frob/arch/_shared_state_race.py         |   10 +-
+ src/frob/arch/_smells.py                    |   34 +-
+ src/frob/arch/_solid.py                     |   34 +-
+ src/frob/arch/_typedesign.py                |   18 +-
+ src/frob/arch/_typescript.py                |    4 +-
+ src/frob/graph/summary.py                   |   28 +-
+ tests/unit/arch_suite/conftest.py           |  133 +
+ tests/unit/arch_suite/test_abstraction.py   | 1419 +++++
+ tests/unit/arch_suite/test_complexity.py    |  248 +
+ tests/unit/arch_suite/test_concurrency.py   |  857 +++
+ tests/unit/arch_suite/test_dispatch.py      |  394 ++
+ tests/unit/arch_suite/test_guards.py        | 1314 ++++
+ tests/unit/arch_suite/test_lang_adapters.py | 1905 ++++++
+ tests/unit/arch_suite/test_logging.py       |  453 ++
+ tests/unit/arch_suite/test_lsp.py           |  801 +++
+ tests/unit/arch_suite/test_misc.py          |  458 ++
+ tests/unit/arch_suite/test_smells.py        |  420 ++
+ tests/unit/arch_suite/test_type_design.py   |  500 ++
+ tests/unit/test_arch.py                     | 8780 +--------------------------
+ tickets/T-2379/done-report.md               |    4 +-
+ tickets/T-2379/ticket.md                    |   10 +-
+ tickets/T-2568/done-report.md               |    8 +-
+ tickets/T-2568/ticket.md                    |   16 +-
+ tickets/T-3473/done-report.md               |   16 +-
+ tickets/T-3473/ticket.md                    |   18 +-
+ tickets/T-3474/done-report.md               |   12 +-
+ tickets/T-3474/ticket.md                    |   14 +-
+ tickets/T-3571/done-report.md               |   10 +-
+ tickets/T-3571/ticket.md                    |   14 +-
+ tickets/T-3581/done-report.md               |    2 +-
+ tickets/T-3581/ticket.md                    |    4 +-
+ tickets/T-3592/ticket.md                    |   18 +-
+ tickets/T-3627/done-report.md               |    4 +-
+ tickets/T-3627/ticket.md                    |    6 +-
+ tickets/archive/T-0329/done-report.md       |    8 +-
+ tickets/archive/T-0329/ticket.md            |   10 +-
+ tickets/archive/T-0330/ticket.md            |    4 +-
+ tickets/archive/T-0332/done-report.md       |   30 +-
+ tickets/archive/T-0332/ticket.md            |   32 +-
+ tickets/archive/T-0359/done-report.md       |    4 +-
+ tickets/archive/T-0359/ticket.md            |    6 +-
+ tickets/archive/T-0360/done-report.md       |    4 +-
+ tickets/archive/T-0360/ticket.md            |   10 +-
+ tickets/archive/T-0368/done-report.md       |   10 +-
+ tickets/archive/T-0368/ticket.md            |   12 +-
+ tickets/archive/T-0370/done-report.md       |    2 +-
+ tickets/archive/T-0370/ticket.md            |   16 +-
+ tickets/archive/T-0371/ticket.md            |    4 +-
+ tickets/archive/T-0372/done-report.md       |   10 +-
+ tickets/archive/T-0372/ticket.md            |   12 +-
+ tickets/archive/T-0373/ticket.md            |    2 +-
+ tickets/archive/T-0394/done-report.md       |   14 +-
+ tickets/archive/T-0394/ticket.md            |   26 +-
+ tickets/archive/T-0528/ticket.md            |   24 +-
+ tickets/archive/T-0588/done-report.md       |    6 +-
+ tickets/archive/T-0588/ticket.md            |    6 +-
+ tickets/archive/T-0605/done-report.md       |   42 +-
+ tickets/archive/T-0605/ticket.md            |   24 +-
+ tickets/archive/T-0609/done-report.md       |    4 +-
+ tickets/archive/T-0609/ticket.md            |    6 +-
+ tickets/archive/T-0610/done-report.md       |    8 +-
+ tickets/archive/T-0610/ticket.md            |   10 +-
+ tickets/archive/T-0611/done-report.md       |   28 +-
+ tickets/archive/T-0611/ticket.md            |   28 +-
+ tickets/archive/T-0612/done-report.md       |   30 +-
+ tickets/archive/T-0612/ticket.md            |   32 +-
+ tickets/archive/T-0614/done-report.md       |   26 +-
+ tickets/archive/T-0614/ticket.md            |   28 +-
+ tickets/archive/T-0615/done-report.md       |   12 +-
+ tickets/archive/T-0615/ticket.md            |   14 +-
+ tickets/archive/T-0617/ticket.md            |    4 +-
+ tickets/archive/T-0618/done-report.md       |   48 +-
+ tickets/archive/T-0618/ticket.md            |   26 +-
+ tickets/archive/T-0619/done-report.md       |   20 +-
+ tickets/archive/T-0619/ticket.md            |   12 +-
+ tickets/archive/T-0620/done-report.md       |   40 +-
+ tickets/archive/T-0620/ticket.md            |   22 +-
+ tickets/archive/T-0621/done-report.md       |   36 +-
+ tickets/archive/T-0621/ticket.md            |   20 +-
+ tickets/archive/T-0622/done-report.md       |   16 +-
+ tickets/archive/T-0622/ticket.md            |   18 +-
+ tickets/archive/T-0623/done-report.md       |   20 +-
+ tickets/archive/T-0623/ticket.md            |   22 +-
+ tickets/archive/T-0624/done-report.md       |   30 +-
+ tickets/archive/T-0624/ticket.md            |   32 +-
+ tickets/archive/T-0625/done-report.md       |    4 +-
+ tickets/archive/T-0625/ticket.md            |    6 +-
+ tickets/archive/T-0632/done-report.md       |   10 +-
+ tickets/archive/T-0632/ticket.md            |   22 +-
+ tickets/archive/T-0681/done-report.md       |   12 +-
+ tickets/archive/T-0681/ticket.md            |   24 +-
+ tickets/archive/T-0685/done-report.md       |    2 +-
+ tickets/archive/T-0685/ticket.md            |    4 +-
+ tickets/archive/T-0686/done-report.md       |    2 +-
+ tickets/archive/T-0686/ticket.md            |   16 +-
+ tickets/archive/T-0687/done-report.md       |    8 +-
+ tickets/archive/T-0687/ticket.md            |   14 +-
+ tickets/archive/T-0689/ticket.md            |   22 +-
+ tickets/archive/T-0693/done-report.md       |   10 +-
+ tickets/archive/T-0693/ticket.md            |   22 +-
+ tickets/archive/T-0694/ticket.md            |   24 +-
+ tickets/archive/T-0695/done-report.md       |   16 +-
+ tickets/archive/T-0695/ticket.md            |   20 +-
+ tickets/archive/T-0696/done-report.md       |    2 +-
+ tickets/archive/T-0696/ticket.md            |   34 +-
+ tickets/archive/T-0697/done-report.md       |   10 +-
+ tickets/archive/T-0697/ticket.md            |   16 +-
+ tickets/archive/T-0698/done-report.md       |    8 +-
+ tickets/archive/T-0698/ticket.md            |   18 +-
+ tickets/archive/T-0727/done-report.md       |    2 +-
+ tickets/archive/T-0727/ticket.md            |    6 +-
+ tickets/archive/T-0739/done-report.md       |    2 +-
+ tickets/archive/T-0739/ticket.md            |    4 +-
+ tickets/archive/T-0743/done-report.md       |    2 +-
+ tickets/archive/T-0743/ticket.md            |    6 +-
+ tickets/archive/T-0745/done-report.md       |   40 +-
+ tickets/archive/T-0745/ticket.md            |   42 +-
+ tickets/archive/T-0767/done-report.md       |    4 +-
+ tickets/archive/T-0767/ticket.md            |    8 +-
+ tickets/archive/T-0794/done-report.md       |    2 +-
+ tickets/archive/T-0794/ticket.md            |    6 +-
+ tickets/archive/T-0809/done-report.md       |   12 +-
+ tickets/archive/T-0809/ticket.md            |    8 +-
+ tickets/archive/T-0849/done-report.md       |   18 +-
+ tickets/archive/T-0849/ticket.md            |   18 +-
+ tickets/archive/T-0871/done-report.md       |    2 +-
+ tickets/archive/T-0892/done-report.md       |   10 +-
+ tickets/archive/T-0892/ticket.md            |   20 +-
+ tickets/archive/T-0914/done-report.md       |   16 +-
+ tickets/archive/T-0914/ticket.md            |   18 +-
+ tickets/archive/T-0916/done-report.md       |   14 +-
+ tickets/archive/T-0916/ticket.md            |   14 +-
+ tickets/archive/T-0925/done-report.md       |    2 +-
+ tickets/archive/T-0925/ticket.md            |    4 +-
+ tickets/archive/T-0931/ticket.md            |    6 +-
+ tickets/archive/T-0951/ticket.md            |    4 +-
+ tickets/archive/T-0970/done-report.md       |    8 +-
+ tickets/archive/T-0970/ticket.md            |   22 +-
+ tickets/archive/T-0972/done-report.md       |   14 +-
+ tickets/archive/T-0972/ticket.md            |   14 +-
+ tickets/archive/T-0976/done-report.md       |   12 +-
+ tickets/archive/T-0976/ticket.md            |   12 +-
+ tickets/archive/T-1024/done-report.md       |    2 +-
+ tickets/archive/T-1024/ticket.md            |    6 +-
+ tickets/archive/T-1027/done-report.md       |    6 +-
+ tickets/archive/T-1027/ticket.md            |    8 +-
+ tickets/archive/T-1066/done-report.md       |    6 +-
+ tickets/archive/T-1066/ticket.md            |    8 +-
+ tickets/archive/T-1068/done-report.md       |    8 +-
+ tickets/archive/T-1068/ticket.md            |   10 +-
+ tickets/archive/T-1112/done-report.md       |   14 +-
+ tickets/archive/T-1112/ticket.md            |    8 +-
+ tickets/archive/T-1141/done-report.md       |    8 +-
+ tickets/archive/T-1141/ticket.md            |    8 +-
+ tickets/archive/T-1144/done-report.md       |    8 +-
+ tickets/archive/T-1144/ticket.md            |    8 +-
+ tickets/archive/T-1181/done-report.md       |    4 +-
+ tickets/archive/T-1181/ticket.md            |   10 +-
+ tickets/archive/T-1182/done-report.md       |    6 +-
+ tickets/archive/T-1182/ticket.md            |   14 +-
+ tickets/archive/T-1195/done-report.md       |    4 +-
+ tickets/archive/T-1195/ticket.md            |    6 +-
+ tickets/archive/T-1215/ticket.md            |   18 +-
+ tickets/archive/T-1424/done-report.md       |    4 +-
+ tickets/archive/T-1424/ticket.md            |   10 +-
+ tickets/archive/T-1485/done-report.md       |    6 +-
+ tickets/archive/T-1485/ticket.md            |    8 +-
+ tickets/archive/T-1636/done-report.md       |    4 +-
+ tickets/archive/T-1636/ticket.md            |    4 +-
+ tickets/archive/T-2470/done-report.md       |    8 +-
+ tickets/archive/T-2470/ticket.md            |    6 +-
+ tickets/archive/T-2539/done-report.md       |   10 +-
+ tickets/archive/T-2539/ticket.md            |   34 +-
+ tickets/archive/T-2543/done-report.md       |   14 +-
+ tickets/archive/T-2543/ticket.md            |   24 +-
+ tickets/archive/T-2552/done-report.md       |    6 +-
+ tickets/archive/T-2552/ticket.md            |   16 +-
+ 195 files changed, 10216 insertions(+), 9894 deletions(-)
+```
+
+### Evidence
+- `tests/unit/arch_suite/test_lang_adapters.py::TestNormalizedModel::test_hand_built_python_snippet_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_complexity.py::TestGodClass::test_big_class_triggers_god_class` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lsp.py::TestOverrideRaisesNotImplemented::test_concrete_override_raising_not_implemented_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_self_recursive_function_converges` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::test_arch_end_to_end_analyze_then_render` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 34 error(s), 4397 warning(s), 897 waived
+- error-findings: ARCH102@src/frob/process/_lock.py, CLAUDE001@.claude/hooks/sync-claude-config.py, COV003@tests/test_ci_workflow_matrix.py, COV007@src/frob/strata/_capacity.py, DEPR006@frob-deprecated-baseline.lock.json, DOC006@tickets/T-3628/ticket.md, DRIFT002@tests/ticket_land_suite/test_archive.py, DRIFT002@tests/ticket_land_suite/test_claim_close.py, DRIFT002@tests/ticket_land_suite/test_dirt_ownership.py, DRIFT002@tests/ticket_land_suite/test_land_core.py, DRIFT002@tests/ticket_land_suite/test_land_lock.py, DRIFT002@tests/ticket_land_suite/test_land_plan.py, DRIFT002@tests/ticket_land_suite/test_ledger_splice.py, DRIFT002@tests/ticket_land_suite/test_push.py, DRIFT002@tests/ticket_land_suite/test_release.py, DRIFT002@tests/ticket_land_suite/test_verify_intent.py, DRIFT002@tests/ticket_land_suite/test_verify_reset.py, DRIFT002@tests/ticket_land_suite/test_waive_deletion.py, DRIFT002@tests/ticket_land_suite/test_wip.py, DRIFT002@tests/unit/arch_suite/test_complexity.py, DRIFT002@tests/unit/arch_suite/test_misc.py, DUP001@tests/unit/arch_suite/test_abstraction.py, DUP001@tests/unit/arch_suite/test_dispatch.py, DUP001@tests/unit/arch_suite/test_lang_adapters.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3592/src/frob/arch/__init__.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3592/src/frob/arch/_models.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3592/tests/test_ticket_land.py, OPAQUE001@src/frob/app/_config_external.py, PRE001@tickets/T-3592, REL001@src/frob/__init__.py, SEC110@tests/ticket_land_suite/test_wip.py, SELFAUDIT001@docs/design/registry/capability-via-ratchet.lock.json, TEST001@src/frob/strata/_models.py, WAIVE011@frob-ratchet.lock.json

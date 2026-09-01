@@ -33,7 +33,7 @@ scope_changes:
   at: '2026-07-27'
 evidence:
 - tests/gates_suite/test_compliance.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
-- tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
+- tests/unit/arch_suite/test_misc.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
 - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
 designated_repro_test: null
 acceptance:
@@ -42,7 +42,7 @@ acceptance:
     per its own acceptance
   evidence:
   - tests/gates_suite/test_compliance.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
-  - tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
+  - tests/unit/arch_suite/test_misc.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
   - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
 threat: null
 component: null

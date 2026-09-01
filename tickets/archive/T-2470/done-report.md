@@ -50,8 +50,8 @@ Changed:
   AFFECT001's touched-doc requirement)
 
 Evidence:
-- `tests/unit/test_arch.py::TestCppSymrefCanonicalization::test_long_function_symref_is_dot_joined_message_keeps_native_spelling`
-- `tests/unit/test_arch.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly`
+- `tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization::test_long_function_symref_is_dot_joined_message_keeps_native_spelling`
+- `tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly`
 - Full `tests/unit/test_arch.py` + `tests/unit/test_lang_primitives.py`:
   328/328 passed, 0 failed.
 
@@ -77,8 +77,8 @@ Gates: `frob check --ticket T-2470` clean on
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestCppSymrefCanonicalization::test_long_function_symref_is_dot_joined_message_keeps_native_spelling` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization::test_long_function_symref_is_dot_joined_message_keeps_native_spelling` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

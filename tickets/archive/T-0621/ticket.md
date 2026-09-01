@@ -19,15 +19,15 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_cross_field_guard_flagged
-- tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_alone_not_flagged
-- tests/unit/test_arch.py::TestPrimitiveObsession::test_three_plus_raw_params_flagged
-- tests/unit/test_arch.py::TestPrimitiveObsession::test_two_raw_params_not_flagged
-- tests/unit/test_arch.py::TestParseDontValidate::test_validates_then_returns_same_type_flagged
-- tests/unit/test_arch.py::TestParseDontValidate::test_validates_then_returns_refined_type_not_flagged
-- tests/unit/test_arch.py::TestBooleanFlagParam::test_public_function_branching_on_bool_param_flagged
-- tests/unit/test_arch.py::TestBooleanFlagParam::test_private_function_not_flagged
-- tests/unit/test_arch.py::TestRunTypeDesignChecks::test_combines_all_four_checks
+- tests/unit/arch_suite/test_type_design.py::TestIllegalStatesRepresentable::test_bool_field_cross_field_guard_flagged
+- tests/unit/arch_suite/test_type_design.py::TestIllegalStatesRepresentable::test_bool_field_alone_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestPrimitiveObsession::test_three_plus_raw_params_flagged
+- tests/unit/arch_suite/test_type_design.py::TestPrimitiveObsession::test_two_raw_params_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestParseDontValidate::test_validates_then_returns_same_type_flagged
+- tests/unit/arch_suite/test_type_design.py::TestParseDontValidate::test_validates_then_returns_refined_type_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestBooleanFlagParam::test_public_function_branching_on_bool_param_flagged
+- tests/unit/arch_suite/test_type_design.py::TestBooleanFlagParam::test_private_function_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestRunTypeDesignChecks::test_combines_all_four_checks
 designated_repro_test: null
 threat: null
 component: null

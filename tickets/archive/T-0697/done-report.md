@@ -76,11 +76,11 @@ Filed: none.
 (no changed files detected)
 
 ### Evidence
-- `tests/unit/test_arch.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSharedStateRaceHazards::test_same_write_under_with_lock_does_not_fire` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSharedStateRaceHazards::test_write_reachable_via_callee_of_dispatched_function_fires` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSharedStateRaceHazards::test_write_not_reachable_from_any_dispatch_does_not_fire` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSharedStateRaceHazards::test_async_create_task_dispatch_fires_same_as_thread_submit` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_same_write_under_with_lock_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_write_reachable_via_callee_of_dispatched_function_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_write_not_reachable_from_any_dispatch_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_async_create_task_dispatch_fires_same_as_thread_submit` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

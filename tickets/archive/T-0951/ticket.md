@@ -24,7 +24,7 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_near_duplicate_bodies_still_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_near_duplicate_bodies_still_flagged
 - tests/test_pii_structural_gate.py::TestFieldNames::test_password_field_fires
 designated_repro_test: null
 threat: null

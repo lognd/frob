@@ -824,7 +824,7 @@ def _rust_build_module(tree: object, rel: str) -> NormalizedModule:
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
-# frob:tests tests/unit/test_arch.py::TestRustAdapter.test_adapt_stays_sane_on_realistic_snippet  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_lang_adapters.py::TestRustAdapter.test_adapt_stays_sane_on_realistic_snippet  # noqa: E501
 class RustAdapter:
     """`LanguageAdapter` (T-0609) for Rust (T-0612): maps a `raw_tree`-
     parsed `.rs` file's tree-sitter `Tree` onto a `NormalizedModule` by
@@ -836,7 +836,7 @@ class RustAdapter:
     language = "rust"
 
     # frob:doc docs/modules/arch.md#normalized-code-model
-    # frob:tests tests/unit/test_arch.py::TestRustAdapter.test_adapt_stays_sane_on_realistic_snippet  # noqa: E501
+    # frob:tests tests/unit/arch_suite/test_lang_adapters.py::TestRustAdapter.test_adapt_stays_sane_on_realistic_snippet  # noqa: E501
     def adapt(self, tree: object, source: bytes, rel: str) -> NormalizedModule:
         """Build the `NormalizedModule` for one parsed rust file (`tree`,
         `rel`) -- `source` is unused since tree-sitter `Node.text` already

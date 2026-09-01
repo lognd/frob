@@ -53,15 +53,15 @@ tests/unit/test_arch.py       | 9 new tests across 5 new test classes
 Collected via `pytest tests/unit/test_arch.py -p no:cacheprovider -q`
 (113 passed, full file) and `--collect-only` (all 9 node ids below
 resolved):
-- tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_cross_field_guard_flagged
-- tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_alone_not_flagged
-- tests/unit/test_arch.py::TestPrimitiveObsession::test_three_plus_raw_params_flagged
-- tests/unit/test_arch.py::TestPrimitiveObsession::test_two_raw_params_not_flagged
-- tests/unit/test_arch.py::TestParseDontValidate::test_validates_then_returns_same_type_flagged
-- tests/unit/test_arch.py::TestParseDontValidate::test_validates_then_returns_refined_type_not_flagged
-- tests/unit/test_arch.py::TestBooleanFlagParam::test_public_function_branching_on_bool_param_flagged
-- tests/unit/test_arch.py::TestBooleanFlagParam::test_private_function_not_flagged
-- tests/unit/test_arch.py::TestRunTypeDesignChecks::test_combines_all_four_checks
+- tests/unit/arch_suite/test_type_design.py::TestIllegalStatesRepresentable::test_bool_field_cross_field_guard_flagged
+- tests/unit/arch_suite/test_type_design.py::TestIllegalStatesRepresentable::test_bool_field_alone_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestPrimitiveObsession::test_three_plus_raw_params_flagged
+- tests/unit/arch_suite/test_type_design.py::TestPrimitiveObsession::test_two_raw_params_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestParseDontValidate::test_validates_then_returns_same_type_flagged
+- tests/unit/arch_suite/test_type_design.py::TestParseDontValidate::test_validates_then_returns_refined_type_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestBooleanFlagParam::test_public_function_branching_on_bool_param_flagged
+- tests/unit/arch_suite/test_type_design.py::TestBooleanFlagParam::test_private_function_not_flagged
+- tests/unit/arch_suite/test_type_design.py::TestRunTypeDesignChecks::test_combines_all_four_checks
 
 `frob check --only <lint|static|gates-fast|gates-native|gates-security>
 --ticket T-0621` (chunked loop), measured after a `git merge main`.
@@ -97,15 +97,15 @@ precedent already established in this cluster.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_cross_field_guard_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_alone_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPrimitiveObsession::test_three_plus_raw_params_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPrimitiveObsession::test_two_raw_params_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestParseDontValidate::test_validates_then_returns_same_type_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestParseDontValidate::test_validates_then_returns_refined_type_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestBooleanFlagParam::test_public_function_branching_on_bool_param_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestBooleanFlagParam::test_private_function_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestRunTypeDesignChecks::test_combines_all_four_checks` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestIllegalStatesRepresentable::test_bool_field_cross_field_guard_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestIllegalStatesRepresentable::test_bool_field_alone_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestPrimitiveObsession::test_three_plus_raw_params_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestPrimitiveObsession::test_two_raw_params_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestParseDontValidate::test_validates_then_returns_same_type_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestParseDontValidate::test_validates_then_returns_refined_type_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestBooleanFlagParam::test_public_function_branching_on_bool_param_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestBooleanFlagParam::test_private_function_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_type_design.py::TestRunTypeDesignChecks::test_combines_all_four_checks` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 9 passed (from 9 evidence id(s))

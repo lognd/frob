@@ -102,7 +102,7 @@ evidence:
 - tests/unit/test_arch_ocp.py::TestNonExhaustiveEnumMatch::test_non_enum_class_match_not_flagged
 - tests/unit/test_arch_ocp.py::TestNonExhaustiveEnumMatch::test_union_pattern_covers_multiple_members
 - tests/unit/test_arch_ocp.py::TestNonExhaustiveEnumMatch::test_unresolvable_pattern_shape_not_flagged
-- tests/unit/test_arch.py::TestPatternRecommender::test_isinstance_chain_recommends_strategy
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_isinstance_chain_recommends_strategy
 designated_repro_test: null
 threat: null
 component: null

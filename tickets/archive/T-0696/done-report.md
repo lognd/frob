@@ -25,7 +25,7 @@ Changed:
 - `src/frob/arch/_models.py::ArchCategory` (4 new category values)
 - `src/frob/arch/__init__.py::_run_python_checks` (wiring call + docstring
   note)
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards` (new, 8 tests)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards` (new, 8 tests)
 
 Evidence: `uv run pytest tests/unit/test_arch.py -k
 TestAsyncEventLoopHazards -p no:cacheprovider -q` -> 8 passed. Confirmed

@@ -24,7 +24,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/graph/test_dsl.py::TestProtocolDeclarations::test_declared_protocol_round_trips
-- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
+- tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
 - tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
 - tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
 designated_repro_test: null
@@ -33,7 +33,7 @@ acceptance:
     THEN each child gate/advisory fires per its own acceptance
   evidence:
   - tests/unit/graph/test_dsl.py::TestProtocolDeclarations::test_declared_protocol_round_trips
-  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
+  - tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
   - tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
   - tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
 threat: null

@@ -35,21 +35,21 @@ scope_changes:
   actor: logan
   at: '2026-07-22'
 evidence:
-- tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
-- tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
-- tests/unit/test_arch.py::TestForkPoolHazards::test_fork_after_threads_fires_when_fork_follows_thread_start
-- tests/unit/test_arch.py::TestForkPoolHazards::test_fork_before_threads_does_not_fire
-- tests/unit/test_arch.py::TestForkPoolHazards::test_pipe_wait_deadlock_fires_without_communicate
-- tests/unit/test_arch.py::TestForkPoolHazards::test_pipe_wait_deadlock_does_not_fire_with_communicate
-- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool
-- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_undispatched_join
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_fork_after_threads_fires_when_fork_follows_thread_start
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_fork_before_threads_does_not_fire
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pipe_wait_deadlock_fires_without_communicate
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pipe_wait_deadlock_does_not_fire_with_communicate
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_undispatched_join
 designated_repro_test: null
 acceptance:
 - text: GIVEN a fixture spawning a process pool inside a thread-pool task WHEN the
     check runs THEN an error-tier finding fires AND the check fires on src/frob/gates/_run_combined_jobs
     as it exists today
   evidence:
-  - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
+  - tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
 threat: null
 component: null
 ---

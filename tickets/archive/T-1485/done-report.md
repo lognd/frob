@@ -81,9 +81,9 @@ entry point's other caller is unaffected). `pytest tests/test_gates.py
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestPatternRecommender::test_isinstance_chain_recommends_strategy` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_state_field_chain_recommends_state_machine` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPatternRecommender::test_stringly_typed_recommends_newtype` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_isinstance_chain_recommends_strategy` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_state_field_chain_recommends_state_machine` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_stringly_typed_recommends_newtype` (pytest node id, verified passing when recorded)
 - `tests/unit/test_arch_ocp.py::TestTypeDispatchSmell::test_isinstance_chain_flags_ocp_violation` (pytest node id, verified passing when recorded)
 
 ### Captured claims

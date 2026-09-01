@@ -48,7 +48,7 @@ pydantic (de)serialization too, same as T-0609's hand-built shape test).
 Imports updated to `from frob.arch._typescript import TypeScriptAdapter`
 throughout `tests/unit/test_arch.py`; `frob:doc`/`frob:tests` directives
 moved with the code and still point at the same
-`tests/unit/test_arch.py::TestTypeScriptAdapter.
+`tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter.
 test_adapt_stays_sane_on_realistic_snippet` node id (unchanged by the
 move).
 
@@ -82,16 +82,16 @@ the merged tree, per the T-0431 conflict precedent.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_is_a_language_adapter` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_imports` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_class_bases_and_fields` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_function_params_and_return_type` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_arrow_function_bound_to_const` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_branches_loops_calls_field_accesses` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_for_of_and_ternary` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_raise_and_catch` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_override_modifier` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_constructor_is_a_method` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_export_wrapped_declarations` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_stays_sane_on_realistic_snippet` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSharedCheckOnPythonAndTypeScript::test_long_complex_function_flags_identically_across_languages` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_is_a_language_adapter` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_imports` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_class_bases_and_fields` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_function_params_and_return_type` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_arrow_function_bound_to_const` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_branches_loops_calls_field_accesses` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_for_of_and_ternary` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_raise_and_catch` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_override_modifier` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_constructor_is_a_method` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_export_wrapped_declarations` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_stays_sane_on_realistic_snippet` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestSharedCheckOnPythonAndTypeScript::test_long_complex_function_flags_identically_across_languages` (pytest node id, verified passing when recorded)

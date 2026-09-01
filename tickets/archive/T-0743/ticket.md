@@ -19,13 +19,13 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestRustAdapter::test_adapt_enum_variant_payload_shapes
+- tests/unit/arch_suite/test_lang_adapters.py::TestRustAdapter::test_adapt_enum_variant_payload_shapes
 designated_repro_test: null
 acceptance:
 - text: GIVEN a Rust enum with tuple and struct variants WHEN RustAdapter.adapt runs
     THEN variant payload shapes are represented and asserted by a test
   evidence:
-  - tests/unit/test_arch.py::TestRustAdapter::test_adapt_enum_variant_payload_shapes
+  - tests/unit/arch_suite/test_lang_adapters.py::TestRustAdapter::test_adapt_enum_variant_payload_shapes
 threat: null
 component: null
 ---

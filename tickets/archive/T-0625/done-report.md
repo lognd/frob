@@ -87,8 +87,8 @@ rather than fixed here (outside T-0625's declared scope).
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestModuleDependencyCycles::test_two_file_import_cycle_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestModuleDependencyCycles::test_acyclic_imports_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestModuleDependencyCycles::test_two_file_import_cycle_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestModuleDependencyCycles::test_acyclic_imports_not_flagged` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

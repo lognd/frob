@@ -12,11 +12,11 @@ src/frob/arch/_concurrency.py::_check_fork_pool_hazards
 docs/modules/arch.md self-join-deadlock section
 
 Evidence:
-tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool
-tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_undispatched_join
-tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown
-tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_fires_on_genuine_thread_self_join
-tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_socketd_idle_monitor
+tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool
+tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_undispatched_join
+tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown
+tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_fires_on_genuine_thread_self_join
+tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_socketd_idle_monitor
 
 The detector now requires the dispatch site to also pass the dispatched
 function its own dispatcher object (self-pass correlation) before a

@@ -72,9 +72,9 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/unit/test_arch.py::TestToolResultBuilderExclusion::test_toolresult_returning_group_not_flagged
-- tests/unit/test_arch.py::TestToolResultBuilderExclusion::test_non_toolresult_returning_group_still_flagged
-- tests/unit/test_arch.py::TestToolResultBuilderExclusion::test_return_type_membership_matches_both_shapes
+- tests/unit/arch_suite/test_abstraction.py::TestToolResultBuilderExclusion::test_toolresult_returning_group_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestToolResultBuilderExclusion::test_non_toolresult_returning_group_still_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestToolResultBuilderExclusion::test_return_type_membership_matches_both_shapes
 designated_repro_test: null
 threat: null
 component: null

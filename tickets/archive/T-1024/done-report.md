@@ -188,7 +188,7 @@ tests/test_vet.py::TestEvasionTaxonomyExhaustiveness (5)
 - `tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires` (pytest node id, verified passing when recorded)
 - `tests/unit/test_design_invariants.py::TestInv007::test_forbidden_import_fires` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires` (pytest node id, verified passing when recorded)
 - `tests/test_registry_exhaustiveness.py::TestDisposition::test_undispositioned_entry_fails` (pytest node id, verified passing when recorded)
 
 ### Captured claims

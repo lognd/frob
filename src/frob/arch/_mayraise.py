@@ -620,8 +620,8 @@ def _build_name_to_func(module: NormalizedModule) -> dict[str, NormalizedFunctio
 
 # frob:doc docs/modules/arch.md#may-raise-resolver
 # frob:ticket T-0686
-# frob:tests tests/unit/test_arch.py::TestMayRaiseResolver.test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestMayRaiseResolver.test_unresolvable_call_yields_unknown  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver.test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_guards.py::TestMayRaiseResolver.test_unresolvable_call_yields_unknown  # noqa: E501
 def compute_may_raise(module: NormalizedModule) -> dict[str, FunctionMayRaise]:
     """Per-function may-raise sets for every top-level function and method
     in `module` (T-0686): each function's EXPOSED set (what escapes it,

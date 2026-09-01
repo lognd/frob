@@ -144,7 +144,7 @@ def _own_contribution(symref: str, edges: Sequence[Edge]) -> _FiveSets:
 
 
 # frob:doc docs/modules/graph.md#protocol-summary-engine
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_leaf_resource_declarations_populate_acquired_released_escaped  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_leaf_resource_declarations_populate_acquired_released_escaped  # noqa: E501
 class FunctionSummary(BaseModel):
     """One function's fixpoint-computed protocol contribution.
 
@@ -535,19 +535,19 @@ def _poison_scc_on_timeout(
 
 # frob:doc docs/modules/graph.md#protocol-summary-engine
 # frob:ticket T-0745
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_leaf_function_summary_is_its_own_declarations  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_caller_summary_includes_callee_transitions  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_requires_and_transitions_join_across_two_hops  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_recursive_cluster_converges_to_hand_computed_fixpoint  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_self_recursive_function_converges  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_unresolved_callee_poisons_the_summary  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_poisoning_propagates_transitively_through_a_clean_caller  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_unreachable_function_is_reported_not_analyzed_never_silent  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_diamond_shaped_calls_join_without_duplication_or_loss  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_leaf_resource_declarations_populate_acquired_released_escaped  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_resource_sets_join_transitively_through_a_caller  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_resource_sets_join_across_a_recursive_cluster  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_leaf_function_summary_is_its_own_declarations  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_caller_summary_includes_callee_transitions  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_requires_and_transitions_join_across_two_hops  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_recursive_cluster_converges_to_hand_computed_fixpoint  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_self_recursive_function_converges  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_unresolved_callee_poisons_the_summary  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_poisoning_propagates_transitively_through_a_clean_caller  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_unreachable_function_is_reported_not_analyzed_never_silent  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_diamond_shaped_calls_join_without_duplication_or_loss  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_leaf_resource_declarations_populate_acquired_released_escaped  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_resource_sets_join_transitively_through_a_caller  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine.test_resource_sets_join_across_a_recursive_cluster  # noqa: E501
 def compute_protocol_summaries(
     callgraph: CallGraph,
     edges: Sequence[Edge],

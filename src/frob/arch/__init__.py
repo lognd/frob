@@ -245,7 +245,9 @@ __all__ = [
 
 
 # frob:ticket T-0471
-# frob:tests tests/unit/test_arch.py::TestGodClass.test_big_class_triggers_god_class
+# frob:tests \
+# tests/unit/arch_suite/test_complexity.py::TestGodClass.test_big_class_triggers_god_cl\
+# ass
 def _collect_files(root: Path) -> list[Path]:
     """Every file under `root` worth handing to a language's arch checks
     (T-0026's original built-in-skip-dir/exclude-glob filtering, now routed
@@ -277,7 +279,8 @@ def _collect_files(root: Path) -> list[Path]:
 
 
 # frob:ticket T-0368
-# frob:tests tests/unit/test_arch.py::TestLargeFile.test_fixtures_json_not_flagged
+# frob:tests \
+# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_fixtures_json_not_flagged
 def _is_fixture_data_file(rel: str) -> bool:
     """True if `rel` sits under a `fixtures/` directory (T-0368): test-data
     corpora (JSON payloads, litmus samples) that arch's size-based checks
@@ -290,11 +293,21 @@ def _is_fixture_data_file(rel: str) -> bool:
 
 # frob:ticket T-0368
 # frob:ticket T-0372
-# frob:tests tests/unit/test_arch.py::TestLargeFile.test_large_test_file_not_flagged
-# frob:tests tests/unit/test_arch.py::TestLargeFile.test_large_src_file_still_flagged
-# frob:tests tests/unit/test_arch.py::TestLargeFile.test_large_json_data_not_flagged
-# frob:tests tests/unit/test_arch.py::TestLargeFile.test_large_md_ledger_not_flagged
-# frob:tests tests/unit/test_arch.py::TestLargeFile.test_large_py_src_still_flagged
+# frob:tests \
+# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_test_file_not_flag\
+# ged
+# frob:tests \
+# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_src_file_still_fla\
+# gged
+# frob:tests \
+# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_json_data_not_flag\
+# ged
+# frob:tests \
+# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_md_ledger_not_flag\
+# ged
+# frob:tests \
+# tests/unit/arch_suite/test_complexity.py::TestLargeFile.test_large_py_src_still_flagg\
+# ed
 def _check_large_file(
     rel: str,
     lines: list[bytes],

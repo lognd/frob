@@ -16,9 +16,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestCallThroughForwarderExclusion::test_distinct_named_self_forwarders_not_flagged
-- tests/unit/test_arch.py::TestCallThroughForwarderExclusion::test_group_with_one_non_self_named_member_still_flagged
-- tests/unit/test_arch.py::TestCallThroughForwarderExclusion::test_forwarder_helper_requires_self_named_short_body
+- tests/unit/arch_suite/test_abstraction.py::TestCallThroughForwarderExclusion::test_distinct_named_self_forwarders_not_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestCallThroughForwarderExclusion::test_group_with_one_non_self_named_member_still_flagged
+- tests/unit/arch_suite/test_abstraction.py::TestCallThroughForwarderExclusion::test_forwarder_helper_requires_self_named_short_body
 designated_repro_test: null
 acceptance:
 - text: GIVEN a group whose members are same-name single-statement forwarders to another
@@ -26,9 +26,9 @@ acceptance:
     excluded (they are deliberate indirection, not duplicated logic), measured before/after
     on the T-1083 finding set
   evidence:
-  - tests/unit/test_arch.py::TestCallThroughForwarderExclusion::test_distinct_named_self_forwarders_not_flagged
-  - tests/unit/test_arch.py::TestCallThroughForwarderExclusion::test_group_with_one_non_self_named_member_still_flagged
-  - tests/unit/test_arch.py::TestCallThroughForwarderExclusion::test_forwarder_helper_requires_self_named_short_body
+  - tests/unit/arch_suite/test_abstraction.py::TestCallThroughForwarderExclusion::test_distinct_named_self_forwarders_not_flagged
+  - tests/unit/arch_suite/test_abstraction.py::TestCallThroughForwarderExclusion::test_group_with_one_non_self_named_member_still_flagged
+  - tests/unit/arch_suite/test_abstraction.py::TestCallThroughForwarderExclusion::test_forwarder_helper_requires_self_named_short_body
 threat: null
 component: null
 ---

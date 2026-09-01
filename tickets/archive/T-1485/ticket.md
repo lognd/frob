@@ -27,9 +27,9 @@ scope_changes:
   actor: logan
   at: '2026-08-06'
 evidence:
-- tests/unit/test_arch.py::TestPatternRecommender::test_isinstance_chain_recommends_strategy
-- tests/unit/test_arch.py::TestPatternRecommender::test_state_field_chain_recommends_state_machine
-- tests/unit/test_arch.py::TestPatternRecommender::test_stringly_typed_recommends_newtype
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_isinstance_chain_recommends_strategy
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_state_field_chain_recommends_state_machine
+- tests/unit/arch_suite/test_abstraction.py::TestPatternRecommender::test_stringly_typed_recommends_newtype
 - tests/unit/test_arch_ocp.py::TestTypeDispatchSmell::test_isinstance_chain_flags_ocp_violation
 designated_repro_test: null
 threat: null

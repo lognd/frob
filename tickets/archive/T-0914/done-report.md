@@ -14,14 +14,14 @@ reference from "the follow-up is T-0914" to the resolved anchor link.
 (no changed files detected)
 
 ### Evidence
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_does_not_fire_via_to_thread` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_fires_on_asyncio_run_inside_coroutine` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_does_not_fire_at_top_level_sync_code` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_fires_on_bare_call_statement` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_does_not_fire_when_awaited_or_stored` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_fires_on_no_await_body` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_does_not_fire_when_awaiting` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_does_not_fire_via_to_thread` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_nested_event_loop_fires_on_asyncio_run_inside_coroutine` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_nested_event_loop_does_not_fire_at_top_level_sync_code` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_fires_on_bare_call_statement` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_does_not_fire_when_awaited_or_stored` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_async_zero_awaits_fires_on_no_await_body` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_async_zero_awaits_does_not_fire_when_awaiting` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 8 passed (from 8 evidence id(s))

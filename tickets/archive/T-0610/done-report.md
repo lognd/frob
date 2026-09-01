@@ -90,7 +90,7 @@ mid-ticket `git merge main`.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestPythonAdapter::test_is_a_language_adapter` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPythonAdapter::test_adapt_arch_python_fixture_shape` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPythonAdapter::test_adapt_long_func_fixture_structural_events` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPythonAdapter::test_adapt_deep_nest_fixture_nesting_depth` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_is_a_language_adapter` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_arch_python_fixture_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_long_func_fixture_structural_events` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_deep_nest_fixture_nesting_depth` (pytest node id, verified passing when recorded)

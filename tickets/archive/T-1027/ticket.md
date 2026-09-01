@@ -17,9 +17,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_fires_on_unrelated_calls
-- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_does_not_fire_when_second_reads_first
-- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_does_not_fire_on_single_await
+- tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_fires_on_unrelated_calls
+- tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_does_not_fire_when_second_reads_first
+- tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_does_not_fire_on_single_await
 designated_repro_test: null
 threat: null
 component: null

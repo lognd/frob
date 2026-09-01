@@ -73,9 +73,9 @@ T-2543 keeps the Class A decision; T-2377 keeps the promotion.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

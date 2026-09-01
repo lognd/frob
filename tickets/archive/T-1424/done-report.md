@@ -64,7 +64,7 @@ Evidence:
   tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_imports_only_the_requested_subcommands_module
   tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others
   tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketFlagParsing::test_flag_sets_the_namespace_dest
-  tests/unit/test_arch.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
+  tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
 
 Also ran (not bound as evidence, sanity checks that pass):
   full targeted suite from the ticket brief (tests/unit/test_app_config_from_external_t1276.py,
@@ -165,7 +165,7 @@ hand-edit of any land-owned file's content.
 - `tests/unit/test_app_lazy_dispatch.py::TestResolveRunner::test_imports_only_the_requested_subcommands_module` (pytest node id, verified passing when recorded)
 - `tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_land_cmd_flags.py::TestAllowCrossTicketFlagParsing::test_flag_sets_the_namespace_dest` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_complexity.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

@@ -50,9 +50,9 @@ mechanism, each with a reason recorded in the ticket's scope_changes audit trail
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestDeepNestingArchExempt::test_reasoned_exempt_suppresses_finding` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestDeepNestingArchExempt::test_unreasoned_exempt_still_fires` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestDeepNestingArchExempt::test_exempt_on_unrelated_function_does_not_leak` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_complexity.py::TestDeepNestingArchExempt::test_reasoned_exempt_suppresses_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_complexity.py::TestDeepNestingArchExempt::test_unreasoned_exempt_still_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_complexity.py::TestDeepNestingArchExempt::test_exempt_on_unrelated_function_does_not_leak` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

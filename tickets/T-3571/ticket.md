@@ -54,12 +54,12 @@ scope_changes:
   actor: logan
   at: '2026-08-31'
 evidence:
-- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool
-- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_undispatched_join
-- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown
-- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_fires_on_genuine_thread_self_join
-- tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_socketd_idle_monitor
-designated_repro_test: tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_undispatched_join
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_fires_on_genuine_thread_self_join
+- tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_socketd_idle_monitor
+designated_repro_test: tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards::test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown
 threat: null
 component: null
 anchor: false

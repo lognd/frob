@@ -45,14 +45,14 @@ categories; the ticket's original scope list omitted it).
 (no changed files detected)
 
 ### Evidence
-- `tests/unit/test_arch.py::TestUnloggedErrorPath::test_catch_with_no_nearby_log_call_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestUnloggedErrorPath::test_catch_with_nearby_log_call_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestUnloggedBoundary::test_public_entry_point_with_no_log_call_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestUnloggedBoundary::test_boundary_call_with_no_nearby_log_call_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestUnloggedBoundary::test_private_function_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPrintAsDiagnostic::test_print_call_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPrintAsDiagnostic::test_print_call_in_cli_module_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestRunLoggingChecks::test_combines_all_three_checks` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_logging.py::TestUnloggedErrorPath::test_catch_with_no_nearby_log_call_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_logging.py::TestUnloggedErrorPath::test_catch_with_nearby_log_call_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_logging.py::TestUnloggedBoundary::test_public_entry_point_with_no_log_call_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_logging.py::TestUnloggedBoundary::test_boundary_call_with_no_nearby_log_call_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_logging.py::TestUnloggedBoundary::test_private_function_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_logging.py::TestPrintAsDiagnostic::test_print_call_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_logging.py::TestPrintAsDiagnostic::test_print_call_in_cli_module_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_logging.py::TestRunLoggingChecks::test_combines_all_three_checks` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 8 passed (from 8 evidence id(s))

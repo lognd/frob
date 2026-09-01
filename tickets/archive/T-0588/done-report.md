@@ -15,7 +15,7 @@ entirely, the same mechanism TEST001 credit already uses):
 as_json / as_text (18 symbols total, fully resolved, 0 residual): every
 Result-model `.as_json()`/`.as_text()` in the collision set was bound to a
 test that actually calls it, verified by reading the test body:
-- ArchResult.as_text/as_json -> tests/unit/test_arch.py::TestArchResultFormat
+- ArchResult.as_text/as_json -> tests/unit/arch_suite/test_dispatch.py::TestArchResultFormat
   (direct `result.as_text()` / `result.as_json()` calls on an ArchResult from
   analyze_project)
 - DupResult.as_text/as_json -> tests/unit/test_dup.py::TestDupResultFormat
@@ -191,8 +191,8 @@ Land note: the order-dependent xdist flake (render-lint gitless system test, doc
 - `tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch::test_unknown_command_exits_1` (pytest node id, verified passing when recorded)
 - `tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch::test_unknown_command_exits_1` (pytest node id, verified passing when recorded)
 - `tests/unit/test_app_runners.py::TestXrefRunner::test_found_symbol_json_mode` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestArchResultFormat::test_as_text_clean_project` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestArchResultFormat::test_as_json_has_suggestions_key` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_dispatch.py::TestArchResultFormat::test_as_text_clean_project` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_dispatch.py::TestArchResultFormat::test_as_json_has_suggestions_key` (pytest node id, verified passing when recorded)
 - `tests/unit/test_dup.py::TestDupResultFormat::test_as_text_clean_project` (pytest node id, verified passing when recorded)
 - `tests/unit/test_dup.py::TestDupResultFormat::test_as_json_has_groups_key` (pytest node id, verified passing when recorded)
 - `tests/unit/test_exports.py::TestExportsPackage::test_as_text_output` (pytest node id, verified passing when recorded)

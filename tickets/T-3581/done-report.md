@@ -38,7 +38,7 @@ diff (repo-wide pre-existing errors listed above, verified unrelated)
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestNormalizedModel::test_hand_built_python_snippet_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestNormalizedModel::test_hand_built_python_snippet_shape` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

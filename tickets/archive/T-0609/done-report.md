@@ -26,5 +26,5 @@ ticket's own acceptance criteria.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestNormalizedModel::test_hand_built_python_snippet_shape` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestNormalizedModel::test_language_adapter_is_a_runtime_checkable_protocol` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestNormalizedModel::test_hand_built_python_snippet_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestNormalizedModel::test_language_adapter_is_a_runtime_checkable_protocol` (pytest node id, verified passing when recorded)

@@ -89,18 +89,18 @@ third-file caller to find that public wrapper:
 - `tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus.test_store_sub_target_waiver_does_not_suppress_a_different_sub_target -> src/frob/strata/_infra.py::_elaborate_store`
 - `tests/unit/strata/test_store_observability.py::TestStoreObservabilityGrammar.test_store_errors_total_and_panics_become_node_attrs -> src/frob/strata/_infra.py::_elaborate_store`
 - `tests/unit/strata/test_store_observability.py::TestStoreOnDeploy.test_store_on_deploy_lands_on_node_deploy_contract -> src/frob/strata/_infra.py::_elaborate_store`
-- `tests/unit/test_arch.py::TestDispatchFamilySuppression.test_dispatch_family_no_abstraction_opportunity -> src/frob/arch/_python.py::_is_dispatch_family` (via `analyze_project` in `frob/arch/__init__.py` -> `_python._check_abstraction_opportunities` -> `_is_dispatch_family`, all in `_python.py` except the test's own entrypoint)
-- `tests/unit/test_arch.py::TestDispatchFamilySuppression.test_accidental_same_signature_still_flagged -> src/frob/arch/_python.py::_is_dispatch_family`
-- `tests/unit/test_arch.py::TestDispatchFamilySuppression.test_accidental_same_signature_still_flagged -> src/frob/arch/_python.py::_near_duplicate_cluster`
-- `tests/unit/test_arch.py::TestDispatchFamilySuppression.test_test_file_co_mention_does_not_suppress -> src/frob/arch/_python.py::_is_dispatch_family`
-- `tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators.test_generic_signature_unrelated_bodies_not_flagged -> src/frob/arch/_python.py::_check_abstraction_opportunities`
-- `tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators.test_generic_signature_unrelated_bodies_not_flagged -> src/frob/arch/_python.py::_signature_is_specific`
-- `tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators.test_generic_signature_unrelated_bodies_not_flagged -> src/frob/arch/_python.py::_near_duplicate_cluster`
-- `tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators.test_generic_signature_near_duplicate_bodies_still_flagged -> src/frob/arch/_python.py::_check_abstraction_opportunities`
-- `tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators.test_generic_signature_near_duplicate_bodies_still_flagged -> src/frob/arch/_python.py::_near_duplicate_cluster`
-- `tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators.test_specific_signature_genuine_family_still_flagged -> src/frob/arch/_python.py::_signature_is_specific`
-- `tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators.test_specific_signature_genuine_family_still_flagged -> src/frob/arch/_python.py::_check_abstraction_opportunities`
-- `tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators.test_generic_signature_only_two_bodies_similar_reports_pair -> src/frob/arch/_python.py::_near_duplicate_cluster`
+- `tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression.test_dispatch_family_no_abstraction_opportunity -> src/frob/arch/_python.py::_is_dispatch_family` (via `analyze_project` in `frob/arch/__init__.py` -> `_python._check_abstraction_opportunities` -> `_is_dispatch_family`, all in `_python.py` except the test's own entrypoint)
+- `tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression.test_accidental_same_signature_still_flagged -> src/frob/arch/_python.py::_is_dispatch_family`
+- `tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression.test_accidental_same_signature_still_flagged -> src/frob/arch/_python.py::_near_duplicate_cluster`
+- `tests/unit/arch_suite/test_dispatch.py::TestDispatchFamilySuppression.test_test_file_co_mention_does_not_suppress -> src/frob/arch/_python.py::_is_dispatch_family`
+- `tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators.test_generic_signature_unrelated_bodies_not_flagged -> src/frob/arch/_python.py::_check_abstraction_opportunities`
+- `tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators.test_generic_signature_unrelated_bodies_not_flagged -> src/frob/arch/_python.py::_signature_is_specific`
+- `tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators.test_generic_signature_unrelated_bodies_not_flagged -> src/frob/arch/_python.py::_near_duplicate_cluster`
+- `tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators.test_generic_signature_near_duplicate_bodies_still_flagged -> src/frob/arch/_python.py::_check_abstraction_opportunities`
+- `tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators.test_generic_signature_near_duplicate_bodies_still_flagged -> src/frob/arch/_python.py::_near_duplicate_cluster`
+- `tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators.test_specific_signature_genuine_family_still_flagged -> src/frob/arch/_python.py::_signature_is_specific`
+- `tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators.test_specific_signature_genuine_family_still_flagged -> src/frob/arch/_python.py::_check_abstraction_opportunities`
+- `tests/unit/arch_suite/test_abstraction.py::TestAbstractionOpportunityDiscriminators.test_generic_signature_only_two_bodies_similar_reports_pair -> src/frob/arch/_python.py::_near_duplicate_cluster`
 
 **Class 3 -- CLI/subprocess integration boundary (2 findings).** The test
 drives the CLI in-process (argparse dispatch by subcommand-name string) or

@@ -27,14 +27,14 @@ scope_changes:
   actor: logan
   at: '2026-07-26'
 evidence:
-- tests/unit/test_arch.py::TestUnloggedErrorPath::test_catch_with_no_nearby_log_call_flagged
-- tests/unit/test_arch.py::TestUnloggedErrorPath::test_catch_with_nearby_log_call_not_flagged
-- tests/unit/test_arch.py::TestUnloggedBoundary::test_public_entry_point_with_no_log_call_flagged
-- tests/unit/test_arch.py::TestUnloggedBoundary::test_boundary_call_with_no_nearby_log_call_flagged
-- tests/unit/test_arch.py::TestUnloggedBoundary::test_private_function_not_flagged
-- tests/unit/test_arch.py::TestPrintAsDiagnostic::test_print_call_flagged
-- tests/unit/test_arch.py::TestPrintAsDiagnostic::test_print_call_in_cli_module_not_flagged
-- tests/unit/test_arch.py::TestRunLoggingChecks::test_combines_all_three_checks
+- tests/unit/arch_suite/test_logging.py::TestUnloggedErrorPath::test_catch_with_no_nearby_log_call_flagged
+- tests/unit/arch_suite/test_logging.py::TestUnloggedErrorPath::test_catch_with_nearby_log_call_not_flagged
+- tests/unit/arch_suite/test_logging.py::TestUnloggedBoundary::test_public_entry_point_with_no_log_call_flagged
+- tests/unit/arch_suite/test_logging.py::TestUnloggedBoundary::test_boundary_call_with_no_nearby_log_call_flagged
+- tests/unit/arch_suite/test_logging.py::TestUnloggedBoundary::test_private_function_not_flagged
+- tests/unit/arch_suite/test_logging.py::TestPrintAsDiagnostic::test_print_call_flagged
+- tests/unit/arch_suite/test_logging.py::TestPrintAsDiagnostic::test_print_call_in_cli_module_not_flagged
+- tests/unit/arch_suite/test_logging.py::TestRunLoggingChecks::test_combines_all_three_checks
 designated_repro_test: null
 threat: null
 component: null

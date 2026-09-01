@@ -49,13 +49,13 @@ existing test surface, all passing (see Evidence); `git diff main
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestLockOrderingHazards::test_unresolvable_lock_identity_is_advisory` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSharedStateRaceHazards::test_same_write_under_with_lock_does_not_fire` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSharedStateRaceHazards::test_write_reachable_via_callee_of_dispatched_function_fires` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestPythonAdapter::test_adapt_arch_python_fixture_shape` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestTypeScriptAdapter::test_adapt_imports` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestLockOrderingHazards::test_unresolvable_lock_identity_is_advisory` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_same_write_under_with_lock_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_write_reachable_via_callee_of_dispatched_function_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_arch_python_fixture_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_lang_adapters.py::TestTypeScriptAdapter::test_adapt_imports` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_two_hop_wrapper_chain` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_wrapper_called_via_import_alias` (pytest node id, verified passing when recorded)

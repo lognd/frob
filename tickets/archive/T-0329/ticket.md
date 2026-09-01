@@ -29,10 +29,10 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence:
-- tests/unit/test_arch.py::TestNormalizedModel::test_hand_built_python_snippet_shape
-- tests/unit/test_arch.py::TestSharedCheckOnPythonAndTypeScript::test_long_complex_function_flags_identically_across_languages
-- tests/unit/test_arch.py::TestSharedCheckOnPythonAndRust::test_long_complex_function_flags_identically_across_languages
-- tests/unit/test_arch.py::TestSharedCheckOnPythonAndKotlin::test_long_complex_function_flags_identically_across_languages
+- tests/unit/arch_suite/test_lang_adapters.py::TestNormalizedModel::test_hand_built_python_snippet_shape
+- tests/unit/arch_suite/test_lang_adapters.py::TestSharedCheckOnPythonAndTypeScript::test_long_complex_function_flags_identically_across_languages
+- tests/unit/arch_suite/test_lang_adapters.py::TestSharedCheckOnPythonAndRust::test_long_complex_function_flags_identically_across_languages
+- tests/unit/arch_suite/test_lang_adapters.py::TestSharedCheckOnPythonAndKotlin::test_long_complex_function_flags_identically_across_languages
 designated_repro_test: null
 threat: null
 component: null

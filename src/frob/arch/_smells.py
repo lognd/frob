@@ -87,8 +87,8 @@ def _is_mutable_default(text: str) -> bool:
 
 
 # frob:doc docs/modules/arch.md#misc-design-smells
-# frob:tests tests/unit/test_arch.py::TestMutableDefaultArg.test_list_literal_default_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestMutableDefaultArg.test_none_default_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestMutableDefaultArg.test_list_literal_default_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestMutableDefaultArg.test_none_default_not_flagged  # noqa: E501
 def check_mutable_default_arg(module: NormalizedModule) -> list[ArchSuggestion]:
     """Mutable default argument (T-0624): flag a parameter whose
     `default_text` looks like a list/dict/set literal or no-arg
@@ -151,8 +151,8 @@ def _call_receiver(call: NormalizedCall) -> str | None:
 
 
 # frob:doc docs/modules/arch.md#misc-design-smells
-# frob:tests tests/unit/test_arch.py::TestFeatureEnvy.test_method_calling_other_receiver_more_than_self_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestFeatureEnvy.test_method_calling_self_more_than_others_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestFeatureEnvy.test_method_calling_other_receiver_more_than_self_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestFeatureEnvy.test_method_calling_self_more_than_others_not_flagged  # noqa: E501
 def check_feature_envy(module: NormalizedModule) -> list[ArchSuggestion]:
     """Feature envy (T-0624): tally each method's calls by receiver
     (`_call_receiver`); flag when some single non-self receiver's call
@@ -225,8 +225,8 @@ DATA_CLUMP_MIN_SITES = 3
 
 # frob:doc docs/modules/arch.md#misc-design-smells
 # frob:ticket T-0972
-# frob:tests tests/unit/test_arch.py::TestDataClumps.test_same_three_keyword_group_at_three_sites_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestDataClumps.test_group_at_two_sites_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestDataClumps.test_same_three_keyword_group_at_three_sites_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestDataClumps.test_group_at_two_sites_not_flagged  # noqa: E501
 def check_data_clumps(module: NormalizedModule) -> list[ArchSuggestion]:
     """Data clumps (T-0624): build the set of keyword-argument names
     (`NormalizedCallArg.keyword`) per call site across the whole module;
@@ -300,8 +300,8 @@ _MAGIC_NUMBER_RE = re.compile(r"(?<![\w.])-?\d+(?:\.\d+)?(?![\w.])")
 
 
 # frob:doc docs/modules/arch.md#misc-design-smells
-# frob:tests tests/unit/test_arch.py::TestMagicLiteral.test_bare_number_in_condition_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestMagicLiteral.test_zero_and_one_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestMagicLiteral.test_bare_number_in_condition_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestMagicLiteral.test_zero_and_one_not_flagged  # noqa: E501
 def check_magic_literal(module: NormalizedModule) -> list[ArchSuggestion]:
     """Magic literal (T-0624): scan every branch's `condition_text` for a
     bare numeric literal not in `_ALLOWED_BARE_NUMBERS` (`_MAGIC_NUMBER_RE`)
@@ -367,8 +367,8 @@ def _referenced_names(module: NormalizedModule) -> set[str]:
 
 
 # frob:doc docs/modules/arch.md#misc-design-smells
-# frob:tests tests/unit/test_arch.py::TestDeadPrivateCode.test_unreferenced_private_function_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestDeadPrivateCode.test_referenced_private_function_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestDeadPrivateCode.test_unreferenced_private_function_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestDeadPrivateCode.test_referenced_private_function_not_flagged  # noqa: E501
 def check_dead_private_code(module: NormalizedModule) -> list[ArchSuggestion]:
     """Dead private code (T-0624, PER-MODULE proxy -- see this module's
     docstring): flag a private (name starts with `_`, not a dunder) top-
@@ -437,8 +437,8 @@ def _inheritance_depth(cls_name: str, bases_by_name: dict[str, list[str]]) -> in
 
 
 # frob:doc docs/modules/arch.md#misc-design-smells
-# frob:tests tests/unit/test_arch.py::TestDeepInheritance.test_chain_beyond_threshold_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestDeepInheritance.test_shallow_chain_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestDeepInheritance.test_chain_beyond_threshold_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestDeepInheritance.test_shallow_chain_not_flagged  # noqa: E501
 def check_deep_inheritance(module: NormalizedModule) -> list[ArchSuggestion]:
     """Deep inheritance (T-0624, PER-MODULE proxy -- see this module's
     docstring): resolves each class's base-class chain (`_inheritance_
@@ -497,8 +497,8 @@ def _looks_like_temporal_flag(name: str) -> bool:
 
 # frob:doc docs/modules/arch.md#misc-design-smells
 # frob:ticket T-0972
-# frob:tests tests/unit/test_arch.py::TestTemporalCoupling.test_guard_clause_on_initialized_flag_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestTemporalCoupling.test_field_not_guarded_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestTemporalCoupling.test_guard_clause_on_initialized_flag_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestTemporalCoupling.test_field_not_guarded_not_flagged  # noqa: E501
 def check_temporal_coupling(module: NormalizedModule) -> list[ArchSuggestion]:
     """Temporal coupling (T-0624): flag a class with a `bool`-typed field
     whose name looks like a call-order gate (`_looks_like_temporal_flag`:
@@ -555,8 +555,8 @@ def check_temporal_coupling(module: NormalizedModule) -> list[ArchSuggestion]:
 
 
 # frob:doc docs/modules/arch.md#module-dependency-cycles
-# frob:tests tests/unit/test_arch.py::TestModuleDependencyCycles.test_two_file_import_cycle_flagged  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestModuleDependencyCycles.test_acyclic_imports_not_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestModuleDependencyCycles.test_two_file_import_cycle_flagged  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_misc.py::TestModuleDependencyCycles.test_acyclic_imports_not_flagged  # noqa: E501
 def check_module_dependency_cycles(root: Path) -> list[ArchSuggestion]:
     """Module dependency cycle detection (T-0625): builds one project-wide
     import graph under `root` using the SAME primitives `frob.app.
@@ -646,7 +646,7 @@ def _module_dependency_cycle_finding(cycle: list[str]) -> ArchSuggestion:
 
 
 # frob:doc docs/modules/arch.md#misc-design-smells
-# frob:tests tests/unit/test_arch.py::TestRunSmellChecks.test_combines_all_seven_checks  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_smells.py::TestRunSmellChecks.test_combines_all_seven_checks  # noqa: E501
 def run_smell_checks(module: NormalizedModule) -> list[ArchSuggestion]:
     """Run every ARCH1xx misc design-smell check (T-0624:
     `check_mutable_default_arg`, `check_feature_envy`,

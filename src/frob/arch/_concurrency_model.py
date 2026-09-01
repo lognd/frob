@@ -326,10 +326,10 @@ def _ipc_overhead_finding(rel: str, c: _FunctionClassification) -> ArchSuggestio
 
 
 # frob:ticket T-0698
-# frob:tests tests/unit/test_arch.py::TestConcurrencyModelMismatch.test_cpu_bound_loop_in_threadpool_fires_gil_bound  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestConcurrencyModelMismatch.test_io_bound_socket_read_in_threadpool_does_not_fire  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestConcurrencyModelMismatch.test_trivial_io_task_in_processpool_fires_ipc_overhead  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestConcurrencyModelMismatch.test_mixed_loop_and_io_function_never_fires_either_advisory  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch.test_cpu_bound_loop_in_threadpool_fires_gil_bound  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch.test_io_bound_socket_read_in_threadpool_does_not_fire  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch.test_trivial_io_task_in_processpool_fires_ipc_overhead  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestConcurrencyModelMismatch.test_mixed_loop_and_io_function_never_fires_either_advisory  # noqa: E501
 def _check_concurrency_model_mismatch(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:

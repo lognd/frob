@@ -37,8 +37,8 @@ scope_changes:
   actor: logan
   at: '2026-08-18'
 evidence:
-- tests/unit/test_arch.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly
-- tests/unit/test_arch.py::TestCppSymrefCanonicalization::test_long_function_symref_is_dot_joined_message_keeps_native_spelling
+- tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly
+- tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization::test_long_function_symref_is_dot_joined_message_keeps_native_spelling
 designated_repro_test: null
 threat: null
 component: null

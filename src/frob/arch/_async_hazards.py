@@ -469,17 +469,17 @@ def _check_unawaited_coroutines(
         )
 
 
-# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_blocking_call_in_async_fires_on_time_sleep  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_blocking_call_in_async_does_not_fire_via_to_thread  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_nested_event_loop_fires_on_asyncio_run_inside_coroutine  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_nested_event_loop_does_not_fire_at_top_level_sync_code  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_unawaited_coroutine_fires_on_bare_call_statement  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_unawaited_coroutine_does_not_fire_when_awaited_or_stored  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_async_zero_awaits_fires_on_no_await_body  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_async_zero_awaits_does_not_fire_when_awaiting  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_sequential_independent_awaits_fires_on_unrelated_calls  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_sequential_independent_awaits_does_not_fire_when_second_reads_first  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_sequential_independent_awaits_does_not_fire_on_single_await  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards.test_blocking_call_in_async_fires_on_time_sleep  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards.test_blocking_call_in_async_does_not_fire_via_to_thread  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards.test_nested_event_loop_fires_on_asyncio_run_inside_coroutine  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards.test_nested_event_loop_does_not_fire_at_top_level_sync_code  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards.test_unawaited_coroutine_fires_on_bare_call_statement  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards.test_unawaited_coroutine_does_not_fire_when_awaited_or_stored  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards.test_async_zero_awaits_fires_on_no_await_body  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards.test_async_zero_awaits_does_not_fire_when_awaiting  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards.test_sequential_independent_awaits_fires_on_unrelated_calls  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards.test_sequential_independent_awaits_does_not_fire_when_second_reads_first  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards.test_sequential_independent_awaits_does_not_fire_on_single_await  # noqa: E501
 def _check_async_event_loop_hazards(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:

@@ -153,8 +153,8 @@ evidence:
 - tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch::test_unknown_command_exits_1
 - tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch::test_unknown_command_exits_1
 - tests/unit/test_app_runners.py::TestXrefRunner::test_found_symbol_json_mode
-- tests/unit/test_arch.py::TestArchResultFormat::test_as_text_clean_project
-- tests/unit/test_arch.py::TestArchResultFormat::test_as_json_has_suggestions_key
+- tests/unit/arch_suite/test_dispatch.py::TestArchResultFormat::test_as_text_clean_project
+- tests/unit/arch_suite/test_dispatch.py::TestArchResultFormat::test_as_json_has_suggestions_key
 - tests/unit/test_dup.py::TestDupResultFormat::test_as_text_clean_project
 - tests/unit/test_dup.py::TestDupResultFormat::test_as_json_has_groups_key
 - tests/unit/test_exports.py::TestExportsPackage::test_as_text_output

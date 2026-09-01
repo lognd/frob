@@ -38,10 +38,10 @@ scope_changes:
   actor: logan
   at: '2026-07-22'
 evidence:
-- tests/unit/test_arch.py::TestPythonAdapter::test_is_a_language_adapter
-- tests/unit/test_arch.py::TestPythonAdapter::test_adapt_arch_python_fixture_shape
-- tests/unit/test_arch.py::TestPythonAdapter::test_adapt_long_func_fixture_structural_events
-- tests/unit/test_arch.py::TestPythonAdapter::test_adapt_deep_nest_fixture_nesting_depth
+- tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_is_a_language_adapter
+- tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_arch_python_fixture_shape
+- tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_long_func_fixture_structural_events
+- tests/unit/arch_suite/test_lang_adapters.py::TestPythonAdapter::test_adapt_deep_nest_fixture_nesting_depth
 designated_repro_test: null
 threat: null
 component: null

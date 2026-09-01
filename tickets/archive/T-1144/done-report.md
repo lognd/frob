@@ -33,7 +33,7 @@ drop already landed) -- exactly the 4 ToolResult-shaped groups
 dropped, confirmed by diffing the printed finding list; the remaining
 64 have no "ToolResult" in their message.
 
-Added tests/unit/test_arch.py::TestToolResultBuilderExclusion (3
+Added tests/unit/arch_suite/test_abstraction.py::TestToolResultBuilderExclusion (3
 cases, mirroring TestGateRuleBuilderExclusion's structure): a
 ToolResult-returning 3-member group is suppressed; a same-shaped
 non-ToolResult-returning group still flags; the return-type-membership
@@ -66,9 +66,9 @@ Filed: none.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestToolResultBuilderExclusion::test_toolresult_returning_group_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestToolResultBuilderExclusion::test_non_toolresult_returning_group_still_flagged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestToolResultBuilderExclusion::test_return_type_membership_matches_both_shapes` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestToolResultBuilderExclusion::test_toolresult_returning_group_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestToolResultBuilderExclusion::test_non_toolresult_returning_group_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_abstraction.py::TestToolResultBuilderExclusion::test_return_type_membership_matches_both_shapes` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

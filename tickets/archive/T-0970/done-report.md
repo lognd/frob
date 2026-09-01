@@ -15,12 +15,12 @@ Changed:
   burn-down status + the ARCH101/ARCH102/ARCH103 promote-or-advisory
   decision (finding 4's "fresh design decision")
 
-Evidence: tests/unit/test_arch.py::TestLayeringViolations (3 tests),
-tests/unit/test_arch.py::TestNoDiConstructionSmell (3 tests),
-tests/unit/test_arch.py::TestOverBroadExcept (3 tests),
+Evidence: tests/unit/arch_suite/test_type_design.py::TestLayeringViolations (3 tests),
+tests/unit/arch_suite/test_type_design.py::TestNoDiConstructionSmell (3 tests),
+tests/unit/arch_suite/test_logging.py::TestOverBroadExcept (3 tests),
 tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_mode_calls_stamp_and_returns,
 tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_gate_error_exits_1,
-tests/unit/test_arch.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint
+tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint
 (all bound via `frob ticket evidence T-0970`).
 
 Measured (chunked `frob check --only gates-native --json`, post-`main`-merge):

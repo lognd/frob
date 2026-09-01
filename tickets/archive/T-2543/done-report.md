@@ -108,13 +108,13 @@ none in any file this ticket touched.
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_provenance_propagates_through_callees` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSubscriptProvenance::test_type_with_a_confirmed_source_is_not_subscript_derived` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestSubscriptProvenance::test_slice_only_function_has_no_subscript_provenance` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestSubscriptProvenance::test_subscript_provenance_propagates_through_callees` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestSubscriptProvenance::test_type_with_a_confirmed_source_is_not_subscript_derived` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_guards.py::TestSubscriptProvenance::test_slice_only_function_has_no_subscript_provenance` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestExhaustiveHandlingGate::test_subscript_only_leak_fires_exhaust004_not_exhaust002` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestExhaustiveHandlingGate::test_confirmed_and_subscript_leaks_split_across_both_rules` (pytest node id, verified passing when recorded)
 

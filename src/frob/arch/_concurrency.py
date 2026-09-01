@@ -443,17 +443,17 @@ def _check_self_join(
     )
 
 
-# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_fork_after_threads_fires_when_fork_follows_thread_start  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_fork_before_threads_does_not_fire  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_pipe_wait_deadlock_fires_without_communicate  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_pipe_wait_deadlock_does_not_fire_with_communicate  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_self_join_deadlock_does_not_fire_on_undispatched_join  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_self_join_deadlock_fires_on_genuine_thread_self_join  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_self_join_deadlock_discharges_on_real_repo_socketd_idle_monitor  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards.test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards.test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards.test_fork_after_threads_fires_when_fork_follows_thread_start  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards.test_fork_before_threads_does_not_fire  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards.test_pipe_wait_deadlock_fires_without_communicate  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards.test_pipe_wait_deadlock_does_not_fire_with_communicate  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards.test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards.test_self_join_deadlock_does_not_fire_on_undispatched_join  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards.test_self_join_deadlock_does_not_fire_on_foreign_object_shutdown  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards.test_self_join_deadlock_fires_on_genuine_thread_self_join  # noqa: E501
+# frob:tests tests/unit/arch_suite/test_concurrency.py::TestForkPoolHazards.test_self_join_deadlock_discharges_on_real_repo_socketd_idle_monitor  # noqa: E501
 def _check_fork_pool_hazards(tree: object, rel: str, out: list[ArchSuggestion]) -> None:
     """Run all four fork/pool hazard detectors (this module's docstring)
     over one parsed python file's functions/methods. `dispatched` (the

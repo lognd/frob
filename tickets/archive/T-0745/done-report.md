@@ -58,16 +58,16 @@ Changed:
   tickets.md -- T-0745 scope change, evidence, this Done report
 
 Evidence (bound via --accepts 0, all pass):
-  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
-  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_caller_summary_includes_callee_transitions
-  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_requires_and_transitions_join_across_two_hops
-  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint
-  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_self_recursive_function_converges
-  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unresolved_callee_poisons_the_summary
-  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_poisoning_propagates_transitively_through_a_clean_caller
-  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent
-  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned
-  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
+  tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
+  tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_caller_summary_includes_callee_transitions
+  tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_requires_and_transitions_join_across_two_hops
+  tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint
+  tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_self_recursive_function_converges
+  tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_unresolved_callee_poisons_the_summary
+  tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_poisoning_propagates_transitively_through_a_clean_caller
+  tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent
+  tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned
+  tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
 
 `uv run pytest tests/unit/test_arch.py tests/unit/graph/ -q`: 164 passed
 (10 new + full pre-existing arch/graph suites, all green).
@@ -94,13 +94,13 @@ Not closed, not landed (per dispatch instructions) -- ready for review/land.
 (no changed files detected)
 
 ### Evidence
-- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_caller_summary_includes_callee_transitions` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_requires_and_transitions_join_across_two_hops` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_self_recursive_function_converges` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unresolved_callee_poisons_the_summary` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_poisoning_propagates_transitively_through_a_clean_caller` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_caller_summary_includes_callee_transitions` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_requires_and_transitions_join_across_two_hops` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_self_recursive_function_converges` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_unresolved_callee_poisons_the_summary` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_poisoning_propagates_transitively_through_a_clean_caller` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_misc.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss` (pytest node id, verified passing when recorded)

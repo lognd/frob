@@ -64,9 +64,9 @@ both before wiring in the docs change and again after the final merge).
 ```
 
 ### Evidence
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_fires_on_unrelated_calls` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_does_not_fire_when_second_reads_first` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_does_not_fire_on_single_await` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_fires_on_unrelated_calls` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_does_not_fire_when_second_reads_first` (pytest node id, verified passing when recorded)
+- `tests/unit/arch_suite/test_concurrency.py::TestAsyncEventLoopHazards::test_sequential_independent_awaits_does_not_fire_on_single_await` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))
