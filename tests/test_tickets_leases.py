@@ -23,6 +23,7 @@ import pytest
 from frob.tickets._leases import (
     LeaseError,
     _LeaseRecord,
+    _looks_like_a_safe_worktree_path_operand,
     is_lease_ttl_expired,
     lease_age_seconds,
     leases_dir,
@@ -458,6 +459,71 @@ class TestLeaseShapeValidation:
             and "rejected lease" in record.getMessage()
         ]
         assert len(rejections) == 1
+
+    # frob:ticket T-3661
+    # frob:tests \
+    # tests/test_tickets_leases.py::TestLeaseShapeValidation::test_read_all_leases_admi\
+    # ts_a_windows_style_worktree_path kind="unit"
+    def test_read_all_leases_admits_a_windows_style_worktree_path(
+        self, repo: Path
+    ) -> None:
+        """T-3661 (win32 gates_suite campaign, T-3659): a Windows worktree
+        path carries a drive-letter colon and backslash separators
+        (`D:\\a\\frob\\frob\\...`) -- BEFORE the fix, `_REF_ALLOWLIST_RE`'s
+        POSIX-only charset rejected every such `worktree` field, so
+        `read_all_leases` silently dropped every lease recorded from a
+        win32 worktree (confirmed root cause of `_rel001_land_owned` and
+        `_other_ticket_holding_live_lease` both silently treating a
+        live win32 lease as though it did not exist). A `str(Path(...))`
+        round-trip of a Windows-shaped string is a single literal path
+        component on POSIX too (`Path` never treats `\\` as a separator
+        outside `WindowsPath`), so this is testable here without a real
+        win32 checkout -- CI's actual win32 leg (tests/gates_suite/
+        test_debt.py, test_fix_engine.py) is still the end-to-end
+        verifier for the two real consumers this unblocks.
+
+        `read_all_leases` also probes worktree LIVENESS (a lease whose
+        worktree no longer exists on disk is opportunistically dropped,
+        independent of the shape check this test targets) -- so a real
+        directory literally named with the Windows-shaped string is
+        created first, since `PosixPath` treats `\\`/`:` as ordinary
+        characters, never a separator, letting this simulate the shape
+        without needing an actual win32 filesystem."""
+        fake_worktree = repo / "D:\\a\\frob\\frob\\tmp\\some-worktree"
+        fake_worktree.mkdir(parents=True)
+        _write_lease(repo, "T-3661", fake_worktree, branch="main")
+        leases = read_all_leases(repo)
+        assert {lease.ticket_id for lease in leases} == {"T-3661"}
+        assert leases[0].worktree == str(fake_worktree)
+
+    # frob:ticket T-3661
+    # frob:tests \
+    # tests/test_tickets_leases.py::TestLeaseShapeValidation::test_read_all_leases_stil\
+    # l_drops_a_dash_prefixed_windows_style_worktree kind="unit"
+    def test_read_all_leases_still_drops_a_dash_prefixed_windows_style_worktree(
+        self, repo: Path
+    ) -> None:
+        """T-3661's widened `worktree` charset must not weaken the
+        leading-`-` injection guard -- a Windows-shaped path that STILL
+        starts with `-` is rejected exactly as before, on every
+        platform."""
+        _write_lease(repo, "T-3661b", Path("-D:\\evil\\path"), branch="main")
+        leases = read_all_leases(repo)
+        assert leases == ()
+
+    # frob:ticket T-3661
+    # frob:tests \
+    # tests/test_tickets_leases.py::TestLeaseShapeValidation::test_worktree_operand_che\
+    # ck_admits_windows_paths_directly kind="unit"
+    def test_worktree_operand_check_admits_windows_paths_directly(self) -> None:
+        """`_looks_like_a_safe_worktree_path_operand` (T-3661) directly:
+        admits a Windows drive-letter/backslash path, still rejects a
+        leading `-`, and still rejects an empty string -- the pure-
+        function unit case behind the integration tests above."""
+        assert _looks_like_a_safe_worktree_path_operand("D:\\a\\frob\\frob\\tmp")
+        assert _looks_like_a_safe_worktree_path_operand("/tmp/worktree")
+        assert not _looks_like_a_safe_worktree_path_operand("-D:\\evil")
+        assert not _looks_like_a_safe_worktree_path_operand("")
 
 
 class TestLeaseTtl:

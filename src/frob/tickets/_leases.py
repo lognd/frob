@@ -370,6 +370,25 @@ _ambiguous_liveness_logged: set[tuple[Path, str]] = set()
 # property this ticket needs (option injection), not ref-format purity.
 _REF_ALLOWLIST_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
 
+# frob:ticket T-3661
+# T-3661: `_REF_ALLOWLIST_RE`'s charset above is POSIX-path-shaped only --
+# a genuine Windows worktree path (e.g. `D:\a\frob\frob\...`) carries a
+# drive-letter colon and backslash separators that regex has never
+# admitted, so on win32 EVERY recorded lease's `worktree` field failed
+# `_looks_like_a_safe_git_argv_operand` and got silently dropped by
+# `_read_one_lease`/`read_all_leases` -- see T-3659's win32 campaign,
+# T-3661's own ticket body for the confirmed root cause of two
+# independent downstream failures (`_rel001_land_owned`'s REL001
+# suppression, `_other_ticket_holding_live_lease`'s live-lease-over-
+# stale-scope precedence). `branch` never legitimately needs `:`/`\` on
+# any platform (a git ref name cannot contain either), so only the
+# `worktree` field's own admission check gets this wider charset --
+# `_REF_ALLOWLIST_RE`/`_looks_like_a_safe_git_argv_operand` stay exactly
+# as strict as before for `branch`. The leading-`-` rejection (the real
+# injection-guard property, per `_REF_ALLOWLIST_RE`'s own comment) is
+# unchanged here too.
+_WORKTREE_PATH_ALLOWLIST_RE = re.compile(r"^[A-Za-z0-9._/\\:-]+$")
+
 
 # frob:ticket T-0780
 def _looks_like_a_safe_git_argv_operand(value: str) -> bool:
@@ -384,18 +403,39 @@ def _looks_like_a_safe_git_argv_operand(value: str) -> bool:
     return bool(_REF_ALLOWLIST_RE.match(value))
 
 
+# frob:ticket T-3661
+def _looks_like_a_safe_worktree_path_operand(value: str) -> bool:
+    """`True` iff `value` is safe to later interpolate into a `git` argv
+    call as a bare worktree-path operand (T-3661, widening T-0780's
+    `_looks_like_a_safe_git_argv_operand` for this ONE field) -- non-
+    empty, does not start with `-` (the same injection-guard property,
+    unchanged), and matches `_WORKTREE_PATH_ALLOWLIST_RE`, which ALSO
+    admits `:` and `\\` so a genuine Windows absolute worktree path
+    (`D:\\a\\frob\\frob\\...`) is not silently rejected the way
+    `_REF_ALLOWLIST_RE` rejected it -- see that pattern's own T-3661
+    comment for the incident this closes. Never used for `branch`, which
+    stays on the narrower `_looks_like_a_safe_git_argv_operand`."""
+    if not value or value.startswith("-"):
+        return False
+    return bool(_WORKTREE_PATH_ALLOWLIST_RE.match(value))
+
+
 # frob:ticket T-0780
 # frob:ticket T-0601
+# frob:ticket T-3661
 def _lease_shape_is_safe(record: _LeaseRecord) -> bool:
     """`True` iff `record`'s `branch` and `worktree` fields are both safe
     argv operands (T-0780) -- the admission check `read_all_leases` and
     `_read_one_lease` run on every parsed record BEFORE returning it, so
     an option-injection payload smuggled through the peer-writable lease
     side-channel is dropped here and never reaches `frob.serve._daemon`'s
-    `git merge-base`/`git merge-tree` calls at all."""
+    `git merge-base`/`git merge-tree` calls at all. T-3661: `worktree`
+    uses the wider `_looks_like_a_safe_worktree_path_operand` (Windows
+    absolute paths carry `:`/`\\`, which are not valid `branch` chars on
+    any platform and so `branch` keeps the original, narrower check)."""
     return _looks_like_a_safe_git_argv_operand(
         record.branch
-    ) and _looks_like_a_safe_git_argv_operand(record.worktree)
+    ) and _looks_like_a_safe_worktree_path_operand(record.worktree)
 
 
 # frob:ticket T-0780

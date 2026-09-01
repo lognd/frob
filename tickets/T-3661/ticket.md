@@ -1,7 +1,7 @@
 ---
 id: T-3661
 title: 'win32: lease records rejected by POSIX-only argv-safety regex'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
