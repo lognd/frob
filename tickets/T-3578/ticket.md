@@ -27,6 +27,13 @@ scope_changes:
     ledger-commit failure'
   actor: logan
   at: '2026-08-31'
+body_changes:
+- mode: append
+  reason: append cross-run evidence from T-3621/T-3624 triage
+  actor: logan
+  at: '2026-09-01'
+  old_length: 3190
+  new_length: 3995
 evidence:
 - tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_commit_failure_names_the_failing_step_and_git_detail
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
@@ -51,3 +58,17 @@ i.e. either git add or git commit itself returned nonzero inside _add_and_commit
 Fix hermetically: at minimum, log_ledger_commit_failure should capture and surface the actual git stderr/returncode from the failed add/commit call (currently swallowed), so a recurrence is diagnosable from CI output alone without re-fetching raw job logs; and _retry_commit_with_fallback_identity should be re-audited for a darwin-specific gap (e.g. global git config discovery differing between macos-latest runner image and the other two). If the underlying cause is confirmed macOS-CI-environment-only (not a real cross-platform correctness bug), frob:waive BUG002 with that reasoning is acceptable per this tickets own instructions.
 
 Also FYI (same run, other tests, NOT this ticket, no action needed here): tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero and tests/test_frob_self_model.py (SELFAUDIT001 SYS111 ratchet) and tests/test_docptr_gate.py (DOC006) also failed in this run -- unrelated pre-existing/other-ticket territory (DOC006/SYS111 is T-3575s subject), listed here only for run-context completeness.
+
+Follow-up (2026-09-01, T-3621/T-3624 triage): run 33459475864
+(T-3621's original triage list) and the coordinator's run 33466891764
+follow-up both flagged
+tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal
+as the one remaining ubuntu-only suite failure. Tried to reproduce
+again from a fresh worktree at current main: 8/8 green across 3
+standalone runs (-p no:xdist) plus 5 full-file runs under xdist --
+consistent with this ticket's own prior finding that the trigger
+needs the full suite's env/fs state, not just this file in isolation.
+No new git stderr captured this pass. Leaving this open under T-3578
+rather than filing a duplicate; root cause is still whatever
+full-suite-only condition this ticket's Done report already
+described.
