@@ -1,7 +1,7 @@
 ---
 id: T-3624
 title: 'windows diag round 10: instrument the 1.6s frob-interrupted'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
