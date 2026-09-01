@@ -136,3 +136,6 @@ Method (carried forward, it worked -- verified again this round):
 Do NOT close this ticket on partial progress. Either drive it to zero or
 file a named successor first and say so in the Done report, same as
 T-1650/T-1655/T-1657 before it.
+
+## Failure log
+- 2026-09-01 attempt 1: Releasing an idle lease: fresh-coverage measurement completed (coverage.xml in the t-1661 worktree, worker_crash=True caveat noted) but the TEST005 slice work never started; the held src/frob/vet/** lease was blocking T-3647.
