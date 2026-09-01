@@ -2,7 +2,7 @@
 id: T-3630
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3624):
   4 new (rule, file) identit(ies) (COV008, DOC006)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-01'

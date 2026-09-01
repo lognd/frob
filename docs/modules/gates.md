@@ -4090,7 +4090,7 @@ structures and env-var access sites, drawn from
   them a real secret), and 3 more (`src/frob/gates/__init__.py`'s
   `_rel001_bump_suppressed_under_agent` and its worker log-level markers)
   were folded into the same fix once T-0973's scope was extended to that
-  file. `tests/test_gates.py::TestSeverityOverrides.
+  file. `tests/gates_suite/test_run.py::TestSeverityOverrides.
   test_sec110_promoted_to_error_gates_a_real_repo_toml` is the before-
   fails/after-passes fixture proving the promotion actually gates.
 - Both rules are file-scoped (same waiver-matching mode as SEC001-003:
@@ -5355,7 +5355,7 @@ partially-degraded run (stale `strata_core`, every structural health check
 reporting clean) still found some instances of a rule lexically while
 missing the exact sites the waivers covered. It was reverted (T-1592); see
 the T-1323 incident writeup below for the full history, and
-`tests/test_gates.py::TestWaive004DegradedRunGuard::
+`tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::
 test_mass_invalidation_with_live_finding_elsewhere_still_refuses` locks
 against its return. The N=1 floor above does not reopen that hole -- it
 only stops the proportional check from firing where it structurally
@@ -6027,7 +6027,7 @@ its finding message, so the handler just calls that existing remedy:
   compare against. `_absorb_pre_land_fixes` ran WAIVE004 excluded
   (`exclude=("WAIVE004",)`) as an interim mitigation between the incident
   and this fix landing; it runs unexcluded again now that the handler
-  guards itself. `tests/test_gates.py::TestWaive004DegradedRunGuard`
+  guards itself. `tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard`
   reproduces the degraded-run and mass-invalidation shapes directly.
 
   **Attempted refinement (T-1579), reverted (T-1592).** A mass-invalidation
@@ -6085,7 +6085,7 @@ its finding message, so the handler just calls that existing remedy:
   before ever calling `site_examined` -- treating an uninstrumented
   family as "covered" just because the check would trivially report
   False for it would recreate the same blast radius this whole guard
-  chain exists to prevent, only inverted. `tests/test_gates.py::
+  chain exists to prevent, only inverted. `tests/gates_suite/test_waive.py::
   TestWaive004ExaminedSitesGuard` is the regression lock, in particular
   `test_original_55_waiver_incident_shape_partial_examination_still_
   refuses` -- the T-1579/T-1592 incident's own shape, narrowed from
@@ -6407,7 +6407,7 @@ direction) remains fully legitimate and untouched -- only auto-WIDENING
 is forbidden. A human must now widen a `may=` grant by hand, subject to
 ordinary code review, the same as any other declared-surface change.
 Proof (must-still-fire / must-not-auto-resolve pair):
-`tests/test_gates.py::TestFixEngineTierA::
+`tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::
 test_sys100_core_violation_still_fires_and_is_not_auto_resolved` and
 `::test_sys100_extended_violation_still_fires_and_is_not_auto_resolved`.
 
