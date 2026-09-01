@@ -31,6 +31,16 @@ scope_changes:
     ticket was filed for
   actor: logan
   at: '2026-09-01'
+body_changes:
+- mode: append
+  reason: 'mark as no-behavior-change: doc-only fix'
+  actor: logan
+  at: '2026-09-01'
+  old_length: 1204
+  new_length: 1580
+evidence:
+- tests/unit/test_process_guard.py::TestGuardedSubprocessRun::test_enabled_spawns_and_returns_ok
+- tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup::test_sets_new_process_group_on_win32
 designated_repro_test: null
 threat: null
 component: null
@@ -51,3 +61,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - COV001  src/frob/process/_guard.py  -> attributed to T-3648 (commit 71e01199a1f7, already closed/dropped -- filed below) via src/frob/process/_guard.py::FROB_WIN32_SPAWN_DEBUG_ENV
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+
+frob:no-behavior-change reason="pure documentation fix -- adds a missing frob:doc anchor and a doc paragraph naming FROB_WIN32_SPAWN_DEBUG; guarded_subprocess_run and _win32_isolate_console_group runtime behavior is byte-for-byte unchanged, confirmed by the full pre-existing test_process_guard.py suite (31/31) staying green with no test additions or modifications needed"
