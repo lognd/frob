@@ -20,7 +20,9 @@ scope:
 - tests/unit/test_process_lock.py
 - src/frob/process/_derived_lock.py
 - src/frob/process/_lock_msvcrt.py
-- docs/modules/process.md
+- frob.lock
+- src/frob/gates/__init__.py
+- tickets/T-draft-d028adeb/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +56,42 @@ scope_changes:
   glob: docs/modules/process.md
   reason: ARCH102 cluster-3 split creates these new destination modules; docs anchor
     already existed and moves with the symbols
+  actor: logan
+  at: '2026-09-01'
+- op: remove
+  glob: docs/modules/process.md
+  reason: frob.lock/gates/__init__.py are genuinely touched by the split tool's own
+    reference-repoint pass (docstring/import citations of moved symbols); T-draft-d028adeb/ticket.md
+    is this ticket's own unblock dependency now promoted to T-3650 -- docs/modules/process.md
+    removed again, its SCOPE002 closure pulls in the whole process package (T-1010-precedent
+    scope-closure tension), out of proportion for this split
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: frob.lock
+  reason: frob.lock/gates/__init__.py are genuinely touched by the split tool's own
+    reference-repoint pass (docstring/import citations of moved symbols); T-draft-d028adeb/ticket.md
+    is this ticket's own unblock dependency now promoted to T-3650 -- docs/modules/process.md
+    removed again, its SCOPE002 closure pulls in the whole process package (T-1010-precedent
+    scope-closure tension), out of proportion for this split
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: frob.lock/gates/__init__.py are genuinely touched by the split tool's own
+    reference-repoint pass (docstring/import citations of moved symbols); T-draft-d028adeb/ticket.md
+    is this ticket's own unblock dependency now promoted to T-3650 -- docs/modules/process.md
+    removed again, its SCOPE002 closure pulls in the whole process package (T-1010-precedent
+    scope-closure tension), out of proportion for this split
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tickets/T-draft-d028adeb/ticket.md
+  reason: frob.lock/gates/__init__.py are genuinely touched by the split tool's own
+    reference-repoint pass (docstring/import citations of moved symbols); T-draft-d028adeb/ticket.md
+    is this ticket's own unblock dependency now promoted to T-3650 -- docs/modules/process.md
+    removed again, its SCOPE002 closure pulls in the whole process package (T-1010-precedent
+    scope-closure tension), out of proportion for this split
   actor: logan
   at: '2026-09-01'
 body_changes:
