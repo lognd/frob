@@ -20,6 +20,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup::test_no_op_on_non_win32
+- tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup::test_sets_new_process_group_on_win32
+- tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup::test_sets_create_no_window_on_win32
+- tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup::test_never_overrides_an_explicit_creationflags
 designated_repro_test: null
 threat: null
 component: null
