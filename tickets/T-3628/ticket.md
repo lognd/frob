@@ -19,6 +19,7 @@ scope:
 - src/frob/process/_lock.py
 - tests/unit/test_process_lock.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +42,12 @@ scope_changes:
   reason: T-3628 moved _worker_inherits_hold's os.environ.get read from _lock.py (already
     declared 'env' broadly) into _derived_lock.py; SELFAUDIT001/SYS100 requires the
     specific env.read capability declared for the new file too
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: raising the core::env.read ratchet ceiling for _derived_lock.py's newly-declared
+    site
   actor: logan
   at: '2026-09-01'
 body_changes:
