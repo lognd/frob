@@ -16,10 +16,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/refactor/**
+- tests/test_refactor.py
+- docs/commands/refactor.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_refactor.py
+  reason: regression tests + doc coverage for the T-3596 gap fixes need to be in scope
+    for COV/SCOPE gate closure
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: docs/commands/refactor.md
+  reason: regression tests + doc coverage for the T-3596 gap fixes need to be in scope
+    for COV/SCOPE gate closure
+  actor: logan
+  at: '2026-09-01'
 body_changes:
 - mode: append
   reason: append T-3628's discovered tool gaps (module-level variable dependency not
