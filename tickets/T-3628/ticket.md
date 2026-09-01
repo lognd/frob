@@ -33,6 +33,13 @@ scope_changes:
     the real test file is tests/unit/test_process_lock.py
   actor: logan
   at: '2026-09-01'
+body_changes:
+- mode: append
+  reason: record split plan before coding, per ticket instruction
+  actor: logan
+  at: '2026-09-01'
+  old_length: 765
+  new_length: 2455
 designated_repro_test: null
 threat: null
 component: null
@@ -55,3 +62,47 @@ importers whose import statement must be updated.
 Previously specified but never filed (LandInProgress starvation
 during a prior agent's ~45 min of retries); refiled now as part of
 draining that starved backlog.
+
+
+## Split plan (T-3628, ARCH102, 12 exports / 3 clusters)
+
+Cluster 1 -- msvcrt low-level primitives (Windows-only blocking
+acquire/release helpers the portable flock layer calls into):
+  fcntl, msvcrt (module-level backend handles)
+  _msvcrt_acquire_blocking
+  _msvcrt_release
+-> new module `frob.process._lock_msvcrt`
+
+Cluster 2 -- portable flock primitive (the cross-platform advisory-lock
+primitive every OTHER module in this repo imports directly -- stays at
+the original module path, `frob.process._lock`, since it is this
+module's own most-imported surface and the natural "small stable core"
+half of the split):
+  PortableLockUnavailable
+  lock_backend_available
+  portable_flock_acquire
+  _portable_flock_acquire_posix
+  _portable_flock_acquire_windows
+  portable_flock_release
+
+Cluster 3 -- derived-state lock (the higher-level per-repo lock built
+ON TOP of cluster 2's primitive, plus its own process-registry
+bookkeeping):
+  DerivedStateLockUnavailable
+  _LOCK_REL, _lock_local, _process_registry_lock, _process_held_counts
+  _INHERITED_LOCK_KEYS_ENV, _INHERITED_LOCK_KEYS_SEP
+  held_registry_keys
+  _worker_inherits_hold
+  _process_already_holds
+  _derived_lock_path
+  _canonical_registry_key
+  derived_state_lock
+  derived_state_write_lock
+-> new module `frob.process._derived_lock`
+
+Executed via `uv run frob refactor split src.frob.process._lock --symbols
+<msvcrt names> --into frob.process._lock_msvcrt`, then a second split for
+the derived-lock cluster `--into frob.process._derived_lock` -- never a
+hand-copy. `_lock.py` keeps cluster 2 (the portable flock primitive) as
+its own remaining content; the tool rewrites every importer's import
+statement for the moved names.
