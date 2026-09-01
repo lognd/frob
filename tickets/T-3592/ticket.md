@@ -19,6 +19,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_arch.py
 - tests/unit/arch_suite/**
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +36,16 @@ scope_changes:
   glob: tests/unit/arch_suite/**
   reason: avoid conftest.py lease collisions; use ticket-owned shared module for cross-family
     helpers per recipe fallback
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: design/frob.strata
+  reason: split relocates capability-observing test code 1:1
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: split relocates capability-observing test code 1:1
   actor: logan
   at: '2026-09-01'
 designated_repro_test: null
