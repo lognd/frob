@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from typing import TYPE_CHECKING
 
 from typani import Err, ErrorSet, Ok
@@ -48,6 +49,21 @@ EXEC_KILL_SWITCH_ENV = "FROB_DISABLE_EXEC"
 #: T-0200's `scope`, see the Done report for the filed follow-on ticket).
 # frob:doc docs/modules/process.md#public-api
 NET_KILL_SWITCH_ENV = "FROB_DISABLE_NET"
+
+#: T-3648: env-gated debug switch -- when truthy, `guarded_subprocess_run`
+#: prints every spawn's argv AND `creationflags` to stderr before calling
+#: `subprocess.run`. Diagnostic-only, harmless when unset (the default
+#: everywhere except the temporary win32 CI diag step T-3648 adds): the
+#: T-3589 win32 hang/crash saga's round-12 diag caught a `KeyboardInterrupt`
+#: injected into frob's OWN main thread ~1.5s into `frob check`, on a
+#: fixture too small for that to be a real Ctrl-C -- and this module's
+#: `subprocess.run` call is the leading suspect (no `creationflags` at all
+#: here, so on win32 every spawned tool child shares frob's own console
+#: process group; a console ctrl event delivered to that group reaches
+#: frob's own main process, not just the child). This flag exists to name
+#: the exact spawn (if any) racing that KeyboardInterrupt in the next CI
+#: run, since the crash cannot be reproduced locally (WSL has no win32).
+FROB_WIN32_SPAWN_DEBUG_ENV = "FROB_WIN32_SPAWN_DEBUG"
 
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
 
@@ -128,6 +144,15 @@ def guarded_subprocess_run(
         return Err(ProcessGuardError.ExecDisabled)
     _log.debug("process: spawning %r", list(args))
     kwargs = _default_text_encoding(kwargs)
+    kwargs = _win32_isolate_console_group(kwargs)
+    if _env_flag_set(FROB_WIN32_SPAWN_DEBUG_ENV):
+        # T-3648: diagnostic-only, see FROB_WIN32_SPAWN_DEBUG_ENV's docstring.
+        print(
+            f"FROB_WIN32_SPAWN_DEBUG: argv={list(args)!r} "
+            f"creationflags={kwargs.get('creationflags')!r} platform={sys.platform!r}",
+            file=sys.stderr,
+            flush=True,
+        )
     try:
         proc = subprocess.run(args, **kwargs)  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
     except subprocess.TimeoutExpired:
@@ -174,9 +199,44 @@ def _default_text_encoding(kwargs: dict[str, object]) -> dict[str, object]:
     return kwargs
 
 
+# frob:ticket T-3648
+# frob:tests tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup.test_no_op_on_non_win32  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup.test_sets_new_process_group_on_win32  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup.test_never_overrides_an_explicit_creationflags  # noqa: E501
+def _win32_isolate_console_group(kwargs: dict[str, object]) -> dict[str, object]:
+    """On win32, default every `guarded_subprocess_run` spawn into its own
+    console process group (T-3648), unless a caller already set its own
+    `creationflags`.
+
+    T-3589's win32 saga: a `KeyboardInterrupt` gets injected into frob's
+    OWN main thread ~1.5s into `frob check`, with nothing external sending
+    Ctrl-C. Without `CREATE_NEW_PROCESS_GROUP`, a spawned child inherits
+    the PARENT's console process group -- so a console ctrl event (job-
+    object teardown, a CI runner's own cancel signal, anything) delivered
+    to that group reaches frob's own main process too, not just the
+    child, exactly matching a spuriously-injected `KeyboardInterrupt` with
+    no visible external Ctrl-C. This is the leading, code-evidenced
+    candidate this ticket names (every `frob.check` tool runner spawns
+    through this module's `guarded_subprocess_run`, and none of them
+    passed `creationflags` before this change) -- landed alongside the
+    `FROB_WIN32_SPAWN_DEBUG` instrumentation as proof-of-diagnosis; the
+    NEXT win32 CI run is the confirming measurement (see the ticket body
+    for what a clean run should show). A no-op on every non-win32
+    platform and whenever a caller already supplies its own
+    `creationflags` (never override an explicit caller choice)."""
+    if sys.platform != "win32":
+        return kwargs
+    if "creationflags" in kwargs:
+        return kwargs
+    kwargs = dict(kwargs)
+    kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+    return kwargs
+
+
 __all__ = [
     "EXEC_KILL_SWITCH_ENV",
     "NET_KILL_SWITCH_ENV",
+    "FROB_WIN32_SPAWN_DEBUG_ENV",
     "ProcessGuardError",
     "exec_enabled",
     "net_enabled",

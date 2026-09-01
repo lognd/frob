@@ -402,14 +402,44 @@ jobs:
           # try/except BaseException, writing the exception's repr +
           # full traceback to diag.out before re-raising, so whatever
           # "frob: interrupted" actually is gets a stack instead of
-          # dying silently. Suspect: T-3565's SIGBREAK handler
-          # (win32-only, registered at import/startup) or a console-
-          # control event delivered to the child process group.
+          # dying silently. T-3648 adds two more diagnostics: a SIGINT/
+          # SIGBREAK logging handler (names which signal actually arrived,
+          # since nothing external should send either at ~1.5s into a
+          # tiny-fixture run) and FROB_WIN32_SPAWN_DEBUG=1 (prints every
+          # subprocess frob.check spawns, with its creationflags) -- also
+          # landing T-3648's own leading, code-evidenced fix in this same
+          # push (guarded_subprocess_run now defaults spawned children to
+          # CREATE_NEW_PROCESS_GROUP on win32), so a clean run here after
+          # that fix would BOTH confirm the diagnosis and prove the fix.
           $codeLines = @(
             'print("diag-python-alive", flush=True)',
             "import faulthandler",
+            "import os",
+            "import signal",
             "import sys",
             "import traceback",
+            "",
+            "# T-3648: env-gated spawn debug (src/frob/process/_guard.py's",
+            "# guarded_subprocess_run) -- prints every subprocess this diag's",
+            "# own 'frob check' call spawns, with its creationflags, to name",
+            "# the exact spawn (if any) racing the injected KeyboardInterrupt.",
+            "os.environ['FROB_WIN32_SPAWN_DEBUG'] = '1'",
+            "",
+            "# T-3648: log SIGINT/SIGBREAK BEFORE python's own default handling",
+            "# turns SIGINT into KeyboardInterrupt -- names which signal actually",
+            "# arrived and this thread's stack at that instant, since nothing",
+            "# external should be sending either at ~1.5s into a tiny-fixture run.",
+            "def _t3648_log_signal(signum, frame):",
+            "    try:",
+            "        name = signal.Signals(signum).name",
+            "    except ValueError:",
+            "        name = repr(signum)",
+            "    print(f'T-3648-SIGNAL: received {name} (signum={signum}) at frame={frame!r}', flush=True)",  # noqa: E501
+            "    traceback.print_stack(frame)",
+            "    raise KeyboardInterrupt",
+            "signal.signal(signal.SIGINT, _t3648_log_signal)",
+            "if hasattr(signal, 'SIGBREAK'):",
+            "    signal.signal(signal.SIGBREAK, _t3648_log_signal)",
             "",
             "# T-3589: dumps every thread's stack to stderr and exits",
             "# nonzero if 'frob check' has not returned within the budget --",

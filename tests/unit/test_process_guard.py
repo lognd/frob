@@ -18,6 +18,7 @@ from frob.process._guard import (
     NET_KILL_SWITCH_ENV,
     ProcessGuardError,
     _default_text_encoding,
+    _win32_isolate_console_group,
     exec_enabled,
     guarded_subprocess_run,
     net_enabled,
@@ -130,6 +131,44 @@ class TestGuardedSubprocessRun:
 
 
 # frob:ticket T-2953
+class TestWin32IsolateConsoleGroup:
+    """T-3648: win32 frob check saga -- a spawned child inheriting frob's
+    own console process group lets a console ctrl event delivered to that
+    group reach frob's own main process too, not just the child, matching
+    the spuriously-injected `KeyboardInterrupt` T-3648's diag caught with
+    no visible external Ctrl-C. `guarded_subprocess_run` now defaults every
+    win32 spawn into its own process group unless a caller already set an
+    explicit `creationflags`."""
+
+    # frob:tests src/frob/process/_guard.py::_win32_isolate_console_group
+    def test_no_op_on_non_win32(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("frob.process._guard.sys.platform", "linux")
+        result = _win32_isolate_console_group({"capture_output": True})
+        assert "creationflags" not in result
+
+    # frob:tests src/frob/process/_guard.py::_win32_isolate_console_group
+    def test_sets_new_process_group_on_win32(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("frob.process._guard.sys.platform", "win32")
+        fake_flag = object()
+        monkeypatch.setattr(
+            "frob.process._guard.subprocess.CREATE_NEW_PROCESS_GROUP",
+            fake_flag,
+            raising=False,
+        )
+        result = _win32_isolate_console_group({"capture_output": True})
+        assert result["creationflags"] is fake_flag
+
+    # frob:tests src/frob/process/_guard.py::_win32_isolate_console_group
+    def test_never_overrides_an_explicit_creationflags(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("frob.process._guard.sys.platform", "win32")
+        result = _win32_isolate_console_group({"creationflags": 42})
+        assert result["creationflags"] == 42
+
+
 class TestDefaultTextEncoding:
     """T-2953: `subprocess.run(text=True, ...)` with no explicit
     `encoding=` falls back to the platform's default locale codec --

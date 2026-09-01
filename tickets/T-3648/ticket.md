@@ -1,7 +1,7 @@
 ---
 id: T-3648
 title: win32 frob check dies by injected KeyboardInterrupt at executor thread start
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -36,6 +36,10 @@ scope_changes:
   reason: test file and affected doc touched by the win32 console-group fix
   actor: logan
   at: '2026-09-01'
+evidence:
+- tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup::test_no_op_on_non_win32
+- tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup::test_sets_new_process_group_on_win32
+- tests/unit/test_process_guard.py::TestWin32IsolateConsoleGroup::test_never_overrides_an_explicit_creationflags
 designated_repro_test: null
 threat: null
 component: null

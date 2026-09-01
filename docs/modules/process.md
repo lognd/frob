@@ -271,6 +271,16 @@ uncatchable `UnicodeDecodeError`. `guarded_subprocess_run` now injects
 without one, for every current and future caller, without needing a
 per-call-site fix.
 
+On win32, `guarded_subprocess_run` also defaults every spawn's
+`creationflags` to `subprocess.CREATE_NEW_PROCESS_GROUP` unless a caller
+already supplies its own (T-3648): a spawned child otherwise inherits
+frob's own console process group, so a console ctrl event delivered to
+that group reaches frob's own main process too, not just the child --
+the leading, code-evidenced candidate for T-3589's win32 saga (a
+`KeyboardInterrupt` spuriously injected into frob's own main thread
+~1.5s into `frob check`, on a fixture too small for a genuine timeout,
+with no external Ctrl-C). A no-op on every non-win32 platform.
+
 <!-- frob:invariant INV-019 -->
 
 ## Derived-state lock (T-0859)
