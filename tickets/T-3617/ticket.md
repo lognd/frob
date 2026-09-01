@@ -1,7 +1,7 @@
 ---
 id: T-3617
 title: tmLanguage missing growth clause keywords (T-3527 regression)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
