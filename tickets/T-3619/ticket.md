@@ -2,7 +2,7 @@
 id: T-3619
 title: 'windows CI diag round 9: ErrorActionPreference kills step on stderr, commitless
   fixture'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-31'
