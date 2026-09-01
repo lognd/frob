@@ -2,7 +2,7 @@
 id: T-3609
 title: 'Windows diag step: stderr redirect kills script under pwsh Stop; continue-on-error
   smuggled onto non-windows guard (T-3604 round 8)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -20,6 +20,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_step_has_no_continue_on_error
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_invocation_does_not_redirect_stderr
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_is_untouched_and_still_windows_only
 designated_repro_test: null
 threat: null
 component: null

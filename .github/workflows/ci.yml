@@ -363,7 +363,6 @@ jobs:
       - name: Diagnose frob check hang on windows (T-3589)
         if: matrix.os == 'windows-latest'
         timeout-minutes: 5
-        continue-on-error: true
         run: |
           $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
           New-Item -ItemType Directory -Force -Path (Join-Path $fixture "src\demo") | Out-Null
@@ -424,14 +423,15 @@ jobs:
           # diagnostic. --project pins dependency resolution to the
           # checkout while Push-Location above still leaves cwd (and
           # therefore frob check's scan target) at the fixture.
-          $stderrFile = Join-Path $env:RUNNER_TEMP "frob_check_diag_stderr.log"
+          # T-3609: no `2>` redirect -- under pwsh's Stop preference
+          # that turns uv's own stderr chatter into a terminating error
+          # (run 33451274911). Interleaved stderr is fine here.
           $started = Get-Date
           Push-Location $fixture
-          uv run --project $env:GITHUB_WORKSPACE python (Join-Path $env:RUNNER_TEMP "frob_check_diag.py") 2>$stderrFile
+          uv run --project $env:GITHUB_WORKSPACE python (Join-Path $env:RUNNER_TEMP "frob_check_diag.py")
           $exitCode = $LASTEXITCODE
           $elapsed = (Get-Date) - $started
           Pop-Location
-          Get-Content $stderrFile -ErrorAction SilentlyContinue | Write-Host
           Write-Host "frob check diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
           # T-3604: the ONLY true-failure signal this step exists to
           # catch is the 240s faulthandler watchdog actually firing --

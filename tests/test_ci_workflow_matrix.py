@@ -172,25 +172,55 @@ class TestWindowsDiagStepFixtureIsAClassifiableProject:
 
 
 class TestWindowsDiagStepDoesNotGateTheJob:
-    """T-3604: this diagnostic step must never abort the job before the
-    Test step runs -- a `frob check` gate finding on the fixture (e.g.
-    the CHECK001 this ticket fixes) is not a hang and must not block the
-    step that actually produces the data this CI run exists to collect."""
+    """T-3609 (T-3604 round 8 correction): a step-level continue-on-
+    error is redundant AND wrong -- T-3604's own script-side elapsed-
+    time discriminator already exits 0 for every no-hang outcome (a
+    clean run or an ordinary gate finding like CHECK001), so the only
+    nonzero left IS a genuine watchdog-fired hang, which SHOULD fail
+    the (job-level-advisory) windows job loudly. A step-level continue-
+    on-error also tripped tests/unit/test_release_workflow_gate.py::
+    TestCiWindowsLegAdvisoryOnly::
+    test_no_step_level_continue_on_error_smuggled_onto_other_legs on
+    BOTH posix legs (run 33451274911) -- that guard is correct and
+    stays; this diag step must not carry step-level continue-on-error
+    at all."""
 
     # frob:tests .github/workflows/ci.yml
-    def test_step_has_continue_on_error(self) -> None:
+    def test_step_has_no_continue_on_error(self) -> None:
         step = _windows_diag_step()
-        assert step.get("continue-on-error") is True, (
-            "the windows diag step must set continue-on-error: true so "
-            "a gate finding on the fixture (or any other non-hang "
-            "nonzero exit) cannot abort the job before the Test step "
-            "runs (T-3604)"
+        assert "continue-on-error" not in step, (
+            "the windows diag step must NOT set its own continue-on-"
+            "error -- T-3604's script-side elapsed-time discriminator "
+            "already exits 0 for every no-hang outcome, so a step-level "
+            "continue-on-error is both redundant and trips the repo's "
+            "windows-only advisory-boundary guard test (T-3609)"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_diag_invocation_does_not_redirect_stderr(self) -> None:
+        """T-3609: pwsh runs with $ErrorActionPreference='Stop' --
+        redirecting a native command's stderr to a file under Stop
+        converts its first stderr line into a terminating
+        NativeCommandError, killing the script in ~2s before its first
+        Write-Host (run 33451274911). Stderr must interleave on the
+        console instead."""
+        step = _windows_diag_step()
+        run_lines = step["run"].splitlines()
+        uv_run_line = next(
+            line for line in run_lines if "uv run --project" in line
+        )
+        assert "2>" not in uv_run_line, (
+            "the diag invocation redirects the uv/python child's stderr "
+            "to a file -- under pwsh's default Stop error preference "
+            "this turns uv's own resolver-chatter stderr line into a "
+            "terminating error, killing the script before it ever "
+            "measures elapsed time (T-3609, run 33451274911)"
         )
 
     # frob:tests .github/workflows/ci.yml
     def test_test_step_is_untouched_and_still_windows_only(self) -> None:
-        """T-3604 must not touch the Test step itself -- only add
-        continue-on-error to the diagnostic step ahead of it."""
+        """Neither T-3604 nor T-3609 may touch the Test step itself --
+        only the diagnostic step ahead of it."""
         workflow = _load_ci_workflow()
         steps = workflow["jobs"]["build"]["steps"]
         test_step = next(
