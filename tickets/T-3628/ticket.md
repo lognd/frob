@@ -15,11 +15,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_lock.py
-- tests/**/*process*lock*
+- tests/unit/test_process_lock.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**/*process*lock*
+  reason: narrow overbroad glob that phantom-matches T-3591s live lease on tests/ticket_land_suite/**;
+    the real test file is tests/unit/test_process_lock.py
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/test_process_lock.py
+  reason: narrow overbroad glob that phantom-matches T-3591s live lease on tests/ticket_land_suite/**;
+    the real test file is tests/unit/test_process_lock.py
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
