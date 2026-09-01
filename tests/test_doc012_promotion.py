@@ -5,7 +5,8 @@ TestDoc012CommandSectionGate -- that file carried a LIVE cross-worktree
 lease (T-2314) at the time this promotion landed, so the must-fail
 fixture proving the new severity lives here instead, disjoint from that
 lease. Reuses the same synthetic two-command fixture parser
-(`tests.test_gates:_doc012_fake_parser_factory`) and fake-config shape
+(`tests.conftest:_doc012_fake_parser_factory` -- T-3586 relocated it
+here out of tests/test_gates.py's own split) and fake-config shape
 `TestDoc012CommandSectionGate` already established, so both files check
 the identical mechanism without duplicating the fixture factory itself.
 
@@ -28,7 +29,7 @@ from frob.gates._docblocks import doc012_gate
 
 _DOC012_PROMOTION_FAKE_CONFIG = (
     '[[docblocks.commands]]\nprog = "acme"\n'
-    'parser = "tests.test_gates:_doc012_fake_parser_factory"\n'
+    'parser = "tests.conftest:_doc012_fake_parser_factory"\n'
 )
 
 
