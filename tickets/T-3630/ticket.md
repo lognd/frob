@@ -2,7 +2,7 @@
 id: T-3630
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3624):
   4 new (rule, file) identit(ies) (COV008, DOC006)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-01'
@@ -19,6 +19,7 @@ scope:
 - docs/design/macos-portability.md
 - docs/modules/gates.md
 - tests/test_gates.py
+- tests/test_docptr_gate.py
 findings:
 - - COV008
   - tests/test_gates.py
@@ -32,6 +33,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: cite the live-repo DOC006 zero-count regression test as evidence for the
+    doc-anchor repoint fix
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
