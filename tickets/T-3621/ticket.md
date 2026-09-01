@@ -1,7 +1,7 @@
 ---
 id: T-3621
 title: 'ubuntu-only run 33459475864 triage: 3 failing tests'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
