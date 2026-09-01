@@ -1,7 +1,7 @@
 ---
 id: T-3674
 title: 'self-gate floor (a): DOC007/DRIFT001 fallout from T-3661/T-3628'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
