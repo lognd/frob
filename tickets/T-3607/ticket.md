@@ -1,7 +1,7 @@
 ---
 id: T-3607
 title: 'cache rebuild unlinks live WAL sidecars: sibling reader SIGBUS in load_parsed_artifact'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -16,10 +16,36 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/cache.py
 - tests/unit/test_graph_cache.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: T-3607's fix adds a new subprocess.Popen (exec) and os.utime/write_bytes
+    (fs.write) capability site to tests/unit/test_graph_cache.py's positive-control
+    test, needing this file's testsuite node capability grants updated (SELFAUDIT001)
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SELFAUDIT001/SYS111 ratchet ceiling bump for the two new testsuite capability
+    sites T-3607's positive-control test adds
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SELFAUDIT001/SYS111 ratchet ceiling bump for the two new testsuite capability
+    sites T-3607's positive-control test adds
+  actor: logan
+  at: '2026-08-31'
+evidence:
+- tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives::test_sibling_reader_survives_concurrent_recreate
+- tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives::test_quarantined_sidecars_are_renamed_not_unlinked
+- tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives::test_sweep_removes_only_old_quarantined_sidecars
 designated_repro_test: null
 threat: null
 component: null

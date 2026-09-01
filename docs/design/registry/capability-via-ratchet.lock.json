@@ -231,9 +231,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 236,
-      "reason": "T-3576: test_wire001_multiprocessing_target.py's fixture bodies are literal source text containing the exec-needle-matching substring \"multiprocessing.Process(\" (never actually executed, just written to tmp_path for WIRE001's own text-scan gate to parse) -- grows testsuite exec via-list by 1 site (235 -> 236).",
-      "ticket": "T-3576"
+      "accepted_count": 237,
+      "reason": "T-3607: test_graph_cache.py's TestRecreateConcurrentReaderSurvives spawns a real subprocess.Popen sibling reader process -- the only way to reproduce the concurrent-recreate-vs-live-reader race the SIGBUS fix guards against -- grows testsuite exec via-list by 1 site (236 -> 237).",
+      "ticket": "T-3607"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -251,9 +251,9 @@
       "ticket": "T-3506"
     },
     "testsuite::fs.write": {
-      "accepted_count": 419,
-      "reason": "T-3576: test_wire001_multiprocessing_target.py's _write fixture helper (same shape as test_fix_engine_journal.py's own already-declared usage) calls path.write_text -- grows testsuite fs.write via-list by 1 site (418 -> 419).",
-      "ticket": "T-3576"
+      "accepted_count": 420,
+      "reason": "T-3607: test_graph_cache.py's quarantine-sweep tests write synthetic quarantined sidecar files (write_bytes/os.utime) to prove _sweep_stale_quarantined_sidecars' age-based cleanup -- grows testsuite fs.write via-list by 1 site (419 -> 420).",
+      "ticket": "T-3607"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

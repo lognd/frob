@@ -19,8 +19,10 @@ re-parsing anything.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import time
+import uuid
 from importlib.metadata import version
 from pathlib import Path
 
@@ -36,6 +38,11 @@ from frob.graph._models import (
 )
 from frob.lang._models import GRAMMAR_FINGERPRINT_PACKAGES, SymbolKind
 from frob.logging import get_logger
+from frob.process._lock import (
+    lock_backend_available,
+    portable_flock_acquire,
+    portable_flock_release,
+)
 
 _log = get_logger(__name__)
 
@@ -394,23 +401,117 @@ def _check_fingerprint(conn: sqlite3.Connection, path: Path) -> None:
 
 
 # frob:ticket T-0141
+# frob:ticket T-3607
+_REBUILD_LOCK_SUFFIX = ".rebuild.lock"
+_STALE_SUFFIX_PREFIX = ".stale-"
+# T-3607: a quarantined sidecar older than this is assumed to have no live
+# reader left mapping it (any sibling holding it open at rebuild time has
+# long since finished or crashed) -- swept opportunistically on the next
+# rebuild so quarantined files never accumulate forever, without needing a
+# separate cleanup job.
+_STALE_SWEEP_AGE_SECONDS = 60 * 60
+
+
+def _rebuild_lock_fd(path: Path) -> int | None:
+    """Open (creating if needed) `path`'s dedicated rebuild-serialization
+    lock file (T-3607), or `None` if no advisory-lock backend exists on
+    this platform -- callers degrade to running the quarantine-swap
+    unlocked rather than failing outright (the swap is still far safer
+    than the old in-place unlink even without the lock, see `_recreate`'s
+    docstring)."""
+    if not lock_backend_available():
+        return None
+    lock_path = path.with_name(path.name + _REBUILD_LOCK_SUFFIX)
+    try:
+        return os.open(
+            str(lock_path), os.O_RDWR | os.O_CREAT | getattr(os, "O_BINARY", 0)
+        )
+    except OSError:
+        return None
+
+
+def _sweep_stale_quarantined_sidecars(path: Path) -> None:
+    """Best-effort delete of `path`'s own previously-quarantined `_recreate`
+    sidecars (T-3607) older than `_STALE_SWEEP_AGE_SECONDS` -- opportunistic
+    hygiene run at the START of every rebuild so quarantined files (never
+    unlinked at swap time, precisely because a sibling might still have
+    them mapped) do not accumulate forever. Any failure (permission,
+    already gone, a concurrent sweeper) is swallowed: this is cleanup, not
+    correctness, and must never block or fail the rebuild it runs inside."""
+    try:
+        candidates = tuple(path.parent.glob(path.name + _STALE_SUFFIX_PREFIX + "*"))
+    except OSError:
+        return
+    now = time.time()
+    for candidate in candidates:
+        try:
+            if now - candidate.stat().st_mtime < _STALE_SWEEP_AGE_SECONDS:
+                continue
+            candidate.unlink()
+        except OSError:
+            continue
+
+
 def _recreate(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
-    """Close `conn`, delete `path` and its WAL/SHM sidecars, reopen fresh.
+    """Close `conn`, quarantine `path` and its WAL/SHM sidecars aside by
+    RENAME, then reopen a fresh db at `path`.
 
     Shared by both corruption-detection points in `connect` (T-0141): a
     cache.db whose bytes cannot be trusted is derived state, so the only
     honest recovery is delete-and-recreate, never DDL over the bad handle.
-    The `-wal`/`-shm` sidecars from T-0029's WAL mode are not themselves a
-    corruption vector here (a fresh db's WAL salt won't match a stale
-    sidecar, so sqlite discards it on open) -- but leaving them behind on
-    every recovery orphans them permanently since nothing else ever cleans
-    them up, so they are unlinked alongside the main file.
+
+    T-3607: this used to `unlink()` `path` and its `-wal`/`-shm` sidecars
+    in place, then reopen at the same path -- a SIGBUS-in-production
+    incident (a sibling `ProcessPoolExecutor` worker's already-open,
+    process-lifetime `_artifact_cache_connection` crashed on an ordinary
+    `SELECT` in `load_parsed_artifact` while this function's unlink+
+    recreate ran concurrently in another worker) traced the fault to that
+    sibling's WAL-index `-shm` mapping being invalidated out from under
+    it by the in-place delete-and-recreate-at-the-same-path sequence.
+
+    The fix: never delete-then-recreate AT THE SAME PATH while another
+    process might have `path`'s sidecars memory-mapped. Instead, RENAME
+    the (possibly bad) db and its sidecars aside to a quarantined sibling
+    name -- a rename does not invalidate any process's already-open fd or
+    active mmap (those stay bound to the renamed file's inode exactly as
+    before) -- and only THEN open a brand-new db at the original `path`
+    (a fresh `open(..., O_CREAT)` there always allocates a new inode, so
+    it can never collide with what a sibling still has mapped). The
+    quarantined files are deliberately NOT unlinked immediately -- a
+    sibling might still be attached to them -- `_sweep_stale_quarantined_
+    sidecars` reclaims them later, once they are old enough that no
+    reader from this rebuild's moment could plausibly still be using
+    them.
+
+    The whole quarantine-and-reopen sequence is serialized by an advisory
+    exclusive flock on a dedicated `<path>.rebuild.lock` file (falling
+    back to running unlocked if no lock backend exists on this platform,
+    T-3607/`_rebuild_lock_fd`) so two processes racing to recover the
+    same corrupt db never quarantine each other's freshly-created
+    replacement.
     """
     conn.close()
-    path.unlink(missing_ok=True)
-    path.with_name(path.name + "-wal").unlink(missing_ok=True)
-    path.with_name(path.name + "-shm").unlink(missing_ok=True)
-    return _open(path)
+    lock_fd = _rebuild_lock_fd(path)
+    if lock_fd is not None:
+        portable_flock_acquire(lock_fd, exclusive=True, blocking=True)
+    try:
+        _sweep_stale_quarantined_sidecars(path)
+        suffix = f"{_STALE_SUFFIX_PREFIX}{os.getpid()}-{uuid.uuid4().hex[:8]}"
+        for name in (path.name, path.name + "-wal", path.name + "-shm"):
+            src = path.with_name(name)
+            try:
+                if src.exists():
+                    src.rename(src.with_name(name + suffix))
+            except OSError:
+                # T-3607: best-effort -- a losing racer under the same
+                # lock, or a sidecar that never existed, is not fatal;
+                # the reopen below still produces a valid fresh db.
+                _log.debug("cache.connect: quarantine rename of %s failed", src)
+        return _open(path)
+    finally:
+        if lock_fd is not None:
+            portable_flock_release(lock_fd)
+            os.close(lock_fd)
 
 
 def _is_concurrent_meta_key_race(exc: sqlite3.IntegrityError) -> bool:
