@@ -2,7 +2,7 @@
 id: T-3650
 title: 'refactor split/move: self-import verify failure once destination already defines
   a bare-name helper the moved symbol references'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
