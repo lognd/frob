@@ -20,6 +20,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
 designated_repro_test: null
 threat: null
 component: null
