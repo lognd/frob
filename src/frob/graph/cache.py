@@ -688,13 +688,124 @@ def _is_missing_meta_table(exc: sqlite3.OperationalError) -> bool:
     return "no such table" in str(exc).lower() and "meta" in str(exc).lower()
 
 
+# frob:ticket T-3634
+_STALE_CONNECTION_ERROR_SHAPES = (
+    "no such table",
+    "disk i/o error",
+    "database is corrupted",
+    "database disk image is malformed",
+    "unable to open database file",
+    "file is not a database",
+)
+
+
+def _is_stale_or_corrupt_connection(exc: sqlite3.OperationalError) -> bool:
+    """True iff `exc` is one of the sqlite error shapes a sibling's
+    concurrent rebuild can produce against a connection whose backing
+    file was atomically replaced or quarantined out from under it
+    (T-3634, round 3 of the T-3623/T-3632 cache-atomicity series).
+
+    Round 1 (T-3623) and round 2 (T-3632) closed the windows where a
+    connection could observe a schema-incomplete db mid-rebuild; this
+    round's new symptom is different in kind -- on darwin, `os.replace`-
+    ing the db file out from under a LIVE WAL connection makes that
+    connection's *next* query raise `sqlite3.OperationalError('disk I/O
+    error')` (its WAL sidecars/file handle no longer match the inode it
+    has open), not the "no such table" shape the earlier rounds handled.
+    Ubuntu tolerated this; darwin's mmap/WAL semantics do not. Matched by
+    substring against `str(exc)` like `_is_missing_meta_table`, just over
+    a wider set of known "this connection is looking at dead state, not
+    a real corruption" shapes -- anything else still propagates as a
+    genuine error.
+    """
+    msg = str(exc).lower()
+    return any(shape in msg for shape in _STALE_CONNECTION_ERROR_SHAPES)
+
+
+def _conn_path(conn: sqlite3.Connection) -> Path | None:
+    """Best-effort recover the on-disk path `conn` was opened against, via
+    sqlite's own `PRAGMA database_list` (T-3634).
+
+    Lets stale-connection recovery reopen at the connection's own path
+    without every cache read/write function needing its own `path`
+    parameter threaded in just for this. Returns `None` if the pragma
+    itself fails (a connection broken badly enough that even metadata
+    queries fail) or reports no file -- callers must fall back to
+    whatever `path` they already have in scope.
+    """
+    try:
+        rows = conn.execute("PRAGMA database_list").fetchall()
+    except sqlite3.DatabaseError:
+        return None
+    for _seq, name, file in rows:
+        if name == "main" and file:
+            return Path(file)
+    return None
+
+
+_STALE_CONN_MAX_RETRIES = 3
+
+
+# frob:ticket T-3634
+# frob:raises AssertionError
+def _run_with_stale_reconnect(conn: sqlite3.Connection, op, *, what: str):  # noqa: ANN001, ANN202
+    """Call `op(conn)`; if it raises a `_is_stale_or_corrupt_connection`
+    shape, close `conn`, reopen fresh at its own on-disk path (via
+    `_conn_path`), and retry -- up to `_STALE_CONN_MAX_RETRIES` times,
+    warning loudly each time -- before letting a persistent failure
+    escape (T-3634).
+
+    `op` receives the (possibly reopened) connection on each attempt and
+    must be safe to call more than once; every current use (a read, or a
+    `_with_lock_retry`-wrapped delete-then-insert) already is. This is
+    the generalized form of `_check_fingerprint_with_recovery`'s own
+    reopen-and-retry, applied to every OTHER cache read/write path
+    (`store_file_data`, `store_parsed_artifact`, `load_parsed_artifact`,
+    `load_file_data`, `load_all`) per T-3634's direction: any query, not
+    just `connect()`'s own, can land mid-window on a sibling's
+    `os.replace`.
+
+    The trailing `AssertionError` below is unreachable in practice --
+    every loop iteration either returns or raises before falling off the
+    end -- kept only so the function has a syntactically reachable exit
+    for type checkers; declared via `frob:raises` rather than caught.
+    """
+    for attempt in range(_STALE_CONN_MAX_RETRIES + 1):
+        try:
+            return op(conn)
+        except sqlite3.OperationalError as exc:
+            if not _is_stale_or_corrupt_connection(exc):
+                raise
+            path = _conn_path(conn)
+            if path is None or attempt == _STALE_CONN_MAX_RETRIES:
+                raise
+            _log.warning(
+                "cache: %s hit a stale/corrupt connection, reopening at "
+                "%s and retrying (attempt %d/%d): %s",
+                what,
+                path,
+                attempt + 1,
+                _STALE_CONN_MAX_RETRIES,
+                exc,
+            )
+            try:
+                conn.close()
+            except sqlite3.Error:
+                pass
+            conn = _open(path)
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
 # frob:ticket T-3623
+# frob:ticket T-3634
+# frob:raises Error
 def _check_fingerprint_with_recovery(
     conn: sqlite3.Connection, path: Path
 ) -> sqlite3.Connection:
     """Run `_check_fingerprint`, recovering once if it hits "no such table:
-    meta" instead of letting that `OperationalError` escape `connect()`
-    uncaught (T-3623 direction 2).
+    meta" or a T-3634 stale/corrupt-connection shape, instead of letting
+    that `OperationalError` escape `connect()` uncaught (T-3623
+    direction 2; T-3634 round 3 widens the match).
 
     `_check_fingerprint` is the last of `connect()`'s three DB touches
     (`_read_schema_version`, `_apply_schema_with_recovery`, this) -- both
@@ -706,16 +817,40 @@ def _check_fingerprint_with_recovery(
     window T-3623's `_create_schema_complete_db`/`_build_schema_complete_
     db` change closes) surfaced as a raw crash instead of the ordinary
     "schema missing, rebuild" path every OTHER miss shape here already
-    gets. One retry is enough: `_recreate_and_reapply` always leaves the
-    connection holding a schema-complete db afterward, so a second
-    failure is a real, different problem that should propagate.
+    gets. T-3634: the same race can now also surface as `disk I/O error`
+    on darwin (a sibling's `os.replace` publishing a fresh db while this
+    connection still has the old inode's WAL mapped) rather than "no such
+    table" -- recovered the same way, by reopening at the canonical path,
+    which by construction already holds the winner's fresh complete db.
+    One retry is enough: both `_recreate_and_reapply` and a fresh
+    `_open(path)` always leave the connection holding a schema-complete
+    db afterward, so a second failure is a real, different problem that
+    should propagate -- the final `_check_fingerprint` retry (and the
+    best-effort `conn.close()` on the stale-connection branch) can still
+    raise a `sqlite3.Error` in that case, declared via `frob:raises`
+    rather than caught, so it reaches `connect()`'s own caller.
     """
     try:
         _check_fingerprint(conn, path)
     except sqlite3.OperationalError as exc:
-        if not _is_missing_meta_table(exc):
+        if _is_missing_meta_table(exc):
+            conn = _recreate_and_reapply(conn, path, exc)
+        elif _is_stale_or_corrupt_connection(exc):
+            reopen_path = _conn_path(conn) or path
+            _log.warning(
+                "cache.connect: %s hit a stale connection (%s), reopening "
+                "at %s",
+                path,
+                exc,
+                reopen_path,
+            )
+            try:
+                conn.close()
+            except sqlite3.Error:
+                pass
+            conn = _open(reopen_path)
+        else:
             raise
-        conn = _recreate_and_reapply(conn, path, exc)
         _check_fingerprint(conn, path)
     return conn
 
@@ -1059,24 +1194,30 @@ def store_file_data(
     of raising a bare `sqlite3.OperationalError`: the whole delete-then-
     insert body is idempotent under retry (a partial attempt just gets
     redone identically), so retrying the entire function on a mid-write
-    lock is safe.
+    lock is safe. T-3634: also survives a sibling's concurrent rebuild
+    publishing a fresh db mid-call (`_run_with_stale_reconnect`) -- same
+    idempotency argument, over a reopened connection instead of the same
+    one.
     """
 
-    def _op() -> None:
-        conn.execute(
-            "INSERT INTO files (path, content_hash, mtime_ns, size) "
-            "VALUES (?, ?, ?, ?) "
-            "ON CONFLICT(path) DO UPDATE SET "
-            "content_hash = excluded.content_hash, "
-            "mtime_ns = excluded.mtime_ns, "
-            "size = excluded.size",
-            (file_path, content_hash, mtime_ns, size),
-        )
-        _store_symbols(conn, file_path, symbols)
-        _store_edges(conn, file_path, edges)
-        _store_malformed(conn, file_path, malformed)
+    def _op(c: sqlite3.Connection) -> None:
+        def _write() -> None:
+            c.execute(
+                "INSERT INTO files (path, content_hash, mtime_ns, size) "
+                "VALUES (?, ?, ?, ?) "
+                "ON CONFLICT(path) DO UPDATE SET "
+                "content_hash = excluded.content_hash, "
+                "mtime_ns = excluded.mtime_ns, "
+                "size = excluded.size",
+                (file_path, content_hash, mtime_ns, size),
+            )
+            _store_symbols(c, file_path, symbols)
+            _store_edges(c, file_path, edges)
+            _store_malformed(c, file_path, malformed)
 
-    _with_lock_retry(_op, what=f"store_file_data({file_path})")
+        _with_lock_retry(_write, what=f"store_file_data({file_path})")
+
+    _run_with_stale_reconnect(conn, _op, what=f"store_file_data({file_path})")
 
 
 def _row_to_symbol(row: tuple) -> SymbolRecord:
@@ -1095,33 +1236,43 @@ def _row_to_symbol(row: tuple) -> SymbolRecord:
 def load_file_data(
     conn: sqlite3.Connection, file_path: str
 ) -> tuple[tuple[SymbolRecord, ...], tuple[Edge, ...], tuple[MalformedDirective, ...]]:
-    """Read back everything previously stored for `file_path` (a cache hit)."""
-    rows = conn.execute(
-        "SELECT symref, path, qualname, kind, public, span_start, span_end, "
-        "digest_sig, digest_body, digest_doc FROM symbols WHERE path = ?",
-        (file_path,),
-    )
-    symbols = tuple(_row_to_symbol(row) for row in rows)
-    edges = tuple(
-        Edge(
-            src=src,
-            kind=EdgeKind(kind),
-            target=target,
-            origin=origin,
-            attrs=json.loads(attrs),
-        )
-        for src, kind, target, origin, attrs in conn.execute(
-            "SELECT src, kind, target, origin, attrs FROM edges WHERE file = ?",
+    """Read back everything previously stored for `file_path` (a cache hit).
+
+    T-3634: retried via `_run_with_stale_reconnect` if a sibling's
+    concurrent rebuild lands mid-read -- the whole read is idempotent
+    under retry (it takes no locks and mutates nothing), so re-running it
+    against a freshly reopened connection is safe.
+    """
+
+    def _op(c: sqlite3.Connection):  # noqa: ANN202
+        rows = c.execute(
+            "SELECT symref, path, qualname, kind, public, span_start, span_end, "
+            "digest_sig, digest_body, digest_doc FROM symbols WHERE path = ?",
             (file_path,),
         )
-    )
-    malformed = tuple(
-        MalformedDirective(file=file_path, line=line, reason=reason)
-        for line, reason in conn.execute(
-            "SELECT line, reason FROM malformed WHERE file = ?", (file_path,)
+        symbols = tuple(_row_to_symbol(row) for row in rows)
+        edges = tuple(
+            Edge(
+                src=src,
+                kind=EdgeKind(kind),
+                target=target,
+                origin=origin,
+                attrs=json.loads(attrs),
+            )
+            for src, kind, target, origin, attrs in c.execute(
+                "SELECT src, kind, target, origin, attrs FROM edges WHERE file = ?",
+                (file_path,),
+            )
         )
-    )
-    return symbols, edges, malformed
+        malformed = tuple(
+            MalformedDirective(file=file_path, line=line, reason=reason)
+            for line, reason in c.execute(
+                "SELECT line, reason FROM malformed WHERE file = ?", (file_path,)
+            )
+        )
+        return symbols, edges, malformed
+
+    return _run_with_stale_reconnect(conn, _op, what=f"load_file_data({file_path})")
 
 
 # frob:doc docs/modules/graph.md#cache
@@ -1144,20 +1295,27 @@ def store_parsed_artifact(
     new lookup, so a race between a worker's read and a concurrent
     fingerprint-bump delete can never serve a wrong-version payload.
     Retries through a contended lock (T-1423) exactly like
-    `store_file_data`: the insert is idempotent under retry.
+    `store_file_data`: the insert is idempotent under retry. T-3634:
+    also survives a sibling's concurrent rebuild mid-call, via
+    `_run_with_stale_reconnect`.
     """
 
-    def _op() -> None:
-        conn.execute(
-            "INSERT INTO parsed_artifacts (content_hash, fingerprint, payload) "
-            "VALUES (?, ?, ?) "
-            "ON CONFLICT(content_hash, fingerprint) DO UPDATE SET "
-            "payload = excluded.payload",
-            (content_hash, fingerprint, payload),
-        )
-        conn.commit()
+    def _op(c: sqlite3.Connection) -> None:
+        def _write() -> None:
+            c.execute(
+                "INSERT INTO parsed_artifacts (content_hash, fingerprint, payload) "
+                "VALUES (?, ?, ?) "
+                "ON CONFLICT(content_hash, fingerprint) DO UPDATE SET "
+                "payload = excluded.payload",
+                (content_hash, fingerprint, payload),
+            )
+            c.commit()
 
-    _with_lock_retry(_op, what=f"store_parsed_artifact({content_hash[:12]})")
+        _with_lock_retry(_write, what=f"store_parsed_artifact({content_hash[:12]})")
+
+    _run_with_stale_reconnect(
+        conn, _op, what=f"store_parsed_artifact({content_hash[:12]})"
+    )
 
 
 # frob:doc docs/modules/graph.md#cache
@@ -1170,13 +1328,24 @@ def load_parsed_artifact(
     or `None` on a cache miss (T-1464) -- the read side of
     `store_parsed_artifact`, letting `frob.lang` skip a full tree-sitter
     parse + `extract()` walk when a `ProcessPoolExecutor` sibling worker
-    (or an earlier run) already derived the same file's artifacts."""
-    row = conn.execute(
-        "SELECT payload FROM parsed_artifacts "
-        "WHERE content_hash = ? AND fingerprint = ?",
-        (content_hash, fingerprint),
-    ).fetchone()
-    return row[0] if row is not None else None
+    (or an earlier run) already derived the same file's artifacts.
+
+    T-3634: retried via `_run_with_stale_reconnect` if a sibling's
+    concurrent rebuild lands mid-read -- the read is idempotent under
+    retry.
+    """
+
+    def _op(c: sqlite3.Connection) -> str | None:
+        row = c.execute(
+            "SELECT payload FROM parsed_artifacts "
+            "WHERE content_hash = ? AND fingerprint = ?",
+            (content_hash, fingerprint),
+        ).fetchone()
+        return row[0] if row is not None else None
+
+    return _run_with_stale_reconnect(
+        conn, _op, what=f"load_parsed_artifact({content_hash[:12]})"
+    )
 
 
 # frob:doc docs/modules/graph.md#cache
@@ -1200,47 +1369,55 @@ def load_all(
     entirely rather than parsing an empty object every time. `load_file_data`
     itself is unchanged and still used by the incremental single-file cache-
     hit path (`frob.graph.__init__`); this rewrite only touches the
-    whole-snapshot path, which never needs a per-file round trip."""
-    root = get_root(conn) or ""
-    file_hashes = {
-        path: content_hash
-        for path, content_hash in conn.execute("SELECT path, content_hash FROM files")
-    }
-    symbols: dict[str, SymbolRecord] = {}
-    for row in conn.execute(
-        "SELECT symref, path, qualname, kind, public, span_start, span_end, "
-        "digest_sig, digest_body, digest_doc FROM symbols ORDER BY path"
-    ):
-        rec = _row_to_symbol(row)
-        symbols[rec.symref] = rec
-    edges: list[Edge] = [
-        Edge(
-            src=src,
-            kind=EdgeKind(kind),
-            target=target,
-            origin=origin,
-            attrs={} if attrs == "{}" else json.loads(attrs),
+    whole-snapshot path, which never needs a per-file round trip.
+
+    T-3634: the whole read is retried via `_run_with_stale_reconnect` if
+    a sibling's concurrent rebuild lands mid-read -- idempotent under
+    retry since it only reads."""
+
+    def _op(c: sqlite3.Connection) -> GraphSnapshot:
+        root = get_root(c) or ""
+        file_hashes = {
+            path: content_hash
+            for path, content_hash in c.execute("SELECT path, content_hash FROM files")
+        }
+        symbols: dict[str, SymbolRecord] = {}
+        for row in c.execute(
+            "SELECT symref, path, qualname, kind, public, span_start, span_end, "
+            "digest_sig, digest_body, digest_doc FROM symbols ORDER BY path"
+        ):
+            rec = _row_to_symbol(row)
+            symbols[rec.symref] = rec
+        edges: list[Edge] = [
+            Edge(
+                src=src,
+                kind=EdgeKind(kind),
+                target=target,
+                origin=origin,
+                attrs={} if attrs == "{}" else json.loads(attrs),
+            )
+            for src, kind, target, origin, attrs in c.execute(
+                "SELECT src, kind, target, origin, attrs FROM edges ORDER BY file"
+            )
+        ]
+        malformed: list[MalformedDirective] = [
+            MalformedDirective(file=file_path, line=line, reason=reason)
+            for file_path, line, reason in c.execute(
+                "SELECT file, line, reason FROM malformed ORDER BY file"
+            )
+        ]
+        return GraphSnapshot(
+            root=root,
+            symbols=symbols,
+            edges=tuple(edges),
+            malformed=tuple(malformed),
+            file_hashes=file_hashes,
+            stats=stats
+            if stats is not None
+            else BuildStats(parsed=0, cache_hits=len(file_hashes)),
         )
-        for src, kind, target, origin, attrs in conn.execute(
-            "SELECT src, kind, target, origin, attrs FROM edges ORDER BY file"
-        )
-    ]
-    malformed: list[MalformedDirective] = [
-        MalformedDirective(file=file_path, line=line, reason=reason)
-        for file_path, line, reason in conn.execute(
-            "SELECT file, line, reason FROM malformed ORDER BY file"
-        )
-    ]
-    return GraphSnapshot(
-        root=root,
-        symbols=symbols,
-        edges=tuple(edges),
-        malformed=tuple(malformed),
-        file_hashes=file_hashes,
-        stats=stats
-        if stats is not None
-        else BuildStats(parsed=0, cache_hits=len(file_hashes)),
-    )
+
+    return _run_with_stale_reconnect(conn, _op, what="load_all")
 
 
 __all__ = [
