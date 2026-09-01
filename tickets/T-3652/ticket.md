@@ -1,7 +1,7 @@
 ---
 id: T-3652
 title: stale matrix-test window misses Start-Process --project arg (T-3648 growth)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
