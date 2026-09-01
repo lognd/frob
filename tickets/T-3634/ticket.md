@@ -20,6 +20,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002: nondeterministic CI-only race, cannot be made to fail at main deterministically'
+  actor: logan
+  at: '2026-09-01'
+  old_length: 1553
+  new_length: 2397
+evidence:
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_two_processes_connecting_concurrently_never_see_no_such_table_meta
 designated_repro_test: null
 threat: null
 component: null
@@ -55,3 +64,5 @@ handling (any query can hit it, not just connect).
 Acceptance: the existing two-process test 5x consecutive locally;
 note in the Done report that CI (both POSIX legs) is the true
 verifier -- prior rounds passed locally 5x and still failed on CI.
+
+frob:waive BUG002 reason="this is a darwin-only, timing-dependent WAL/os.replace race (disk I/O error) that this repo's own CI history shows does not reliably reproduce locally -- both T-3623 and T-3632, this ticket's own direct predecessors, passed their bound evidence 5x locally and still hit a NEW failure mode on the next CI run; the acceptance criterion documented in the ticket body is explicitly CI-verified, not locally-reproduced. The bound test cannot fail at main because the race window it exercises is a probabilistic timing race, not a deterministic code path; a mutation-killing unit test would require injecting a fault at the exact os.replace/WAL-read boundary, which this repo has no harness for. Round 4 remains possible if CI recurs with yet another OperationalError shape not covered by _is_stale_or_corrupt_connection."
