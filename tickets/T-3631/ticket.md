@@ -2,7 +2,7 @@
 id: T-3631
 title: 'post-land sweep regression from T-3586: 4 new (rule, file) identit(ies), 9
   finding(s) (INV001, PII012)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-01'
@@ -19,6 +19,7 @@ scope:
 - invariants/INV-013.md
 - invariants/INV-041.md
 - tests/gates_suite/test_compliance.py
+- src/frob/gates/_pii_structural/_keywords.py
 findings:
 - - INV001
   - invariants/INV-011.md
@@ -32,6 +33,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_pii_structural/_keywords.py
+  reason: PII012 non-PII waiver allowlist for test_gates.py test names must be relocated
+    1:1 to their new tests/gates_suite/test_compliance.py home
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
