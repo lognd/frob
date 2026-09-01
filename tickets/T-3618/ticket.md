@@ -2,7 +2,7 @@
 id: T-3618
 title: 'TDD001 per-edge git-log walk is unbudgeted: ~200-300s/edge makes large lands
   structurally unlandable'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-31'
