@@ -17,10 +17,19 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/cache.py
 - tests/unit/test_graph_cache.py
+- tests/unit/test_graph_build_lock.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_graph_build_lock.py
+  reason: 'SCOPE002: cache.py::connect/_inprocess_write_lock/_is_transient_lock_error
+    are covered by this file''s two-process test, which is also T-3669''s acceptance
+    evidence for the handle-lifecycle fix'
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
