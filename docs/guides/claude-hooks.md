@@ -335,6 +335,15 @@ automatically on every `frob` invocation (stderr, next to
 `stale_install_warning`/`stale_binary_warning`); the WRITE stays this
 script's/the verb's explicit call, never automatic.
 
+T-3626: `MANAGED` now also lists `.claude/hooks/_root_write_guard_lib.py`
+-> `hooks/_root_write_guard_lib.py`, the importable helper module
+`root-write-guard.py`'s LARGE001 split factored its pure resolution logic
+into -- it must materialize to `~/.claude/hooks/` alongside the entry
+point that imports it (the same `sys.path.insert` + bare-module-name
+pattern `_shellscan.py`/`_agent_context.py` already use for their own
+hook-local helpers), or the entry point's import fails at the harness's
+real invocation path.
+
 T-3408: the WRITE path now refuses to sync a managed file whose source
 (this worktree's own copy) is BEHIND `main` for that specific file --
 unchanged by the worktree since it branched, while `main` has since

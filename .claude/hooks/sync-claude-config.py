@@ -107,6 +107,10 @@ MANAGED: list[tuple[str, str]] = [
     (".claude/hooks/frob-suggest.py", "hooks/frob-suggest.py"),
     (".claude/hooks/frob-timeout-guard.py", "hooks/frob-timeout-guard.py"),
     (".claude/hooks/root-write-guard.py", "hooks/root-write-guard.py"),
+    (
+        ".claude/hooks/_root_write_guard_lib.py",
+        "hooks/_root_write_guard_lib.py",
+    ),
     (".claude/hooks/_agent_context.py", "hooks/_agent_context.py"),
     (
         ".claude/hooks/root-cleanliness-detector.py",

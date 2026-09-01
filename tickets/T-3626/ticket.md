@@ -1,7 +1,7 @@
 ---
 id: T-3626
 title: 'LARGE001: split .claude/hooks/root-write-guard.py (834 lines)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-01'
@@ -62,6 +62,10 @@ scope_changes:
     alongside the entry point it is imported by
   actor: logan
   at: '2026-09-01'
+evidence:
+- tests/test_hook_root_write_guard.py::test_no_marker_write_to_root_is_refused
+- tests/test_hook_root_write_guard.py::test_write_inside_a_real_worktree_is_allowed_with_no_markers
+- tests/test_hook_root_write_guard.py::test_bash_redirect_into_primary_with_no_marker_is_refused
 designated_repro_test: null
 threat: null
 component: null
