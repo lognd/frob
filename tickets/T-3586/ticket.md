@@ -2,7 +2,7 @@
 id: T-3586
 title: Split tests/test_gates.py (21691 lines) into a per-gate-family package via
   frob refactor verbs; establish the monofile-split recipe
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-31'
@@ -18,10 +18,40 @@ scope:
 - tests/test_gates.py
 - tests/gates_suite/**
 - tests/conftest.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: split relocated capability-observing test code; via-lists must follow the
+    files 1:1 (515 SELFAUDIT001 findings from the land attempt are the spec)
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: split relocated capability-observing test code; via-lists must follow the
+    files 1:1 (515 SELFAUDIT001 findings from the land attempt are the spec)
+  actor: logan
+  at: '2026-09-01'
+evidence:
+- tests/gates_suite/test_prework.py::TestScopePrework::test_pre001_missing_sweep
+- tests/gates_suite/test_doc.py::TestDriftGate::test_drift001_stale_ack_has_remedy
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov001_waiver_does_not_blanket_suppress_sibling_symbol
+- tests/gates_suite/test_waive.py::TestWaivePresets::test_waive_preset_resolves_reason_and_matches_like_inline
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+- tests/gates_suite/test_protocol.py::TestProtocolSummaryGate::test_unresolved_callee_poisons_a_protocol_tagged_symbol
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt002_closed_ticket_is_reported
+- tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv001_no_evidence
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test001_public_symbol_no_unit_edge
+- tests/gates_suite/test_run.py::TestRunGates::test_run_gates_end_to_end
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_renamed_draft_resolved_via_git_not_refiled
+- tests/gates_suite/test_sys.py::TestSysGate::test_noop_no_design_dir
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_backtick_styled_id_in_a_real_claim_still_fires
+- tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_ts_interface_email_field_fires
 designated_repro_test: null
 threat: null
 component: null
