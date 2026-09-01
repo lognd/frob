@@ -648,6 +648,7 @@ def _run_stall_watchdog(config: pytest.Config, stop_event: "threading.Event") ->
 
 
 # frob:ticket T-3608
+# frob:ticket T-3643
 # frob:waive WIRE001 reason="genuinely wired -- pytest-xdist calls this via its own \
 # newhooks.py pytest_testnodedown hookspec (DSession.worker_errordown/worker_ \
 # workerfinished), name-based plugin discovery like this file's pre-existing \
@@ -655,6 +656,10 @@ def _run_stall_watchdog(config: pytest.Config, stop_event: "threading.Event") ->
 # frob:tests \
 # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_testnodedown_marks_a_de\
 # ath_controller_only
+# frob:tests \
+# tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_pytest_testnodedown_is_\
+# optionalhook
+@pytest.hookimpl(optionalhook=True)
 def pytest_testnodedown(node: object, error: object) -> None:
     """T-3608: records that SOME worker went down, independent of whether
     `pytest_handlecrashitem` (T-3516's `WORKER-CRASH-REPORT`) ever actually
@@ -663,7 +668,16 @@ def pytest_testnodedown(node: object, error: object) -> None:
     crash-report bookkeeping, so it is the one signal that survives even
     the exact gap run 33451274911 exposed (a death for which no
     `WORKER-CRASH-REPORT` line was ever emitted). Controller-only (mirrors
-    every other controller-only hook in this file)."""
+    every other controller-only hook in this file).
+
+    T-3643: `@pytest.hookimpl(optionalhook=True)` -- this is an xdist-only
+    hookspec (`xdist.newhooks`), so without this decorator pytest's own
+    plugin validation refuses to even START under `-p no:xdist` (Windows
+    CI's Test step, run 33491468339: `PluginValidationError: unknown hook
+    'pytest_testnodedown' in plugin tests.conftest`, `SUITE-RESULT: DID-
+    NOT-COMPLETE exitstatus=3`, `collected=0` -- the ENTIRE Windows suite
+    dead before a single test ran). Matches this file's pre-existing
+    `pytest_handlecrashitem` waiver's same optionalhook posture."""
     config = _worker_crash_hook_config
     if config is not None and hasattr(config, "workerinput"):
         return

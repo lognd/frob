@@ -1,7 +1,7 @@
 ---
 id: T-3643
 title: xdist-only pytest_testnodedown hook kills Windows suite (-p no:xdist)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -20,6 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestStallWatchdog::test_pytest_testnodedown_is_optionalhook
+- tests/unit/test_conftest_stackdump.py::TestStallWatchdog::test_testnodedown_marks_a_death_controller_only
 designated_repro_test: null
 threat: null
 component: null

@@ -754,6 +754,27 @@ class TestStallWatchdog:
         module.pytest_testnodedown(node=object(), error=None)
         assert module._last_node_death_ts is not None
 
+    # frob:ticket T-3643
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestStallWatchdog.test_pytest_testnodedown\
+    # _is_optionalhook
+    def test_pytest_testnodedown_is_optionalhook(self) -> None:
+        """T-3643: `pytest_testnodedown` is an xdist-only hookspec
+        (`xdist.newhooks`) -- without `@pytest.hookimpl(optionalhook=True)`
+        pytest's own plugin validation refuses to even START a session
+        under `-p no:xdist` (Windows CI's Test step, run 33491468339:
+        `PluginValidationError: unknown hook 'pytest_testnodedown' in
+        plugin tests.conftest`, the whole suite dead before a single test
+        ran). Pins the decorator stays on this hook the same way it
+        already pins `pytest_handlecrashitem`'s (below)."""
+        module = _load_conftest()
+        marker = getattr(module.pytest_testnodedown, "pytest_impl", None)
+        assert marker is not None, (
+            "pytest_testnodedown is missing @pytest.hookimpl(...) entirely -- "
+            "it must be optionalhook=True for -p no:xdist to start at all"
+        )
+        assert marker.get("optionalhook") is True
+
 
 # frob:ticket T-3608
 class TestStallWatchdogIntegration:
