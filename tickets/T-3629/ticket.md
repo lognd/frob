@@ -18,6 +18,7 @@ scope:
 - tests/unit/test_land_squash_residue_reclaim.py
 - tests/unit/test_land_squash_stage.py
 - src/frob/tickets/_land_splice.py
+- docs/design/land-splice-test-then-impl.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +45,11 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_land_splice.py
   reason: new module created by the split
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: docs/design/land-splice-test-then-impl.md
+  reason: moved symbols frob:doc anchor lives there; may need AFFECT001/DRIFT002 re-verification
   actor: logan
   at: '2026-09-01'
 body_changes:
