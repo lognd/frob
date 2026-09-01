@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_land.py
 - tests/gates/test_tdd_order.py
 - tests/test_ticket_land.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,12 @@ scope_changes:
   glob: tests/test_ticket_land.py
   reason: TDD001 perf fix touches the check module, its land call site, and both test
     files
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/modules/gates.md
+  reason: AFFECT001 requires touching the tdd001-t-3009 doc anchor since resolve_symbol_introduction/tdd_order_violations
+    changed
   actor: logan
   at: '2026-08-31'
 designated_repro_test: null
