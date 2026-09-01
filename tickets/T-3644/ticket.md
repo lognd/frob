@@ -1,7 +1,7 @@
 ---
 id: T-3644
 title: 'cache SIGBUS round 4: retire WAL journal mode on graph cache'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
