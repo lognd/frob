@@ -1,7 +1,7 @@
 ---
 id: T-3629
 title: 'ARCH102: split src/frob/tickets/_land_squash.py (38 exports, 3 clusters)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-01'
