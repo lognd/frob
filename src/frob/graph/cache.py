@@ -259,6 +259,27 @@ def _is_transient_lock_error(exc: sqlite3.OperationalError) -> bool:
     return "locked" in msg or "readonly database" in msg
 
 
+# frob:ticket T-3669
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestHandleIdentity.test_readonly_database_is_classifi\
+# ed_as_a_handle_fault
+def _is_readonly_handle_error(exc: sqlite3.OperationalError) -> bool:
+    """True iff `exc` is sqlite's `attempt to write a readonly database`
+    (T-3669) -- the shape a WRITE through a handle bound to a replaced-away
+    inode takes on darwin.
+
+    `_is_transient_lock_error` also matches this string, deliberately
+    (T-3644: the same-process fcntl-aliasing contention it describes is
+    genuinely transient and genuinely retryable). But when the caller has a
+    canonical path to reopen at, this shape must be treated as a HANDLE
+    fault first: retrying it on the same connection is what made five
+    rounds of retry budget useless on darwin (run 33529632605 ended with
+    `CacheLocked('attempt to write a readonly database')` after the full
+    deadline). Callers that can reopen check this predicate before falling
+    back to the transient-lock reading."""
+    return "readonly database" in str(exc).lower()
+
+
 # frob:ticket T-1423
 # frob:doc docs/modules/graph.md#lock-contention-t-1423
 # frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_raises_cache_locked_once_budget_exhausted  # noqa: E501
@@ -277,7 +298,8 @@ class CacheLocked(sqlite3.OperationalError):
 # frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not_retried  # noqa: E501
 # frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_store_file_data_retries_past_a_held_exclusive_lock  # noqa: E501
 # frob:raises CacheLocked
-def _with_lock_retry(op, *, what: str):  # noqa: ANN001, ANN202
+# frob:ticket T-3669
+def _with_lock_retry(op, *, what: str, retry_readonly: bool = True):  # noqa: ANN001, ANN202
     """Run `op()`, retrying while sqlite reports the db as locked, up to
     `_LOCK_TOTAL_TIMEOUT_SECONDS`; raises `CacheLocked` once the budget is
     exhausted instead of letting the raw `sqlite3.OperationalError` escape.
@@ -298,6 +320,14 @@ def _with_lock_retry(op, *, what: str):  # noqa: ANN001, ANN202
             return op()
         except sqlite3.OperationalError as exc:
             if not _is_transient_lock_error(exc):
+                raise
+            # T-3669: a caller that owns an outer reopen layer passes
+            # retry_readonly=False so the readonly-database shape escapes
+            # IMMEDIATELY to that layer, which closes the handle and
+            # reopens at the canonical path. Absorbing it here instead is
+            # what burned the entire 30s budget on a connection bound to a
+            # replaced-away inode, five rounds running.
+            if not retry_readonly and _is_readonly_handle_error(exc):
                 raise
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -356,6 +386,163 @@ def _connect_with_backoff(path: Path) -> sqlite3.Connection:
             attempt += 1
 
 
+# frob:ticket T-3669
+# Round 6 of the cache-atomicity saga. Every prior round (T-3607 quarantine
+# -rename, T-3623 schema-complete-before-visible, T-3632 atomic temp-build
+# + double-checked locking, T-3634 disk-I/O reconnect, T-3644 WAL
+# retirement, T-3654 deadline backoff) treated the symptom on the SAME
+# connection object. The defect they all missed is a HANDLE LIFECYCLE one:
+# `os.replace` publishes a NEW inode at the canonical path, and a
+# `sqlite3.Connection` opened before that replace stays bound to the OLD,
+# now-unlinked (or quarantined) inode forever. On darwin such a handle
+# reads the pre-replace state indefinitely -- so a sibling keeps seeing
+# `fingerprint None`, re-invalidates, republishes, and the two processes
+# thrash rebuilds over each other (~20 cycles, run 33529632605) -- and a
+# WRITE through it surfaces as `attempt to write a readonly database`,
+# which every retry loop then retried ON THE SAME DOOMED HANDLE. The fix
+# is to make "is my handle still bound to the file at the canonical path?"
+# a cheap, explicit check taken BEFORE every fingerprint read and before
+# every retried operation, and to make the readonly shape reopen rather
+# than retry. `id(conn)` keys this map because `sqlite3.Connection`
+# supports neither weak references nor attribute assignment; entries are
+# dropped in `_close_conn`, and an id collision is harmless either way (a
+# stale entry that differs from the live inode only causes one extra
+# correct reopen; one that matches it describes the same file anyway).
+_CONN_FILE_IDENTITY: dict[int, tuple[int, int]] = {}
+_OPEN_IDENTITY_ATTEMPTS = 3
+_CONN_IDENTITY_MAX_ENTRIES = 512
+
+
+# frob:ticket T-3669
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestHandleIdentity.test_identity_changes_after_os_rep\
+# lace
+def _file_identity(path: Path) -> tuple[int, int] | None:
+    """The `(st_dev, st_ino)` pair naming the file currently at `path`, or
+    `None` if it does not exist (T-3669) -- the value a cache connection's
+    recorded identity is compared against to detect that a sibling's
+    `os.replace` published a new inode under a live handle."""
+    try:
+        st = path.stat()
+    except OSError:
+        return None
+    return (st.st_dev, st.st_ino)
+
+
+# frob:ticket T-3669
+def _close_conn(conn: sqlite3.Connection) -> None:
+    """Close `conn`, swallowing an already-broken handle's close error, and
+    forget its recorded file identity (T-3669) so the `id()`-keyed
+    `_CONN_FILE_IDENTITY` map cannot grow without bound or be misread by a
+    later connection that happens to reuse the same `id()`."""
+    _CONN_FILE_IDENTITY.pop(id(conn), None)
+    try:
+        conn.close()
+    except sqlite3.Error:
+        pass
+
+
+# frob:ticket T-3669
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestHandleIdentity.test_store_file_data_after_a_repla\
+# ce_lands_on_the_live_file
+def _reopen_without_closing(
+    conn: sqlite3.Connection, path: Path
+) -> sqlite3.Connection | None:
+    """A FRESH connection at `path` if `conn` is bound to a file that has
+    since been replaced there, else `None` (T-3669).
+
+    The non-destructive half of `_reopen_if_replaced`, for the one caller
+    that does not own the connection it was handed
+    (`_run_with_stale_reconnect`, reached from `store_file_data` and the
+    other module-level read/write helpers): closing a caller's connection
+    out from under it turns the caller's next ordinary use into a
+    `ProgrammingError`, so a stranded handle is worked AROUND here rather
+    than invalidated."""
+    recorded = _CONN_FILE_IDENTITY.get(id(conn))
+    if recorded is None:
+        return None
+    current = _file_identity(path)
+    if current is None or current == recorded:
+        return None
+    _log.warning(
+        "cache: operating through a fresh connection at %s -- the caller's "
+        "handle is bound to a replaced-away file (inode %s, now %s)",
+        path,
+        recorded,
+        current,
+    )
+    return _open(path)
+
+
+# frob:ticket T-3669
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestHandleIdentity.test_replaced_away_handle_is_reope\
+# ned_before_the_next_read
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestHandleIdentity.test_live_handle_is_not_reopened
+def _reopen_if_replaced(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
+    """Return `conn` if it is still bound to the file now at `path`;
+    otherwise close it and return a FRESH connection opened at `path`
+    (T-3669).
+
+    This is round 6's whole thesis in one function: a handle whose backing
+    inode was replaced out from under it is not "temporarily busy", it is
+    permanently looking at dead state, and no amount of retrying the
+    operation on it can ever succeed. Called before each fingerprint read
+    and before each retried cache operation, it converts the previously
+    unbounded rebuild-thrash and readonly-database loops into a single
+    reopen at the canonical path -- which, by construction of
+    `_build_schema_complete_db` + `os.replace`, always holds the winner's
+    schema-complete db. Returns `conn` unchanged when either identity is
+    unknown (an unstattable path, or a connection this module did not open
+    through `_open`): reopening on no evidence would defeat T-0232's
+    pinned "a second connection must not queue behind a held write"
+    invariant for the ordinary, non-racing case.
+    """
+    recorded = _CONN_FILE_IDENTITY.get(id(conn))
+    if recorded is None:
+        return conn
+    current = _file_identity(path)
+    if current is None or current == recorded:
+        return conn
+    _log.warning(
+        "cache: connection at %s is bound to a replaced-away file "
+        "(inode %s, now %s) -- closing and reopening at the canonical path",
+        path,
+        recorded,
+        current,
+    )
+    _close_conn(conn)
+    return _open(path)
+
+
+# frob:ticket T-3669
+def _connect_recording_identity(
+    path: Path,
+) -> tuple[sqlite3.Connection, tuple[int, int] | None]:
+    """`_connect_with_backoff(path)` plus the `(st_dev, st_ino)` the opened
+    handle is actually bound to (T-3669).
+
+    Stats `path` on both sides of the connect and retries when the two
+    disagree: a sibling's `os.replace` landing in exactly that window would
+    otherwise make us record the NEW inode for a handle holding the OLD
+    one -- an identity that lies in the one direction that matters, since
+    `_reopen_if_replaced` would then never reopen it. After
+    `_OPEN_IDENTITY_ATTEMPTS` losses the connection is returned with an
+    unknown (`None`) identity, which degrades to exactly the pre-T-3669
+    behavior rather than looping against a pathologically busy path."""
+    for _attempt in range(_OPEN_IDENTITY_ATTEMPTS):
+        before = _file_identity(path)
+        conn = _connect_with_backoff(path)
+        after = _file_identity(path)
+        if before is not None and before == after:
+            return conn, after
+        _close_conn(conn)
+    return _connect_with_backoff(path), None
+
+
+# frob:ticket T-3669
 def _open(path: Path) -> sqlite3.Connection:
     """A cache connection with a busy timeout so concurrent builds wait
     rather than raising `disk I/O error` (T-0029: two agents building the
@@ -382,7 +569,15 @@ def _open(path: Path) -> sqlite3.Connection:
     line the first time a poll actually blocks, while keeping the same
     30s overall budget.
     """
-    conn = _connect_with_backoff(path)
+    conn, identity = _connect_recording_identity(path)
+    if identity is not None:
+        # T-3669: callers close their own connections without going
+        # through `_close_conn`, so entries accumulate; this map is a
+        # best-effort cache, not a registry, and dropping it wholesale
+        # only costs one skipped reopen check per surviving connection.
+        if len(_CONN_FILE_IDENTITY) >= _CONN_IDENTITY_MAX_ENTRIES:
+            _CONN_FILE_IDENTITY.clear()
+        _CONN_FILE_IDENTITY[id(conn)] = identity
     # These pragmas can touch page structure, so on a non-sqlite file they
     # raise here -- swallow it and let connect()'s schema SELECT be the one
     # place that detects corruption and triggers recreate (T-0019/T-0029).
@@ -484,7 +679,7 @@ def _rebuild_schema_atomically(
             try:
                 _, recheck_existing = _read_schema_version(recheck_conn, path)
             finally:
-                recheck_conn.close()
+                _close_conn(recheck_conn)
             if recheck_existing == _SCHEMA_VERSION:
                 _log.debug(
                     "cache.connect: schema already rebuilt to %s at %s by a "
@@ -492,7 +687,7 @@ def _rebuild_schema_atomically(
                     _SCHEMA_VERSION,
                     path,
                 )
-                conn.close()
+                _close_conn(conn)
                 return _open(path)
         _log.info(
             "cache.connect: schema %s -> %s at %s, rebuilding",
@@ -500,7 +695,7 @@ def _rebuild_schema_atomically(
             _SCHEMA_VERSION,
             path,
         )
-        conn.close()
+        _close_conn(conn)
         tmp_path = _build_schema_complete_db(path)
         _quarantine_sidecars(path)
         os.replace(tmp_path, path)
@@ -700,7 +895,7 @@ def _recreate(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
     same corrupt db never quarantine each other's freshly-created
     replacement.
     """
-    conn.close()
+    _close_conn(conn)
     lock_fd = _rebuild_lock_fd(path)
     if lock_fd is not None:
         portable_flock_acquire(lock_fd, exclusive=True, blocking=True)
@@ -837,59 +1032,129 @@ def _conn_path(conn: sqlite3.Connection) -> Path | None:
 _STALE_CONN_MAX_RETRIES = 3
 
 
+# frob:ticket T-3669
+# frob:raises sqlite3.OperationalError
+def _reconnect_delay_for(
+    exc: sqlite3.OperationalError,
+    *,
+    what: str,
+    path: Path | None,
+    deadline: float,
+    attempt: int,
+    readonly_attempt: int,
+) -> tuple[Path, float, bool]:
+    """Decide whether `exc` earns another attempt through a REOPENED
+    connection, returning `(delay before that attempt, was it the readonly
+    shape)` -- or re-raising `exc` when it does not (T-3669, split out of
+    `_run_with_stale_reconnect` to keep that function under ARCH001's line
+    threshold).
+
+    Two budgets, because the two shapes mean different things. `attempt to
+    write a readonly database` is a handle fault whose underlying cause (a
+    sibling's `os.replace` mid-rebuild) clears on its own, so it retries
+    against the whole `_LOCK_TOTAL_TIMEOUT_SECONDS` budget with backoff;
+    a stale/corrupt-connection shape means the reopen itself should have
+    already fixed things, so a small fixed `_STALE_CONN_MAX_RETRIES` is
+    the honest ceiling. Anything else, or an unknown path to reopen at,
+    propagates unchanged."""
+    readonly = _is_readonly_handle_error(exc)
+    if not readonly and not _is_stale_or_corrupt_connection(exc):
+        raise exc
+    if path is None:
+        raise exc
+    if readonly:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise exc
+        _log.warning(
+            "cache: %s hit a readonly-database write fault, reopening at "
+            "%s and retrying (up to %.0fs remaining): %s",
+            what,
+            path,
+            remaining,
+            exc,
+        )
+        return path, _lock_backoff_seconds(readonly_attempt, remaining=remaining), True
+    if attempt >= _STALE_CONN_MAX_RETRIES:
+        raise exc
+    _log.warning(
+        "cache: %s hit a stale/corrupt connection, reopening at %s and "
+        "retrying (attempt %d/%d): %s",
+        what,
+        path,
+        attempt + 1,
+        _STALE_CONN_MAX_RETRIES,
+        exc,
+    )
+    return path, 0.0, False
+
+
 # frob:ticket T-3634
-# frob:raises AssertionError
+# frob:ticket T-3669
 def _run_with_stale_reconnect(conn: sqlite3.Connection, op, *, what: str):  # noqa: ANN001, ANN202
-    """Call `op(conn)`; if it raises a `_is_stale_or_corrupt_connection`
-    shape, close `conn`, reopen fresh at its own on-disk path (via
-    `_conn_path`), and retry -- up to `_STALE_CONN_MAX_RETRIES` times,
-    warning loudly each time -- before letting a persistent failure
-    escape (T-3634).
+    """Call `op(conn)` through a connection guaranteed to be bound to the
+    file currently at the cache path, reopening and retrying rather than
+    reusing a handle that a sibling's `os.replace` stranded on the old
+    inode (T-3634; T-3669 for the handle-lifecycle rewrite).
 
     `op` receives the (possibly reopened) connection on each attempt and
     must be safe to call more than once; every current use (a read, or a
-    `_with_lock_retry`-wrapped delete-then-insert) already is. This is
-    the generalized form of `_check_fingerprint_with_recovery`'s own
-    reopen-and-retry, applied to every OTHER cache read/write path
-    (`store_file_data`, `store_parsed_artifact`, `load_parsed_artifact`,
-    `load_file_data`, `load_all`) per T-3634's direction: any query, not
-    just `connect()`'s own, can land mid-window on a sibling's
-    `os.replace`.
-
-    The trailing `AssertionError` below is unreachable in practice --
-    every loop iteration either returns or raises before falling off the
-    end -- kept only so the function has a syntactically reachable exit
-    for type checkers; declared via `frob:raises` rather than caught.
+    `_with_lock_retry`-wrapped delete-then-insert) already is. `conn`
+    itself is never closed when it is merely stranded -- it belongs to the
+    caller, whose own later calls route back through here -- so a write
+    made through a connection of this function's own is committed here,
+    since the caller cannot commit a handle it was never given. See
+    T-3669 for why five rounds of same-handle retries could not fix this.
     """
-    for attempt in range(_STALE_CONN_MAX_RETRIES + 1):
-        try:
-            return op(conn)
-        except sqlite3.OperationalError as exc:
-            if not _is_stale_or_corrupt_connection(exc):
-                raise
-            path = _conn_path(conn)
-            if path is None or attempt == _STALE_CONN_MAX_RETRIES:
-                raise
-            _log.warning(
-                "cache: %s hit a stale/corrupt connection, reopening at "
-                "%s and retrying (attempt %d/%d): %s",
-                what,
-                path,
-                attempt + 1,
-                _STALE_CONN_MAX_RETRIES,
-                exc,
-            )
+    deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
+    canonical = _conn_path(conn)
+    attempt = 0
+    readonly_attempt = 0
+    active = conn
+    owned = False
+    try:
+        while True:
+            if canonical is not None and not owned:
+                fresh = _reopen_without_closing(conn, canonical)
+                if fresh is not None:
+                    active, owned = fresh, True
             try:
-                conn.close()
-            except sqlite3.Error:
-                pass
-            conn = _open(path)
-    raise AssertionError("unreachable")  # pragma: no cover
+                result = op(active)
+            except sqlite3.OperationalError as exc:
+                path = _conn_path(active) or canonical
+                path, delay, readonly = _reconnect_delay_for(
+                    exc,
+                    what=what,
+                    path=path,
+                    deadline=deadline,
+                    attempt=attempt,
+                    readonly_attempt=readonly_attempt,
+                )
+                if readonly:
+                    readonly_attempt += 1
+                else:
+                    attempt += 1
+                if owned:
+                    _close_conn(active)
+                active, owned = _open(path), True
+                canonical = path
+                if delay:
+                    time.sleep(delay)
+                continue
+            if owned:
+                # The caller holds no reference to `active`, so nobody
+                # else can ever commit it -- do it here or lose the write.
+                active.commit()
+            return result
+    finally:
+        if owned:
+            _close_conn(active)
 
 
 # frob:ticket T-3623
 # frob:ticket T-3634
 # frob:raises Error
+# frob:ticket T-3669
 def _check_fingerprint_with_recovery(
     conn: sqlite3.Connection, path: Path
 ) -> sqlite3.Connection:
@@ -921,27 +1186,30 @@ def _check_fingerprint_with_recovery(
     raise a `sqlite3.Error` in that case, declared via `frob:raises`
     rather than caught, so it reaches `connect()`'s own caller.
     """
+    # T-3669: the fingerprint read is the exact statement the darwin
+    # thrash loop kept answering from a replaced-away inode (`fingerprint
+    # None` ~20 times running, run 33529632605). Reopen the handle at the
+    # canonical path FIRST, so the value read -- and the invalidation
+    # write that follows a mismatch -- both land on the live file.
+    conn = _reopen_if_replaced(conn, path)
     try:
         _check_fingerprint(conn, path)
     except sqlite3.OperationalError as exc:
         if _is_missing_meta_table(exc):
             conn = _recreate_and_reapply(conn, path, exc)
-        elif _is_stale_or_corrupt_connection(exc):
+        elif _is_stale_or_corrupt_connection(exc) or _is_readonly_handle_error(exc):
             reopen_path = _conn_path(conn) or path
             _log.warning(
-                "cache.connect: %s hit a stale connection (%s), reopening "
-                "at %s",
+                "cache.connect: %s hit a stale connection (%s), reopening at %s",
                 path,
                 exc,
                 reopen_path,
             )
-            try:
-                conn.close()
-            except sqlite3.Error:
-                pass
+            _close_conn(conn)
             conn = _open(reopen_path)
         else:
             raise
+        conn = _reopen_if_replaced(conn, path)
         _check_fingerprint(conn, path)
     return conn
 
@@ -1335,6 +1603,7 @@ def _store_malformed(
 
 # frob:doc docs/modules/graph.md#cache
 # frob:ticket T-1423
+# frob:ticket T-3669
 def store_file_data(
     conn: sqlite3.Connection,
     *,
@@ -1380,7 +1649,13 @@ def store_file_data(
             _store_edges(c, file_path, edges)
             _store_malformed(c, file_path, malformed)
 
-        _with_lock_retry(_write, what=f"store_file_data({file_path})")
+        # T-3669: retry_readonly=False -- `_run_with_stale_reconnect`
+        # (this call's own wrapper, below) owns the reopen, so a readonly
+        # write fault must reach it rather than being retried here on the
+        # replaced-away handle that caused it.
+        _with_lock_retry(
+            _write, what=f"store_file_data({file_path})", retry_readonly=False
+        )
 
     _run_with_stale_reconnect(conn, _op, what=f"store_file_data({file_path})")
 

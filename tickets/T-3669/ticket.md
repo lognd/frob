@@ -2,7 +2,7 @@
 id: T-3669
 title: 'cache round 6: reopen the connection handle at the canonical path instead
   of retrying a replaced-away inode'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'

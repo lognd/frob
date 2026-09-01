@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 import subprocess
 import sys
@@ -451,3 +452,197 @@ class TestLockBackoff:
     def test_backoff_is_never_negative(self) -> None:
         delay = graph_cache._lock_backoff_seconds(0, remaining=0.0)
         assert delay >= 0.0
+
+
+def _publish_marked_db(path: Path, marker: str) -> None:
+    """Atomically `os.replace` a fresh schema-complete db carrying
+    `meta.marker = marker` over `path` -- the exact publish shape a
+    sibling's rebuild performs, used to simulate the replace that strands
+    an already-open connection on the old inode (T-3669)."""
+    tmp = graph_cache._build_schema_complete_db(path)
+    writer = sqlite3.connect(str(tmp))
+    try:
+        writer.execute("INSERT INTO meta (key, value) VALUES ('marker', ?)", (marker,))
+        writer.commit()
+    finally:
+        writer.close()
+    os.replace(tmp, path)
+
+
+# frob:ticket T-3669
+class TestHandleIdentity:
+    """T-3669 (cache round 6): a `sqlite3.Connection` opened before a
+    sibling's `os.replace` stays bound to the OLD inode -- it reads
+    pre-replace state indefinitely (the ~20-cycle `fingerprint None`
+    rebuild thrash of run 33529632605) and its writes surface as `attempt
+    to write a readonly database`, which rounds 1-5 all retried on that
+    same doomed handle. The fix is lifecycle, not retry: detect the
+    replace and REOPEN at the canonical path."""
+
+    @staticmethod
+    def _read_meta(path: Path, key: str) -> str | None:
+        """`meta[key]` as an INDEPENDENT connection sees it on disk -- the
+        only honest way to assert a write landed in the LIVE file rather
+        than in a replaced-away inode (T-3669)."""
+        reader = sqlite3.connect(str(path))
+        try:
+            row = reader.execute(
+                "SELECT value FROM meta WHERE key = ?", (key,)
+            ).fetchone()
+        finally:
+            reader.close()
+        return None if row is None else row[0]
+
+    # frob:tests src/frob/graph/cache.py::_file_identity
+    def test_identity_changes_after_os_replace(self, tmp_path: Path) -> None:
+        """`_file_identity` must actually distinguish the pre- and
+        post-replace files -- the whole detection rests on it."""
+        path = tmp_path / "cache.db"
+        graph_cache._create_schema_complete_db(path)
+        before = graph_cache._file_identity(path)
+        _publish_marked_db(path, "after")
+        after = graph_cache._file_identity(path)
+        assert before is not None and after is not None
+        assert before != after, (
+            "os.replace published a new file that _file_identity reports as "
+            "identical -- a replaced-away handle could never be detected"
+        )
+
+    # frob:tests src/frob/graph/cache.py::_reopen_if_replaced
+    def test_replaced_away_handle_is_reopened_before_the_next_read(
+        self, tmp_path: Path
+    ) -> None:
+        """A connection whose backing file was replaced is closed and
+        reopened at the canonical path, so its next read sees the WINNER's
+        db -- not the stale inode it still had open."""
+        path = tmp_path / "cache.db"
+        graph_cache._create_schema_complete_db(path)
+        conn = graph_cache._open(path)
+        _publish_marked_db(path, "winner")
+
+        # Sanity: the un-reopened handle is exactly the defect -- it still
+        # answers from the replaced-away inode.
+        assert (
+            conn.execute("SELECT value FROM meta WHERE key = 'marker'").fetchone()
+            is None
+        )
+
+        fresh = graph_cache._reopen_if_replaced(conn, path)
+        try:
+            row = fresh.execute(
+                "SELECT value FROM meta WHERE key = 'marker'"
+            ).fetchone()
+        finally:
+            fresh.close()
+        assert row is not None and row[0] == "winner"
+
+    # frob:tests src/frob/graph/cache.py::_reopen_if_replaced
+    def test_live_handle_is_not_reopened(self, tmp_path: Path) -> None:
+        """No replace, no reopen: a handle still bound to the file at
+        `path` is returned untouched, so this check cannot reintroduce
+        T-0232's "a second connection must not queue behind a held write"
+        cost on the ordinary, non-racing path."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+        try:
+            assert graph_cache._reopen_if_replaced(conn, path) is conn
+        finally:
+            conn.close()
+
+    # frob:tests src/frob/graph/cache.py::_is_readonly_handle_error
+    def test_readonly_database_is_classified_as_a_handle_fault(self) -> None:
+        """The terminal error of round 5 (`CacheLocked('attempt to write a
+        readonly database')`) must be recognised as a handle fault, so it
+        reopens instead of being retried on the connection that caused
+        it."""
+        exc = sqlite3.OperationalError("attempt to write a readonly database")
+        assert graph_cache._is_readonly_handle_error(exc)
+        assert not graph_cache._is_readonly_handle_error(
+            sqlite3.OperationalError("database is locked")
+        )
+
+    # frob:tests src/frob/graph/cache.py::_with_lock_retry
+    def test_lock_retry_lets_a_readonly_fault_escape_to_the_reopen_layer(
+        self,
+    ) -> None:
+        """With `retry_readonly=False` the readonly shape escapes at once
+        rather than burning the 30s budget on a doomed handle -- the
+        measured reason T-3654's deadline backoff changed nothing."""
+        calls: list[int] = []
+
+        def _op() -> None:
+            calls.append(1)
+            raise sqlite3.OperationalError("attempt to write a readonly database")
+
+        started = time.monotonic()
+        with pytest.raises(sqlite3.OperationalError):
+            graph_cache._with_lock_retry(_op, what="probe", retry_readonly=False)
+        assert calls == [1], "the readonly fault was retried on the same handle"
+        assert time.monotonic() - started < 5.0
+
+    # frob:tests src/frob/graph/cache.py::_check_fingerprint_with_recovery
+    def test_fingerprint_read_after_a_replace_lands_on_the_live_file(
+        self, tmp_path: Path
+    ) -> None:
+        """The mutual-rebuild thrash in one assertion: after an external
+        replace, the fingerprint check must reopen and write its
+        fingerprint into the file that is actually at `path` -- writing it
+        into the replaced-away inode is what let both processes keep
+        seeing `fingerprint None` and rebuilding over each other."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+        _publish_marked_db(path, "winner")
+
+        conn = graph_cache._check_fingerprint_with_recovery(conn, path)
+        try:
+            assert self._read_meta(path, "marker") == "winner", (
+                "the fingerprint check republished over the winner's db"
+            )
+            reader = sqlite3.connect(str(path))
+            try:
+                row = reader.execute(
+                    "SELECT value FROM meta WHERE key = 'fingerprint'"
+                ).fetchone()
+            finally:
+                reader.close()
+        finally:
+            conn.close()
+        assert row is not None and row[0] == graph_cache._compute_fingerprint(), (
+            "the fingerprint was written to a replaced-away inode, so the "
+            "next reader still sees None and rebuilds again -- the thrash"
+        )
+
+    # frob:tests src/frob/graph/cache.py::store_file_data
+    def test_store_file_data_after_a_replace_lands_on_the_live_file(
+        self, tmp_path: Path
+    ) -> None:
+        """The app-path write shape (`ticket_run close` -> `build_graph` ->
+        `store_file_data`, the second production surface seen in runs
+        33521/33533): a write issued on a connection whose file was
+        replaced must reach the LIVE db, not vanish into the old inode or
+        die as `CacheLocked('attempt to write a readonly database')`."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+        _publish_marked_db(path, "winner")
+
+        graph_cache.store_file_data(
+            conn,
+            file_path="a.py",
+            content_hash="deadbeef",
+            symbols=(),
+            edges=(),
+            malformed=(),
+        )
+        conn.close()
+        assert self._read_meta(path, "marker") == "winner"
+        reader = sqlite3.connect(str(path))
+        try:
+            row = reader.execute(
+                "SELECT content_hash FROM files WHERE path = 'a.py'"
+            ).fetchone()
+        finally:
+            reader.close()
+        assert row is not None and row[0] == "deadbeef", (
+            "store_file_data wrote through a replaced-away handle -- the "
+            "row never reached the db that is actually at the cache path"
+        )
