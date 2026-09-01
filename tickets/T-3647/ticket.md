@@ -7,8 +7,6 @@ kind: bug
 origin: agent
 created: '2026-09-01'
 priority: high
-blocked_by:
-- T-1661
 parent: null
 tier: ticket
 sprint: null
@@ -60,3 +58,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DRIFT002  src/frob/vet/_supplychain.py  -> attributed to T-3593 (commit 98ffba114367, already closed/dropped -- filed below) via tests/vet_suite/test_supply_chain.py::TestSupplyChainCiActionPin.test_no_workflows_dir_not_flagged -> src/frob/vet/_supplychain.py::_unpinned_ci_action_violations -> src/frob/vet/_supplychain.py::_is_full_commit_sha -> src/frob/vet/_supplychain.py::_HEX_DIGITS
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Unblock log
+- 2026-09-01: unblocked by T-1661 -- T-1661's idle lease released (requeued); its src/frob/vet/** hold no longer applies -- T-3647's DRIFT002 repoints can proceed
