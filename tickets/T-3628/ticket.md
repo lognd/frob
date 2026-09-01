@@ -6,8 +6,6 @@ kind: feature
 origin: human
 created: '2026-09-01'
 priority: medium
-blocked_by:
-- T-3596
 parent: null
 tier: ticket
 sprint: null
@@ -108,3 +106,6 @@ the derived-lock cluster `--into frob.process._derived_lock` -- never a
 hand-copy. `_lock.py` keeps cluster 2 (the portable flock primitive) as
 its own remaining content; the tool rewrites every importer's import
 statement for the moved names.
+
+## Unblock log
+- 2026-09-01: unblocked by T-3596 -- T-3596 landed at 4fb806e3d03e; the move/split import-carry, bare-name-repoint, free-variable, and decorator-preservation gaps this split needs are fixed
