@@ -1,7 +1,7 @@
 ---
 id: T-3627
 title: 'LARGE001: split src/frob/arch/_mayraise.py (878 lines)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-01'
