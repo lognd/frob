@@ -40,6 +40,13 @@ scope_changes:
     the real test files live in tests/unit/
   actor: logan
   at: '2026-09-01'
+body_changes:
+- mode: append
+  reason: record split plan before coding, per ticket instruction
+  actor: logan
+  at: '2026-09-01'
+  old_length: 779
+  new_length: 2706
 designated_repro_test: null
 threat: null
 component: null
@@ -62,3 +69,46 @@ importers whose import statement must be updated.
 Previously specified but never filed (LandInProgress starvation
 during a prior agent's ~45 min of retries); refiled now as part of
 draining that starved backlog.
+
+
+## Split plan (T-3629, ARCH102, 38 exports / 3 clusters)
+
+Cluster 1 -- test-then-impl commit splicing (splits a worktree's staged
+diff into a separate "test" commit and "impl" commit pair):
+  classify_test_then_impl_paths
+  _apply_pathset_diff_to_scratch_index
+  _write_and_commit_pathset_index
+  _compose_pathset_commit
+  compose_test_then_impl_commits
+-> new module `frob.tickets._land_splice`
+
+Cluster 2 -- squash-conflict/ledger-v2 scope checking (pre-flight over
+the v2 ledger before a squash-apply is attempted):
+  _check_squash_conflicted
+  _v2_effective_scope
+  _check_squash_conflicted_v2
+  _squash_and_splice_ledger_v2
+  _squash_and_splice_ledger
+  _unwind_squash_apply
+-> stays in `_land_squash.py` for this ticket (tool-risk note below)
+
+Cluster 3 -- squash-apply/publish/commit-record machinery (the large
+core: land-commit-record derivation, absorption reporting, the
+squash-apply pipeline itself, pre-commit sweep, native rebuild, land
+report):
+  everything else (~27 functions)
+-> stays in `_land_squash.py` for this ticket (tool-risk note below)
+
+EXECUTION NOTE (T-3628 tool-gap precedent, T-3596): `frob refactor
+split` was found to drop a moved function's own module-level free-
+variable dependencies (T-3596 gap 3/4) when the destination module
+never had that dependency (e.g. this file's `_log = get_logger(
+__name__)`). Cluster 1 is the smallest, most clearly self-contained,
+least state-coupled subset (only `_log` as a free variable, no
+decorators, no cross-cluster call edges back into clusters 2/3) and is
+attempted first via the tool with full post-move verification (actual
+pytest run, not just the tool's own success report, per the T-3628
+incident). Clusters 2/3 remain undivided in `_land_squash.py` pending
+either a T-3596 fix or a follow-up ticket, rather than risk a repeat of
+T-3628's tool-corrupted split on this much larger, more state-coupled
+file within this same ticket's time budget.
