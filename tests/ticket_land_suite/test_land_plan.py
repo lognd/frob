@@ -43,7 +43,7 @@ class TestLandPlan:
     matching this whole file's established style."""
 
     # frob:ticket T-1269
-    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
     def test_merges_and_finalizes_every_draft_atomically(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -79,7 +79,9 @@ class TestLandPlan:
         assert _status_ignoring_frob(repo) == ""
 
     # frob:ticket T-1269
-    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_dry_run_unwinds_the_merge
+    # frob:tests \
+    # tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_dry_run_unwinds_the_\
+    # merge
     def test_dry_run_unwinds_the_merge(self, repo: Path, tmp_path: Path) -> None:
         from frob.tickets._land import land_plan
 
@@ -99,7 +101,8 @@ class TestLandPlan:
 
     # frob:ticket T-1269
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandPlan.test_merge_conflict_aborts_and_refuses
+    # tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_merge_conflict_abort\
+    # s_and_refuses
     def test_merge_conflict_aborts_and_refuses(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -124,7 +127,7 @@ class TestLandPlan:
 
     # frob:ticket T-1269
     # frob:ticket T-1522
-    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge  # noqa: E501
     def test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -160,7 +163,7 @@ class TestLandPlan:
         assert loaded[draft.id].id.startswith("T-draft-")
 
     # frob:ticket T-2189
-    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_dry_run_tick_gate_dirty_still_fully_unwinds  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_dry_run_tick_gate_dirty_still_fully_unwinds  # noqa: E501
     def test_dry_run_tick_gate_dirty_still_fully_unwinds(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -203,7 +206,7 @@ class TestLandPlan:
         assert draft.id not in loaded
 
     # frob:ticket T-1269
-    # frob:tests tests/test_ticket_land.py::TestLandPlan.test_cli_dispatches_to_land_plan_and_reports  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_cli_dispatches_to_land_plan_and_reports  # noqa: E501
     def test_cli_dispatches_to_land_plan_and_reports(
         self, repo: Path, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -228,7 +231,7 @@ class TestLandPlan:
 
     # frob:ticket T-2198
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
+    # tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
     def test_pre_existing_tick004_does_not_block_ledger_only_plan_land(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -328,7 +331,7 @@ class TestLandPlanUnwindNeverDiscardsForeignCommits:
     (`_assert_reset_only_discards_own_commits`) refuses instead."""
 
     # frob:ticket T-1495
-    # frob:tests tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding  # noqa: E501
     def test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -364,7 +367,7 @@ class TestLandPlanUnwindNeverDiscardsForeignCommits:
     def test_foreign_commit_refusal_still_unstages_own_leftover_content(
         self, repo: Path, tmp_path: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_foreign_commit_refusal_still_unstages_own_leftover_content  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_foreign_commit_refusal_still_unstages_own_leftover_content  # noqa: E501
         """T-1740's second instance of the same defect class: `land
         --plan` runs its OWN unwind primitive (T-1495), separate from
         `_verified_reset_root`, with the identical gap -- refusing on
@@ -398,7 +401,7 @@ class TestLandPlanUnwindNeverDiscardsForeignCommits:
 
     # frob:ticket T-1495
     # frob:ticket T-1522
-    # frob:tests tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindNeverDiscardsForeignCommits.test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge  # noqa: E501
     def test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -435,7 +438,7 @@ class TestLandPlanQueueDrainCommitsDurable:
 
     # frob:ticket T-1522
     # frob:ticket T-2220
-    # frob:tests tests/test_ticket_land.py::TestLandPlanQueueDrainCommitsDurable.test_finalize_failure_after_merge_keeps_the_merge_commit  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlanQueueDrainCommitsDurable.test_finalize_failure_after_merge_keeps_the_merge_commit  # noqa: E501
     def test_finalize_failure_after_merge_keeps_the_merge_commit(
         self, repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -490,7 +493,7 @@ class TestLandSquashHelpersMutationCoverage:
     def test_worktree_full_changeset_diff_ok_but_nonzero_returncode_is_failed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_worktree_full_changeset_diff_ok_but_nonzero_returncode_is_failed  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandSquashHelpersMutationCoverage.test_worktree_full_changeset_diff_ok_but_nonzero_returncode_is_failed  # noqa: E501
         """Kills the `or` -> `and` mutant on `_worktree_full_changeset`'s
         diff guard: `git diff` succeeding at the process level (is_err=
         False) with a nonzero returncode must still refuse as
@@ -526,7 +529,7 @@ class TestLandSquashHelpersMutationCoverage:
     def test_land_commit_details_diff_tree_fails_returns_empty_files(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_land_commit_details_diff_tree_fails_returns_empty_files  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandSquashHelpersMutationCoverage.test_land_commit_details_diff_tree_fails_returns_empty_files  # noqa: E501
         """Kills the `and` -> `or` mutant on `_land_commit_details`'s
         `files` derivation: when `diff-tree` itself fails (`Err`), the
         `and` guard must short-circuit to `()` without ever touching
@@ -551,7 +554,7 @@ class TestLandSquashHelpersMutationCoverage:
     def test_absorption_scoped_content_matches_worktree_head_err_is_false(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_absorption_scoped_content_matches_worktree_head_err_is_false  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandSquashHelpersMutationCoverage.test_absorption_scoped_content_matches_worktree_head_err_is_false  # noqa: E501
         """Kills the `False` -> `True` negation mutant guarding
         `_absorption_scoped_content_matches`'s `worktree_head` error path:
         an unresolvable worktree HEAD must read as "not verified", never
@@ -568,7 +571,7 @@ class TestLandSquashHelpersMutationCoverage:
     def test_absorption_scoped_content_matches_diff_ok_but_nonzero_is_false(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_absorption_scoped_content_matches_diff_ok_but_nonzero_is_false  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandSquashHelpersMutationCoverage.test_absorption_scoped_content_matches_diff_ok_but_nonzero_is_false  # noqa: E501
         """Kills both the `or` -> `and` mutant on the diff guard AND the
         `False` -> `True` negation on its return: `git diff` succeeding at
         the process level with a nonzero returncode must still read as
@@ -594,7 +597,7 @@ class TestLandSquashHelpersMutationCoverage:
     def test_absorption_verified_false_when_ticket_not_done(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_absorption_verified_false_when_ticket_not_done  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandSquashHelpersMutationCoverage.test_absorption_verified_false_when_ticket_not_done  # noqa: E501
         """Kills the `and` -> `or` mutant on `_absorption_verified`'s
         guard: a ticket loaded successfully but NOT yet `done` must
         short-circuit to `False` WITHOUT ever consulting
@@ -619,7 +622,7 @@ class TestLandSquashHelpersMutationCoverage:
     def test_absorption_verified_false_when_load_fails(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_absorption_verified_false_when_load_fails  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandSquashHelpersMutationCoverage.test_absorption_verified_false_when_load_fails  # noqa: E501
         """Complement of the above: a failed ledger load also returns
         `False`, killing the `False` -> `True` negation mutant on the
         shared early-return statement."""
@@ -633,7 +636,7 @@ class TestLandSquashHelpersMutationCoverage:
     def test_report_stacked_sibling_absorption_reports_real_land_not_dry_run(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_report_stacked_sibling_absorption_reports_real_land_not_dry_run  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandSquashHelpersMutationCoverage.test_report_stacked_sibling_absorption_reports_real_land_not_dry_run  # noqa: E501
         """Kills the literal `False` -> `True` negation mutants on
         `_report_stacked_sibling_absorption`'s `dry_run=False` and
         `natives_rebuilt=False` fields: an absorbed-land report always
@@ -653,7 +656,7 @@ class TestLandSquashHelpersMutationCoverage:
     def test_absorbed_land_report_none_when_staged_files_nonempty(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_absorbed_land_report_none_when_staged_files_nonempty  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandSquashHelpersMutationCoverage.test_absorbed_land_report_none_when_staged_files_nonempty  # noqa: E501
         """Kills the `or` -> `and` mutant on `_absorbed_land_report`'s
         first guard: a NON-EMPTY staged set (a genuine partial squash,
         not an absorbed no-op) must short-circuit to `None` even though
@@ -679,7 +682,7 @@ class TestLandSquashHelpersMutationCoverage:
     def test_staged_files_diff_ok_but_nonzero_returncode_is_failed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_staged_files_diff_ok_but_nonzero_returncode_is_failed  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandSquashHelpersMutationCoverage.test_staged_files_diff_ok_but_nonzero_returncode_is_failed  # noqa: E501
         """Kills the `or` -> `and` mutant on `_staged_files`'s diff guard:
         `git diff --cached` succeeding at the process level with a
         nonzero returncode must still refuse as `GitFailed`."""
@@ -699,7 +702,7 @@ class TestLandSquashHelpersMutationCoverage:
     def test_land_commit_details_rev_parse_ok_but_nonzero_returncode_is_no_sha(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandSquashHelpersMutationCoverage.test_land_commit_details_rev_parse_ok_but_nonzero_returncode_is_no_sha  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandSquashHelpersMutationCoverage.test_land_commit_details_rev_parse_ok_but_nonzero_returncode_is_no_sha  # noqa: E501
         """Kills the `and` -> `or` mutant on `_land_commit_details`'s `sha`
         derivation: `rev-parse` succeeding at the process level with a
         nonzero returncode must still report `sha_str=None`, not the

@@ -2,7 +2,7 @@
 id: T-3635
 title: 'post-land sweep regression from T-3591: 17 new (rule, file) identit(ies),
   827 finding(s) (DOC006, DRIFT002, F401, SEC110)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-01'

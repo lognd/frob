@@ -42,8 +42,8 @@ class TestDirtOwnedByNoOpenTicket:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket.test_path_inside_an_op\
-        # en_tickets_scope_is_not_orphaned
+        # tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnedByNoOpenTicket.t\
+        # est_path_inside_an_open_tickets_scope_is_not_orphaned
         from frob.tickets._land import _dirt_owned_by_no_open_ticket
 
         created = new_ticket(repo, _spec("Open work", scope=("src/owned.py",)))
@@ -56,8 +56,8 @@ class TestDirtOwnedByNoOpenTicket:
         self, repo: Path
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket.test_path_outside_ever\
-        # y_open_tickets_scope_is_orphaned
+        # tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnedByNoOpenTicket.t\
+        # est_path_outside_every_open_tickets_scope_is_orphaned
         from frob.tickets._land import _dirt_owned_by_no_open_ticket
 
         created = new_ticket(repo, _spec("Open work", scope=("src/owned.py",)))
@@ -68,8 +68,8 @@ class TestDirtOwnedByNoOpenTicket:
 
     def test_a_done_tickets_scope_does_not_count(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket.test_a_done_tickets_sc\
-        # ope_does_not_count
+        # tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnedByNoOpenTicket.t\
+        # est_a_done_tickets_scope_does_not_count
         """A DONE ticket's scope must not exempt its old files forever --
         only currently OPEN (non-terminal) tickets count."""
         from frob.tickets._land import _dirt_owned_by_no_open_ticket
@@ -95,8 +95,8 @@ class TestDirtOwnerTickets:
     # frob:ticket T-2118
     def test_path_owned_by_another_open_ticket_names_it(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestDirtOwnerTickets.test_path_owned_by_another_op\
-        # en_ticket_names_it
+        # tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets.test_pat\
+        # h_owned_by_another_open_ticket_names_it
         from frob.tickets._land import _dirt_owner_tickets
 
         created = new_ticket(repo, _spec("Other work", scope=("src/other.py",)))
@@ -115,8 +115,8 @@ class TestDirtOwnerTickets:
     # frob:ticket T-2118
     def test_path_owned_by_landing_ticket_itself_is_excluded(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestDirtOwnerTickets.test_path_owned_by_landing_ti\
-        # cket_itself_is_excluded
+        # tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets.test_pat\
+        # h_owned_by_landing_ticket_itself_is_excluded
         from frob.tickets._land import _dirt_owner_tickets
 
         landing = new_ticket(repo, _spec("Landing work", scope=("src/mine.py",)))
@@ -130,8 +130,8 @@ class TestDirtOwnerTickets:
     # frob:ticket T-2118
     def test_path_owned_by_no_open_ticket_is_excluded(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestDirtOwnerTickets.test_path_owned_by_no_open_ti\
-        # cket_is_excluded
+        # tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets.test_pat\
+        # h_owned_by_no_open_ticket_is_excluded
         from frob.tickets._land import _dirt_owner_tickets
 
         landing = new_ticket(repo, _spec("Landing work", scope=("src/mine.py",)))
@@ -147,8 +147,8 @@ class TestDirtOwnerTickets:
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestDirtOwnerTickets.test_dirty_main_refusal_names\
-        # _the_owning_ticket
+        # tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets.test_dir\
+        # ty_main_refusal_names_the_owning_ticket
         """T-2071's own measured incident shape: dirt in root belongs to
         SOME other open ticket's declared scope, not the landing ticket's.
         The refusal log line must name that other ticket explicitly rather
@@ -190,8 +190,8 @@ class TestDirtOwnerTickets:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestDirtOwnerTickets.test_status_unreadable_refusa\
-        # l_never_claims_uncommitted_work
+        # tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets.test_sta\
+        # tus_unreadable_refusal_never_claims_uncommitted_work
         """T-3216's exact incident: `_porcelain_dirty_paths`'s own `git
         status` call fails (index.lock contention), landing on the
         `_dirt_owned_by_no_open_ticket` branch with an empty path set --
@@ -237,14 +237,14 @@ class TestDescribeRootDirtNamesStagedState:
     out explicitly and first."""
 
     def test_working_tree_only_dirt_is_unchanged(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestDescribeRootDirtNamesStagedState.test_working_tree_only_dirt_is_unchanged  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_dirt_ownership.py::TestDescribeRootDirtNamesStagedState.test_working_tree_only_dirt_is_unchanged  # noqa: E501
         (repo / "modified.txt").write_text("unstaged edit\n")
         described = _land_git_ops_mod.describe_root_dirt(repo)
         assert "modified.txt" in described
         assert "STAGED" not in described
 
     def test_staged_dirt_is_called_out_explicitly(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestDescribeRootDirtNamesStagedState.test_staged_dirt_is_called_out_explicitly  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_dirt_ownership.py::TestDescribeRootDirtNamesStagedState.test_staged_dirt_is_called_out_explicitly  # noqa: E501
         (repo / "staged.txt").write_text("staged leftover\n")
         _run(["git", "add", "staged.txt"], repo)
         described = _land_git_ops_mod.describe_root_dirt(repo)
@@ -254,7 +254,7 @@ class TestDescribeRootDirtNamesStagedState:
     def test_porcelain_dirty_paths_staged_only_reports_index_status(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestDescribeRootDirtNamesStagedState.test_porcelain_dirty_paths_staged_only_reports_index_status  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_dirt_ownership.py::TestDescribeRootDirtNamesStagedState.test_porcelain_dirty_paths_staged_only_reports_index_status  # noqa: E501
         (repo / "staged.txt").write_text("staged\n")
         _run(["git", "add", "staged.txt"], repo)
         (repo / "unstaged.txt").write_text("unstaged\n")
@@ -288,8 +288,8 @@ class TestPreCommitUnscopedSweep:
     # frob:ticket T-1514
     def test_true_verdict_lands_normally(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestPreCommitUnscopedSweep.test_true_verdict_lands\
-        # _normally
+        # tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep.te\
+        # st_true_verdict_lands_normally
         # frob:ticket T-3442
         # T-3135 flipped `pre_commit_sweep`'s handed tree from `root` to
         # the persistent warm-sweep-stage worktree
@@ -314,8 +314,8 @@ class TestPreCommitUnscopedSweep:
     # frob:ticket T-1514
     def test_none_verdict_is_a_skip_lands_normally(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestPreCommitUnscopedSweep.test_none_verdict_is_a_\
-        # skip_lands_normally
+        # tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep.te\
+        # st_none_verdict_is_a_skip_lands_normally
         tid, wt = self._land_one(repo, "feature-sweep-skip", "sweepskip.py")
 
         result = land(
@@ -326,8 +326,8 @@ class TestPreCommitUnscopedSweep:
     # frob:ticket T-1514
     def test_false_verdict_unwinds_and_commits_nothing(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestPreCommitUnscopedSweep.test_false_verdict_unwi\
-        # nds_and_commits_nothing
+        # tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep.te\
+        # st_false_verdict_unwinds_and_commits_nothing
         tid, wt = self._land_one(repo, "feature-sweep-refuse", "sweeprefuse.py")
         before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
 
@@ -344,7 +344,8 @@ class TestPreCommitUnscopedSweep:
     # frob:ticket T-1514
     def test_no_callback_is_noop(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestPreCommitUnscopedSweep.test_no_callback_is_noop
+        # tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep.te\
+        # st_no_callback_is_noop
         tid, wt = self._land_one(repo, "feature-sweep-none", "sweepnone.py")
 
         result = land(repo, tid, wt, dry_run=False)
@@ -372,7 +373,7 @@ class TestUnboundAcceptancePreflightBeforeMerge:
     def test_unbound_acceptance_refused_pre_merge_no_commits_created(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestUnboundAcceptancePreflightBeforeMerge.test_unbound_acceptance_refused_pre_merge_no_commits_created  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_dirt_ownership.py::TestUnboundAcceptancePreflightBeforeMerge.test_unbound_acceptance_refused_pre_merge_no_commits_created  # noqa: E501
         wt = repo.parent / "wt"
         _run(
             ["git", "worktree", "add", "-b", "feature-unbound-acceptance", str(wt)],
@@ -450,7 +451,7 @@ class TestScopeUnboundPreflightBeforeMerge:
     def test_scope_unbound_refused_pre_merge_no_commits_created(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestScopeUnboundPreflightBeforeMerge.test_scope_unbound_refused_pre_merge_no_commits_created  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_dirt_ownership.py::TestScopeUnboundPreflightBeforeMerge.test_scope_unbound_refused_pre_merge_no_commits_created  # noqa: E501
         wt = repo.parent / "wt"
         _run(
             ["git", "worktree", "add", "-b", "feature-scope-unbound", str(wt)],
@@ -498,7 +499,7 @@ class TestScopeUnboundPreflightBeforeMerge:
         assert still.state == TicketState.IN_PROGRESS
 
     def test_covers_scope_true_still_lands_normally(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestScopeUnboundPreflightBeforeMerge.test_covers_scope_true_still_lands_normally  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_dirt_ownership.py::TestScopeUnboundPreflightBeforeMerge.test_covers_scope_true_still_lands_normally  # noqa: E501
         wt = repo.parent / "wt"
         _run(
             ["git", "worktree", "add", "-b", "feature-scope-bound", str(wt)],

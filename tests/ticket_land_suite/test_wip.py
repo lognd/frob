@@ -227,7 +227,7 @@ class TestWorktreeLeaseEnvIsolation:
     #: tests' separate `self` instances in the same worker process.
     _last_apply_agent_env_leak: str | None = None
 
-    # frob:tests tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation.test_b_does_not_see_a_leaked_frob_worktree  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation.test_b_does_not_see_a_leaked_frob_worktree  # noqa: E501
     def test_a_leaves_frob_worktree_set_like_apply_agent_env_does(self) -> None:
         """First test: mutate `os.environ` DIRECTLY (bypassing
         `monkeypatch`, exactly like `apply_agent_env` does) -- without

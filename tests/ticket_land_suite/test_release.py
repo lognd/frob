@@ -33,7 +33,8 @@ class TestReleaseBump:
 
     def test_bump_applied_and_reported(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestReleaseBump.test_bump_applied_and_reported
+        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_bump_applied_an\
+        # d_reported
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-bump", str(wt)], repo)
         created = new_ticket(wt, _spec("Bump me", scope=("src/bumped.py",)))
@@ -59,7 +60,8 @@ class TestReleaseBump:
 
     def test_no_bump_needed_reports_none(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestReleaseBump.test_no_bump_needed_reports_none
+        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_no_bump_needed_\
+        # reports_none
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-nobump", str(wt)], repo)
         created = new_ticket(wt, _spec("No bump needed", scope=("src/quiet.py",)))
@@ -81,7 +83,8 @@ class TestReleaseBump:
 
     def test_bump_failure_unwinds_squash(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestReleaseBump.test_bump_failure_unwinds_squash
+        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_bump_failure_un\
+        # winds_squash
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-badbump", str(wt)], repo)
         created = new_ticket(wt, _spec("Bad bump", scope=("src/badbump.py",)))
@@ -108,7 +111,9 @@ class TestReleaseBump:
         assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
 
     def test_no_callback_is_noop(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_no_callback_is_noop
+        # frob:tests \
+        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_no_callback_is_\
+        # noop
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-nocallback", str(wt)], repo)
         created = new_ticket(wt, _spec("No callback", scope=("src/nc.py",)))
@@ -124,7 +129,7 @@ class TestReleaseBump:
 
     # frob:ticket T-0992
     def test_stale_worktree_version_bump_yields_main_plus_one(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_stale_worktree_version_bump_yields_main_plus_one  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestReleaseBump.test_stale_worktree_version_bump_yields_main_plus_one  # noqa: E501
         """T-0992 acceptance criterion: a worktree whose own pyproject.toml
         carries an OLDER version than main (it forked before some other
         land already bumped main) must still land at main-plus-one, never
@@ -175,7 +180,8 @@ class TestReleaseBump:
     # frob:ticket T-0992
     def test_downgrade_bump_is_refused(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestReleaseBump.test_downgrade_bump_is_refused
+        # tests/ticket_land_suite/test_release.py::TestReleaseBump.test_downgrade_bump_\
+        # is_refused
         """T-0992 hard monotonicity refusal: a `bump_version` callback that
         computes a version no greater than main's CURRENT pre-land version
         (the T-0976/T-0989 failure mode -- a stale worktree-carried input
@@ -234,7 +240,7 @@ class TestReleaseBumpQuartetAtomicity:
 
     # frob:ticket T-2220
     def test_manifest_version_written_same_step_as_pyproject(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity.test_manifest_version_written_same_step_as_pyproject  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity.test_manifest_version_written_same_step_as_pyproject  # noqa: E501
         (repo / ".frob-release.json").write_text(
             '{"version": "0.183.0", "api": {"a": "digest"}}\n'
         )
@@ -287,7 +293,7 @@ class TestReleaseBumpQuartetAtomicity:
     def test_incoherent_quartet_refusal_names_desync(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity.test_incoherent_quartet_refusal_names_desync  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity.test_incoherent_quartet_refusal_names_desync  # noqa: E501
         # Main's own quartet is ALREADY desynced before this land even
         # starts (mirrors the real incident: a prior land bumped
         # pyproject.toml but left the manifest stale).
@@ -349,7 +355,7 @@ class TestLandReleaseMonotonicityHelpers:
     def test_read_root_pyproject_version_ok_but_nonzero_returncode_is_none(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_read_root_pyproject_version_ok_but_nonzero_returncode_is_none  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestLandReleaseMonotonicityHelpers.test_read_root_pyproject_version_ok_but_nonzero_returncode_is_none  # noqa: E501
         """Kills the `or` -> `and` mutant on `_read_root_pyproject_version`'s
         error guard: `run_argv` succeeding (is_err=False) with a nonzero
         `returncode` (e.g. `git show` reporting a bad revision/path) must
@@ -373,7 +379,7 @@ class TestLandReleaseMonotonicityHelpers:
     def test_read_root_manifest_version_ok_but_nonzero_returncode_is_none(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_read_root_manifest_version_ok_but_nonzero_returncode_is_none  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestLandReleaseMonotonicityHelpers.test_read_root_manifest_version_ok_but_nonzero_returncode_is_none  # noqa: E501
         """Same `or` -> `and` mutant, on `_read_root_manifest_version`'s
         identical guard shape."""
 
@@ -392,12 +398,12 @@ class TestLandReleaseMonotonicityHelpers:
         assert result is None
 
     def test_monotonic_when_no_prior_version(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_monotonic_when_no_prior_version  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestLandReleaseMonotonicityHelpers.test_monotonic_when_no_prior_version  # noqa: E501
         """`pre_bump_version=None` is vacuously monotonic."""
         assert _land_release_mod._release_bump_is_monotonic(None, "0.1.0") is True
 
     def test_fallback_path_equal_versions_not_monotonic(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_fallback_path_equal_versions_not_monotonic  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestLandReleaseMonotonicityHelpers.test_fallback_path_equal_versions_not_monotonic  # noqa: E501
         """Kills the `!=` -> `==` and `and` -> `or` mutants on the PEP-440
         parse-failure fallback: two EQUAL non-numeric versions must not be
         treated as monotonic (an `==` mutant would flip this, and an `or`
@@ -409,7 +415,7 @@ class TestLandReleaseMonotonicityHelpers:
         )
 
     def test_fallback_path_lesser_version_not_monotonic(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_fallback_path_lesser_version_not_monotonic  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestLandReleaseMonotonicityHelpers.test_fallback_path_lesser_version_not_monotonic  # noqa: E501
         """Kills the `>` -> other-comparator mutant on the same fallback:
         a strictly LESSER non-numeric string must not be monotonic."""
         assert (
@@ -420,7 +426,7 @@ class TestLandReleaseMonotonicityHelpers:
         )
 
     def test_fallback_path_greater_version_is_monotonic(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_fallback_path_greater_version_is_monotonic  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestLandReleaseMonotonicityHelpers.test_fallback_path_greater_version_is_monotonic  # noqa: E501
         """Positive complement of the two fallback tests above: a
         genuinely greater non-numeric string IS monotonic."""
         assert (
@@ -433,7 +439,7 @@ class TestLandReleaseMonotonicityHelpers:
     def test_log_monotonicity_refusal_quartet_desync_requires_all_three_legs(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_log_monotonicity_refusal_quartet_desync_requires_all_three_legs  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestLandReleaseMonotonicityHelpers.test_log_monotonicity_refusal_quartet_desync_requires_all_three_legs  # noqa: E501
         """Kills the `and` -> `or` mutant on `quartet_desynced`'s three-leg
         check: a `pre_manifest_version` that is `None` (never observed at
         `pre_land_tip`) must NOT be treated as desynced even though the
@@ -447,7 +453,7 @@ class TestLandReleaseMonotonicityHelpers:
     def test_log_monotonicity_refusal_fires_on_genuine_desync(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_log_monotonicity_refusal_fires_on_genuine_desync  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestLandReleaseMonotonicityHelpers.test_log_monotonicity_refusal_fires_on_genuine_desync  # noqa: E501
         """Positive complement: all three legs present and manifest !=
         pre-bump DOES fire the INCOHERENT message."""
         with caplog.at_level("ERROR", logger="frob.tickets._land_release"):
@@ -459,7 +465,7 @@ class TestLandReleaseMonotonicityHelpers:
     def test_sync_uv_lock_ok_but_nonzero_returncode_on_git_add_is_failed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_sync_uv_lock_ok_but_nonzero_returncode_on_git_add_is_failed  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestLandReleaseMonotonicityHelpers.test_sync_uv_lock_ok_but_nonzero_returncode_on_git_add_is_failed  # noqa: E501
         """Kills the `or` -> `and` mutant on `_sync_uv_lock_for_land`'s
         `git add uv.lock` guard: `uv lock` itself succeeds, but the
         subsequent `git add` returns `Ok` with a nonzero returncode (e.g.
@@ -490,7 +496,7 @@ class TestLandReleaseMonotonicityHelpers:
     def test_resync_release_manifest_ok_but_nonzero_returncode_on_git_add_is_failed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandReleaseMonotonicityHelpers.test_resync_release_manifest_ok_but_nonzero_returncode_on_git_add_is_failed  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestLandReleaseMonotonicityHelpers.test_resync_release_manifest_ok_but_nonzero_returncode_on_git_add_is_failed  # noqa: E501
         """Kills the `or` -> `and` mutant on `_resync_release_manifest`'s
         `git add .frob-release.json` guard: the manifest write itself
         succeeds, but the subsequent `git add` returns `Ok` with a nonzero
@@ -546,7 +552,7 @@ class TestRealCallbackStaleWorktreeManifest:
     def test_stale_worktree_manifest_still_lands_main_plus_one(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest.test_stale_worktree_manifest_still_lands_main_plus_one  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest.test_stale_worktree_manifest_still_lands_main_plus_one  # noqa: E501
         from frob.app import ticket_runner
 
         (repo / "pyproject.toml").write_text(
@@ -626,7 +632,8 @@ class TestUvLockSync:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestUvLockSync.test_bump_then_lock_synced_in_commit
+        # tests/ticket_land_suite/test_release.py::TestUvLockSync.test_bump_then_lock_s\
+        # ynced_in_commit
         (repo / "pyproject.toml").write_text(
             '[project]\nname = "frob"\nversion = "0.1.0"\n'
         )
@@ -677,7 +684,7 @@ class TestUvLockSync:
         assert "uv.lock" in committed_files
 
     def test_dirty_lock_version_line_only_does_not_refuse(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_dirty_lock_version_line_only_does_not_refuse  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_dirty_lock_version_line_only_does_not_refuse  # noqa: E501
         (repo / "uv.lock").write_text(
             '[[package]]\nname = "frob"\nversion = "0.1.0"\nsource = { editable = "." }\n'
         )
@@ -706,7 +713,7 @@ class TestUvLockSync:
     def test_worktree_side_lock_flap_auto_restored_before_wip_commit(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_worktree_side_lock_flap_auto_restored_before_wip_commit  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_worktree_side_lock_flap_auto_restored_before_wip_commit  # noqa: E501
         # frob:tests src/frob/tickets/_land_git_ops.py::_wip_commit kind="unit"
         """T-1003 (churn item 4): the T-0793 frob-version-only auto-restore
         applies to the WORKTREE's own `uv.lock` too, before the wip-commit
@@ -746,7 +753,7 @@ class TestUvLockSync:
         assert (repo / "uv.lock").read_text().count('version = "0.1.0"') == 1
 
     def test_dirty_lock_with_other_change_still_refuses(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_dirty_lock_with_other_change_still_refuses  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_dirty_lock_with_other_change_still_refuses  # noqa: E501
         (repo / "uv.lock").write_text(
             '[[package]]\nname = "frob"\nversion = "0.1.0"\nsource = { editable = "." }\n'
         )
@@ -770,7 +777,7 @@ class TestUvLockSync:
         assert result.danger_err == LandError.DirtyMain
 
     def test_dirty_lock_version_plus_other_line_still_refuses(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_dirty_lock_version_plus_other_line_still_refuses  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_dirty_lock_version_plus_other_line_still_refuses  # noqa: E501
         (repo / "uv.lock").write_text(
             "[[package]]\n"
             'name = "frob"\n'
@@ -809,7 +816,7 @@ class TestUvLockSync:
     def test_lock_sync_spawn_failure_unwinds_squash(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_lock_sync_spawn_failure_unwinds_squash  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_lock_sync_spawn_failure_unwinds_squash  # noqa: E501
         (repo / "pyproject.toml").write_text(
             '[project]\nname = "frob"\nversion = "0.1.0"\n'
         )
@@ -870,8 +877,8 @@ class TestRapidDebtOnlyDriftAutoCommit:
 
     def test_sole_rapid_debt_dirt_is_committed(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit.test_sole_rapid_d\
-        # ebt_dirt_is_committed
+        # tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit.tes\
+        # t_sole_rapid_debt_dirt_is_committed
         from frob.tickets._land_git_ops import _commit_rapid_debt_only_drift
 
         (repo / "rapid-debt.jsonl").write_text(
@@ -892,8 +899,8 @@ class TestRapidDebtOnlyDriftAutoCommit:
 
     def test_a_second_dirty_file_blocks_the_auto_commit(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit.test_a_second_dir\
-        # ty_file_blocks_the_auto_commit
+        # tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit.tes\
+        # t_a_second_dirty_file_blocks_the_auto_commit
         from frob.tickets._land_git_ops import _commit_rapid_debt_only_drift
 
         (repo / "rapid-debt.jsonl").write_text(
@@ -908,8 +915,8 @@ class TestRapidDebtOnlyDriftAutoCommit:
 
     def test_no_dirt_at_all_is_a_noop(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit.test_no_dirt_at_a\
-        # ll_is_a_noop
+        # tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit.tes\
+        # t_no_dirt_at_all_is_a_noop
         from frob.tickets._land_git_ops import _commit_rapid_debt_only_drift
 
         assert _commit_rapid_debt_only_drift(repo) is False
@@ -921,7 +928,7 @@ class TestRebuildNatives:
     when the landed changeset touches a native source tree."""
 
     def test_invoked_when_native_source_touched(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_invoked_when_native_source_touched  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestRebuildNatives.test_invoked_when_native_source_touched  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-native-src", str(wt)], repo)
         created = new_ticket(
@@ -947,7 +954,7 @@ class TestRebuildNatives:
         assert calls == [repo]
 
     def test_skipped_when_no_native_source_touched(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_skipped_when_no_native_source_touched  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestRebuildNatives.test_skipped_when_no_native_source_touched  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-not-native", str(wt)], repo)
         created = new_ticket(wt, _spec("Regular change", scope=("src/regular.py",)))
@@ -974,7 +981,7 @@ class TestRebuildNatives:
         fix it ran while root held the whole squash staged and
         uncommitted, so every second of a minutes-long native build was a
         second every sibling agent saw DirtyMain."""
-        # frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_rebuild_runs_after_the_landing_commit_is_durable  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestRebuildNatives.test_rebuild_runs_after_the_landing_commit_is_durable  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-native-order", str(wt)], repo)
         created = new_ticket(
@@ -1013,7 +1020,7 @@ class TestRebuildNatives:
         )
 
     def test_rebuild_failure_does_not_block_land(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_rebuild_failure_does_not_block_land  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_release.py::TestRebuildNatives.test_rebuild_failure_does_not_block_land  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-native-fail", str(wt)], repo)
         created = new_ticket(

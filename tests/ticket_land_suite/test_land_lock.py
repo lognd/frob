@@ -23,8 +23,8 @@ class TestLandLockHolderMetadataAndTimeout:
     new coordinator session's own `land()` call)."""
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_holder_metad\
-    # ata_written_on_acquire
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout.t\
+    # est_holder_metadata_written_on_acquire
     # frob:ticket T-1515
     def test_holder_metadata_written_on_acquire(self, tmp_path: Path) -> None:
         import os
@@ -39,8 +39,8 @@ class TestLandLockHolderMetadataAndTimeout:
         assert "started_at" in parsed
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_lock_release\
-    # d_after_context_exits
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout.t\
+    # est_lock_released_after_context_exits
     # frob:ticket T-1515
     def test_lock_released_after_context_exits(self, tmp_path: Path) -> None:
         if sys.platform == "win32":
@@ -63,8 +63,8 @@ class TestLandLockHolderMetadataAndTimeout:
             os.close(fd)
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_timeout_rais\
-    # es_when_a_foreign_holder_never_releases
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout.t\
+    # est_timeout_raises_when_a_foreign_holder_never_releases
     # frob:ticket T-1515
     def test_timeout_raises_when_a_foreign_holder_never_releases(
         self, tmp_path: Path
@@ -107,8 +107,8 @@ class TestLandLockHolderMetadataAndTimeout:
             os.close(holder_fd)
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_loc\
-    # k_from_a_confirmed_dead_pid_is_reclaimed_and_logged
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout.t\
+    # est_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged
     # frob:ticket T-1634
     def test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
@@ -154,8 +154,8 @@ class TestLandLockHolderMetadataAndTimeout:
         assert "orphaned-session" in reclaim_lines[0]
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_loc\
-    # k_naming_a_genuinely_live_pid_still_refuses
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout.t\
+    # est_orphaned_lock_naming_a_genuinely_live_pid_still_refuses
     # frob:ticket T-1634
     def test_orphaned_lock_naming_a_genuinely_live_pid_still_refuses(
         self, tmp_path: Path
@@ -203,8 +203,8 @@ class TestLandLockHolderMetadataAndTimeout:
             os.close(holder_fd)
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_lock_timeout\
-    # _stays_below_the_playbook_shell_wrapper_floor
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout.t\
+    # est_lock_timeout_stays_below_the_playbook_shell_wrapper_floor
     # frob:ticket T-2065
     def test_lock_timeout_stays_below_the_playbook_shell_wrapper_floor(self) -> None:
         """T-2065: `_LAND_LOCK_TIMEOUT_S` must sit strictly BELOW the
@@ -236,7 +236,8 @@ class TestLandStatus:
 
     # frob:ticket T-2691
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandStatus.test_phase_transitions_are_pollable
+    # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_phase_transitions_\
+    # are_pollable
     def test_phase_transitions_are_pollable(self, tmp_path: Path) -> None:
         """Successive `_write_land_status` calls for the SAME ticket
         preserve `started_at` across phase transitions (T-2691's own
@@ -261,7 +262,8 @@ class TestLandStatus:
 
     # frob:ticket T-2691
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandStatus.test_waiting_phase_records_lock_holder
+    # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_waiting_phase_reco\
+    # rds_lock_holder
     def test_waiting_phase_records_lock_holder(self, tmp_path: Path) -> None:
         """`lock_wait`, when given, is recorded verbatim under the
         marker's own `lock_wait` key -- the holder metadata a blocked
@@ -276,8 +278,8 @@ class TestLandStatus:
 
     # frob:ticket T-2691
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandStatus.test_write_failure_is_best_effort_and_n\
-    # ever_raises
+    # tests/ticket_land_suite/test_land_lock.py::TestLandStatus.test_write_failure_is_b\
+    # est_effort_and_never_raises
     def test_write_failure_is_best_effort_and_never_raises(
         self, tmp_path: Path
     ) -> None:
@@ -306,8 +308,8 @@ class TestLandLockPlatformBackends:
     (which no longer exist as module attributes)."""
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockPlatformBackends.test_no_lock_primitive_ra\
-    # ises_land_lock_timeout
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockPlatformBackends.test_no_l\
+    # ock_primitive_raises_land_lock_timeout
     def test_no_lock_primitive_raises_land_lock_timeout(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -322,8 +324,8 @@ class TestLandLockPlatformBackends:
         assert excinfo.value.holder is None
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockPlatformBackends.test_windows_backend_roun\
-    # d_trips
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockPlatformBackends.test_wind\
+    # ows_backend_round_trips
     def test_windows_backend_round_trips(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -381,8 +383,8 @@ class TestProbeLandLockPidLivenessDelegatesToSharedModule:
     real, not just a same-behavior coincidence."""
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestProbeLandLockPidLivenessDelegatesToSharedModule.te\
-    # st_windows_backend_alive_pid_is_true
+    # tests/ticket_land_suite/test_land_lock.py::TestProbeLandLockPidLivenessDelegatesT\
+    # oSharedModule.test_windows_backend_alive_pid_is_true
     def test_windows_backend_alive_pid_is_true(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -404,8 +406,8 @@ class TestProbeLandLockPidLivenessDelegatesToSharedModule:
         assert _probe_land_lock_pid_liveness(4242) is True
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestProbeLandLockPidLivenessDelegatesToSharedModule.te\
-    # st_windows_backend_never_ambiguous
+    # tests/ticket_land_suite/test_land_lock.py::TestProbeLandLockPidLivenessDelegatesT\
+    # oSharedModule.test_windows_backend_never_ambiguous
     def test_windows_backend_never_ambiguous(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -443,8 +445,8 @@ class TestLandLockWaitBudgetFromDeclaredDeadline:
     budget (or no declaration at all) behaves exactly as before."""
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline.test_no_dec\
-    # laration_keeps_the_flat_timeout_unchanged
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDead\
+    # line.test_no_declaration_keeps_the_flat_timeout_unchanged
     # frob:ticket T-2774
     def test_no_declaration_keeps_the_flat_timeout_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -464,8 +466,8 @@ class TestLandLockWaitBudgetFromDeclaredDeadline:
         assert result.danger_ok == _LAND_LOCK_TIMEOUT_S
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline.test_ample_\
-    # deadline_derives_a_wait_budget_and_proceeds
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDead\
+    # line.test_ample_deadline_derives_a_wait_budget_and_proceeds
     # frob:ticket T-2774
     def test_ample_deadline_derives_a_wait_budget_and_proceeds(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -486,8 +488,8 @@ class TestLandLockWaitBudgetFromDeclaredDeadline:
         assert 0 < result.danger_ok <= _LAND_LOCK_TIMEOUT_S
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline.test_insuff\
-    # icient_deadline_refuses_immediately_with_no_lock_attempt
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDead\
+    # line.test_insufficient_deadline_refuses_immediately_with_no_lock_attempt
     # frob:ticket T-2774
     def test_insufficient_deadline_refuses_immediately_with_no_lock_attempt(
         self,
@@ -519,8 +521,8 @@ class TestLandLockWaitBudgetFromDeclaredDeadline:
         ), caplog.text
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline.test_short_\
-    # wait_then_acquire_still_completes
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDead\
+    # line.test_short_wait_then_acquire_still_completes
     # frob:ticket T-2774
     def test_short_wait_then_acquire_still_completes(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -542,8 +544,8 @@ class TestLandLockWaitBudgetFromDeclaredDeadline:
             pass
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline.test_unpars\
-    # eable_deadline_falls_back_to_the_flat_timeout
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDead\
+    # line.test_unparseable_deadline_falls_back_to_the_flat_timeout
     # frob:ticket T-2774
     def test_unparseable_deadline_falls_back_to_the_flat_timeout(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -577,8 +579,8 @@ class TestLandLockInlineWaitDefaultsNearZero:
     today, per the module-level comment's own audit)."""
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero.test_ample_dead\
-    # line_defaults_to_the_near_zero_ceiling_not_the_flat_500s
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockInlineWaitDefaultsNearZero\
+    # .test_ample_deadline_defaults_to_the_near_zero_ceiling_not_the_flat_500s
     # frob:ticket T-2816
     def test_ample_deadline_defaults_to_the_near_zero_ceiling_not_the_flat_500s(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -602,8 +604,8 @@ class TestLandLockInlineWaitDefaultsNearZero:
         assert result.danger_ok < _LAND_LOCK_TIMEOUT_S
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero.test_opt_in_env\
-    # _restores_a_longer_in_land_wait
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockInlineWaitDefaultsNearZero\
+    # .test_opt_in_env_restores_a_longer_in_land_wait
     # frob:ticket T-2816
     def test_opt_in_env_restores_a_longer_in_land_wait(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -625,8 +627,8 @@ class TestLandLockInlineWaitDefaultsNearZero:
         assert result.danger_ok > _LAND_LOCK_DEFAULT_INLINE_WAIT_S
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero.test_opt_in_env\
-    # _is_still_capped_by_the_remaining_budget
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockInlineWaitDefaultsNearZero\
+    # .test_opt_in_env_is_still_capped_by_the_remaining_budget
     # frob:ticket T-2816
     def test_opt_in_env_is_still_capped_by_the_remaining_budget(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -647,8 +649,8 @@ class TestLandLockInlineWaitDefaultsNearZero:
         assert result.danger_ok == pytest.approx(5.0)
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero.test_unparseabl\
-    # e_inline_wait_env_falls_back_to_the_near_zero_default
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockInlineWaitDefaultsNearZero\
+    # .test_unparseable_inline_wait_env_falls_back_to_the_near_zero_default
     # frob:ticket T-2816
     def test_unparseable_inline_wait_env_falls_back_to_the_near_zero_default(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -668,8 +670,8 @@ class TestLandLockInlineWaitDefaultsNearZero:
         assert result.danger_ok == _LAND_LOCK_DEFAULT_INLINE_WAIT_S
 
     # frob:tests \
-    # tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero.test_held_lock_\
-    # released_quickly_leaves_almost_the_whole_deadline_for_work
+    # tests/ticket_land_suite/test_land_lock.py::TestLandLockInlineWaitDefaultsNearZero\
+    # .test_held_lock_released_quickly_leaves_almost_the_whole_deadline_for_work
     # frob:ticket T-2816
     def test_held_lock_released_quickly_leaves_almost_the_whole_deadline_for_work(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -59,7 +59,7 @@ class TestVerifiedResetRoot:
     def test_resets_to_the_explicit_pre_land_tip_when_current_matches(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestVerifiedResetRoot.test_resets_to_the_explicit_pre_land_tip_when_current_matches  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot.test_resets_to_the_explicit_pre_land_tip_when_current_matches  # noqa: E501
         pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         (repo / "scratch.txt").write_text("staged but never committed\n")
         _run(["git", "add", "scratch.txt"], repo)
@@ -72,7 +72,7 @@ class TestVerifiedResetRoot:
     def test_refuses_and_does_not_reset_when_current_tip_has_drifted(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestVerifiedResetRoot.test_refuses_and_does_not_reset_when_current_tip_has_drifted  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot.test_refuses_and_does_not_reset_when_current_tip_has_drifted  # noqa: E501
         pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         (repo / "another.txt").write_text("a real commit made after pre was captured\n")
         _commit_all(repo, "advance main past the recorded pre-land tip")
@@ -86,7 +86,7 @@ class TestVerifiedResetRoot:
         assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == drifted_tip
 
     def test_drift_refusal_still_unstages_the_index(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestVerifiedResetRoot.test_drift_refusal_still_unstages_the_index  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot.test_drift_refusal_still_unstages_the_index  # noqa: E501
         """T-1740: the 2026-08-07 incident -- a refused land used to leave
         its own staged squash content sitting in root's index forever on
         the drift path, because a full `reset --hard` there is unsafe (it
@@ -117,7 +117,7 @@ class TestVerifiedResetRoot:
     def test_unstage_index_only_never_moves_head_or_touches_tracked_content(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestVerifiedResetRoot.test_unstage_index_only_never_moves_head_or_touches_tracked_content  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot.test_unstage_index_only_never_moves_head_or_touches_tracked_content  # noqa: E501
         head_before = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         (repo / "new_staged.txt").write_text("new staged file\n")
         _run(["git", "add", "new_staged.txt"], repo)
@@ -147,7 +147,7 @@ class TestDriftRefusalRestoresModifiedTrackedContent:
     def test_must_fire_modified_tracked_ledger_file_restored_to_head(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestDriftRefusalRestoresModifiedTrackedContent.test_must_fire_modified_tracked_ledger_file_restored_to_head  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestDriftRefusalRestoresModifiedTrackedContent.test_must_fire_modified_tracked_ledger_file_restored_to_head  # noqa: E501
         """Reproduces the exact T-2947 shape: a TRACKED ticket ledger file
         (already committed with `state: queued`) is modified in-place by
         this land's own squash (simulating the finalize write promoting
@@ -207,7 +207,7 @@ class TestDriftRefusalRestoresModifiedTrackedContent:
     def test_must_still_pass_untracked_leftover_is_not_touched(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestDriftRefusalRestoresModifiedTrackedContent.test_must_still_pass_untracked_leftover_is_not_touched  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestDriftRefusalRestoresModifiedTrackedContent.test_must_still_pass_untracked_leftover_is_not_touched  # noqa: E501
         """A brand-new, never-committed file this land staged (T-1740's
         own precedent) is left alone exactly as before -- it cannot
         manufacture a false ledger read, so restoring it would only mean
@@ -226,7 +226,7 @@ class TestDriftRefusalRestoresModifiedTrackedContent:
         assert (repo / "new_file.txt").read_text() == "a genuinely new file\n"
 
     def test_no_drift_no_restore_needed(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestDriftRefusalRestoresModifiedTrackedContent.test_no_drift_no_restore_needed  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestDriftRefusalRestoresModifiedTrackedContent.test_no_drift_no_restore_needed  # noqa: E501
         """Must-still-pass: the ordinary, no-drift path is completely
         unaffected by this fix -- `_verified_reset_root` still succeeds
         and fully hard-resets when there is no concurrent drift."""
@@ -259,7 +259,7 @@ class TestCommitSquashApplyUnwindsOnCommitFailure:
     def test_commit_failure_unwinds_the_staged_squash(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCommitSquashApplyUnwindsOnCommitFailure.test_commit_failure_unwinds_the_staged_squash  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestCommitSquashApplyUnwindsOnCommitFailure.test_commit_failure_unwinds_the_staged_squash  # noqa: E501
         pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         (repo / "staged_by_land.txt").write_text("staged squash content\n")
         _run(["git", "add", "staged_by_land.txt"], repo)
@@ -321,7 +321,7 @@ class TestCommittedDiffGuardRegistryCompleteness:
 
     # frob:ticket T-2017
     def test_every_call_site_guard_is_registered(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness.test_every_call_site_guard_is_registered  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestCommittedDiffGuardRegistryCompleteness.test_every_call_site_guard_is_registered  # noqa: E501
         # T-1940 (MUST FAIL if a guard call is added to _land_precheck/
         # _land_precheck_remaining_checks without a matching registry
         # entry, or removed from source without removing its entry):
@@ -343,7 +343,7 @@ class TestCommittedDiffGuardRegistryCompleteness:
 
     # frob:ticket T-2017
     def test_every_registry_entry_has_a_twin_or_a_stated_reason(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness.test_every_registry_entry_has_a_twin_or_a_stated_reason  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestCommittedDiffGuardRegistryCompleteness.test_every_registry_entry_has_a_twin_or_a_stated_reason  # noqa: E501
         # T-1940: the actual acceptance-criterion enforcement -- a
         # registry row is never allowed to have BOTH fields empty (a
         # silent gap), only one or the other (a closed hazard, or an
@@ -367,7 +367,7 @@ class TestCommittedDiffGuardRegistryCompleteness:
     def test_registered_twins_are_actually_wired_into_the_land_sequence(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness.test_registered_twins_are_actually_wired_into_the_land_sequence  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestCommittedDiffGuardRegistryCompleteness.test_registered_twins_are_actually_wired_into_the_land_sequence  # noqa: E501
         # A registry entry claiming a twin exists is only meaningful if
         # `_land_locked` actually CALLS it -- source-inspects `_land_
         # locked` for each registered twin's own name, the same
@@ -393,14 +393,14 @@ class TestLandRepairMarker:
     against the same root/ticket."""
 
     def test_no_marker_is_a_silent_no_op(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
         result = _land_mod._repair_stale_land_marker(repo)
         assert result.is_ok
 
     def test_repair_resets_root_when_current_tip_matches_the_marker(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_resets_root_when_current_tip_matches_the_marker  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker.test_repair_resets_root_when_current_tip_matches_the_marker  # noqa: E501
         pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         _land_mod._write_land_repair_marker(repo, "T-9999", pre)
         (repo / "leftover.txt").write_text("leftover staged squash content\n")
@@ -417,7 +417,7 @@ class TestLandRepairMarker:
     def test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker.test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker  # noqa: E501
         # T-1963 (MUST FAIL on the pre-fix code): a marker's recorded tip
         # is stale because a DIFFERENT land legitimately committed onto
         # root while this one sat crashed -- the ordinary shape under
@@ -480,7 +480,7 @@ class TestFinalizeRepairMarker:
     def test_no_marker_is_a_silent_no_op(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestFinalizeRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestFinalizeRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
         with caplog.at_level("ERROR", logger="frob.tickets._land"):
             _land_mod._repair_stale_finalize_markers(repo)
         assert not [r for r in caplog.records if r.levelname == "ERROR"]
@@ -488,7 +488,7 @@ class TestFinalizeRepairMarker:
     def test_repair_logs_loudly_when_worktree_still_shows_done_but_root_does_not(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestFinalizeRepairMarker.test_repair_logs_loudly_when_worktree_still_shows_done_but_root_does_not  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestFinalizeRepairMarker.test_repair_logs_loudly_when_worktree_still_shows_done_but_root_does_not  # noqa: E501
         # T-2679's own measured shape: a marker survives a crashed land,
         # AND root's own ledger has no record of the ticket at all (the
         # squash-apply never ran) -- exactly "state=done recorded
@@ -515,7 +515,7 @@ class TestFinalizeRepairMarker:
     def test_repair_is_silent_when_root_already_shows_the_ticket_done(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestFinalizeRepairMarker.test_repair_is_silent_when_root_already_shows_the_ticket_done  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestFinalizeRepairMarker.test_repair_is_silent_when_root_already_shows_the_ticket_done  # noqa: E501
         # The self-healed case: a retry (or a manual recovery) already
         # landed the ticket for real onto root BEFORE this reconciliation
         # ever ran -- no anomaly to report.
@@ -544,13 +544,13 @@ class TestPostLandVerifyPendingMarker:
     of the NEXT invocation."""
 
     def test_no_marker_is_a_silent_empty_result(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestPostLandVerifyPendingMarker.test_no_marker_is_a_silent_empty_result  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker.test_no_marker_is_a_silent_empty_result  # noqa: E501
         assert _land_mod._stale_post_land_verify_markers(repo) == ()
 
     def test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestPostLandVerifyPendingMarker.test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker.test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor  # noqa: E501
         sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         _land_mod._write_post_land_verify_marker(repo, "T-9999", sha)
 
@@ -569,7 +569,7 @@ class TestPostLandVerifyPendingMarker:
         reconciliation call the NEXT time `frob ticket land` runs for a
         DIFFERENT ticket -- reported via a `LAND-PROOF-RECOVERED:` log
         line and cleared, never blocking the new ticket's own land."""
-        # frob:tests tests/test_ticket_land.py::TestPostLandVerifyPendingMarker.test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker.test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
             _report_stale_post_land_verify_markers,
         )
@@ -603,7 +603,7 @@ class TestSigkillMidStaging:
     ) -> None:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
-        # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging.test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-kill", str(wt)], repo)
         created = new_ticket(wt, _spec("Add killable", scope=("src/killable.py",)))
@@ -662,7 +662,7 @@ class TestSigkillMidStaging:
     ) -> None:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
-        # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_unrelated_land_does_not_absorb_a_killed_lands_staged_content  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging.test_unrelated_land_does_not_absorb_a_killed_lands_staged_content  # noqa: E501
         """T-2564: the hazard a bare abandoned-staged-content symptom does
         NOT by itself prove -- that a DIFFERENT, unrelated ticket's own
         `land()` call, running against the same `root` shortly after the
@@ -754,7 +754,7 @@ class TestSigkillMidStaging:
     ) -> None:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
-        # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_sigkill_during_finalize_close_leaves_ticket_recoverable_not_a_silent_lie  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging.test_sigkill_during_finalize_close_leaves_ticket_recoverable_not_a_silent_lie  # noqa: E501
         """T-2679's own positive control, ONE step earlier than T-0907's:
         a real `SIGKILL` delivered while `land()` is mid-
         `_land_finalize_and_close` -- AFTER the worktree's ticket.md has
@@ -844,7 +844,7 @@ class TestSigkillMidStaging:
     def test_normal_land_reaches_done_exactly_once_no_extra_transition(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_normal_land_reaches_done_exactly_once_no_extra_transition  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging.test_normal_land_reaches_done_exactly_once_no_extra_transition  # noqa: E501
         """The required OTHER direction: an ordinary, uninterrupted land
         must be completely unaffected by the T-2679 finalize-repair
         marker -- it is written and cleared within the same call, no
@@ -876,7 +876,7 @@ class TestSigkillMidStaging:
     ) -> None:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")
-        # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_sigkill_during_post_squash_reverification_leaves_ticket_recoverable  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging.test_sigkill_during_post_squash_reverification_leaves_ticket_recoverable  # noqa: E501
         """The coordinator's own live-fire control (a real T-2696
         reproduction, 2026-08-20): a land was killed not right after the
         squash-merge stages (T-0907's own test, above), but LATER, during
@@ -961,7 +961,7 @@ class TestTick005LandRegressions:
     def test_no_regression_when_terminal_ticket_stays_terminal(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestTick005LandRegressions.test_no_regression_when_terminal_ticket_stays_terminal  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestTick005LandRegressions.test_no_regression_when_terminal_ticket_stays_terminal  # noqa: E501
         created = new_ticket(tmp_path, _spec("Widget"))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -976,7 +976,7 @@ class TestTick005LandRegressions:
     def test_detects_terminal_ticket_regressed_to_non_terminal(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestTick005LandRegressions.test_detects_terminal_ticket_regressed_to_non_terminal  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestTick005LandRegressions.test_detects_terminal_ticket_regressed_to_non_terminal  # noqa: E501
         created = new_ticket(tmp_path, _spec("Widget"))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -999,7 +999,7 @@ class TestTick005LandRegressions:
         assert regressions == (tid,)
 
     def test_archived_ids_are_excluded(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestTick005LandRegressions.test_archived_ids_are_excluded  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestTick005LandRegressions.test_archived_ids_are_excluded  # noqa: E501
         created = new_ticket(tmp_path, _spec("Widget"))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -1022,7 +1022,7 @@ class TestTick005LandRegressions:
         assert regressions == ()
 
     def test_malformed_text_degrades_to_no_regressions(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestTick005LandRegressions.test_malformed_text_degrades_to_no_regressions  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestTick005LandRegressions.test_malformed_text_degrades_to_no_regressions  # noqa: E501
         malformed = "# Tickets\n\n<!-- ticket:T-0001 -->\nno frontmatter here\n"
         created = new_ticket(tmp_path, _spec("Widget"))
         assert created.is_ok
@@ -1051,7 +1051,7 @@ class TestLandRefusesOnTerminalStateRegression:
     def test_land_refuses_and_unwinds_when_sweep_finds_a_regression(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandRefusesOnTerminalStateRegression.test_land_refuses_and_unwinds_when_sweep_finds_a_regression  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_reset.py::TestLandRefusesOnTerminalStateRegression.test_land_refuses_and_unwinds_when_sweep_finds_a_regression  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-tick005", str(wt)], repo)
         created = new_ticket(wt, _spec("Add sprocket", scope=("src/sprocket.py",)))

@@ -274,8 +274,8 @@ class TestWaiveRewrapNotDeletion:
         pin the exact mechanism the ticket names rather than a synthetic
         stand-in for it."""
         # frob:tests \
-        # tests/test_ticket_land.py::TestWaiveRewrapNotDeletion.test_real_fmt001_fixer_\
-        # rewrap_does_not_trip_the_guard
+        # tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion.te\
+        # st_real_fmt001_fixer_rewrap_does_not_trip_the_guard
         from frob.gates._fmt_directives import format_paths
 
         (repo / "src" / "other.py").write_text(
@@ -468,8 +468,8 @@ class TestCommittedWaiveDeletionRefusal:
         this test locks that in with a REAL `git merge main`, not just an
         unmerged branch-point scenario."""
         # frob:tests \
-        # tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal.test_branch_merg\
-        # es_main_after_main_deletes_a_waiver_still_allowed
+        # tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRef\
+        # usal.test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
         (repo / "src" / "other.py").write_text(
             '# frob:waive PERF001 reason="genuinely needed, unrelated"\n'
             "def g():\n    pass\n"

@@ -178,7 +178,7 @@ class TestSpliceOnlyTicket:
 
     # frob:ticket T-0740
     # frob:ticket T-1194
-    # frob:tests tests/test_ticket_land.py::TestSpliceOnlyTicket.test_render_that_would_drop_an_id_is_refused  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceOnlyTicket.test_render_that_would_drop_an_id_is_refused  # noqa: E501
     def test_render_that_would_drop_an_id_is_refused(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -263,7 +263,7 @@ class TestCarryForwardOrRefuseSiblingEdits:
         return ticket.model_copy(update={"evidence": ids})
 
     # frob:ticket T-1721
-    # frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_worktree_only_edit_is_carried_forward  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits.test_worktree_only_edit_is_carried_forward  # noqa: E501
     def test_worktree_only_edit_is_carried_forward(self, tmp_path: Path) -> None:
         """The T-1637 shape exactly: B is DONE on both main and the
         worktree at the fork point; the worktree rebinds B's evidence
@@ -309,7 +309,7 @@ class TestCarryForwardOrRefuseSiblingEdits:
         assert merged[tid_b].evidence == ("tests/test_x.py::test_new",)
 
     # frob:ticket T-1721
-    # frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_main_only_edit_is_left_alone  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits.test_main_only_edit_is_left_alone  # noqa: E501
     def test_main_only_edit_is_left_alone(self, tmp_path: Path) -> None:
         """Inverse of the above: main independently edited B since the
         base, the worktree never touched B at all -- main's edit must
@@ -341,7 +341,7 @@ class TestCarryForwardOrRefuseSiblingEdits:
         assert merged[tid_b].state == TicketState.IN_PROGRESS
 
     # frob:ticket T-1721
-    # frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_both_sides_edit_the_same_way_converges_silently  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits.test_both_sides_edit_the_same_way_converges_silently  # noqa: E501
     def test_both_sides_edit_the_same_way_converges_silently(
         self, tmp_path: Path
     ) -> None:
@@ -374,7 +374,7 @@ class TestCarryForwardOrRefuseSiblingEdits:
         assert spliced.is_ok, spliced.err
 
     # frob:ticket T-1721
-    # frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_both_sides_edit_differently_refuses  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits.test_both_sides_edit_differently_refuses  # noqa: E501
     def test_both_sides_edit_differently_refuses(self, tmp_path: Path) -> None:
         """The genuine conflict this ticket exists to stop silently
         resolving: main and the worktree each independently rebind B's
@@ -406,7 +406,7 @@ class TestCarryForwardOrRefuseSiblingEdits:
         assert spliced.danger_err.name == "SiblingLedgerEditConflict"
 
     # frob:ticket T-1721
-    # frob:tests tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits.test_no_base_available_falls_back_to_done_report_heuristic  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits.test_no_base_available_falls_back_to_done_report_heuristic  # noqa: E501
     def test_no_base_available_falls_back_to_done_report_heuristic(
         self, tmp_path: Path
     ) -> None:
@@ -555,7 +555,7 @@ class TestSpliceLedgerRicherStatePreference:
     (the whole-ledger merge) directly rather than the ticket-scoped
     `_splice_only_ticket`."""
 
-    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_report_side_still_wins_when_it_also_outranks_the_reportless_side  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerRicherStatePreference.test_report_side_still_wins_when_it_also_outranks_the_reportless_side  # noqa: E501
     def test_report_side_still_wins_when_it_also_outranks_the_reportless_side(
         self, tmp_path: Path
     ) -> None:
@@ -597,7 +597,7 @@ class TestSpliceLedgerRicherStatePreference:
         assert parsed[tid].state == TicketState.IN_PROGRESS
         assert "## Done report" in parsed[tid].body
 
-    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_to_a_strictly_outranking_reportless_side  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_to_a_strictly_outranking_reportless_side  # noqa: E501
     def test_stale_report_on_lower_rank_still_loses_to_a_strictly_outranking_reportless_side(  # noqa: E501
         self, tmp_path: Path
     ) -> None:
@@ -639,7 +639,7 @@ class TestSpliceLedgerRicherStatePreference:
         assert parsed[tid].state == TicketState.IN_PROGRESS
         assert "## Done report" not in parsed[tid].body
 
-    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_regardless_of_which_side_it_is_on  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_regardless_of_which_side_it_is_on  # noqa: E501
     def test_stale_report_on_lower_rank_still_loses_regardless_of_which_side_it_is_on(
         self, tmp_path: Path
     ) -> None:
@@ -676,7 +676,7 @@ class TestSpliceLedgerRicherStatePreference:
         assert parsed[tid].state == TicketState.IN_PROGRESS
         assert "## Done report" not in parsed[tid].body
 
-    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_neither_side_reporting_still_falls_back_to_state_rank  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerRicherStatePreference.test_neither_side_reporting_still_falls_back_to_state_rank  # noqa: E501
     def test_neither_side_reporting_still_falls_back_to_state_rank(
         self, tmp_path: Path
     ) -> None:
@@ -716,7 +716,7 @@ class TestSpliceLedgerPrefersEvidenceRichSideOnRankTie:
     tiebreak; now the evidence/acceptance-richer side must win."""
 
     # frob:ticket T-0764
-    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie.test_evidence_and_acceptance_rich_side_wins_a_same_rank_reportless_tie  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie.test_evidence_and_acceptance_rich_side_wins_a_same_rank_reportless_tie  # noqa: E501
     def test_evidence_and_acceptance_rich_side_wins_a_same_rank_reportless_tie(
         self, tmp_path: Path
     ) -> None:
@@ -765,7 +765,7 @@ class TestSpliceLedgerPrefersEvidenceRichSideOnRankTie:
         assert parsed[tid].acceptance[0].evidence == ("tests/test_widget.py::test_x",)
 
     # frob:ticket T-0764
-    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie.test_acceptance_binding_unioned_even_when_the_reportless_higher_rank_side_wins  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie.test_acceptance_binding_unioned_even_when_the_reportless_higher_rank_side_wins  # noqa: E501
     def test_acceptance_binding_unioned_even_when_the_reportless_higher_rank_side_wins(
         self, tmp_path: Path
     ) -> None:
@@ -826,7 +826,7 @@ class TestSpliceLedgerIdDropGuard:
     id (markerless-block class) or produces unparseable output."""
 
     # frob:ticket T-0764
-    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_a_side_only_id_missing_from_theirs_survives_the_splice  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard.test_a_side_only_id_missing_from_theirs_survives_the_splice  # noqa: E501
     def test_a_side_only_id_missing_from_theirs_survives_the_splice(
         self, tmp_path: Path
     ) -> None:
@@ -846,7 +846,7 @@ class TestSpliceLedgerIdDropGuard:
         assert tid in parsed
 
     # frob:ticket T-0764
-    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_malformed_side_is_refused_not_silently_treated_as_empty  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard.test_malformed_side_is_refused_not_silently_treated_as_empty  # noqa: E501
     def test_malformed_side_is_refused_not_silently_treated_as_empty(
         self, tmp_path: Path
     ) -> None:
@@ -868,7 +868,7 @@ class TestSpliceLedgerIdDropGuard:
 
     # frob:ticket T-0764
     # frob:ticket T-1194
-    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused  # noqa: E501
     def test_render_that_would_drop_an_id_is_refused(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1034,7 +1034,7 @@ class TestSquashSpliceLedgerChurn:
     ledger splice must survive, never be silently overwritten by the
     splice's (previously stale) base-text snapshot."""
 
-    # frob:tests tests/test_ticket_land.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
     # T-3144: this test's own monkeypatch target was stale (patched
     # `_land_squash`'s `run_argv`, but T-3121's disposable-stage flip
     # moved the actual `git merge --squash` call into `_land_compose`'s
@@ -1146,7 +1146,8 @@ class TestUnionZoneMerge:
 
     def test_keyed_lines_union_composes(self) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_composes
+        # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_keyed_\
+        # lines_union_composes
         ours = '# comment for A\nRULEA = "error"\n'
         theirs = '# comment for B\nRULEB = "warn"\n'
         merged = _land_merge_zones_mod._union_keyed_chunks(
@@ -1158,7 +1159,8 @@ class TestUnionZoneMerge:
 
     def test_keyed_lines_union_refuses(self) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_refuses
+        # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_keyed_\
+        # lines_union_refuses
         ours = 'RULEA = "error"\n'
         theirs = 'RULEA = "warn"\n'
         merged = _land_merge_zones_mod._union_keyed_chunks(
@@ -1167,7 +1169,9 @@ class TestUnionZoneMerge:
         assert merged is None
 
     def test_resolve_stages(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_resolve_stages
+        # frob:tests \
+        # tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_resolv\
+        # e_stages
         target = repo / "frob.toml"
         target.write_text(
             "[gates.severity]\n"
@@ -1191,7 +1195,7 @@ class TestUnionZoneMerge:
         assert "<<<<<<<" not in content
 
     def test_append_only_union_concatenates(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_append_only_union_concatenates  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_append_only_union_concatenates  # noqa: E501
         ours = "## Remediation log (T-A)\nfixed thing A\n"
         theirs = "## Remediation log (T-B)\nfixed thing B\n"
         merged = _land_merge_zones_mod._union_append_only(ours, theirs)
@@ -1220,8 +1224,8 @@ class TestRenameAwareWaiveDeletionAttribution:
         what `git diff --no-color -U0` reports as the file the `-` line
         belongs to)."""
         # frob:tests \
-        # tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution.test_commi\
-        # tted_waiver_deleted_inside_a_rename_attributes_to_old_path
+        # tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAt\
+        # tribution.test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path
         (repo / "src" / "old.py").write_text(
             '# frob:waive PERF001 reason="stale, being removed by this ticket"\n'
             "def g():\n    pass\n"
@@ -1257,8 +1261,9 @@ class TestRenameAwareWaiveDeletionAttribution:
         perform to dodge the guard) on top of proving which path is
         checked."""
         # frob:tests \
-        # tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution.test_commi\
-        # tted_waiver_deleted_inside_a_rename_out_of_scope_still_refuses
+        # tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAt\
+        # tribution.test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_re\
+        # fuses
         (repo / "src" / "old.py").write_text(
             '# frob:waive PERF001 reason="genuinely needed, not this ticket"\n'
             "def g():\n    pass\n"
@@ -1290,8 +1295,9 @@ class TestRenameAwareWaiveDeletionAttribution:
         test above: `git mv` + edit left dirty (not yet committed) must
         still be attributed correctly when the OLD path is in scope."""
         # frob:tests \
-        # tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution.test_uncom\
-        # mitted_waiver_deleted_inside_a_rename_attributes_to_old_path
+        # tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAt\
+        # tribution.test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_p\
+        # ath
         (repo / "src" / "old.py").write_text(
             '# frob:waive PERF001 reason="stale, being removed by this ticket"\n'
             "def g():\n    pass\n"

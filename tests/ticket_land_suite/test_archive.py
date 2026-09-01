@@ -305,7 +305,7 @@ class TestArchiveV2:
     def test_v2_draft_survives_a_concurrent_worktree_restore(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestArchiveV2.test_v2_draft_survives_a_concurrent_worktree_restore  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveV2.test_v2_draft_survives_a_concurrent_worktree_restore  # noqa: E501
         """Regression for the T-1115/T-1126/T-1127/T-1128 draft-death
         shape (T-1259 acceptance[5], carried forward by this ticket): a
         draft ticket filed into a worktree, followed by the section 10b

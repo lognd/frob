@@ -73,7 +73,7 @@ acquire/release helpers the portable flock layer calls into):
   fcntl, msvcrt (module-level backend handles)
   _msvcrt_acquire_blocking
   _msvcrt_release
--> new module `frob.process._lock_msvcrt`
+-> new module `frob.process._lock_msvcrt`  <!-- frob:waive DOC006 reason="planned future module name, not yet built by this still-open ticket" -->
 
 Cluster 2 -- portable flock primitive (the cross-platform advisory-lock
 primitive every OTHER module in this repo imports directly -- stays at
@@ -100,7 +100,7 @@ bookkeeping):
   _canonical_registry_key
   derived_state_lock
   derived_state_write_lock
--> new module `frob.process._derived_lock`
+-> new module `frob.process._derived_lock`  <!-- frob:waive DOC006 reason="planned future module name, not yet built by this still-open ticket" -->
 
 Executed via `uv run frob refactor split src.frob.process._lock --symbols
 <msvcrt names> --into frob.process._lock_msvcrt`, then a second split for

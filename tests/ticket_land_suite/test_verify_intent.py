@@ -18,7 +18,7 @@ class TestUnscopedErrorFindingsPublicSeam:
     the node boundary to call the private name directly."""
 
     # frob:ticket T-2450
-    # frob:tests tests/test_ticket_land.py::TestUnscopedErrorFindingsPublicSeam.test_delegates_with_the_same_arguments  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam.test_delegates_with_the_same_arguments  # noqa: E501
     def test_delegates_with_the_same_arguments(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -84,8 +84,9 @@ class TestUnscopedErrorFindingsExcludesNoTicketNoise:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestUnscopedErrorFindingsExcludesNoTicketNoise.tes\
-        # t_pre001_and_scope001_are_excluded_but_real_findings_survive
+        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsExclu\
+        # desNoTicketNoise.test_pre001_and_scope001_are_excluded_but_real_findings_surv\
+        # ive
         from frob.app import ticket_runner
 
         payload = self._json_payload(
@@ -112,8 +113,8 @@ class TestUnscopedErrorFindingsExcludesNoTicketNoise:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestUnscopedErrorFindingsExcludesNoTicketNoise.tes\
-        # t_only_no_ticket_noise_present_returns_empty_not_none
+        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsExclu\
+        # desNoTicketNoise.test_only_no_ticket_noise_present_returns_empty_not_none
         """A run whose ONLY findings are PRE001/SCOPE001 -- exactly the
         five-tickets-in-an-hour incident -- must read as a real, measured
         EMPTY set (clean), never `None` (unmeasurable): the whole point is
@@ -150,8 +151,8 @@ class TestUnscopedErrorFindingsFullMode:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode.test_full_mode_o\
-        # mits_budget_flag_and_sets_allow_full_check_env
+        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullM\
+        # ode.test_full_mode_omits_budget_flag_and_sets_allow_full_check_env
         from frob.app import ticket_runner
 
         captured: dict[str, Any] = {}
@@ -192,8 +193,8 @@ class TestUnscopedErrorFindingsFullMode:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode.test_full_mode_d\
-        # efault_is_false_preserves_prior_budgeted_behavior
+        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullM\
+        # ode.test_full_mode_default_is_false_preserves_prior_budgeted_behavior
         from frob.app import ticket_runner
 
         captured: dict[str, Any] = {}
@@ -262,8 +263,8 @@ class TestUnscopedErrorFindingsRecordsBudgetDeferral:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral.tes\
-        # t_budget_truncated_run_records_deferred_groups
+        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecor\
+        # dsBudgetDeferral.test_budget_truncated_run_records_deferred_groups
         from frob.app import ticket_runner
         from frob.app.ticket_runner import _land_cmd
 
@@ -287,8 +288,8 @@ class TestUnscopedErrorFindingsRecordsBudgetDeferral:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral.tes\
-        # t_clean_run_records_no_deferral
+        # tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecor\
+        # dsBudgetDeferral.test_clean_run_records_no_deferral
         """The must-still-land positive control at this layer: a run with
         no `BUDGET001` deferral at all leaves `_LAST_BUDGET_DEFERRALS`
         untouched for this ticket id."""
@@ -337,8 +338,8 @@ class TestPrintLandProofSurfacesBudgetDeferred:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred.test_defe\
-        # rred_groups_named_on_the_land_proof_line
+        # tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudg\
+        # etDeferred.test_deferred_groups_named_on_the_land_proof_line
         import logging
 
         from frob.app.ticket_runner import _land_cmd
@@ -373,8 +374,8 @@ class TestPrintLandProofSurfacesBudgetDeferred:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred.test_no_d\
-        # eferral_reports_none_not_absent
+        # tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudg\
+        # etDeferred.test_no_deferral_reports_none_not_absent
         """The must-still-land positive control: a land whose sweep ran
         clean prints `budget_deferred=none` -- present and explicit,
         never a silently-omitted field a human could mistake for
@@ -411,7 +412,7 @@ class TestTouchedSymrefsForIntent:
 
     # frob:ticket T-1736
     def test_overlapping_hunk_matches_the_symbol(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestTouchedSymrefsForIntent.test_overlapping_hunk_matches_the_symbol  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_intent.py::TestTouchedSymrefsForIntent.test_overlapping_hunk_matches_the_symbol  # noqa: E501
         from frob.gitio import Diff, Hunk
         from frob.graph import Digests, GraphSnapshot, SymbolId, SymbolRecord
         from frob.lang import SymbolKind
@@ -435,7 +436,7 @@ class TestTouchedSymrefsForIntent:
 
     # frob:ticket T-1736
     def test_non_overlapping_hunk_matches_nothing(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestTouchedSymrefsForIntent.test_non_overlapping_hunk_matches_nothing  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_intent.py::TestTouchedSymrefsForIntent.test_non_overlapping_hunk_matches_nothing  # noqa: E501
         from frob.gitio import Diff, Hunk
         from frob.graph import Digests, GraphSnapshot, SymbolId, SymbolRecord
         from frob.lang import SymbolKind
@@ -459,7 +460,7 @@ class TestTouchedSymrefsForIntent:
 
     # frob:ticket T-1736
     def test_different_file_matches_nothing(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestTouchedSymrefsForIntent.test_different_file_matches_nothing  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_intent.py::TestTouchedSymrefsForIntent.test_different_file_matches_nothing  # noqa: E501
         from frob.gitio import Diff, Hunk
         from frob.graph import Digests, GraphSnapshot, SymbolId, SymbolRecord
         from frob.lang import SymbolKind
@@ -505,7 +506,7 @@ class TestRecordVerifyIntentForLandedCommit:
 
     # frob:ticket T-1736
     def test_dry_run_is_a_noop(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_dry_run_is_a_noop  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_dry_run_is_a_noop  # noqa: E501
         from frob.verify import queue_status
 
         _land_mod._record_verify_intent_for_landed_commit(
@@ -517,7 +518,7 @@ class TestRecordVerifyIntentForLandedCommit:
     def test_real_land_records_an_intent_entry(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_real_land_records_an_intent_entry  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_real_land_records_an_intent_entry  # noqa: E501
         from frob.gitio import Diff, Hunk
         from frob.graph import Digests, GraphSnapshot, SymbolId, SymbolRecord
         from frob.lang import SymbolKind
@@ -556,7 +557,7 @@ class TestRecordVerifyIntentForLandedCommit:
     def test_no_resolvable_symbols_records_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_no_resolvable_symbols_records_nothing  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_no_resolvable_symbols_records_nothing  # noqa: E501
         from frob.gitio import Diff
         from frob.graph import GraphSnapshot
         from frob.verify import queue_status
@@ -575,7 +576,7 @@ class TestRecordVerifyIntentForLandedCommit:
     def test_diff_failure_is_logged_not_raised(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_diff_failure_is_logged_not_raised  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit.test_diff_failure_is_logged_not_raised  # noqa: E501
         from frob.verify import queue_status
 
         monkeypatch.setattr(

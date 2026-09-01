@@ -86,7 +86,7 @@ class TestClaimDivergencePostMerge:
         assert write_ticket(root, ticket).is_ok
 
     def test_matching_claims_land_succeeds(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_matching_claims_land_succeeds  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_matching_claims_land_succeeds  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-claims-match", str(wt)], repo)
 
@@ -108,7 +108,7 @@ class TestClaimDivergencePostMerge:
         assert result.is_ok
 
     def test_divergent_test_count_refuses_land(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_divergent_test_count_refuses_land  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_divergent_test_count_refuses_land  # noqa: E501
         """`passed()` still reports the ticket's one real evidence id as
         PASSING (so D-05's own evidence re-verify stays green and does not
         pre-empt this with `NotCloseable`) -- but the Done report's own
@@ -150,7 +150,7 @@ class TestClaimDivergencePostMerge:
     def test_strictly_improved_test_count_auto_accepts_and_rewrites_recap(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_strictly_improved_test_count_auto_accepts_and_rewrites_recap  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_strictly_improved_test_count_auto_accepts_and_rewrites_recap  # noqa: E501
         """T-1000 (churn item 1): a captured claim of 0/0 (recorded before
         the ticket's one real evidence id existed, or a stale recap from a
         send-back cycle) against a fresh post-merge re-run showing the
@@ -194,7 +194,7 @@ class TestClaimDivergencePostMerge:
         assert "- tests: 0 passed (from 0 evidence id(s))" not in landed.body
 
     def test_divergent_gate_errors_refuses_land(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_divergent_gate_errors_refuses_land  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_divergent_gate_errors_refuses_land  # noqa: E501
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-claims-gates", str(wt)], repo)
 
@@ -217,7 +217,7 @@ class TestClaimDivergencePostMerge:
         assert result.danger_err == LandError.ClaimDivergence
 
     def test_lower_gate_error_count_than_claim_still_lands(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_lower_gate_error_count_than_claim_still_lands  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_lower_gate_error_count_than_claim_still_lands  # noqa: E501
         """T-0846: a fresh post-merge error count LOWER than the captured
         claim (a sibling land fixed something on main between done-report
         time and this post-merge check, or a scoped-run WAIVE004 finding
@@ -250,7 +250,7 @@ class TestClaimDivergencePostMerge:
 
         assert result.is_ok
 
-    # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity  # noqa: E501
     def test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity(
         self, repo: Path
     ) -> None:
@@ -316,7 +316,7 @@ class TestClaimDivergencePostMerge:
     def test_divergent_warning_or_waived_count_alone_still_lands(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_divergent_warning_or_waived_count_alone_still_lands  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_divergent_warning_or_waived_count_alone_still_lands  # noqa: E501
         """Review round 2 fix #1: a warning/waived-count drift ALONE (errors
         unchanged) must never refuse a land -- repo-global warning counts
         legitimately move on a busy shared branch for reasons unrelated to
@@ -348,7 +348,7 @@ class TestClaimDivergencePostMerge:
         assert result.is_ok
 
     def test_no_claims_section_skips_reverification(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_no_claims_section_skips_reverification  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_no_claims_section_skips_reverification  # noqa: E501
         """A Done report predating T-0754 (no `### Captured claims`
         section) lands normally even with `passed`/`check_gates`
         supplied -- there is nothing recorded to diverge from."""
@@ -375,7 +375,7 @@ class TestClaimDivergencePostMerge:
     def test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds  # noqa: E501
         """T-0832: when the post-merge `check_gates()` callable cannot
         produce a gate-summary (e.g. the ticket lost its lease -- the real
         T-0830 incident), land must not compare a sentinel; it must skip
@@ -428,7 +428,7 @@ class TestClaimDivergencePostMerge:
         assert "-1" not in notices[0].replace(tid, "<TID>")
 
     def test_two_unmeasured_gate_claims_never_vacuously_match(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match  # noqa: E501
         """T-0832 regression: the T-0830 incident was NOT merely that land
         printed a nonsense message -- it was that a done-report capture
         that recorded an unmeasured claim (formerly `-1`) and a land-time
@@ -520,7 +520,7 @@ class TestSkipInlineClaimsReverifyUnderRapid:
         assert write_ticket(root, ticket).is_ok
 
     def test_rapid_profile_skips_inline_check_gates_spawn(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid.test_rapid_profile_skips_inline_check_gates_spawn  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid.test_rapid_profile_skips_inline_check_gates_spawn  # noqa: E501
         """must-be-faster / must-still-catch, rapid side: a divergent
         `check_gates` result (which `TestClaimDivergencePostMerge.
         test_divergent_gate_errors_refuses_land` proves refuses the land
@@ -562,7 +562,7 @@ class TestSkipInlineClaimsReverifyUnderRapid:
     def test_non_rapid_profile_still_runs_inline_check_gates_spawn(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid.test_non_rapid_profile_still_runs_inline_check_gates_spawn  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid.test_non_rapid_profile_still_runs_inline_check_gates_spawn  # noqa: E501
         """must-still-catch, non-rapid side: the SAME divergent claim,
         the SAME spy, no `frob.toml` (default = standard profile) --
         `check_gates` IS called and the land refuses, exactly as
@@ -602,7 +602,7 @@ class TestSkipInlineClaimsReverifyUnderRapid:
     def test_unreadable_profile_config_fails_closed_and_still_runs_spawn(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid.test_unreadable_profile_config_fails_closed_and_still_runs_spawn  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid.test_unreadable_profile_config_fails_closed_and_still_runs_spawn  # noqa: E501
         """Fail-closed side: a malformed `frob.toml` makes `effective_
         profile` return `Err`, which `_land_should_skip_inline_claims_
         reverify` must treat as NOT-rapid (never skip) -- a broken
@@ -655,7 +655,7 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
     profile, extended here by the SAME `FROB_LAND_DEADLINE_S`/estimator
     T-2774 already uses for the land-lock wait)."""
 
-    # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_insufficient_deadline_skips_regardless_of_profile  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_insufficient_deadline_skips_regardless_of_profile  # noqa: E501
     def test_insufficient_deadline_skips_regardless_of_profile(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -673,7 +673,7 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
 
         assert _land_should_skip_inline_claims_reverify(worktree) is True
 
-    # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_ample_deadline_still_runs_the_spawn  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_ample_deadline_still_runs_the_spawn  # noqa: E501
     def test_ample_deadline_still_runs_the_spawn(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -689,7 +689,7 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
 
         assert _land_should_skip_inline_claims_reverify(worktree) is False
 
-    # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_no_declared_deadline_is_unchanged  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_no_declared_deadline_is_unchanged  # noqa: E501
     def test_no_declared_deadline_is_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -704,7 +704,7 @@ class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
 
         assert _land_should_skip_inline_claims_reverify(worktree) is False
 
-    # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_unparseable_deadline_is_unchanged  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline.test_unparseable_deadline_is_unchanged  # noqa: E501
     def test_unparseable_deadline_is_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -740,7 +740,7 @@ class TestDoneReportThenLandRealClosuresEndToEnd:
     run twice, can."""
 
     def test_real_closures_done_report_then_land_succeeds(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds  # noqa: E501
         from frob.app.ticket_runner import (
             _check_gates_summary_fn,
             _land_collected_fn,
@@ -829,7 +829,7 @@ class TestLandInternalEnvThroughHook:
     land the moment any of those commits stages CHANGELOG.md."""
 
     def test_land_through_changelog_guard_hook_succeeds(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandInternalEnvThroughHook.test_land_through_changelog_guard_hook_succeeds  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestLandInternalEnvThroughHook.test_land_through_changelog_guard_hook_succeeds  # noqa: E501
         (repo / "CHANGELOG.md").write_text("# Changelog\n")
         _commit_all(repo, "add changelog")
         _install_changelog_guard_hook(repo)
@@ -971,7 +971,7 @@ class TestMutationEvidencePrecheck:
     def test_security_kind_error_finding_blocks(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestMutationEvidencePrecheck.test_security_kind_error_finding_blocks  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestMutationEvidencePrecheck.test_security_kind_error_finding_blocks  # noqa: E501
         from frob.gates._models import Severity, Violation
 
         ticket = self._ticket(TicketKind.SECURITY)
@@ -997,7 +997,7 @@ class TestMutationEvidencePrecheck:
     def test_feature_kind_warn_finding_does_not_block(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestMutationEvidencePrecheck.test_feature_kind_warn_finding_does_not_block  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestMutationEvidencePrecheck.test_feature_kind_warn_finding_does_not_block  # noqa: E501
         from frob.gates._models import Severity, Violation
 
         ticket = self._ticket(TicketKind.FEATURE)
@@ -1023,7 +1023,8 @@ class TestMutationEvidencePrecheck:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestMutationEvidencePrecheck.test_no_findings_is_ok
+        # tests/ticket_land_suite/test_claim_close.py::TestMutationEvidencePrecheck.tes\
+        # t_no_findings_is_ok
         ticket = self._ticket(TicketKind.SECURITY)
         import frob.gates as _gates_mod
 
@@ -1036,7 +1037,7 @@ class TestMutationEvidencePrecheck:
     def test_skip_flag_bypasses_error_finding_but_still_logs(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestMutationEvidencePrecheck.test_skip_flag_bypasses_error_finding_but_still_logs  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestMutationEvidencePrecheck.test_skip_flag_bypasses_error_finding_but_still_logs  # noqa: E501
         from frob.gates._models import Severity, Violation
 
         ticket = self._ticket(TicketKind.SECURITY)
@@ -1116,7 +1117,7 @@ class TestCheckTddOrder:
     def test_logs_a_warning_for_an_implementation_first_pair_without_blocking(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: Any
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_logs_a_warning_for_an_implementation_first_pair_without_blocking  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_logs_a_warning_for_an_implementation_first_pair_without_blocking  # noqa: E501
         import frob.gates._tdd_order as _tdd_mod
         import frob.gitio as _gitio_mod
         import frob.graph as _graph_mod
@@ -1155,7 +1156,7 @@ class TestCheckTddOrder:
     def test_stays_quiet_when_no_tests_edges_are_touched(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_stays_quiet_when_no_tests_edges_are_touched  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_stays_quiet_when_no_tests_edges_are_touched  # noqa: E501
         import frob.gitio as _gitio_mod
         import frob.graph as _graph_mod
         from frob.gitio import Diff, Hunk
@@ -1177,7 +1178,7 @@ class TestCheckTddOrder:
     def test_never_refuses_the_land(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_never_refuses_the_land  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_never_refuses_the_land  # noqa: E501
         import frob.gates._tdd_order as _tdd_mod
         import frob.gitio as _gitio_mod
         import frob.graph as _graph_mod
@@ -1227,7 +1228,7 @@ class TestCheckTddOrder:
         ENTIRE history into just this land's own branch range. Pinning
         the ARGUMENT `tdd_order_violations` receives (not wall-clock) is
         this ticket's own acceptance bar for a perf regression test."""
-        # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_passes_the_resolved_merge_base_as_since  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_passes_the_resolved_merge_base_as_since  # noqa: E501
         import frob.gates._tdd_order as _tdd_mod
         import frob.gitio as _gitio_mod
         import frob.graph as _graph_mod
@@ -1272,7 +1273,7 @@ class TestCheckTddOrder:
         behavior -- rather than skipping TDD001 outright, and must log
         the fallback loudly rather than silently eating the cost
         regression it re-introduces."""
-        # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_falls_back_to_unbounded_when_merge_base_is_unresolvable  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder.test_falls_back_to_unbounded_when_merge_base_is_unresolvable  # noqa: E501
         import frob.gates._tdd_order as _tdd_mod
         import frob.gitio as _gitio_mod
         import frob.graph as _graph_mod
@@ -1332,7 +1333,7 @@ class TestLiveTrackerCitationPrecheck:
     def test_citations_found_blocks(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck.test_citations_found_blocks  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestLiveTrackerCitationPrecheck.test_citations_found_blocks  # noqa: E501
         # T-1853: the check now only fires for a land moving the ticket to
         # a TERMINAL state (an in-progress land threatens no citation --
         # see TestLandCheckSkipsNonTerminalAnchor in
@@ -1353,7 +1354,7 @@ class TestLiveTrackerCitationPrecheck:
     def test_no_citations_is_ok(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck.test_no_citations_is_ok  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestLiveTrackerCitationPrecheck.test_no_citations_is_ok  # noqa: E501
         import frob.tickets._live_tracker as _live_tracker_mod
 
         monkeypatch.setattr(
@@ -1374,7 +1375,7 @@ class TestSkipMutationEvidenceCliWiring:
     findings`) caught as an UNTESTED mutant on first landing this flag."""
 
     def test_flag_parses_to_true(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring.test_flag_parses_to_true  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipMutationEvidenceCliWiring.test_flag_parses_to_true  # noqa: E501
         from frob.__main__ import _build_parser
         from frob.app.config import AppConfig
 
@@ -1395,7 +1396,7 @@ class TestSkipMutationEvidenceCliWiring:
         assert cfg.ticket_skip_mutation_evidence is True
 
     def test_flag_omitted_defaults_false(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring.test_flag_omitted_defaults_false  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestSkipMutationEvidenceCliWiring.test_flag_omitted_defaults_false  # noqa: E501
         from frob.__main__ import _build_parser
         from frob.app.config import AppConfig
 
@@ -1427,7 +1428,7 @@ class TestCloseSkipMutationEvidenceCliWiring:
     OWN new `ticket_close_skip_mutation_evidence` field."""
 
     def test_flag_parses_to_true(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCloseSkipMutationEvidenceCliWiring.test_flag_parses_to_true  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCloseSkipMutationEvidenceCliWiring.test_flag_parses_to_true  # noqa: E501
         from frob.__main__ import _build_parser
         from frob.app.config import AppConfig
 
@@ -1446,7 +1447,7 @@ class TestCloseSkipMutationEvidenceCliWiring:
         assert cfg.ticket_close_skip_mutation_evidence is True
 
     def test_flag_omitted_defaults_false(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCloseSkipMutationEvidenceCliWiring.test_flag_omitted_defaults_false  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCloseSkipMutationEvidenceCliWiring.test_flag_omitted_defaults_false  # noqa: E501
         from frob.__main__ import _build_parser
         from frob.app.config import AppConfig
 
@@ -1485,7 +1486,7 @@ class TestCloseMutationEvidenceForTicket:
     def test_error_severity_finding_returns_false(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket.test_error_severity_finding_returns_false  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCloseMutationEvidenceForTicket.test_error_severity_finding_returns_false  # noqa: E501
         from frob.gates._models import Severity, Violation
 
         _git_init(tmp_path)
@@ -1516,7 +1517,7 @@ class TestCloseMutationEvidenceForTicket:
     def test_warn_only_severity_returns_true(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket.test_warn_only_severity_returns_true  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCloseMutationEvidenceForTicket.test_warn_only_severity_returns_true  # noqa: E501
         from frob.gates._models import Severity, Violation
 
         _git_init(tmp_path)
@@ -1547,7 +1548,7 @@ class TestCloseMutationEvidenceForTicket:
     def test_no_findings_returns_none(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket.test_no_findings_returns_none  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCloseMutationEvidenceForTicket.test_no_findings_returns_none  # noqa: E501
         _git_init(tmp_path)
         (tmp_path / "README.md").write_text("x\n")
         _commit_all(tmp_path, "init")
@@ -1564,7 +1565,7 @@ class TestCloseMutationEvidenceForTicket:
         assert result is None
 
     def test_unresolvable_branch_returns_none(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket.test_unresolvable_branch_returns_none  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCloseMutationEvidenceForTicket.test_unresolvable_branch_returns_none  # noqa: E501
         # tmp_path is NOT a git work tree -- current_branch(root) must
         # fail, and the whole check degrades to "skip", never a false
         # ERROR/OK verdict.
@@ -1602,7 +1603,7 @@ class TestReverifyEvidenceForClose:
         )
 
     def test_no_non_cmd_evidence_returns_none(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_no_non_cmd_evidence_returns_none  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose.test_no_non_cmd_evidence_returns_none  # noqa: E501
         from datetime import date as _date
 
         from frob.app import ticket_runner
@@ -1623,7 +1624,7 @@ class TestReverifyEvidenceForClose:
     def test_collection_failure_returns_false(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_collection_failure_returns_false  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose.test_collection_failure_returns_false  # noqa: E501
         from frob.app import ticket_runner
 
         monkeypatch.setattr(
@@ -1637,7 +1638,7 @@ class TestReverifyEvidenceForClose:
     def test_still_passing_returns_true(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_still_passing_returns_true  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose.test_still_passing_returns_true  # noqa: E501
         from frob.app import ticket_runner
         from frob.app.ticket_runner._verify import VerifyOutcome, VerifyStatus
 
@@ -1660,7 +1661,7 @@ class TestReverifyEvidenceForClose:
     def test_no_longer_passing_returns_false(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_no_longer_passing_returns_false  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose.test_no_longer_passing_returns_false  # noqa: E501
         """Positive control (a), T-2569: a GENUINELY failing evidence node
         must still report as failing -- this is the guard against the fix
         for T-2569 accidentally disabling failure detection altogether
@@ -1693,7 +1694,7 @@ class TestReverifyEvidenceForClose:
     def test_unmeasured_returns_false_with_distinct_message(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_unmeasured_returns_false_with_distinct_message  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose.test_unmeasured_returns_false_with_distinct_message  # noqa: E501
         """Positive control (b), T-2569: a spawn failure (the real
         incident: `TestingError.SpawnFailed` under machine contention, load
         48.5 on 12 cores) must report as UNMEASURED and refuse the close --
@@ -1737,7 +1738,7 @@ class TestCloseFailureHintMutationEvidence:
     self-check caught as surviving."""
 
     def test_confirmatory_only_hint_names_skip_flag_remedy(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCloseFailureHintMutationEvidence.test_confirmatory_only_hint_names_skip_flag_remedy  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCloseFailureHintMutationEvidence.test_confirmatory_only_hint_names_skip_flag_remedy  # noqa: E501
         from frob.app.ticket_runner import _close_failure_hint
         from frob.tickets._models import TicketError, TicketState
 
@@ -1748,7 +1749,7 @@ class TestCloseFailureHintMutationEvidence:
         assert "TEST016" in hint
 
     def test_other_error_does_not_name_skip_flag_remedy(self) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCloseFailureHintMutationEvidence.test_other_error_does_not_name_skip_flag_remedy  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCloseFailureHintMutationEvidence.test_other_error_does_not_name_skip_flag_remedy  # noqa: E501
         from frob.app.ticket_runner import _close_failure_hint
         from frob.tickets._models import TicketError, TicketState
 
@@ -1794,7 +1795,7 @@ class TestCloseSkipMutationEvidenceBypass:
     def test_skip_flag_bypasses_error_verdict(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass.test_skip_flag_bypasses_error_verdict  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCloseSkipMutationEvidenceBypass.test_skip_flag_bypasses_error_verdict  # noqa: E501
         from frob.app import ticket_runner
         from frob.app.config import AppConfig
         from frob.tickets import TicketState, load_all
@@ -1820,7 +1821,7 @@ class TestCloseSkipMutationEvidenceBypass:
     def test_no_skip_flag_refuses_on_error_verdict(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass.test_no_skip_flag_refuses_on_error_verdict  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_claim_close.py::TestCloseSkipMutationEvidenceBypass.test_no_skip_flag_refuses_on_error_verdict  # noqa: E501
         from frob.app import ticket_runner
         from frob.app.config import AppConfig
         from frob.tickets import TicketState, load_all

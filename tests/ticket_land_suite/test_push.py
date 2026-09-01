@@ -32,7 +32,8 @@ class TestLandPushCliWiring:
 
     def test_flag_parses_to_true(self, tmp_path: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestLandPushCliWiring.test_flag_parses_to_true
+        # tests/ticket_land_suite/test_push.py::TestLandPushCliWiring.test_flag_parses_\
+        # to_true
         from frob.__main__ import _build_parser
         from frob.app.config import AppConfig
 
@@ -53,7 +54,7 @@ class TestLandPushCliWiring:
         assert cfg.ticket_land_push is True
 
     def test_flag_omitted_defaults_false(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandPushCliWiring.test_flag_omitted_defaults_false  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_push.py::TestLandPushCliWiring.test_flag_omitted_defaults_false  # noqa: E501
         from frob.__main__ import _build_parser
         from frob.app.config import AppConfig
 
@@ -89,7 +90,7 @@ class TestLandWorktreeResolvedAtArgParse:
     was spelled on the command line."""
 
     def test_relative_worktree_arg_resolves_to_absolute(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse.test_relative_worktree_arg_resolves_to_absolute  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_push.py::TestLandWorktreeResolvedAtArgParse.test_relative_worktree_arg_resolves_to_absolute  # noqa: E501
 
         from frob.__main__ import _build_parser
         from frob.app.config import AppConfig
@@ -120,7 +121,7 @@ class TestLandWorktreeResolvedAtArgParse:
         assert cfg.ticket_worktree == worktree_dir.resolve()
 
     def test_absolute_worktree_arg_unchanged(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse.test_absolute_worktree_arg_unchanged  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_push.py::TestLandWorktreeResolvedAtArgParse.test_absolute_worktree_arg_unchanged  # noqa: E501
         from frob.__main__ import _build_parser
         from frob.app.config import AppConfig
 
@@ -166,7 +167,8 @@ class TestPushAfterLand:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestPushAfterLand.test_dry_run_never_pushes
+        # tests/ticket_land_suite/test_push.py::TestPushAfterLand.test_dry_run_never_pu\
+        # shes
         from frob.app import ticket_runner
 
         def _fail_if_called(*a: Any, **k: Any) -> Any:
@@ -178,7 +180,7 @@ class TestPushAfterLand:
     def test_real_land_pushes_the_current_branch(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestPushAfterLand.test_real_land_pushes_the_current_branch  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_push.py::TestPushAfterLand.test_real_land_pushes_the_current_branch  # noqa: E501
         from frob.app import ticket_runner
 
         calls: list[list[str]] = []
@@ -198,7 +200,8 @@ class TestPushAfterLand:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestPushAfterLand.test_push_failure_exits_nonzero
+        # tests/ticket_land_suite/test_push.py::TestPushAfterLand.test_push_failure_exi\
+        # ts_nonzero
         from frob.app import ticket_runner
 
         def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
@@ -217,7 +220,8 @@ class TestPushAfterLand:
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestPushAfterLand.test_exec_disabled_exits_nonzero
+        # tests/ticket_land_suite/test_push.py::TestPushAfterLand.test_exec_disabled_ex\
+        # its_nonzero
         from frob.app import ticket_runner
         from frob.process._guard import ProcessGuardError
 
@@ -240,7 +244,7 @@ class TestSyncGateRulesCallback:
     posture as `bump_version` on a real failure."""
 
     def test_sync_gate_rules_none_is_noop(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop  # noqa: E501
         pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
         result = _land_release_mod._apply_gate_rule_sync(
             repo, "T-0001", None, pre_land_tip
@@ -249,7 +253,7 @@ class TestSyncGateRulesCallback:
         assert result.danger_ok is None
 
     def test_sync_gate_rules_applies_and_stages(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_applies_and_stages  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_applies_and_stages  # noqa: E501
         pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
 
         def _fake_sync(_root: Path, _tip: str) -> Result[tuple[str, ...] | None, Any]:
@@ -264,7 +268,7 @@ class TestSyncGateRulesCallback:
         assert _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
 
     def test_sync_gate_rules_failure_unwinds(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_failure_unwinds  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_failure_unwinds  # noqa: E501
         pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
 
         def _fake_sync(_root: Path, _tip: str) -> Result[tuple[str, ...] | None, Any]:
@@ -292,7 +296,7 @@ class TestSyncGateRulesForLandDiffTarget:
     def test_edit_to_waive_py_is_detected(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestSyncGateRulesForLandDiffTarget.test_edit_to_waive_py_is_detected  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesForLandDiffTarget.test_edit_to_waive_py_is_detected  # noqa: E501
         from frob.app.ticket_runner import _sync_gate_rules_for_land
 
         pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
@@ -329,7 +333,7 @@ class TestSyncGateRulesForLandDiffTarget:
         assert called == ["scanned"]
 
     def test_unrelated_waive_py_edit_is_noop(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestSyncGateRulesForLandDiffTarget.test_unrelated_waive_py_edit_is_noop  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesForLandDiffTarget.test_unrelated_waive_py_edit_is_noop  # noqa: E501
         from frob.app.ticket_runner import _sync_gate_rules_for_land
 
         pre_land_tip = _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok
@@ -365,7 +369,7 @@ class TestNewerWinnerQualifiedPreferenceProperty:
     """
 
     # frob:ticket T-1194
-    # frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_terminal_side_always_wins_over_non_terminal  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty.test_terminal_side_always_wins_over_non_terminal  # noqa: E501
     @given(
         st.sampled_from([0, 1, 2]),
         st.booleans(),
@@ -396,7 +400,7 @@ class TestNewerWinnerQualifiedPreferenceProperty:
         assert _land_ledger_merge_mod._newer_winner(b, a) is b
 
     # frob:ticket T-1194
-    # frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_strictly_higher_rank_poorer_side_always_wins  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty.test_strictly_higher_rank_poorer_side_always_wins  # noqa: E501
     @given(
         st.sampled_from([0, 1, 2]),
         st.sampled_from([0, 1, 2]),
@@ -432,7 +436,7 @@ class TestNewerWinnerQualifiedPreferenceProperty:
         assert _land_ledger_merge_mod._newer_winner(poorer, richer) is poorer
 
     # frob:ticket T-1194
-    # frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_richer_side_wins_at_equal_or_lower_rank  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty.test_richer_side_wins_at_equal_or_lower_rank  # noqa: E501
     @given(
         st.sampled_from([0, 1, 2]),
         st.sampled_from([0, 1, 2]),

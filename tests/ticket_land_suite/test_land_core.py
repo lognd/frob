@@ -104,7 +104,7 @@ class TestLand:
 
     # frob:ticket T-1805
     def test_non_version_pyproject_edit_survives_land(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLand.test_non_version_pyproject_edit_survives_land  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLand.test_non_version_pyproject_edit_survives_land  # noqa: E501
         """T-1805 regression, end to end through the real `land()` entry
         point: a ticket whose ONLY change is a non-version
         `pyproject.toml` field (an optional-dependencies pin -- the exact
@@ -156,7 +156,7 @@ class TestLand:
     def test_sibling_evidence_rebind_carried_forward_end_to_end(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLand.test_sibling_evidence_rebind_carried_forward_end_to_end  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLand.test_sibling_evidence_rebind_carried_forward_end_to_end  # noqa: E501
         """The real T-1637 field incident, reproduced end to end through
         the actual `land()` entry point (not just the splice primitive):
         a sibling ticket B is already DONE on main; in the SAME worktree
@@ -244,7 +244,7 @@ class TestRecordLandCommit:
     all there -- see `_finish_real_land_report`'s own T-3543 docstring)."""
 
     # frob:ticket T-2220
-    # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_land_commit_is_derivable_with_no_follow_up_commit  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit.test_land_commit_is_derivable_with_no_follow_up_commit  # noqa: E501
     def test_land_commit_is_derivable_with_no_follow_up_commit(
         self, repo: Path
     ) -> None:
@@ -285,7 +285,7 @@ class TestRecordLandCommit:
         assert derived == report.commit_sha
 
     # frob:ticket T-2274
-    # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_record_land_commit_never_absorbs_a_bystanders_dirty_file  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit.test_record_land_commit_never_absorbs_a_bystanders_dirty_file  # noqa: E501
     def test_record_land_commit_never_absorbs_a_bystanders_dirty_file(
         self, v2_repo: Path
     ) -> None:
@@ -329,7 +329,7 @@ class TestRecordLandCommit:
         assert reloaded.danger_ok[tid].land_commit == fake_land_sha
 
     # frob:ticket T-2220
-    # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_plan_land_finalized_ticket_is_resolvable_by_ticket_id  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit.test_plan_land_finalized_ticket_is_resolvable_by_ticket_id  # noqa: E501
     def test_plan_land_finalized_ticket_is_resolvable_by_ticket_id(
         self, repo: Path, tmp_path: Path
     ) -> None:
@@ -387,7 +387,7 @@ class TestPlannedStateAutoAdvanceOnLand:
     DONE, not die `InvalidTransition` after main already merged."""
 
     # frob:ticket T-0821
-    # frob:tests tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand.test_planned_ticket_with_full_evidence_lands_to_done  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_core.py::TestPlannedStateAutoAdvanceOnLand.test_planned_ticket_with_full_evidence_lands_to_done  # noqa: E501
     def test_planned_ticket_with_full_evidence_lands_to_done(self, repo: Path) -> None:
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-planned", str(wt)], repo)
@@ -1216,7 +1216,7 @@ class TestCoverageLockConflictMerges:
     keeps the elementwise MAX of both sides' `module_line` percentages
     instead of picking one side wholesale."""
 
-    # frob:tests tests/test_ticket_land.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_core.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides  # noqa: E501
     # frob:ticket T-2550
     def test_conflicting_lock_merges_to_the_higher_of_both_sides(
         self, repo: Path
@@ -1299,7 +1299,7 @@ class TestLandRetryAfterFinalizeThenFail:
     def test_retry_after_finalize_then_squash_failure_lands_the_diff(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail.test_retry_after_finalize_then_squash_failure_lands_the_diff  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail.test_retry_after_finalize_then_squash_failure_lands_the_diff  # noqa: E501
         # frob:tests src/frob/tickets/_land_finalize.py::_close_finalized_ticket \
         # kind="unit"
         wt = repo.parent / "wt"
@@ -1378,7 +1378,7 @@ class TestLandRetryAfterFinalizeThenFail:
     def test_retry_after_full_success_reports_absorption_not_commit_failed(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail.test_retry_after_full_success_reports_absorption_not_commit_failed  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail.test_retry_after_full_success_reports_absorption_not_commit_failed  # noqa: E501
         """T-1001 (churn item 2): retrying a land whose FIRST attempt
         already fully succeeded (committed onto `root`, ticket `done` on
         both sides) stages nothing new -- the squash finds no file diff
@@ -1424,7 +1424,7 @@ class TestLandRetryAfterFinalizeThenFail:
     def test_retry_when_still_queued_re_runs_the_ordinary_transition(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail.test_retry_when_still_queued_re_runs_the_ordinary_transition  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail.test_retry_when_still_queued_re_runs_the_ordinary_transition  # noqa: E501
         # frob:tests src/frob/tickets/_land_finalize.py::_close_finalized_ticket \
         # kind="unit"
         """Sanity companion: the ordinary (non-retry) first-time land, where
@@ -1463,7 +1463,7 @@ class TestLandDroppedTicket:
 
     # frob:ticket T-1721
     def test_dropped_ticket_with_a_reason_lands_cleanly(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandDroppedTicket.test_dropped_ticket_with_a_reason_lands_cleanly  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLandDroppedTicket.test_dropped_ticket_with_a_reason_lands_cleanly  # noqa: E501
         # frob:tests src/frob/tickets/_land_merge.py::_validate_closeable kind="unit"
         # frob:tests src/frob/tickets/_land_finalize.py::_close_finalized_ticket \
         # kind="unit"
@@ -1488,7 +1488,7 @@ class TestLandDroppedTicket:
         assert "premise already resolved" in on_main.body
 
     def test_dropped_ticket_with_no_reason_refuses(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandDroppedTicket.test_dropped_ticket_with_no_reason_refuses  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLandDroppedTicket.test_dropped_ticket_with_no_reason_refuses  # noqa: E501
         # frob:tests src/frob/tickets/_land_merge.py::_validate_closeable kind="unit"
         """A `state: dropped` ticket whose body carries no `## Drop
         reason` section at all (only reachable by hand-editing the ledger
@@ -1528,7 +1528,7 @@ class TestLandFailedTicket:
     # frob:ticket T-1736
     # frob:ticket T-2550
     def test_failed_ticket_with_a_failure_log_lands_cleanly(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandFailedTicket.test_failed_ticket_with_a_failure_log_lands_cleanly  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLandFailedTicket.test_failed_ticket_with_a_failure_log_lands_cleanly  # noqa: E501
         # frob:tests src/frob/tickets/_land_merge.py::_validate_closeable kind="unit"
         # frob:tests src/frob/tickets/_land_merge.py::_has_failure_log \
         # kind="integration"
@@ -1569,7 +1569,7 @@ class TestLandFailedTicket:
 
     # frob:ticket T-1736
     def test_queued_ticket_with_no_failure_log_still_refuses(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandFailedTicket.test_queued_ticket_with_no_failure_log_still_refuses  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLandFailedTicket.test_queued_ticket_with_no_failure_log_still_refuses  # noqa: E501
         # frob:tests src/frob/tickets/_land_merge.py::_validate_closeable kind="unit"
         """A ticket that is merely QUEUED (never started, or requeued with
         no fail-log recorded) must NOT skip the DONE preconditions -- only
@@ -1603,7 +1603,7 @@ class TestLandRefusesWhenRootIsWorktree:
     def test_refused_before_any_git_mutation_names_the_real_mistake(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree.test_refused_before_any_git_mutation_names_the_real_mistake  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree.test_refused_before_any_git_mutation_names_the_real_mistake  # noqa: E501
         # frob:tests src/frob/tickets/_land.py::_refuse_if_root_is_worktree kind="unit"
         created = new_ticket(
             repo, _spec("Same path as root", scope=("src/samepath.py",))
@@ -1633,7 +1633,7 @@ class TestLandRefusesWhenRootIsWorktree:
         assert still.state == TicketState.IN_PROGRESS
 
     def test_still_refuses_when_worktree_has_diverged_commits(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree.test_still_refuses_when_worktree_has_diverged_commits  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree.test_still_refuses_when_worktree_has_diverged_commits  # noqa: E501
         # frob:tests src/frob/tickets/_land.py::_refuse_if_root_is_worktree kind="unit"
         """T-0761 regression preserved under a different name: the exact
         prior scenario (a new file committed directly on the branch `root`
@@ -1677,7 +1677,7 @@ class TestLandChainedCdRootResolution:
     def test_root_equal_to_a_real_linked_worktree_resolves_and_lands(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandChainedCdRootResolution.test_root_equal_to_a_real_linked_worktree_resolves_and_lands  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLandChainedCdRootResolution.test_root_equal_to_a_real_linked_worktree_resolves_and_lands  # noqa: E501
         # frob:tests src/frob/tickets/_land.py::_resolve_primary_checkout kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-chained-cd", str(wt)], repo)
@@ -1711,7 +1711,7 @@ class TestLandChainedCdRootResolution:
     def test_root_equal_to_the_primary_checkout_itself_still_refuses(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestLandChainedCdRootResolution.test_root_equal_to_the_primary_checkout_itself_still_refuses  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestLandChainedCdRootResolution.test_root_equal_to_the_primary_checkout_itself_still_refuses  # noqa: E501
         # frob:tests src/frob/tickets/_land.py::_resolve_primary_checkout kind="unit"
         """Sanity companion: when `--worktree` genuinely IS the primary
         checkout (no linked worktree at all, `TestLandRefusesWhenRootIs
@@ -1746,7 +1746,7 @@ class TestMergeMainIntoWorktreeRicherState:
     def test_landing_tickets_in_progress_report_survives_the_merge_stage(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_land.py::TestMergeMainIntoWorktreeRicherState.test_landing_tickets_in_progress_report_survives_the_merge_stage  # noqa: E501
+        # frob:tests tests/ticket_land_suite/test_land_core.py::TestMergeMainIntoWorktreeRicherState.test_landing_tickets_in_progress_report_survives_the_merge_stage  # noqa: E501
         # Ticket is created ON main (a real id, not a draft) so it exists
         # in BOTH the worktree's and main's ledgers before either side
         # diverges it -- the scenario under test is a genuine same-id
@@ -1817,7 +1817,7 @@ class TestFrobDirNeverLeaksIntoGitAdd:
     docstring."""
 
     # frob:ticket T-1331
-    # frob:tests tests/test_ticket_land.py::TestFrobDirNeverLeaksIntoGitAdd.test_frob_scratch_files_are_gitignored_not_tracked kind="unit"  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_core.py::TestFrobDirNeverLeaksIntoGitAdd.test_frob_scratch_files_are_gitignored_not_tracked kind="unit"  # noqa: E501
     def test_frob_scratch_files_are_gitignored_not_tracked(
         self, tmp_path: Path
     ) -> None:
@@ -1843,7 +1843,7 @@ class TestFrobDirNeverLeaksIntoGitAdd:
         assert ".frob/" not in status
 
     # frob:ticket T-1331
-    # frob:tests tests/test_ticket_land.py::TestFrobDirNeverLeaksIntoGitAdd.test_two_branches_with_divergent_frob_scratch_never_add_add_conflict  # noqa: E501
+    # frob:tests tests/ticket_land_suite/test_land_core.py::TestFrobDirNeverLeaksIntoGitAdd.test_two_branches_with_divergent_frob_scratch_never_add_add_conflict  # noqa: E501
     def test_two_branches_with_divergent_frob_scratch_never_add_add_conflict(
         self, tmp_path: Path
     ) -> None:
@@ -1892,8 +1892,8 @@ class TestCommitsTouchingPath:
 
     def test_names_the_real_commit_that_touched_the_file(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestCommitsTouchingPath.test_names_the_real_commit\
-        # _that_touched_the_file
+        # tests/ticket_land_suite/test_land_core.py::TestCommitsTouchingPath.test_names\
+        # _the_real_commit_that_touched_the_file
         # frob:ticket T-1799
         from frob.tickets._land_git_ops import _commits_touching_path
 
@@ -1908,8 +1908,8 @@ class TestCommitsTouchingPath:
 
     def test_empty_when_the_path_was_never_touched(self, repo: Path) -> None:
         # frob:tests \
-        # tests/test_ticket_land.py::TestCommitsTouchingPath.test_empty_when_the_path_w\
-        # as_never_touched
+        # tests/ticket_land_suite/test_land_core.py::TestCommitsTouchingPath.test_empty\
+        # _when_the_path_was_never_touched
         # frob:ticket T-1799
         from frob.tickets._land_git_ops import _commits_touching_path
 
