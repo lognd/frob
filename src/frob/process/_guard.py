@@ -63,6 +63,7 @@ NET_KILL_SWITCH_ENV = "FROB_DISABLE_NET"
 #: frob's own main process, not just the child). This flag exists to name
 #: the exact spawn (if any) racing that KeyboardInterrupt in the next CI
 #: run, since the crash cannot be reproduced locally (WSL has no win32).
+# frob:doc docs/modules/process.md#public-api
 FROB_WIN32_SPAWN_DEBUG_ENV = "FROB_WIN32_SPAWN_DEBUG"
 
 _TRUTHY = frozenset({"1", "true", "yes", "on"})

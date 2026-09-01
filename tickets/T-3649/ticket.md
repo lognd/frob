@@ -2,7 +2,7 @@
 id: T-3649
 title: 'post-land sweep regression from T-3648: 1 new (rule, file) identit(ies), 1
   finding(s) (COV001)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-01'

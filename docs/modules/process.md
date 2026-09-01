@@ -281,6 +281,12 @@ the leading, code-evidenced candidate for T-3589's win32 saga (a
 ~1.5s into `frob check`, on a fixture too small for a genuine timeout,
 with no external Ctrl-C). A no-op on every non-win32 platform.
 
+Set `FROB_WIN32_SPAWN_DEBUG=1` (`FROB_WIN32_SPAWN_DEBUG_ENV`, T-3648) to
+print every `guarded_subprocess_run` spawn's argv and `creationflags` to
+stderr before it runs -- diagnostic-only, harmless when unset (the
+default everywhere except the temporary win32 CI diag step T-3648 added
+to iterate on the T-3589 saga above without a local win32 repro).
+
 <!-- frob:invariant INV-019 -->
 
 ## Derived-state lock (T-0859)
