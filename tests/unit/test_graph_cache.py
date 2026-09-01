@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 import subprocess
 import sys
 import time
@@ -186,3 +187,136 @@ class TestRecreateConcurrentReaderSurvives:
 
         assert not old.exists()
         assert fresh.exists()
+
+
+# frob:ticket T-3623
+_SIBLING_CONNECT_LOOP_SCRIPT = """
+import sqlite3
+import sys
+import time
+from pathlib import Path
+
+from frob.graph import cache as graph_cache
+
+path = Path(sys.argv[1])
+deadline = time.monotonic() + float(sys.argv[2])
+errors = []
+while time.monotonic() < deadline:
+    try:
+        conn = graph_cache.connect(path)
+        conn.execute("SELECT 1 FROM meta LIMIT 1")
+        conn.close()
+    except sqlite3.OperationalError as exc:
+        errors.append(repr(exc))
+        break
+if errors:
+    print("ERRORS:" + "|".join(errors))
+else:
+    print("OK")
+"""
+
+
+# frob:ticket T-3623
+class TestRecreateNeverExposesASchemaIncompleteDb:
+    """T-3623: a fresh replacement db built by `_recreate` (or the very
+    first `connect()` at a brand-new path) must never be OBSERVABLE by a
+    concurrent connection before its schema is fully applied. Before this
+    fix, `_recreate` opened a plain, empty sqlite file directly at the
+    real path and relied on a LATER step in the SAME connect() call to
+    apply the schema -- any other connection racing in that window saw a
+    valid-but-tableless file and got `OperationalError: no such table:
+    meta` straight out of `_check_fingerprint`, which has no rebuild-on-
+    miss handling of its own (run 33466891764, macOS)."""
+
+    # frob:tests \
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
+    # recreate_replacement_always_has_meta_table
+    def test_recreate_replacement_always_has_meta_table(self, tmp_path: Path) -> None:
+        """The instant `_recreate` returns, `path` already has its `meta`
+        table -- there is no intermediate state where the file exists but
+        is not yet schema-complete."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+        graph_cache._recreate(conn, path)
+
+        # A brand-new, completely independent connection (mimicking a
+        # racing sibling) must see the schema immediately, with no
+        # dependency on any further work by the process that ran
+        # _recreate.
+        reader = sqlite3.connect(str(path))
+        try:
+            row = reader.execute(
+                "SELECT value FROM meta WHERE key = 'schema_version'"
+            ).fetchone()
+        finally:
+            reader.close()
+        assert row is not None, (
+            "a fresh connection right after _recreate() found no "
+            "meta.schema_version row -- the replacement db was exposed "
+            "before its schema was applied"
+        )
+
+    # frob:tests \
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
+    # first_ever_connect_never_exposes_a_tableless_file
+    def test_first_ever_connect_never_exposes_a_tableless_file(
+        self, tmp_path: Path
+    ) -> None:
+        """The very first `connect()` at a path that has never had a cache
+        db before must not leave a window where the file exists but has
+        no `meta` table -- same schema-complete-before-visible guarantee
+        `_recreate` gets, for the first-creation path too."""
+        path = tmp_path / "never-seen-before" / "cache.db"
+
+        # Pre-build the schema-complete replacement helper directly, the
+        # same primitive connect() uses internally, and assert its output
+        # is immediately schema-complete to any independent connection.
+        path.parent.mkdir(parents=True)
+        graph_cache._create_schema_complete_db(path)
+
+        reader = sqlite3.connect(str(path))
+        try:
+            row = reader.execute(
+                "SELECT value FROM meta WHERE key = 'schema_version'"
+            ).fetchone()
+        finally:
+            reader.close()
+        assert row is not None
+
+    # frob:tests \
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
+    # two_processes_connecting_concurrently_never_see_no_such_table_meta
+    def test_two_processes_connecting_concurrently_never_see_no_such_table_meta(
+        self, tmp_path: Path
+    ) -> None:
+        """Regression for T-3623 direction 3: one process repeatedly
+        `_recreate`s the same cache path (as a schema-mismatch rebuild
+        would) while a sibling PROCESS repeatedly `connect()`s that same
+        path and queries `meta` in a tight loop; the sibling must never
+        observe `OperationalError: no such table: meta`."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+        graph_cache.store_parsed_artifact(
+            conn, content_hash="h", fingerprint="f", payload="one"
+        )
+
+        sibling = subprocess.Popen(
+            [sys.executable, "-c", _SIBLING_CONNECT_LOOP_SCRIPT, str(path), "2.0"],
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            deadline = time.monotonic() + 2.0
+            while time.monotonic() < deadline:
+                conn = graph_cache._recreate(graph_cache._open(path), path)
+                graph_cache._apply_schema(conn, None, path)
+                graph_cache.store_parsed_artifact(
+                    conn, content_hash="h", fingerprint="f", payload="one"
+                )
+        finally:
+            out, _ = sibling.communicate(timeout=30)
+
+        assert "ERRORS:" not in out, (
+            f"sibling connect() loop observed a sqlite error: {out!r} -- "
+            "a concurrent _recreate exposed a schema-incomplete db"
+        )

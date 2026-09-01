@@ -452,6 +452,64 @@ def _sweep_stale_quarantined_sidecars(path: Path) -> None:
             continue
 
 
+def _build_schema_complete_db(path: Path) -> Path:
+    """Create a brand-new sqlite db with the full schema already applied,
+    at a throwaway temp path sitting next to `path` -- publish it into
+    place with `os.replace` (T-3623). Returns the temp path.
+
+    Split out from the old single `_create_schema_complete_db` (T-3623
+    round 1) so `_recreate` can build this BEFORE quarantining the old
+    file: building the schema takes real time, and doing that work while
+    `path` still points at the (about to be replaced) old file keeps
+    `path` continuously present on disk right up until one atomic rename
+    -- rather than absent for the whole build duration, which regressed
+    `connect_readonly` callers racing `_recreate` (T-3607's own
+    concurrent-reader test) straight into `unable to open database file`.
+    """
+    tmp_path = path.with_name(f"{path.name}.new-{os.getpid()}-{uuid.uuid4().hex[:8]}")
+    conn = sqlite3.connect(str(tmp_path))
+    try:
+        conn.executescript(_SCHEMA)
+        conn.execute(
+            "INSERT INTO meta (key, value) VALUES ('schema_version', ?)",
+            (str(_SCHEMA_VERSION),),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return tmp_path
+
+
+def _create_schema_complete_db(path: Path) -> None:
+    """Build a brand-new cache db with the full schema already applied at
+    a temp path, then atomically `os.replace` it into place at `path`
+    (T-3623).
+
+    Used where no old file needs quarantining first (the very first
+    `connect()` at a brand-new path, `connect()`'s own doc comment) --
+    `_recreate` instead calls `_build_schema_complete_db` directly so it
+    can build BEFORE renaming the old file aside (see that function's
+    docstring for why the ordering matters).
+
+    Old behavior (pre-T-3623) was to `_open(path)` a fresh, EMPTY sqlite
+    file directly at the real path, then apply the schema over that same
+    connection in a later step back in `connect()` -- between those two
+    moments, `path` was visible on disk as a valid-but-tableless sqlite
+    file. A concurrent connection (another process's own `connect()`, or
+    `connect_readonly`, which has no rebuild-on-miss handling of its own)
+    that opened `path` inside that window saw a file with no `meta` table
+    and raised `OperationalError: no such table: meta` straight out of
+    whatever query it ran first (`_check_fingerprint`'s SELECT at line
+    ~377 was the one this surfaced through in run 33466891764). Doing all
+    schema-creation work at a throwaway temp path first and only exposing
+    it at the real path via one atomic rename closes that window: any
+    connection that can see `path` at all sees a schema-complete db, by
+    construction, never a half-built one.
+    """
+    tmp_path = _build_schema_complete_db(path)
+    os.replace(tmp_path, path)
+
+
 def _recreate(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
     """Close `conn`, quarantine `path` and its WAL/SHM sidecars aside by
     RENAME, then reopen a fresh db at `path`.
@@ -496,22 +554,38 @@ def _recreate(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
         portable_flock_acquire(lock_fd, exclusive=True, blocking=True)
     try:
         _sweep_stale_quarantined_sidecars(path)
-        suffix = f"{_STALE_SUFFIX_PREFIX}{os.getpid()}-{uuid.uuid4().hex[:8]}"
-        for name in (path.name, path.name + "-wal", path.name + "-shm"):
-            src = path.with_name(name)
-            try:
-                if src.exists():
-                    src.rename(src.with_name(name + suffix))
-            except OSError:
-                # T-3607: best-effort -- a losing racer under the same
-                # lock, or a sidecar that never existed, is not fatal;
-                # the reopen below still produces a valid fresh db.
-                _log.debug("cache.connect: quarantine rename of %s failed", src)
+        # T-3623: build the replacement's schema at a temp path FIRST,
+        # while the OLD file still sits at `path` -- see
+        # _build_schema_complete_db's docstring for why the ordering
+        # matters (T-3607's own concurrent-reader test caught the
+        # regression when this was tried the other way around).
+        tmp_path = _build_schema_complete_db(path)
+        _quarantine_sidecars(path)
+        os.replace(tmp_path, path)
         return _open(path)
     finally:
         if lock_fd is not None:
             portable_flock_release(lock_fd)
             os.close(lock_fd)
+
+
+def _quarantine_sidecars(path: Path) -> None:
+    """Rename `path`'s db/`-wal`/`-shm` files aside to a quarantined
+    sibling name (T-3607), best-effort -- shared by `_recreate` so the
+    rename-not-unlink step has one home distinct from the schema-build
+    step it now runs alongside (T-3623 split this out of `_recreate`
+    itself to keep that function under ARCH001's complexity threshold)."""
+    suffix = f"{_STALE_SUFFIX_PREFIX}{os.getpid()}-{uuid.uuid4().hex[:8]}"
+    for name in (path.name, path.name + "-wal", path.name + "-shm"):
+        src = path.with_name(name)
+        try:
+            if src.exists():
+                src.rename(src.with_name(name + suffix))
+        except OSError:
+            # T-3607: best-effort -- a losing racer under the same
+            # lock, or a sidecar that never existed, is not fatal;
+            # the reopen below still produces a valid fresh db.
+            _log.debug("cache.connect: quarantine rename of %s failed", src)
 
 
 def _is_concurrent_meta_key_race(exc: sqlite3.IntegrityError) -> bool:
@@ -536,6 +610,43 @@ def _recreate_and_reapply(
     )
     conn = _recreate(conn, path)
     _apply_schema(conn, None, path)
+    return conn
+
+
+def _is_missing_meta_table(exc: sqlite3.OperationalError) -> bool:
+    """True iff `exc` is sqlite's "no such table: meta" shape."""
+    return "no such table" in str(exc).lower() and "meta" in str(exc).lower()
+
+
+# frob:ticket T-3623
+def _check_fingerprint_with_recovery(
+    conn: sqlite3.Connection, path: Path
+) -> sqlite3.Connection:
+    """Run `_check_fingerprint`, recovering once if it hits "no such table:
+    meta" instead of letting that `OperationalError` escape `connect()`
+    uncaught (T-3623 direction 2).
+
+    `_check_fingerprint` is the last of `connect()`'s three DB touches
+    (`_read_schema_version`, `_apply_schema_with_recovery`, this) -- both
+    of the earlier two already route a missing/corrupt schema through a
+    rebuild, but this one had no such handling of its own, so it was the
+    step where a genuinely still-possible connection-level race (this
+    connection's own SELECT lazily resolving against a `path` inode that
+    changed under it between statements, distinct from the visibility
+    window T-3623's `_create_schema_complete_db`/`_build_schema_complete_
+    db` change closes) surfaced as a raw crash instead of the ordinary
+    "schema missing, rebuild" path every OTHER miss shape here already
+    gets. One retry is enough: `_recreate_and_reapply` always leaves the
+    connection holding a schema-complete db afterward, so a second
+    failure is a real, different problem that should propagate.
+    """
+    try:
+        _check_fingerprint(conn, path)
+    except sqlite3.OperationalError as exc:
+        if not _is_missing_meta_table(exc):
+            raise
+        conn = _recreate_and_reapply(conn, path, exc)
+        _check_fingerprint(conn, path)
     return conn
 
 
@@ -642,10 +753,23 @@ def connect(path: Path) -> sqlite3.Connection:
     committed, so re-running the whole function from scratch is safe.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        # T-3623: the very first ever connect() at this path has the same
+        # schema-incomplete-but-visible window _recreate used to have --
+        # sqlite3.connect() creates a 0-byte file immediately, before any
+        # CREATE TABLE runs. Pre-building the schema at a temp path and
+        # atomically renaming it into place (same helper _recreate uses)
+        # means a racing sibling's connect_readonly (or its own connect())
+        # never observes a tableless file at all. A second racer that also
+        # sees `not path.exists()` just repeats this and loses the rename
+        # race harmlessly -- os.replace is atomic either way.
+        _create_schema_complete_db(path)
     conn = _open(path)
     conn, existing = _read_schema_version(conn, path)
     conn = _apply_schema_with_recovery(conn, existing, path)
-    _with_lock_retry(lambda: _check_fingerprint(conn, path), what="fingerprint check")
+    conn = _with_lock_retry(
+        lambda: _check_fingerprint_with_recovery(conn, path), what="fingerprint check"
+    )
     return conn
 
 

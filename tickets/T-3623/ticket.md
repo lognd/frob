@@ -1,7 +1,7 @@
 ---
 id: T-3623
 title: 'T-3607 fallout: fresh-rebuilt cache db visible without schema'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -20,6 +20,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_recreate_replacement_always_has_meta_table
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_first_ever_connect_never_exposes_a_tableless_file
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_two_processes_connecting_concurrently_never_see_no_such_table_meta
 designated_repro_test: null
 threat: null
 component: null
