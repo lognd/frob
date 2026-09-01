@@ -1,7 +1,7 @@
 ---
 id: T-3627
 title: 'LARGE001: split src/frob/arch/_mayraise.py (878 lines)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-01'
@@ -48,6 +48,9 @@ scope_changes:
     ledger bookkeeping for this ticket
   actor: logan
   at: '2026-09-01'
+evidence:
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_curated_stdlib_c_extension_table_resolves_precisely
 designated_repro_test: null
 threat: null
 component: null

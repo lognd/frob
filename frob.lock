@@ -2771,6 +2771,24 @@
       "old_digest": "7ad06a795002f9c91ec61398ef71020176874b84cda549c52cba836d533521e3",
       "reason": "T-3590 DRIFT001 burn-down: read the current body against its docstring's T-3324 unconditional-selfaudit-check claim -- still accurate, no behavior drift",
       "ref": "src/frob/tickets/_land_squash.py::_refuse_if_selfaudit_findings_in_touched_files"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-01",
+      "facet": "sig",
+      "new_digest": "5e1419b54787c00464c3c5dd248237e15b650db564f916179f49efa9aa02d78a",
+      "old_digest": null,
+      "reason": "T-3627 split: UNKNOWN/UBIQUITOUS_TIER moved verbatim (value and docstring content unchanged) from _mayraise.py into the new _mayraise_tables.py; docs/modules/arch.md#may-raise-resolver's description of both still holds -- content re-verified against the new file",
+      "ref": "src/frob/arch/_mayraise_tables.py::UNKNOWN"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-01",
+      "facet": "sig",
+      "new_digest": "c4514f553a7a56aca97ffbf2b10356bb400cd2214e27d6bffcbd3539189f4bd7",
+      "old_digest": null,
+      "reason": "T-3627 split: UNKNOWN/UBIQUITOUS_TIER moved verbatim (value and docstring content unchanged) from _mayraise.py into the new _mayraise_tables.py; docs/modules/arch.md#may-raise-resolver's description of both still holds -- content re-verified against the new file",
+      "ref": "src/frob/arch/_mayraise_tables.py::UBIQUITOUS_TIER"
     }
   ],
   "entries": [
@@ -2998,6 +3016,16 @@
       "digest": "1f278e21843f62455f569b82cbe764acf79b53bc2d70d199b6664a4b65f8cf50",
       "facet": "sig",
       "ref": "src/frob/arch/_mayraise.py::compute_may_raise"
+    },
+    {
+      "digest": "c4514f553a7a56aca97ffbf2b10356bb400cd2214e27d6bffcbd3539189f4bd7",
+      "facet": "sig",
+      "ref": "src/frob/arch/_mayraise_tables.py::UBIQUITOUS_TIER"
+    },
+    {
+      "digest": "5e1419b54787c00464c3c5dd248237e15b650db564f916179f49efa9aa02d78a",
+      "facet": "sig",
+      "ref": "src/frob/arch/_mayraise_tables.py::UNKNOWN"
     },
     {
       "digest": "48bba7c4e3e618a3bf0ef92073e4ac587a09504e5538d7481fe8679e3136617d",

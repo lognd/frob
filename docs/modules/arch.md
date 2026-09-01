@@ -1052,8 +1052,8 @@ behavior change.
 <a id="may-raise-resolver"></a>
 <!-- frob:describes src/frob/arch/_mayraise.py::compute_may_raise -->
 <!-- frob:describes src/frob/arch/_mayraise.py::FunctionMayRaise -->
-<!-- frob:describes src/frob/arch/_mayraise.py::UNKNOWN -->
-<!-- frob:describes src/frob/arch/_mayraise.py::UBIQUITOUS_TIER -->
+<!-- frob:describes src/frob/arch/_mayraise_tables.py::UNKNOWN -->
+<!-- frob:describes src/frob/arch/_mayraise_tables.py::UBIQUITOUS_TIER -->
 
 `frob.arch._mayraise` (T-0686, child 1 of T-0685's exception may-raise
 umbrella) computes per-function may-raise sets over the shared
