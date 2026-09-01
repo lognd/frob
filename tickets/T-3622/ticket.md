@@ -1,7 +1,7 @@
 ---
 id: T-3622
 title: 'ARCH103: split _leases.py mixed-concern helpers (_land_flock_probe, _live_pids_with_cwd)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-31'
@@ -47,6 +47,9 @@ scope_changes:
     actual leases test files live at repo tests/ root
   actor: logan
   at: '2026-09-01'
+evidence:
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_allows_when_no_lock_file
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_belt_and_braces_process_scan_without_the_lock_file
 designated_repro_test: null
 threat: null
 component: null

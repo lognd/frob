@@ -147,6 +147,21 @@ def _refuse_for_held_land_lock(
 
 
 # frob:ticket T-1680
+# frob:ticket T-3622
+def _open_land_lock_fd_for_probe(path: Path) -> int | None:
+    """Best-effort `O_RDWR` open of the land-lock file for `_land_flock_
+    probe`'s acquire attempt (T-3622, split out of that function so its
+    single try/except OSError I/O concern is not mixed into the same body
+    as the flock-acquire decision logic). `None` on ANY `OSError` -- an
+    unopenable or vanished-between-check-and-open file -- never raised;
+    the caller's degrade-to-no-finding contract (ARCH103) is unchanged."""
+    try:
+        return os.open(str(path), os.O_RDWR | getattr(os, "O_BINARY", 0))
+    except OSError:
+        return None
+
+
+# frob:ticket T-1680
 # frob:ticket T-1961
 def _land_flock_probe(
     root: Path, *, quiet: bool = False, exclude_pid: int | None = None
@@ -164,15 +179,18 @@ def _land_flock_probe(
 
     T-2406: `exclude_pid` is threaded straight to `_refuse_for_held_land_
     lock` -- see that function's docstring for the exact, single-pid
-    scoping rule."""
+    scoping rule.
+
+    T-3622: the fd-open attempt itself is `_open_land_lock_fd_for_probe`,
+    split out so this function is left holding only the acquire/refuse
+    decision, not also the raw I/O try/except."""
     if not lock_backend_available():
         return Ok(None)
     path = root / LAND_LOCK_REL
     if not path.exists():
         return Ok(None)
-    try:
-        fd = os.open(str(path), os.O_RDWR | getattr(os, "O_BINARY", 0))
-    except OSError:
+    fd = _open_land_lock_fd_for_probe(path)
+    if fd is None:
         return Ok(None)
     # frob:ticket T-3506
     if not portable_flock_acquire(fd, exclusive=True, blocking=False):
@@ -1905,66 +1923,115 @@ def _proc_cwd(pid: int) -> Path | None:
 
 
 # frob:ticket T-3500
-def _live_pids_with_cwd(path: Path) -> tuple[int, ...]:
-    """Every live pid whose cwd resolves to `path` (T-3500): on Linux, an
+# frob:ticket T-3622
+def _live_pids_with_cwd_linux(resolved: Path) -> tuple[int, ...]:
+    """Linux half of `_live_pids_with_cwd` (T-3622, split out): an
     `/proc` directory walk checking each numeric entry's `_proc_cwd_
     linux` (`scan_for_live_worktree_process`/`_scan_for_live_land_
-    process`'s own original approach, unchanged); on macOS, one `lsof
-    -a -d cwd -Fpn -- <path>` call -- `lsof` treats a bare directory
-    operand as "find every process whose cwd IS this exact path"
-    (non-recursive: unlike `+D <path>`, this does not also match
+    process`'s own original approach, unchanged). Empty tuple on a
+    missing `/proc` or any read failure -- same degrade-to-no-finding
+    contract as its caller; `resolved` is expected already-`.resolve()`d
+    by the caller so this function owns only the `/proc` walk itself."""
+    proc_dir = Path("/proc")
+    if not proc_dir.is_dir():
+        return ()
+    self_pid = os.getpid()
+    try:
+        entries = tuple(proc_dir.iterdir())
+    except OSError:
+        return ()
+    pids = []
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        pid = int(entry.name)
+        if pid == self_pid:
+            continue
+        if _proc_cwd_linux(pid) == resolved:
+            pids.append(pid)
+    return tuple(pids)
+
+
+# frob:ticket T-3500
+# frob:ticket T-3622
+def _parse_lsof_pid_lines(stdout: str, *, self_pid: int) -> tuple[int, ...]:
+    """Parse `lsof -Fpn`'s `p<pid>` output lines into pids (T-3622, split
+    out of `_live_pids_with_cwd_darwin` so the string-parsing concern is
+    not mixed into the same body as the subprocess-spawn/exit-code
+    decision logic). Skips `self_pid` -- the probing process's own pid
+    must never count as a "live" match -- and any line that fails to
+    parse as `p` followed by an int, which `lsof -Fpn`'s output shape
+    should never produce but is not itself a reason to fail the scan."""
+    pids = []
+    for line in stdout.splitlines():
+        if line.startswith("p"):
+            try:
+                pid = int(line[1:])
+            except ValueError:
+                continue
+            if pid != self_pid:
+                pids.append(pid)
+    return tuple(pids)
+
+
+# frob:ticket T-3500
+# frob:ticket T-3622
+def _run_lsof_cwd_query(resolved: Path) -> str | None:
+    """Spawn `lsof -a -d cwd -Fpn -- <path>` and return its stdout (T-3622,
+    split out of `_live_pids_with_cwd_darwin` so the subprocess I/O is not
+    mixed into the same body as line-parsing). `lsof` treats a bare
+    directory operand as "find every process whose cwd IS this exact
+    path" (non-recursive: unlike `+D <path>`, this does not also match
     processes with an open file somewhere underneath it), so this is a
     single targeted query rather than an all-pids enumerate-and-filter
-    loop. Empty tuple (never a refusal by itself) on any platform other
-    than Linux/macOS, or any read/spawn failure -- the same
-    degrade-to-no-finding contract every `/proc`-consuming function in
-    this module already documents."""
+    loop. `None` on a spawn failure or a non-match exit code (rc=1 is
+    `lsof`'s own "no match", not an error -- mirrors this module's
+    existing `git grep`/`_base_name_match_paths`-style rc-classification
+    convention elsewhere in this repo) -- same degrade-to-no-finding
+    contract as its caller."""
+    guarded = guarded_subprocess_run(
+        ["lsof", "-a", "-d", "cwd", "-Fpn", "--", str(resolved)],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    if guarded.is_err:
+        return None
+    proc = guarded.danger_ok
+    if proc.returncode not in (0, 1):
+        return None
+    return proc.stdout
+
+
+# frob:ticket T-3500
+# frob:ticket T-3622
+def _live_pids_with_cwd_darwin(resolved: Path) -> tuple[int, ...]:
+    """macOS half of `_live_pids_with_cwd` (T-3622, split out): the query
+    itself is `_run_lsof_cwd_query`, and line-parsing is
+    `_parse_lsof_pid_lines` (both split out of this function so the
+    subprocess-spawn, exit-code, and string-parsing concerns each live in
+    their own body). Empty tuple on any spawn failure or non-match exit
+    code -- same degrade-to-no-finding contract as its caller."""
+    stdout = _run_lsof_cwd_query(resolved)
+    if stdout is None:
+        return ()
+    return _parse_lsof_pid_lines(stdout, self_pid=os.getpid())
+
+
+# frob:ticket T-3500
+def _live_pids_with_cwd(path: Path) -> tuple[int, ...]:
+    """Every live pid whose cwd resolves to `path` (T-3500), platform-
+    dispatched to `_live_pids_with_cwd_linux`/`_live_pids_with_cwd_darwin`
+    (T-3622, split out of this function so each platform's own I/O and
+    decision logic no longer mix in one body). Empty tuple (never a
+    refusal by itself) on any platform other than Linux/macOS, or any
+    read/spawn failure -- the same degrade-to-no-finding contract every
+    `/proc`-consuming function in this module already documents."""
     resolved = path.resolve()
     if sys.platform.startswith("linux"):
-        proc_dir = Path("/proc")
-        if not proc_dir.is_dir():
-            return ()
-        self_pid = os.getpid()
-        try:
-            entries = tuple(proc_dir.iterdir())
-        except OSError:
-            return ()
-        pids = []
-        for entry in entries:
-            if not entry.name.isdigit():
-                continue
-            pid = int(entry.name)
-            if pid == self_pid:
-                continue
-            if _proc_cwd_linux(pid) == resolved:
-                pids.append(pid)
-        return tuple(pids)
+        return _live_pids_with_cwd_linux(resolved)
     if sys.platform == "darwin":
-        guarded = guarded_subprocess_run(
-            ["lsof", "-a", "-d", "cwd", "-Fpn", "--", str(resolved)],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if guarded.is_err:
-            return ()
-        proc = guarded.danger_ok
-        if proc.returncode not in (0, 1):
-            # rc=1 is lsof's own "no match" -- not an error (mirrors this
-            # module's existing `git grep`/`_base_name_match_paths`-style
-            # rc-classification convention elsewhere in this repo).
-            return ()
-        self_pid = os.getpid()
-        pids = []
-        for line in proc.stdout.splitlines():
-            if line.startswith("p"):
-                try:
-                    pid = int(line[1:])
-                except ValueError:
-                    continue
-                if pid != self_pid:
-                    pids.append(pid)
-        return tuple(pids)
+        return _live_pids_with_cwd_darwin(resolved)
     return ()
 
 
