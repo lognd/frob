@@ -20,6 +20,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: cite run 33521416410 per coordinator request; confirm fix already covers
+    ticket-close path generically
+  actor: logan
+  at: '2026-09-01'
+  old_length: 1574
+  new_length: 2546
 evidence:
 - tests/unit/test_graph_cache.py::TestLockBackoff::test_backoff_doubles_up_to_the_cap
 - tests/unit/test_graph_cache.py::TestLockBackoff::test_backoff_never_exceeds_remaining_budget
@@ -58,3 +66,5 @@ backoff (small initial delay, doubling, capped at the existing 2.0s) in
 all three lock-retry call sites, and promote every retry's log line to
 WARNING (not just the first) per this ticket's "keep it loud"
 acceptance criterion.
+
+UPDATE (run 33521416410): the readonly-database CacheLocked class now also observed on BOTH POSIX legs (ubuntu AND macOS two-process test), plus a second surface on macOS: tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal died SystemExit(1) inside _make_done_ticket -> ticket close, with the same readonly-database cache errors in caplog. Confirmed by code inspection (git grep) that src/frob/tickets/ has NO direct graph_cache import/call of its own -- the ticket-close path's cache contention reaches this SAME shared cache.py implementation (connect/_open/_connect_with_backoff/_with_lock_retry) via frob's graph-build machinery, so this ticket's landed exponential-backoff fix (commit c8cab395208c) already covers the ticket-close path generically, not just the two-process test's connect loop -- no separate fix needed for that surface. The next CI run is the confirming measurement for both surfaces.
