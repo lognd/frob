@@ -21,6 +21,7 @@ scope:
 - docs/design/land-splice-test-then-impl.md
 - tests/unit/test_land_splice_test_then_impl.py
 - tickets/T-3566/ticket.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +65,12 @@ scope_changes:
   glob: tickets/T-3566/ticket.md
   reason: refactor split auto-updated this tests import statement and an unrelated
     tickets historical-attribution reference to the moved symbols path
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: design/frob.strata
+  reason: need to declare fs.write/env.read capability via-list entries for the new
+    _land_splice.py module (SELFAUDIT001)
   actor: logan
   at: '2026-09-01'
 body_changes:
