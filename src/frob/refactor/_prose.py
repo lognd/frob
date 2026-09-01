@@ -246,6 +246,50 @@ def _renamed_heading_and_slugs(
     return new_heading, old_slug, new_slug
 
 
+def _anchor_ops_in_py_comments(
+    file_path: Path, old_anchor: str, new_anchor: str
+) -> list[RewriteOp]:
+    """`_rewrite_anchor_refs`'s `.py`-file half, split out (ARCH001): every
+    COMMENT-span occurrence of `old_anchor` in `file_path` rewritten to
+    `new_anchor`. T-3656: reads comment spans off `parse_file`'s own
+    tokenization (exactly like `_scan_file_for_prose_mentions`), never a
+    raw whole-file substring scan -- a bare `old_anchor not in line` check
+    cannot tell a real `frob:doc`/`frob:describes` anchor reference apart
+    from the same text sitting inside an unrelated string/bytes literal
+    (e.g. a fixture sample embedding doc-shaped text), which the standing
+    token/grammar-not-lexical rule forbids treating as a real reference."""
+    parsed_result = parse_file(file_path)
+    if parsed_result.is_err:
+        return []
+    parsed = parsed_result.danger_ok
+    try:
+        source_lines = file_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    ops: list[RewriteOp] = []
+    seen_spans: set[tuple[int, int]] = set()
+    for comment in parsed.comments:
+        span = comment.span
+        if span in seen_spans:
+            continue
+        start, end = span
+        text = "\n".join(source_lines[start - 1 : end])
+        if old_anchor not in text:
+            continue
+        seen_spans.add(span)
+        ops.append(
+            RewriteOp(
+                file_path=str(file_path),
+                start_line=start,
+                end_line=end,
+                old_text=text,
+                new_text=text.replace(old_anchor, new_anchor),
+                reason=f"carry doc anchor reference {old_anchor} -> {new_anchor}",
+            )
+        )
+    return ops
+
+
 def _rewrite_anchor_refs(
     repo_root: Path, doc_rel: str, old_slug: str, new_slug: str
 ) -> list[RewriteOp]:
@@ -258,22 +302,7 @@ def _rewrite_anchor_refs(
     new_anchor = f"{doc_rel}#{new_slug}"
     ops: list[RewriteOp] = []
     for file_path in find_python_files(repo_root):
-        text = file_path.read_text(encoding="utf-8")
-        if old_anchor not in text:
-            continue
-        for lineno, line in enumerate(text.splitlines(), start=1):
-            if old_anchor not in line:
-                continue
-            ops.append(
-                RewriteOp(
-                    file_path=str(file_path),
-                    start_line=lineno,
-                    end_line=lineno,
-                    old_text=line,
-                    new_text=line.replace(old_anchor, new_anchor),
-                    reason=f"carry doc anchor reference {old_anchor} -> {new_anchor}",
-                )
-            )
+        ops.extend(_anchor_ops_in_py_comments(file_path, old_anchor, new_anchor))
     docs_dir = repo_root / "docs"
     if docs_dir.is_dir():
         # frob:waive WALK001 reason="docs_dir is repo_root/'docs' only -- a fixed subtree, never containing .git/.venv/node_modules/.claude/worktrees, so nothing to prune (T-3483)"  # noqa: E501
@@ -301,6 +330,7 @@ def _rewrite_anchor_refs(
 
 # frob:doc docs/commands/refactor.md#scan_doc_anchor_carriers
 # frob:tests tests/test_refactor.py::TestProseCarrier.test_heading_and_anchor_rewritten_together  # noqa: E501
+# frob:tests tests/test_refactor.py::TestProseCarrier.test_anchor_text_inside_string_literal_survives_untouched  # noqa: E501
 def scan_doc_anchor_carriers(
     repo_root: Path, resolved: ResolvedSymbol, destination: SymbolRef
 ) -> tuple[list[RewriteOp], list[str]]:

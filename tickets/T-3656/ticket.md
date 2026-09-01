@@ -2,7 +2,7 @@
 id: T-3656
 title: 'refactor split/move: import-consolidation pass edits string-literal content,
   not just AST import nodes'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'

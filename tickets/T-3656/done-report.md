@@ -1,0 +1,72 @@
+## Done report
+
+Changed: src/frob/refactor/_prose.py::_anchor_ops_in_py_comments (new,
+extracted from `_rewrite_anchor_refs`), src/frob/refactor/_prose.py::
+_rewrite_anchor_refs (now delegates its `.py`-file half to the new
+helper)
+
+Root cause found: `_rewrite_anchor_refs` (doc-anchor carrier,
+`scan_doc_anchor_carriers`'s own repointer) scanned every `.py` file's
+WHOLE TEXT for a raw substring match of the doc anchor
+(`docs/guide.md#slug`) and rewrote any physical line containing it --
+including one sitting inside a string/bytes literal, not a real
+`frob:doc`/`frob:describes` comment. This is the token/grammar-not-
+lexical violation class the production regression (T-3595's land
+deleting `from pathlib import Path` out of `tests/conftest.py`'s
+`PY_SAMPLE` bytes literal) traces to: a text-based pass elsewhere in
+this package, not an AST-based one. Every OTHER import/reference-
+rewriting pass audited in `src/frob/refactor/**` (`_scan.py`'s
+`scan_references`/`needed_import_ops_for_symbols`/
+`bare_name_repoint_ops`, `_split.py`'s dedup, `_directives.py`'s
+directive carrier, `_prose.py`'s own `scan_python_prose_mentions`) was
+already AST/comment-span based and did not reproduce the defect.
+
+Fix: extracted the `.py`-file half of `_rewrite_anchor_refs` into
+`_anchor_ops_in_py_comments`, which now reads comment spans off
+`parse_file` (exactly like `_scan_file_for_prose_mentions` already
+does) and matches the anchor text only inside a real comment/docstring
+span, never a whole-file substring scan. Added a regression test
+(`TestProseCarrier.test_anchor_text_inside_string_literal_survives_
+untouched`) asserting a `.py` file whose string literal embeds
+anchor-shaped text is left byte-identical by `scan_doc_anchor_
+carriers`; confirmed to genuinely fail on the pre-fix code via
+`frob ticket evidence --check-repro --base-ref 25fee5d7a` (the repro
+test's own standalone commit, before the fix commit).
+
+Evidence: tests/test_refactor.py::TestProseCarrier::
+test_anchor_text_inside_string_literal_survives_untouched (repro
+verified genuine); full `tests/test_refactor.py` suite green (144
+passed, `uv run pytest tests/test_refactor.py -q -p no:xdist`).
+
+Filed: none -- no out-of-scope work discovered beyond the two other
+already-queued tickets (T-3645, T-3653/T-3660) this series' brief
+already lists.
+
+Gates: `frob check --ticket T-3656 --only scope` clean (0 errors; 2
+pre-existing SCOPE002 warnings remain -- `design/frob.strata` and
+`tests/unit/test_arch_srp.py`, both pre-existing coverage-graph
+cascades unrelated to this diff's own symbols, chasing them widens
+scope into `src/frob/arch`/`src/frob/gates`/`src/frob/repo_meta`, left
+as-is per the standing "never expand scope on your own" rule and
+T-3595's own precedent for the same class of finding). `uv run ruff
+check src tests` clean. `frob test`/`frob test . --base main` timed
+out at the 540s foreground cap on this host (repeated) -- substituted
+the full `tests/test_refactor.py` suite run plus the check-repro pass
+above, per this series' own verification-budget instruction (never run
+the full suite; run the touched test files directly).
+
+### Changed
+```
+ src/frob/refactor/_prose.py | 62 +++++++++++++++++++++++++++++++++------------
+ tests/test_refactor.py      | 27 ++++++++++++++++++++
+ tickets/T-3656/ticket.md    | 28 --------------------
+ 3 files changed, 73 insertions(+), 44 deletions(-)
+```
+
+### Evidence
+- `tests/test_refactor.py::TestProseCarrier::test_anchor_text_inside_string_literal_survives_untouched` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 17 error(s), 4234 warning(s), 896 waived
+- error-findings: CLAUDE001@.claude/hooks/sync-claude-config.py, COV003@tests/test_ci_workflow_matrix.py, COV007@src/frob/strata/_capacity.py, DEPR006@frob-deprecated-baseline.lock.json, DOC007@tests/test_tickets_leases.py, DRIFT001@src/frob/process/_derived_lock.py, DRIFT002@docs/modules/process.md, DRIFT002@tests/test_tickets_leases.py, LARGE001@src/frob/refactor/_scan.py, LARGE001@src/frob/refactor/_verify.py, OPAQUE001@src/frob/app/_config_external.py, PRE001@tickets/T-3656, REF002@src/frob/process/_lock_msvcrt.py, REL001@src/frob/__init__.py, SEC110@tests/ticket_land_suite/test_wip.py, TEST001@src/frob/strata/_models.py, WAIVE011@frob-ratchet.lock.json

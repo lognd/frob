@@ -2185,6 +2185,33 @@ class TestProseCarrier:
         ]
         assert any("docs/guide.md#hello" in op.new_text for op in anchor_ops)
 
+    def test_anchor_text_inside_string_literal_survives_untouched(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestProseCarrier.test_anchor_text_inside_string_liter\
+        # al_survives_untouched
+        # T-3656: a `.py` file whose STRING/bytes literal happens to
+        # contain the exact `docs/guide.md#greet` anchor text (not a real
+        # `frob:doc`/`frob:describes` comment) must survive the rewrite
+        # byte-identical -- the anchor carrier must key off comment spans,
+        # never a raw whole-file substring scan (the production regression
+        # T-3595's land hit: an unrelated import-shaped line inside a
+        # fixture's bytes literal got silently edited by a text-based
+        # pass elsewhere in this package).
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        _write(root, "docs/guide.md", "# greet\n\nSome text.\n")
+        literal = 'SAMPLE = "see docs/guide.md#greet for details"\n'
+        _write(root, "src/pkg/other.py", literal)
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        destination = SymbolRef(module="pkg.mod", qualname="hello")
+        ops, unresolved = scan_doc_anchor_carriers(root, resolved, destination)
+        assert unresolved == []
+        other_ops = [op for op in ops if str(root / "src/pkg/other.py") == op.file_path]
+        assert other_ops == []
+        assert (root / "src/pkg/other.py").read_text(encoding="utf-8") == literal
+
     def test_unrelated_heading_not_touched(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestProseCarrier.test_unrelated_heading_not_touched
