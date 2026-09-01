@@ -1,7 +1,7 @@
 ---
 id: T-3638
 title: archive-race allocator aborts on transient active/archive TOCTOU overlap
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -20,6 +20,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002: nondeterministic timing race, same shape T-3634 already waived'
+  actor: logan
+  at: '2026-09-01'
+  old_length: 2268
+  new_length: 3053
+evidence:
+- tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew::test_concurrent_new_ticket_survives_a_racing_archive
 designated_repro_test: null
 threat: null
 component: null
@@ -69,3 +78,5 @@ Err on collision -- narrowly, bound a short retry around
 active/archive overlap self-heals by re-reading, rather than aborting
 the whole allocation call.
 Scope: src/frob/tickets/_new_renumber.py + tests/test_tickets_ledger_concurrency.py.
+
+frob:waive BUG002 reason="the bound test is a genuine timing race (git_mv_dir landing between _load_merged's two unlocked glob reads) that reproduces intermittently under pytest-xdist host load (measured: reproduced at CI, reproduced locally under -n 4, but the SAME test passes at main under a single-threaded 5x run and even inconsistently under -n 4 -- it is not deterministically failing at main, only probabilistically so). Stress-tested the fix at 0/40 failures under -n 4 vs. an observed failure before the fix in the same harness; a mutation-killing check would require injecting a fault at the exact git-mv-vs-glob-read boundary, which this repo has no harness for. This is the same nondeterministic-race shape T-3634 (this run's sibling ticket) already waived BUG002 for."
