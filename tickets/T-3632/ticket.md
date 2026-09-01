@@ -20,6 +20,20 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: BUG002 refused the race-condition repro test as confirmatory-only (PASSED_AT_PARENT);
+    waiving per the documented nondeterministic-defect escape hatch, backed by deterministic
+    unit-test evidence for the same code paths
+  actor: logan
+  at: '2026-09-01'
+  old_length: 2920
+  new_length: 3874
+evidence:
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_two_processes_connecting_concurrently_never_see_no_such_table_meta
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_apply_schema_rebuild_replacement_always_has_files_table
+- tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection::test_connect_after_forced_schema_rebuild_returns_a_fresh_live_connection
+- tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection::test_recreate_closed_connection_raises_a_clean_programming_error_not_interface_error
 designated_repro_test: null
 threat: null
 component: null
@@ -83,3 +97,5 @@ connection object.
 Scope: src/frob/graph/cache.py + tests/unit/test_graph_cache.py.
 CRITICAL: these two failures are currently the ONLY POSIX suite
 failures; this ticket IS the release path.
+
+frob:waive BUG002 reason="the designated repro test drives a real inter-process race (a sibling process's tight connect() loop against this process's repeated _recreate/_apply_schema calls) whose observable failure window depends on OS scheduling timing -- it reproduced the defect on CI (run 33472403980, both POSIX legs) but --check-repro's single deterministic run at the parent commit does not hit the timing window every time (PASSED_AT_PARENT this run). This mirrors BUG002's own documented nondeterministic-crash escape hatch (a genuine race condition the suite cannot force deterministically). The fix's mechanism is directly covered by two new deterministic unit tests instead: test_apply_schema_rebuild_replacement_always_has_files_table asserts the rebuild path's atomicity contract, and the TestConnectNeverReturnsAStaleConnection pair assert connect() never reuses a closed connection -- both exercise the exact code paths T-3632 changed."
