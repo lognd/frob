@@ -29,6 +29,10 @@ scope_changes:
     live here, not in gates_suite
   actor: logan
   at: '2026-09-01'
+evidence:
+- tests/test_tickets_leases.py::TestLeaseShapeValidation::test_read_all_leases_admits_a_windows_style_worktree_path
+- tests/test_tickets_leases.py::TestLeaseShapeValidation::test_read_all_leases_still_drops_a_dash_prefixed_windows_style_worktree
+- tests/test_tickets_leases.py::TestLeaseShapeValidation::test_worktree_operand_check_admits_windows_paths_directly
 designated_repro_test: null
 threat: null
 component: null
