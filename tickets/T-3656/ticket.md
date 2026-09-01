@@ -2,7 +2,7 @@
 id: T-3656
 title: 'refactor split/move: import-consolidation pass edits string-literal content,
   not just AST import nodes'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -20,6 +20,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_refactor.py::TestProseCarrier::test_anchor_text_inside_string_literal_survives_untouched
 designated_repro_test: null
 threat: null
 component: null
