@@ -2,7 +2,7 @@
 id: T-3593
 title: Split tests/test_vet.py (7992 lines) into a per-gate-family package, reusing
   T-3586's recipe
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-08-31'
