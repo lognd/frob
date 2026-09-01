@@ -2,7 +2,7 @@
 id: T-3566
 title: 'post-land sweep regression from T-3546: 4 new (rule, file) identit(ies), 6
   finding(s) (ARCH102, COV001, DOC002, DOC006)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -57,3 +57,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - SELFAUDIT001  docs/design/registry/capability-via-ratchet.lock.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-31: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (ARCH102 src/frob/tickets/_land_squash.py, COV001 src/frob/tickets/_land_squash.py, DOC002 src/frob/tickets/_land_squash.py, DOC006 docs/design/land-splice-test-then-impl.md) is absent from a direct re-check of exactly the 727 named (rule, file) identit(ies) (not a full sweep) that completed with no failed/silent tool stage at doable's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
