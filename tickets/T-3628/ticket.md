@@ -6,6 +6,8 @@ kind: feature
 origin: human
 created: '2026-09-01'
 priority: medium
+blocked_by:
+- T-draft-d028adeb
 parent: null
 tier: ticket
 sprint: null
