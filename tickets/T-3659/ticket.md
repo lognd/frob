@@ -21,6 +21,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: decompose run 33521416410's 20 failures into 6 buckets
+  actor: logan
+  at: '2026-09-01'
+  old_length: 2167
+  new_length: 4915
 designated_repro_test: null
 threat: null
 component: null
@@ -64,3 +71,50 @@ teardown death cut the run short. Once win32 round 15 (or whatever
 replaces it) lands and a fully clean Windows run completes, re-measure
 and decompose into buckets (macOS-campaign style) for real, and update
 this ticket's body with the confirmed denominator.
+
+
+UPDATE (this session, decomposition of run 33521416410's 20 win32 gates_suite failures into buckets, per this ticket's own instructions):
+
+- test_debt.py (1) + part of test_fix_engine.py (1) -> T-3661: lease
+  records' `worktree` field rejected by a POSIX-only argv-safety regex
+  in src/frob/tickets/_leases.py, silently dropping every Windows lease.
+- test_fix_engine.py (2 of 4) + test_run.py (2 of 3) -> T-3662: FMT001
+  and PERF004 producers build `Violation.file`/`FixApplied.file` via
+  `str(path.relative_to(root))` instead of `.as_posix()`, leaking
+  native backslash separators into fields every other gate/waiver
+  match assumes are POSIX.
+- test_waive.py (2) -> T-3664: src/frob/arch/__init__.py's
+  `files_examined` uses bare `str(path.relative_to(scan_root))` (same
+  class of bug as T-3662, different module), breaking WAIVE004's
+  examined-sites guard on win32.
+- test_run.py (1 of 3) -> T-3665: a genuine platform-capability
+  assertion (`"forkserver" in multiprocessing.get_all_start_methods()`)
+  hardcoded unconditionally at the end of an otherwise-correct test;
+  win32 never has forkserver. Confirmed NOT a product bug -- product's
+  own `_process_pool_start_method()` already falls back to spawn
+  correctly. Test-only fix.
+- test_fix_engine.py (2 of 4) -> T-3666: filed against tests/conftest.py
+  (out of my declared scope, sibling-owned) -- `_write`'s
+  `path.write_text(text)` with no `newline=` translates `\n` to `\r\n`
+  on write on win32, so the CRLF the two failing snapshot-byte-equality
+  tests see is the FIXTURE corrupting its own input, not the product
+  under test.
+- test_protocol.py (10) -> T-3667: all 10 share one shape (`protocol_
+  summary_gate` returns zero violations across every fixture/language/
+  rule family). Strong diagnostic lead from the captured log (an
+  ABSOLUTE-path symref appearing in `compute_protocol_summaries`'s
+  reachability universe where a relative one is expected) but the exact
+  call site that leaks the absolute path could NOT be confirmed from
+  source alone -- every symref-construction site checked already
+  normalizes correctly, and the failure did not reproduce on POSIX with
+  an equivalent absolute-tmp-dir setup. Filed with the full diagnostic
+  trail and a concrete next step (log `callgraph.calls` keys on an
+  actual win32 run) rather than skipped, since nothing here proves the
+  bug is unfixable from source -- only that pinning the exact line
+  needs windows-side instrumentation this WSL environment cannot
+  produce.
+
+20/20 failures accounted for across 6 tickets (T-3661/T-3662/T-3664/
+T-3665/T-3666/T-3667). Not fixing anything under this tracking ticket
+itself, per its own standing instruction -- see each linked ticket for
+its own root cause and fix.
