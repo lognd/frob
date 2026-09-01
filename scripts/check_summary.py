@@ -22,8 +22,10 @@ from typing import Any
 
 # frob:doc docs/guides/coordinator-scripts.md#load_report
 # frob:ticket T-1863
-# frob:tests tests/unit/test_coordinator_scripts.py::TestLoadReport.test_reads_path
-# frob:tests tests/unit/test_coordinator_scripts.py::TestLoadReport.test_reads_stdin
+# frob:tests \
+# tests/unit/coordinator_suite/test_check_summary.py::TestLoadReport.test_reads_path
+# frob:tests \
+# tests/unit/coordinator_suite/test_check_summary.py::TestLoadReport.test_reads_stdin
 def load_report(source: str | None) -> dict[str, Any]:
     """Read a `frob check --json` report from a path, or stdin when None."""
     if source is None or source == "-":
@@ -35,10 +37,11 @@ def load_report(source: str | None) -> dict[str, Any]:
 # frob:doc docs/guides/coordinator-scripts.md#iter_diagnostics
 # frob:ticket T-1863
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestIterDiagnostics.test_yields_tool_and_diag\
-# nostic
+# tests/unit/coordinator_suite/test_check_summary.py::TestIterDiagnostics.test_yields_t\
+# ool_and_diagnostic
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestIterDiagnostics.test_empty_results
+# tests/unit/coordinator_suite/test_check_summary.py::TestIterDiagnostics.test_empty_re\
+# sults
 def iter_diagnostics(report: dict[str, Any]):
     """Yield (tool, diagnostic) for every diagnostic in the report.
 
@@ -55,9 +58,11 @@ def iter_diagnostics(report: dict[str, Any]):
 # frob:doc docs/guides/coordinator-scripts.md#find_test006
 # frob:ticket T-2763
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestFindTest006.test_finds_test006_diagnostics
+# tests/unit/coordinator_suite/test_check_summary.py::TestFindTest006.test_finds_test00\
+# 6_diagnostics
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestFindTest006.test_empty_when_no_test006
+# tests/unit/coordinator_suite/test_check_summary.py::TestFindTest006.test_empty_when_n\
+# o_test006
 def find_test006(report: dict[str, Any]) -> list[tuple]:
     """Return every TEST006 (missing/stale coverage stamp) diagnostic.
 
@@ -79,9 +84,11 @@ def find_test006(report: dict[str, Any]) -> list[tuple]:
 # frob:doc docs/guides/coordinator-scripts.md#summarise
 # frob:ticket T-1863
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestSummarise.test_counts_by_severity
+# tests/unit/coordinator_suite/test_check_summary.py::TestSummarise.test_counts_by_seve\
+# rity
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestSummarise.test_collects_error_rows
+# tests/unit/coordinator_suite/test_check_summary.py::TestSummarise.test_collects_error\
+# _rows
 def summarise(report: dict[str, Any]) -> tuple[collections.Counter, list[tuple]]:
     """Return (severity counts, error rows) for a parsed report."""
     severities: collections.Counter = collections.Counter()
@@ -105,15 +112,17 @@ def summarise(report: dict[str, Any]) -> tuple[collections.Counter, list[tuple]]
 # frob:doc docs/guides/coordinator-scripts.md#check_summary-main
 # frob:ticket T-1863
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestCheckSummaryMain.test_exit_zero_when_clean
+# tests/unit/coordinator_suite/test_check_summary.py::TestCheckSummaryMain.test_exit_ze\
+# ro_when_clean
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestCheckSummaryMain.test_exit_one_when_errors
+# tests/unit/coordinator_suite/test_check_summary.py::TestCheckSummaryMain.test_exit_on\
+# e_when_errors
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestCheckSummaryMain.test_test006_banner_lead\
-# s_output_when_present
+# tests/unit/coordinator_suite/test_check_summary.py::TestCheckSummaryMain.test_test006\
+# _banner_leads_output_when_present
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestCheckSummaryMain.test_no_banner_when_test\
-# 006_absent
+# tests/unit/coordinator_suite/test_check_summary.py::TestCheckSummaryMain.test_no_bann\
+# er_when_test006_absent
 def main() -> int:
     """Print severity counts then every error row; exit 1 if any error."""
     report = load_report(sys.argv[1] if len(sys.argv) > 1 else None)

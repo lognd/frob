@@ -24,33 +24,33 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_holder_dead_is_reclaimable
-- tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_guidance_line_uses_live_count_not_raw_count
-- tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_root_worktree_is_structurally_unreclaimable
-- tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_live_lease_stays_live
-- tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_classification_is_strictly_read_only
-designated_repro_test: tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_holder_dead_is_reclaimable
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification::test_holder_dead_is_reclaimable
+- tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus::test_guidance_line_uses_live_count_not_raw_count
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification::test_root_worktree_is_structurally_unreclaimable
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification::test_live_lease_stays_live
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification::test_classification_is_strictly_read_only
+designated_repro_test: tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification::test_holder_dead_is_reclaimable
 acceptance:
 - text: 'The report distinguishes a reclaimable lease from a live one (fails today:
     leases() returns undifferentiated records)'
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_holder_dead_is_reclaimable
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification::test_holder_dead_is_reclaimable
 - text: The concurrency guidance clause is computed from the LIVE count, not the raw
     file count
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_guidance_line_uses_live_count_not_raw_count
+  - tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus::test_guidance_line_uses_live_count_not_raw_count
 - text: A lease whose worktree IS the repo root is reported as structurally unreclaimable,
     derived from the record's worktree vs resolved root -- never a ticket-id allowlist
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_root_worktree_is_structurally_unreclaimable
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification::test_root_worktree_is_structurally_unreclaimable
 - text: A genuinely live lease MUST STILL report as live (must-still-pass control
     against a fix that marks everything reclaimable)
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_live_lease_stays_live
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification::test_live_lease_stays_live
 - text: 'The report remains strictly read-only: it never releases, modifies, or deletes
     a lease'
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestLeaseClassification::test_classification_is_strictly_read_only
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestLeaseClassification::test_classification_is_strictly_read_only
 threat: null
 component: null
 anchor: false

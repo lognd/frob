@@ -25,29 +25,29 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestTicketReadinessScopeCollision::test_not_dispatchable_when_scope_files_are_held_by_another_live_lease
-- tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions::test_glob_scope_collides_with_a_literal_lease_file
-- tests/unit/test_coordinator_scripts.py::TestTicketReadinessScopeCollision::test_dispatchable_when_no_colliding_lease
-- tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions::test_a_reclaimable_lease_is_never_a_collision
-designated_repro_test: tests/unit/test_coordinator_scripts.py::TestTicketReadinessScopeCollision::test_not_dispatchable_when_scope_files_are_held_by_another_live_lease
+- tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadinessScopeCollision::test_not_dispatchable_when_scope_files_are_held_by_another_live_lease
+- tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions::test_glob_scope_collides_with_a_literal_lease_file
+- tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadinessScopeCollision::test_dispatchable_when_no_colliding_lease
+- tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions::test_a_reclaimable_lease_is_never_a_collision
+designated_repro_test: tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadinessScopeCollision::test_not_dispatchable_when_scope_files_are_held_by_another_live_lease
 acceptance:
 - text: '--ticket on a ticket whose scope files are held by another live lease reports
     the collision and names the holding ticket (fails today: prints lease=none, dispatchable=True)'
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestTicketReadinessScopeCollision::test_not_dispatchable_when_scope_files_are_held_by_another_live_lease
+  - tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadinessScopeCollision::test_not_dispatchable_when_scope_files_are_held_by_another_live_lease
 - text: A glob scope entry colliding only after expansion is detected (src/frob/**
     vs a live lease on src/frob/tickets/_land.py) -- resolved paths, never string
     comparison
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions::test_glob_scope_collides_with_a_literal_lease_file
+  - tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions::test_glob_scope_collides_with_a_literal_lease_file
 - text: A ticket with no colliding lease MUST STILL report dispatchable (must-still-pass
     control against flagging everything)
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestTicketReadinessScopeCollision::test_dispatchable_when_no_colliding_lease
+  - tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadinessScopeCollision::test_dispatchable_when_no_colliding_lease
 - text: A reclaimable or residual lease does not count as a collision -- reuse T-2222's
     classification, do not re-implement it
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions::test_a_reclaimable_lease_is_never_a_collision
+  - tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions::test_a_reclaimable_lease_is_never_a_collision
 threat: null
 component: null
 anchor: false

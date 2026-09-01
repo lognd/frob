@@ -39,7 +39,7 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_prints_no_live_holder_as_normal_resting_state_not_stale
+- tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus::test_prints_no_live_holder_as_normal_resting_state_not_stale
 designated_repro_test: null
 acceptance:
 - text: given the 4 named DRIFT001/DRIFT002 findings (rapid_sweep, fmt_directives
@@ -48,12 +48,12 @@ acceptance:
     doc/test is fixed first; the 5th (drain) is deliberately out of scope, filed as
     a blocked follow-up
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_prints_no_live_holder_as_normal_resting_state_not_stale
+  - tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus::test_prints_no_live_holder_as_normal_resting_state_not_stale
 - text: given the fix is landed, when frob check --only docblocks --json is re-run,
     then none of the 4 addressed findings remain (the 5th, drain, is tracked separately,
     blocked by T-2324)
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_prints_no_live_holder_as_normal_resting_state_not_stale
+  - tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus::test_prints_no_live_holder_as_normal_resting_state_not_stale
 acceptance_amendments:
 - op: replace
   index: 0
@@ -128,7 +128,7 @@ fleet_status addition, T-2310's drain change):
  - DRIFT001 src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket (body), 1 dependent
  - DRIFT001 src/frob/gates/_fmt_directives.py::_format_one_path (body), 2 dependents
  - DRIFT001 src/frob/gates/_fmt_directives.py::_format_one_path (sig), 2 dependents
- - DRIFT002 scripts/fleet_status.py::_land_status_lines -> tests/unit/test_coordinator_scripts.py::TestPrintLandStatus...
+ - DRIFT002 scripts/fleet_status.py::_land_status_lines -> tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus...
  - DRIFT002 src/frob/verify/_drain.py::run_drain_async -> tests/unit/verify/test_drain.py::TestRunDrainAsync...
 
 REQUIRED: for each finding, actually read the current symbol body and

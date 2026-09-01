@@ -51,9 +51,15 @@ _TICKET_ID_RE = re.compile(r"^T-[0-9]+$")
 
 # frob:doc docs/guides/coordinator-scripts.md#load_land_commit
 # frob:ticket T-2220
-# frob:tests tests/unit/test_coordinator_scripts.py::TestLoadLandCommit.test_returns_land_commit_for_a_landed_ticket  # noqa: E501
-# frob:tests tests/unit/test_coordinator_scripts.py::TestLoadLandCommit.test_returns_none_for_an_unlanded_ticket  # noqa: E501
-# frob:tests tests/unit/test_coordinator_scripts.py::TestLoadLandCommit.test_returns_missing_for_an_unknown_ticket_id  # noqa: E501
+# frob:tests \
+# tests/unit/coordinator_suite/test_verify_lands.py::TestLoadLandCommit.test_returns_la\
+# nd_commit_for_a_landed_ticket  # noqa: E501
+# frob:tests \
+# tests/unit/coordinator_suite/test_verify_lands.py::TestLoadLandCommit.test_returns_no\
+# ne_for_an_unlanded_ticket  # noqa: E501
+# frob:tests \
+# tests/unit/coordinator_suite/test_verify_lands.py::TestLoadLandCommit.test_returns_mi\
+# ssing_for_an_unknown_ticket_id  # noqa: E501
 def load_land_commit(ticket_id: str) -> str | None | Exception:
     """`ticket_id`'s landing sha: its persisted `land_commit` field first,
     a `KeyError` INSTANCE (never raised -- returned, so the caller can
@@ -95,9 +101,11 @@ def _git(args: list[str]) -> subprocess.CompletedProcess:
 
 # frob:doc docs/guides/coordinator-scripts.md#resolve
 # frob:ticket T-1863
-# frob:tests tests/unit/test_coordinator_scripts.py::TestResolve.test_resolves_full_sha
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestResolve.test_unknown_sha_returns_none
+# tests/unit/coordinator_suite/test_verify_lands.py::TestResolve.test_resolves_full_sha
+# frob:tests \
+# tests/unit/coordinator_suite/test_verify_lands.py::TestResolve.test_unknown_sha_retur\
+# ns_none
 def resolve(sha: str) -> str | None:
     """Full commit id for `sha`, or None when git cannot resolve it."""
     done = _git(["rev-parse", "--verify", f"{sha}^{{commit}}"])
@@ -107,9 +115,11 @@ def resolve(sha: str) -> str | None:
 # frob:doc docs/guides/coordinator-scripts.md#is_ancestor
 # frob:ticket T-1863
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestIsAncestor.test_true_when_ancestor
+# tests/unit/coordinator_suite/test_verify_lands.py::TestIsAncestor.test_true_when_ance\
+# stor
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestIsAncestor.test_false_when_not_ancestor
+# tests/unit/coordinator_suite/test_verify_lands.py::TestIsAncestor.test_false_when_not\
+# _ancestor
 def is_ancestor(sha: str, ref: str) -> bool:
     """True when `sha` is an ancestor of `ref` (i.e. it really landed)."""
     return _git(["merge-base", "--is-ancestor", sha, ref]).returncode == 0
@@ -118,7 +128,8 @@ def is_ancestor(sha: str, ref: str) -> bool:
 # frob:doc docs/guides/coordinator-scripts.md#subject
 # frob:ticket T-1863
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestSubject.test_returns_commit_subject
+# tests/unit/coordinator_suite/test_verify_lands.py::TestSubject.test_returns_commit_su\
+# bject
 def subject(sha: str) -> str:
     """One-line subject for `sha`, for eyeballing that it is the right commit."""
     return _git(["log", "-1", "--format=%s", sha]).stdout.strip()
@@ -127,8 +138,8 @@ def subject(sha: str) -> str:
 # frob:doc docs/guides/coordinator-scripts.md#verify_lands-main
 # frob:ticket T-1863
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain.test_distinguishes_unknow\
-# n_from_missing
+# tests/unit/coordinator_suite/test_verify_lands.py::TestVerifyLandsMain.test_distingui\
+# shes_unknown_from_missing
 def main() -> int:
     """Check every sha/ticket-id against `ref`; exit 1 if any is missing,
     unknown, or (T-2220) an unrecognized/never-landed ticket id."""

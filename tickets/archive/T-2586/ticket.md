@@ -49,12 +49,12 @@ body_changes:
   old_length: 2189
   new_length: 5845
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_clean_repo
-- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_dirty_repo
-- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_phantom_modified_entry_dropped
-- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_genuine_modified_entry_kept
-- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_untracked_entry_never_reverified
-designated_repro_test: tests/unit/test_coordinator_scripts.py::TestRootDirt::test_phantom_modified_entry_dropped
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt::test_clean_repo
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt::test_dirty_repo
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt::test_phantom_modified_entry_dropped
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt::test_genuine_modified_entry_kept
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt::test_untracked_entry_never_reverified
+designated_repro_test: tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt::test_phantom_modified_entry_dropped
 threat: null
 component: null
 anchor: false

@@ -55,11 +55,11 @@ evidence:
 - tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_phase_transitions_are_pollable
 - tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_waiting_phase_records_lock_holder
 - tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_write_failure_is_best_effort_and_never_raises
-- tests/unit/test_coordinator_scripts.py::TestReadLandStatusMarker::test_reads_a_written_marker
-- tests/unit/test_coordinator_scripts.py::TestReadLandStatusMarker::test_missing_marker_returns_none
-- tests/unit/test_coordinator_scripts.py::TestReadLandStatusMarker::test_unparseable_marker_returns_none
-- tests/unit/test_coordinator_scripts.py::TestLandStatusMarkerLine::test_no_marker_renders_nothing
-- tests/unit/test_coordinator_scripts.py::TestLandStatusMarkerLine::test_marker_renders_phase_ticket_and_pid
+- tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_reads_a_written_marker
+- tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_missing_marker_returns_none
+- tests/unit/coordinator_suite/test_fleet_land.py::TestReadLandStatusMarker::test_unparseable_marker_returns_none
+- tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLine::test_no_marker_renders_nothing
+- tests/unit/coordinator_suite/test_fleet_land.py::TestLandStatusMarkerLine::test_marker_renders_phase_ticket_and_pid
 designated_repro_test: null
 threat: null
 component: null

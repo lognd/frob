@@ -6,7 +6,7 @@ check` (fixed T-3093), (b) the LAND LOCK line reported fd-open waiters as
 holders (fixed T-3093), (c) a false LEAK against a live registered
 worktree (fixed T-3128), (d) orphan forkserver counting applied no age
 floor (fixed T-3139). Each got a reactive point-fix and, separately, unit
-coverage in `tests/unit/test_coordinator_scripts.py` -- but the four kept
+coverage in `tests/unit/coordinator_suite/` -- but the four kept
 arriving one at a time anyway, because no single suite treated "does this
 script's four core CLAIMS survive a constructed ground-truth scenario
 shaped like the last incident" as one denominator.
@@ -35,18 +35,20 @@ from pathlib import Path
 
 import pytest
 
-from tests.unit import test_coordinator_scripts as _tcs
 from tests.unit.conftest import _load_script
+from tests.unit.coordinator_suite import test_fleet_host_load as _tfh
+from tests.unit.coordinator_suite import test_fleet_land as _tfl
+from tests.unit.coordinator_suite import test_fleet_worktrees as _tfw
 
-#: NO DUPLICATION: reuse `tests/unit/test_coordinator_scripts.py`'s own
-#: fixture helpers (`_run_git`, `_init_bare_repo`, `_write_proc_locks`,
-#: `TestOrphanedForkserverCount`'s writers) via a qualified module
-#: reference rather than a second copy of any of them -- see each usage
-#: site below (`_tcs.<name>`).
-_init_repo = _tcs._init_bare_repo
-_run_git = _tcs._run_git
-_write_proc_locks = _tcs._write_proc_locks
-_OrphanedForkserverFixtures = _tcs.TestOrphanedForkserverCount
+#: NO DUPLICATION: reuse tests/unit/coordinator_suite/'s own fixture
+#: helpers (`_run_git`, `_init_bare_repo`, `_write_proc_locks`,
+#: `TestOrphanedForkserverCount`'s writers) via qualified module
+#: references rather than a second copy of any of them -- see each usage
+#: site below (`_tfw.<name>`/`_tfl.<name>`/`_tfh.<name>`).
+_init_repo = _tfw._init_bare_repo
+_run_git = _tfw._run_git
+_write_proc_locks = _tfl._write_proc_locks
+_OrphanedForkserverFixtures = _tfh.TestOrphanedForkserverCount
 
 fleet_status = _load_script("fleet_status")
 

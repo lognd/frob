@@ -38,7 +38,7 @@ evidence:
 - tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_promotes_a_draft_the_ticket_filed
 - tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion::test_absent_pyproject_is_none
 - tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard::test_clean_narrative_is_unaffected
-- tests/unit/test_coordinator_scripts.py::TestLoadReport::test_reads_path
+- tests/unit/coordinator_suite/test_check_summary.py::TestLoadReport::test_reads_path
 - tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_must_now_fire_reports_the_undeclared_key
 - tests/unit/test_fleet_runner.py::TestFleetRunner::test_run_status_table
 - tests/unit/test_fmt_wiring_reachability_t2761.py::TestFmtRunnerReachability::test_check_mode_reports_no_change_for_rust_file_under_its_own_width

@@ -1876,7 +1876,7 @@ capability declaration is exactly the class of unaudited process-spawn
 SELFAUDIT001 exists to catch).
 
 TEST001 (unit-test coverage) is satisfied with real pytest coverage in
-`tests/unit/test_coordinator_scripts.py`, not a path-class exemption:
+`tests/unit/coordinator_suite/`, not a path-class exemption:
 unlike `.claude/hooks/**` (T-1838/T-1861's precedent, exempted because
 those scripts run ONLY under the Claude Code dispatch harness and cannot
 be meaningfully unit-tested outside it), every function here is ordinary

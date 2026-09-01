@@ -34,8 +34,8 @@ body_changes:
   old_length: 2298
   new_length: 2621
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases::test_no_worktree_flagged_as_leak
-- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases::test_live_worktree_named_not_leaked
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases::test_no_worktree_flagged_as_leak
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases::test_live_worktree_named_not_leaked
 designated_repro_test: null
 threat: null
 component: null

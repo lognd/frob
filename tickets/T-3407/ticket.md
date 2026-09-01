@@ -44,15 +44,15 @@ scope_changes:
   actor: logan
   at: '2026-08-30'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestForkserverRssHeldKb::test_sums_vmrss_across_every_forkserver
-- tests/unit/test_coordinator_scripts.py::TestForkserverRssHeldKb::test_missing_status_file_degrades_that_entry_to_zero_not_a_crash
-- tests/unit/test_coordinator_scripts.py::TestForkserverRssHeldKb::test_missing_proc_returns_none
-- tests/unit/test_coordinator_scripts.py::TestForkserverCount::test_counts_every_live_forkserver
-- tests/unit/test_coordinator_scripts.py::TestForkserverCount::test_missing_proc_returns_none
-- tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline::test_large_rss_produces_a_visible_warning
-- tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline::test_small_rss_stays_quiet
-- tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline::test_unknown_inputs_degrade_to_unknown_not_zero
-designated_repro_test: tests/unit/test_coordinator_scripts.py::TestForkserverRssHeadline::test_large_rss_produces_a_visible_warning
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb::test_sums_vmrss_across_every_forkserver
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb::test_missing_status_file_degrades_that_entry_to_zero_not_a_crash
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeldKb::test_missing_proc_returns_none
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverCount::test_counts_every_live_forkserver
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverCount::test_missing_proc_returns_none
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline::test_large_rss_produces_a_visible_warning
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline::test_small_rss_stays_quiet
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline::test_unknown_inputs_degrade_to_unknown_not_zero
+designated_repro_test: tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverRssHeadline::test_large_rss_produces_a_visible_warning
 threat: null
 component: null
 anchor: false

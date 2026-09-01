@@ -99,12 +99,12 @@ evidence:
 - tests/unit/test_process_reap.py::TestIsOrphanedForkserver::test_forkserver_with_live_parent_is_not_orphaned
 - tests/unit/test_process_reap.py::TestIsOrphanedForkserver::test_non_forkserver_process_is_never_matched
 - tests/unit/test_main_entry.py::TestMainSigint::test_normal_dispatch_is_unaffected
-- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_counts_forkserver_reparented_to_init
-- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_ignores_forkserver_with_live_parent
-- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_ignores_non_forkserver_processes
-- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_missing_proc_returns_none
-- tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_orphaned_forkserver_count_printed_alongside_swap_guidance
-- tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_zero_orphaned_forkservers_prints_zero_not_omitted
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount::test_counts_forkserver_reparented_to_init
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount::test_ignores_forkserver_with_live_parent
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount::test_ignores_non_forkserver_processes
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount::test_missing_proc_returns_none
+- tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus::test_orphaned_forkserver_count_printed_alongside_swap_guidance
+- tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus::test_zero_orphaned_forkservers_prints_zero_not_omitted
 designated_repro_test: null
 acceptance:
 - text: Given a frob check killed mid-run by SIGTERM or a budget abort, when it exits,
@@ -130,12 +130,12 @@ acceptance:
 - text: Given orphaned forkservers present on the machine, when fleet_status.py runs,
     then it reports their count alongside the existing swap-pressure guidance.
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_counts_forkserver_reparented_to_init
-  - tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_ignores_forkserver_with_live_parent
-  - tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_ignores_non_forkserver_processes
-  - tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_missing_proc_returns_none
-  - tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_orphaned_forkserver_count_printed_alongside_swap_guidance
-  - tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_zero_orphaned_forkservers_prints_zero_not_omitted
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount::test_counts_forkserver_reparented_to_init
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount::test_ignores_forkserver_with_live_parent
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount::test_ignores_non_forkserver_processes
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCount::test_missing_proc_returns_none
+  - tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus::test_orphaned_forkserver_count_printed_alongside_swap_guidance
+  - tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus::test_zero_orphaned_forkservers_prints_zero_not_omitted
 threat: null
 component: process
 anchor: false

@@ -35,12 +35,12 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases::test_in_progress_with_open_blocker_flagged
-- tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases::test_in_progress_with_no_blockers_not_flagged
-- tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases::test_in_progress_with_only_terminal_blockers_not_flagged
-- tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases::test_queued_ticket_with_open_blocker_not_flagged
-- tests/unit/test_coordinator_scripts.py::TestPrintFleetReport::test_leases_section_flags_blocked_open_lease
-designated_repro_test: tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases::test_in_progress_with_open_blocker_flagged
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases::test_in_progress_with_open_blocker_flagged
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases::test_in_progress_with_no_blockers_not_flagged
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases::test_in_progress_with_only_terminal_blockers_not_flagged
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases::test_queued_ticket_with_open_blocker_not_flagged
+- tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport::test_leases_section_flags_blocked_open_lease
+designated_repro_test: tests/unit/coordinator_suite/test_fleet_worktrees.py::TestBlockedInProgressLeases::test_in_progress_with_open_blocker_flagged
 threat: null
 component: null
 anchor: false

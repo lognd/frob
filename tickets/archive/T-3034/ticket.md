@@ -200,7 +200,7 @@ suffixes are truncated pytest -q summary text, not part of the node id:
   tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_refuses_over_broad_scope
   tests/unit/test_app_runners_t0714_doable_summary.py::TestRenderScopeBreadthSummary::test_multiple_stale_leases_collapse_to_one_summary_line
   tests/unit/test_app_runners_t1822_already_landed.py::TestRenderAlreadyLandedMarkers::test_no_markers_prints_nothing_and_returns_empty
-  tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
+  tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
   tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
   tests/unit/test_gitattributes_merge.py::TestAttachmentCrlfSuppression::test_unrelated_text_file_still_gets_autocrlf_conversion
   tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag::test_unacknowledged_broad_scope_still_warns

@@ -371,7 +371,7 @@ def _write_live_check_entry(
     """`_write_proc_entry` twin for a LIVE `frob check` ancestor (T-3072)
     -- same fake `/proc/<pid>/{cmdline,stat}` shape, distinct helper name
     only so a test reads as "this pid is the live-check root", matching
-    `tests/unit/test_coordinator_scripts.py`'s own `_write_live_check`
+    `tests/unit/coordinator_suite/test_fleet_host_load.py`'s own `_write_live_check`
     naming convention."""
     _write_proc_entry(proc, pid, cmdline=cmdline, ppid=ppid)
 

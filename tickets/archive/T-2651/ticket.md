@@ -23,12 +23,12 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases::test_no_worktree_flagged_as_leak
-- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases::test_live_worktree_named_not_leaked
-- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases::test_queued_ticket_excluded
-- tests/unit/test_coordinator_scripts.py::TestPrintFleetReport::test_leases_section_shows_classification_per_lease
-- tests/unit/test_coordinator_scripts.py::TestPrintFleetReport::test_leases_section_reports_ledger_leak_missing_from_held
-designated_repro_test: tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases::test_no_worktree_flagged_as_leak
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases::test_no_worktree_flagged_as_leak
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases::test_live_worktree_named_not_leaked
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases::test_queued_ticket_excluded
+- tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport::test_leases_section_shows_classification_per_lease
+- tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport::test_leases_section_reports_ledger_leak_missing_from_held
+designated_repro_test: tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeases::test_no_worktree_flagged_as_leak
 threat: null
 component: null
 anchor: false

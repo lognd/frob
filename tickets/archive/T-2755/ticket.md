@@ -34,11 +34,11 @@ scope_changes:
   actor: logan
   at: '2026-08-21'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicketIds::test_non_conventionally_named_worktree_resolves
-- tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicketIds::test_no_start_transition_commits_resolves_empty
-- tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicketIds::test_series_worktree_resolves_every_started_id
-- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassificationLiveGit::test_non_conventionally_named_worktree_classifies_active_via_structural_ids
-- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassificationLiveGit::test_worktree_with_genuinely_no_ticket_is_not_force_matched
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicketIds::test_non_conventionally_named_worktree_resolves
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicketIds::test_no_start_transition_commits_resolves_empty
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeStartedTicketIds::test_series_worktree_resolves_every_started_id
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeContentClassificationLiveGit::test_non_conventionally_named_worktree_classifies_active_via_structural_ids
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeContentClassificationLiveGit::test_worktree_with_genuinely_no_ticket_is_not_force_matched
 designated_repro_test: null
 threat: null
 component: null

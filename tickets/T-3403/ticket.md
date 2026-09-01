@@ -40,9 +40,9 @@ scope_changes:
   actor: logan
   at: '2026-08-29'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_freshly_started_worktree_with_no_scope_commit_yet_is_not_leaked
-- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_no_worktree_and_no_lease_is_still_leaked
-- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeasesLiveGit::test_freshly_started_worktree_with_no_scope_commit_yet_is_not_leaked
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeasesLiveGit::test_no_worktree_and_no_lease_is_still_leaked
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
 designated_repro_test: null
 threat: null
 component: null

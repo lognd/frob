@@ -22,12 +22,12 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions::test_glob_scope_collides_with_a_literal_lease_file
+- tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions::test_glob_scope_collides_with_a_literal_lease_file
 designated_repro_test: null
 acceptance:
 - text: The PERF004 identity resolves and no longer appears in an unscoped frob check
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions::test_glob_scope_collides_with_a_literal_lease_file
+  - tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions::test_glob_scope_collides_with_a_literal_lease_file
 threat: null
 component: null
 anchor: false

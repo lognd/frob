@@ -41,11 +41,11 @@ scope_changes:
   actor: logan
   at: '2026-08-22'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestOwnDocstringHasNoMalformedDirective::test_no_malformed_directives_in_this_file
+- tests/unit/coordinator_suite/test_fleet_report.py::TestOwnDocstringHasNoMalformedDirective::test_no_malformed_directives_in_this_file
 - tests/unit/graph/test_dsl_mention_escape.py::TestDocstringMentionEscape::test_unescaped_docstring_prose_is_malformed
 - tests/unit/graph/test_dsl_mention_escape.py::TestDocstringMentionEscape::test_escaped_docstring_prose_produces_no_malformed_or_edge
 - tests/unit/graph/test_dsl_mention_escape.py::TestDocstringMentionEscape::test_real_directive_inside_a_docstring_still_parses
-designated_repro_test: tests/unit/test_coordinator_scripts.py::TestOwnDocstringHasNoMalformedDirective::test_no_malformed_directives_in_this_file
+designated_repro_test: tests/unit/coordinator_suite/test_fleet_report.py::TestOwnDocstringHasNoMalformedDirective::test_no_malformed_directives_in_this_file
 threat: null
 component: null
 anchor: false

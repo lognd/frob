@@ -103,9 +103,9 @@ scope_changes:
   at: '2026-08-16'
 evidence:
 - tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_land_commit_is_derivable_with_no_follow_up_commit
-- tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit
+- tests/unit/coordinator_suite/test_verify_lands.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit
 - tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id
-- tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_never_landed_ticket_id_refused_distinguishably_from_a_typo_sha
+- tests/unit/coordinator_suite/test_verify_lands.py::TestVerifyLandsMain::test_never_landed_ticket_id_refused_distinguishably_from_a_typo_sha
 designated_repro_test: tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit
 acceptance:
 - text: Landing a ticket persists the resulting merge_commit as a structured field
@@ -116,16 +116,16 @@ acceptance:
     argument MUST STILL WORK (must-still-pass control)
   evidence:
   - tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_land_commit_is_derivable_with_no_follow_up_commit
-  - tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit
+  - tests/unit/coordinator_suite/test_verify_lands.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit
 - text: A --plan land (no ticket id in the commit subject) is resolvable by ticket
     id -- the case a log grep cannot reach
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit
+  - tests/unit/coordinator_suite/test_verify_lands.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit
   - tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id
 - text: A never-landed ticket id is refused distinguishably from a typo'd SHA
   evidence:
   - tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id
-  - tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_never_landed_ticket_id_refused_distinguishably_from_a_typo_sha
+  - tests/unit/coordinator_suite/test_verify_lands.py::TestVerifyLandsMain::test_never_landed_ticket_id_refused_distinguishably_from_a_typo_sha
 evidence_changes:
 - old_node: tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit
   new_node: tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_land_commit_is_derivable_with_no_follow_up_commit

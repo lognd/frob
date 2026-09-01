@@ -34,10 +34,10 @@ scope_changes:
   actor: logan
   at: '2026-08-11'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestPrintTicketReadiness::test_prints_dispatchable_true
-- tests/unit/test_coordinator_scripts.py::TestPrintTicketReadiness::test_prints_lease_scope_divergence_and_sibling_commits
-- tests/unit/test_coordinator_scripts.py::TestPrintFleetReport::test_prints_all_four_sections
-- tests/unit/test_coordinator_scripts.py::TestFleetStatusMain::test_ticket_readiness_prints_before_the_general_report
+- tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketReadiness::test_prints_dispatchable_true
+- tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketReadiness::test_prints_lease_scope_divergence_and_sibling_commits
+- tests/unit/coordinator_suite/test_fleet_report.py::TestPrintFleetReport::test_prints_all_four_sections
+- tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMain::test_ticket_readiness_prints_before_the_general_report
 designated_repro_test: null
 threat: null
 component: null

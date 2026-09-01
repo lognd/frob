@@ -30,10 +30,10 @@ body_changes:
   old_length: 552
   new_length: 996
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid::test_finds_the_true_holder
-- tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid::test_ignores_a_lock_on_a_different_inode
-- tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid::test_unreadable_proc_locks_is_indeterminate
-- tests/unit/test_coordinator_scripts.py::TestTrueFlockHolderPid::test_missing_lock_file_is_true_none
+- tests/unit/coordinator_suite/test_fleet_land.py::TestTrueFlockHolderPid::test_finds_the_true_holder
+- tests/unit/coordinator_suite/test_fleet_land.py::TestTrueFlockHolderPid::test_ignores_a_lock_on_a_different_inode
+- tests/unit/coordinator_suite/test_fleet_land.py::TestTrueFlockHolderPid::test_unreadable_proc_locks_is_indeterminate
+- tests/unit/coordinator_suite/test_fleet_land.py::TestTrueFlockHolderPid::test_missing_lock_file_is_true_none
 designated_repro_test: null
 threat: null
 component: null

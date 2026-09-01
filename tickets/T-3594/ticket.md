@@ -2,7 +2,7 @@
 id: T-3594
 title: Split tests/unit/test_coordinator_scripts.py (5935 lines) into a per-gate-family
   package, reusing T-3586's recipe
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-31'
@@ -23,6 +23,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestResolveRepoRoot::test_positive_control_matches_primary_checkout
+- tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows::test_parses_matching_rows_and_skips_others
+- tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness::test_dispatchable_when_no_lease_no_commits_no_divergence
+- tests/unit/coordinator_suite/test_check_summary.py::TestLoadReport::test_reads_path
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestHostLoad::test_reads_loadavg_and_mem_available
+- tests/unit/coordinator_suite/test_verify_lands.py::TestResolve::test_resolves_full_sha
+- tests/unit/coordinator_suite/test_wait_for_land_slot.py::TestWaitForSlot::test_slot_already_free_returns_immediately
 designated_repro_test: null
 threat: null
 component: null

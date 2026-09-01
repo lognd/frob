@@ -77,14 +77,14 @@ scope_changes:
   actor: logan
   at: '2026-08-11'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestQuarantineState::test_reports_raised_with_undisposed_count
-- tests/unit/test_coordinator_scripts.py::TestQuarantineState::test_reports_clear_when_store_says_cleared
-- tests/unit/test_coordinator_scripts.py::TestQuarantineState::test_reports_clear_when_no_file
-- tests/unit/test_coordinator_scripts.py::TestQuarantineState::test_unreadable_store_is_unknown_never_clear
-- tests/unit/test_coordinator_scripts.py::TestQuarantineState::test_non_dict_record_is_unknown
-- tests/unit/test_coordinator_scripts.py::TestFleetStatusMainQuarantine::test_prints_raised_with_undisposed_count_and_consequence
-- tests/unit/test_coordinator_scripts.py::TestFleetStatusMainQuarantine::test_prints_clear
-- tests/unit/test_coordinator_scripts.py::TestFleetStatusMainQuarantine::test_prints_unknown_as_unsafe
+- tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState::test_reports_raised_with_undisposed_count
+- tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState::test_reports_clear_when_store_says_cleared
+- tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState::test_reports_clear_when_no_file
+- tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState::test_unreadable_store_is_unknown_never_clear
+- tests/unit/coordinator_suite/test_fleet_report.py::TestQuarantineState::test_non_dict_record_is_unknown
+- tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainQuarantine::test_prints_raised_with_undisposed_count_and_consequence
+- tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainQuarantine::test_prints_clear
+- tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainQuarantine::test_prints_unknown_as_unsafe
 - tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings::test_notice_names_undisposed_count_and_dispose_command
 - tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary::test_no_quarantine_ever_raised_is_unknown_not_a_crash
 - tests/unit/test_land_cmd_quarantine.py::TestQuarantineUndisposedSummary::test_corrupt_store_is_unknown

@@ -38,7 +38,7 @@ scope_changes:
   at: '2026-08-10'
 evidence:
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_agent_context_root_write_refused_without_frob_agent
-- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_dirty_repo
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt::test_dirty_repo
 designated_repro_test: tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_agent_context_root_write_refused_without_frob_agent
 acceptance:
 - text: given a shell with FROB_AGENT unset (as every dispatched agent has), when
@@ -50,7 +50,7 @@ acceptance:
 - text: given the fleet is running, when scripts/fleet_status.py probes ROOT, then
     a dirty root reports the offending paths rather than a bare dirty/clean verdict
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestRootDirt::test_dirty_repo
+  - tests/unit/coordinator_suite/test_fleet_worktrees.py::TestRootDirt::test_dirty_repo
 acceptance_amendments:
 - op: remove
   index: 1

@@ -34,10 +34,10 @@ scope_changes:
   actor: logan
   at: '2026-08-11'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket::test_ledger_only_churn_is_not_reported
-- tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket::test_empty_scope_globs_never_reports
-- tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket::test_finds_a_branch_with_unlanded_commits
-- tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket::test_empty_when_nothing_touches_it
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket::test_ledger_only_churn_is_not_reported
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket::test_empty_scope_globs_never_reports
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket::test_finds_a_branch_with_unlanded_commits
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket::test_empty_when_nothing_touches_it
 designated_repro_test: null
 threat: null
 component: null

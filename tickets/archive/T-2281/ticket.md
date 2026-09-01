@@ -37,8 +37,8 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions::test_land_in_progress_ticket_with_no_lease_still_collides
-designated_repro_test: tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions::test_land_in_progress_ticket_with_no_lease_still_collides
+- tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions::test_land_in_progress_ticket_with_no_lease_still_collides
+designated_repro_test: tests/unit/coordinator_suite/test_fleet_report.py::TestScopeLeaseCollisions::test_land_in_progress_ticket_with_no_lease_still_collides
 threat: null
 component: null
 anchor: false

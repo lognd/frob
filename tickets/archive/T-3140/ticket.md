@@ -93,7 +93,7 @@ Each of the 8 below, with what was actually observed:
    dest triggered it and whether _config_external.py genuinely drifted or the
    test fixture is stale.
 
-7. tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
+7. tests/unit/coordinator_suite/test_fleet_worktrees.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
    Expected a live worktree with an unlanded commit (no lease file) to
    resolve via fallback scan with leaked=False/worktree='t-2583'; got
    leaked=True/worktree=None instead -- the fallback scan this test exists to

@@ -56,12 +56,12 @@ scope_changes:
   actor: logan
   at: '2026-08-16'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_splits_by_tier_under_distinct_action_headings
-- tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_runs_last_ticket_gets_its_own_deferred_bucket_not_needs_dispatch
-- tests/unit/test_coordinator_scripts.py::TestRottingTickets::test_reads_runs_last_as_a_structured_field_not_from_title
+- tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot::test_splits_by_tier_under_distinct_action_headings
+- tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot::test_runs_last_ticket_gets_its_own_deferred_bucket_not_needs_dispatch
+- tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets::test_reads_runs_last_as_a_structured_field_not_from_title
 - tests/test_tickets_priority.py::TestTick004QueueRot::test_stale_critical_ticket_flags
 - tests/test_tickets_priority.py::TestTick004QueueRot::test_stale_runs_last_ticket_gets_a_distinct_message_not_work_it
-designated_repro_test: tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_runs_last_ticket_gets_its_own_deferred_bucket_not_needs_dispatch
+designated_repro_test: tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot::test_runs_last_ticket_gets_its_own_deferred_bucket_not_needs_dispatch
 acceptance:
 - text: 'Reproduced live: T-1614''s title is literally ''RUNS LAST: audit every frob:waive
     for cop-outs, after all other work is complete''. I ran ''frob ticket runs-last
@@ -72,14 +72,14 @@ acceptance:
     was cleared. So the report recommends dispatching a ticket the tool will reject.
     This test MUST fail against current main.'
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_runs_last_ticket_gets_its_own_deferred_bucket_not_needs_dispatch
+  - tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot::test_runs_last_ticket_gets_its_own_deferred_bucket_not_needs_dispatch
 - text: 'Read runs_last from the ledger frontmatter the report ALREADY parses (_parse_ticket_ledger_file)
     and route those tickets to a third bucket naming the real action -- they are neither
     dispatchable nor decomposable, they are deliberately deferred. Do NOT drop them
     from the report: a runs_last ticket aging past threshold is still real information,
     and T-1614 at 11 days is genuinely waiting on a queue that is not draining.'
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestRottingTickets::test_reads_runs_last_as_a_structured_field_not_from_title
+  - tests/unit/coordinator_suite/test_fleet_report.py::TestRottingTickets::test_reads_runs_last_as_a_structured_field_not_from_title
 - text: 'Audit the same omission in TICK004 itself: src/frob/gates/_tickets_gate.py
     contains ZERO references to runs_last, so the gate rot-alarms a ticket another
     subsystem structurally forbids anyone from starting. Two subsystems in direct

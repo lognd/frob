@@ -80,7 +80,7 @@ evidence:
 - tests/unit/test_land_record_commit.py::TestDeriveLandCommitByGrep::test_returns_none_when_no_matching_commit_exists
 - tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_land_commit_is_derivable_with_no_follow_up_commit
 - tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id
-- tests/unit/test_coordinator_scripts.py::TestLoadLandCommit::test_returns_land_commit_for_a_landed_ticket
+- tests/unit/coordinator_suite/test_verify_lands.py::TestLoadLandCommit::test_returns_land_commit_for_a_landed_ticket
 designated_repro_test: null
 threat: null
 component: null

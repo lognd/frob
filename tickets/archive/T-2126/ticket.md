@@ -23,11 +23,11 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestVerifyQueueState::test_reports_depth_and_oldest_age
-- tests/unit/test_coordinator_scripts.py::TestVerifyQueueState::test_zero_depth_when_no_file
-- tests/unit/test_coordinator_scripts.py::TestVerifyQueueState::test_unreadable_queue_is_unknown_never_zero
-- tests/unit/test_coordinator_scripts.py::TestFleetStatusMainVerifyQueue::test_prints_depth_and_age_when_nonempty
-- tests/unit/test_coordinator_scripts.py::TestFleetStatusMainVerifyQueue::test_prints_empty_when_zero_depth
+- tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState::test_reports_depth_and_oldest_age
+- tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState::test_zero_depth_when_no_file
+- tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState::test_unreadable_queue_is_unknown_never_zero
+- tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainVerifyQueue::test_prints_depth_and_age_when_nonempty
+- tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMainVerifyQueue::test_prints_empty_when_zero_depth
 designated_repro_test: null
 threat: null
 component: null

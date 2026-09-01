@@ -24,7 +24,7 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCountAgreesWithReap::test_old_no_ancestor_forkserver_agrees
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestOrphanedForkserverCountAgreesWithReap::test_old_no_ancestor_forkserver_agrees
 designated_repro_test: null
 threat: null
 component: null

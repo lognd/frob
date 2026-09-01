@@ -137,17 +137,17 @@ from fleet_status import (  # noqa: E402
 # frob:doc docs/guides/coordinator-scripts.md#probe_lands_in_flight
 # frob:ticket T-2775
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestProbeLandsInFlight.test_reads_a_genuine_c\
-# ount
+# tests/unit/coordinator_suite/test_verify_lands.py::TestProbeLandsInFlight.test_reads_\
+# a_genuine_count
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestProbeLandsInFlight.test_nonzero_exit_is_u\
-# nmeasured
+# tests/unit/coordinator_suite/test_verify_lands.py::TestProbeLandsInFlight.test_nonzer\
+# o_exit_is_unmeasured
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestProbeLandsInFlight.test_unparseable_outpu\
-# t_is_unmeasured
+# tests/unit/coordinator_suite/test_verify_lands.py::TestProbeLandsInFlight.test_unpars\
+# eable_output_is_unmeasured
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestProbeLandsInFlight.test_probe_timeout_is_\
-# unmeasured
+# tests/unit/coordinator_suite/test_verify_lands.py::TestProbeLandsInFlight.test_probe_\
+# timeout_is_unmeasured
 def probe_lands_in_flight(command: list[str]) -> int | None:
     """Run `command` (default: `fleet_status.py` itself) and return its
     own `LANDS IN FLIGHT: N` reading, or `None` when the probe could not
@@ -207,9 +207,15 @@ def _timeout_outcome(
 
 # frob:doc docs/guides/coordinator-scripts.md#probe_unattributed_land_process
 # frob:ticket T-2807
-# frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess.test_true_when_a_row_has_no_parseable_ticket_id  # noqa: E501
-# frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess.test_false_when_every_row_has_a_ticket_id  # noqa: E501
-# frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess.test_false_when_no_rows_at_all  # noqa: E501
+# frob:tests \
+# tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess.\
+# test_true_when_a_row_has_no_parseable_ticket_id  # noqa: E501
+# frob:tests \
+# tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess.\
+# test_false_when_every_row_has_a_ticket_id  # noqa: E501
+# frob:tests \
+# tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess.\
+# test_false_when_no_rows_at_all  # noqa: E501
 def probe_unattributed_land_process(rows: list[dict] | None = None) -> bool:
     """T-2807: `True` iff at least one row `land_process_rows()` returns
     (a live process `fleet_status.py` has already argv-verified as a real
@@ -257,22 +263,26 @@ def probe_unattributed_land_process(rows: list[dict] | None = None) -> bool:
 # frob:doc docs/guides/coordinator-scripts.md#wait_for_slot
 # frob:ticket T-2775
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestWaitForSlot.test_slot_already_free_return\
-# s_immediately
+# tests/unit/coordinator_suite/test_wait_for_land_slot.py::TestWaitForSlot.test_slot_al\
+# ready_free_returns_immediately
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestWaitForSlot.test_land_in_flight_then_free\
-# _blocks_then_returns
+# tests/unit/coordinator_suite/test_wait_for_land_slot.py::TestWaitForSlot.test_land_in\
+# _flight_then_free_blocks_then_returns
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestWaitForSlot.test_always_in_flight_times_o\
-# ut
+# tests/unit/coordinator_suite/test_wait_for_land_slot.py::TestWaitForSlot.test_always_\
+# in_flight_times_out
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestWaitForSlot.test_always_unmeasurable_neve\
-# r_returns_zero
+# tests/unit/coordinator_suite/test_wait_for_land_slot.py::TestWaitForSlot.test_always_\
+# unmeasurable_never_returns_zero
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestWaitForSlot.test_measured_then_unmeasurab\
-# le_is_timeout_not_measurement_failure
-# frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestWaitForSlotUnattributedGate.test_unattributed_land_process_blocks_an_otherwise_free_slot  # noqa: E501
-# frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestWaitForSlotUnattributedGate.test_no_land_at_all_still_returns_free_promptly  # noqa: E501
+# tests/unit/coordinator_suite/test_wait_for_land_slot.py::TestWaitForSlot.test_measure\
+# d_then_unmeasurable_is_timeout_not_measurement_failure
+# frob:tests \
+# tests/unit/test_wait_for_land_slot_unattributed.py::TestWaitForSlotUnattributedGate.t\
+# est_unattributed_land_process_blocks_an_otherwise_free_slot  # noqa: E501
+# frob:tests \
+# tests/unit/test_wait_for_land_slot_unattributed.py::TestWaitForSlotUnattributedGate.t\
+# est_no_land_at_all_still_returns_free_promptly  # noqa: E501
 def wait_for_slot(
     *,
     command: list[str],
@@ -433,14 +443,14 @@ def _resolve_fleet_status_command(fleet_status_cmd: str | None) -> list[str]:
 # frob:doc docs/guides/coordinator-scripts.md#wait_for_land_slot-cli
 # frob:ticket T-2775
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestWaitForLandSlotMain.test_quiet_by_default\
-# _prints_one_summary_line
+# tests/unit/coordinator_suite/test_wait_for_land_slot.py::TestWaitForLandSlotMain.test\
+# _quiet_by_default_prints_one_summary_line
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestWaitForLandSlotMain.test_verbose_adds_per\
-# _tick_lines_to_stderr
+# tests/unit/coordinator_suite/test_wait_for_land_slot.py::TestWaitForLandSlotMain.test\
+# _verbose_adds_per_tick_lines_to_stderr
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestWaitForLandSlotMain.test_end_to_end_force\
-# d_probe_failure_via_fleet_status_cmd
+# tests/unit/coordinator_suite/test_wait_for_land_slot.py::TestWaitForLandSlotMain.test\
+# _end_to_end_forced_probe_failure_via_fleet_status_cmd
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point: parse args, run `wait_for_slot`, print exactly one
     summary line (plus per-tick lines under `--verbose`), return the exit

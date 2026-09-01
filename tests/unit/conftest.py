@@ -11,8 +11,10 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 from types import ModuleType
+from typing import Any
 
 #: Repo root, three levels up from this file (tests/unit/conftest.py ->
 #: repo root) -- the same computation `test_coverage_attribution_lock_
@@ -75,3 +77,77 @@ class _FakeCompletedProcess:
         self.stdout = stdout
         self.stderr = stderr
         self.returncode = returncode
+
+
+def _report(*, results: list[dict[str, Any]]) -> dict[str, Any]:
+    """A minimal `frob check --json`-shaped report for the given results."""
+    return {"results": results}
+
+
+def _completed(stdout: str = "", returncode: int = 0) -> subprocess.CompletedProcess:
+    """A `subprocess.CompletedProcess` stub for monkeypatching `subprocess.run`."""
+    return subprocess.CompletedProcess(
+        args=[], returncode=returncode, stdout=stdout, stderr=""
+    )
+
+
+def _write_ticket(
+    tickets_dir: Path,
+    ticket_id: str,
+    *,
+    state: str = "queued",
+    priority: str = "high",
+    created: str = "2026-01-01",
+    tier: str = "ticket",
+    runs_last: bool = False,
+    parent: str | None = None,
+    blocked_by: tuple[str, ...] = (),
+) -> None:
+    """Write a minimal `tickets/<id>/ticket.md` fixture file with just the
+    frontmatter fields `_parse_ticket_ledger_file` reads. `runs_last`
+    (T-2200) is written as the same flat `key: value` line real
+    `frob ticket` output uses (`runs_last: true`/`runs_last: false`), the
+    STRUCTURED field the parser reads -- never inferred from `title`, so a
+    fixture whose title happens to say 'RUNS LAST' (mirroring T-1614's
+    real title) with `runs_last=False` must NOT be treated as deferred.
+    `parent` (T-2229), when given, is written the same way real `frob
+    ticket new --parent` output is; omitted entirely when `None` (mirrors
+    a ledger row with no `parent:` line at all, not a literal 'null').
+    `blocked_by` (T-2449), when non-empty, is written as the same `- item`
+    list-block shape real `frob ticket new --blocked-by` output uses;
+    omitted entirely when empty (mirrors a ledger row with no
+    `blocked_by:` key at all)."""
+    ticket_dir = tickets_dir / ticket_id
+    ticket_dir.mkdir(parents=True)
+    parent_line = f"parent: {parent}\n" if parent is not None else ""
+    blocked_by_block = (
+        "blocked_by:\n" + "".join(f"- {b}\n" for b in blocked_by) if blocked_by else ""
+    )
+    (ticket_dir / "ticket.md").write_text(
+        f"---\n"
+        f"id: {ticket_id}\n"
+        f"title: 'a title'\n"
+        f"state: {state}\n"
+        f"kind: feature\n"
+        f"created: '{created}'\n"
+        f"priority: {priority}\n"
+        f"tier: {tier}\n"
+        f"runs_last: {'true' if runs_last else 'false'}\n"
+        f"{parent_line}"
+        f"{blocked_by_block}"
+        f"---\n",
+        encoding="utf-8",
+    )
+
+
+# ---------------------------------------------------------------------------
+# scripts/ module loads shared across tests.unit.coordinator_suite families
+# (T-3594 split: check_summary/fleet_status/verify_lands/wait_for_land_slot
+# are each used by more than one destination family, so they live here
+# rather than in any single per-family module).
+# ---------------------------------------------------------------------------
+
+check_summary = _load_script("check_summary")
+fleet_status = _load_script("fleet_status")
+verify_lands = _load_script("verify_lands")
+wait_for_land_slot = _load_script("wait_for_land_slot")

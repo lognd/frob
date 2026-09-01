@@ -38,9 +38,9 @@ scope_changes:
   actor: logan
   at: '2026-08-18'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_blocked_story_with_terminal_child_prints_under_blocked_not_needs_close
-- tests/unit/test_coordinator_scripts.py::TestLandProcessRows::test_watcher_pgrep_pattern_is_not_counted_as_a_land
-designated_repro_test: tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_blocked_story_with_terminal_child_prints_under_blocked_not_needs_close
+- tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot::test_blocked_story_with_terminal_child_prints_under_blocked_not_needs_close
+- tests/unit/coordinator_suite/test_fleet_land.py::TestLandProcessRows::test_watcher_pgrep_pattern_is_not_counted_as_a_land
+designated_repro_test: tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot::test_blocked_story_with_terminal_child_prints_under_blocked_not_needs_close
 threat: null
 component: null
 anchor: false

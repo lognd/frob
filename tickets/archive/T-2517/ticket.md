@@ -36,15 +36,15 @@ scope_changes:
   actor: logan
   at: '2026-08-18'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount::test_counts_old_forkserver_when_no_checks_running
-- tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount::test_ignores_young_forkserver
-- tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount::test_never_counts_anything_while_a_check_is_running
-- tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount::test_unknown_concurrent_checks_never_counts_anything
-- tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount::test_missing_proc_returns_none
-- tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb::test_sums_vmswap_across_every_forkserver
-- tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb::test_missing_status_file_degrades_that_entry_to_zero_not_a_crash
-- tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb::test_missing_proc_returns_none
-- tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_prints_no_live_holder_as_normal_resting_state_not_stale
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount::test_counts_old_forkserver_when_no_checks_running
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount::test_ignores_young_forkserver
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount::test_never_counts_anything_while_a_check_is_running
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount::test_unknown_concurrent_checks_never_counts_anything
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestStaleForkserverCount::test_missing_proc_returns_none
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb::test_sums_vmswap_across_every_forkserver
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb::test_missing_status_file_degrades_that_entry_to_zero_not_a_crash
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestForkserverSwapHeldKb::test_missing_proc_returns_none
+- tests/unit/coordinator_suite/test_fleet_land.py::TestPrintLandStatus::test_prints_no_live_holder_as_normal_resting_state_not_stale
 designated_repro_test: null
 threat: null
 component: null

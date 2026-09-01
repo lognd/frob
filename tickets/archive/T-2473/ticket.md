@@ -74,9 +74,9 @@ evidence:
 - tests/unit/test_process_reap.py::TestCountRunningChecks::test_excludes_self
 - tests/unit/test_process_reap.py::TestCountRunningChecks::test_ignores_non_check_processes
 - tests/unit/test_process_reap.py::TestCountRunningChecks::test_missing_proc_returns_none
-- tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_counts_check_processes
-- tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_ignores_non_check_processes
-- tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_missing_proc_returns_none
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_counts_check_processes
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_ignores_non_check_processes
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_missing_proc_returns_none
 - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_no_other_checks_logs_nothing
 - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_other_checks_logs_info_below_four
 - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_four_or_more_checks_logs_warning
@@ -91,9 +91,9 @@ acceptance:
   - tests/unit/test_process_reap.py::TestCountRunningChecks::test_excludes_self
   - tests/unit/test_process_reap.py::TestCountRunningChecks::test_ignores_non_check_processes
   - tests/unit/test_process_reap.py::TestCountRunningChecks::test_missing_proc_returns_none
-  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_counts_check_processes
-  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_ignores_non_check_processes
-  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_missing_proc_returns_none
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_counts_check_processes
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_ignores_non_check_processes
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_missing_proc_returns_none
   - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_no_other_checks_logs_nothing
   - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_other_checks_logs_info_below_four
   - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_four_or_more_checks_logs_warning
@@ -105,9 +105,9 @@ acceptance:
   - tests/unit/test_process_reap.py::TestCountRunningChecks::test_excludes_self
   - tests/unit/test_process_reap.py::TestCountRunningChecks::test_ignores_non_check_processes
   - tests/unit/test_process_reap.py::TestCountRunningChecks::test_missing_proc_returns_none
-  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_counts_check_processes
-  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_ignores_non_check_processes
-  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_missing_proc_returns_none
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_counts_check_processes
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_ignores_non_check_processes
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_missing_proc_returns_none
   - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_no_other_checks_logs_nothing
   - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_other_checks_logs_info_below_four
   - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_four_or_more_checks_logs_warning
@@ -119,9 +119,9 @@ acceptance:
   - tests/unit/test_process_reap.py::TestCountRunningChecks::test_excludes_self
   - tests/unit/test_process_reap.py::TestCountRunningChecks::test_ignores_non_check_processes
   - tests/unit/test_process_reap.py::TestCountRunningChecks::test_missing_proc_returns_none
-  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_counts_check_processes
-  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_ignores_non_check_processes
-  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_missing_proc_returns_none
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_counts_check_processes
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_ignores_non_check_processes
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_missing_proc_returns_none
   - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_no_other_checks_logs_nothing
   - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_other_checks_logs_info_below_four
   - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_four_or_more_checks_logs_warning
@@ -134,9 +134,9 @@ acceptance:
   - tests/unit/test_process_reap.py::TestCountRunningChecks::test_excludes_self
   - tests/unit/test_process_reap.py::TestCountRunningChecks::test_ignores_non_check_processes
   - tests/unit/test_process_reap.py::TestCountRunningChecks::test_missing_proc_returns_none
-  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_counts_check_processes
-  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_ignores_non_check_processes
-  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_missing_proc_returns_none
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_counts_check_processes
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_ignores_non_check_processes
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestConcurrentCheckCount::test_missing_proc_returns_none
   - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_no_other_checks_logs_nothing
   - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_other_checks_logs_info_below_four
   - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_four_or_more_checks_logs_warning

@@ -41,12 +41,12 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_stranded_new_content_not_on_main
-- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_stale_when_content_fully_landed_despite_many_commits
-- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_stale_when_only_behind_main
-- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_active_ticket_never_stranded_or_stale
-- tests/unit/test_coordinator_scripts.py::TestWorktreeTicketId::test_ticket_named_worktree_resolves
-- tests/unit/test_coordinator_scripts.py::TestWorktreeTicketId::test_ad_hoc_named_worktree_resolves_to_none
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeContentClassification::test_stranded_new_content_not_on_main
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeContentClassification::test_stale_when_content_fully_landed_despite_many_commits
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeContentClassification::test_stale_when_only_behind_main
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeContentClassification::test_active_ticket_never_stranded_or_stale
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeTicketId::test_ticket_named_worktree_resolves
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreeTicketId::test_ad_hoc_named_worktree_resolves_to_none
 designated_repro_test: null
 threat: null
 component: null

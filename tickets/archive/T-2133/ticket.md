@@ -37,15 +37,15 @@ scope_changes:
   actor: logan
   at: '2026-08-11'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestTicketReadiness::test_dispatchable_when_no_lease_no_commits_no_divergence
-- tests/unit/test_coordinator_scripts.py::TestTicketReadiness::test_not_dispatchable_when_a_live_lease_exists
-- tests/unit/test_coordinator_scripts.py::TestTicketReadiness::test_not_dispatchable_when_another_branch_already_has_commits
-- tests/unit/test_coordinator_scripts.py::TestTicketReadiness::test_flags_scope_divergence_between_the_live_lease_and_main
-- tests/unit/test_coordinator_scripts.py::TestFleetStatusMain::test_ticket_flag_exits_one_when_not_dispatchable
-- tests/unit/test_coordinator_scripts.py::TestFleetStatusMain::test_ticket_flag_exits_zero_when_dispatchable
-- tests/unit/test_coordinator_scripts.py::TestTicketLease::test_reads_a_live_lease
-- tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain::test_reads_state_and_scope
-- tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket::test_finds_a_branch_with_unlanded_commits
+- tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness::test_dispatchable_when_no_lease_no_commits_no_divergence
+- tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness::test_not_dispatchable_when_a_live_lease_exists
+- tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness::test_not_dispatchable_when_another_branch_already_has_commits
+- tests/unit/coordinator_suite/test_fleet_report.py::TestTicketReadiness::test_flags_scope_divergence_between_the_live_lease_and_main
+- tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMain::test_ticket_flag_exits_one_when_not_dispatchable
+- tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusMain::test_ticket_flag_exits_zero_when_dispatchable
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketLease::test_reads_a_live_lease
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestTicketFrontmatterOnMain::test_reads_state_and_scope
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestWorktreesTouchingTicket::test_finds_a_branch_with_unlanded_commits
 designated_repro_test: null
 threat: null
 component: null

@@ -328,7 +328,7 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestVerifyQueueState::test_reports_depth_and_oldest_age
+- tests/unit/coordinator_suite/test_fleet_report.py::TestVerifyQueueState::test_reports_depth_and_oldest_age
 - tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_refuses_when_not_raised
 - tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_flags_id_with_genuinely_different_content_on_both_sides
 - tests/system/test_fleet_status_ticket_readiness_arch001.py::TestFleetStatusTicketReadinessArch001::test_ticket_readiness_is_not_an_arch001_finding

@@ -150,7 +150,7 @@ class TestDocstringMentionEscape:
     own fixtures never exercised. `frob:quote(...)` is the same one
     escape either way; these are the docstring-carrier positive controls
     (both directions) T-2854's own investigation measured directly
-    against this repo's real tests/unit/test_coordinator_scripts.py
+    against this repo's real tests/unit/coordinator_suite/
     before applying its fix there."""
 
     def test_unescaped_docstring_prose_is_malformed(self, tmp_path: Path) -> None:
@@ -178,8 +178,8 @@ class TestDocstringMentionEscape:
     ) -> None:
         # frob:tests src/frob/graph/dsl.py::parse_directives
         # Same docstring, with the mention wrapped -- T-2854's actual fix
-        # shape, applied to tests/unit/test_coordinator_scripts.py's own
-        # TestFleetStatusLarge001WaiverParses docstring.
+        # shape, applied to tests/unit/coordinator_suite/test_fleet_report.py's
+        # own TestFleetStatusLarge001WaiverParses docstring.
         src = (
             "def foo() -> None:\n"
             '    """proving the corrected, multi-line\n'

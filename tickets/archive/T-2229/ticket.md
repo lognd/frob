@@ -40,7 +40,7 @@ scope_changes:
   at: '2026-08-17'
 evidence:
 - tests/test_tickets_priority.py::TestTick004QueueRot::test_decomposed_epic_gets_a_distinct_message_not_work_it
-- tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_decomposed_epic_prints_under_its_own_heading_not_needs_decomposition
+- tests/unit/coordinator_suite/test_fleet_report.py::TestPrintTicketRot::test_decomposed_epic_prints_under_its_own_heading_not_needs_decomposition
 designated_repro_test: tests/test_tickets_priority.py::TestTick004QueueRot::test_decomposed_epic_gets_a_distinct_message_not_work_it
 threat: null
 component: null

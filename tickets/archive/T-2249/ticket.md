@@ -37,28 +37,28 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
-designated_repro_test: tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
+- tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
+designated_repro_test: tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
 acceptance:
 - text: 'With swap in use, the report surfaces it and the concurrency guidance reflects
     the pressure (fails today: swap never read, guidance is a static string)'
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
 - text: 'MUST-STILL-PASS: on a machine with SwapTotal 0, no false pressure claim and
     no crash (division by zero total)'
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
 - text: Existing LOAD/MEM figures reported unchanged -- this adds a signal, does not
     replace them
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
 - text: Reads /proc/meminfo directly, consistent with existing MemAvailable handling;
     no subprocess, no new dependency
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
 - text: State the measured basis for any threshold chosen
   evidence:
-  - tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
+  - tests/unit/coordinator_suite/test_fleet_host_load.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
 threat: null
 component: null
 anchor: false

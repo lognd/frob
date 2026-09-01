@@ -34,9 +34,9 @@ scope_changes:
   actor: logan
   at: '2026-08-20'
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestResolveRepoRoot::test_positive_control_matches_primary_checkout
-- tests/unit/test_coordinator_scripts.py::TestResolveRepoRoot::test_falls_back_when_not_a_git_checkout
-designated_repro_test: tests/unit/test_coordinator_scripts.py::TestResolveRepoRoot::test_positive_control_matches_primary_checkout
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestResolveRepoRoot::test_positive_control_matches_primary_checkout
+- tests/unit/coordinator_suite/test_fleet_worktrees.py::TestResolveRepoRoot::test_falls_back_when_not_a_git_checkout
+designated_repro_test: tests/unit/coordinator_suite/test_fleet_worktrees.py::TestResolveRepoRoot::test_positive_control_matches_primary_checkout
 threat: null
 component: null
 anchor: false

@@ -25,7 +25,7 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_coordinator_scripts.py::TestFleetStatusLarge001WaiverParses::test_waiver_still_suppresses_large001
+- tests/unit/coordinator_suite/test_fleet_report.py::TestFleetStatusLarge001WaiverParses::test_waiver_still_suppresses_large001
 designated_repro_test: null
 threat: null
 component: null
