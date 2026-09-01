@@ -2,7 +2,7 @@
 id: T-3596
 title: 'frob refactor move/split: no import carry-forward, no caller-side bare-name
   repoint'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-08-31'
@@ -16,25 +16,10 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/refactor/**
-- tests/test_refactor.py
-- docs/commands/refactor.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-scope_changes:
-- op: add
-  glob: tests/test_refactor.py
-  reason: regression tests + doc coverage for the T-3596 gap fixes need to be in scope
-    for COV/SCOPE gate closure
-  actor: logan
-  at: '2026-09-01'
-- op: add
-  glob: docs/commands/refactor.md
-  reason: regression tests + doc coverage for the T-3596 gap fixes need to be in scope
-    for COV/SCOPE gate closure
-  actor: logan
-  at: '2026-09-01'
 body_changes:
 - mode: append
   reason: append T-3628's discovered tool gaps (module-level variable dependency not
@@ -50,6 +35,17 @@ body_changes:
   at: '2026-09-01'
   old_length: 6426
   new_length: 9532
+evidence:
+- tests/test_refactor.py::TestGapRegressions::test_gap1_move_carries_forward_default_arg_import
+- tests/test_refactor.py::TestGapRegressions::test_gap2_move_repoints_same_module_bare_name_reference
+- tests/test_refactor.py::TestGapRegressions::test_gap3_split_carries_forward_module_level_free_variable
+- tests/test_refactor.py::TestGapRegressions::test_gap4_split_preserves_decorator_and_no_self_import
+- tests/test_refactor.py::TestVerifyStructural::test_no_undefined_names_catches_free_variable
+- tests/test_refactor.py::TestVerifyStructural::test_no_undefined_names_passes_clean_module
+- tests/test_refactor.py::TestVerifyStructural::test_no_self_import_catches_self_reference
+- tests/test_refactor.py::TestVerifyStructural::test_no_self_import_passes_clean_module
+- tests/test_refactor.py::TestVerifyStructural::test_decorators_preserved_catches_dropped_decorator
+- tests/test_refactor.py::TestVerifyStructural::test_decorators_preserved_passes_when_intact
 designated_repro_test: null
 threat: null
 component: null

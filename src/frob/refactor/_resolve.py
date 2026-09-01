@@ -152,19 +152,38 @@ def resolve_symbol(
         return Err(RefactorError.TargetNotFound)
     node, is_class = found
     end_line = node.end_lineno if node.end_lineno is not None else node.lineno
+    # T-3596 gap 4: a decorated def/class's own `node.lineno` is the
+    # `def`/`class` KEYWORD line, never its `@decorator` line(s) -- `ast`
+    # deliberately gives each decorator its own `lineno` in `decorator_
+    # list`. Using `node.lineno` bare as the move span's start silently
+    # left every decorator behind at the SOURCE file (a `move`/`split`
+    # reporting `success=True` while dropping `@contextmanager` etc. from
+    # the moved symbol entirely -- T-3628's `derived_state_lock` repro).
+    # Start the span at the FIRST decorator's own line when any exist, so
+    # every downstream span consumer (`build_move_ops`, `extend_span_for_
+    # attached_directives`, `needed_import_ops_for_symbols`) already sees
+    # the decorators as part of the symbol's own text.
+    decorator_list = getattr(node, "decorator_list", ())
+    start_line = node.lineno
+    decorator_names: tuple[str, ...] = ()
+    if decorator_list:
+        start_line = min(d.lineno for d in decorator_list)
+        decorator_names = tuple(ast.unparse(d) for d in decorator_list)
     _log.info(
-        "refactor.resolve: %s resolved to %s:%d-%d",
+        "refactor.resolve: %s resolved to %s:%d-%d (decorators=%s)",
         ref.dotted,
         file_path,
-        node.lineno,
+        start_line,
         end_line,
+        decorator_names,
     )
     return Ok(
         ResolvedSymbol(
             ref=ref,
             file_path=str(file_path),
-            start_line=node.lineno,
+            start_line=start_line,
             end_line=end_line,
             is_class=is_class,
+            decorator_names=decorator_names,
         )
     )

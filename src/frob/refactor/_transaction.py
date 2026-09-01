@@ -45,7 +45,11 @@ from frob.refactor._repointer import (
     scan_registry_citations,
 )
 from frob.refactor._resolve import module_to_path, resolve_symbol
-from frob.refactor._scan import scan_references
+from frob.refactor._scan import (
+    bare_name_repoint_ops,
+    needed_import_ops_for_symbols,
+    scan_references,
+)
 
 _log = get_logger(__name__)
 
@@ -138,6 +142,7 @@ def build_plan(
     destination: SymbolRef,
     alias_conflict: str = "error",
     also_moving: frozenset[str] = frozenset(),
+    is_split: bool = False,
 ) -> Result[RefactorPlan, RefactorError]:
     """Plan phase entry point: resolve `source`, refuse on a destination
     collision, then build every move-op and reference-op before any file
@@ -148,6 +153,18 @@ def build_plan(
     Exposed standalone (not only via `run_refactor`) so a sibling pass
     (T-1199/T-1200/T-1267) can extend `reference_ops` against an
     already-built plan without re-running Resolve.
+
+    T-3596 gaps 1-3: when `destination.module` maps to a file different
+    from `source`'s own file, this also (a) carries forward the moved
+    span's needed top-level imports AND module-level free-variable
+    dependencies (`needed_import_ops_for_symbols`, gaps 1+3 -- previously
+    only `_split.py` called this, `move` got neither) and (b) repoints
+    any SAME-FILE bare-name reference to the moved symbol left behind in
+    `source`'s own file (`bare_name_repoint_ops`, gap 2). `is_split=True`
+    skips (b): `run_split`'s own re-export shim already re-imports every
+    moved name back into the source module's namespace, so a second,
+    independently-computed repoint import would just be a redundant
+    duplicate op targeting the same append span.
     """
     resolved_result = resolve_symbol(repo_root, source)
     if resolved_result.is_err:
@@ -176,6 +193,34 @@ def build_plan(
         destination.qualname.split(".")[-1],
         source.qualname.split(".")[-1],
     )
+
+    # T-3596 gaps 1-3: only meaningful for an actual cross-FILE move --
+    # an in-place rename (same file) needs neither an import carried
+    # forward (the name is already in scope) nor a bare-name repoint
+    # (nothing left the file).
+    old_leaf = source.qualname.split(".")[-1]
+    new_leaf = destination.qualname.split(".")[-1]
+    dest_file_path = module_to_path(repo_root, destination.module)
+    move_span = [(move_start, resolved.end_line)]
+    carry_forward_ops: list[RewriteOp] = []
+    repoint_ops: list[RewriteOp] = []
+    if str(dest_file_path) != resolved.file_path:
+        moving_names = frozenset({old_leaf}) | also_moving
+        carry_forward_ops = needed_import_ops_for_symbols(
+            Path(resolved.file_path),
+            dest_file_path,
+            move_span,
+            source.module,
+            moving_names,
+        )
+        if not is_split:
+            repoint_ops = bare_name_repoint_ops(
+                Path(resolved.file_path),
+                move_span,
+                {old_leaf: new_leaf},
+                destination.module,
+            )
+
     reference_ops, aliases, unresolved = scan_references(
         repo_root,
         resolved,
@@ -224,11 +269,32 @@ def build_plan(
     reference_ops = reference_ops + collision_ops
     aliases = list(aliases) + ([collision_alias] if collision_alias is not None else [])
 
+    # T-3596 gaps 1-3: the bare-name repoint lands in `source`'s own
+    # file, folded into `reference_ops` same as every other reference
+    # rewrite.
+    reference_ops = reference_ops + repoint_ops
+
+    # T-3596 gaps 1+3: `carry_forward_ops` MUST land in `dest_file_path`
+    # BEFORE `append_op`'s own append of the moved symbol's body --
+    # `_apply_ops_to_file` writes every append-kind op (`start_line=-1`)
+    # targeting one file in LIST order, so a needed-import op folded into
+    # `reference_ops` (which always comes AFTER `move_ops` in `plan.
+    # all_ops`) would land physically BELOW the class/function it is
+    # meant to satisfy -- syntactically valid (a module-level statement
+    # can follow a class def) but semantically useless: the class body
+    # already evaluated its base-class expression by the time that
+    # import line runs, so the `NameError` this fix exists to prevent
+    # still fires. Folding it into `move_ops` INSTEAD (between `delete_
+    # op` and `append_op`) keeps `move_ops` a variable-length tuple only
+    # when a cross-file move actually needed a carry-forward import --
+    # `TestBuildPlan.test_plan_includes_move_and_reference_ops`'s
+    # same-file rename case, which never populates `carry_forward_ops`,
+    # keeps its existing `len(plan.move_ops) == 2` contract unchanged.
     plan = RefactorPlan(
         kind=kind,
         source=resolved,
         destination=destination,
-        move_ops=(delete_op, append_op),
+        move_ops=(delete_op, *carry_forward_ops, append_op),
         reference_ops=tuple(reference_ops),
         aliases=tuple(aliases),
         unresolved=tuple(unresolved),
@@ -354,13 +420,17 @@ def _run_verify(
 ) -> list[VerifyOutcome]:
     """Delegate to `_commit.run_verify_outcomes` with this plan's own
     touched-files set (T-2990: the three Verify-phase post-conditions
-    are kind-agnostic and now shared with `_module_transaction.py`)."""
+    are kind-agnostic and now shared with `_module_transaction.py`).
+    T-3596: also passes `plan.source`/`plan.destination` as this
+    transaction's own moved-symbol pair so `verify_decorators_preserved`
+    (gap 4) runs for a single symbol move/rename."""
     return run_verify_outcomes(
         repo_root,
         list(plan.touched_files),
         run_pytest_collect,
         run_check_delta,
         pytest_scope_touched_only,
+        moved_symbols=[(plan.source, plan.destination)],
     )
 
 

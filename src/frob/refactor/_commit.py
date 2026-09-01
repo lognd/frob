@@ -10,17 +10,26 @@ here; see `_module_scan_python.py`'s module docstring for why).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 
 from typani import Err, Ok
 from typani.result import Result
 
 from frob.refactor._gitops import current_sha, git
-from frob.refactor._models import RefactorError, VerifyOutcome
+from frob.refactor._models import (
+    RefactorError,
+    ResolvedSymbol,
+    SymbolRef,
+    VerifyOutcome,
+)
 from frob.refactor._verify import (
     verify_check_delta,
+    verify_decorators_preserved,
     verify_import_resolution,
     verify_module_import,
+    verify_no_self_import,
+    verify_no_undefined_names,
     verify_pytest_collect,
 )
 
@@ -57,15 +66,25 @@ def run_verify_outcomes(
     run_pytest_collect: bool,
     run_check_delta: bool,
     pytest_scope_touched_only: bool,
+    moved_symbols: Sequence[tuple[ResolvedSymbol, SymbolRef]] = (),
 ) -> list[VerifyOutcome]:
     """Run the Verify-phase post-conditions common to every `frob
-    refactor` transaction: import resolution and a real-interpreter
-    module import (T-3119, both ALWAYS run, never skippable) plus
+    refactor` transaction: import resolution, a real-interpreter module
+    import (T-3119), and T-3596's structural scope-walk checks (undefined
+    names, self-imports -- all ALWAYS run, never skippable) plus
     optionally pytest collection and `frob check --delta` -- the same
     checks `_transaction.py`'s symbol pipeline runs, factored here so
     `_module_transaction.py` calls this instead of re-deriving the same
-    sequence."""
+    sequence.
+
+    `moved_symbols` (default empty) is every `(resolved, destination)`
+    pair this transaction moved -- when given, also runs T-3596's
+    decorator-preservation check (gap 4); a caller with no symbol-level
+    move info (e.g. a module-move transaction, which never moves a
+    def/class individually) simply gets no decorator check, same as
+    before this parameter existed."""
     # frob:ticket T-3119
+    # frob:ticket T-3596
     outcomes: list[VerifyOutcome] = [
         verify_import_resolution(touched_files, repo_root=repo_root),
         # T-3119: unconditional, never gated by a --skip-* flag -- a
@@ -75,7 +94,16 @@ def run_verify_outcomes(
         # check cannot catch this; see its docstring, "PARSE IS NOT
         # IMPORT").
         verify_module_import(repo_root, touched_files),
+        # T-3596: structural scope-walk checks -- catch a call-time-only
+        # NameError (gaps 1/3/4: a moved body's free variable/module
+        # global/decorator dependency) and a self-import (gap 4), neither
+        # of which `verify_module_import`'s top-level-only real import
+        # can see. Unconditional for the same reason T-3119's check is.
+        verify_no_undefined_names(touched_files),
+        verify_no_self_import(touched_files, repo_root),
     ]
+    if moved_symbols:
+        outcomes.append(verify_decorators_preserved(repo_root, list(moved_symbols)))
     if run_pytest_collect:
         targets = touched_files if pytest_scope_touched_only else None
         outcomes.append(verify_pytest_collect(repo_root, targets=targets))

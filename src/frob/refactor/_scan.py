@@ -21,7 +21,12 @@ from frob.refactor._models import AliasRecord, ResolvedSymbol, RewriteOp, Symbol
 
 _log = get_logger(__name__)
 
-__all__ = ["find_python_files", "needed_import_ops_for_symbols", "scan_references"]
+__all__ = [
+    "bare_name_repoint_ops",
+    "find_python_files",
+    "needed_import_ops_for_symbols",
+    "scan_references",
+]
 
 
 # frob:doc docs/commands/refactor.md#find_python_files
@@ -120,12 +125,69 @@ def _import_texts_for_names(
     return texts
 
 
+def _module_level_bound_names(tree: ast.Module) -> set[str]:
+    """Every name bound at `tree`'s module top level by ANY statement
+    kind -- `def`/`class`, plain/annotated assignment, `import`/`from
+    ... import`, and (one level deep) a `try`/`except`/`else`/`finally`
+    or `if`/`else` block wrapping any of those (the `try: import msvcrt
+    \\nexcept ImportError: msvcrt = None` platform-fallback shape T-3596
+    gap 3 repro'd against `_lock.py`'s own `msvcrt` global). T-3122's
+    `_top_level_import_map` only knows about `Import`/`ImportFrom`
+    nodes; this is the wider set `needed_import_ops_for_symbols` needs to
+    tell "a moved body's free variable is some OTHER still-in-source
+    module global" apart from "a moved body's free variable is simply
+    undefined" (a real bug the mechanical carry-forward must not paper
+    over by inventing an import for it)."""
+    names: set[str] = set()
+
+    def _collect(stmts: list[ast.stmt]) -> None:
+        for node in stmts:
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    names.add(alias.asname or alias.name.split(".")[0])
+            elif isinstance(node, ast.ImportFrom):
+                for alias in node.names:
+                    if alias.name != "*":
+                        names.add(alias.asname or alias.name)
+            elif isinstance(
+                node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+            ):
+                names.add(node.name)
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        names.add(target.id)
+            elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                names.add(node.target.id)
+            elif isinstance(node, ast.Try):
+                _collect(node.body)
+                for handler in node.handlers:
+                    _collect(handler.body)
+                _collect(node.orelse)
+                _collect(node.finalbody)
+            elif isinstance(node, ast.If):
+                _collect(node.body)
+                _collect(node.orelse)
+
+    _collect(tree.body)
+    return names
+
+
 # frob:doc docs/commands/refactor.md#split-verb-t-1201
 # frob:ticket T-3122
+# frob:ticket T-3596
 # frob:tests \
 # tests/test_refactor.py::TestRunSplit.test_split_carries_forward_imports_moved_body_needs  # noqa: E501
+# frob:tests \
+# tests/test_refactor.py::TestGapRegressions.test_gap3_split_carries_forward_module_level_free_variable  # noqa: E501
+# frob:tests \
+# tests/test_refactor.py::TestGapRegressions.test_gap1_move_carries_forward_default_arg_import  # noqa: E501
 def needed_import_ops_for_symbols(
-    source_file: Path, dest_file: Path, spans: list[tuple[int, int]]
+    source_file: Path,
+    dest_file: Path,
+    spans: list[tuple[int, int]],
+    source_module: str | None = None,
+    moving_names: frozenset[str] = frozenset(),
 ) -> list[RewriteOp]:
     """T-3122's fix: `build_move_ops` relocates a symbol's own source
     TEXT, but never the subset of `source_file`'s top-level imports that
@@ -134,30 +196,74 @@ def needed_import_ops_for_symbols(
     undefined, parsing fine but raising `NameError` at real import time
     (`ast.parse` cannot see this; only a real import can).
 
+    T-3596 gap 3 widens this: a moved body can also depend on a
+    module-level NAME that is not an `import` statement at all -- a plain
+    `Name = value` global, or one populated by a `try`/`except` platform
+    shim (`_lock.py`'s `msvcrt`). Those are never "carried forward" (they
+    are still genuinely owned by `source_file`, possibly by several
+    OTHER symbols too) -- instead `dest_file` gets a synthetic `from
+    <source_module> import <name>` re-import, the same mechanism the
+    split verb's own re-export shim already uses for the opposite
+    direction. Skips any such name already in `moving_names` (this
+    chunk's OWN batch moving to `dest_file` together -- importing a name
+    from its own destination file would be the T-3628 self-import defect
+    this fix exists to prevent) and any name `source_file` itself does
+    not bind anywhere (a genuinely undefined name is not this function's
+    concern to paper over; `verify_no_undefined_names` catches that).
+    `source_module=None` (the historical call shape) disables this
+    synthetic-import half and keeps the original import-statement-only
+    carry-forward.
+
     `spans` is one `(start_line, end_line)` 1-indexed pair per symbol
     being moved out of `source_file` in this chunk (a `ResolvedSymbol`'s
-    own span). Returns at most one append `RewriteOp` (`start_line=-1`)
-    targeting `dest_file`, holding every needed import's exact source
-    text, in the source module's own declaration order, deduplicated --
-    empty if none of the moved symbols reference any of `source_file`'s
-    top-level imports."""
+    own span, including any decorator lines -- T-3596 gap 4). Returns at
+    most one append `RewriteOp` (`start_line=-1`) targeting `dest_file`,
+    holding every needed import's exact source text plus any synthetic
+    re-import line, in the source module's own declaration order,
+    deduplicated -- empty if none of the moved symbols reference any of
+    `source_file`'s top-level imports or other module globals."""
     source_lines = source_file.read_text(encoding="utf-8").splitlines()
     tree = ast.parse("\n".join(source_lines), filename=str(source_file))
     import_map = _top_level_import_map(tree, source_lines)
-    if not import_map:
-        return []
-
     needed_names = _names_needed_by_spans(tree, spans)
-    needed_texts = _import_texts_for_names(import_map, needed_names)
-    if not needed_texts:
+    needed_texts = (
+        _import_texts_for_names(import_map, needed_names) if import_map else []
+    )
+
+    synthetic_line = ""
+    if source_module is not None:
+        module_bound = _module_level_bound_names(tree)
+        synthetic_names = sorted(
+            name
+            for name in needed_names
+            if name not in import_map
+            and name in module_bound
+            and name not in moving_names
+        )
+        if synthetic_names:
+            synthetic_line = (
+                f"from {source_module} import {', '.join(synthetic_names)}"
+            )
+            _log.info(
+                "refactor.split: carrying forward module-level free "
+                "variable(s) %s into %s via synthetic re-import from %s",
+                synthetic_names,
+                dest_file,
+                source_module,
+            )
+
+    combined_texts = list(needed_texts)
+    if synthetic_line:
+        combined_texts.append(synthetic_line)
+    if not combined_texts:
         return []
 
     _log.info(
         "refactor.split: carrying forward %d import statement(s) into %s",
-        len(needed_texts),
+        len(combined_texts),
         dest_file,
     )
-    combined = "\n".join(needed_texts) + "\n\n"
+    combined = "\n".join(combined_texts) + "\n\n"
     return [
         RewriteOp(
             file_path=str(dest_file),
@@ -169,6 +275,101 @@ def needed_import_ops_for_symbols(
             f"{dest_file}",
         )
     ]
+
+
+def _names_referenced_outside_moved_spans(
+    tree: ast.Module, moved_spans: list[tuple[int, int]]
+) -> set[str]:
+    """Every `Name` id referenced anywhere in `tree`'s top-level
+    statements EXCLUDING the ones that fall inside `moved_spans` -- a
+    moved symbol's own header/body must never count as a "reference to
+    itself" when checking whether a SIBLING statement left behind still
+    bare-references it. Split out of `bare_name_repoint_ops` to keep it
+    under the ARCH001 line budget."""
+    referenced: set[str] = set()
+    for node in tree.body:
+        node_start = node.lineno
+        node_end = node.end_lineno if node.end_lineno is not None else node_start
+        if any(
+            node_start >= start and node_end <= end for start, end in moved_spans
+        ):
+            continue
+        referenced |= _names_referenced(node)
+    return referenced
+
+
+def _bare_name_repoint_op(
+    file_path: Path, hits: list[str], moved_name_map: dict[str, str], dest_module: str
+) -> RewriteOp:
+    """The single append `RewriteOp` `bare_name_repoint_ops` returns for
+    a non-empty `hits` list -- one `from <dest_module> import ...` line
+    covering every still-referenced moved name, preserving an `as`-alias
+    when the destination leaf was renamed. Split out of `bare_name_
+    repoint_ops` to keep it under the ARCH001 line budget."""
+    parts = []
+    for old in hits:
+        leaf = moved_name_map[old]
+        parts.append(f"{leaf} as {old}" if leaf != old else leaf)
+    text = f"\nfrom {dest_module} import {', '.join(parts)}  # noqa: F401 -- T-3596\n"
+    _log.info(
+        "refactor.move: %s still bare-references %s after move -- adding "
+        "caller-side repoint import from %s",
+        file_path,
+        hits,
+        dest_module,
+    )
+    return RewriteOp(
+        file_path=str(file_path),
+        start_line=-1,
+        end_line=-1,
+        old_text="",
+        new_text=text,
+        reason=(
+            f"caller-side bare-name repoint: {file_path} still "
+            f"references {hits} after move to {dest_module}"
+        ),
+    )
+
+
+# frob:doc docs/commands/refactor.md#bare-name-caller-side-repoint
+# frob:ticket T-3596
+# frob:tests \
+# tests/test_refactor.py::TestGapRegressions.test_gap2_move_repoints_same_module_bare_n\
+# ame_reference
+def bare_name_repoint_ops(
+    file_path: Path,
+    moved_spans: list[tuple[int, int]],
+    moved_name_map: dict[str, str],
+    dest_module: str,
+) -> list[RewriteOp]:
+    """T-3596 gap 2: a symbol referenced only as a BARE name (no `from
+    <old module> import <symbol>` statement to rewrite, because the
+    reference lived in the SAME file the symbol used to live in) is
+    invisible to `scan_references`, which only walks files OTHER than
+    `resolved.file_path`. After the move deletes the symbol's own
+    definition, any such sibling reference left in `file_path` becomes a
+    plain `NameError` at call time -- exactly the "verb's own docs claim
+    every call site is rewritten but a same-module one silently is not"
+    gap.
+
+    `moved_spans` is every moved symbol's own `(start_line, end_line)`
+    span in `file_path`'s CURRENT (pre-apply) text -- excluded from the
+    scan so the symbol's own definition is never mistaken for a
+    reference to itself. `moved_name_map` maps each moved symbol's OLD
+    bare name to its (possibly renamed) leaf name at `dest_module`.
+    Returns at most one append `RewriteOp` targeting `file_path` with a
+    `from <dest_module> import ...` line covering every moved name still
+    referenced elsewhere in the file, empty if none are."""
+    try:
+        tree = ast.parse(file_path.read_text(encoding="utf-8"), filename=str(file_path))
+    except (OSError, SyntaxError):
+        return []
+
+    referenced = _names_referenced_outside_moved_spans(tree, moved_spans)
+    hits = sorted(old for old in moved_name_map if old in referenced)
+    if not hits:
+        return []
+    return [_bare_name_repoint_op(file_path, hits, moved_name_map, dest_module)]
 
 
 def _enclosing_stmt_list(tree: ast.Module, node: ast.stmt) -> list[ast.stmt] | None:

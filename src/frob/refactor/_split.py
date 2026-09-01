@@ -16,6 +16,7 @@ acceptance [1]).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -37,7 +38,6 @@ from frob.refactor._models import (
     VerifyOutcome,
 )
 from frob.refactor._resolve import module_to_path
-from frob.refactor._scan import needed_import_ops_for_symbols
 from frob.refactor._transaction import build_plan
 
 _log = get_logger(__name__)
@@ -237,6 +237,7 @@ def _plan_chunk(
             destination,
             alias_conflict,
             also_moving,
+            is_split=True,
         )
         if plan_result.is_err:
             return Err(plan_result.danger_err)
@@ -246,21 +247,16 @@ def _plan_chunk(
         unresolved.extend(plan.unresolved)
         resolved_pairs.append((plan.source, destination))
 
-    # T-3122: `build_plan` (via `build_move_ops`) relocates each symbol's
-    # own source TEXT but never the subset of the source module's
-    # top-level imports that text references -- prepend the needed-import
-    # carry-forward op(s) BEFORE every symbol's own body-append op so they
-    # land first in `destination_module`, in this chunk's declared append
-    # order (`_apply_ops_to_file` appends in list order).
-    if resolved_pairs:
-        source_file = Path(resolved_pairs[0][0].file_path)
-        dest_file = module_to_path(repo_root, destination_module)
-        spans = [
-            (resolved.start_line, resolved.end_line) for resolved, _ in resolved_pairs
-        ]
-        import_ops = needed_import_ops_for_symbols(source_file, dest_file, spans)
-        all_ops = import_ops + all_ops
-
+    # T-3122/T-3596: each symbol's own `build_plan` call above already
+    # carries forward its needed imports AND module-level free-variable
+    # dependencies (gap 3) via `needed_import_ops_for_symbols`, called per
+    # symbol with `is_split=True` and this chunk's `also_moving` set so a
+    # sibling in the SAME chunk is never mistaken for a genuinely
+    # still-in-source name needing a synthetic re-import (the T-3628
+    # self-import defect this used to reproduce). A second, chunk-wide
+    # combined-span call here would just recompute the same ops a second
+    # time; `_dedupe_equivalent_import_ops` below already collapses any
+    # resulting duplicates across this chunk's per-symbol plans.
     all_ops = _dedupe_equivalent_import_ops(all_ops)
     shim_op = build_reexport_shim_op(
         repo_root, source_module, destination_module, symbols
@@ -274,6 +270,7 @@ def _run_chunk_verify(
     touched_files: list[Path],
     run_pytest_collect: bool,
     run_check_delta: bool,
+    resolved_pairs: Sequence[tuple] = (),
 ) -> list[VerifyOutcome]:
     """The same Verify-phase post-conditions `run_refactor` runs per
     single move, run once for a whole chunk's combined touched-file set;
@@ -299,6 +296,7 @@ def _run_chunk_verify(
         run_pytest_collect,
         run_check_delta,
         pytest_scope_touched_only=True,
+        moved_symbols=resolved_pairs,
     )
 
 
@@ -410,13 +408,14 @@ def _verify_or_rollback_chunk(
     pre_sha: str,
     run_pytest_collect: bool,
     run_check_delta: bool,
+    resolved_pairs: Sequence[tuple] = (),
 ) -> tuple[list[VerifyOutcome], bool, bool]:
     """Run the chunk's verify outcomes and, if any failed, reset back to
     `pre_sha` (undoing the commit). Returns `(outcomes, success,
     rolled_back)`."""
     touched_files = sorted({Path(op.file_path) for op in all_ops})
     outcomes = _run_chunk_verify(
-        repo_root, touched_files, run_pytest_collect, run_check_delta
+        repo_root, touched_files, run_pytest_collect, run_check_delta, resolved_pairs
     )
     success = all(outcome.passed for outcome in outcomes)
     rolled_back = False
@@ -474,7 +473,7 @@ def _run_chunk(
     commit_sha_val = commit_result.danger_ok or None
 
     outcomes, success, rolled_back = _verify_or_rollback_chunk(
-        repo_root, all_ops, pre_sha, run_pytest_collect, run_check_delta
+        repo_root, all_ops, pre_sha, run_pytest_collect, run_check_delta, resolved_pairs
     )
 
     return ChunkReport(

@@ -66,7 +66,12 @@ from frob.refactor._repointer import (
     scan_registry_citations,
 )
 from frob.refactor._resolve import module_to_path, resolve_symbol
-from frob.refactor._scan import find_python_files, scan_references
+from frob.refactor._scan import (
+    bare_name_repoint_ops,
+    find_python_files,
+    needed_import_ops_for_symbols,
+    scan_references,
+)
 from frob.refactor._split import (
     ChunkReport,
     SplitReport,
@@ -77,7 +82,11 @@ from frob.refactor._split import (
 from frob.refactor._transaction import build_plan, run_refactor
 from frob.refactor._verify import (
     verify_check_delta,
+    verify_decorators_preserved,
     verify_import_resolution,
+    verify_module_import,
+    verify_no_self_import,
+    verify_no_undefined_names,
     verify_pytest_collect,
 )
 
@@ -101,6 +110,7 @@ __all__ = [
     "VerifyOutcome",
     "adapter_for",
     "apply_plan",
+    "bare_name_repoint_ops",
     "build_module_plan",
     "build_plan",
     "build_reexport_shim_op",
@@ -110,6 +120,7 @@ __all__ = [
     "extend_span_for_attached_directives",
     "find_python_files",
     "module_to_path",
+    "needed_import_ops_for_symbols",
     "parse_module_operand",
     "parse_symbol_operand",
     "resolve_module",
@@ -131,6 +142,10 @@ __all__ = [
     "supported_languages",
     "validate_module_destination",
     "verify_check_delta",
+    "verify_decorators_preserved",
     "verify_import_resolution",
+    "verify_module_import",
+    "verify_no_self_import",
+    "verify_no_undefined_names",
     "verify_pytest_collect",
 ]

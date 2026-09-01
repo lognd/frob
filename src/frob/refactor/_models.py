@@ -109,6 +109,14 @@ class ResolvedSymbol(BaseModel):
     start_line: int
     end_line: int
     is_class: bool
+    # T-3596 gap 4: the exact `ast.unparse`d text of every decorator on
+    # this symbol's own def/class header, in source order -- captured at
+    # Resolve time (before any move touches the span) so a post-move
+    # Verify pass can confirm the destination's def carries the SAME
+    # decorators, symbol-for-symbol, rather than trusting that `start_
+    # line` already covering the decorator lines (see `resolve_symbol`)
+    # was itself applied correctly everywhere a `ResolvedSymbol` is built.
+    decorator_names: tuple[str, ...] = ()
 
 
 # frob:doc docs/commands/refactor.md#rewriteop

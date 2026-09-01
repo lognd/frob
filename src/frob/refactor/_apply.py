@@ -47,9 +47,25 @@ def build_move_ops(
         # header line only -- the plan's own reference_ops handle every
         # external call site; this only needs the definition's own header
         # to match its new qualname.
+        #
+        # T-3596 gap 4: `start_line` now begins at the symbol's own FIRST
+        # `@decorator` line when one exists (`resolve_symbol`), so
+        # `body_lines[0]` is no longer reliably the `def`/`class` header --
+        # renaming index 0 blindly would corrupt a decorator line instead
+        # (e.g. mangling `@contextmanager` if `old_name` happened to be a
+        # substring of it) and leave the real header still bearing the OLD
+        # name. Rename the first line that actually starts a `def `/
+        # `async def `/`class ` statement instead of assuming position 0.
         body_lines = body.splitlines()
-        if body_lines:
-            body_lines[0] = body_lines[0].replace(old_name, new_name, 1)
+        for idx, line in enumerate(body_lines):
+            stripped = line.lstrip()
+            if (
+                stripped.startswith("def ")
+                or stripped.startswith("async def ")
+                or stripped.startswith("class ")
+            ):
+                body_lines[idx] = line.replace(old_name, new_name, 1)
+                break
         body = "\n".join(body_lines)
 
     delete_op = RewriteOp(

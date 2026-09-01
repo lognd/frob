@@ -433,7 +433,11 @@ used for both the source and destination of a move/rename.
 <a id="resolvedsymbol"></a>
 <!-- frob:describes src/frob/refactor/_models.py::ResolvedSymbol -->
 **`ResolvedSymbol`**: the Resolve phase's output -- a `SymbolRef` pinned
-to a real file and exact source span.
+to a real file and exact source span. Since T-3596, `start_line` already
+includes any decorator lines (gap 4) and `decorator_names` carries each
+decorator's exact `ast.unparse`d text, captured before any move touches
+the span, so a post-move Verify pass can confirm the destination kept
+them (`verify_decorators_preserved`).
 
 <a id="rewriteop"></a>
 <!-- frob:describes src/frob/refactor/_models.py::RewriteOp -->
@@ -490,7 +494,10 @@ path is outside every known root.
 <a id="resolve_symbol"></a>
 <!-- frob:describes src/frob/refactor/_resolve.py::resolve_symbol -->
 **`resolve_symbol`**: the Resolve phase entry point -- see "Transaction
-model" above, step 1.
+model" above, step 1. Since T-3596 (gap 4), a decorated def/class's own
+span starts at its FIRST `@decorator` line rather than the bare `def`/
+`class` keyword line `ast` reports as `node.lineno` -- previously every
+decorator was silently left behind at the source file on a move/split.
 
 <a id="find_python_files"></a>
 <!-- frob:describes src/frob/refactor/_scan.py::find_python_files -->
@@ -508,10 +515,38 @@ set is folded into one rewrite pointed at the destination, instead of
 being left untouched as if `B` were a genuinely unrelated name (still the
 correct outcome, T-3105, for a co-imported name NOT in `also_moving`).
 
+<a id="bare-name-caller-side-repoint"></a>
+<!-- frob:describes src/frob/refactor/_scan.py::bare_name_repoint_ops -->
+**`bare_name_repoint_ops`** (T-3596, gap 2): a symbol referenced only as
+a BARE name (no `from <old module> import <symbol>` statement to
+rewrite, because the reference lived in the SAME file the symbol used to
+live in) is invisible to `scan_references`, which only walks files OTHER
+than the moving symbol's own source file. This scans the source file's
+OWN remaining top-level statements (excluding the moved span(s)) for any
+bare reference to a moved name and, if found, returns one append
+`RewriteOp` adding `from <dest_module> import ...` back into that file.
+
+<a id="module-level-bindings"></a>
+<!-- frob:describes src/frob/refactor/_scan.py::needed_import_ops_for_symbols -->
+**`_module_level_bound_names`** (T-3596, gap 3, private helper of
+`needed_import_ops_for_symbols`): every name bound at a module's top
+level by ANY statement kind, not just `import`/`from ... import` --
+`def`/`class`, plain/annotated assignment, and (one level deep) a
+`try`/`except`/`if` block wrapping any of those, covering the `try:
+import msvcrt \n except ImportError: msvcrt = None` platform-fallback
+shape. `needed_import_ops_for_symbols` uses this to tell "a moved body's
+free variable is some OTHER still-in-source module global" (emit a
+synthetic `from <source_module> import <name>` re-import into the
+destination) apart from "a moved body's free variable is simply
+undefined" (never invent an import for that).
+
 <a id="build_move_ops"></a>
 <!-- frob:describes src/frob/refactor/_apply.py::build_move_ops -->
 **`build_move_ops`**: computes the two `RewriteOp`s that relocate a
-symbol's own source span.
+symbol's own source span. A rename-on-move (`new_name != old_name`)
+renames the actual `def`/`class` header line, found by scanning for it
+rather than assuming index 0 of the moved body (T-3596: index 0 can now
+be a `@decorator` line since the span starts there).
 
 <a id="apply_plan"></a>
 <!-- frob:describes src/frob/refactor/_apply.py::apply_plan -->
@@ -555,6 +590,40 @@ opaque collection failure several layers removed from the real cause.
 **`verify_check_delta`**: Verify post-condition 3 -- `frob check --delta`
 is diff-clean.
 
+<a id="verify_no_undefined_names"></a>
+<!-- frob:describes src/frob/refactor/_verify.py::verify_no_undefined_names -->
+**`verify_no_undefined_names`** (T-3596): a structural Verify-phase
+check that every touched `.py` file's own free-variable references
+resolve against SOME binding anywhere in that same file (a whole-file
+scope pool, deliberately not scope-accurate -- see the function's own
+docstring for the false-positive/false-negative trade-off) or a
+builtin. Closes gaps 1/3/4 the way `verify_module_import`'s real
+`import` alone cannot: importing a module only executes its TOP-LEVEL
+code, so a free variable only referenced inside a moved function's BODY
+(gap 3's `msvcrt`/`_process_registry_lock` repro; a gap-4 dropped-
+decorator's resulting self-import) never raises until something
+actually CALLS that function. Unconditional, always run by
+`run_verify_outcomes`.
+
+<a id="verify_no_self_import"></a>
+<!-- frob:describes src/frob/refactor/_verify.py::verify_no_self_import -->
+**`verify_no_self_import`** (T-3596, gap 4): confirms no touched file
+gained a `from <its own module> import ...` line -- the self-import
+`split` was observed inserting into a newly-created destination module.
+Token/grammar-level (`ImportFrom.module` compared against the file's own
+dotted module name), never a substring/regex match. Unconditional,
+always run by `run_verify_outcomes`.
+
+<a id="verify_decorators_preserved"></a>
+<!-- frob:describes src/frob/refactor/_verify.py::verify_decorators_preserved -->
+**`verify_decorators_preserved`** (T-3596, gap 4): given `(resolved,
+destination)` pairs for every symbol an already-applied transaction
+moved, confirms each destination def/class header carries the SAME
+`ast.unparse`d decorator list (order-sensitive) `resolve_symbol`
+captured at Plan time. Run by `run_verify_outcomes` whenever its new
+`moved_symbols` parameter is non-empty (both `run_refactor`'s
+single-symbol pipeline and `run_split`'s per-chunk verify pass it).
+
 <a id="build_plan"></a>
 <!-- frob:describes src/frob/refactor/_transaction.py::build_plan -->
 **`build_plan`**: Resolve+Plan in one call -- see "Usage" above. Since
@@ -567,6 +636,20 @@ T-3143, takes an `also_moving` set (default empty) forwarded verbatim to
 `scan_references` -- see that anchor -- so a caller planning several
 symbols in one batch (`run_split`'s own chunking) can name each symbol's
 chunk siblings.
+
+Since T-3596 (gaps 1-3), when the destination resolves to a DIFFERENT
+file than the source, also calls `needed_import_ops_for_symbols` (folded
+into `move_ops`, between the delete and append op, so the carried
+import(s) land BEFORE the moved body in the destination file) to carry
+forward any top-level import or module-level free-variable dependency
+(gaps 1+3) the moved span's own text needs. Takes a new `is_split: bool
+= False` parameter (gap 2): when `False` (a plain `move`/`rename`), also
+calls `bare_name_repoint_ops` to add an import back into `source`'s own
+file for any sibling symbol LEFT BEHIND that referenced the moved symbol
+as a bare name; `run_split` passes `is_split=True` since its own
+re-export shim already re-imports every moved name back into the source
+module's namespace, making a second independently-computed repoint
+redundant.
 
 <a id="run_refactor"></a>
 <!-- frob:describes src/frob/refactor/_transaction.py::run_refactor -->
@@ -840,9 +923,13 @@ commit-or-reset mechanics as `move`/`rename`/`split`.
 
 <a id="run_verify_outcomes"></a>
 <!-- frob:describes src/frob/refactor/_commit.py::run_verify_outcomes -->
-**`run_verify_outcomes`**: runs the three shared Verify-phase post-
-conditions against a given touched-files set -- factored out of
-`_transaction.py` (T-2990) for the same reason as `commit_wip`.
+**`run_verify_outcomes`**: runs the shared Verify-phase post-conditions
+against a given touched-files set -- factored out of `_transaction.py`
+(T-2990) for the same reason as `commit_wip`. Since T-3596, always also
+runs `verify_no_undefined_names`/`verify_no_self_import`, and takes a
+new `moved_symbols` parameter (default empty, a list of `(resolved,
+destination)` pairs) -- when given, also runs `verify_decorators_
+preserved`.
 
 <a id="apply_ops"></a>
 <!-- frob:describes src/frob/refactor/_apply.py::apply_ops -->

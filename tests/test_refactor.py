@@ -2928,6 +2928,7 @@ class TestCommit:
         ).stdout.strip()
         assert head == pre_sha
 
+    # frob:ticket T-3596
     def test_run_verify_outcomes_runs_requested_checks(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestCommit.test_run_verify_outcomes_runs_requested_ch\
@@ -2941,11 +2942,18 @@ class TestCommit:
             run_check_delta=False,
             pytest_scope_touched_only=True,
         )
-        assert len(outcomes) == 2
+        # T-3596: two more unconditional structural checks now always run
+        # alongside import_resolution/module_import -- no_undefined_names
+        # and no_self_import (gaps 1/3/4).
+        assert len(outcomes) == 4
         assert outcomes[0].name == "import_resolution"
         assert outcomes[0].passed is True
         assert outcomes[1].name == "module_import"
         assert outcomes[1].passed is True
+        assert outcomes[2].name == "no_undefined_names"
+        assert outcomes[2].passed is True
+        assert outcomes[3].name == "no_self_import"
+        assert outcomes[3].passed is True
 
 
 class TestBuildModulePlan:
@@ -3087,3 +3095,332 @@ class TestRunMoveModule:
         assert report.rolled_back is True
         assert (root / "src/pkg/old_mod.py").exists()
         assert not (root / "src/pkg/new_mod.py").exists()
+
+
+# frob:ticket T-3596
+class TestVerifyStructural:
+    """T-3596: the structural post-move Verify checks -- undefined names,
+    self-imports, decorator preservation -- that catch a `NameError`/
+    dropped-decorator defect the pre-existing `import_resolution`/
+    `module_import` checks structurally cannot (they only prove the
+    TOP-LEVEL of a module executes, never a name only referenced inside
+    a function body)."""
+
+    def test_no_undefined_names_catches_free_variable(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestVerifyStructural.test_no_undefined_names_catches_\
+        # free_variable
+        """T-3596 gap 3 repro shape: a function body reads a module
+        global (`msvcrt`-style) that is bound NOWHERE in this file --
+        `import`ing the module alone never executes the function body,
+        so only a scope walk catches it."""
+        from frob.refactor import verify_no_undefined_names
+
+        bad = _write(
+            tmp_path,
+            "bad.py",
+            "def acquire():\n    return _process_registry_lock.acquire()\n",
+        )
+        outcome = verify_no_undefined_names([bad])
+        assert outcome.passed is False
+        assert outcome.name == "no_undefined_names"
+        assert "_process_registry_lock" in outcome.detail
+
+    def test_no_undefined_names_passes_clean_module(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestVerifyStructural.test_no_undefined_names_passes_c\
+        # lean_module
+        from frob.refactor import verify_no_undefined_names
+
+        good = _write(
+            tmp_path,
+            "good.py",
+            "import threading\n\n_lock = threading.Lock()\n\n\ndef acquire():\n"
+            "    return _lock.acquire()\n",
+        )
+        outcome = verify_no_undefined_names([good])
+        assert outcome.passed is True
+
+    def test_no_self_import_catches_self_reference(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestVerifyStructural.test_no_self_import_catches_self\
+        # _reference
+        """T-3596 gap 4 repro shape: `split` observed inserting a `from
+        <destination module> import (...)` line INTO that same
+        destination module."""
+        from frob.refactor import verify_no_self_import
+
+        root = _repo(tmp_path)
+        selfimp = _write(
+            root,
+            "src/pkg/selfimp.py",
+            "from pkg.selfimp import held_registry_keys  # bogus self-import\n\n\n"
+            "def held_registry_keys():\n    return []\n",
+        )
+        outcome = verify_no_self_import([selfimp], root)
+        assert outcome.passed is False
+        assert outcome.name == "no_self_import"
+        assert "self-import" in outcome.detail
+
+    def test_no_self_import_passes_clean_module(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestVerifyStructural.test_no_self_import_passes_clean\
+        # _module
+        from frob.refactor import verify_no_self_import
+
+        root = _repo(tmp_path)
+        good = _write(root, "src/pkg/good.py", "def f():\n    return 1\n")
+        outcome = verify_no_self_import([good], root)
+        assert outcome.passed is True
+
+    def test_decorators_preserved_catches_dropped_decorator(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestVerifyStructural.test_decorators_preserved_catche\
+        # s_dropped_decorator
+        """T-3596 gap 4 repro shape: the destination def is missing the
+        `@contextmanager` decorator the source symbol had at Plan time."""
+        from frob.refactor import ResolvedSymbol, SymbolRef, verify_decorators_preserved
+
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/dest.py",
+            "def derived_state_lock(root, exclusive):\n    yield\n",
+        )
+        resolved = ResolvedSymbol(
+            ref=SymbolRef(module="pkg.src", qualname="derived_state_lock"),
+            file_path=str(root / "src/pkg/src.py"),
+            start_line=1,
+            end_line=3,
+            is_class=False,
+            decorator_names=("contextmanager",),
+        )
+        destination = SymbolRef(module="pkg.dest", qualname="derived_state_lock")
+        outcome = verify_decorators_preserved(root, [(resolved, destination)])
+        assert outcome.passed is False
+        assert outcome.name == "decorators_preserved"
+        assert "derived_state_lock" in outcome.detail
+
+    def test_decorators_preserved_passes_when_intact(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestVerifyStructural.test_decorators_preserved_passes\
+        # _when_intact
+        from frob.refactor import ResolvedSymbol, SymbolRef, verify_decorators_preserved
+
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/dest.py",
+            "from contextlib import contextmanager\n\n\n"
+            "@contextmanager\ndef derived_state_lock(root, exclusive):\n    yield\n",
+        )
+        resolved = ResolvedSymbol(
+            ref=SymbolRef(module="pkg.src", qualname="derived_state_lock"),
+            file_path=str(root / "src/pkg/src.py"),
+            start_line=1,
+            end_line=3,
+            is_class=False,
+            decorator_names=("contextmanager",),
+        )
+        destination = SymbolRef(module="pkg.dest", qualname="derived_state_lock")
+        outcome = verify_decorators_preserved(root, [(resolved, destination)])
+        assert outcome.passed is True
+
+
+# frob:ticket T-3596
+class TestGapRegressions:
+    """T-3596: one regression test per documented gap, each reproducing
+    the exact failure shape the ticket body's repro commands described."""
+
+    # frob:ticket T-3596
+    def test_gap1_move_carries_forward_default_arg_import(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestGapRegressions.test_gap1_move_carries_forward_def\
+        # ault_arg_import
+        """Gap 1: `move` (not just `split`) must copy forward a top-level
+        import a moved function's DEFAULT ARGUMENT reads -- the ticket's
+        own repro (`_violation(severity=Severity.WARN)` moved to
+        `tests.conftest`, `import_resolution`/`module_import` alone never
+        catch it because a default-arg expression only evaluates at DEF
+        time, which the moved module's own real `import` DOES execute --
+        this is exactly why `verify_module_import` alone should already
+        catch a dropped-import default-arg case, but confirms `move`
+        itself now emits the carried-forward import at all rather than
+        leaving it to be caught only by verify."""
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/severity.py",
+            "from enum import StrEnum\n\n\nclass Severity(StrEnum):\n"
+            "    WARN = 'warn'\n",
+        )
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "from pkg.severity import Severity\n\n\n"
+            "def _violation(msg, severity=Severity.WARN):\n"
+            "    return (msg, severity)\n",
+        )
+        _commit_all(root, "initial")
+
+        result = run_refactor(
+            root,
+            RefactorKind.MOVE,
+            SymbolRef(module="pkg.mod", qualname="_violation"),
+            SymbolRef(module="pkg.conftest", qualname="_violation"),
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.success is True, report.verify_outcomes
+        dest_text = (root / "src/pkg/conftest.py").read_text(encoding="utf-8")
+        assert "from pkg.severity import Severity" in dest_text
+        assert "def _violation(msg, severity=Severity.WARN):" in dest_text
+
+    # frob:ticket T-3596
+    def test_gap2_move_repoints_same_module_bare_name_reference(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestGapRegressions.test_gap2_move_repoints_same_modul\
+        # e_bare_name_reference
+        """Gap 2: a sibling function LEFT BEHIND in the source module that
+        references the moved symbol as a bare name (no `from SOURCE
+        import symbol` statement to rewrite, since it lived in the same
+        file) must get an added import repointing it at the destination
+        -- `scan_references` alone never looks at the source file itself."""
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def helper():\n    return 1\n\n\n"
+            "def uses_helper():\n    return helper() + 1\n",
+        )
+        _commit_all(root, "initial")
+
+        result = run_refactor(
+            root,
+            RefactorKind.MOVE,
+            SymbolRef(module="pkg.mod", qualname="helper"),
+            SymbolRef(module="pkg.helpers", qualname="helper"),
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.success is True, report.verify_outcomes
+        mod_text = (root / "src/pkg/mod.py").read_text(encoding="utf-8")
+        assert "from pkg.helpers import helper" in mod_text
+        assert "def uses_helper():" in mod_text
+
+        import_result = subprocess.run(
+            ["python", "-c", "import sys; sys.path.insert(0, 'src'); import pkg.mod; "
+             "assert pkg.mod.uses_helper() == 2"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        assert import_result.returncode == 0, import_result.stderr
+
+    # frob:ticket T-3596
+    def test_gap3_split_carries_forward_module_level_free_variable(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestGapRegressions.test_gap3_split_carries_forward_mo\
+        # dule_level_free_variable
+        """Gap 3 -- the `_lock.py` repro shape: a module-level global
+        populated by a `try`/`except ImportError` platform shim (not an
+        `import` statement `needed_import_ops_for_symbols`'s ORIGINAL
+        T-3122 fix ever looked at) that a moved function's body bare-
+        references must be re-imported into the destination module."""
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "try:\n    import msvcrt\nexcept ImportError:\n    msvcrt = None\n\n\n"
+            "def acquire_blocking(fd):\n    return msvcrt.locking(fd, 1, 1)\n",
+        )
+        _commit_all(root, "initial")
+
+        # Uses `move` (not `split`) so this test isolates gap 3's own
+        # free-variable carry-forward fix from `split`'s SEPARATE
+        # re-export-shim mechanism -- a split's shim (source re-imports
+        # the moved symbol back from the destination) combined with the
+        # destination needing a source global back is a genuine circular
+        # import in a single-symbol chunk, an orthogonal hazard of the
+        # shim design itself, not this gap.
+        result = run_refactor(
+            root,
+            RefactorKind.MOVE,
+            SymbolRef(module="pkg.mod", qualname="acquire_blocking"),
+            SymbolRef(module="pkg.mod_msvcrt", qualname="acquire_blocking"),
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.success is True, report.verify_outcomes
+        dest_text = (root / "src/pkg/mod_msvcrt.py").read_text(encoding="utf-8")
+        assert "from pkg.mod import msvcrt" in dest_text
+
+        import_result = subprocess.run(
+            [
+                "python",
+                "-c",
+                "import sys; sys.path.insert(0, 'src'); import pkg.mod_msvcrt",
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        assert import_result.returncode == 0, import_result.stderr
+
+    # frob:ticket T-3596
+    def test_gap4_split_preserves_decorator_and_no_self_import(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestGapRegressions.test_gap4_split_preserves_decorato\
+        # r_and_no_self_import
+        """Gap 4 -- the `derived_state_lock` repro shape: splitting a
+        `@contextmanager`-decorated function must keep the decorator AND
+        must not insert a self-import into the newly-created destination
+        module."""
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "from contextlib import contextmanager\n\n\n"
+            "@contextmanager\n"
+            "def derived_state_lock(root, exclusive=False):\n"
+            "    yield root\n",
+        )
+        _commit_all(root, "initial")
+
+        result = run_split(
+            root,
+            source_module="pkg.mod",
+            symbols=["derived_state_lock"],
+            destination_module="pkg.derived_lock",
+            chunk_size=1,
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.success is True, report.chunks
+
+        dest_text = (root / "src/pkg/derived_lock.py").read_text(encoding="utf-8")
+        assert "@contextmanager" in dest_text
+        assert "from pkg.derived_lock import" not in dest_text
+
+        import_result = subprocess.run(
+            [
+                "python",
+                "-c",
+                "import sys; sys.path.insert(0, 'src'); "
+                "from pkg.derived_lock import derived_state_lock\n"
+                "with derived_state_lock('r'):\n"
+                "    pass\n",
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        assert import_result.returncode == 0, import_result.stderr
