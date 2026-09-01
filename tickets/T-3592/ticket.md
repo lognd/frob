@@ -2,7 +2,7 @@
 id: T-3592
 title: Split tests/unit/test_arch.py (8910 lines) into a per-gate-family package,
   reusing T-3586's recipe
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-08-31'
@@ -18,11 +18,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_arch.py
-- tests/conftest.py
+- tests/unit/arch_suite/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/conftest.py
+  reason: avoid conftest.py lease collisions; use ticket-owned shared module for cross-family
+    helpers per recipe fallback
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/arch_suite/**
+  reason: avoid conftest.py lease collisions; use ticket-owned shared module for cross-family
+    helpers per recipe fallback
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
