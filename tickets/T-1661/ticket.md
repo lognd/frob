@@ -14,14 +14,59 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- tests/**
-- src/frob/**
+- src/frob/strata/**
+- tests/unit/strata/**
+- src/frob/vet/**
+- tests/unit/vet/**
 scope_breadth_ack: true
 scope_breadth_ack_reason: genuine coverage burn-down epic spanning app/serve/arch/tickets/scaffold/refactor/testing/gates/strata/vet/dup
   packages per its own body's breakdown; narrowing would misrepresent the ticket as
   single-file
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: narrow T-1661's epic-wide scope to the two smallest TEST005 clusters named
+    in its own breakdown (strata=2, vet=2 findings) to avoid colliding with other
+    in-progress tickets' leases on unrelated files (T-3608 holds tests/conftest.py)
+  actor: logan
+  at: '2026-09-01'
+- op: remove
+  glob: src/frob/**
+  reason: narrow T-1661's epic-wide scope to the two smallest TEST005 clusters named
+    in its own breakdown (strata=2, vet=2 findings) to avoid colliding with other
+    in-progress tickets' leases on unrelated files (T-3608 holds tests/conftest.py)
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: src/frob/strata/**
+  reason: narrow T-1661's epic-wide scope to the two smallest TEST005 clusters named
+    in its own breakdown (strata=2, vet=2 findings) to avoid colliding with other
+    in-progress tickets' leases on unrelated files (T-3608 holds tests/conftest.py)
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/strata/**
+  reason: narrow T-1661's epic-wide scope to the two smallest TEST005 clusters named
+    in its own breakdown (strata=2, vet=2 findings) to avoid colliding with other
+    in-progress tickets' leases on unrelated files (T-3608 holds tests/conftest.py)
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: src/frob/vet/**
+  reason: narrow T-1661's epic-wide scope to the two smallest TEST005 clusters named
+    in its own breakdown (strata=2, vet=2 findings) to avoid colliding with other
+    in-progress tickets' leases on unrelated files (T-3608 holds tests/conftest.py)
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/vet/**
+  reason: narrow T-1661's epic-wide scope to the two smallest TEST005 clusters named
+    in its own breakdown (strata=2, vet=2 findings) to avoid colliding with other
+    in-progress tickets' leases on unrelated files (T-3608 holds tests/conftest.py)
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
