@@ -279,7 +279,7 @@ class TestCppSymrefCanonicalization:
     human-facing `message=` display (native `Class::method` spelling)."""
 
     # frob:ticket T-2470
-    # frob:tests tests/unit/test_arch.py::TestCppSymrefCanonicalization.test_long_function_symref_is_dot_joined_message_keeps_native_spelling  # noqa: E501
+    # frob:tests tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization.test_long_function_symref_is_dot_joined_message_keeps_native_spelling  # noqa: E501
     def test_long_function_symref_is_dot_joined_message_keeps_native_spelling(
         self, tmp_path
     ):
@@ -318,7 +318,7 @@ class TestCppSymrefCanonicalization:
         assert not any(s.symref == "long.cpp::Foo::bar" for s in hits)
 
     # frob:ticket T-2470
-    # frob:tests tests/unit/test_arch.py::TestCppSymrefCanonicalization.test_symref_matches_dsl_waiver_binding_exactly  # noqa: E501
+    # frob:tests tests/unit/arch_suite/test_misc.py::TestCppSymrefCanonicalization.test_symref_matches_dsl_waiver_binding_exactly  # noqa: E501
     def test_symref_matches_dsl_waiver_binding_exactly(self, tmp_path):
         """T-2438's own confirmed repro, now closed at the producer: the
         `Violation.symref` this scanner emits for a class method is now
@@ -376,7 +376,7 @@ class TestCppMayThrow:
     is non-empty and not discharged by its own catch (...) fires
     cpp-noexcept-throws at ArchSeverity "error"."""
 
-    # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_calling_throwing_function_fires_error  # noqa: E501
+    # frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_noexcept_calling_throwing_function_fires_error  # noqa: E501
     def test_noexcept_calling_throwing_function_fires_error(self, tmp_path):
         """noexcept `caller` calls same-file `risky` (which throws) with
         no try/catch of its own -- an error finding names the call site."""
@@ -398,7 +398,7 @@ class TestCppMayThrow:
         assert any(s.symref == "risky.cpp::caller" for s in hits)
         assert any(s.severity == "error" for s in hits)
 
-    # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_with_catch_all_does_not_fire  # noqa: E501
+    # frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_noexcept_with_catch_all_does_not_fire  # noqa: E501
     def test_noexcept_with_catch_all_does_not_fire(self, tmp_path):
         """Same shape as above, but `caller` wraps the risky call in a
         try/catch (...) -- the hard boundary is discharged, no finding."""
@@ -421,7 +421,7 @@ class TestCppMayThrow:
         hits = [s for s in result.suggestions if s.category == "cpp-noexcept-throws"]
         assert hits == []
 
-    # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_non_noexcept_function_never_fires  # noqa: E501
+    # frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_non_noexcept_function_never_fires  # noqa: E501
     def test_non_noexcept_function_never_fires(self, tmp_path):
         """A function that may throw but is NOT noexcept is normal
         propagation, not a hard-boundary violation -- never flagged."""
@@ -441,7 +441,7 @@ class TestCppMayThrow:
         hits = [s for s in result.suggestions if s.category == "cpp-noexcept-throws"]
         assert hits == []
 
-    # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_calling_vector_at_fires_curated_thrower  # noqa: E501
+    # frob:tests tests/unit/arch_suite/test_misc.py::TestCppMayThrow.test_noexcept_calling_vector_at_fires_curated_thrower  # noqa: E501
     def test_noexcept_calling_vector_at_fires_curated_thrower(self, tmp_path):
         """A noexcept function calling `.at(...)` (curated STL thrower,
         out_of_range) with no catch fires, naming out_of_range."""

@@ -1,7 +1,7 @@
 ---
 id: T-3640
 title: 'post-T-3592 fallout: self-referential frob:tests directives point at old tests/unit/test_arch.py'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'

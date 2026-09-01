@@ -88,8 +88,8 @@ class TestDeepNestingArchExempt:
 
     # frob:ticket T-1066
     # frob:tests \
-    # tests/unit/test_arch.py::TestDeepNestingArchExempt.test_reasoned_exempt_suppresse\
-    # s_finding
+    # tests/unit/arch_suite/test_complexity.py::TestDeepNestingArchExempt.test_reasoned\
+    # _exempt_suppresses_finding
     def test_reasoned_exempt_suppresses_finding(self, tmp_path):
         source = _DEEP_NEST_SRC.replace(
             "def process_matrix",
@@ -102,8 +102,8 @@ class TestDeepNestingArchExempt:
 
     # frob:ticket T-1066
     # frob:tests \
-    # tests/unit/test_arch.py::TestDeepNestingArchExempt.test_unreasoned_exempt_still_f\
-    # ires
+    # tests/unit/arch_suite/test_complexity.py::TestDeepNestingArchExempt.test_unreason\
+    # ed_exempt_still_fires
     def test_unreasoned_exempt_still_fires(self, tmp_path):
         # No reason= -- must not match, same discipline frob:waive enforces
         # via WAIVE001 for the generic channel.
@@ -116,8 +116,8 @@ class TestDeepNestingArchExempt:
 
     # frob:ticket T-1066
     # frob:tests \
-    # tests/unit/test_arch.py::TestDeepNestingArchExempt.test_exempt_on_unrelated_funct\
-    # ion_does_not_leak
+    # tests/unit/arch_suite/test_complexity.py::TestDeepNestingArchExempt.test_exempt_o\
+    # n_unrelated_function_does_not_leak
     def test_exempt_on_unrelated_function_does_not_leak(self, tmp_path):
         # The directive sits above an earlier, unrelated function -- a
         # blank/non-comment line breaks the leading-comment-block scan, so
