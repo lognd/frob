@@ -16,38 +16,10 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/refactor/**
-- docs/commands/refactor.md
-- tests/test_refactor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-scope_changes:
-- op: add
-  glob: docs/commands/refactor.md
-  reason: 'SCOPE002: doc/test coverage closure for the anchor-carrier fix pulls in
-    the package''s existing frob:doc target and frob:tests suite file'
-  actor: logan
-  at: '2026-09-01'
-- op: add
-  glob: tests/test_refactor.py
-  reason: 'SCOPE002: doc/test coverage closure for the anchor-carrier fix pulls in
-    the package''s existing frob:doc target and frob:tests suite file'
-  actor: logan
-  at: '2026-09-01'
-- op: add
-  glob: tests/unit/test_arch_srp.py
-  reason: 'SCOPE002: doc/test coverage closure for the anchor-carrier fix pulls in
-    the package''s existing frob:doc target and frob:tests suite file'
-  actor: logan
-  at: '2026-09-01'
-- op: remove
-  glob: tests/unit/test_arch_srp.py
-  reason: 'revert: cascades into unrelated src/frob/arch,gates,repo_meta scope --
-    pre-existing SCOPE002 finding unrelated to this ticket''s diff, left as-is per
-    T-3595 precedent (never expand scope to chase an unrelated cascade)'
-  actor: logan
-  at: '2026-09-01'
 evidence:
 - tests/test_refactor.py::TestProseCarrier::test_anchor_text_inside_string_literal_survives_untouched
 designated_repro_test: null
