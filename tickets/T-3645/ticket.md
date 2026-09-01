@@ -2,7 +2,7 @@
 id: T-3645
 title: 'refactor split: per-symbol import carry-forward not merged into one top-level
   block when multiple classes land in same destination module'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -16,10 +16,20 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/refactor/**
+- tests/test_refactor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_refactor.py
+  reason: 'SCOPE002: test coverage closure for the src/frob/refactor package this
+    fix touches pulls in the package''s own frob:tests suite file'
+  actor: logan
+  at: '2026-09-01'
+evidence:
+- tests/test_refactor.py::TestRunSplit::test_split_merges_carried_imports_into_existing_top_block
 designated_repro_test: null
 threat: null
 component: null
