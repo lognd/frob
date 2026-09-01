@@ -1,7 +1,7 @@
 ---
 id: T-3632
 title: 'cache schema atomicity round 2: atomic rebuild + stale-conn fix'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'

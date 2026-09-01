@@ -328,35 +328,96 @@ def _read_schema_version(
     return conn, None
 
 
-def _apply_schema(conn: sqlite3.Connection, existing: int | None, path: Path) -> None:
-    """Ensure the schema is current; wipe and rebuild on a version mismatch.
+def _apply_schema(
+    conn: sqlite3.Connection, existing: int | None, path: Path
+) -> sqlite3.Connection:
+    """Ensure the schema is current; rebuild atomically on a version mismatch.
 
-    A no-op when `existing` already matches `_SCHEMA_VERSION` (T-0232): the
-    common case, hit on every `connect()` call, has no schema work to do at
-    all, so skip re-running `CREATE TABLE IF NOT EXISTS` for it rather than
-    re-executing statements whose only possible effect on an up-to-date db
-    is wasted work. See `connect_readonly` (T-0232) for the actual .frob
-    db contention fix -- callers that only ever read (e.g. `load_graph`)
-    now use a connection that cannot request sqlite's write lock at all,
-    instead of relying on this DDL being a no-op to stay out of a
-    concurrent writer's way.
+    A no-op (returns `conn` unchanged) when `existing` already matches
+    `_SCHEMA_VERSION` (T-0232): the common case, hit on every `connect()`
+    call, has no schema work to do at all, so skip re-running `CREATE
+    TABLE IF NOT EXISTS` for it rather than re-executing statements whose
+    only possible effect on an up-to-date db is wasted work. See
+    `connect_readonly` (T-0232) for the actual .frob db contention fix --
+    callers that only ever read (e.g. `load_graph`) now use a connection
+    that cannot request sqlite's write lock at all, instead of relying on
+    this DDL being a no-op to stay out of a concurrent writer's way.
+
+    T-3632 (round 2 of T-3623): a real rebuild used to `DROP TABLE` /
+    `CREATE TABLE` one statement at a time IN PLACE on `conn`, live at the
+    canonical `path` -- each of those statements auto-commits on its own
+    (`executescript`/individual DDL statements are not one transaction in
+    sqlite3), so a concurrent connector querying `path` mid-sequence could
+    observe a window with `meta` dropped but `files` not yet recreated
+    (measured as `OperationalError: no such table: files` from a sibling
+    process's tight `connect()` loop, run 33472403980). Now this always
+    goes through the same build-at-a-temp-path-then-`os.replace` primitive
+    `_recreate` uses (`_build_schema_complete_db` / `_quarantine_sidecars`)
+    so no connector ever sees a schema mid-rebuild, whether the mismatch
+    was found here (first DDL touch) or via `_recreate`'s own corruption
+    path.
+
+    Double-checked locking (T-3632 direction 2): the rebuild is
+    serialized on `path`'s dedicated rebuild lock, and the FIRST thing
+    done under that lock is a fresh re-read of the stored schema version
+    -- if a sibling already won the race and published a current-version
+    db while this caller was waiting on the lock, this is a no-op (just
+    reopen) instead of thrashing a second full rebuild over the winner's
+    fresh db.
     """
     if existing == _SCHEMA_VERSION:
-        return
-    _log.info(
-        "cache.connect: schema %s -> %s at %s, rebuilding",
-        existing,
-        _SCHEMA_VERSION,
-        path,
-    )
-    for table in ("meta", "files", "symbols", "edges", "malformed", "parsed_artifacts"):
-        conn.execute(f"DROP TABLE IF EXISTS {table}")
-    conn.executescript(_SCHEMA)
-    conn.execute(
-        "INSERT INTO meta (key, value) VALUES ('schema_version', ?)",
-        (str(_SCHEMA_VERSION),),
-    )
-    conn.commit()
+        return conn
+    return _rebuild_schema_atomically(conn, existing, path)
+
+
+def _rebuild_schema_atomically(
+    conn: sqlite3.Connection, existing: int | None, path: Path
+) -> sqlite3.Connection:
+    """Do `_apply_schema`'s actual rebuild: serialize on `path`'s rebuild
+    lock, double-check under it (a sibling may have already published a
+    current-version db while this caller waited), and otherwise publish a
+    fresh schema-complete db via the same atomic temp-build-then-`os.
+    replace` primitive `_recreate` uses (T-3632, split out of
+    `_apply_schema` to keep that function under ARCH001's line
+    threshold)."""
+    lock_fd = _rebuild_lock_fd(path)
+    if lock_fd is not None:
+        portable_flock_acquire(lock_fd, exclusive=True, blocking=True)
+    try:
+        # Double-checked locking (T-3632 direction 2): re-read under the
+        # lock before doing any rebuild work -- if a sibling already won
+        # the race, this is a no-op reopen instead of a second thrash-
+        # inducing rebuild over the winner's fresh db.
+        if lock_fd is not None:
+            recheck_conn = _open(path)
+            try:
+                _, recheck_existing = _read_schema_version(recheck_conn, path)
+            finally:
+                recheck_conn.close()
+            if recheck_existing == _SCHEMA_VERSION:
+                _log.debug(
+                    "cache.connect: schema already rebuilt to %s at %s by a "
+                    "sibling, skipping redundant rebuild",
+                    _SCHEMA_VERSION,
+                    path,
+                )
+                conn.close()
+                return _open(path)
+        _log.info(
+            "cache.connect: schema %s -> %s at %s, rebuilding",
+            existing,
+            _SCHEMA_VERSION,
+            path,
+        )
+        conn.close()
+        tmp_path = _build_schema_complete_db(path)
+        _quarantine_sidecars(path)
+        os.replace(tmp_path, path)
+        return _open(path)
+    finally:
+        if lock_fd is not None:
+            portable_flock_release(lock_fd)
+            os.close(lock_fd)
 
 
 # frob:ticket T-0243
@@ -604,13 +665,22 @@ def _is_concurrent_meta_key_race(exc: sqlite3.IntegrityError) -> bool:
 def _recreate_and_reapply(
     conn: sqlite3.Connection, path: Path, exc: Exception
 ) -> sqlite3.Connection:
-    """Delete-and-recreate `path`, then apply a fresh schema (T-0141 recovery)."""
+    """Delete-and-recreate `path` (T-0141 recovery).
+
+    T-3632: `_recreate` already builds and atomically publishes a
+    schema-complete db at the current `_SCHEMA_VERSION` (same primitive
+    `_apply_schema`'s rebuild path now uses), so a second, separate
+    `_apply_schema(conn, None, path)` call here used to be both redundant
+    AND the actual root cause of the measured mutual-rebuild thrash: it
+    ran its own in-place DROP/CREATE sequence directly on the connection
+    `_recreate` had just atomically published, reopening the exact
+    schema-incomplete-window T-3623 closed. `_recreate`'s output is
+    already schema-complete, so there is nothing left to reapply.
+    """
     _log.warning(
         "cache.connect: %s failed schema application, recreating: %s", path, exc
     )
-    conn = _recreate(conn, path)
-    _apply_schema(conn, None, path)
-    return conn
+    return _recreate(conn, path)
 
 
 def _is_missing_meta_table(exc: sqlite3.OperationalError) -> bool:
@@ -701,8 +771,7 @@ def _apply_schema_with_recovery(
     deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
     while True:
         try:
-            _apply_schema(conn, existing, path)
-            return conn
+            return _apply_schema(conn, existing, path)
         except sqlite3.OperationalError as exc:
             if "locked" not in str(exc).lower():
                 raise
@@ -751,6 +820,25 @@ def connect(path: Path) -> sqlite3.Connection:
     is idempotent under retry: its first statement is a plain `SELECT`, and
     a lock error on any later write means the transaction has not
     committed, so re-running the whole function from scratch is safe.
+
+    T-3632: the final `_check_fingerprint_with_recovery` step used to be
+    wrapped as `lambda: _check_fingerprint_with_recovery(conn, path)` and
+    handed to `_with_lock_retry`, which can call that lambda more than
+    once (T-1423 lock retry). A retry re-reads the closed-over `conn` --
+    but if the FIRST attempt hit a "database is locked" error partway
+    through its own internal `_recreate_and_reapply` recovery (a distinct,
+    real possibility: `_recreate` takes a rebuild lock and reopens),
+    `_check_fingerprint_with_recovery`'s internal reassignment of its
+    local `conn` name is discarded when the exception propagates, and the
+    retry would reuse the OUTER `conn` -- by then already `.close()`d by
+    `_recreate` -- producing exactly the stale-connection misuse
+    (`sqlite3.InterfaceError` / `ProgrammingError`) measured at this
+    file's old line ~1083 (run 33472403980, `test_waive002_end_to_end_via_
+    run_gates`). Using `nonlocal` so every retry attempt reads and writes
+    the SAME variable this function ultimately returns closes that gap:
+    a caller of `connect()` can never receive, and no retry can ever
+    reuse, a connection object that a recreate has since closed out from
+    under it.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
@@ -767,9 +855,12 @@ def connect(path: Path) -> sqlite3.Connection:
     conn = _open(path)
     conn, existing = _read_schema_version(conn, path)
     conn = _apply_schema_with_recovery(conn, existing, path)
-    conn = _with_lock_retry(
-        lambda: _check_fingerprint_with_recovery(conn, path), what="fingerprint check"
-    )
+
+    def _check_fingerprint_step() -> None:
+        nonlocal conn
+        conn = _check_fingerprint_with_recovery(conn, path)
+
+    _with_lock_retry(_check_fingerprint_step, what="fingerprint check")
     return conn
 
 

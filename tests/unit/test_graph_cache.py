@@ -8,6 +8,8 @@ import sys
 import time
 from pathlib import Path
 
+import pytest
+
 from frob.graph import cache as graph_cache
 
 
@@ -135,7 +137,7 @@ class TestRecreateConcurrentReaderSurvives:
             deadline = time.monotonic() + 2.0
             while time.monotonic() < deadline:
                 conn = graph_cache._recreate(graph_cache._open(path), path)
-                graph_cache._apply_schema(conn, None, path)
+                conn = graph_cache._apply_schema(conn, None, path)
                 graph_cache.store_parsed_artifact(
                     conn, content_hash="h", fingerprint="f", payload="one"
                 )
@@ -309,7 +311,7 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
             deadline = time.monotonic() + 2.0
             while time.monotonic() < deadline:
                 conn = graph_cache._recreate(graph_cache._open(path), path)
-                graph_cache._apply_schema(conn, None, path)
+                conn = graph_cache._apply_schema(conn, None, path)
                 graph_cache.store_parsed_artifact(
                     conn, content_hash="h", fingerprint="f", payload="one"
                 )
@@ -320,3 +322,96 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
             f"sibling connect() loop observed a sqlite error: {out!r} -- "
             "a concurrent _recreate exposed a schema-incomplete db"
         )
+
+    # frob:tests \
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
+    # apply_schema_rebuild_replacement_always_has_files_table
+    def test_apply_schema_rebuild_replacement_always_has_files_table(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3632 (round 2 of T-3623): a forced `_apply_schema` rebuild
+        (`existing=None`, the same call shape `_apply_schema_with_recovery`
+        and the two-process test above both use) must publish the `files`
+        table atomically along with `meta`, not just `meta` alone -- the
+        exact gap the round-1 fix missed (measured as `OperationalError:
+        no such table: files` from a sibling's tight `connect()` loop,
+        run 33472403980)."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+        graph_cache._apply_schema(conn, None, path)
+
+        reader = sqlite3.connect(str(path))
+        try:
+            row = reader.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'files'"
+            ).fetchone()
+        finally:
+            reader.close()
+        assert row is not None, (
+            "a fresh connection right after a forced _apply_schema rebuild "
+            "found no 'files' table -- the replacement db was exposed "
+            "before its schema was fully applied"
+        )
+
+
+# frob:ticket T-3632
+class TestConnectNeverReturnsAStaleConnection:
+    """T-3632 direction 3: `connect()` must never hand a caller a
+    connection object that an internal schema rebuild has already
+    `.close()`d -- regression for the `sqlite3.InterfaceError` measured
+    at `src/frob/graph/cache.py:1083` (run 33472403980,
+    `test_waive002_end_to_end_via_run_gates`), a NEW error class that
+    appeared only after T-3623's own fix, consistent with a caller
+    somewhere ending up bound to a connection a concurrent rebuild had
+    invalidated."""
+
+    # frob:tests \
+    # tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_conn\
+    # ect_after_forced_schema_rebuild_returns_a_fresh_live_connection
+    def test_connect_after_forced_schema_rebuild_returns_a_fresh_live_connection(
+        self, tmp_path: Path
+    ) -> None:
+        """Forcing the exact condition `_apply_schema`'s rebuild path
+        handles (a stored schema_version below `_SCHEMA_VERSION`) and
+        calling `connect()` again must return a DIFFERENT, immediately
+        usable connection object -- never the one the rebuild closed."""
+        path = tmp_path / "cache.db"
+        conn1 = graph_cache.connect(path)
+
+        conn1.execute("UPDATE meta SET value = '0' WHERE key = 'schema_version'")
+        conn1.commit()
+
+        conn2 = graph_cache.connect(path)
+
+        assert conn2 is not conn1, (
+            "connect() returned the SAME connection object after a "
+            "schema rebuild -- a caller holding it would be bound to "
+            "whatever _apply_schema's rebuild did to the old object"
+        )
+        row = conn2.execute(
+            "SELECT value FROM meta WHERE key = 'schema_version'"
+        ).fetchone()
+        assert row is not None and int(row[0]) == graph_cache._SCHEMA_VERSION, (
+            "the connection connect() returned after a rebuild is not "
+            "usable against the current schema"
+        )
+
+    # frob:tests \
+    # tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_recr\
+    # eate_closed_connection_raises_a_clean_programming_error_not_interface_error
+    def test_recreate_closed_connection_raises_a_clean_programming_error_not_interface_error(  # noqa: E501
+        self, tmp_path: Path
+    ) -> None:
+        """`_recreate` documents that it `.close()`s the connection it is
+        given (see its docstring); using that SAME object afterward must
+        fail in the ordinary, well-understood sqlite3 way
+        (`ProgrammingError: Cannot operate on a closed database`), never
+        as an opaque `InterfaceError` -- the latter is the signature of
+        genuinely bad connection state (e.g. a use-after-free-shaped bug),
+        not merely "closed"."""
+        path = tmp_path / "cache.db"
+        stale = graph_cache.connect(path)
+        graph_cache._recreate(stale, path)
+
+        with pytest.raises(sqlite3.ProgrammingError):
+            stale.execute("SELECT 1 FROM meta LIMIT 1")
