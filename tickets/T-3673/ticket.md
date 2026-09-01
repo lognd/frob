@@ -2,7 +2,7 @@
 id: T-3673
 title: 'win32 round 17: elimination controls (e/f) + mitigation validation (a2) +
   suite guard'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'

@@ -832,10 +832,267 @@ jobs:
           Write-Host "pool-preload-disabled diag: no hang (returned in $($elapsed.TotalSeconds)s) -- exit code $exitCode is FROB_DISABLE_POOL_PRELOAD=1 running process-pool gate jobs serially (CHECK-family gate errors expected), not a failure of this diagnostic step. If this variant is CLEAN of T-3648-SIGNAL while variant (a) still gets it, the pool's spawn children are the sender."
           exit 0
 
+      # T-3673 (round 17): the round-16 matrix (a-d) exonerated guarded
+      # tool children, uv ancestry, and the ProcessPoolExecutor preload
+      # -- all four variants still received T-3648-SIGNAL. Two remaining
+      # suspects: (i) the environment itself delivering a console ctrl
+      # event to every console-attached child, or (ii) frob's own
+      # in-process startup (import-time side effect). Variant (e) is a
+      # trivial-python control -- same Start-Process harness and signal
+      # logger preamble as variant (a), but the child NEVER imports frob
+      # at all, just sleeps and exits. Dirty (e) exonerates frob
+      # entirely (the environment is the sender); clean (e) implicates
+      # frob's own startup and hands off to variant (f) below.
+      - name: Diagnose frob check hang on windows -- trivial-python control variant (T-3673)
+        if: matrix.os == 'windows-latest'
+        timeout-minutes: 5
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
+          $codeLines = @(
+            'print("diag-python-alive", flush=True)',
+            "import signal",
+            "import sys",
+            "import time",
+            "import traceback",
+            "",
+            "def _t3673_log_signal(signum, frame):",
+            "    try:",
+            "        name = signal.Signals(signum).name",
+            "    except ValueError:",
+            "        name = repr(signum)",
+            "    print(f'T-3648-SIGNAL: received {name} (signum={signum}) at frame={frame!r}', flush=True)",  # noqa: E501
+            "    traceback.print_stack(frame)",
+            "    raise KeyboardInterrupt",
+            "signal.signal(signal.SIGINT, _t3673_log_signal)",
+            "if hasattr(signal, 'SIGBREAK'):",
+            "    signal.signal(signal.SIGBREAK, _t3673_log_signal)",
+            "",
+            "# T-3673 variant (e): this child NEVER imports frob -- no",
+            "# 'import frob', no 'from frob... import ...', nothing. It",
+            "# only proves whether the environment itself delivers a",
+            "# console ctrl event to a console-attached child regardless",
+            "# of what that child runs.",
+            "print('diag-python: about to sleep(5)', flush=True)",
+            "try:",
+            "    time.sleep(5)",
+            "except BaseException as exc:",
+            "    print(f'diag-python: sleep raised {exc!r}', flush=True)",
+            "    traceback.print_exc()",
+            "    raise",
+            "print('diag-python: sleep(5) completed cleanly', flush=True)",
+            "sys.exit(0)"
+          )
+          Set-Content -Path (Join-Path $env:RUNNER_TEMP "frob_check_diag_trivialpython.py") -Value $codeLines
+          Write-Host "T-3673 breadcrumb: trivial-python control diag file written"
+          $diagOut = Join-Path $env:RUNNER_TEMP "diag_trivialpython.out"
+          $diagErr = Join-Path $env:RUNNER_TEMP "diag_trivialpython.err"
+          $diagPy = Join-Path $env:RUNNER_TEMP "frob_check_diag_trivialpython.py"
+          $started = Get-Date
+          $elapsed = [TimeSpan]::Zero
+          $exitCode = -1
+          Write-Host "T-3673 breadcrumb: about to invoke uv via Start-Process"
+          try {
+            $p = Start-Process -FilePath "uv" `
+              -ArgumentList "run", "--project", "$env:GITHUB_WORKSPACE", "python", "$diagPy" `
+              -WorkingDirectory $fixture `
+              -PassThru -RedirectStandardOutput $diagOut -RedirectStandardError $diagErr
+            try {
+              Wait-Process -Id $p.Id -Timeout 290 -ErrorAction Stop
+              $exitCode = $p.ExitCode
+            } catch {
+              Write-Host "T-3673 breadcrumb: Wait-Process timed out at 290s -- terminating"
+              Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            }
+          } catch {
+            Write-Host "T-3673: invoke threw: $_"
+          } finally {
+            $elapsed = (Get-Date) - $started
+            Write-Host "T-3673 breadcrumb: Start-Process invocation returned (elapsed: $($elapsed.TotalSeconds)s)"
+            Write-Host "--- diag_trivialpython.out ---"
+            if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "--- diag_trivialpython.err ---"
+            if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "trivial-python control diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          }
+          if ($elapsed.TotalSeconds -ge 235) {
+            Write-Host "::error::trivial-python control diag ran $($elapsed.TotalSeconds)s -- treating as a HANG (T-3673)."
+            exit 1
+          }
+          Write-Host "trivial-python control diag: no hang (returned in $($elapsed.TotalSeconds)s) -- exit code $exitCode. If this variant is DIRTY with T-3648-SIGNAL, the environment itself is the sender and frob is fully exonerated. If CLEAN, frob's own startup is implicated -- see variant (f)."
+          exit 0
+
+      # T-3673 (round 17): variant (f) -- localizes a clean-(e)/dirty-
+      # rest result. This child does `import frob` and NOTHING else,
+      # then sleeps and exits. Clean (f) with dirty (a-d) points at the
+      # check pipeline itself (pre-thread-start); dirty (f) points at
+      # import-time side effects (e.g. audit signal handler
+      # registrations at import).
+      - name: Diagnose frob check hang on windows -- import-only control variant (T-3673)
+        if: matrix.os == 'windows-latest'
+        timeout-minutes: 5
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
+          $codeLines = @(
+            'print("diag-python-alive", flush=True)',
+            "import signal",
+            "import sys",
+            "import time",
+            "import traceback",
+            "",
+            "def _t3673_log_signal(signum, frame):",
+            "    try:",
+            "        name = signal.Signals(signum).name",
+            "    except ValueError:",
+            "        name = repr(signum)",
+            "    print(f'T-3648-SIGNAL: received {name} (signum={signum}) at frame={frame!r}', flush=True)",  # noqa: E501
+            "    traceback.print_stack(frame)",
+            "    raise KeyboardInterrupt",
+            "signal.signal(signal.SIGINT, _t3673_log_signal)",
+            "if hasattr(signal, 'SIGBREAK'):",
+            "    signal.signal(signal.SIGBREAK, _t3673_log_signal)",
+            "",
+            "# T-3673 variant (f): import frob and NOTHING else -- no",
+            "# main(), no CLI invocation. Localizes an import-time side",
+            "# effect (e.g. a signal handler registered at import) from",
+            "# anything the check pipeline itself does afterward.",
+            "print('diag-python: about to import frob', flush=True)",
+            "import frob  # noqa: F401",
+            "print('diag-python: import frob completed, about to sleep(5)', flush=True)",
+            "try:",
+            "    time.sleep(5)",
+            "except BaseException as exc:",
+            "    print(f'diag-python: sleep raised {exc!r}', flush=True)",
+            "    traceback.print_exc()",
+            "    raise",
+            "print('diag-python: sleep(5) completed cleanly', flush=True)",
+            "sys.exit(0)"
+          )
+          Set-Content -Path (Join-Path $env:RUNNER_TEMP "frob_check_diag_importonly.py") -Value $codeLines
+          Write-Host "T-3673 breadcrumb: import-only control diag file written"
+          $diagOut = Join-Path $env:RUNNER_TEMP "diag_importonly.out"
+          $diagErr = Join-Path $env:RUNNER_TEMP "diag_importonly.err"
+          $diagPy = Join-Path $env:RUNNER_TEMP "frob_check_diag_importonly.py"
+          $started = Get-Date
+          $elapsed = [TimeSpan]::Zero
+          $exitCode = -1
+          Write-Host "T-3673 breadcrumb: about to invoke uv via Start-Process"
+          try {
+            $p = Start-Process -FilePath "uv" `
+              -ArgumentList "run", "--project", "$env:GITHUB_WORKSPACE", "python", "$diagPy" `
+              -WorkingDirectory $fixture `
+              -PassThru -RedirectStandardOutput $diagOut -RedirectStandardError $diagErr
+            try {
+              Wait-Process -Id $p.Id -Timeout 290 -ErrorAction Stop
+              $exitCode = $p.ExitCode
+            } catch {
+              Write-Host "T-3673 breadcrumb: Wait-Process timed out at 290s -- terminating"
+              Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            }
+          } catch {
+            Write-Host "T-3673: invoke threw: $_"
+          } finally {
+            $elapsed = (Get-Date) - $started
+            Write-Host "T-3673 breadcrumb: Start-Process invocation returned (elapsed: $($elapsed.TotalSeconds)s)"
+            Write-Host "--- diag_importonly.out ---"
+            if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "--- diag_importonly.err ---"
+            if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "import-only control diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          }
+          if ($elapsed.TotalSeconds -ge 235) {
+            Write-Host "::error::import-only control diag ran $($elapsed.TotalSeconds)s -- treating as a HANG (T-3673)."
+            exit 1
+          }
+          Write-Host "import-only control diag: no hang (returned in $($elapsed.TotalSeconds)s) -- exit code $exitCode. Clean here with dirty (a-d) points at the check pipeline pre-thread-start; dirty here points at import-time side effects."
+          exit 0
+
+      # T-3673 (round 17): mitigation validation variant (a2) -- variant
+      # (a) but with FROB_WIN32_IGNORE_CONSOLE_CTRL=1 set, exercising the
+      # T-3657 win32_console_ctrl_ignore_scope() mitigation
+      # (src/frob/process/_guard.py) that already wraps run_check
+      # (src/frob/check/__init__.py). Acceptance: NO T-3648-SIGNAL line,
+      # and the diag exits with a genuine gate result (0 or nonzero-not-
+      # 130).
+      - name: Diagnose frob check hang on windows -- mitigation-enabled variant (T-3673)
+        if: matrix.os == 'windows-latest'
+        timeout-minutes: 5
+        env:
+          FROB_WIN32_IGNORE_CONSOLE_CTRL: "1"
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
+          # Reuses the SAME fixture and diag script as variant (a) --
+          # only FROB_WIN32_IGNORE_CONSOLE_CTRL=1 (set at the step's env:
+          # block above, so it is present before uv even starts) changes.
+          $diagOut = Join-Path $env:RUNNER_TEMP "diag_mitigation.out"
+          $diagErr = Join-Path $env:RUNNER_TEMP "diag_mitigation.err"
+          $diagPy = Join-Path $env:RUNNER_TEMP "frob_check_diag.py"
+          $started = Get-Date
+          $elapsed = [TimeSpan]::Zero
+          $exitCode = -1
+          Write-Host "T-3673 breadcrumb: about to invoke uv via Start-Process with FROB_WIN32_IGNORE_CONSOLE_CTRL=1"
+          try {
+            $p = Start-Process -FilePath "uv" `
+              -ArgumentList "run", "--project", "$env:GITHUB_WORKSPACE", "python", "$diagPy" `
+              -WorkingDirectory $fixture `
+              -PassThru -RedirectStandardOutput $diagOut -RedirectStandardError $diagErr
+            try {
+              Wait-Process -Id $p.Id -Timeout 290 -ErrorAction Stop
+              $exitCode = $p.ExitCode
+            } catch {
+              Write-Host "T-3673 breadcrumb: Wait-Process timed out at 290s -- terminating"
+              Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            }
+          } catch {
+            Write-Host "T-3673: invoke threw: $_"
+          } finally {
+            $elapsed = (Get-Date) - $started
+            Write-Host "T-3673 breadcrumb: Start-Process invocation returned (elapsed: $($elapsed.TotalSeconds)s)"
+            Write-Host "--- diag_mitigation.out ---"
+            if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "--- diag_mitigation.err ---"
+            if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "mitigation-enabled diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          }
+          if ($elapsed.TotalSeconds -ge 235) {
+            Write-Host "::error::mitigation-enabled diag ran $($elapsed.TotalSeconds)s -- treating as a HANG (T-3673)."
+            exit 1
+          }
+          if ($exitCode -eq 130) {
+            Write-Host "::error::mitigation-enabled diag exited 130 -- FROB_WIN32_IGNORE_CONSOLE_CTRL=1 did NOT stop the SIGINT/exit-130 pattern. See diag_mitigation.out/.err above for whether T-3648-SIGNAL still printed."
+            exit 1
+          }
+          Write-Host "mitigation-enabled diag: no hang, no exit-130 (returned in $($elapsed.TotalSeconds)s) -- exit code $exitCode is a genuine gate result, not the injected-SIGINT pattern. The T-3657 mitigation scope validates."
+          exit 0
+
+      # T-3673 (round 17): FROB_TEST_IGNORE_CONSOLE_CTRL=1 is set here,
+      # and ONLY here in this repo -- it activates tests/conftest.py's
+      # session-lifetime SetConsoleCtrlHandler guard (installed in
+      # pytest_configure, removed in pytest_unconfigure), the SAME
+      # mitigation mechanism as FROB_WIN32_IGNORE_CONSOLE_CTRL
+      # (src/frob/process/_guard.py::win32_console_ctrl_ignore_scope,
+      # T-3657) but scoped to the whole pytest session rather than one
+      # run_check() call. This masks a SYMPTOM, not a diagnosis: 3
+      # consecutive CI runs measured the suite dying at teardown
+      # (threading.py join at session end) from the SAME injected-
+      # SIGINT class the whole T-3648/T-3651/T-3657/T-3670/T-3673
+      # ticket family is chasing, at ~100% completion -- a real,
+      # already-computed test result thrown away by a signal with no
+      # legitimate source on a non-interactive runner (no human at a
+      # keyboard here to send a real Ctrl-C). Setting it is justified
+      # by (a2) (this same round's diag step above) validating the
+      # underlying handler mechanism end to end, plus this measured
+      # teardown-interrupt evidence -- see docs/modules/process.md's
+      # "Round 17" paragraph for the full rationale. The sender's
+      # identity (environment vs. frob) stays tracked, unresolved, in
+      # this ticket family regardless of this mitigation shipping.
       - name: Test (windows, timed with hang guard)
         if: matrix.os == 'windows-latest'
         env:
           PYTHONFAULTHANDLER: "1"
+          FROB_TEST_IGNORE_CONSOLE_CTRL: "1"
         run: |
           $budget = 1500  # 25m, same budget/rationale as ubuntu's step above
           $stdout = Join-Path $env:RUNNER_TEMP "pytest-stdout.log"

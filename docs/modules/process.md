@@ -348,6 +348,67 @@ code path -- only this diagnostic CI step opts in, and disabling the
 pool trades parallelism for correctness (every gate still runs, just
 serially), never silently drops gate coverage.
 
+Round 17 (T-3673): all four round-16 variants (a-d) still received
+`T-3648-SIGNAL` -- guarded tool children, `uv` ancestry, and the
+`ProcessPoolExecutor` preload are now all exonerated. Two elimination
+controls narrow the remaining suspects (the environment itself, or
+frob's own in-process startup): variant (e) is a TRIVIAL python child
+run through the identical `Start-Process`/`uv` harness as variant (a),
+except it never imports frob at all -- it just installs the same
+signal logger and `time.sleep(5)`s. A dirty (e) proves the environment
+(pwsh/`Start-Process`/conhost/the runner) delivers the console ctrl
+event to every console-attached child regardless of what that child
+runs, fully exonerating frob and clearing the way to the mitigation
+below; a clean (e) instead implicates frob's own startup and hands off
+to variant (f), which does `import frob` and nothing else (no
+`main()`, no CLI argv) before sleeping -- clean (f) alongside dirty
+(a-d) points at the check pipeline itself (something after import,
+before the interruptible lock wait); dirty (f) points at an import-
+time side effect (e.g. a signal handler some import registers as a
+side effect).
+
+In the same round, variant (a2) VALIDATES the `FROB_WIN32_IGNORE_
+CONSOLE_CTRL` mitigation end to end for the first time: variant (a)'s
+exact invocation, with the env var set in the step's own `env:` block
+before `uv` (and so `frob.__main__`) ever starts. Acceptance is
+explicit and machine-checked by the step itself: no `T-3648-SIGNAL`
+line, and no exit code 130 -- an ordinary gate result (0 or nonzero-
+not-130) is what "the mitigation held" looks like here, an exit-130
+diag failure is what "it did not" looks like, and the step fails
+itself in the latter case rather than reporting it as merely
+informational.
+
+If (e) proves an environment sender AND (a2) validates the mitigation,
+this round ALSO extends the SAME mitigation to the test suite itself,
+not just the diagnostic `frob check` invocation: `tests/conftest.py`
+gains a session-lifetime `SetConsoleCtrlHandler` guard
+(`_install_test_console_ctrl_ignore_guard`/`_uninstall_test_console_
+ctrl_ignore_guard`, installed from `pytest_configure` and removed from
+`pytest_unconfigure`) gated on its OWN env var,
+`FROB_TEST_IGNORE_CONSOLE_CTRL` -- deliberately separate from
+`FROB_WIN32_IGNORE_CONSOLE_CTRL` above, since a pytest session's
+lifetime is not the same scope as one `run_check` call and conflating
+the two gates would silently widen (or narrow) either one's blast
+radius the next time only one of them changes. **This masks a
+symptom, not a diagnosis**: the suite's own teardown `KeyboardInterrupt`
+(a `threading.py` join at session end) is measured evidence of the
+SAME injected-signal class this whole ticket family (T-3648/T-3651/
+T-3657/T-3670/T-3673) has been chasing, caught 3 consecutive CI runs
+in a row at ~100% completion -- a real, already-computed test result
+thrown away by a signal with no legitimate source on a non-interactive
+CI runner (there is no human at a keyboard to send a real Ctrl-C to a
+GitHub Actions windows-latest job). Suppressing it there is a
+deliberate, bounded trade discussed and accepted at the point this
+landed, NOT a claim that the sender-identity question is closed --
+that stays open and tracked in this ticket family regardless of
+whether this suite-level mitigation ships. `FROB_TEST_IGNORE_CONSOLE_
+CTRL=1` is set in exactly one place in this repo: `.github/workflows/
+ci.yml`'s windows `Test (windows, timed with hang guard)` step's own
+`env:` block, with a comment pointing back at (a2) and this paragraph
+-- never as a default, and never anywhere a real developer's
+interactive `pytest` run could have their own Ctrl-C silently
+swallowed.
+
 <!-- frob:invariant INV-019 -->
 
 ## Derived-state lock (T-0859)

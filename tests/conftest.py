@@ -1,3 +1,4 @@
+import ctypes
 import json
 import os
 import shutil
@@ -338,6 +339,7 @@ def pytest_configure(config: pytest.Config) -> None:
     global _last_node_death_ts
     _last_internal_error = None
     _install_stackdump_handler()
+    _install_test_console_ctrl_ignore_guard()
     _worker_crash_hook_config = config
     if hasattr(config, "workerinput"):
         return
@@ -362,6 +364,16 @@ def pytest_configure(config: pytest.Config) -> None:
             daemon=True,
         )
         _stall_watchdog_thread.start()
+
+
+def pytest_unconfigure(config: pytest.Config) -> None:
+    """T-3673: mirror-image of `pytest_configure`'s `_install_test_
+    console_ctrl_ignore_guard` -- unregisters the session-lifetime
+    `SetConsoleCtrlHandler` callback, if one was installed, so it never
+    outlives this pytest process. A no-op whenever nothing was
+    installed (non-win32, or `FROB_TEST_IGNORE_CONSOLE_CTRL` unset)."""
+    del config
+    _uninstall_test_console_ctrl_ignore_guard()
 
 
 _SUITE_RESULT_MAX_NODE_IDS = 50
@@ -392,6 +404,88 @@ named in the `SUITE-RESULT:` line so a reader distinguishes a completed run
 (status 0/1) from an aborted one (2/3/4/5) without memorizing pytest's exit
 code table. An undocumented/future code falls back to `f"CODE-{exitstatus}"`
 in `pytest_sessionfinish` rather than raising or silently omitting a label."""
+
+FROB_TEST_IGNORE_CONSOLE_CTRL_ENV = "FROB_TEST_IGNORE_CONSOLE_CTRL"
+"""T-3673 (win32 round 17): env-gated, OFF by default everywhere except
+the CI workflow's windows Test step -- when truthy on win32, installs a
+`SetConsoleCtrlHandler` callback for the whole pytest session that
+swallows `CTRL_C_EVENT`/`CTRL_BREAK_EVENT`, the same mechanism
+`src/frob/process/_guard.py::win32_console_ctrl_ignore_scope` uses for
+`frob check` itself (T-3657). This is a SEPARATE env var from
+`FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV` -- the suite's session lifetime is
+not the same scope as one `run_check` call, so it gets its own gate
+rather than piggybacking on the check-pipeline one. Rationale: 3
+consecutive CI runs measured the suite dying at teardown
+(threading.py join at session end) from the SAME injected-SIGINT class
+tracked across the whole T-3648/T-3651/T-3657/T-3670/T-3673 ticket
+family, at ~100% completion -- a real result already computed, thrown
+away by a signal with no legitimate source in a non-interactive CI
+runner. Masking is a deliberate, documented symptom-mitigation, NOT a
+claim that the sender identity question is closed; see
+docs/modules/process.md for the full rationale and
+`.github/workflows/ci.yml`'s windows Test step for the one place this
+is ever set."""
+
+_test_console_ctrl_handler_holder: list[object] = []
+"""T-3673: holds the live `ctypes.WINFUNCTYPE` handler object (if any)
+between `pytest_configure` installing it and `pytest_unconfigure`
+removing it -- a bare local would be garbage-collected the moment
+`pytest_configure` returns, which would silently unregister nothing
+(the callback trampoline must outlive the `SetConsoleCtrlHandler`
+registration) or crash on a stale pointer if Windows ever invoked it
+after collection."""
+
+
+def _test_console_ctrl_ignore_requested() -> bool:
+    """True exactly when `FROB_TEST_IGNORE_CONSOLE_CTRL` is set to a
+    truthy value AND this process is running on win32 -- mirrors
+    `_win32_ignore_console_ctrl_requested`'s posture in
+    `src/frob/process/_guard.py` (checked once, fresh, before any win32
+    API is touched)."""
+    if sys.platform != "win32":
+        return False
+    value = os.environ.get(FROB_TEST_IGNORE_CONSOLE_CTRL_ENV, "")
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _install_test_console_ctrl_ignore_guard() -> None:
+    """T-3673: install the session-lifetime `SetConsoleCtrlHandler`
+    guard when `_test_console_ctrl_ignore_requested()` -- a no-op call
+    on every other platform/env combination. Stashes the handler in
+    `_test_console_ctrl_handler_holder` so `_uninstall_test_console_ctrl_
+    ignore_guard` can unregister the SAME callback object at session
+    end; only ever called once per process, from `pytest_configure`."""
+    if not _test_console_ctrl_ignore_requested():
+        return
+    kernel32 = getattr(ctypes, "windll").kernel32  # noqa: B009
+    handler_type = getattr(ctypes, "WINFUNCTYPE")(ctypes.c_bool, ctypes.c_ulong)  # noqa: B009
+
+    def _handler(ctrl_type: int) -> bool:
+        """Swallow `CTRL_C_EVENT` (0) / `CTRL_BREAK_EVENT` (1) for the
+        whole pytest session; let every other console control code fall
+        through to Windows' default handling, same posture as
+        `win32_console_ctrl_ignore_scope`'s handler."""
+        if ctrl_type in (0, 1):
+            return True
+        return False
+
+    handler = handler_type(_handler)
+    kernel32.SetConsoleCtrlHandler(handler, True)
+    _test_console_ctrl_handler_holder.append(handler)
+
+
+def _uninstall_test_console_ctrl_ignore_guard() -> None:
+    """T-3673: unregister the handler `_install_test_console_ctrl_ignore_
+    guard` installed, if any -- called from `pytest_unconfigure` so a
+    real console ctrl event delivered AFTER the pytest process exits
+    (e.g. to a parent shell) is never suppressed by a handler this
+    process leaked."""
+    if not _test_console_ctrl_handler_holder:
+        return
+    handler = _test_console_ctrl_handler_holder.pop()
+    kernel32 = getattr(ctypes, "windll").kernel32  # noqa: B009
+    kernel32.SetConsoleCtrlHandler(handler, False)
+
 
 _last_internal_error: str | None = None
 """T-3246: the most recent `pytest_internalerror` cause, stashed here because

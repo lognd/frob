@@ -209,6 +209,49 @@ def _windows_nopoolpreload_diag_step() -> dict:
     )
 
 
+def _windows_trivialpython_diag_step() -> dict:
+    """T-3673 round 17: variant (e) -- a control child that NEVER
+    imports frob, run through the same Start-Process/uv harness as
+    variant (a). Dirty (e) exonerates frob (the environment is the
+    sender); clean (e) implicates frob's own startup."""
+    workflow = _load_ci_workflow()
+    steps = workflow["jobs"]["build"]["steps"]
+    return next(
+        step
+        for step in steps
+        if "Diagnose frob check hang on windows" in step.get("name", "")
+        and "trivial-python control" in step.get("name", "")
+    )
+
+
+def _windows_importonly_diag_step() -> dict:
+    """T-3673 round 17: variant (f) -- a control child that does
+    `import frob` and nothing else. Localizes an import-time side
+    effect from anything the check pipeline does afterward."""
+    workflow = _load_ci_workflow()
+    steps = workflow["jobs"]["build"]["steps"]
+    return next(
+        step
+        for step in steps
+        if "Diagnose frob check hang on windows" in step.get("name", "")
+        and "import-only control" in step.get("name", "")
+    )
+
+
+def _windows_mitigation_diag_step() -> dict:
+    """T-3673 round 17: variant (a2) -- variant (a) with
+    FROB_WIN32_IGNORE_CONSOLE_CTRL=1 set, validating the T-3657
+    win32_console_ctrl_ignore_scope() mitigation end to end."""
+    workflow = _load_ci_workflow()
+    steps = workflow["jobs"]["build"]["steps"]
+    return next(
+        step
+        for step in steps
+        if "Diagnose frob check hang on windows" in step.get("name", "")
+        and "mitigation-enabled" in step.get("name", "")
+    )
+
+
 class TestWindowsZeroSpawnDiagVariant:
     """T-3657 round 15: the SIGINT sender is not one of the 4 guarded
     tool children (T-3651's round-14 hypothesis is falsified -- see this
@@ -401,6 +444,136 @@ class TestWindowsNoPoolPreloadDiagVariant:
     def test_nopoolpreload_diag_step_reuses_the_same_fixture(self) -> None:
         run_text = _windows_nopoolpreload_diag_step()["run"]
         assert "-WorkingDirectory $fixture" in run_text
+
+
+# frob:ticket T-3673
+class TestWindowsTrivialPythonDiagVariant:
+    """T-3673 round 17: variant (e) -- discriminate the environment
+    itself as the SIGINT sender via a child that never imports frob."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_trivialpython_diag_step_exists_and_runs_on_windows(self) -> None:
+        step = _windows_trivialpython_diag_step()
+        assert step.get("if") == "matrix.os == 'windows-latest'"
+
+    # frob:tests .github/workflows/ci.yml
+    def test_trivialpython_diag_step_has_a_bounded_timeout(self) -> None:
+        step = _windows_trivialpython_diag_step()
+        assert step.get("timeout-minutes") == 5
+
+    # frob:tests .github/workflows/ci.yml
+    def test_trivialpython_diag_step_never_imports_frob(self) -> None:
+        run_text = _windows_trivialpython_diag_step()["run"]
+        code_lines = [
+            line
+            for line in run_text.splitlines()
+            if '"' in line and not line.strip().startswith('"#')
+        ]
+        assert not any("import frob" in line for line in code_lines), (
+            "variant (e)'s whole point is that the child never imports "
+            "frob -- an 'import frob' CODE line here (an explanatory "
+            "comment mentioning it is fine) would collapse it into "
+            "variant (f)"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_trivialpython_diag_step_installs_the_signal_logger(self) -> None:
+        run_text = _windows_trivialpython_diag_step()["run"]
+        assert "T-3648-SIGNAL" in run_text, (
+            "variant (e) must keep the same signal logger preamble as "
+            "the other diag variants so a delivered SIGINT is still "
+            "observable"
+        )
+        assert "signal.signal(signal.SIGINT" in run_text
+
+    # frob:tests .github/workflows/ci.yml
+    def test_trivialpython_diag_step_just_sleeps(self) -> None:
+        run_text = _windows_trivialpython_diag_step()["run"]
+        assert "time.sleep(5)" in run_text
+
+    # frob:tests .github/workflows/ci.yml
+    def test_trivialpython_diag_step_keeps_uv_ancestry(self) -> None:
+        """Same invocation shape as variant (a) -- only the child's own
+        code changes, not the process ancestry, so this isolates
+        exactly one variable."""
+        run_text = _windows_trivialpython_diag_step()["run"]
+        assert '"--project", "$env:GITHUB_WORKSPACE",' in run_text
+
+
+# frob:ticket T-3673
+class TestWindowsImportOnlyDiagVariant:
+    """T-3673 round 17: variant (f) -- localizes a clean-(e) result to
+    either import-time side effects or the check pipeline itself."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_importonly_diag_step_exists_and_runs_on_windows(self) -> None:
+        step = _windows_importonly_diag_step()
+        assert step.get("if") == "matrix.os == 'windows-latest'"
+
+    # frob:tests .github/workflows/ci.yml
+    def test_importonly_diag_step_has_a_bounded_timeout(self) -> None:
+        step = _windows_importonly_diag_step()
+        assert step.get("timeout-minutes") == 5
+
+    # frob:tests .github/workflows/ci.yml
+    def test_importonly_diag_step_imports_frob_and_nothing_else(self) -> None:
+        run_text = _windows_importonly_diag_step()["run"]
+        assert "import frob" in run_text
+        assert "from frob.__main__ import main" not in run_text, (
+            "variant (f) must import frob and stop there -- calling "
+            "main() would collapse it into variant (a)"
+        )
+        assert "sys.argv" not in run_text
+
+    # frob:tests .github/workflows/ci.yml
+    def test_importonly_diag_step_imports_before_sleeping(self) -> None:
+        run_text = _windows_importonly_diag_step()["run"]
+        import_idx = run_text.find("import frob")
+        sleep_idx = run_text.find("time.sleep(5)")
+        assert import_idx != -1 and sleep_idx != -1
+        assert import_idx < sleep_idx
+
+
+# frob:ticket T-3673
+class TestWindowsMitigationDiagVariant:
+    """T-3673 round 17: variant (a2) -- validates the T-3657
+    win32_console_ctrl_ignore_scope() mitigation with
+    FROB_WIN32_IGNORE_CONSOLE_CTRL=1."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_mitigation_diag_step_exists_and_runs_on_windows(self) -> None:
+        step = _windows_mitigation_diag_step()
+        assert step.get("if") == "matrix.os == 'windows-latest'"
+
+    # frob:tests .github/workflows/ci.yml
+    def test_mitigation_diag_step_has_a_bounded_timeout(self) -> None:
+        step = _windows_mitigation_diag_step()
+        assert step.get("timeout-minutes") == 5
+
+    # frob:tests .github/workflows/ci.yml
+    def test_mitigation_diag_step_sets_the_env_var(self) -> None:
+        step = _windows_mitigation_diag_step()
+        assert step.get("env", {}).get("FROB_WIN32_IGNORE_CONSOLE_CTRL") == "1", (
+            "variant (a2) must set FROB_WIN32_IGNORE_CONSOLE_CTRL=1 in "
+            "the step's own env: block so it is present before uv (and "
+            "so frob.__main__) ever starts"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_mitigation_diag_step_reuses_variant_a_script_and_fixture(self) -> None:
+        run_text = _windows_mitigation_diag_step()["run"]
+        assert "-WorkingDirectory $fixture" in run_text
+        assert (
+            'Join-Path $env:RUNNER_TEMP "frob_check_diag.py"' in run_text
+        ), "variant (a2) must reuse variant (a)'s own diag script"
+
+    # frob:tests .github/workflows/ci.yml
+    def test_mitigation_diag_step_fails_the_step_on_exit_130(self) -> None:
+        """Acceptance for (a2) is explicit: no exit 130. A silent pass-
+        through on 130 would let the mitigation regress unnoticed."""
+        run_text = _windows_mitigation_diag_step()["run"]
+        assert "-eq 130" in run_text
+        assert "did NOT stop the SIGINT" in run_text
 
 
 class TestWindowsDiagStepFixtureIsAClassifiableProject:
@@ -615,6 +788,19 @@ class TestWindowsDiagStepDoesNotGateTheJob:
             assert marker in run_text, f"expected a breadcrumb containing {marker!r}"
 
     # frob:tests .github/workflows/ci.yml
+    # frob:tests .github/workflows/ci.yml
+    def test_test_step_sets_frob_test_ignore_console_ctrl(self) -> None:
+        """T-3673 round 17: the windows Test step is the ONE place in
+        this repo that sets FROB_TEST_IGNORE_CONSOLE_CTRL=1, activating
+        tests/conftest.py's session-lifetime console-ctrl-ignore guard
+        -- see docs/modules/process.md's "Round 17" paragraph."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        test_step = next(
+            step for step in steps if step.get("name", "").startswith("Test (windows")
+        )
+        assert test_step.get("env", {}).get("FROB_TEST_IGNORE_CONSOLE_CTRL") == "1"
+
     def test_test_step_is_untouched_and_still_windows_only(self) -> None:
         """Neither T-3604 nor T-3609 may touch the Test step itself --
         only the diagnostic step ahead of it."""
