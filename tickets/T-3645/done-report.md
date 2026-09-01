@@ -1,0 +1,78 @@
+## Done report
+
+Changed: src/frob/refactor/_scan.py::_dest_file_top_import_block (new),
+src/frob/refactor/_scan.py::needed_import_ops_for_symbols (merges its
+combined carry-forward import text into the destination file's own
+existing top-of-file import block when one exists, instead of always
+appending a fresh block at file end immediately before the moved
+symbol)
+
+Root cause confirmed as described: the carry-forward import op was
+always emitted as a `start_line=-1` append, and `_apply_ops_to_file`
+appends every such op, in list order, to the file's END -- so each
+split/move call into an already-populated destination file landed its
+own carried-forward import immediately above that call's own newly-
+appended symbol body, never merged with an earlier call's own import
+block. A multi-symbol split (or several sequential `split` invocations
+targeting the same `--into` module) therefore leaves N separate
+import mini-blocks scattered through the file's body, each valid
+Python but tripping ruff E402 (module level import not at top of
+file) and I001 (unsorted import block) -- exactly the 50-finding
+measurement across 12 of 13 destination files the ticket cites from
+T-3593.
+
+Fix: `_dest_file_top_import_block` reads `dest_file`'s own contiguous
+top-level import run (skipping a leading module docstring) and returns
+its `(start_line, end_line, statement_texts)`, or `None` if the file
+doesn't exist yet or does not start with imports. `needed_import_ops_
+for_symbols` now checks this before building its append op: if a top
+block exists, the new import(s) (deduped by exact statement text
+against what's already there) are merged into that block via a single
+REPLACE op extending the block's own span -- not a second append.
+The first symbol landing in a brand-new destination file is unaffected
+(no existing block yet, so it takes the prior append path, which
+becomes the seed block every later call now merges into).
+
+Regression test added (`TestRunSplit::test_split_merges_carried_
+imports_into_existing_top_block`): two classes needing distinct
+imports (`Path`, `OrderedDict`) split into the SAME destination module
+across two SEPARATE `run_split` calls (mirroring the ticket's own
+repeated `frob refactor split ... --into` invocations); asserts every
+import line in the resulting file sits in one contiguous run at the
+top, not scattered between the two classes. Confirmed genuine via
+`frob ticket evidence --check-repro --base-ref c2feca975` (the repro
+test's own standalone commit, before the fix commit).
+
+Evidence: tests/test_refactor.py::TestRunSplit::
+test_split_merges_carried_imports_into_existing_top_block (repro
+verified genuine); full tests/test_refactor.py suite green (146
+passed).
+
+Filed: none.
+
+Gates: `frob check --ticket T-3645 --only scope` clean (0 errors; 2
+pre-existing SCOPE002 warnings remain -- `design/frob.strata` and
+`tests/unit/test_arch_srp.py`, the identical pre-existing coverage-
+graph cascade T-3656/T-3653 already left as-is earlier in this same
+series, unrelated to this diff's own symbols). `uv run ruff check src
+tests` clean. `frob test`/`frob test . --base main` timed out at the
+540s foreground cap on this host (repeated, fleet contention) --
+substituted the full `tests/test_refactor.py` suite run plus the
+check-repro pass above, per this series' own verification-budget
+instruction.
+
+### Changed
+```
+ src/frob/refactor/_scan.py | 80 ++++++++++++++++++++++++++++++++++++++++++++++
+ tests/test_refactor.py     | 68 +++++++++++++++++++++++++++++++++++++++
+ tickets/T-3645/ticket.md   | 19 ++++++++++-
+ 3 files changed, 166 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_refactor.py::TestRunSplit::test_split_merges_carried_imports_into_existing_top_block` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 20 error(s), 4242 warning(s), 898 waived
+- error-findings: ARCH001@src/frob/refactor/_scan.py, CLAUDE001@.claude/hooks/sync-claude-config.py, COV003@tests/test_ci_workflow_matrix.py, COV007@src/frob/strata/_capacity.py, DEPR006@frob-deprecated-baseline.lock.json, DOC007@tests/test_tickets_leases.py, DRIFT001@src/frob/process/_derived_lock.py, DRIFT002@docs/modules/process.md, DRIFT002@tests/test_tickets_leases.py, LANDPARITY002@src/frob/refactor/_scan.py, LARGE001@src/frob/refactor/_scan.py, LARGE001@src/frob/refactor/_verify.py, OPAQUE001@src/frob/app/_config_external.py, PERF003@src/frob/refactor/_scan.py, PRE001@tickets/T-3645, REF002@src/frob/process/_lock_msvcrt.py, REL001@src/frob/__init__.py, SEC110@tests/ticket_land_suite/test_wip.py, TEST001@src/frob/strata/_models.py, WAIVE011@frob-ratchet.lock.json

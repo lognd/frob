@@ -174,6 +174,46 @@ def _module_level_bound_names(tree: ast.Module) -> set[str]:
     return names
 
 
+def _dest_file_top_import_block(
+    dest_file: Path,
+) -> tuple[int, int, set[str]] | None:
+    """T-3645: `dest_file`'s own existing top-of-file import BLOCK, as
+    `(start_line, end_line, statement_texts)` -- the contiguous run of
+    top-level `Import`/`ImportFrom` statements starting from `tree.body`'s
+    first statement (skipping only a leading module docstring), or `None`
+    if `dest_file` does not exist yet or its first real statement is not
+    an import. A later split/move landing a symbol in `dest_file` that
+    needs its own import carried forward should MERGE into this block
+    (dedup by exact statement text) rather than appending a fresh,
+    scattered import statement immediately above the newly-placed symbol
+    -- the ruff E402/I001 mess this ticket's own repro measured across
+    every destination file a multi-symbol split populates."""
+    if not dest_file.exists():
+        return None
+    dest_lines = dest_file.read_text(encoding="utf-8").splitlines()
+    tree = ast.parse("\n".join(dest_lines), filename=str(dest_file))
+    body = list(tree.body)
+    if (
+        body
+        and isinstance(body[0], ast.Expr)
+        and isinstance(body[0].value, ast.Constant)
+    ):
+        body = body[1:]
+    texts: set[str] = set()
+    start_line: int | None = None
+    end_line: int | None = None
+    for node in body:
+        if not isinstance(node, (ast.Import, ast.ImportFrom)):
+            break
+        if start_line is None:
+            start_line = node.lineno
+        end_line = node.end_lineno if node.end_lineno is not None else node.lineno
+        texts.add("\n".join(dest_lines[node.lineno - 1 : end_line]))
+    if start_line is None or end_line is None:
+        return None
+    return start_line, end_line, texts
+
+
 def _dest_file_bound_names(dest_file: Path) -> set[str]:
     """T-3650: every name already bound at `dest_file`'s module top level
     RIGHT NOW -- empty if `dest_file` does not exist yet. Reuses
@@ -194,12 +234,15 @@ def _dest_file_bound_names(dest_file: Path) -> set[str]:
 # frob:ticket T-3122
 # frob:ticket T-3596
 # frob:ticket T-3650
+# frob:ticket T-3645
 # frob:tests \
 # tests/test_refactor.py::TestRunSplit.test_split_carries_forward_imports_moved_body_needs  # noqa: E501
 # frob:tests \
 # tests/test_refactor.py::TestGapRegressions.test_gap3_split_carries_forward_module_level_free_variable  # noqa: E501
 # frob:tests \
 # tests/test_refactor.py::TestGapRegressions.test_gap1_move_carries_forward_default_arg_import  # noqa: E501
+# frob:tests \
+# tests/test_refactor.py::TestRunSplit.test_split_merges_carried_imports_into_existing_top_block  # noqa: E501
 def needed_import_ops_for_symbols(
     source_file: Path,
     dest_file: Path,
@@ -295,8 +338,56 @@ def needed_import_ops_for_symbols(
     combined_texts = list(needed_texts)
     if synthetic_line:
         combined_texts.append(synthetic_line)
+    return _carry_forward_ops_for_texts(dest_file, combined_texts)
+
+
+def _carry_forward_ops_for_texts(
+    dest_file: Path, combined_texts: list[str]
+) -> list[RewriteOp]:
+    """`needed_import_ops_for_symbols`'s own final step, split out (
+    ARCH001): turn its already-computed `combined_texts` (needed
+    top-level imports plus any synthetic free-variable re-import) into
+    the actual `RewriteOp`(s) against `dest_file`.
+
+    T-3645: a destination file that ALREADY HAS its own top-of-file
+    import block (i.e. this is not the first symbol landing there) gets
+    the new import(s) merged INTO that block -- deduped by exact
+    statement text, appended after the block's own last line -- instead
+    of a fresh append-at-file-end statement landing immediately above
+    THIS symbol's own newly-appended body. Each subsequent split/move
+    into the same destination keeps growing the same one block rather
+    than scattering a new one per call; `ruff --fix` sorts/dedupes the
+    result same as it always has, this only stops the ruff E402/I001
+    mess of import statements interleaved with class/function bodies."""
     if not combined_texts:
         return []
+
+    top_block = _dest_file_top_import_block(dest_file)
+    if top_block is not None:
+        block_start, block_end, existing_texts = top_block
+        merge_texts = [t for t in combined_texts if t not in existing_texts]
+        if not merge_texts:
+            return []
+        dest_lines = dest_file.read_text(encoding="utf-8").splitlines()
+        block_text = "\n".join(dest_lines[block_start - 1 : block_end])
+        merged = block_text + "\n" + "\n".join(merge_texts)
+        _log.info(
+            "refactor.split: merging %d import statement(s) into %s's own "
+            "existing top-of-file import block",
+            len(merge_texts),
+            dest_file,
+        )
+        return [
+            RewriteOp(
+                file_path=str(dest_file),
+                start_line=block_start,
+                end_line=block_end,
+                old_text=block_text,
+                new_text=merged,
+                reason=f"merge import(s) needed by symbol(s) moved into "
+                f"{dest_file}'s own existing top-of-file import block",
+            )
+        ]
 
     _log.info(
         "refactor.split: carrying forward %d import statement(s) into %s",

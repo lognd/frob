@@ -2436,6 +2436,74 @@ class TestRunSplit:
         ).stdout
         assert status.strip() == ""
 
+    # frob:ticket T-3645
+    def test_split_merges_carried_imports_into_existing_top_block(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRunSplit.test_split_merges_carried_imports_into_e\
+        # xisting_top_block
+        """T-3645's own repro shape: `A` and `B` each need a DIFFERENT
+        import (`Path`, `OrderedDict`) not already present at the
+        destination, split into the SAME destination module across TWO
+        SEPARATE `run_split` calls (mirroring the ticket's own repeated
+        `frob refactor split ... --into` invocations). The second call's
+        own carried-forward import must MERGE into the first call's
+        already-landed top-of-file import block -- not append a second,
+        scattered import statement wedged between `class A` and `class
+        B` (the ruff E402/I001 mess the ticket measured 50 findings of
+        across 12 of 13 destination files)."""
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "from pathlib import Path\nfrom collections import OrderedDict\n\n\n"
+            "class A:\n    def m(self):\n        return Path('a')\n\n\n"
+            "class B:\n    def m(self):\n        return OrderedDict()\n",
+        )
+        _commit_all(root, "initial")
+
+        first = run_split(
+            root,
+            source_module="pkg.mod",
+            symbols=["A"],
+            destination_module="pkg.dest",
+            chunk_size=1,
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert first.is_ok
+        assert first.danger_ok.success is True, first.danger_ok.chunks
+
+        second = run_split(
+            root,
+            source_module="pkg.mod",
+            symbols=["B"],
+            destination_module="pkg.dest",
+            chunk_size=1,
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert second.is_ok
+        report = second.danger_ok
+        assert report.success is True, report.chunks
+
+        dest_lines = (root / "src/pkg/dest.py").read_text(encoding="utf-8").splitlines()
+        import_lines = [
+            i
+            for i, line in enumerate(dest_lines)
+            if line.startswith(("import ", "from "))
+        ]
+        assert import_lines, dest_lines
+        # Every import line sits in one CONTIGUOUS run at the top of the
+        # file -- no import statement scattered later, between the two
+        # classes.
+        assert import_lines == list(range(import_lines[0], import_lines[-1] + 1))
+        assert "class A:" in "\n".join(dest_lines[import_lines[-1] :])
+        assert "class B:" in "\n".join(dest_lines[import_lines[-1] :])
+
+        dest_text = "\n".join(dest_lines)
+        assert "from pathlib import Path" in dest_text
+        assert "from collections import OrderedDict" in dest_text
+
     # frob:ticket T-3122
     def test_split_carries_forward_imports_moved_body_needs(self, tmp_path):
         # frob:tests \
