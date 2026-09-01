@@ -1,7 +1,7 @@
 ---
 id: T-3628
 title: 'ARCH102: split src/frob/process/_lock.py (12 exports, 3 clusters)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-01'
