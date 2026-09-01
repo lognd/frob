@@ -2,7 +2,7 @@
 id: T-3625
 title: 'frob ticket land: TDD001 pre-land check has no per-land time budget, blocks
   landing large diffs'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-31'
@@ -72,3 +72,6 @@ ACCEPTANCE: a land whose diff touches 100+ frob:tests edges against a
 handful of large-history files completes TDD001 in well under 595s,
 measured against this same T-3586 diff (or an equivalent fixture) once
 this ticket's fix lands.
+
+## Drop reason
+- 2026-09-01: duplicate of T-3618, fixed there (TDD001 land-time git-log walk unbudgeted)
