@@ -1,7 +1,7 @@
 ---
 id: T-3661
 title: 'win32: lease records rejected by POSIX-only argv-safety regex'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -17,10 +17,18 @@ scope:
 - src/frob/tickets/_leases.py
 - tests/gates_suite/test_debt.py
 - tests/gates_suite/test_fix_engine.py
+- tests/test_tickets_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_leases.py
+  reason: unit tests for _looks_like_a_safe_worktree_path_operand/lease admission
+    live here, not in gates_suite
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
