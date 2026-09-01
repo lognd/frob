@@ -15,14 +15,14 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_import_as_alias_detected
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_from_import_detected
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_from_import_as_detected_with_correct_kind
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_import_as_alias_operation_names_registry_entry
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_method_shadowing_import_not_detected
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_param_shadowing_import_not_detected
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_local_variable_shadowing_import_not_detected
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_bare_name_call_with_no_import_not_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_import_as_alias_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_from_import_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_from_import_as_detected_with_correct_kind
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_import_as_alias_operation_names_registry_entry
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_method_shadowing_import_not_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_param_shadowing_import_not_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_local_variable_shadowing_import_not_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_bare_name_call_with_no_import_not_detected
 designated_repro_test: null
 threat: null
 component: null

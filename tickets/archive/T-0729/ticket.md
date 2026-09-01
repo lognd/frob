@@ -27,8 +27,8 @@ scope_changes:
   at: '2026-07-22'
 evidence:
 - tests/unit/test_arch_srp.py::TestMixedConcernFunction::test_io_compute_and_formatting_together_trigger
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_every_needle_table_module
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_survives_a_foreign_install_copy
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_covers_every_needle_table_module
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_survives_a_foreign_install_copy
 designated_repro_test: null
 acceptance:
 - text: GIVEN main after the fix WHEN frob sys audit runs THEN zero SYS100 gaps and

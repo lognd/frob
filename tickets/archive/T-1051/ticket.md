@@ -18,16 +18,16 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_python_container_dynamic_key_not_addressed
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_python_container_literal_key_call_not_addressed_by_structural_gate
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_typescript_computed_member_non_constant_key_not_addressed
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_typescript_container_dynamic_key_not_addressed
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_c_array_nonconstant_index_not_addressed
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_c_integer_cast_to_function_pointer_not_addressed
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_c_void_star_backcast_not_addressed
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_cpp_array_runtime_index_not_addressed
-- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_structural_construct_is_frozen
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_container_dynamic_key_not_addressed
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_container_literal_key_call_not_addressed_by_structural_gate
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_typescript_computed_member_non_constant_key_not_addressed
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_typescript_container_dynamic_key_not_addressed
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_c_array_nonconstant_index_not_addressed
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_c_integer_cast_to_function_pointer_not_addressed
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_c_void_star_backcast_not_addressed
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_cpp_array_runtime_index_not_addressed
+- tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_structural_construct_is_frozen
 designated_repro_test: null
 threat: null
 component: null
@@ -37,7 +37,7 @@ pass found unaddressed (RUNTIME_OPAQUE_CONSTRUCTS gained 15 needle
 entries across python/typescript/c-cpp/rust/kotlin; OPAQUE_SOURCE_INVISIBLE
 gained 2 rust category-3 excuses). 13 rows remain, each already locked by
 an honest non-firing/non-resolving litmus fixture in
-tests/test_vet.py::TestOpaqueIndirectionGate (untouched by T-1047):
+tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate (untouched by T-1047):
 
 Needle-architecture-blocked (need a generalized subscript-or-cast detector
 shape, not another single-literal needle -- the current

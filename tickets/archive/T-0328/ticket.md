@@ -19,16 +19,16 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_import_as_alias_detected
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_from_import_detected
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_from_import_as_detected_with_correct_kind
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_import_as_alias_operation_names_registry_entry
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_method_shadowing_import_not_detected
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_param_shadowing_import_not_detected
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_local_variable_shadowing_import_not_detected
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_bare_name_call_with_no_import_not_detected
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_direct_call_still_detected_via_resolver
-- tests/test_vet.py::TestCapabilityScanBindingResolution::test_attribute_only_env_access_via_alias_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_import_as_alias_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_from_import_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_from_import_as_detected_with_correct_kind
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_import_as_alias_operation_names_registry_entry
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_method_shadowing_import_not_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_param_shadowing_import_not_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_local_variable_shadowing_import_not_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_bare_name_call_with_no_import_not_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_direct_call_still_detected_via_resolver
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanBindingResolution::test_attribute_only_env_access_via_alias_detected
 designated_repro_test: null
 acceptance:
 - text: given 'import subprocess as sp' then 'sp.run(x)', when scanned, then exec

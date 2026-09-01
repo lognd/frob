@@ -23,11 +23,11 @@ evidence:
 - tests/test_tickets.py::TestAttach::test_index_increments
 - tests/test_tickets.py::TestAttach::test_large_file_logs_warning
 - tests/test_tickets.py::TestAttach::test_unknown_ticket_not_found
-- tests/test_vet.py::TestQuarantine::test_fresh_package_blocked
-- tests/test_vet.py::TestQuarantine::test_old_package_ok
-- tests/test_vet.py::TestQuarantine::test_network_failure_degrades_to_unverified
-- tests/test_vet.py::TestQuarantine::test_typosquat_name_blocked_before_any_registry_lookup
-- tests/test_vet.py::TestAllowConfig::test_vet_section_present
+- tests/vet_suite/test_lockfile.py::TestQuarantine::test_fresh_package_blocked
+- tests/vet_suite/test_lockfile.py::TestQuarantine::test_old_package_ok
+- tests/vet_suite/test_lockfile.py::TestQuarantine::test_network_failure_degrades_to_unverified
+- tests/vet_suite/test_lockfile.py::TestQuarantine::test_typosquat_name_blocked_before_any_registry_lookup
+- tests/vet_suite/test_lockfile.py::TestAllowConfig::test_vet_section_present
 designated_repro_test: null
 threat: null
 component: null

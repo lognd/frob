@@ -35,7 +35,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestYamlLoader::test_prefers_csafeloader_when_libyaml_present
 - tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion
 - tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
-- tests/test_vet.py::TestFingerprintScan::test_yaml_load_with_explicit_loader_is_not_flagged
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_yaml_load_with_explicit_loader_is_not_flagged
 designated_repro_test: null
 threat: null
 component: null

@@ -430,7 +430,7 @@ body_changes:
   old_length: 0
   new_length: 3464
 evidence:
-- tests/test_vet.py::TestLockfileParsers::test_find_lockfile_uv
+- tests/vet_suite/test_lockfile.py::TestLockfileParsers::test_find_lockfile_uv
 - tests/test_arch_gate.py::TestArchComplexityAware::test_flat_long_function_not_flagged
 designated_repro_test: null
 threat: null

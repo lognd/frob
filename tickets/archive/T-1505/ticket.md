@@ -51,10 +51,10 @@ scope_changes:
   actor: logan
   at: '2026-08-07'
 evidence:
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_cpp_pointer_to_member_call_fires
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_macro_rules_dangerous_body_fires
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_macro_rules_benign_body_not_addressed
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_kotlin_operator_invoke_instance_call_fires
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_cpp_pointer_to_member_call_fires
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_rust_macro_rules_dangerous_body_fires
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_rust_macro_rules_benign_body_not_addressed
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_kotlin_operator_invoke_instance_call_fires
 designated_repro_test: null
 threat: null
 component: null
@@ -185,10 +185,10 @@ after land, per this repo's review-gated ticket workflow.
 ```
 
 ### Evidence
-- `tests/test_vet.py::TestOpaqueIndirectionGate::test_cpp_pointer_to_member_call_fires` (pytest node id, verified passing when recorded)
-- `tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_macro_rules_dangerous_body_fires` (pytest node id, verified passing when recorded)
-- `tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_macro_rules_benign_body_not_addressed` (pytest node id, verified passing when recorded)
-- `tests/test_vet.py::TestOpaqueIndirectionGate::test_kotlin_operator_invoke_instance_call_fires` (pytest node id, verified passing when recorded)
+- `tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_cpp_pointer_to_member_call_fires` (pytest node id, verified passing when recorded)
+- `tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_rust_macro_rules_dangerous_body_fires` (pytest node id, verified passing when recorded)
+- `tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_rust_macro_rules_benign_body_not_addressed` (pytest node id, verified passing when recorded)
+- `tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_kotlin_operator_invoke_instance_call_fires` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

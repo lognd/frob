@@ -32,10 +32,10 @@ scope_changes:
   actor: logan
   at: '2026-08-03'
 evidence:
-- tests/test_vet.py::TestFingerprintScan::test_whitespace_tolerant_match_still_respects_comment_spans
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
-- tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
-- tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_whitespace_tolerant_match_still_respects_comment_spans
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN _comment_byte_spans/_docstring_byte_spans (per-node Python recursion)
@@ -49,10 +49,10 @@ acceptance:
     zero-Rust)'' -- this ticket covers only the sort+bisect containment fix and the
     per-run cache, not the extraction mechanism itself'
   evidence:
-  - tests/test_vet.py::TestFingerprintScan::test_whitespace_tolerant_match_still_respects_comment_spans
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
-  - tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
-  - tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
+  - tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_whitespace_tolerant_match_still_respects_comment_spans
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
 threat: null
 component: null
 ---

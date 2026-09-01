@@ -502,7 +502,7 @@ def _body_reaches_decode_and_exec(body: str) -> bool:
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-2358
 # frob:ticket T-2798
-# frob:tests tests/test_vet.py::TestCapabilityScan.test_python_exec_and_net_detected kind="unit"  # noqa: E501
+# frob:tests tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_python_exec_and_net_detected kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_scan_file_capabilities_still_resolves_cross_file_wrapper kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_scan_file_capabilities_sees_a_genuine_sibling_change kind="unit"  # noqa: E501
 def scan_file_capabilities(path: Path) -> frozenset[str]:

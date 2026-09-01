@@ -16,8 +16,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
-- tests/test_vet.py::TestNvdLookup::test_fetch_cwe_for_cve_refuses_when_net_disabled
+- tests/vet_suite/test_advisories.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
+- tests/vet_suite/test_advisories.py::TestNvdLookup::test_fetch_cwe_for_cve_refuses_when_net_disabled
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 designated_repro_test: null
 acceptance:
@@ -25,13 +25,13 @@ acceptance:
     NVD CVE->CWE mapping, then no urlopen call happens and the result degrades to
     ok=False with a "net disabled" note.
   evidence:
-  - tests/test_vet.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
-  - tests/test_vet.py::TestNvdLookup::test_fetch_cwe_for_cve_refuses_when_net_disabled
+  - tests/vet_suite/test_advisories.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
+  - tests/vet_suite/test_advisories.py::TestNvdLookup::test_fetch_cwe_for_cve_refuses_when_net_disabled
 - text: Given design/frob.strata's vet node, when frob sys audit runs, then the node
     declares a real attr flag=<id> kill-switch and carries no LINT004 waiver.
   evidence:
   - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
-  - tests/test_vet.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
+  - tests/vet_suite/test_advisories.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
 threat: null
 component: null
 ---

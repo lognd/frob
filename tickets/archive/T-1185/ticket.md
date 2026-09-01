@@ -22,7 +22,7 @@ scope_breadth_ack_reason: null
 scope_changes:
 - op: add
   glob: tests/test_vet.py
-  reason: T-1185's OPAQUE001 WARN->ERROR promotion in _opaque.py directly breaks tests/test_vet.py::TestOpaqueIndirectionGate.test_opaque_gate_emits_warn_severity_violation's
+  reason: T-1185's OPAQUE001 WARN->ERROR promotion in _opaque.py directly breaks tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate.test_opaque_gate_emits_warn_severity_violation's
     severity assertion; fixing it is a direct mechanical consequence of this ticket's
     own in-scope change
   actor: logan
@@ -34,9 +34,9 @@ scope_changes:
   actor: logan
   at: '2026-07-29'
 evidence:
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_waived_finding_is_suppressed_and_reason_recorded
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_waived_finding_is_suppressed_and_reason_recorded
 designated_repro_test: null
 threat: null
 component: null

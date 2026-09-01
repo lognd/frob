@@ -146,9 +146,9 @@ body_changes:
 evidence:
 - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
 - tests/test_lang_support.py::TestDeriveLanguageRegistry::test_cuda_capability_dup_docblock_are_implemented
-- tests/test_vet.py::TestCapabilityScan::test_cuda_host_system_call_detected
-- tests/test_vet.py::TestCapabilityScan::test_cuda_dlopen_detected
-- tests/test_vet.py::TestCapabilityScan::test_cuda_benign_kernel_has_no_capabilities
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_cuda_host_system_call_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_cuda_dlopen_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_cuda_benign_kernel_has_no_capabilities
 designated_repro_test: null
 threat: null
 component: null

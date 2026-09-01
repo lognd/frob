@@ -1,4 +1,6 @@
+import json
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -7,9 +9,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator
 
 import pytest
-
-if TYPE_CHECKING:
-    from frob.graph import GraphSnapshot
 
 import frob.lang as lang_mod
 from frob.gates import Severity, Violation
@@ -28,6 +27,10 @@ from frob.tickets._worktree_guard import (
     FROB_WORKTREE_ENV,
     PYTEST_XDIST_AUTO_NUM_WORKERS_ENV,
 )
+
+if TYPE_CHECKING:
+    from frob.graph import GraphSnapshot
+
 
 #: T-3582 (Windows round 5): the DEFAULT bound for `run_bounded_subprocess`
 #: whenever a caller does not pass its own `timeout=` -- never `None`
@@ -1850,3 +1853,118 @@ def _complex_function_source(fn_name: str) -> str:
         lines.append(f'    step_{i} = cfg.get("step_{i}", "default")')
     lines.append("    return result, " + ", ".join(f"step_{i}" for i in range(20)))
     return "\n".join(lines) + "\n"
+
+
+def _make_fake_frob_repo_root(dest: Path) -> Path:
+    """Build a `dest` directory that `_is_frob_repo_root` (T-0253) recognizes
+    as frob's own checkout: `pyproject.toml` declaring `name = "frob"`, plus
+    the `frob-core`/`strata-core` marker directories, plus a copy of the
+    real `src/frob` tree underneath. `is_self_pattern_path`'s scan-target
+    discriminator checks the exact directory passed as the scan root (no
+    upward ancestor search -- see that function's docstring for why:
+    ascending from a dependency located under frob's own `.venv` during
+    frob vetting its OWN dependencies would otherwise wrongly classify that
+    dependency's tree as "self" too), so tests exercising the discriminator
+    must pass THIS directory itself as the scan root, not a subdirectory of
+    it."""
+    dest.mkdir(parents=True)
+    repo_root = Path(__file__).resolve().parents[1]
+    (dest / "pyproject.toml").write_text('[project]\nname = "frob"\n')
+    (dest / "frob-core").mkdir()
+    (dest / "strata-core").mkdir()
+    shutil.copytree(
+        repo_root / "src" / "frob",
+        dest / "src" / "frob",
+        ignore=shutil.ignore_patterns("__pycache__"),
+    )
+    return dest
+
+
+def _ts_find(node, node_type: str):  # noqa: ANN001, ANN201
+    """First descendant of `node` (inclusive) with `.type == node_type`, or
+    `None` -- a small DFS helper `TestCapabilityScanTsAliasTablePredicates`
+    uses to pluck a specific tree-sitter node out of a parsed fixture for a
+    white-box call into a private resolver function."""
+    if node.type == node_type:
+        return node
+    for child in node.children:
+        found = _ts_find(child, node_type)
+        if found is not None:
+            return found
+    return None
+
+
+def _ts_find_all(node, node_type: str, out: list) -> None:  # noqa: ANN001
+    """Every descendant of `node` (inclusive) with `.type == node_type`,
+    appended to `out` in document order -- `_ts_find`'s multi-match
+    sibling."""
+    if node.type == node_type:
+        out.append(node)
+    for child in node.children:
+        _ts_find_all(child, node_type, out)
+
+
+# ---------------------------------------------------------------------------
+# lockfile fixtures shared across tests.vet_suite families (T-3593 split:
+# used by both lockfile-parser tests and scan-tree tests, so they live here
+# rather than in any single per-family module).
+# ---------------------------------------------------------------------------
+
+UV_LOCK = """\
+version = 1
+requires-python = ">=3.11"
+
+[[package]]
+name = "requests"
+version = "2.31.0"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "idna"
+version = "3.6"
+source = { registry = "https://pypi.org/simple" }
+"""
+
+PACKAGE_LOCK_JSON_V3 = json.dumps(
+    {
+        "name": "app",
+        "lockfileVersion": 3,
+        "packages": {
+            "": {"name": "app", "version": "1.0.0"},
+            "node_modules/lodash": {"version": "4.17.21"},
+            "node_modules/chalk": {"version": "5.3.0"},
+        },
+    }
+)
+
+PACKAGE_LOCK_JSON_V1 = json.dumps(
+    {
+        "name": "app",
+        "lockfileVersion": 1,
+        "dependencies": {
+            "express": {"version": "4.18.2"},
+        },
+    }
+)
+
+PNPM_LOCK_YAML = """\
+lockfileVersion: '6.0'
+
+packages:
+  /lodash@4.17.21:
+    resolution: {integrity: sha512-xyz}
+  /chalk@5.3.0:
+    resolution: {integrity: sha512-abc}
+"""
+
+CARGO_LOCK = """\
+version = 3
+
+[[package]]
+name = "serde"
+version = "1.0.195"
+
+[[package]]
+name = "tokio"
+version = "1.35.1"
+"""

@@ -22,8 +22,8 @@ evidence:
 - tests/unit/strata/test_threat.py::TestCwe611Xxe::test_cwe_611_never_fires_capability_kind_is_none
 - tests/unit/strata/test_cve_fingerprint.py::TestXxeFingerprint::test_fp_xxe_parse_001_exists_and_joins_cwe_611
 - tests/unit/strata/test_cve_fingerprint.py::TestXxeFingerprint::test_fp_xxe_parse_001_resolves_against_the_default_joined_catalog
-- tests/test_vet.py::TestFingerprintScan::test_matches_the_xxe_fingerprint_positive
-- tests/test_vet.py::TestFingerprintScan::test_does_not_match_the_xxe_fingerprint_negative
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_matches_the_xxe_fingerprint_positive
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_does_not_match_the_xxe_fingerprint_negative
 - tests/unit/strata/test_litmus_cwe.py::TestFixtureCoverageIsExhaustive::test_every_catalog_entry_has_a_fixture_mapping
 - tests/unit/strata/test_litmus_cwe.py::TestFixtureCoverageIsExhaustive::test_unfired_ids_are_exactly_the_capability_kind_none_entries
 - tests/unit/strata/test_litmus_cwe.py::TestCapabilityKindNoneEntriesNeverFireByDesign::test_never_fires_even_in_a_plausible_vulnerable_scenario[CWE-611]

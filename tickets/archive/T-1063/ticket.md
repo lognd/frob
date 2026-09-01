@@ -24,9 +24,9 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_vet.py::TestCapabilityScanRustTaxonomyClosureResolution::test_struct_update_field_rebind_detected
-- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_destructuring_declaration_detected
-- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_default_parameter_forwarding_callable_detected
+- tests/vet_suite/test_capability_scan_rust.py::TestCapabilityScanRustTaxonomyClosureResolution::test_struct_update_field_rebind_detected
+- tests/vet_suite/test_capability_scan_kotlin.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_destructuring_declaration_detected
+- tests/vet_suite/test_capability_scan_kotlin.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_default_parameter_forwarding_callable_detected
 designated_repro_test: null
 threat: null
 component: null

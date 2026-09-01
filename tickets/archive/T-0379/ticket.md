@@ -15,10 +15,10 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestCapabilityScanCBindingResolution::test_macro_alias_detected
-- tests/test_vet.py::TestCapabilityScanCBindingResolution::test_call_before_local_shadow_still_detected
-- tests/test_vet.py::TestCapabilityScanCBindingResolution::test_local_shadowing_macro_alias_not_detected
-- tests/test_vet.py::TestCapabilityScanCBindingResolution::test_transitive_macro_alias_detected
+- tests/vet_suite/test_capability_scan_c.py::TestCapabilityScanCBindingResolution::test_macro_alias_detected
+- tests/vet_suite/test_capability_scan_c.py::TestCapabilityScanCBindingResolution::test_call_before_local_shadow_still_detected
+- tests/vet_suite/test_capability_scan_c.py::TestCapabilityScanCBindingResolution::test_local_shadowing_macro_alias_not_detected
+- tests/vet_suite/test_capability_scan_c.py::TestCapabilityScanCBindingResolution::test_transitive_macro_alias_detected
 designated_repro_test: null
 threat: null
 component: null

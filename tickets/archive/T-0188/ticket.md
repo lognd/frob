@@ -19,12 +19,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_threat.py::TestQualityFamilies::test_cwe_295_is_cataloged_with_no_capability_kind_or_view
-- tests/test_vet.py::TestFingerprintScan::test_matches_tls_verify_false_python
-- tests/test_vet.py::TestFingerprintScan::test_no_match_on_verified_tls_python
-- tests/test_vet.py::TestFingerprintScan::test_matches_tls_reject_unauthorized_false_node
-- tests/test_vet.py::TestFingerprintScan::test_no_match_on_reject_unauthorized_true_node
-- tests/test_vet.py::TestFingerprintScan::test_matches_tls_danger_accept_invalid_certs_rust
-- tests/test_vet.py::TestFingerprintScan::test_no_match_on_default_reqwest_builder_rust
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_matches_tls_verify_false_python
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_no_match_on_verified_tls_python
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_matches_tls_reject_unauthorized_false_node
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_no_match_on_reject_unauthorized_true_node
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_matches_tls_danger_accept_invalid_certs_rust
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_no_match_on_default_reqwest_builder_rust
 designated_repro_test: null
 threat: spoofing
 component: null

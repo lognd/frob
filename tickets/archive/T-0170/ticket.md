@@ -18,11 +18,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestCapabilityScan::test_kotlin_net_okhttp_detected
-- tests/test_vet.py::TestCapabilityScan::test_kotlin_exec_runtime_exec_detected
-- tests/test_vet.py::TestCapabilityScan::test_kotlin_client_storage_shared_preferences_detected
-- tests/test_vet.py::TestCapabilityScan::test_kotlin_benign_file_has_no_capabilities
-- tests/test_vet.py::TestCapabilityScan::test_language_for_known_and_unknown_extensions
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_kotlin_net_okhttp_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_kotlin_exec_runtime_exec_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_kotlin_client_storage_shared_preferences_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_kotlin_benign_file_has_no_capabilities
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_language_for_known_and_unknown_extensions
 - tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages
 - tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_language_for_is_consistent_with_scanned_languages
 designated_repro_test: null

@@ -19,7 +19,7 @@ evidence:
 - tests/test_graph.py::TestCallGraph::test_build_reference_graph_catches_dispatch_table_entry
 - tests/test_lang.py::TestParsePython::test_private_module_level_const_extracted
 - tests/unit/test_dup_cache.py::TestConnectionReuse::test_close_all_drops_cached_connections
-- tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_names_registry_entry
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_scan_file_operations_names_registry_entry
 designated_repro_test: null
 threat: null
 component: null

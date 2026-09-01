@@ -18,8 +18,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_does_not_fire_when_vetting_a_dependency
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_survives_a_foreign_install_copy
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_does_not_fire_when_vetting_a_dependency
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_survives_a_foreign_install_copy
 designated_repro_test: null
 threat: null
 component: null

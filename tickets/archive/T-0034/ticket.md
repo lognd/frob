@@ -27,7 +27,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/gates_suite/test_test_gate.py::TestGatesDegradeWithoutDiff::test_diff_independent_gates_run_without_git
-- tests/test_vet.py::TestLockfileParsers::test_find_lockfile_uv
+- tests/vet_suite/test_lockfile.py::TestLockfileParsers::test_find_lockfile_uv
 designated_repro_test: null
 threat: null
 component: null

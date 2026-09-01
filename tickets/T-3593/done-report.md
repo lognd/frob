@@ -1,0 +1,70 @@
+## Done report
+
+Split tests/test_vet.py (7992 lines, 481 tests) into 13 per-gate-family
+modules under tests/vet_suite/, using `frob refactor split`/`move`
+exclusively (never hand-copying test logic), reusing T-3586's recipe.
+Split symbols one-at-a-time per destination module (not as combined
+chunks) after a combined TestLockfileParsers/TestAllowConfig/
+TestQuarantine/TestTyposquat chunk refused with an overlapping-rewrite
+error on tickets/archive/T-0328/ticket.md's evidence list (two symbols'
+citations landing on the same YAML line) -- filed as a new T-3596 gap
+below. Module-level fixture constants shared across families
+(UV_LOCK/PACKAGE_LOCK_JSON_V1/V3/PNPM_LOCK_YAML/CARGO_LOCK, used by
+both TestLockfileParsers and the later TestScanTreeLockArg/
+TestScanTreeWithLocalSource families) and two shared tree-sitter DFS
+helpers (_ts_find/_ts_find_all) and a fake-repo-root builder
+(_make_fake_frob_repo_root) were relocated to tests/conftest.py by
+hand ahead of the split (move/split v1 scope is function/class defs
+only, per T-3586's own precedent).
+
+tests/test_vet.py is KEPT as a genuine (not re-export-shim) residual
+file: after every class moved out, 46 real lines remained -- the
+hook-command parsing table's two module-level test functions
+(test_parse_hook_command, test_parse_hook_command_scoped_npm_package),
+which have no natural per-gate-family home and are cheap enough to
+leave where they are; well under the 200-line shim precedent.
+
+Verified: collection count preserved EXACTLY (481/481 before and
+after, `pytest tests/vet_suite tests/test_vet.py --collect-only -q`).
+Full new-package suite green (481/481 PASSING, not just collected).
+`ruff check` clean on every touched file. Repointed 9 stale
+tests/test_vet.py::TestX frob:tests citations left behind by the
+split's reference scanner (scoped to Python import/call sites, not
+directive comments or doc prose) in src/frob/app/vet_runner.py,
+src/frob/gates/_opaque.py, src/frob/vet/_capability.py,
+_capability_core.py, _capability_kotlin.py, _capability_scan.py,
+_lockfile.py, _scan.py, _scan_violations.py, plus invariants/INV-025.md
+and docs/modules/vet.md, docs/design/capability-evasion-taxonomy.md
+doc anchors, plus one self-referential frob:tests citation left inside
+a moved test body (test_opaque_indirection.py). Fixed 6
+`Path(__file__).resolve().parents[N]`/`.parent.parent` repo-root
+computations in moved test bodies that needed +1 level of nesting now
+that they live one directory deeper (tests/vet_suite/ vs tests/).
+Rewrote TestEvasionTaxonomyExhaustiveness::test_every_litmus_path_
+resolves_to_a_real_test, which used to `ast.parse` its OWN file to
+verify every _EVASION_LITMUS_MAP dotted reference resolves to a real
+test -- now that the litmus fixtures it validates are scattered across
+sibling vet_suite modules, it scans the whole package directory
+instead.
+
+Tool gap found and appended to T-3596's body: `frob refactor split`
+carries an imported symbol's needed import statement forward once PER
+SYMBOL rather than merging into a single top-of-file block when
+several classes in the same split batch land in the same destination
+module -- produced 50 ruff E402 findings (scattered module-level
+import statements after the first executable line) across 12 of the
+13 new files, cleaned up by hand (consolidated into each file's single
+top import block, deduped against what was already there).
+
+### Changed
+tests/test_vet.py, tests/conftest.py,
+tests/vet_suite/{__init__,test_lockfile,test_capability_scan_python,
+test_capability_scan_embedded,test_capability_scan_ts,
+test_capability_scan_rust,test_capability_scan_c,
+test_capability_scan_cpp,test_capability_scan_kotlin,test_fingerprint,
+test_scan_tree,test_advisories,test_opaque_indirection,
+test_supply_chain}.py, src/frob/app/vet_runner.py,
+src/frob/gates/_opaque.py, src/frob/vet/{_capability,_capability_core,
+_capability_kotlin,_capability_scan,_evasion_coverage,_lockfile,_scan,
+_scan_violations}.py, invariants/INV-025.md, docs/modules/vet.md,
+docs/design/capability-evasion-taxonomy.md

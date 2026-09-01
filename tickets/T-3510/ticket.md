@@ -39,8 +39,8 @@ body_changes:
   old_length: 2486
   new_length: 2971
 evidence:
-- tests/test_vet.py::TestObfuscationEnsemble::test_bidi_override_detected_in_c_file
-- tests/test_vet.py::TestObfuscationEnsemble::test_bidi_override_detected_in_kotlin_file
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_bidi_override_detected_in_c_file
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_bidi_override_detected_in_kotlin_file
 designated_repro_test: null
 threat: null
 component: null

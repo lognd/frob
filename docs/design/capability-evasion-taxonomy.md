@@ -305,7 +305,7 @@ Combined split: 73 static-resolvable constructs (analyzer MUST resolve),
 
 The 112-entry denominator above is enforced against the litmus-fixture
 registry in `src/frob/vet/_evasion_coverage.py`, cross-checked by
-`tests/test_vet.py::TestEvasionTaxonomyExhaustiveness` (T-0666).
+`tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness` (T-0666).
 
 ---
 

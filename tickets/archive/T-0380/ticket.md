@@ -27,14 +27,14 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_vet.py::TestFingerprintBindingResolution::test_python_aliased_pickle_loads_still_matches
-- tests/test_vet.py::TestFingerprintBindingResolution::test_python_unaliased_control_still_matches_lexically
-- tests/test_vet.py::TestFingerprintBindingResolution::test_typescript_aliased_require_still_matches
-- tests/test_vet.py::TestFingerprintBindingResolution::test_typescript_clean_source_does_not_match
-- tests/test_vet.py::TestFingerprintBindingResolution::test_rust_aliased_use_still_matches
-- tests/test_vet.py::TestFingerprintBindingResolution::test_rust_clean_source_does_not_match
-- tests/test_vet.py::TestFingerprintBindingResolution::test_c_aliased_macro_still_matches
-- tests/test_vet.py::TestFingerprintBindingResolution::test_c_clean_source_does_not_match
+- tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution::test_python_aliased_pickle_loads_still_matches
+- tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution::test_python_unaliased_control_still_matches_lexically
+- tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution::test_typescript_aliased_require_still_matches
+- tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution::test_typescript_clean_source_does_not_match
+- tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution::test_rust_aliased_use_still_matches
+- tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution::test_rust_clean_source_does_not_match
+- tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution::test_c_aliased_macro_still_matches
+- tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution::test_c_clean_source_does_not_match
 designated_repro_test: null
 threat: null
 component: null

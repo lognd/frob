@@ -2,7 +2,7 @@
 id: T-3593
 title: Split tests/test_vet.py (7992 lines) into a per-gate-family package, reusing
   T-3586's recipe
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-08-31'
@@ -23,6 +23,22 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/vet_suite/test_advisories.py::TestLifecycleScripts::test_finds_postinstall_script
+- tests/vet_suite/test_capability_scan_embedded.py::TestEmbeddedCodeCapability::test_embedded_html_script_string_detected
+- tests/vet_suite/test_supply_chain.py::TestSupplyChainUnpinnedDependencies::test_pyproject_caret_range_flagged
+- tests/vet_suite/test_capability_scan_c.py::TestCapabilityScanCBindingResolution::test_macro_alias_detected
+- tests/vet_suite/test_capability_scan_cpp.py::TestCapabilityScanCppTaxonomyClosureResolution::test_using_declaration_needs_no_special_resolution
+- tests/vet_suite/test_capability_scan_kotlin.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_expr_text_returns_none_for_unbound_identifier
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_python_exec_and_net_detected
+- tests/vet_suite/test_capability_scan_rust.py::TestCapabilityScanRustBindingResolution::test_use_as_alias_detected
+- tests/vet_suite/test_capability_scan_ts.py::TestCapabilityScanTsBindingResolution::test_direct_unaliased_call_still_detected
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_high_entropy_string_flagged
+- tests/vet_suite/test_lockfile.py::TestLockfileParsers::test_find_lockfile_uv
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation
+- tests/vet_suite/test_scan_tree.py::TestScanTreeLockArg::test_scan_tree_lockfile_arg
+- tests/vet_suite/test_scan_tree.py::TestVetRunnerLockArg::test_run_lockfile_arg
+- tests/test_vet.py::test_parse_hook_command_scoped_npm_package
 designated_repro_test: null
 threat: null
 component: null

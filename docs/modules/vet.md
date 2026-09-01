@@ -524,7 +524,7 @@ reports "install-hook" for `vet` itself even though `vet` does not
 install-hook anything -- that is the accepted false-positive class this
 paragraph documents, exercised by
 `TestCapabilityScan::test_capability_module_self_scan_documented_false_positive`
-in `tests/test_vet.py`.
+in `tests/vet_suite/test_capability_scan_python.py`.
 
 High-entropy string scan (T-0208): `high_entropy_strings` finds quoted
 literal bodies with a single left-to-right scan (matching quote chars
@@ -645,7 +645,7 @@ hidden" posture:
   by this pass.
 
 Each of these three limits has its own regression test
-(`tests/test_vet.py::TestCapabilityScan`) asserting the gap is real, not
+(`tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan`) asserting the gap is real, not
 merely undocumented -- the same "prove the limit, don't just state it"
 posture as the corpus-verification note above.
 

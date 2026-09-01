@@ -57,50 +57,50 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_python_getattr_literal_name_does_not_fire
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_python_eval_always_fires_regardless_of_argument
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_python_import_module_non_literal_fires
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_typescript_dynamic_import_non_literal_specifier_fires
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_typescript_dynamic_import_literal_specifier_does_not_fire
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_c_dlsym_non_literal_symbol_fires
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_c_dlsym_literal_symbol_does_not_fire
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_kotlin_class_forname_always_fires
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_libloading_get_fires_only_when_file_uses_libloading
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_finding_inside_string_literal_does_not_fire
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_arg_looks_literal_rejects_fstring_interpolation
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_split_top_level_args_balances_nested_parens
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_split_top_level_args_returns_none_when_unterminated
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_waived_finding_is_suppressed_and_reason_recorded
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_getattr_literal_name_does_not_fire
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_eval_always_fires_regardless_of_argument
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_import_module_non_literal_fires
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_typescript_dynamic_import_non_literal_specifier_fires
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_typescript_dynamic_import_literal_specifier_does_not_fire
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_c_dlsym_non_literal_symbol_fires
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_c_dlsym_literal_symbol_does_not_fire
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_kotlin_class_forname_always_fires
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_rust_libloading_get_fires_only_when_file_uses_libloading
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_finding_inside_string_literal_does_not_fire
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_arg_looks_literal_rejects_fstring_interpolation
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_split_top_level_args_balances_nested_parens
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_split_top_level_args_returns_none_when_unterminated
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_waived_finding_is_suppressed_and_reason_recorded
 designated_repro_test: null
 acceptance:
 - text: Given code containing a spec-defined runtime-resolved indirection construct
     with no waiver, when checked, then the obligation fires
   evidence:
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_python_getattr_literal_name_does_not_fire
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_python_eval_always_fires_regardless_of_argument
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_python_import_module_non_literal_fires
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_typescript_dynamic_import_non_literal_specifier_fires
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_typescript_dynamic_import_literal_specifier_does_not_fire
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_c_dlsym_non_literal_symbol_fires
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_c_dlsym_literal_symbol_does_not_fire
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_kotlin_class_forname_always_fires
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_libloading_get_fires_only_when_file_uses_libloading
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_finding_inside_string_literal_does_not_fire
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_arg_looks_literal_rejects_fstring_interpolation
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_split_top_level_args_balances_nested_parens
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_split_top_level_args_returns_none_when_unterminated
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_getattr_literal_name_does_not_fire
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_eval_always_fires_regardless_of_argument
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_import_module_non_literal_fires
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_typescript_dynamic_import_non_literal_specifier_fires
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_typescript_dynamic_import_literal_specifier_does_not_fire
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_c_dlsym_non_literal_symbol_fires
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_c_dlsym_literal_symbol_does_not_fire
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_kotlin_class_forname_always_fires
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_rust_libloading_get_fires_only_when_file_uses_libloading
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_finding_inside_string_literal_does_not_fire
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_arg_looks_literal_rejects_fstring_interpolation
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_split_top_level_args_balances_nested_parens
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_split_top_level_args_returns_none_when_unterminated
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
 - text: Given the same construct with a reasoned waiver, when checked, then it passes
     and the waiver reason is recorded
   evidence:
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_waived_finding_is_suppressed_and_reason_recorded
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_waived_finding_is_suppressed_and_reason_recorded
 threat: null
 component: null
 ---

@@ -18,16 +18,16 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestObfuscationEnsemble::test_high_entropy_string_flagged
-- tests/test_vet.py::TestObfuscationEnsemble::test_plain_string_not_flagged
-- tests/test_vet.py::TestObfuscationEnsemble::test_bidi_override_is_fatal
-- tests/test_vet.py::TestObfuscationEnsemble::test_clean_text_no_bidi
-- tests/test_vet.py::TestObfuscationEnsemble::test_hex_identifier_ratio_flagged
-- tests/test_vet.py::TestObfuscationEnsemble::test_normal_identifiers_not_flagged
-- tests/test_vet.py::TestObfuscationEnsemble::test_high_entropy_strings_returns_the_literal
-- tests/test_vet.py::TestObfuscationEnsemble::test_high_entropy_strings_empty_for_plain_text
-- tests/test_vet.py::TestObfuscationEnsemble::test_scan_directory_obfuscation_finds_signal_in_one_file
-- tests/test_vet.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_high_entropy_string_flagged
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_plain_string_not_flagged
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_bidi_override_is_fatal
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_clean_text_no_bidi
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_hex_identifier_ratio_flagged
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_normal_identifiers_not_flagged
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_high_entropy_strings_returns_the_literal
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_high_entropy_strings_empty_for_plain_text
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_scan_directory_obfuscation_finds_signal_in_one_file
+- tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration
 designated_repro_test: null
 threat: null
 component: null

@@ -26,7 +26,7 @@ evidence:
 - tests/unit/strata/test_host.py::TestHostAttrs::test_desugars
 - tests/unit/strata/test_waive.py::TestSplitWaiverRule::test_bare_rule_has_no_sub_target
 - tests/unit/test_ticket_store.py::TestSerializeAndParse::test_round_trip
-- tests/test_vet.py::TestVerdictCache::test_store_and_retrieve_latest
+- tests/vet_suite/test_fingerprint.py::TestVerdictCache::test_store_and_retrieve_latest
 - tests/test_capability_registry.py::TestValidateRegistryKinds::test_known_kinds_pass
 designated_repro_test: null
 threat: null

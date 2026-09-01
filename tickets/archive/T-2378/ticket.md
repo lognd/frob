@@ -73,8 +73,8 @@ body_changes:
   old_length: 932
   new_length: 1293
 evidence:
-- tests/test_vet.py::TestEcosystemRules::test_python_setup_py_cmdclass_flagged
-- tests/test_vet.py::TestEcosystemRules::test_python_pth_file_flagged
+- tests/vet_suite/test_fingerprint.py::TestEcosystemRules::test_python_setup_py_cmdclass_flagged
+- tests/vet_suite/test_fingerprint.py::TestEcosystemRules::test_python_pth_file_flagged
 designated_repro_test: null
 acceptance:
 - text: given the src/frob/vet exact-duplicate frob-dup finding (_read_text_or_empty
@@ -82,8 +82,8 @@ acceptance:
     findings remain for that pair, AND the family's histogram plus two sibling decomposition
     tickets (parent=T-2378) are recorded in the Done report
   evidence:
-  - tests/test_vet.py::TestEcosystemRules::test_python_setup_py_cmdclass_flagged
-  - tests/test_vet.py::TestEcosystemRules::test_python_pth_file_flagged
+  - tests/vet_suite/test_fingerprint.py::TestEcosystemRules::test_python_setup_py_cmdclass_flagged
+  - tests/vet_suite/test_fingerprint.py::TestEcosystemRules::test_python_pth_file_flagged
 acceptance_amendments:
 - op: replace
   index: 0

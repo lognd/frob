@@ -18,8 +18,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
-- tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
 - tests/test_capability_registry.py::TestNegativeFixtures::test_openapi_generated_ts_is_not_ffi
 - tests/test_capability_registry.py::TestNegativeFixtures::test_real_napi_import_still_fires_ffi
 designated_repro_test: null

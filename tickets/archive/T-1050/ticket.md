@@ -38,7 +38,7 @@ separately here rather than forced into T-1047's needle-table shape.
 
 Remaining runtime-opaque taxonomy rows still with NO detector/excuse
 (litmus fixtures already lock the current honest non-firing behavior in
-tests/test_vet.py::TestOpaqueIndirectionGate, `_not_addressed` suffix):
+tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate, `_not_addressed` suffix):
 - python: container-dynamic-key (`handlers[key](x)`)
 - typescript: computed-member-non-constant-key (`cp[key](x)`),
   container-dynamic-key (`handlers[key](x)`)

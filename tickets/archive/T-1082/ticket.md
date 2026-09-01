@@ -18,7 +18,7 @@ evidence:
 - tests/test_secrets_gate.py::TestTrackedFilesGitFailure::test_spawn_error_yields_no_tracked_files
 - tests/test_secrets_gate.py::TestTrackedFilesGitFailure::test_nonzero_exit_yields_no_tracked_files
 - tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_repo_is_clean
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
 designated_repro_test: null
 threat: null
 component: null

@@ -89,10 +89,10 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_vet.py::TestSupplyChainUnpinnedDependencies::test_pyproject_caret_range_flagged
-- tests/test_vet.py::TestSupplyChainInstallArtifacts::test_setup_py_absolute_data_files_flagged
-- tests/test_vet.py::TestSupplyChainCiActionPin::test_workflow_branch_ref_flagged
-- tests/test_vet.py::TestSupplyChainOpaqueBinaryArtifact::test_tracked_so_without_recipe_flagged
+- tests/vet_suite/test_supply_chain.py::TestSupplyChainUnpinnedDependencies::test_pyproject_caret_range_flagged
+- tests/vet_suite/test_supply_chain.py::TestSupplyChainInstallArtifacts::test_setup_py_absolute_data_files_flagged
+- tests/vet_suite/test_supply_chain.py::TestSupplyChainCiActionPin::test_workflow_branch_ref_flagged
+- tests/vet_suite/test_supply_chain.py::TestSupplyChainOpaqueBinaryArtifact::test_tracked_so_without_recipe_flagged
 - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_foreign_file_with_capability_fires_sys103
 - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 designated_repro_test: null
@@ -100,10 +100,10 @@ acceptance:
 - text: GIVEN a full frob check WHEN all gates run THEN the DEPR, LANG, INV, REG,
     WAIVE, and WALK families each report zero unwaived warnings
   evidence:
-  - tests/test_vet.py::TestSupplyChainUnpinnedDependencies::test_pyproject_caret_range_flagged
-  - tests/test_vet.py::TestSupplyChainInstallArtifacts::test_setup_py_absolute_data_files_flagged
-  - tests/test_vet.py::TestSupplyChainCiActionPin::test_workflow_branch_ref_flagged
-  - tests/test_vet.py::TestSupplyChainOpaqueBinaryArtifact::test_tracked_so_without_recipe_flagged
+  - tests/vet_suite/test_supply_chain.py::TestSupplyChainUnpinnedDependencies::test_pyproject_caret_range_flagged
+  - tests/vet_suite/test_supply_chain.py::TestSupplyChainInstallArtifacts::test_setup_py_absolute_data_files_flagged
+  - tests/vet_suite/test_supply_chain.py::TestSupplyChainCiActionPin::test_workflow_branch_ref_flagged
+  - tests/vet_suite/test_supply_chain.py::TestSupplyChainOpaqueBinaryArtifact::test_tracked_so_without_recipe_flagged
   - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_foreign_file_with_capability_fires_sys103
   - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 threat: null

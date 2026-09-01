@@ -18,7 +18,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
 designated_repro_test: null
 threat: null
 component: null

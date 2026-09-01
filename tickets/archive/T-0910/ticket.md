@@ -31,8 +31,8 @@ scope_changes:
   actor: logan
   at: '2026-07-26'
 evidence:
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_logging_checks_needle_tuples
-- tests/test_vet.py::TestFingerprintScan::test_line_effects_reports_no_capability_on_logging_checks_module
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_covers_logging_checks_needle_tuples
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_line_effects_reports_no_capability_on_logging_checks_module
 designated_repro_test: null
 threat: null
 component: null

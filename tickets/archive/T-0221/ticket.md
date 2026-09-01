@@ -17,12 +17,12 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestLockfileParsers::test_find_lockfile_direct
-- tests/test_vet.py::TestLockfileParsers::test_find_lockfile_bad_name
-- tests/test_vet.py::TestScanTreeLockArg::test_scan_tree_lockfile_arg
-- tests/test_vet.py::TestScanTreeLockArg::test_scan_tree_unsupp_err
-- tests/test_vet.py::TestVetRunnerLockArg::test_run_lockfile_arg
-- tests/test_vet.py::TestVetRunnerLockArg::test_run_unsupp_nonzero
+- tests/vet_suite/test_lockfile.py::TestLockfileParsers::test_find_lockfile_direct
+- tests/vet_suite/test_lockfile.py::TestLockfileParsers::test_find_lockfile_bad_name
+- tests/vet_suite/test_scan_tree.py::TestScanTreeLockArg::test_scan_tree_lockfile_arg
+- tests/vet_suite/test_scan_tree.py::TestScanTreeLockArg::test_scan_tree_unsupp_err
+- tests/vet_suite/test_scan_tree.py::TestVetRunnerLockArg::test_run_lockfile_arg
+- tests/vet_suite/test_scan_tree.py::TestVetRunnerLockArg::test_run_unsupp_nonzero
 designated_repro_test: null
 threat: null
 component: null

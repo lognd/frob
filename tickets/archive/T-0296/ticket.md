@@ -23,7 +23,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
-- tests/test_vet.py::TestAllowConfig::test_no_frob_toml_is_advisory_only
+- tests/vet_suite/test_lockfile.py::TestAllowConfig::test_no_frob_toml_is_advisory_only
 - tests/test_tickets.py::TestArchive::test_blocked_by_archived_ticket_resolves_closed
 - tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
 - tests/unit/deploy/test_audit.py::TestAttest::test_all_green

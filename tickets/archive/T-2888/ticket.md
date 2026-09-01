@@ -31,7 +31,7 @@ body_changes:
   old_length: 6647
   new_length: 6820
 evidence:
-- tests/test_vet.py::TestCapabilityScan::test_docstring_query_still_finds_real_docstrings
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_docstring_query_still_finds_real_docstrings
 designated_repro_test: null
 threat: null
 component: null

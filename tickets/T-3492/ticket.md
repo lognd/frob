@@ -151,9 +151,9 @@ body_changes:
 evidence:
 - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
 - tests/test_lang_support.py::TestDeriveLanguageRegistry::test_java_capability_dup_docblock_are_implemented
-- tests/test_vet.py::TestCapabilityScan::test_java_process_builder_exec_detected
-- tests/test_vet.py::TestCapabilityScan::test_java_object_input_stream_deserialize_detected
-- tests/test_vet.py::TestCapabilityScan::test_java_benign_file_has_no_capabilities
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_java_process_builder_exec_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_java_object_input_stream_deserialize_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_java_benign_file_has_no_capabilities
 - tests/gates_suite/test_doc.py::TestDoc004JavaImportDrift::test_import_of_tracked_package_unanchored_warns
 - tests/gates_suite/test_doc.py::TestDoc004JavaImportDrift::test_import_of_tracked_package_anchored_passes
 - tests/gates_suite/test_doc.py::TestDoc004JavaImportDrift::test_import_of_jdk_package_is_not_project_internal

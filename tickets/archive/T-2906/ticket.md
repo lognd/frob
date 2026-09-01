@@ -180,13 +180,13 @@ scope_changes:
   actor: logan
   at: '2026-08-25'
 evidence:
-- tests/test_vet.py::TestCapabilityScan::test_bash_pipe_to_shell_detected
-- tests/test_vet.py::TestCapabilityScan::test_bash_eval_detected
-- tests/test_vet.py::TestCapabilityScan::test_bash_benign_file_has_no_capabilities
-- tests/test_vet.py::TestCapabilityScan::test_csharp_process_start_detected
-- tests/test_vet.py::TestCapabilityScan::test_csharp_binary_formatter_deserialize_detected
-- tests/test_vet.py::TestCapabilityScan::test_csharp_benign_file_has_no_capabilities
-- tests/test_vet.py::TestCapabilityScan::test_language_for_known_and_unknown_extensions
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_bash_pipe_to_shell_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_bash_eval_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_bash_benign_file_has_no_capabilities
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_csharp_process_start_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_csharp_binary_formatter_deserialize_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_csharp_benign_file_has_no_capabilities
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_language_for_known_and_unknown_extensions
 - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_bash_and_csharp_are_registered_languages
 - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
 - tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_bash_and_csharp_are_registered_languages

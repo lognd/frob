@@ -1130,7 +1130,7 @@ SCANNED_LANGUAGES: frozenset[str] = frozenset(_EXT_LANGUAGE.values())
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-2358
-# frob:tests tests/test_vet.py::TestCapabilityScan.test_language_for_known_and_unknown_extensions kind="unit"  # noqa: E501
+# frob:tests tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_language_for_known_and_unknown_extensions kind="unit"  # noqa: E501
 def language_for(path: Path) -> str | None:
     """The pattern-table bucket for `path`'s extension (T-0158: C/C++ is now
     a first-class `"c-cpp"` bucket, not `None`), or `None` for an extension

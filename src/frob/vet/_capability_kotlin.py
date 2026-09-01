@@ -152,7 +152,7 @@ def _kt_property_name_and_value(node):  # noqa: ANN001, ANN201
 
 # frob:ticket T-0664
 # frob:waive ARCH001 reason="one recursive dispatch over kotlin's three resolvable expression shapes (simple_identifier/navigation_expression/call_expression); each branch is a single named case, splitting further would multiply indirection without shrinking real complexity" ceiling="65"  # noqa: E501
-# frob:tests tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates.test_resolve_expr_text_returns_none_for_unbound_identifier  # noqa: E501
+# frob:tests tests/vet_suite/test_capability_scan_kotlin.py::TestCapabilityScanKotlinAliasTablePredicates.test_resolve_expr_text_returns_none_for_unbound_identifier  # noqa: E501
 # frob:invariant terminates reason="the navigation_expression branch recurses only \
 # into node.children[0] (its own base), and the call_expression branch recurses only \
 # into _kt_call_callee(node)'s result -- both a proper descendant of node one or more \

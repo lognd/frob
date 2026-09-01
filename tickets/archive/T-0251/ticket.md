@@ -18,7 +18,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_app.py::test_config_cli_overrides_file
-- tests/test_vet.py::TestScanTreeLockArg::test_scan_tree_lockfile_arg
+- tests/vet_suite/test_scan_tree.py::TestScanTreeLockArg::test_scan_tree_lockfile_arg
 - tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null

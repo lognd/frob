@@ -48,13 +48,13 @@ scope_changes:
   actor: logan
   at: '2026-08-16'
 evidence:
-- tests/test_vet.py::TestCapabilityScan::test_public_sibling_wrapper_exec_is_resolved_one_hop
-- tests/test_vet.py::TestCapabilityScan::test_wrapper_with_no_dangerous_body_resolves_nothing
-- tests/test_vet.py::TestCapabilityScan::test_wrapper_two_hops_away_is_not_followed
-- tests/test_vet.py::TestCapabilityScan::test_sibling_in_a_different_directory_is_not_followed
-- tests/test_vet.py::TestCapabilityScan::test_wrapper_capabilities_resolve_cross_file_via_call_graph
-- tests/test_vet.py::TestCapabilityScan::test_wrapper_capabilities_ignore_unrelated_cross_file_calls
-designated_repro_test: tests/test_vet.py::TestCapabilityScan::test_public_sibling_wrapper_exec_is_resolved_one_hop
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_public_sibling_wrapper_exec_is_resolved_one_hop
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_wrapper_with_no_dangerous_body_resolves_nothing
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_wrapper_two_hops_away_is_not_followed
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_sibling_in_a_different_directory_is_not_followed
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_wrapper_capabilities_resolve_cross_file_via_call_graph
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_wrapper_capabilities_ignore_unrelated_cross_file_calls
+designated_repro_test: tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_public_sibling_wrapper_exec_is_resolved_one_hop
 threat: null
 component: null
 anchor: false

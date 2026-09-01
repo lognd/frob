@@ -84,7 +84,7 @@ scope_changes:
   actor: logan
   at: '2026-08-18'
 evidence:
-- tests/test_vet.py::TestCapabilityScan::test_public_sibling_wrapper_exec_is_resolved_one_hop
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_public_sibling_wrapper_exec_is_resolved_one_hop
 - tests/test_lang.py::TestFromImportSubmoduleResolution::test_from_package_import_submodule_resolves_to_the_file
 - tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
 - tests/ticket_land_suite/test_wip.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands
@@ -112,7 +112,7 @@ as the target, called BY NAME from the test's own body. Every one of the
 
 (a) The test reaches the private target through a public entry point in a
     DIFFERENT file / package re-export, several hops out. Examples:
-    tests/test_vet.py::TestCapabilityScan.test_public_sibling_wrapper_
+    tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_public_sibling_wrapper_
     exec_is_resolved_one_hop calls `frob.vet._capability.scan_file_
     capabilities`, which reaches `_capability_python.py::_python_local_
     wrapper_capabilities`; every tests/test_ticket_land.py finding drives

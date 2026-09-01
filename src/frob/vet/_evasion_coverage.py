@@ -13,11 +13,12 @@ excuse via `frob.vet._capability_registry.OPAQUE_SOURCE_INVISIBLE`).
 
 This module is the single, greppable, statically-checkable REGISTRATION
 of "row X in the taxonomy doc is proven by test Y" that
-`tests/test_vet.py::TestEvasionTaxonomyExhaustiveness` (the T-0666
-cross-language exhaustiveness meta-test) validates bidirectionally at test
-time: (1) every row the doc's own tables enumerate, per language and
-category, has AT LEAST as many registered litmus paths here as the doc
-has rows for that (language, category) pair -- a doc row added with no
+`tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness`
+(the T-0666 cross-language exhaustiveness meta-test) validates
+bidirectionally at test time: (1) every row the doc's own tables
+enumerate, per language and category, has AT LEAST as many registered
+litmus paths here as the doc has rows for that (language, category)
+pair -- a doc row added with no
 matching growth here fails the build loudly; (2) every dotted test path
 listed here actually exists as a collected test in `tests/test_vet.py` --
 a stale/renamed reference fails loudly too, the "dangling ref" direction.

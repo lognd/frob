@@ -15,9 +15,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestCapabilityScanRustBindingResolution::test_call_before_rebinding_still_detected
-- tests/test_vet.py::TestCapabilityScanRustBindingResolution::test_call_after_rebinding_still_not_detected
-- tests/test_vet.py::TestCapabilityScanRustBindingResolution::test_use_as_alias_detected
+- tests/vet_suite/test_capability_scan_rust.py::TestCapabilityScanRustBindingResolution::test_call_before_rebinding_still_detected
+- tests/vet_suite/test_capability_scan_rust.py::TestCapabilityScanRustBindingResolution::test_call_after_rebinding_still_not_detected
+- tests/vet_suite/test_capability_scan_rust.py::TestCapabilityScanRustBindingResolution::test_use_as_alias_detected
 designated_repro_test: null
 threat: null
 component: null

@@ -66,8 +66,8 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_vet.py::TestCapabilityScan::test_wrapper_capabilities_resolve_cross_file_via_call_graph
-- tests/test_vet.py::TestCapabilityScan::test_wrapper_capabilities_ignore_unrelated_cross_file_calls
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_wrapper_capabilities_resolve_cross_file_via_call_graph
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_wrapper_capabilities_ignore_unrelated_cross_file_calls
 designated_repro_test: null
 threat: null
 component: null
@@ -115,8 +115,8 @@ Design answers to T-1752's own open questions:
 - scope: matches the callgraph's own private-callee-only resolution rule (T-0841) -- a PUBLIC forwarding wrapper is a disclosed remaining gap, consistent with this module's existing fail-open-on-ambiguity posture.
 
 Evidence:
-- tests/test_vet.py::TestCapabilityScan::test_wrapper_capabilities_resolve_cross_file_via_call_graph
-- tests/test_vet.py::TestCapabilityScan::test_wrapper_capabilities_ignore_unrelated_cross_file_calls
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_wrapper_capabilities_resolve_cross_file_via_call_graph
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_wrapper_capabilities_ignore_unrelated_cross_file_calls
 
 Filed: none
 
@@ -129,8 +129,8 @@ Gates: uv run frob check --ticket T-1752 clean (0 errors). TEST016 flagged 2 con
 ```
 
 ### Evidence
-- `tests/test_vet.py::TestCapabilityScan::test_wrapper_capabilities_resolve_cross_file_via_call_graph` (pytest node id, verified passing when recorded)
-- `tests/test_vet.py::TestCapabilityScan::test_wrapper_capabilities_ignore_unrelated_cross_file_calls` (pytest node id, verified passing when recorded)
+- `tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_wrapper_capabilities_resolve_cross_file_via_call_graph` (pytest node id, verified passing when recorded)
+- `tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_wrapper_capabilities_ignore_unrelated_cross_file_calls` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

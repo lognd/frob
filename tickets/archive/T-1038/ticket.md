@@ -130,9 +130,9 @@ evidence:
 - tests/test_mutate.py::test_mutator_visit_bin_op
 - tests/test_mutate.py::test_mutator_visit_bool_op
 - tests/test_mutate.py::test_run_mutations_all_killed_by_strong_test
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_waived_finding_is_suppressed_and_reason_recorded
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_gate_emits_warn_severity_violation
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_gate_no_findings_on_empty_tracked_set
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_waived_finding_is_suppressed_and_reason_recorded
 - tests/unit/test_app.py::test_config_reads_toml_file
 - tests/unit/test_dup.py::test_dup_end_to_end_scan_then_render
 - tests/unit/test_logging_module.py::test_below_level_filter

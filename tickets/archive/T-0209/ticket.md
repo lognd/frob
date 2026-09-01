@@ -17,14 +17,14 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
-- tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
-- tests/test_vet.py::TestCapabilityScan::test_string_literal_needle_still_fires
-- tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
-- tests/test_vet.py::TestCapabilityScan::test_re_compile_alone_does_not_report_eval
-- tests/test_vet.py::TestCapabilityScan::test_bare_compile_call_still_reports_eval
-- tests/test_vet.py::TestCapabilityScan::test_genuine_eval_still_detected
-- tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_string_literal_needle_still_fires
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_re_compile_alone_does_not_report_eval
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_bare_compile_call_still_reports_eval
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_genuine_eval_still_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module
 designated_repro_test: null
 threat: null
 component: null

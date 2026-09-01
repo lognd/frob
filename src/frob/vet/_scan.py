@@ -691,8 +691,10 @@ def _resolve_lockfiles_and_deps(
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_lockfile_arg
-# frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_unsupp_err
+# frob:tests \
+# tests/vet_suite/test_scan_tree.py::TestScanTreeLockArg.test_scan_tree_lockfile_arg
+# frob:tests \
+# tests/vet_suite/test_scan_tree.py::TestScanTreeLockArg.test_scan_tree_unsupp_err
 # frob:ticket T-2233
 # frob:waive AFFECT001 reason="T-2233: this diff only retargets this file's frob.vet \
 # leaf-submodule imports (_cache/_capability/_ecosystem/_lifecycle/ \

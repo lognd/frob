@@ -19,9 +19,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown::test_no_reg008_findings_for_check_coverage_yaml
-- tests/test_vet.py::TestTyposquat::test_requets_flags_requests
-- tests/test_vet.py::TestOsvAdapter::test_run_osv_scan_none_when_binary_absent
-- tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_flags_undeclared_capability
+- tests/vet_suite/test_lockfile.py::TestTyposquat::test_requets_flags_requests
+- tests/vet_suite/test_advisories.py::TestOsvAdapter::test_run_osv_scan_none_when_binary_absent
+- tests/vet_suite/test_scan_tree.py::TestScanTreeWithLocalSource::test_scan_tree_flags_undeclared_capability
 designated_repro_test: null
 acceptance:
 - text: given the 11 SC-* entries T-1087 flipped to handled_by VET-family rules, when

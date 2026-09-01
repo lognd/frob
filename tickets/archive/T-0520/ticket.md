@@ -190,7 +190,7 @@ evidence:
 - tests/test_telemetry.py::test_redact_command_hides_recognizable_secret
 - tests/test_testing.py::TestSelect::test_reversed_directive_never_selects_the_source_symbol
 - tests/test_tickets_lease.py::TestDoable::test_real_collision_is_hidden_from_default_doable
-- tests/test_vet.py::TestObfuscationEnsemble::test_scan_directory_obfuscation_finds_signal_in_one_file
+- tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble::test_scan_directory_obfuscation_finds_signal_in_one_file
 - tests/unit/strata/test_selfconform.py::TestStaleDesign::test_stale_design_skips_node_fully_within_graph_exclude
 - tests/unit/strata/test_crash.py::TestNoHangCheck::test_missing_timeout_into_crashable_node_fails_closed
 - tests/unit/strata/test_facts.py::TestClosure::test_worst_age_reports_unbounded_on_a_positive_cycle

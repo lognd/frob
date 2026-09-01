@@ -34,7 +34,7 @@ evidence:
 - tests/unit/test_ticket_store.py::TestYamlLoader::test_prefers_csafeloader_when_libyaml_present
 - tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_without_libyaml
 - tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_under_active_coverage_tracer
-- tests/test_vet.py::TestLockfileParsers::test_parse_pnpm_lock
+- tests/vet_suite/test_lockfile.py::TestLockfileParsers::test_parse_pnpm_lock
 designated_repro_test: null
 threat: null
 component: null

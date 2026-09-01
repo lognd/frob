@@ -34,12 +34,12 @@ scope_changes:
   actor: logan
   at: '2026-08-03'
 evidence:
-- tests/test_vet.py::TestCapabilityScan::test_docstring_query_does_not_treat_enum_value_as_docstring
-- tests/test_vet.py::TestCapabilityScan::test_docstring_query_still_finds_real_docstrings
-- tests/test_vet.py::TestFingerprintScan::test_whitespace_tolerant_match_still_respects_comment_spans
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
-- tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
-- tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_docstring_query_does_not_treat_enum_value_as_docstring
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_docstring_query_still_finds_real_docstrings
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_whitespace_tolerant_match_still_respects_comment_spans
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
 designated_repro_test: null
 acceptance:
 - text: GIVEN _comment_byte_spans (vet/_capability.py:212) and _docstring_byte_spans
@@ -50,12 +50,12 @@ acceptance:
     sys+opaque's span-extraction share drops without requiring a new frob_core crate
     export
   evidence:
-  - tests/test_vet.py::TestCapabilityScan::test_docstring_query_does_not_treat_enum_value_as_docstring
-  - tests/test_vet.py::TestCapabilityScan::test_docstring_query_still_finds_real_docstrings
-  - tests/test_vet.py::TestFingerprintScan::test_whitespace_tolerant_match_still_respects_comment_spans
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
-  - tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
-  - tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_docstring_query_does_not_treat_enum_value_as_docstring
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_docstring_query_still_finds_real_docstrings
+  - tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_whitespace_tolerant_match_still_respects_comment_spans
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_finding_inside_comment_span_does_not_fire
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
 threat: null
 component: null
 ---

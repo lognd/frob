@@ -33,8 +33,10 @@ _LOCKFILE_NAMES = (
 # frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
 # frob:describes this private helper by name (T-0529) -- a deliberate architecture \
 # doc, not accidental drift onto a private helper"
-# frob:tests tests/test_vet.py::TestLockfileParsers.test_find_lockfile_direct
-# frob:tests tests/test_vet.py::TestLockfileParsers.test_find_lockfile_bad_name
+# frob:tests \
+# tests/vet_suite/test_lockfile.py::TestLockfileParsers.test_find_lockfile_direct
+# frob:tests \
+# tests/vet_suite/test_lockfile.py::TestLockfileParsers.test_find_lockfile_bad_name
 def _find_lockfile(root: Path) -> Path | None:
     """`root` itself if it is already a supported lockfile path (T-0221 --
     `frob vet uv.lock` must not be misread as "look for uv.lock under

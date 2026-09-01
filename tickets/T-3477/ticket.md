@@ -55,7 +55,7 @@ evidence:
 - tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_inline_comment_example_not_picked_up
 - tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_whole_line_comment_not_picked_up
 - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_detects_freshly_added_rule_id
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_kotlin_operator_invoke_instance_call_fires
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_kotlin_operator_invoke_instance_call_fires
 - tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_reports_correct_line_number_deep_into_a_multi_line_file
 designated_repro_test: null
 threat: null

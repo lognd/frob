@@ -20,10 +20,10 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestEmbeddedCodeCapability::test_embedded_html_script_string_detected
-- tests/test_vet.py::TestEmbeddedCodeCapability::test_embedded_code_region_below_size_threshold_not_detected
-- tests/test_vet.py::TestEmbeddedCodeCapability::test_embedded_code_declared_even_when_content_opaque_to_needles
-- tests/test_vet.py::TestEmbeddedCodeCapability::test_embedded_code_regions_scanned_via_operations
+- tests/vet_suite/test_capability_scan_embedded.py::TestEmbeddedCodeCapability::test_embedded_html_script_string_detected
+- tests/vet_suite/test_capability_scan_embedded.py::TestEmbeddedCodeCapability::test_embedded_code_region_below_size_threshold_not_detected
+- tests/vet_suite/test_capability_scan_embedded.py::TestEmbeddedCodeCapability::test_embedded_code_declared_even_when_content_opaque_to_needles
+- tests/vet_suite/test_capability_scan_embedded.py::TestEmbeddedCodeCapability::test_embedded_code_regions_scanned_via_operations
 designated_repro_test: null
 threat: null
 component: null

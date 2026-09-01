@@ -49,10 +49,10 @@ evidence:
 - tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_non_executable_line_numbers_no_spans_is_empty
 - tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_non_executable_line_numbers_missing_file_is_empty
 - tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_non_executable_line_numbers_read_bytes_oserror_is_empty
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_default_root_is_false
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_resolve_oserror_is_false
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_surprising_parts_shape_is_false
-- tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_default_root_is_false
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_resolve_oserror_is_false
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_surprising_parts_shape_is_false
+- tests/vet_suite/test_scan_tree.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN a TEST005 finding in src/frob/vet that is fixable from a scoped
@@ -71,16 +71,16 @@ acceptance:
 
     exercised, not required for this ticket''s own closure.'
   evidence:
-  - tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
+  - tests/vet_suite/test_scan_tree.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
 - text: GIVEN a 0.0%-branch symbol in vet WHEN it is judged dead code THEN it is routed
     to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
   evidence:
-  - tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
+  - tests/vet_suite/test_scan_tree.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
 - text: GIVEN a new test added to close a vet TEST005 finding WHEN reviewed THEN it
     asserts real behavior (inputs/outputs/side effects), not mere import/instantiation
   evidence:
-  - tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
+  - tests/vet_suite/test_scan_tree.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
 acceptance_amendments:
 - op: replace
   index: 0

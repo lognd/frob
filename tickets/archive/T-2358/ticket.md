@@ -108,7 +108,7 @@ evidence:
 - tests/unit/test_capability_and_deploy_cycle_regression.py::TestPlantedCycleStillDetected::test_planted_two_node_cycle_is_detected
 - tests/unit/test_vet_cycle_regression.py::TestVetCycleRegression::test_vet_cluster_is_not_a_cycle
 - tests/unit/deploy/test_generate.py::TestSorted::test_sorted
-- tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_names_registry_entry
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_scan_file_operations_names_registry_entry
 designated_repro_test: tests/unit/test_capability_and_deploy_cycle_regression.py::TestDeployAndCapabilityCycleRegression::test_generate_windows_no_longer_imports_generate
 acceptance:
 - text: given src/frob, when frob cycle runs, then the deploy/_generate<->_generate_windows
@@ -125,7 +125,7 @@ acceptance:
 - text: given the touched packages, when their test suites run, then they pass
   evidence:
   - tests/unit/deploy/test_generate.py::TestSorted::test_sorted
-  - tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_names_registry_entry
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_scan_file_operations_names_registry_entry
 acceptance_amendments:
 - op: replace
   index: 0

@@ -41,10 +41,10 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence:
-- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
-- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_python_eval_always_fires_regardless_of_argument
+- tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
+- tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_eval_always_fires_regardless_of_argument
 designated_repro_test: null
 acceptance:
 - text: given a per-language-spec denominator of every name-binding/aliasing/re-export
@@ -53,8 +53,8 @@ acceptance:
     construct resolves the call to its dangerous target -- verified by one litmus
     per construct, with a coverage table proving the denominator is fully covered
   evidence:
-  - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
-  - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
+  - tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
+  - tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
 - text: given any RUNTIME-resolved indirection the spec defines as opaque to static
     analysis (reflection, eval/exec, dynamic import, computed member access with non-constant
     key, callable retrieved from a container, function pointer from a non-constant
@@ -62,15 +62,15 @@ acceptance:
     -- emits an 'opaque capability indirection' obligation that must be discharged
     by a reasoned waiver, never a silent pass
   evidence:
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_python_eval_always_fires_regardless_of_argument
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_eval_always_fires_regardless_of_argument
 - text: 'given the two guarantees above, evasion is impossible-in-the-silent-sense:
     a reviewer can point to the per-spec denominator table (static fragment complete)
     and the fail-closed obligation (dynamic fragment gated), so no code path routes
     a dangerous call to an unaccounted sink without either resolving to it or tripping
     the opaque-indirection finding'
   evidence:
-  - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
+  - tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
 threat: elevation-of-privilege
 component: null
 ---

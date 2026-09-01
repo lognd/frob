@@ -17,43 +17,43 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_chained_assignment_outer_target_detected
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_chained_assignment_inner_target_detected
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_tuple_unpack_destructuring_detected
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_tuple_unpack_second_element_detected
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_starred_unpack_leading_detected
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_starred_unpack_trailing_detected
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_default_arg_forwarding_detected
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_attribute_target_rebind_detected
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_star_import_reexport_detected
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_dangerous_first_detected
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_dangerous_second_detected
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_benign_destructuring_not_detected
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_star_import_untracked_module_not_claimed
-- tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_both_safe_not_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_chained_assignment_outer_target_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_chained_assignment_inner_target_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_tuple_unpack_destructuring_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_tuple_unpack_second_element_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_starred_unpack_leading_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_starred_unpack_trailing_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_default_arg_forwarding_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_attribute_target_rebind_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_star_import_reexport_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_dangerous_first_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_dangerous_second_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_benign_destructuring_not_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_star_import_untracked_module_not_claimed
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_both_safe_not_detected
 designated_repro_test: null
 acceptance:
 - text: Given every Python static-resolvable construct in the taxonomy's Python table,
     when the resolver runs on a litmus fixture for that construct, then the aliased
     dangerous call is detected
   evidence:
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_chained_assignment_outer_target_detected
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_chained_assignment_inner_target_detected
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_tuple_unpack_destructuring_detected
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_tuple_unpack_second_element_detected
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_starred_unpack_leading_detected
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_starred_unpack_trailing_detected
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_default_arg_forwarding_detected
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_attribute_target_rebind_detected
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_star_import_reexport_detected
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_dangerous_first_detected
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_dangerous_second_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_chained_assignment_outer_target_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_chained_assignment_inner_target_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_tuple_unpack_destructuring_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_tuple_unpack_second_element_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_starred_unpack_leading_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_starred_unpack_trailing_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_default_arg_forwarding_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_attribute_target_rebind_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_star_import_reexport_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_dangerous_first_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_dangerous_second_detected
 - text: Given a benign parameter/local binding shadowing a dangerous name, when the
     resolver runs, then it stays silent (no regression)
   evidence:
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_benign_destructuring_not_detected
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_star_import_untracked_module_not_claimed
-  - tests/test_vet.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_both_safe_not_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_benign_destructuring_not_detected
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_star_import_untracked_module_not_claimed
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanTaxonomyClosureResolution::test_conditional_import_fallback_both_safe_not_detected
 threat: null
 component: null
 ---

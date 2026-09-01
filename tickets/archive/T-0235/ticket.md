@@ -14,13 +14,13 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestScanTreeLockArg::test_scan_tree_lockfile_arg
-- tests/test_vet.py::TestScanTreeLockArg::test_scan_tree_unsupp_err
-- tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_detects_capabilities_from_node_modules
-- tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_flags_undeclared_capability
-- tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
-- tests/test_vet.py::TestScanTreeMultipleLockfiles::test_scan_tree_scans_every_lockfile
-- tests/test_vet.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration
+- tests/vet_suite/test_scan_tree.py::TestScanTreeLockArg::test_scan_tree_lockfile_arg
+- tests/vet_suite/test_scan_tree.py::TestScanTreeLockArg::test_scan_tree_unsupp_err
+- tests/vet_suite/test_scan_tree.py::TestScanTreeWithLocalSource::test_scan_tree_detects_capabilities_from_node_modules
+- tests/vet_suite/test_scan_tree.py::TestScanTreeWithLocalSource::test_scan_tree_flags_undeclared_capability
+- tests/vet_suite/test_scan_tree.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
+- tests/vet_suite/test_scan_tree.py::TestScanTreeMultipleLockfiles::test_scan_tree_scans_every_lockfile
+- tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration
 designated_repro_test: null
 threat: null
 component: null

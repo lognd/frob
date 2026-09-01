@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 273,
-      "reason": "T-3592: same split, exec via-list relocation -- measured live via-list count.",
-      "ticket": "T-3592"
+      "accepted_count": 278,
+      "reason": "T-3593: tests/test_vet.py split into tests/vet_suite/ moved exec-observing test code across 3 new files (test_capability_scan_python.py, test_fingerprint.py, test_opaque_indirection.py); via-list entries relocated 1:1 in the same diff. Measured live via-list count.",
+      "ticket": "T-3593"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -246,14 +246,19 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 208,
-      "reason": "T-3592: same split, fs.read via-list relocation -- measured live via-list count.",
-      "ticket": "T-3592"
+      "accepted_count": 211,
+      "reason": "T-3593: same split, fs.read via-list relocation across test_fingerprint.py and test_opaque_indirection.py -- measured live via-list count.",
+      "ticket": "T-3593"
     },
     "testsuite::fs.write": {
-      "accepted_count": 458,
-      "reason": "T-3592: same split, fs.write via-list relocation -- measured live via-list count.",
-      "ticket": "T-3592"
+      "accepted_count": 483,
+      "reason": "T-3593: same split, fs.write via-list relocation across all 13 new tests/vet_suite/*.py files -- measured live via-list count.",
+      "ticket": "T-3593"
+    },
+    "testsuite::net.connect": {
+      "accepted_count": 3,
+      "reason": "T-3593: tests/test_vet.py split into tests/vet_suite/ newly declares net.connect on testsuite (previously ungranted here) for 3 files (test_capability_scan_python.py, test_fingerprint.py, test_opaque_indirection.py) with fail-closed monkeypatched socket/connection tests -- measured live via-list count.",
+      "ticket": "T-3593"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

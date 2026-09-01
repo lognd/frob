@@ -18,12 +18,12 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestCapabilityScanLocalRebindResolution::test_single_rebind_detected
-- tests/test_vet.py::TestCapabilityScanLocalRebindResolution::test_chained_rebind_detected
-- tests/test_vet.py::TestCapabilityScanLocalRebindResolution::test_attribute_rebind_detected
-- tests/test_vet.py::TestCapabilityScanLocalRebindResolution::test_benign_rebind_not_detected
-- tests/test_vet.py::TestCapabilityScanLocalRebindResolution::test_parameter_shadow_still_not_detected
-- tests/test_vet.py::TestCapabilityScanLocalRebindResolution::test_dangerous_then_benign_rebind_stays_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanLocalRebindResolution::test_single_rebind_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanLocalRebindResolution::test_chained_rebind_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanLocalRebindResolution::test_attribute_rebind_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanLocalRebindResolution::test_benign_rebind_not_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanLocalRebindResolution::test_parameter_shadow_still_not_detected
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScanLocalRebindResolution::test_dangerous_then_benign_rebind_stays_detected
 designated_repro_test: null
 acceptance:
 - text: given 'from subprocess import run\nxyz = run\nxyz(["pwned"])', when scan_file_capabilities

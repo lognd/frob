@@ -48,8 +48,8 @@ evidence:
 - tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
 - tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
 - tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_kotlin_file_no_longer_flagged_by_lang002
-- tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_aggregates_across_files
-- tests/test_vet.py::TestFingerprintScan::test_scan_directory_fingerprints_aggregates_across_files
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_scan_directory_capabilities_aggregates_across_files
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_scan_directory_fingerprints_aggregates_across_files
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_in_source_without_anchor_warns
@@ -232,8 +232,8 @@ sweep re-run). `frob check --land-parity`: clean, 0 unscoped errors.
 - `tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_in_source_without_anchor_warns` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestInv006SplitAssist::test_finds_carried_waiver_for_verbatim_moved_claim` (pytest node id, verified passing when recorded)
 - `tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_kotlin_file_no_longer_flagged_by_lang002` (pytest node id, verified passing when recorded)
-- `tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_aggregates_across_files` (pytest node id, verified passing when recorded)
-- `tests/test_vet.py::TestFingerprintScan::test_scan_directory_fingerprints_aggregates_across_files` (pytest node id, verified passing when recorded)
+- `tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_scan_directory_capabilities_aggregates_across_files` (pytest node id, verified passing when recorded)
+- `tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_scan_directory_fingerprints_aggregates_across_files` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 10 passed (from 10 evidence id(s))

@@ -19,14 +19,14 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_c_weak_symbol_override_excused_source_invisible
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_extern_ffi_symbol_excused_source_invisible
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_proc_macro_synthesized_call_excused_source_invisible
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_rust_runtime_vtable_patch_excused_source_invisible
-- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
-- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_litmus_path_resolves_to_a_real_test
-- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
-- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_map_has_no_orphaned_language_category_pairs
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_c_weak_symbol_override_excused_source_invisible
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_rust_extern_ffi_symbol_excused_source_invisible
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_rust_proc_macro_synthesized_call_excused_source_invisible
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_rust_runtime_vtable_patch_excused_source_invisible
+- tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
+- tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_every_litmus_path_resolves_to_a_real_test
+- tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
+- tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_map_has_no_orphaned_language_category_pairs
 designated_repro_test: null
 threat: null
 component: null
@@ -44,7 +44,7 @@ later call), and a C++ pointer-to-member gap (`&Ops::run` / `.*`/`->*`
 dereference has no alias tracking at all).
 
 Each gap has a litmus fixture locking the CURRENT honest (non-firing /
-non-resolving) behavior in tests/test_vet.py::TestOpaqueIndirectionGate
+non-resolving) behavior in tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate
 (the `_not_addressed` suffix tests) and in the per-language
 TaxonomyClosureResolution classes (Rust struct-update, C++ member-fn-ptr),
 added by T-0666. This ticket tracks closing each one: extend

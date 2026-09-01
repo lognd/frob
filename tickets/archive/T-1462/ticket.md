@@ -17,8 +17,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
-- tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module
 - tests/test_vet_capability.py::TestDocstringProseNotObservedSetLevel::test_real_exec_call_still_observed
 designated_repro_test: null
 threat: null
@@ -49,7 +49,7 @@ Fixed during implementation:
   entry for `_capability_core.py` -- it now carries the
   `_has_bare_compile_call` needle-as-data self-match hazard the parent
   file used to alone. Same precedent as the T-1420 registry-package split.
-- `tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive`
+- `tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive`
   retargeted from `_capability.py` to `_capability_core.py` -- the
   `b"compile("` code-level literal this test locks moved with
   `_has_bare_compile_call`.

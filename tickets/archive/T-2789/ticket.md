@@ -32,8 +32,8 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_vet.py::TestLockfileParsers::test_find_lockfile_uv
-- tests/test_vet.py::TestClosedWorldAccounting::test_walk_python_imports_collects_absolute_imports_only
+- tests/vet_suite/test_lockfile.py::TestLockfileParsers::test_find_lockfile_uv
+- tests/vet_suite/test_opaque_indirection.py::TestClosedWorldAccounting::test_walk_python_imports_collects_absolute_imports_only
 - tests/test_vet_capability.py::TestDocstringProseNotObservedSetLevel::test_docstring_and_comment_prose_yields_no_exec_capability
 - tests/unit/test_wire001_dotted_method_call.py::TestWireGateDottedMethodReach::test_classmethod_called_dotted_qualified_is_not_flagged
 - tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParameterAccess::test_fixture_consumed_by_a_test_in_the_same_file_is_not_flagged

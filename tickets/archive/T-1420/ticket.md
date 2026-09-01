@@ -369,8 +369,8 @@ evidence:
 - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_matrix_covers_every_kind_and_language
 - tests/test_capability_registry.py::TestMatrixExhaustiveness::test_every_operation_kind_and_language_registered
 - tests/test_capability_registry.py::TestValidateRegistryKinds::test_known_kinds_pass
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_every_needle_table_module
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_survives_a_foreign_install_copy
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_covers_every_needle_table_module
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_survives_a_foreign_install_copy
 - tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
 - tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
 - tests/gates_suite/test_wire.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged

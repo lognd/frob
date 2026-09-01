@@ -60,7 +60,7 @@ scope_changes:
   glob: tests/test_vet.py
   reason: 'The T-0769 fix (excluding python docstring spans from the raw-text needle
     scan, matching the existing comment-span exclusion) directly changes the outcome
-    of tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive,
+    of tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive,
     which locks a specific documented false positive ("cmdclass"/"os.environ" appearing
     ONLY in _capability.py''s own module DOCSTRING) that this exact fix is designed
     to eliminate. The locked assertion is now factually wrong post-fix and must be
@@ -100,7 +100,7 @@ evidence:
 - tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_prose_only_lines_report_zero_exec_observation_via_selfconform
 - tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_real_exec_call_still_flagged_via_selfconform
 - tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_non_executable_line_numbers_covers_docstring_and_comment
-- tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
 designated_repro_test: null
 acceptance:
 - text: GIVEN a module whose docstrings mention subprocess.Popen/os.fork prose but
@@ -113,7 +113,7 @@ acceptance:
   - tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_prose_only_lines_report_zero_exec_observation_via_selfconform
   - tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_real_exec_call_still_flagged_via_selfconform
   - tests/test_vet_capability.py::TestDocstringProseNotObservedLineLevel::test_non_executable_line_numbers_covers_docstring_and_comment
-  - tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
+  - tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
 threat: null
 component: null
 ---

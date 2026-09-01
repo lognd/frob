@@ -43,9 +43,9 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_repo_unrestricted_scan_is_clean
 - tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch::test_real_repo_design_selfconform_has_no_eval_gap
-- tests/test_vet.py::TestFingerprintScan::test_yaml_load_with_explicit_loader_is_not_flagged
-- tests/test_vet.py::TestFingerprintScan::test_one_bare_yaml_load_among_remediated_calls_still_flags
-- tests/test_vet.py::TestFingerprintScan::test_scan_directory_fingerprints_excludes_the_catalog_itself
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_yaml_load_with_explicit_loader_is_not_flagged
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_one_bare_yaml_load_among_remediated_calls_still_flags
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_scan_directory_fingerprints_excludes_the_catalog_itself
 - tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance007_real_repo_registry_surfaces_known_gap
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
 designated_repro_test: null

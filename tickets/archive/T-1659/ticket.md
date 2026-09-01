@@ -81,29 +81,29 @@ scope_changes:
   actor: logan
   at: '2026-08-06'
 evidence:
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_violation_carries_symref
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_waiver_scoped_to_symbol_not_whole_file
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_violation_carries_symref
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_waiver_scoped_to_symbol_not_whole_file
 - tests/test_cache_gate.py::TestCache001Symref::test_violation_carries_symref
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_dotted_setattr_call_does_not_fire
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_dotted_eval_method_call_does_not_fire
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_identifier_ending_in_builtin_name_does_not_fire
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_bare_setattr_call_still_fires
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_sys_modules_read_does_not_fire
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_sys_modules_write_still_fires
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_dotted_setattr_call_does_not_fire
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_dotted_eval_method_call_does_not_fire
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_identifier_ending_in_builtin_name_does_not_fire
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_bare_setattr_call_still_fires
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_sys_modules_read_does_not_fire
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_sys_modules_write_still_fires
 designated_repro_test: null
 acceptance:
 - text: CACHE001 and OPAQUE001 Violations carry symref; waiver matching re-verified
     against the new symref for OPAQUE001's existing 166-waiver population
   evidence:
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_violation_carries_symref
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_opaque_waiver_scoped_to_symbol_not_whole_file
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_violation_carries_symref
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_opaque_waiver_scoped_to_symbol_not_whole_file
   - tests/test_cache_gate.py::TestCache001Symref::test_violation_carries_symref
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_dotted_setattr_call_does_not_fire
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_dotted_eval_method_call_does_not_fire
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_identifier_ending_in_builtin_name_does_not_fire
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_bare_setattr_call_still_fires
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_sys_modules_read_does_not_fire
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_sys_modules_write_still_fires
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_dotted_setattr_call_does_not_fire
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_dotted_eval_method_call_does_not_fire
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_identifier_ending_in_builtin_name_does_not_fire
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_bare_setattr_call_still_fires
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_sys_modules_read_does_not_fire
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_sys_modules_write_still_fires
 threat: null
 component: null
 ---

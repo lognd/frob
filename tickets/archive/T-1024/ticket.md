@@ -18,12 +18,12 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_doc_heading_recognized
-- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_litmus_path_resolves_to_a_real_test
-- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
-- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_map_has_no_orphaned_language_category_pairs
-- tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
-- tests/test_vet.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
+- tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_every_doc_heading_recognized
+- tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_every_litmus_path_resolves_to_a_real_test
+- tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
+- tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_map_has_no_orphaned_language_category_pairs
+- tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
+- tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
 - tests/unit/test_design_invariants.py::TestInv007::test_forbidden_import_fires
 - tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires
 - tests/test_registry_exhaustiveness.py::TestDisposition::test_undispositioned_entry_fails
@@ -32,12 +32,12 @@ acceptance:
 - text: GIVEN a full frob check THEN REF001/REF002/COV006/COV007/DEAD001/PLACE001
     warnings are zero
   evidence:
-  - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_doc_heading_recognized
-  - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_litmus_path_resolves_to_a_real_test
-  - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
-  - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_map_has_no_orphaned_language_category_pairs
-  - tests/test_vet.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
-  - tests/test_vet.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
+  - tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_every_doc_heading_recognized
+  - tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_every_litmus_path_resolves_to_a_real_test
+  - tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_every_taxonomy_row_has_sufficient_registered_litmus_coverage
+  - tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_map_has_no_orphaned_language_category_pairs
+  - tests/vet_suite/test_opaque_indirection.py::TestEvasionTaxonomyExhaustiveness::test_combined_registered_total_matches_112_entry_denominator
+  - tests/vet_suite/test_opaque_indirection.py::TestOpaqueIndirectionGate::test_python_getattr_non_literal_name_fires
   - tests/unit/test_design_invariants.py::TestInv007::test_forbidden_import_fires
   - tests/unit/arch_suite/test_concurrency.py::TestSharedStateRaceHazards::test_unguarded_write_from_thread_submitted_function_fires
   - tests/test_registry_exhaustiveness.py::TestDisposition::test_undispositioned_entry_fails

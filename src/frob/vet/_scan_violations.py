@@ -103,7 +103,9 @@ def _vet001_violation(
 # VET004 here, DOC001/other doclink builders in frob.gates._doclink_docanchor -- \
 # coincidental short-function shape, unrelated rule domains"
 # frob:invariant INV-025
-# frob:tests tests/test_vet.py::TestObfuscationEnsemble.test_high_entropy_string_flagged
+# frob:tests \
+# tests/vet_suite/test_fingerprint.py::TestObfuscationEnsemble.test_high_entropy_string\
+# _flagged
 # frob:enforces SC-DETECTION-OBFUSCATED-SOURCE
 # frob:enforces SC-DETECTION-ENTROPY-BLOB
 # frob:enforces SC-DETECTION-TROJAN-SOURCE

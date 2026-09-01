@@ -237,7 +237,7 @@ def non_executable_line_numbers(path: Path) -> frozenset[int]:
 # frob:ticket T-0158
 # frob:ticket T-0565
 # frob:waive ARCH001 reason="a linear read/match/extend orchestration pipeline over already-extracted helpers (raw-text match, T-0328 binding match, T-0244 embedded match, T-0662/T-0663/T-0664 per-language binding branches); each step is a single named call, splitting further would multiply indirection without shrinking real complexity" ceiling="70"  # noqa: E501
-# frob:tests tests/test_vet.py::TestCapabilityScan.test_scan_file_operations_names_registry_entry  # noqa: E501
+# frob:tests tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_scan_file_operations_names_registry_entry  # noqa: E501
 def _scan_file_operations(path: Path) -> tuple[_DangerousOperation, ...]:
     """The specific `DANGEROUS_OPERATIONS` registry entries whose needle(s)
     matched in `path`'s raw text outside a comment span (T-0209) -- the

@@ -21,8 +21,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
-- tests/test_vet.py::TestFingerprintScan::test_own_catalog_file_excluded_from_directory_aggregation
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_every_needle_table_module
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_own_catalog_file_excluded_from_directory_aggregation
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_covers_every_needle_table_module
 designated_repro_test: null
 threat: null
 component: null

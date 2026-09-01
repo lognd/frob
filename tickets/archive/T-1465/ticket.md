@@ -133,7 +133,7 @@ evidence:
 - tests/test_telemetry.py::test_usage_report_counts_redundant_reruns
 - tests/test_telemetry.py::test_usage_report_empty_corpus_is_all_zero
 - tests/test_capability_registry.py::test_fire_fixture_names_a_registry_entry
-- tests/test_vet.py::TestOperationEntryMatchesFallthrough::test_no_needles_and_not_bare_compile_returns_false
+- tests/vet_suite/test_opaque_indirection.py::TestOperationEntryMatchesFallthrough::test_no_needles_and_not_bare_compile_returns_false
 designated_repro_test: null
 threat: null
 component: null

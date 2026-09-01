@@ -24,10 +24,10 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_every_needle_table_module
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_does_not_fire_when_vetting_a_dependency
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_covers_every_needle_table_module
+- tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_self_pattern_exclusion_does_not_fire_when_vetting_a_dependency
 - tests/test_capability_registry.py::TestIsSelfPatternPath::test_frob_repo_root_with_matching_suffix_returns_true
-- tests/test_vet.py::TestCapabilityScanTsAliasTablePredicates::test_resolve_expr_peels_through_chained_assignment
+- tests/vet_suite/test_capability_scan_ts.py::TestCapabilityScanTsAliasTablePredicates::test_resolve_expr_peels_through_chained_assignment
 designated_repro_test: null
 threat: null
 component: null
