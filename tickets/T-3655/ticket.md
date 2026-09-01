@@ -19,6 +19,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'waive BUG002: perf flake evidence cannot be deterministically reproduced'
+  actor: logan
+  at: '2026-09-01'
+  old_length: 1457
+  new_length: 1959
+evidence:
+- tests/unit/perf/test_hotgraph.py::TestStackSampler::test_overhead_under_five_percent
 designated_repro_test: null
 threat: null
 component: null
@@ -52,3 +61,6 @@ would not address the measured 0.54 overhead's actual cause (host
 oversubscription). Whoever picks this up should weigh that documented,
 already-evaluated tradeoff before choosing between the two options this
 ticket offers.
+
+
+frob:waive BUG002 reason="the sampled overhead assertion is a nondeterministic host-contention flake (measured 0.5382 under gw3 in run 33513484322, comfortably under the tolerance most of the time including at main's HEAD) -- it cannot be made to fail-at-parent/pass-at-fix deterministically in a local repro since the failure depends on transient host oversubscription this environment cannot reliably recreate. This is the same nondeterministic-crash class BUG002's own guidance names as waivable."
