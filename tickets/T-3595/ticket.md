@@ -99,6 +99,14 @@ scope_changes:
     split's actual diff; out of scope for T-3595, filing separately if it blocks land
   actor: logan
   at: '2026-09-01'
+evidence:
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline::test_write_then_read_round_trips
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_unmeasurable_check_leaves_the_baseline_untouched
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_leaves_the_repo_clean
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestAttributeNewFindings::test_empty_queue_returns_empty_mapping
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_under_root_is_relativized
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers
+- tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
 designated_repro_test: null
 threat: null
 component: null
