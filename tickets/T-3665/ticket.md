@@ -1,7 +1,7 @@
 ---
 id: T-3665
 title: 'win32: process-pool test hardcodes forkserver availability'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -19,6 +19,26 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): test-only fix: corrects a hardcoded POSIX-only
+    assertion in an existing test to check the platform-appropriate property; product''s
+    own _process_pool_start_method fallback logic was already correct and is unchanged'
+  actor: logan
+  at: '2026-09-01'
+  old_length: 1974
+  new_length: 2222
+- mode: append
+  reason: 'BUG002 front door (T-2393): test-only fix: corrects a hardcoded POSIX-only
+    assertion in an existing test to check the platform-appropriate property; product''s
+    own _process_pool_start_method fallback logic was already correct and is unchanged'
+  actor: logan
+  at: '2026-09-01'
+  old_length: 2222
+  new_length: 2470
+evidence:
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_open_process_pool_preloads_forkserver_when_available
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_process_pool_start_method_falls_back_to_spawn_without_forkserver
 designated_repro_test: null
 threat: null
 component: null
@@ -37,3 +57,8 @@ Fix direction (test only, per campaign's fix-direction rule -- this is a test ha
 Traceback evidence: scratchpad/win-33521-failures.txt lines 16479-17593.
 
 References T-3659 (tracking ticket for this campaign).
+
+
+frob:no-behavior-change reason="test-only fix: corrects a hardcoded POSIX-only assertion in an existing test to check the platform-appropriate property; product's own _process_pool_start_method fallback logic was already correct and is unchanged"
+
+frob:no-behavior-change reason="test-only fix: corrects a hardcoded POSIX-only assertion in an existing test to check the platform-appropriate property; product's own _process_pool_start_method fallback logic was already correct and is unchanged"

@@ -456,7 +456,46 @@ class TestProcessPoolGates:
                 ) == list(_FORKSERVER_PRELOAD)
         finally:
             ppool.shutdown(wait=True)
-        assert "forkserver" in multiprocessing.get_all_start_methods()
+        # frob:ticket T-3665
+        # T-3665: NOT `assert "forkserver" in multiprocessing.get_all_
+        # start_methods()` -- that hardcodes a POSIX-only platform
+        # capability (CPython's `multiprocessing` never registers
+        # `forkserver` on win32, since it needs `os.fork`), which is
+        # real and not something `_process_pool_start_method` can work
+        # around; that function's own contract (falls back to `spawn`
+        # when `forkserver` is unavailable) is exactly what the
+        # conditional block above already exercises. This closing
+        # assertion re-checks the property that actually holds on every
+        # platform: whichever method `_open_process_pool` picked is one
+        # `multiprocessing` genuinely offers here.
+        assert expected_method in multiprocessing.get_all_start_methods()
+
+    # frob:ticket T-3665
+    # frob:tests src/frob/gates/__init__.py::_process_pool_start_method kind="unit"
+    def test_process_pool_start_method_falls_back_to_spawn_without_forkserver(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3665 (win32 gates_suite campaign, T-3659): reproduces, on
+        ANY platform, the exact win32 shape `_process_pool_start_method`
+        must handle -- `multiprocessing.get_all_start_methods()`
+        reporting `["spawn"]` only, no `"forkserver"` (CPython never
+        registers `forkserver` on win32, since it needs `os.fork`).
+        `_process_pool_start_method()` must fall back to `"spawn"`
+        rather than raising or returning something
+        `get_all_start_methods()` does not actually offer -- this is the
+        exact property `test_open_process_pool_preloads_forkserver_when_
+        available`'s OWN final assertion (before this ticket's fix)
+        failed to check for on win32, by hardcoding `"forkserver" in
+        get_all_start_methods()` unconditionally instead of checking
+        against whichever method was actually chosen."""
+        import multiprocessing
+
+        from frob.gates import _process_pool_start_method
+
+        monkeypatch.setattr(multiprocessing, "get_all_start_methods", lambda: ["spawn"])
+        assert _process_pool_start_method() == "spawn"
+
+
 class TestSeverityOverrides:
     def test_override_downgrades_and_ignores_garbage(self, tmp_path, monkeypatch):
         from frob.gates import Severity, Violation, _apply_severity_overrides
