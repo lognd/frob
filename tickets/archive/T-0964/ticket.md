@@ -15,14 +15,14 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 designated_repro_test: null
 acceptance:
 - text: given a rule id referenced only via a module-level constant and absent from
     _KNOWN_GATE_RULES, when the drift-lock test runs, then it fails naming that id
   evidence:
-  - tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
-  - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+  - tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
+  - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 threat: null
 component: null
 ---

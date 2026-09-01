@@ -18,9 +18,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_mode_conformance_violation
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_mode_conformance_violation
 - tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_arbitered_store_discharges
 designated_repro_test: null
 threat: null

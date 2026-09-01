@@ -610,7 +610,7 @@ evidence:
 - tests/test_coverage_wait_shared.py::TestTreeDigest::test_identical_hashes_produce_identical_digest
 - tests/test_doc012_promotion.py::TestDoc012PromotedToError::test_undocumented_subcommand_is_now_error
 - tests/test_docenum_gate.py::TestDocenum001Gate::test_stale_claimed_list_fires
-- tests/test_gates.py::TestMutationEvidencePackageReexports::test_must_still_pass_violations_importable_from_package
+- tests/gates_suite/test_doc.py::TestMutationEvidencePackageReexports::test_must_still_pass_violations_importable_from_package
 - tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression::test_mypy_suppressed_ty_unsuppressed_gets_paired_suppression
 - tests/test_gates_suppress.py::TestSuppressionDialects::test_registers_ty_mypy_ruff
 - tests/test_graph.py::TestDigests::test_reformat_identical_digests

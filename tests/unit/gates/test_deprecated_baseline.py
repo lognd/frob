@@ -33,7 +33,7 @@ def _write(root: Path, rel: str, content: str) -> None:
 
 def _snapshot(root: Path):
     """Test helper: a fresh `GraphSnapshot` for `root`, mirroring
-    `tests/test_gates.py::_snapshot`."""
+    `tests/conftest.py::_snapshot`."""
     cache = root / ".frob" / "cache.db"
     return build_graph(root, cache).danger_ok
 

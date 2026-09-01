@@ -17,8 +17,8 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_graph.py::TestResolveCallEdgesNative::test_native_matches_python_fallback_on_a_real_package
 - tests/test_graph.py::TestResolveCallEdgesNative::test_core_available_true_dispatches_to_native_spy_and_false_does_not
-- tests/test_gates.py::TestWaivePresets::test_resolve_preset_known_name
-- tests/test_gates.py::TestWaivePresets::test_resolve_preset_unknown_name_is_none
+- tests/gates_suite/test_waive.py::TestWaivePresets::test_resolve_preset_known_name
+- tests/gates_suite/test_waive.py::TestWaivePresets::test_resolve_preset_unknown_name_is_none
 designated_repro_test: null
 acceptance:
 - text: GIVEN the graph package at the 75%/70% floors WHEN frob check --only test
@@ -26,8 +26,8 @@ acceptance:
   evidence:
   - tests/test_graph.py::TestResolveCallEdgesNative::test_native_matches_python_fallback_on_a_real_package
   - tests/test_graph.py::TestResolveCallEdgesNative::test_core_available_true_dispatches_to_native_spy_and_false_does_not
-  - tests/test_gates.py::TestWaivePresets::test_resolve_preset_known_name
-  - tests/test_gates.py::TestWaivePresets::test_resolve_preset_unknown_name_is_none
+  - tests/gates_suite/test_waive.py::TestWaivePresets::test_resolve_preset_known_name
+  - tests/gates_suite/test_waive.py::TestWaivePresets::test_resolve_preset_unknown_name_is_none
 - text: GIVEN a 0.0%-branch symbol in graph WHEN it is judged dead code THEN it is
     routed to the DEAD gate/dup machinery or a removal ticket, never given an assert-True
     filler test
@@ -38,8 +38,8 @@ acceptance:
   evidence:
   - tests/test_graph.py::TestResolveCallEdgesNative::test_native_matches_python_fallback_on_a_real_package
   - tests/test_graph.py::TestResolveCallEdgesNative::test_core_available_true_dispatches_to_native_spy_and_false_does_not
-  - tests/test_gates.py::TestWaivePresets::test_resolve_preset_known_name
-  - tests/test_gates.py::TestWaivePresets::test_resolve_preset_unknown_name_is_none
+  - tests/gates_suite/test_waive.py::TestWaivePresets::test_resolve_preset_known_name
+  - tests/gates_suite/test_waive.py::TestWaivePresets::test_resolve_preset_unknown_name_is_none
 threat: null
 component: null
 ---

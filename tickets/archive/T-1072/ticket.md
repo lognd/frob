@@ -88,11 +88,11 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_waive002_known_gate_rule_is_not_flagged
-- tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
-- tests/test_gates.py::TestTestGate::test_match_waiver_prefix_reach_gated_to_package_scoped_rules
-- tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket
-- tests/test_gates.py::TestDsl001::test_waive_reason_and_tests_kind_not_double_flagged
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_waive002_known_gate_rule_is_not_flagged
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_missed_following_binding_fires
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_prefix_reach_gated_to_package_scoped_rules
+- tests/gates_suite/test_coverage.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket
+- tests/gates_suite/test_waive.py::TestDsl001::test_waive_reason_and_tests_kind_not_double_flagged
 - tests/test_secrets_gate.py::TestFindsTokens::test_sec003_waiver_is_inert
 - tests/test_waive_gate.py::TestWaive006Registration::test_waive006_gate_combines_both_channels
 - tests/test_waive_gate.py::TestWaive007Registration::test_waive007_gate_combines_both_channels

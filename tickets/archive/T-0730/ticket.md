@@ -16,20 +16,20 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestNativeTestCollectors::test_ts_directive_resolves_via_real_vitest_node_id
-- tests/test_gates.py::TestNativeTestCollectors::test_ts_structural_only_edge_no_longer_credited
-- tests/test_gates.py::TestNativeTestCollectors::test_ts_no_longer_in_native_extensions
-- tests/test_gates.py::TestNativeTestCollectors::test_load_tests_merges_all_four_collectors
+- tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_ts_directive_resolves_via_real_vitest_node_id
+- tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_ts_structural_only_edge_no_longer_credited
+- tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_ts_no_longer_in_native_extensions
+- tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_load_tests_merges_all_four_collectors
 designated_repro_test: null
 acceptance:
 - text: GIVEN a vitest project with a frob:tests directive naming a real vitest test
     WHEN gates run THEN the edge resolves against the collected id and the structural
     fallback no longer credits unverified ts edges
   evidence:
-  - tests/test_gates.py::TestNativeTestCollectors::test_ts_directive_resolves_via_real_vitest_node_id
-  - tests/test_gates.py::TestNativeTestCollectors::test_ts_structural_only_edge_no_longer_credited
-  - tests/test_gates.py::TestNativeTestCollectors::test_ts_no_longer_in_native_extensions
-  - tests/test_gates.py::TestNativeTestCollectors::test_load_tests_merges_all_four_collectors
+  - tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_ts_directive_resolves_via_real_vitest_node_id
+  - tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_ts_structural_only_edge_no_longer_credited
+  - tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_ts_no_longer_in_native_extensions
+  - tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_load_tests_merges_all_four_collectors
 threat: null
 component: null
 ---

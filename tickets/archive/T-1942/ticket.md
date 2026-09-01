@@ -46,10 +46,10 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/test_gates.py::TestWaive004ExaminedSitesGuard::test_examined_archgate_site_is_deleted
-- tests/test_gates.py::TestWaive004ExaminedSitesGuard::test_uninstrumented_family_is_unchanged_from_today
-- tests/test_gates.py::TestWaive004ExaminedSitesGuard::test_unexamined_archgate_site_refuses
-- tests/test_gates.py::TestWaive004ExaminedSitesGuard::test_original_55_waiver_incident_shape_partial_examination_still_refuses
+- tests/gates_suite/test_waive.py::TestWaive004ExaminedSitesGuard::test_examined_archgate_site_is_deleted
+- tests/gates_suite/test_waive.py::TestWaive004ExaminedSitesGuard::test_uninstrumented_family_is_unchanged_from_today
+- tests/gates_suite/test_waive.py::TestWaive004ExaminedSitesGuard::test_unexamined_archgate_site_refuses
+- tests/gates_suite/test_waive.py::TestWaive004ExaminedSitesGuard::test_original_55_waiver_incident_shape_partial_examination_still_refuses
 designated_repro_test: null
 threat: null
 component: null
@@ -76,7 +76,7 @@ family this run before the guard may even consider relaxing.
 
 Still refuse on any uncertainty -- an unexamined or unknown-family site
 must never be deletable, per the standing regression lock
-(tests/test_gates.py::TestWaive004DegradedRunGuard::
+(tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::
 test_mass_invalidation_with_live_finding_elsewhere_still_refuses).
 Prove this ticket's own acceptance property with a new regression test:
 fabricate a GateStats.examined_sites that covers SOME but not all sites

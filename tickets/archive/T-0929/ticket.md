@@ -49,7 +49,7 @@ scope_changes:
 evidence:
 - tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_error_threshold_errors
 - tests/test_tickets_collision.py::TestRealLedgerIntegrity::test_no_duplicate_ids_within_or_across_ledgers
-- tests/test_gates.py::TestTick006PhantomFiling::test_phantom_filed_colon_fires
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_phantom_filed_colon_fires
 designated_repro_test: null
 threat: null
 component: null

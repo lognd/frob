@@ -28,7 +28,7 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_stale_via_symbol_violation
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_stale_via_symbol_violation
 designated_repro_test: null
 threat: null
 component: null

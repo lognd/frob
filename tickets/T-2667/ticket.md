@@ -39,7 +39,7 @@ body_changes:
   old_length: 4268
   new_length: 4462
 evidence:
-- tests/test_gates.py::TestDebtGate::test_debt002_open_ticket_is_silent
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt002_open_ticket_is_silent
 designated_repro_test: null
 threat: null
 component: null

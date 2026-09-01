@@ -60,8 +60,8 @@ evidence:
 - tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_line_wrapped_inline_span_is_blanked_as_one_token
 - tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_blank_line_is_not_treated_as_inside_a_span
 - tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_id_inside_double_backtick_span_is_not_flagged
-- tests/test_gates.py::TestTick006PhantomFiling::test_code_spanned_filed_claim_does_not_fire
-- tests/test_gates.py::TestTick006PhantomFiling::test_backtick_styled_id_in_a_real_claim_still_fires
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_code_spanned_filed_claim_does_not_fire
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_backtick_styled_id_in_a_real_claim_still_fires
 - tests/unit/gates/test_markdown_scan.py::TestStripCodeSpans::test_run_length_must_match_to_close
 designated_repro_test: null
 threat: null

@@ -50,13 +50,13 @@ scope_changes:
   actor: logan
   at: '2026-08-26'
 evidence:
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_disclosed_follow_up_with_no_citation_fires
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_numeric_count_residual_is_not_a_disclosure
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_rule_id_shaped_residue_is_not_a_disclosure
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_residue_heading_label_with_no_citation_still_fires
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_residue_heading_label_with_citation_immediately_after_is_silent
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_ordinary_prose_residue_preceded_by_non_technical_word_is_not_a_disclosure
-designated_repro_test: tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_ordinary_prose_residue_preceded_by_non_technical_word_is_not_a_disclosure
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_disclosed_follow_up_with_no_citation_fires
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_numeric_count_residual_is_not_a_disclosure
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_rule_id_shaped_residue_is_not_a_disclosure
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_residue_heading_label_with_no_citation_still_fires
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_residue_heading_label_with_citation_immediately_after_is_silent
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_ordinary_prose_residue_preceded_by_non_technical_word_is_not_a_disclosure
+designated_repro_test: tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_ordinary_prose_residue_preceded_by_non_technical_word_is_not_a_disclosure
 acceptance:
 - text: 'given TICK011''s WARN findings (the residue/residual false-positive
 
@@ -68,7 +68,7 @@ acceptance:
 
     on unrelated backlog tickets, split out as T-2946, not claimed here.'
   evidence:
-  - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_ordinary_prose_residue_preceded_by_non_technical_word_is_not_a_disclosure
+  - tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_ordinary_prose_residue_preceded_by_non_technical_word_is_not_a_disclosure
 - text: 'given TICK011''s gate module, when its severity is read, then it is
 
     ERROR not WARNING -- confirmed promoted and takes effect (a fresh
@@ -79,7 +79,7 @@ acceptance:
 
     promoted while their own counts are nonzero (T-2946).'
   evidence:
-  - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_disclosed_follow_up_with_no_citation_fires
+  - tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_disclosed_follow_up_with_no_citation_fires
 acceptance_amendments:
 - op: replace
   index: 0

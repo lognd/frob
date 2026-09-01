@@ -17,24 +17,24 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestPiiStructuralCrossLanguage::test_ts_secret_wrapper_type_field_fires
-- tests/test_gates.py::TestPiiStructuralCrossLanguage::test_ts_branded_email_type_field_fires
-- tests/test_gates.py::TestPiiStructuralCrossLanguage::test_ts_plain_string_field_type_does_not_fire
-- tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_secrecy_secretstring_type_field_fires
-- tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_secret_newtype_type_field_fires
-- tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_plain_string_field_type_does_not_fire
+- tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_ts_secret_wrapper_type_field_fires
+- tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_ts_branded_email_type_field_fires
+- tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_ts_plain_string_field_type_does_not_fire
+- tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_rust_secrecy_secretstring_type_field_fires
+- tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_rust_secret_newtype_type_field_fires
+- tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_rust_plain_string_field_type_does_not_fire
 designated_repro_test: null
 acceptance:
 - text: GIVEN a TS field typed as a known secret-wrapper or a Rust field typed secrecy::SecretString
     WHEN pii_structural runs THEN a type-kind PII finding fires; a plain String field
     does not
   evidence:
-  - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_ts_secret_wrapper_type_field_fires
-  - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_ts_branded_email_type_field_fires
-  - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_ts_plain_string_field_type_does_not_fire
-  - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_secrecy_secretstring_type_field_fires
-  - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_secret_newtype_type_field_fires
-  - tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_plain_string_field_type_does_not_fire
+  - tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_ts_secret_wrapper_type_field_fires
+  - tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_ts_branded_email_type_field_fires
+  - tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_ts_plain_string_field_type_does_not_fire
+  - tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_rust_secrecy_secretstring_type_field_fires
+  - tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_rust_secret_newtype_type_field_fires
+  - tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_rust_plain_string_field_type_does_not_fire
 threat: null
 component: null
 ---

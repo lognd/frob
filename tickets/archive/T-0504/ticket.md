@@ -13,10 +13,10 @@ sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
-- tests/test_gates.py::TestPlace001Gate::test_per_field_pydantic_idiom_is_silent
-- tests/test_gates.py::TestPlace001Gate::test_directive_directly_above_def_is_silent
-- tests/test_gates.py::TestPlace001Gate::test_no_nearby_symbol_at_all_is_silent
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_missed_following_binding_fires
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_per_field_pydantic_idiom_is_silent
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_directive_directly_above_def_is_silent
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_no_nearby_symbol_at_all_is_silent
 designated_repro_test: null
 threat: null
 component: null

@@ -51,10 +51,10 @@ body_changes:
   old_length: 3981
   new_length: 4272
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
-- tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_doc_anchor_on_public_symbol
-- tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_a_strata_node_whose_clearance_is_not_public
-- tests/test_gates.py::TestCoverageGate::test_cov007_still_fires_for_a_python_private_helper_after_t2549
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_silent_for_doc_anchor_on_public_symbol
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_silent_for_a_strata_node_whose_clearance_is_not_public
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_still_fires_for_a_python_private_helper_after_t2549
 designated_repro_test: null
 threat: null
 component: null

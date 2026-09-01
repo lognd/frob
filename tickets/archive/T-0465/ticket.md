@@ -64,12 +64,12 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestExcludeHazardGate::test_entry_shadowing_tracked_dir_fires
-- tests/test_gates.py::TestExcludeHazardGate::test_entry_matching_no_tracked_path_is_silent
-- tests/test_gates.py::TestExcludeHazardGate::test_comment_and_negated_lines_are_ignored
-- tests/test_gates.py::TestExcludeHazardGate::test_exact_tracked_file_entry_fires
-- tests/test_gates.py::TestExcludeHazardGate::test_empty_exclude_file_is_silent
-- tests/test_gates.py::TestExcludeHazardGate::test_non_git_root_is_silent
+- tests/gates_suite/test_invariant.py::TestExcludeHazardGate::test_entry_shadowing_tracked_dir_fires
+- tests/gates_suite/test_invariant.py::TestExcludeHazardGate::test_entry_matching_no_tracked_path_is_silent
+- tests/gates_suite/test_invariant.py::TestExcludeHazardGate::test_comment_and_negated_lines_are_ignored
+- tests/gates_suite/test_invariant.py::TestExcludeHazardGate::test_exact_tracked_file_entry_fires
+- tests/gates_suite/test_invariant.py::TestExcludeHazardGate::test_empty_exclude_file_is_silent
+- tests/gates_suite/test_invariant.py::TestExcludeHazardGate::test_non_git_root_is_silent
 designated_repro_test: null
 threat: null
 component: null

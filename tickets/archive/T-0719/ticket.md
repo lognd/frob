@@ -30,8 +30,8 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_dependent_gates_block_loudly_on_failed_diff
-- tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_dependent_gates_pass_quietly_on_a_genuinely_gitless_root
+- tests/gates_suite/test_test_gate.py::TestGatesDegradeWithoutDiff::test_diff_dependent_gates_block_loudly_on_failed_diff
+- tests/gates_suite/test_test_gate.py::TestGatesDegradeWithoutDiff::test_diff_dependent_gates_pass_quietly_on_a_genuinely_gitless_root
 designated_repro_test: null
 threat: null
 component: null

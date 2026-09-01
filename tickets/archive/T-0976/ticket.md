@@ -41,7 +41,7 @@ evidence:
 - tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
 - tests/unit/test_arch.py::TestModuleDependencyCycles::test_two_file_import_cycle_flagged
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
-- tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_honors_graph_excludes
+- tests/gates_suite/test_prework.py::TestPreworkSweepBounds::test_sweep_ticket_honors_graph_excludes
 - tests/test_gates_fmt_directives.py::TestFormatPaths::test_check_mode_reports_without_writing
 - tests/test_pii_structural_gate.py::TestFieldNames::test_password_field_fires
 - tests/test_ticket_land.py::TestSpliceLedger::test_same_id_newer_state_wins

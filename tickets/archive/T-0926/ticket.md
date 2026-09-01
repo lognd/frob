@@ -31,14 +31,14 @@ correctly reset exactly once per real `frob check` invocation
 (`frob.check._run_check_with_skips` calls `reset_parse_cache()` before any
 gate/snapshot work starts). That is sound for a real one-shot CLI run.
 
-It is NOT sound for the test suite: `tests/test_gates.py::_snapshot` (and
+It is NOT sound for the test suite: `tests/conftest.py::_snapshot` (and
 several other test helpers) call `frob.graph.build_graph` directly,
 bypassing `frob.check`'s reset entirely. Any earlier test in the same
 pytest-xdist worker process that parses a file with a syntax error
 (`_warn_if_partial_tree`) leaves its display path in
 `_partial_parse_files` until some LATER test happens to call
 `reset_parse_cache()` at its own start. Reproduced concretely: running
-`tests/test_lang.py tests/test_gates.py::TestParseFailureGate` together
+`tests/test_lang.py tests/gates_suite/test_waive.py::TestParseFailureGate` together
 under xdist intermittently fails
 `TestParseFailureGate.test_no_parse_failures_is_clean` (added T-0558,
 unmodified) with a leaked PARSE002-shaped violation from an unrelated

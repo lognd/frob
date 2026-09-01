@@ -16,7 +16,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
 - cmd:sh /tmp/claude-1000/-home-logan-projects-frob/28006941-9d5c-4153-b3fb-399b3b532639/scratchpad/t0833-evidence.sh
   exit=0 sha256=e3b0c44298fc
 designated_repro_test: null

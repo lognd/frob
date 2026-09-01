@@ -17,10 +17,10 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestOptInGates::test_perf_gate_flags_list_membership_in_loop
-- tests/test_gates.py::TestOptInGates::test_perf_gate_silences_unscannable_files
-- tests/test_gates.py::TestOptInGates::test_perf_gate_still_reports_genuine_parse_failure
-- tests/test_gates.py::test_gates_run_gates_integration
+- tests/gates_suite/test_run.py::TestOptInGates::test_perf_gate_flags_list_membership_in_loop
+- tests/gates_suite/test_run.py::TestOptInGates::test_perf_gate_silences_unscannable_files
+- tests/gates_suite/test_run.py::TestOptInGates::test_perf_gate_still_reports_genuine_parse_failure
+- tests/gates_suite/test_coverage.py::test_gates_run_gates_integration
 designated_repro_test: null
 threat: null
 component: null

@@ -47,7 +47,7 @@ The real-parser path (`_directive_ids_via_real_parser`, mirroring
 "stranded" classification measurably, but two important caveats from
 direct measurement:
 
-1. **The false-positive framing below was partly wrong.** Most of
+1. **The false-positive framing below was partly wrong.** <!-- frob:waive DOC006 reason="dated point-in-time measurement against the pre-T-3586 monofile shape; the number/behavior described is historical, not a live pointer" --> Most of
    `tests/test_gates.py`'s 389 literal "frob:ticket" text occurrences
    are GENUINE directive-position comments (this repo's own convention
    puts `frob:tests`/`frob:ticket` directives densely across a large
@@ -64,7 +64,7 @@ direct measurement:
    reasonable budget.** A full run over all ~1098 branches was killed
    at the 480s mark (still running); the original bare-regex scan
    completes the same set in ~6-7 minutes. Tree-sitter parsing every
-   large file (`tests/test_gates.py` alone is ~900KB) once per branch
+   large file (`tests/test_gates.py` <!-- frob:waive DOC006 reason="dated point-in-time measurement against the pre-T-3586 monofile shape; the number/behavior described is historical, not a live pointer" --> alone is ~900KB) once per branch
    that touches it, with no cross-branch content-hash cache, is the
    cost -- `frob.lang.parse_file`'s own per-process cache does not help
    here since each branch's blob is read into a FRESH scratch file path
@@ -91,7 +91,7 @@ py` (389 literal `frob:ticket` occurrences in its own test fixtures) or
 `src/frob/gates/_fix_engine_sync.py` (22 occurrences) -- neither file
 change actually anchors real per-ticket work; the regex just fired on
 every test-fixture string. Example: branch `t-2101`'s only real diff is
-`src/frob/gates/_fix_engine_sync.py` + `tests/test_gates.py` +
+`src/frob/gates/_fix_engine_sync.py` + `tests/test_gates.py` <!-- frob:waive DOC006 reason="dated point-in-time measurement against the pre-T-3586 monofile shape; the number/behavior described is historical, not a live pointer" --> +
 `rapid-debt.jsonl` + its own `tickets/T-2101/*`, all legitimate, yet the
 directive scan attributes it 300+ unrelated ticket ids because most of
 them are `queued`/unresolved on main, which pushed it into "stranded"
@@ -131,7 +131,7 @@ signal quality, not by the raw count:**
 
 3. **Likely false positive (majority of the 188)** -- large ticket-id
    lists (dozens to hundreds) whose branch's own real diff is 1-6 files
-   including `tests/test_gates.py` and/or `src/frob/gates/_fix_engine_
+   including `tests/test_gates.py` <!-- frob:waive DOC006 reason="dated point-in-time measurement against the pre-T-3586 monofile shape; the number/behavior described is historical, not a live pointer" --> and/or `src/frob/gates/_fix_engine_
    sync.py`. These read as "stranded" only because of the fixture-string
    false-positive above; their actual per-branch diff is almost always a
    single small gate/test change plus that ticket's own `tickets/T-####/`

@@ -40,10 +40,10 @@ scope_changes:
 evidence:
 - tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning
 - tests/unit/test_check.py::TestRunGatesDelta::test_stale_baseline_falls_back_to_full_set_with_warning
-- tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
-- tests/test_gates.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
-- tests/test_gates.py::TestProcessPoolGates::test_run_gates_output_is_identical_across_repeated_runs
-- tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_run_gates_output_is_identical_across_repeated_runs
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
 designated_repro_test: null
 threat: null
 component: null

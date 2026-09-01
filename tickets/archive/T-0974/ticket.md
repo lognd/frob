@@ -45,9 +45,9 @@ evidence:
 - tests/test_dup_native_rungs.py::TestNativeRungsOffWhenDisabled::test_explicit_false_reports_no_native_rungs
 - tests/test_dup_native_rungs.py::TestNativeRungsEnabled::test_enabled_finds_the_r4_gapped_clone
 - tests/test_dup_native_rungs.py::TestNativeRungsEnabled::test_enabled_finds_the_r5_dataflow_clone
-- tests/test_gates.py::TestOptInGates::test_dup_gate_off_by_default
-- tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
-- tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
+- tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_off_by_default
+- tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
+- tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
 designated_repro_test: null
 threat: null
 component: null

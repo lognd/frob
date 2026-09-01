@@ -750,7 +750,7 @@ def _tick006_phantom_ids(done_report_text: str) -> tuple[str, ...]:
     `_quoted_char_ranges` set (code spans included) for the id check
     instead would regress T-1700's own settled precedent that an id
     styled in `` `backtick code` `` right after plain-prose "Filed:" is
-    still a real, checkable claim (`tests/test_gates.py::
+    still a real, checkable claim (`tests/gates_suite/test_tick.py::
     TestTick006PhantomFiling::
     test_backtick_styled_id_in_a_real_claim_still_fires`) -- only a
     double-quoted id is new prose-not-citation territory; a code-spanned
@@ -775,7 +775,8 @@ def _tick006_phantom_ids(done_report_text: str) -> tuple[str, ...]:
 
 # frob:ticket T-0929
 # frob:tests \
-# tests/test_gates.py::TestTick006PhantomFiling.test_phantom_filed_colon_fires
+# tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_phantom_filed_colon_fir\
+# es
 # frob:enforces CHK-GATE-TICK006
 def _tick006_phantom_filing(
     queue: TicketQueue, archived: Result[dict[str, Ticket], TicketError]
@@ -977,10 +978,10 @@ def _tick011_disclosure_hits(text: str) -> tuple[re.Match[str], ...]:
 
 # frob:ticket T-1129
 # frob:ticket T-1402
-# frob:tests tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_disclosed_follow_up_with_no_citation_fires  # noqa: E501
-# frob:tests tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_recent_ticket_outside_old_window_still_fires_exactly_as_today  # noqa: E501
-# frob:tests tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_historical_ticket_outside_active_window_is_silent_by_default  # noqa: E501
-# frob:tests tests/test_gates.py::TestTick011DisclosedCutWithoutTicket.test_include_history_env_opt_in_restores_the_historical_finding  # noqa: E501
+# frob:tests tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_disclosed_follow_up_with_no_citation_fires  # noqa: E501
+# frob:tests tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_recent_ticket_outside_old_window_still_fires_exactly_as_today  # noqa: E501
+# frob:tests tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_historical_ticket_outside_active_window_is_silent_by_default  # noqa: E501
+# frob:tests tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket.test_include_history_env_opt_in_restores_the_historical_finding  # noqa: E501
 # frob:enforces CHK-GATE-TICK011
 def _tick011_disclosed_cuts_without_ticket(
     queue: TicketQueue, archived: Result[dict[str, Ticket], TicketError]
@@ -1088,14 +1089,18 @@ def _tick011_first_uncited_disclosure(
 
 # frob:ticket T-0820
 # frob:enforces CHK-GATE-TICK007
-# frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_stale_critical_fires
 # frob:tests \
-# tests/test_gates.py::TestTick007UndispatchedStale.test_fresh_critical_is_silent
+# tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_stale_critical_fires
 # frob:tests \
-# tests/test_gates.py::TestTick007UndispatchedStale.test_medium_priority_never_fires
+# tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_fresh_critical_is_s\
+# ilent
 # frob:tests \
-# tests/test_gates.py::TestTick007UndispatchedStale.test_blocked_ticket_is_silent
-# frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_real_repo_scan_runs_end_to_end_without_crashing  # noqa: E501
+# tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_medium_priority_nev\
+# er_fires
+# frob:tests \
+# tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_blocked_ticket_is_s\
+# ilent
+# frob:tests tests/gates_suite/test_tick.py::TestTick007UndispatchedStale.test_real_repo_scan_runs_end_to_end_without_crashing  # noqa: E501
 def _tick007_undispatched_stale(
     root: Path, queue: TicketQueue
 ) -> tuple[Violation, ...]:
@@ -1136,13 +1141,17 @@ def _tick007_undispatched_stale(
 # frob:ticket T-0842
 # frob:enforces CHK-GATE-TICK008
 # frob:tests \
-# tests/test_gates.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_field
+# tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_\
+# field
 # frob:tests \
-# tests/test_gates.py::TestTick008UnknownLedgerFields.test_fuzzy_hint_on_near_miss_typo
+# tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_fuzzy_hint_on_nea\
+# r_miss_typo
 # frob:tests \
-# tests/test_gates.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger
-# frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_real_repo_ledger_is_tick008_clean  # noqa: E501
-# frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_waivable
+# tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_silent_on_clean_l\
+# edger
+# frob:tests tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_real_repo_ledger_is_tick008_clean  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields.test_waivable
 def _tick008_unknown_ledger_fields(queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK008 (T-0842): WARN on every ticket in the CHECKED ledger that
     carries unknown/extra frontmatter field(s) -- the mechanical follow-up

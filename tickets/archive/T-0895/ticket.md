@@ -15,7 +15,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
+- tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
 designated_repro_test: null
 threat: null
 component: null

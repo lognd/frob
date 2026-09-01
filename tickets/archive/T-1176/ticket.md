@@ -129,11 +129,11 @@ scope_changes:
   actor: logan
   at: '2026-07-29'
 evidence:
-- tests/test_gates.py::TestWaivePresets::test_docs_table_matches_waive_presets
-- tests/test_gates.py::TestWaivePresets::test_resolve_preset_known_name
-- tests/test_gates.py::TestWaivePresets::test_resolve_preset_unknown_name_is_none
-- tests/test_gates.py::TestWaivePresets::test_waive_preset_resolves_reason_and_matches_like_inline
-- tests/test_gates.py::TestWaivePresets::test_unknown_preset_is_malformed_directive
+- tests/gates_suite/test_waive.py::TestWaivePresets::test_docs_table_matches_waive_presets
+- tests/gates_suite/test_waive.py::TestWaivePresets::test_resolve_preset_known_name
+- tests/gates_suite/test_waive.py::TestWaivePresets::test_resolve_preset_unknown_name_is_none
+- tests/gates_suite/test_waive.py::TestWaivePresets::test_waive_preset_resolves_reason_and_matches_like_inline
+- tests/gates_suite/test_waive.py::TestWaivePresets::test_unknown_preset_is_malformed_directive
 designated_repro_test: null
 acceptance:
 - text: GIVEN a frob:waive directive using preset=<name> WHEN gates evaluate it THEN
@@ -141,13 +141,13 @@ acceptance:
     section, machine-read), behaves identically to the inline reason, and an unknown
     preset name is an error
   evidence:
-  - tests/test_gates.py::TestWaivePresets::test_waive_preset_resolves_reason_and_matches_like_inline
-  - tests/test_gates.py::TestWaivePresets::test_unknown_preset_is_malformed_directive
-  - tests/test_gates.py::TestWaivePresets::test_docs_table_matches_waive_presets
+  - tests/gates_suite/test_waive.py::TestWaivePresets::test_waive_preset_resolves_reason_and_matches_like_inline
+  - tests/gates_suite/test_waive.py::TestWaivePresets::test_unknown_preset_is_malformed_directive
+  - tests/gates_suite/test_waive.py::TestWaivePresets::test_docs_table_matches_waive_presets
 - text: GIVEN the existing calibration-batch INV006 text THEN it becomes preset=split-carried-prose
     and the repo's 10+ verbatim copies are migrated to it in the same land
   evidence:
-  - tests/test_gates.py::TestWaivePresets::test_resolve_preset_known_name
+  - tests/gates_suite/test_waive.py::TestWaivePresets::test_resolve_preset_known_name
 threat: null
 component: null
 ---

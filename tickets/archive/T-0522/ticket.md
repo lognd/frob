@@ -22,7 +22,7 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestInv003Gate::test_illustrative_example_reason_does_not_self_waive
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_illustrative_example_reason_does_not_self_waive
 designated_repro_test: null
 threat: null
 component: null

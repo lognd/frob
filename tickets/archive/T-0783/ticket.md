@@ -34,9 +34,9 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_todo003_fires_after_version_bump_since_deferral_landed
-- tests/test_gates.py::TestCoverageGate::test_todo003_silent_when_no_version_bump_since_deferral
-- tests/test_gates.py::TestCoverageGate::test_todo003_silent_when_ticket_closes
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_todo003_fires_after_version_bump_since_deferral_landed
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_todo003_silent_when_no_version_bump_since_deferral
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_todo003_silent_when_ticket_closes
 designated_repro_test: null
 acceptance:
 - text: GIVEN a shipped comment deferring work to ticket T-X (that ticket's job shape
@@ -44,9 +44,9 @@ acceptance:
     landed THEN a warning fires naming the deferral site and age; GIVEN the ticket
     closes THEN the finding clears
   evidence:
-  - tests/test_gates.py::TestCoverageGate::test_todo003_fires_after_version_bump_since_deferral_landed
-  - tests/test_gates.py::TestCoverageGate::test_todo003_silent_when_no_version_bump_since_deferral
-  - tests/test_gates.py::TestCoverageGate::test_todo003_silent_when_ticket_closes
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_todo003_fires_after_version_bump_since_deferral_landed
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_todo003_silent_when_no_version_bump_since_deferral
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_todo003_silent_when_ticket_closes
 threat: null
 component: null
 ---

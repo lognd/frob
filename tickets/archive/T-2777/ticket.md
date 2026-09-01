@@ -77,8 +77,8 @@ evidence:
 - tests/test_lang_conformance_gate.py::TestLangConformanceGate::test_real_registry_is_clean
 - tests/test_refs_gate.py::TestTiers::test_two_refs_passes
 - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_commented_out_rule_literal_is_skipped
-- tests/test_gates.py::TestSysGate::test_sys001_valid
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
+- tests/gates_suite/test_sys.py::TestSysGate::test_sys001_valid
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
 - tests/unit/test_profile_table_schema.py::TestProfileSchemaGate::test_must_now_fire_reports_the_undeclared_key
 - tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_testing_known_keys_reads_test_policy_model_fields
 - tests/unit/test_toplevel_scalar_schema.py::TestTopLevelScalarSchemaGate::test_must_now_fire_reports_the_undeclared_key
@@ -91,8 +91,8 @@ acceptance:
   - tests/test_lang_conformance_gate.py::TestLangConformanceGate::test_real_registry_is_clean
   - tests/test_refs_gate.py::TestTiers::test_two_refs_passes
   - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_commented_out_rule_literal_is_skipped
-  - tests/test_gates.py::TestSysGate::test_sys001_valid
-  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
+  - tests/gates_suite/test_sys.py::TestSysGate::test_sys001_valid
+  - tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
   - tests/unit/test_profile_table_schema.py::TestProfileSchemaGate::test_must_now_fire_reports_the_undeclared_key
   - tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_testing_known_keys_reads_test_policy_model_fields
   - tests/unit/test_toplevel_scalar_schema.py::TestTopLevelScalarSchemaGate::test_must_now_fire_reports_the_undeclared_key

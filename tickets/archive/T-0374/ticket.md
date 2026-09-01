@@ -17,13 +17,13 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestBaselineDelta::test_stamp_and_load_round_trip
-- tests/test_gates.py::TestBaselineDelta::test_baseline_not_stale_when_files_unchanged
-- tests/test_gates.py::TestBaselineDelta::test_baseline_stale_when_file_changes
-- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_roundtrip
-- tests/test_gates.py::TestCoverageLoad::test_joins_via_repo_relative_source
-- tests/test_gates.py::TestCoverageLoad::test_multi_source_picks_the_root_that_joins
-- tests/test_gates.py::TestCoverageLoad::test_missing_coverage_xml
+- tests/gates_suite/test_prework.py::TestBaselineDelta::test_stamp_and_load_round_trip
+- tests/gates_suite/test_prework.py::TestBaselineDelta::test_baseline_not_stale_when_files_unchanged
+- tests/gates_suite/test_prework.py::TestBaselineDelta::test_baseline_stale_when_file_changes
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_roundtrip
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_joins_via_repo_relative_source
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_multi_source_picks_the_root_that_joins
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_missing_coverage_xml
 designated_repro_test: null
 threat: null
 component: null

@@ -28,7 +28,7 @@ scope_changes:
   actor: logan
   at: '2026-08-28'
 evidence:
-- tests/test_gates.py::TestDsl001::test_docarch001_wiring_comment_does_not_self_match
+- tests/gates_suite/test_waive.py::TestDsl001::test_docarch001_wiring_comment_does_not_self_match
 designated_repro_test: null
 threat: null
 component: null

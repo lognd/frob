@@ -65,9 +65,9 @@ scope_changes:
   actor: logan
   at: '2026-08-03'
 evidence:
-- tests/test_gates.py::TestDoclinkGate::test_broken_relative_link_target_fires_doc008
-- tests/test_gates.py::TestDoclinkGate::test_broken_fragment_on_existing_target_fires_doc008
-- tests/test_gates.py::TestDoclinkGate::test_resolvable_relative_link_and_fragment_pass
+- tests/gates_suite/test_doc.py::TestDoclinkGate::test_broken_relative_link_target_fires_doc008
+- tests/gates_suite/test_doc.py::TestDoclinkGate::test_broken_fragment_on_existing_target_fires_doc008
+- tests/gates_suite/test_doc.py::TestDoclinkGate::test_resolvable_relative_link_and_fragment_pass
 designated_repro_test: null
 threat: null
 component: null

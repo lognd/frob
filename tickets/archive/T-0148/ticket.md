@@ -36,12 +36,12 @@ evidence:
 - tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_interleaved_enter_exit_across_threads_never_sticks
 - tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]
 - tests/unit/strata/test_kernel_properties.py::test_worst_age_matches_longest_path_oracle_on_dags
-- tests/test_gates.py::TestCoverageLoad::test_parses_line_to_symbol_span
-- tests/test_gates.py::TestCoverageLoad::test_joins_via_repo_relative_source
-- tests/test_gates.py::TestCoverageLoad::test_multi_source_picks_the_root_that_joins
-- tests/test_gates.py::TestCoverageLoad::test_zero_join_is_loud_not_silent
-- tests/test_gates.py::TestTestGate::test_test008_fires_on_unjoined_root
-- tests/test_gates.py::TestTestGate::test_test008_cannot_be_waived
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_parses_line_to_symbol_span
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_joins_via_repo_relative_source
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_multi_source_picks_the_root_that_joins
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_zero_join_is_loud_not_silent
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test008_fires_on_unjoined_root
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test008_cannot_be_waived
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately

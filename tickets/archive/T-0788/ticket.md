@@ -82,11 +82,11 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_gates.py::TestComplianceGate::test_compliance005_registered_in_known_gate_rules
-- tests/test_gates.py::TestComplianceGate::test_compliance005_fires_on_deferred_disposition
-- tests/test_gates.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
-- tests/test_gates.py::TestComplianceGate::test_compliance005_missing_registry_dir_is_silent
-- tests/test_gates.py::TestComplianceGate::test_compliance005_real_repo_registry_passes
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance005_registered_in_known_gate_rules
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance005_fires_on_deferred_disposition
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance005_missing_registry_dir_is_silent
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance005_real_repo_registry_passes
 designated_repro_test: null
 acceptance:
 - text: GIVEN a compliance.yaml entry regressed to deferred or undispositioned WHEN
@@ -94,8 +94,8 @@ acceptance:
     GIVEN the 17 CMPL units re-dispositioned by T-0607 THEN their entries may cite
     handled_by:COMPLIANCE005 and REG002 accepts it
   evidence:
-  - tests/test_gates.py::TestComplianceGate::test_compliance005_fires_on_deferred_disposition
-  - tests/test_gates.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
+  - tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance005_fires_on_deferred_disposition
+  - tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
 threat: null
 component: null
 ---

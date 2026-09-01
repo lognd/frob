@@ -91,8 +91,8 @@ _REPO_WIDE_EXEMPT_RULES = frozenset({"REL002"})
 # frob:ticket T-2284
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:tests \
-# tests/test_gates.py::TestFixEngineScopeLease.test_out_of_scope_fix_is_reverted_and_re\
-# ported kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_out_of_scope_fix_i\
+# s_reverted_and_reported kind="unit"
 class SkippedFix(BaseModel):
     """One Tier-A fix a handler produced but `filter_fixes_by_scope_and_
     lease` refused to keep -- same identity a kept `FixApplied` carries
@@ -216,20 +216,20 @@ def _revert_fix_file(
 # frob:ticket T-2284
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:tests \
-# tests/test_gates.py::TestFixEngineScopeLease.test_out_of_scope_fix_is_reverted_and_re\
-# ported kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_out_of_scope_fix_i\
+# s_reverted_and_reported kind="unit"
 # frob:tests \
-# tests/test_gates.py::TestFixEngineScopeLease.test_live_leased_file_skipped_even_when_\
-# in_landing_scope kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_live_leased_file_s\
+# kipped_even_when_in_landing_scope kind="unit"
 # frob:tests \
-# tests/test_gates.py::TestFixEngineScopeLease.test_in_scope_fix_is_kept_unchanged \
-# kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_in_scope_fix_is_ke\
+# pt_unchanged kind="unit"
 # frob:tests \
-# tests/test_gates.py::TestFixEngineScopeLease.test_no_ticket_id_passes_every_fix_throu\
-# gh_unfiltered kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_no_ticket_id_passe\
+# s_every_fix_through_unfiltered kind="unit"
 # frob:tests \
-# tests/test_gates.py::TestFixEngineScopeLease.test_rel002_is_a_named_repo_wide_exempti\
-# on_not_a_silent_pass kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease.test_rel002_is_a_named_\
+# repo_wide_exemption_not_a_silent_pass kind="unit"
 def filter_fixes_by_scope_and_lease(
     root: Path,
     queue: TicketQueue,

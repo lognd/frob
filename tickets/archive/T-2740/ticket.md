@@ -88,9 +88,9 @@ evidence:
 - tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness::test_inert_when_rule_does_not_scan_the_file
 - tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness::test_unverified_when_no_checker_registered
 - tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness::test_necessary_never_inert_even_with_a_registered_checker
-- tests/test_gates.py::TestRenderLintGate::test_render001_scans_true_for_a_real_scanned_file
-- tests/test_gates.py::TestRenderLintGate::test_render001_scans_false_for_an_exempt_path
-- tests/test_gates.py::TestRenderLintGate::test_render001_scans_false_for_a_path_outside_any_pathspec
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_render001_scans_true_for_a_real_scanned_file
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_render001_scans_false_for_an_exempt_path
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_render001_scans_false_for_a_path_outside_any_pathspec
 - tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness::test_appconfig_check_liveness_defaults_false
 - tests/unit/test_waive_audit_runner.py::TestCheckLivenessWiring::test_check_liveness_renders_inert_and_necessary
 - tests/unit/test_waive_audit_runner.py::TestCheckLivenessWiring::test_check_liveness_never_flags_when_gate_run_fails

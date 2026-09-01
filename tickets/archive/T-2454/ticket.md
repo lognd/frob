@@ -92,8 +92,8 @@ scope_changes:
 evidence:
 - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_new_standard_shape_rule_recognized_without_hand_registration
 - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_disclosed_gap_shape_still_requires_hand_registration
-- tests/test_gates.py::TestWire001RuleIdViolationsUnion::test_standard_shape_new_rule_not_flagged_without_hand_registration
-- tests/test_gates.py::TestWire001RuleIdViolationsUnion::test_shape_outside_scanned_bases_still_flagged
+- tests/gates_suite/test_wire.py::TestWire001RuleIdViolationsUnion::test_standard_shape_new_rule_not_flagged_without_hand_registration
+- tests/gates_suite/test_wire.py::TestWire001RuleIdViolationsUnion::test_shape_outside_scanned_bases_still_flagged
 - tests/unit/test_app_runners_t0875_leaf_collision.py::TestRegistryRunnerRun::test_sync_gate_rules_logs_the_full_generated_rule_id_set
 designated_repro_test: null
 acceptance:
@@ -102,16 +102,16 @@ acceptance:
   evidence:
   - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_new_standard_shape_rule_recognized_without_hand_registration
   - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_disclosed_gap_shape_still_requires_hand_registration
-  - tests/test_gates.py::TestWire001RuleIdViolationsUnion::test_standard_shape_new_rule_not_flagged_without_hand_registration
-  - tests/test_gates.py::TestWire001RuleIdViolationsUnion::test_shape_outside_scanned_bases_still_flagged
+  - tests/gates_suite/test_wire.py::TestWire001RuleIdViolationsUnion::test_standard_shape_new_rule_not_flagged_without_hand_registration
+  - tests/gates_suite/test_wire.py::TestWire001RuleIdViolationsUnion::test_shape_outside_scanned_bases_still_flagged
 - text: Given a gate constructing a rule id declared nowhere, when the registry check
     runs, then it is still reported, proving the check was not removed along with
     the bottleneck.
   evidence:
   - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_new_standard_shape_rule_recognized_without_hand_registration
   - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_disclosed_gap_shape_still_requires_hand_registration
-  - tests/test_gates.py::TestWire001RuleIdViolationsUnion::test_standard_shape_new_rule_not_flagged_without_hand_registration
-  - tests/test_gates.py::TestWire001RuleIdViolationsUnion::test_shape_outside_scanned_bases_still_flagged
+  - tests/gates_suite/test_wire.py::TestWire001RuleIdViolationsUnion::test_standard_shape_new_rule_not_flagged_without_hand_registration
+  - tests/gates_suite/test_wire.py::TestWire001RuleIdViolationsUnion::test_shape_outside_scanned_bases_still_flagged
 - text: Given the derived registry, when a maintainer asks for the complete list of
     registered rule ids, then it is obtainable in one place as a generated artifact
     rather than a hand-kept literal.

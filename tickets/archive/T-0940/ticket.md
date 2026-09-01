@@ -19,7 +19,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_lang.py::TestErrors::test_syntax_error_yields_partial_symbols
-- tests/test_gates.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
+- tests/gates_suite/test_waive.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
 - tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketNewTierSprint::test_new_carries_tier_and_sprint
 - tests/test_tickets_tiers.py::TestTierField::test_default_tier_is_ticket
 designated_repro_test: null
@@ -28,7 +28,7 @@ acceptance:
     then gate-summary reports 0 errors
   evidence:
   - tests/test_lang.py::TestErrors::test_syntax_error_yields_partial_symbols
-  - tests/test_gates.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
+  - tests/gates_suite/test_waive.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
   - tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketNewTierSprint::test_new_carries_tier_and_sprint
   - tests/test_tickets_tiers.py::TestTierField::test_default_tier_is_ticket
 threat: null

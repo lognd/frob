@@ -42,8 +42,8 @@ scope_changes:
   actor: logan
   at: '2026-08-20'
 evidence:
-- tests/test_gates.py::TestTick006PhantomFiling::test_renumbered_draft_corrected_to_real_id_is_silent
-- tests/test_gates.py::TestTick006PhantomFiling::test_stale_draft_id_after_renumber_still_fires
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_renumbered_draft_corrected_to_real_id_is_silent
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_stale_draft_id_after_renumber_still_fires
 designated_repro_test: null
 threat: null
 component: null

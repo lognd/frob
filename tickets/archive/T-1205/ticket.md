@@ -98,11 +98,11 @@ scope_changes:
   actor: logan
   at: '2026-08-03'
 evidence:
-- tests/test_gates.py::TestTestGate::test_test005_symbol_finding_discloses_stale_coverage
-- tests/test_gates.py::TestTestGate::test_test005_symbol_finding_no_disclosure_when_fresh
-- tests/test_gates.py::TestTestGate::test_test005_module_finding_discloses_stale_coverage
-- tests/test_gates.py::TestTestGate::test_test005_system_finding_discloses_stale_coverage
-- tests/test_gates.py::TestTestGate::test_test017_fires_on_low_join_fraction
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test005_symbol_finding_discloses_stale_coverage
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test005_symbol_finding_no_disclosure_when_fresh
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test005_module_finding_discloses_stale_coverage
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test005_system_finding_discloses_stale_coverage
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test017_fires_on_low_join_fraction
 - tests/test_coverage.py::TestCoverageFileCache::test_load_missing_returns_empty
 - tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_backfills_unchanged_file
 - tests/test_coverage.py::TestCoverageFileCache::test_fill_from_cache_ignores_stale_hash
@@ -134,10 +134,10 @@ acceptance:
     rather than reported as current fact, and TEST011 escalates from advisory to a
     blocking freshness contract
   evidence:
-  - tests/test_gates.py::TestTestGate::test_test005_symbol_finding_discloses_stale_coverage
-  - tests/test_gates.py::TestTestGate::test_test005_module_finding_discloses_stale_coverage
-  - tests/test_gates.py::TestTestGate::test_test005_system_finding_discloses_stale_coverage
-  - tests/test_gates.py::TestTestGate::test_test017_fires_on_low_join_fraction
+  - tests/gates_suite/test_test_gate.py::TestTestGate::test_test005_symbol_finding_discloses_stale_coverage
+  - tests/gates_suite/test_test_gate.py::TestTestGate::test_test005_module_finding_discloses_stale_coverage
+  - tests/gates_suite/test_test_gate.py::TestTestGate::test_test005_system_finding_discloses_stale_coverage
+  - tests/gates_suite/test_test_gate.py::TestTestGate::test_test017_fires_on_low_join_fraction
 - text: 'GIVEN an unchanged file THEN its coverage is never recomputed: per-file coverage
     keyed by content hash, full-suite runs reserved for cold start or explicit --full'
   evidence:

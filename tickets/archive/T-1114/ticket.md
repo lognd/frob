@@ -14,8 +14,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestDebtGate::test_debt001_malformed_directive_is_reported
-- tests/test_gates.py::TestDeprecatedGate::test_depr001_malformed_directive_is_reported
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt001_malformed_directive_is_reported
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr001_malformed_directive_is_reported
 - tests/unit/test_design_invariants.py::TestInv007::test_forbidden_import_fires
 - tests/test_waive_gate.py::TestWaive006BindingPhraseExtraction::test_pending_phrasing_is_binding
 designated_repro_test: null

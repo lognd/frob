@@ -28,8 +28,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestKnownGateRuleIds::test_scan_finds_a_synthetic_rule_id
-- tests/test_gates.py::test_gates_run_gates_integration
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_scan_finds_a_synthetic_rule_id
+- tests/gates_suite/test_coverage.py::test_gates_run_gates_integration
 - tests/unit/test_arch.py::test_arch_end_to_end_analyze_then_render
 - tests/unit/perf/test_effect_summaries.py::TestEffectGraphSummaryUnknownDegradation::test_fully_resolvable_call_path_has_no_unknown_member
 - tests/test_perf.py::test_perf_end_to_end_profile_load_and_heat

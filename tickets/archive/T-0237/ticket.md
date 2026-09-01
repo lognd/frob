@@ -17,9 +17,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTest010KindValidation::test_invalid_kind_reported
-- tests/test_gates.py::TestTest010KindValidation::test_valid_kind_not_reported
-- tests/test_gates.py::TestTest010KindValidation::test_dangling_tests_endpoint_still_caught_by_drift002
+- tests/gates_suite/test_test_gate.py::TestTest010KindValidation::test_invalid_kind_reported
+- tests/gates_suite/test_test_gate.py::TestTest010KindValidation::test_valid_kind_not_reported
+- tests/gates_suite/test_test_gate.py::TestTest010KindValidation::test_dangling_tests_endpoint_still_caught_by_drift002
 - tests/test_graph.py::TestDsl::test_tests_verb_invalid_kind_is_malformed
 designated_repro_test: null
 threat: null

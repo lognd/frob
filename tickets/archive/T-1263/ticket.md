@@ -30,26 +30,26 @@ scope_changes:
   actor: logan
   at: '2026-08-03'
 evidence:
-- tests/test_gates.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
-- tests/test_gates.py::TestFixEngineTierC::test_no_eligible_findings_returns_an_empty_list
-- tests/test_gates.py::TestFixEngineTierC::test_no_violations_at_all_returns_an_empty_list
-- tests/test_gates.py::TestFixEngineTierC::test_todo001_emitter_never_touches_any_file
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierC::test_no_eligible_findings_returns_an_empty_list
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierC::test_no_violations_at_all_returns_an_empty_list
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierC::test_todo001_emitter_never_touches_any_file
 designated_repro_test: null
 acceptance:
 - text: GIVEN a content-required finding with a registered Tier-C emitter WHEN --fix
     runs THEN no file is edited and a FixIt record with a non-empty reason_unfixable
     is emitted
   evidence:
-  - tests/test_gates.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
 - text: GIVEN --fix --json THEN the output includes a `fixits` array; on a repo with
     zero Tier-C-eligible findings the array is empty, never a missing key
   evidence:
-  - tests/test_gates.py::TestFixEngineTierC::test_no_eligible_findings_returns_an_empty_list
-  - tests/test_gates.py::TestFixEngineTierC::test_no_violations_at_all_returns_an_empty_list
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierC::test_no_eligible_findings_returns_an_empty_list
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierC::test_no_violations_at_all_returns_an_empty_list
 - text: GIVEN a FixIt's message field THEN it is the original violation's message
     verbatim, never paraphrased
   evidence:
-  - tests/test_gates.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
 threat: null
 component: null
 ---

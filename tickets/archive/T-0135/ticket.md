@@ -19,9 +19,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestSysGate::test_no_design_dir_never_imports_frob_strata
-- tests/test_gates.py::TestSysGate::test_design_dir_degrades_with_typed_error_on_native_extension_missing
-- tests/test_gates.py::TestSysGate::test_default_design_dir_mirror_stays_in_sync
+- tests/gates_suite/test_sys.py::TestSysGate::test_no_design_dir_never_imports_frob_strata
+- tests/gates_suite/test_sys.py::TestSysGate::test_design_dir_degrades_with_typed_error_on_native_extension_missing
+- tests/gates_suite/test_sys.py::TestSysGate::test_default_design_dir_mirror_stays_in_sync
 designated_repro_test: null
 threat: null
 component: null

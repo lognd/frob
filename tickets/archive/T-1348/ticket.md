@@ -30,23 +30,23 @@ scope_changes:
   actor: logan
   at: '2026-07-31'
 evidence:
-- tests/test_gates.py::TestAutofixManifest::test_write_then_clear_roundtrip
-- tests/test_gates.py::TestAutofixManifest::test_apply_tier_a_fixes_clears_manifest_on_clean_finish
-- tests/test_gates.py::TestAutofixManifest::test_killed_mid_handler_leaves_manifest_naming_completed_fixes
-- tests/test_gates.py::TestTierAAutofixCrashSafety::test_kill_between_write_and_rename_leaves_original_file_intact
+- tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_write_then_clear_roundtrip
+- tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_apply_tier_a_fixes_clears_manifest_on_clean_finish
+- tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_killed_mid_handler_leaves_manifest_naming_completed_fixes
+- tests/gates_suite/test_fix_engine.py::TestTierAAutofixCrashSafety::test_kill_between_write_and_rename_leaves_original_file_intact
 designated_repro_test: null
 acceptance:
 - text: given a land killed mid-auto-fix, when the worktree is inspected, then no
     source file is left half-rewritten
   evidence:
-  - tests/test_gates.py::TestAutofixManifest::test_write_then_clear_roundtrip
-  - tests/test_gates.py::TestAutofixManifest::test_apply_tier_a_fixes_clears_manifest_on_clean_finish
-  - tests/test_gates.py::TestTierAAutofixCrashSafety::test_kill_between_write_and_rename_leaves_original_file_intact
+  - tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_write_then_clear_roundtrip
+  - tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_apply_tier_a_fixes_clears_manifest_on_clean_finish
+  - tests/gates_suite/test_fix_engine.py::TestTierAAutofixCrashSafety::test_kill_between_write_and_rename_leaves_original_file_intact
 - text: given a land killed mid-auto-fix, when an agent recovers, then it can identify
     exactly which paths land rewrote without discarding its own uncommitted work
   evidence:
-  - tests/test_gates.py::TestAutofixManifest::test_write_then_clear_roundtrip
-  - tests/test_gates.py::TestAutofixManifest::test_killed_mid_handler_leaves_manifest_naming_completed_fixes
+  - tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_write_then_clear_roundtrip
+  - tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_killed_mid_handler_leaves_manifest_naming_completed_fixes
 threat: null
 component: tickets
 ---

@@ -40,8 +40,8 @@ scope_changes:
 evidence:
 - tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict::test_frob_managed_side_effect_path_never_conflicts
 - tests/test_tickets_scope_mutation.py::TestScopeLeaseConflict::test_non_exempt_path_still_conflicts_alongside_exempt_one
-- tests/test_gates.py::TestScopePrework::test_scope001_frob_managed_side_effect_path_never_fires
-- tests/test_gates.py::TestScopePrework::test_scope001_still_fires_for_non_exempt_unscoped_file_alongside_exempt_one
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_frob_managed_side_effect_path_never_fires
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_still_fires_for_non_exempt_unscoped_file_alongside_exempt_one
 designated_repro_test: null
 threat: null
 component: null

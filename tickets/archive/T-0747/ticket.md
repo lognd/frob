@@ -57,15 +57,15 @@ scope_changes:
   actor: logan
   at: '2026-07-26'
 evidence:
-- tests/test_gates.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
-- tests/test_gates.py::TestCleanupObligationGate::test_release_before_return_is_not_flagged
-- tests/test_gates.py::TestCleanupObligationGate::test_escape_transfer_discharges_the_obligation
-- tests/test_gates.py::TestCleanupObligationGate::test_self_contained_acquire_and_release_is_trusted
-- tests/test_gates.py::TestCleanupObligationGate::test_python_with_block_discharges_the_acquisition
-- tests/test_gates.py::TestCleanupObligationGate::test_process_exit_ok_policy_discharges_a_terminator_guarded_return
-- tests/test_gates.py::TestCleanupObligationGate::test_exceptional_exit_with_no_release_anywhere_is_an_error
-- tests/test_gates.py::TestCleanupObligationGate::test_deinit_never_called_for_cleanup_always_protocol_is_an_error
-- tests/test_gates.py::TestCleanupObligationGate::test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged
+- tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
+- tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_release_before_return_is_not_flagged
+- tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_escape_transfer_discharges_the_obligation
+- tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_self_contained_acquire_and_release_is_trusted
+- tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_python_with_block_discharges_the_acquisition
+- tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_process_exit_ok_policy_discharges_a_terminator_guarded_return
+- tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_exceptional_exit_with_no_release_anywhere_is_an_error
+- tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_deinit_never_called_for_cleanup_always_protocol_is_an_error
+- tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged
 designated_repro_test: null
 acceptance:
 - text: GIVEN a C fixture acquiring a resource with an early-error return skipping
@@ -74,9 +74,9 @@ acceptance:
     cleanup=process-exit-ok THEN termination paths discharge silently by declared
     policy only
   evidence:
-  - tests/test_gates.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
-  - tests/test_gates.py::TestCleanupObligationGate::test_python_with_block_discharges_the_acquisition
-  - tests/test_gates.py::TestCleanupObligationGate::test_process_exit_ok_policy_discharges_a_terminator_guarded_return
+  - tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_early_return_before_release_call_is_an_error
+  - tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_python_with_block_discharges_the_acquisition
+  - tests/gates_suite/test_protocol.py::TestCleanupObligationGate::test_process_exit_ok_policy_discharges_a_terminator_guarded_return
 threat: null
 component: null
 ---

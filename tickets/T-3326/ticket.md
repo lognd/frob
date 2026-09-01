@@ -89,7 +89,7 @@ evidence:
 - tests/test_check_runner.py::TestApplyTierAAndReverify::test_ticket_scoped_fix_never_touches_files_outside_declared_scope
 - tests/test_check_runner.py::TestApplyTierAAndReverify::test_unscoped_fix_refuses_without_fix_all
 - tests/test_check_runner.py::TestApplyTierAAndReverify::test_fix_all_still_runs_repo_wide_when_explicitly_requested
-- tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
 designated_repro_test: tests/test_check_runner.py::TestApplyTierAAndReverify::test_ticket_scoped_fix_never_touches_files_outside_declared_scope
 threat: null
 component: null

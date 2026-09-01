@@ -124,8 +124,8 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorScaffoldConformance::test_run_diagnosis_unhealthy_when_scaffold_blocks_missing
 - tests/system/test_cli_doctor.py::TestDoctorStaleTicketLeases::test_run_diagnosis_healthy_with_no_stale_leases
 - tests/system/test_cli_vet.py::TestHookMode::test_old_package_passes
-- tests/test_gates.py::TestOptInGates::test_fuzz_gate_off_by_default
-- tests/test_gates.py::test_gates_run_gates_integration
+- tests/gates_suite/test_run.py::TestOptInGates::test_fuzz_gate_off_by_default
+- tests/gates_suite/test_coverage.py::test_gates_run_gates_integration
 - tests/test_graph.py::test_graph_build_lock_drift_integration
 - tests/test_mutate.py::test_mutator_visit_bin_op
 - tests/test_mutate.py::test_mutator_visit_bool_op

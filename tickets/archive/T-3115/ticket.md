@@ -31,10 +31,10 @@ body_changes:
   old_length: 0
   new_length: 3234
 evidence:
-- tests/test_gates.py::TestWireGate::test_wire003_direct_dispatch_verb_refactor_is_not_flagged
-- tests/test_gates.py::TestWireGate::test_wire003_still_flags_a_verb_shaped_like_the_hidden_set
-- tests/test_gates.py::TestWireGate::test_wire003_matcher_pattern_stale_verb_is_flagged
-- tests/test_gates.py::TestWireGate::test_wire003_real_verbs_are_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire003_direct_dispatch_verb_refactor_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire003_still_flags_a_verb_shaped_like_the_hidden_set
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire003_matcher_pattern_stale_verb_is_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire003_real_verbs_are_not_flagged
 designated_repro_test: null
 threat: null
 component: null

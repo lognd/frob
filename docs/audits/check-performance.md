@@ -231,7 +231,7 @@ after:                          tickets=1.10s / 1.13s
 ```
 
 ~46-47% reduction, consistent across both post-fix runs. Full
-`tests/test_gates.py` (543 tests) passes unchanged.
+`tests/test_gates.py` <!-- frob:waive DOC006 reason="dated point-in-time measurement against the pre-T-3586 monofile shape; the test count described is historical, not a live pointer" --> (543 tests) passes unchanged.
 
 **Row 4 (`perf` gate, 9.50s, python-optimizable) -- ALREADY RESOLVED,
 verified not re-broken.** `perf_rules` (`src/frob/perf/_rules.py`)
@@ -346,7 +346,7 @@ somewhat slower than the in-context bracket (2.22s), consistent with the
 isolated call paying its own full `_load_inputs` cold-cache cost with
 nothing else warming shared caches first; this residual gap was not
 chased further as it is far below row 2's original 13.68s/15% share and no
-longer this audit's largest unresolved row. Full `tests/test_gates.py`
+longer this audit's largest unresolved row. Full `tests/test_gates.py` <!-- frob:waive DOC006 reason="dated point-in-time measurement against the pre-T-3586 monofile shape; the test count described is historical, not a live pointer" -->
 (463 collected, all passing before and after) verifies the three memo
 functions preserve every existing gate's output.
 

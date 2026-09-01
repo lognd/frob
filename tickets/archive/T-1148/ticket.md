@@ -50,8 +50,8 @@ evidence:
 - tests/unit/strata/test_native_staleness.py::TestUnimportableNatives::test_no_declared_natives_reports_nothing
 - tests/unit/strata/test_native_staleness.py::TestUnimportableNatives::test_warning_names_the_native_and_the_fix_command
 - tests/unit/strata/test_native_staleness.py::TestUnimportableNatives::test_warning_is_none_when_nothing_broken
-- tests/test_gates.py::TestNativeAvailabilityGate::test_unimportable_native_short_circuits_run_gates_with_one_finding
-- tests/test_gates.py::TestNativeAvailabilityGate::test_every_native_importable_runs_the_normal_pipeline
+- tests/gates_suite/test_run.py::TestNativeAvailabilityGate::test_unimportable_native_short_circuits_run_gates_with_one_finding
+- tests/gates_suite/test_run.py::TestNativeAvailabilityGate::test_every_native_importable_runs_the_normal_pipeline
 designated_repro_test: null
 acceptance:
 - text: GIVEN a checkout whose installed natives are missing or stale relative to
@@ -60,7 +60,7 @@ acceptance:
     build) -- or auto-builds under a config flag -- and never emits resolver no-candidates
     errors misattributed to design/doc drift
   evidence:
-  - tests/test_gates.py::TestNativeAvailabilityGate::test_unimportable_native_short_circuits_run_gates_with_one_finding
+  - tests/gates_suite/test_run.py::TestNativeAvailabilityGate::test_unimportable_native_short_circuits_run_gates_with_one_finding
 threat: null
 component: null
 ---

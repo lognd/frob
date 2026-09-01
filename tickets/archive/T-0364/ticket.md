@@ -18,7 +18,7 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_app_runner_map
 - tests/integration/test_interfaces.py::TestInterfaces::test_deploy_generate_writes_and_checks
 - tests/system/test_cli_vet.py::TestHookMode::test_old_package_passes
-- tests/test_gates.py::test_gates_run_gates_integration
+- tests/gates_suite/test_coverage.py::test_gates_run_gates_integration
 - tests/test_graph.py::test_graph_build_lock_drift_integration
 - tests/unit/strata/test_litmus_pii.py::TestPiiVulnLitmus::test_vuln_pii003_names_the_store
 - tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_declared_retention_discharges

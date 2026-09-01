@@ -15,7 +15,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestScopePrework::test_scope001_empty_scope_never_returns_bare_empty_tuple_for_a_real_diff
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_empty_scope_never_returns_bare_empty_tuple_for_a_real_diff
 designated_repro_test: null
 threat: null
 component: null

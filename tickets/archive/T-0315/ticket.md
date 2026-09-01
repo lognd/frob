@@ -17,7 +17,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_test005_skips_test_file_symbols
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test005_skips_test_file_symbols
 designated_repro_test: null
 threat: null
 component: null

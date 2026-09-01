@@ -16,7 +16,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageLoad::test_multi_root_resolves_each_class_to_its_real_root
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_multi_root_resolves_each_class_to_its_real_root
 designated_repro_test: null
 acceptance:
 - text: Given a coverage.xml with two declared source roots and a class filename that

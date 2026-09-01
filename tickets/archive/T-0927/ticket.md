@@ -28,7 +28,7 @@ scope_changes:
   at: '2026-07-27'
 evidence:
 - tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_with_serial_pools_worker_is_majority_attributed
-- tests/test_gates.py::TestProcessPoolGates::test_open_process_pool_preloads_forkserver_when_available
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_open_process_pool_preloads_forkserver_when_available
 designated_repro_test: null
 threat: null
 component: null

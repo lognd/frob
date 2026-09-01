@@ -85,10 +85,10 @@ scope_changes:
   actor: logan
   at: '2026-08-20'
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_tick006_git_rename_lookup_failure_files_nothing_never_treated_as_confirmed_non_rename
-- tests/test_gates.py::TestFixEngineTierA::test_tick006_lookup_failure_then_clean_retry_recovers_correctly
-- tests/test_gates.py::TestFixEngineTierA::test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket
-designated_repro_test: tests/test_gates.py::TestFixEngineTierA::test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_git_rename_lookup_failure_files_nothing_never_treated_as_confirmed_non_rename
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_lookup_failure_then_clean_retry_recovers_correctly
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket
+designated_repro_test: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket
 threat: null
 component: null
 anchor: false

@@ -15,9 +15,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
-- tests/test_gates.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover
-- tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket
+- tests/gates_suite/test_coverage.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
+- tests/gates_suite/test_coverage.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover
+- tests/gates_suite/test_coverage.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket
 designated_repro_test: null
 threat: null
 component: null

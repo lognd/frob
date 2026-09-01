@@ -30,24 +30,24 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
-- tests/test_gates.py::TestKnownGateRuleIds::test_scan_finds_a_synthetic_rule_id
-- tests/test_gates.py::TestKnownGateRuleIds::test_scan_resolves_const_name_reference
-- tests/test_gates.py::TestKnownGateRuleIds::test_retired_id_stays_excluded
-- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
-- tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_scan_finds_a_synthetic_rule_id
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_scan_resolves_const_name_reference
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_retired_id_stays_excluded
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_is_frozenset
 designated_repro_test: null
 acceptance:
 - text: given a new gate emitting a fresh rule id via constant or literal, when generation
     runs, then the registry contains it with no hand edit; the drift-lock passes with
     an empty ad hoc allowlist
   evidence:
-  - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
-  - tests/test_gates.py::TestKnownGateRuleIds::test_scan_finds_a_synthetic_rule_id
-  - tests/test_gates.py::TestKnownGateRuleIds::test_scan_resolves_const_name_reference
-  - tests/test_gates.py::TestKnownGateRuleIds::test_retired_id_stays_excluded
-  - tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
-  - tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
+  - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+  - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_scan_finds_a_synthetic_rule_id
+  - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_scan_resolves_const_name_reference
+  - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_retired_id_stays_excluded
+  - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_returns_known_rule_id
+  - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_is_frozenset
 threat: null
 component: null
 ---

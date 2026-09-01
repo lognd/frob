@@ -28,8 +28,8 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/test_gates.py::TestDeadSymbolGate::test_call_site_inside_with_block_dead_branch_is_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_call_site_inside_with_block_live_branch_is_not_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_inside_with_block_dead_branch_is_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_inside_with_block_live_branch_is_not_flagged
 designated_repro_test: null
 threat: null
 component: null

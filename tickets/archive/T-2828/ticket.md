@@ -50,10 +50,10 @@ body_changes:
   old_length: 1545
   new_length: 1980
 evidence:
-- tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
-- tests/test_gates.py::TestDebtGate::test_debt002_closed_ticket_is_reported
-- tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
-- tests/test_gates.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt002_closed_ticket_is_reported
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+- tests/gates_suite/test_coverage.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
 designated_repro_test: null
 threat: null
 component: null

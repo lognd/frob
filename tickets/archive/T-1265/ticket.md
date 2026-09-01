@@ -38,8 +38,8 @@ scope_changes:
   actor: logan
   at: '2026-08-01'
 evidence:
-- tests/test_gates.py::TestTestGate::test_ci_workflow_self_gate_does_not_swallow_errors
-- tests/test_gates.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_ci_workflow_self_gate_does_not_swallow_errors
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift
 designated_repro_test: null
 acceptance:
 - text: GIVEN a PR that would locally fail TEST005/006 (stale/missing coverage-stamp)
@@ -48,8 +48,8 @@ acceptance:
     a printed warning -- i.e. ERROR-tier violations for at least TEST005/006/012 fail
     the CI step outright.
   evidence:
-  - tests/test_gates.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift
-  - tests/test_gates.py::TestTestGate::test_ci_workflow_self_gate_does_not_swallow_errors
+  - tests/gates_suite/test_test_gate.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift
+  - tests/gates_suite/test_test_gate.py::TestTestGate::test_ci_workflow_self_gate_does_not_swallow_errors
 - text: GIVEN a fresh CI checkout with no prior .frob state (the gitignored derived
     cache is never restored between runs) WHEN the CI workflow runs THEN either a
     coverage-stamp/baseline gets produced fresh in that same job before the gate step
@@ -57,7 +57,7 @@ acceptance:
     are structurally inert in CI and why, so a passing CI run is never silently read
     as a full-strength guarantee it does not provide.
   evidence:
-  - tests/test_gates.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift
+  - tests/gates_suite/test_test_gate.py::TestTestGate::test_ci_workflow_hard_fails_on_test012_drift
 threat: null
 component: null
 ---

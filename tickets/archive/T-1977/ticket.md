@@ -83,10 +83,10 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_capability_ratchet_violation
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_does_not_fire_below_the_ratchet_ceiling
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_deleting_ratchet_lock_entry_still_fires
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_shrink_then_regrow_within_ceiling_stays_silent
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_capability_ratchet_violation
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_does_not_fire_below_the_ratchet_ceiling
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_deleting_ratchet_lock_entry_still_fires
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_shrink_then_regrow_within_ceiling_stays_silent
 designated_repro_test: null
 threat: null
 component: null

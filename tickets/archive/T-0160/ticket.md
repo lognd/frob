@@ -65,13 +65,13 @@ scope_changes:
   actor: logan
   at: '2026-07-22'
 evidence:
-- tests/test_gates.py::TestInvariantLoad::test_unreadable_file_is_malformed
-- tests/test_gates.py::TestInvariantLoad::test_no_frontmatter_block_is_malformed
-- tests/test_gates.py::TestInvariantLoad::test_bad_yaml_frontmatter_is_malformed
-- tests/test_gates.py::TestInvariantLoad::test_non_mapping_frontmatter_is_malformed
-- tests/test_gates.py::TestInvariantLoad::test_empty_statement_is_malformed
-- tests/test_gates.py::TestInvariantLoad::test_evidence_not_a_list_is_malformed
-- tests/test_gates.py::TestInvariantLoad::test_bad_criticality_is_malformed
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_unreadable_file_is_malformed
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_no_frontmatter_block_is_malformed
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_bad_yaml_frontmatter_is_malformed
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_non_mapping_frontmatter_is_malformed
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_empty_statement_is_malformed
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_evidence_not_a_list_is_malformed
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_bad_criticality_is_malformed
 - tests/test_tickets_collision.py::TestDefaultBranchEdgeCases::test_remote_symbolic_ref_wins_over_local_main
 - tests/test_tickets_collision.py::TestDefaultBranchEdgeCases::test_no_remote_falls_back_to_local_master
 - tests/test_tickets_collision.py::TestDefaultBranchEdgeCases::test_no_remote_no_main_no_master_falls_back_to_main_literal

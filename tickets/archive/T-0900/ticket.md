@@ -15,8 +15,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestComplianceGate::test_compliance006_fires_on_deleted_registry_after_adoption
-- tests/test_gates.py::TestComplianceGate::test_compliance006_silent_on_never_adopted_registry
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance006_fires_on_deleted_registry_after_adoption
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance006_silent_on_never_adopted_registry
 designated_repro_test: null
 threat: null
 component: null

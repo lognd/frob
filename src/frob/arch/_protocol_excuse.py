@@ -78,10 +78,10 @@ class DischargeResult(BaseModel):
 
 
 # frob:doc docs/modules/gates.md#proto002proto003-t-0746
-# frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_drop_impl_discharges  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_mem_forget_revokes_the_drop_discharge  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_manually_drop_revokes_the_discharge  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_no_drop_impl_is_not_discharged  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_rust_drop_impl_discharges  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_rust_mem_forget_revokes_the_drop_discharge  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_rust_manually_drop_revokes_the_discharge  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_rust_no_drop_impl_is_not_discharged  # noqa: E501
 def rust_drop_discharge(source: str, type_name: str) -> DischargeResult:
     """`impl Drop for <type_name>` discharges `type_name`'s cleanup
     obligation -- UNLESS `mem::forget`/`ManuallyDrop<type_name>` is also
@@ -131,8 +131,8 @@ def rust_drop_discharge(source: str, type_name: str) -> DischargeResult:
 
 
 # frob:doc docs/modules/gates.md#proto002proto003-t-0746
-# frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_cpp_raii_destructor_discharges  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_cpp_no_destructor_is_not_discharged  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_cpp_raii_destructor_discharges  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_cpp_no_destructor_is_not_discharged  # noqa: E501
 def cpp_raii_discharge(source: str, class_name: str) -> DischargeResult:
     """A `~<class_name>()` destructor discharges `class_name`'s cleanup
     obligation ONLY when the acquiring call's result is held by an
@@ -158,8 +158,8 @@ def cpp_raii_discharge(source: str, class_name: str) -> DischargeResult:
 
 
 # frob:doc docs/modules/gates.md#proto002proto003-t-0746
-# frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_python_with_block_discharges  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_python_no_with_block_is_not_discharged  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_python_with_block_discharges  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_python_no_with_block_is_not_discharged  # noqa: E501
 def python_with_discharge(source: str, resource: str) -> DischargeResult:
     """A `with ... <resource> ...:` block discharges `resource`'s cleanup
     obligation lexically -- Python's context-manager protocol guarantees
@@ -179,9 +179,9 @@ def python_with_discharge(source: str, resource: str) -> DischargeResult:
 
 
 # frob:doc docs/modules/gates.md#proto002proto003-t-0746
-# frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_typescript_using_discharges  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_typescript_try_finally_discharges  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_typescript_bare_call_is_not_discharged  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_typescript_using_discharges  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_typescript_try_finally_discharges  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_typescript_bare_call_is_not_discharged  # noqa: E501
 def typescript_using_discharge(source: str, resource: str) -> DischargeResult:
     """A `using`-declaration or a `try`/`finally` block naming `resource`
     discharges its cleanup obligation lexically -- both are TypeScript/JS
@@ -206,7 +206,7 @@ def typescript_using_discharge(source: str, resource: str) -> DischargeResult:
 
 
 # frob:doc docs/modules/gates.md#proto002proto003-t-0746
-# frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_gc_finalizer_never_discharges  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge.test_gc_finalizer_never_discharges  # noqa: E501
 def gc_finalizer_discharge(resource: str) -> DischargeResult:
     """GC finalizers NEVER discharge (T-0746 doctrine): a finalizer's run
     timing (if it ever runs at all) is unspecified by every mainstream GC,

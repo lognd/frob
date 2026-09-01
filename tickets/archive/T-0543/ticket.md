@@ -62,9 +62,9 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005
-- tests/test_gates.py::TestInvariantGate::test_inv001_passes_via_explicit_tests_edge_to_anchor
-- tests/test_gates.py::TestInvariantGate::test_inv001_passes_with_collected_evidence
+- tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005
+- tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv001_passes_via_explicit_tests_edge_to_anchor
+- tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv001_passes_with_collected_evidence
 designated_repro_test: null
 threat: null
 component: null

@@ -91,7 +91,9 @@ def _autofix_manifest_path(root: Path) -> Path:
 
 # frob:ticket T-1348
 # frob:doc docs/modules/tickets-landing.md#frob-ticket-land
-# frob:tests tests/test_gates.py::TestAutofixManifest.test_write_then_clear_roundtrip
+# frob:tests \
+# tests/gates_suite/test_fix_engine.py::TestAutofixManifest.test_write_then_clear_round\
+# trip
 def write_autofix_manifest(root: Path, applied: list[FixApplied]) -> None:
     """Record `applied`'s distinct file paths, atomically, as the T-1348
     recovery breadcrumb naming every path `apply_tier_a_fixes` has
@@ -122,7 +124,9 @@ def write_autofix_manifest(root: Path, applied: list[FixApplied]) -> None:
 
 # frob:ticket T-1348
 # frob:doc docs/modules/tickets-landing.md#frob-ticket-land
-# frob:tests tests/test_gates.py::TestAutofixManifest.test_write_then_clear_roundtrip
+# frob:tests \
+# tests/gates_suite/test_fix_engine.py::TestAutofixManifest.test_write_then_clear_round\
+# trip
 # frob:waive AFFECT001 reason="T-1371 only widens internal exception handling; the documented breadcrumb-removal behavior is unchanged, so docs/modules/tickets-landing.md#frob-ticket-land needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def clear_autofix_manifest(root: Path) -> None:
     """Remove the T-1348 recovery breadcrumb (`write_autofix_manifest`)

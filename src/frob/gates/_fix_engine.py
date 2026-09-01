@@ -80,11 +80,11 @@ _log = logging.getLogger(__name__)
 # frob:ticket T-2400
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:tests \
-# tests/test_gates.py::TestFixEngineTierA.test_tick006_id_on_merge_target_but_not_workt\
-# ree_is_silent kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_id_on_merge_tar\
+# get_but_not_worktree_is_silent kind="unit"
 # frob:tests \
-# tests/test_gates.py::TestFixEngineTierA.test_tick006_not_measured_merge_target_files_\
-# nothing kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_not_measured_me\
+# rge_target_files_nothing kind="unit"
 class MergeTargetKnownIds(BaseModel):
     """Ticket ids resolvable on `frob ticket land`'s merge target (the
     primary checkout, i.e. main) at the moment the pre-land Tier-A batch
@@ -446,14 +446,14 @@ def _sibling_worktree_known_ids(root: Path) -> frozenset[str]:
 # frob:ticket T-2702
 # frob:ticket T-3108
 # frob:tests \
-# tests/test_gates.py::TestFixEngineTierA.test_tick006_refiles_and_rewrites_citation \
-# kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_refiles_and_rew\
+# rites_citation kind="unit"
 # frob:tests \
-# tests/test_gates.py::TestFixEngineTierA.test_tick006_known_id_is_never_touched \
-# kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_known_id_is_nev\
+# er_touched kind="unit"
 # frob:tests \
-# tests/test_gates.py::TestFixEngineTierA.test_tick006_two_lands_citing_same_draft_prod\
-# uce_at_most_one_ticket kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_two_lands_citin\
+# g_same_draft_produce_at_most_one_ticket kind="unit"
 def fix_tick006_phantom_refile(
     root: Path,
     queue: TicketQueue,
@@ -609,11 +609,11 @@ def _resolve_via_git_rename(root: Path, tid: str) -> str | None:
 
 # frob:ticket T-2702
 # frob:tests \
-# tests/test_gates.py::TestFixEngineTierA.test_tick006_git_rename_lookup_failure_files_\
-# nothing_never_treated_as_confirmed_non_rename kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_git_rename_look\
+# up_failure_files_nothing_never_treated_as_confirmed_non_rename kind="unit"
 # frob:tests \
-# tests/test_gates.py::TestFixEngineTierA.test_tick006_lookup_failure_then_clean_retry_\
-# recovers_correctly kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_lookup_failure_\
+# then_clean_retry_recovers_correctly kind="unit"
 def _resolve_via_git_rename_measured(root: Path, tid: str) -> tuple[str | None, bool]:
     """T-2690: best-effort resolution of `tid` (an id TICK006's own
     ledger-snapshot lookup could not find) via git's OWN rename record --
@@ -1122,7 +1122,7 @@ TIER_A_HANDLERS: dict[
 
 
 # frob:ticket T-2351
-# frob:tests tests/test_gates.py::TestFixEngineTierA.test_pre_fix_dirty_snapshot_captures_uncommitted_content kind="unit"  # noqa: E501
+# frob:tests tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_pre_fix_dirty_snapshot_captures_uncommitted_content kind="unit"  # noqa: E501
 def _snapshot_dirty_files(root: Path) -> dict[str, bytes]:
     """The exact on-disk bytes, right now, of every file `git status`
     already shows as uncommitted-dirty (modified, staged, or both) in
@@ -1162,7 +1162,7 @@ def _snapshot_dirty_files(root: Path) -> dict[str, bytes]:
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-# frob:tests tests/test_gates.py::TestFixEngineTierA.test_doc007_dotted_form_rewrite_applies_and_reverifies_clean kind="unit"  # noqa: E501
+# frob:tests tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_doc007_dotted_form_rewrite_applies_and_reverifies_clean kind="unit"  # noqa: E501
 # frob:waive AFFECT001 reason="T-3526 only strengthens WHEN write_autofix_manifest is \
 # called (now once more, before the first handler, not only after each one) -- the \
 # documented contract at this anchor (a killed run leaves an accurate, on-disk \

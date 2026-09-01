@@ -215,10 +215,10 @@ scope_changes:
   actor: logan
   at: '2026-08-03'
 evidence:
-- tests/test_gates.py::TestDocstatusGate::test_missing_status_header_fires_doc009
-- tests/test_gates.py::TestDocstatusGate::test_dated_status_header_passes
-- tests/test_gates.py::TestDocstatusGate::test_superseded_header_with_missing_target_fires_doc009
-- tests/test_gates.py::TestDocstatusGate::test_superseded_header_with_real_target_passes
+- tests/gates_suite/test_doc.py::TestDocstatusGate::test_missing_status_header_fires_doc009
+- tests/gates_suite/test_doc.py::TestDocstatusGate::test_dated_status_header_passes
+- tests/gates_suite/test_doc.py::TestDocstatusGate::test_superseded_header_with_missing_target_fires_doc009
+- tests/gates_suite/test_doc.py::TestDocstatusGate::test_superseded_header_with_real_target_passes
 designated_repro_test: null
 threat: null
 component: null

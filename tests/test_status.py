@@ -3,7 +3,7 @@
 obey -- a stale/absent baseline, or no current measurement, must never
 render a fabricated delta.
 
-Subprocess-free, matching `tests/test_gates.py::TestBaselineDelta`'s own
+Subprocess-free, matching `tests/gates_suite/test_prework.py::TestBaselineDelta`'s own
 style precedent for the same `Violation`/`violation_fingerprint` primitives
 this module reuses directly -- no new fingerprint logic to test twice."""
 

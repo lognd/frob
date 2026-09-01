@@ -49,9 +49,9 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_gates.py::TestDeprecatedGate::test_depr005_new_caller_errors
-- tests/test_gates.py::TestDeprecatedGate::test_depr005_no_baseline_entry_is_silent
-- tests/test_gates.py::TestDeprecatedGate::test_depr005_reference_set_combines_consumers_and_xref
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr005_new_caller_errors
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr005_no_baseline_entry_is_silent
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr005_reference_set_combines_consumers_and_xref
 - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_shrinkage_drops_stale_references
 - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_never_absorbs_a_new_reference
 - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_first_seen_symbol_is_seeded_whole
@@ -61,9 +61,9 @@ acceptance:
 - text: GIVEN a design decision recorded WHEN implemented THEN a change adding a call
     to a deprecated public symbol produces a DEPR finding naming the new call site
   evidence:
-  - tests/test_gates.py::TestDeprecatedGate::test_depr005_new_caller_errors
-  - tests/test_gates.py::TestDeprecatedGate::test_depr005_no_baseline_entry_is_silent
-  - tests/test_gates.py::TestDeprecatedGate::test_depr005_reference_set_combines_consumers_and_xref
+  - tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr005_new_caller_errors
+  - tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr005_no_baseline_entry_is_silent
+  - tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr005_reference_set_combines_consumers_and_xref
   - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_shrinkage_drops_stale_references
   - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_never_absorbs_a_new_reference
   - tests/unit/gates/test_deprecated_baseline.py::TestTighten::test_first_seen_symbol_is_seeded_whole

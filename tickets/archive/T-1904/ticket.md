@@ -60,11 +60,11 @@ scope_changes:
   actor: logan
   at: '2026-08-09'
 evidence:
-- tests/test_gates.py::TestWaive004DegradedRunGuard::test_native001_degraded_run_deletes_nothing
-- tests/test_gates.py::TestWaive004DegradedRunGuard::test_skipped_stage_degraded_run_deletes_nothing
-- tests/test_gates.py::TestWaive004DegradedRunGuard::test_mass_invalidation_of_one_rule_deletes_nothing
-- tests/test_gates.py::TestWaive004DegradedRunGuard::test_mass_invalidation_with_live_finding_elsewhere_still_refuses
-- tests/test_gates.py::TestWaive004DegradedRunGuard::test_healthy_run_below_threshold_still_deletes
+- tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::test_native001_degraded_run_deletes_nothing
+- tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::test_skipped_stage_degraded_run_deletes_nothing
+- tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::test_mass_invalidation_of_one_rule_deletes_nothing
+- tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::test_mass_invalidation_with_live_finding_elsewhere_still_refuses
+- tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::test_healthy_run_below_threshold_still_deletes
 designated_repro_test: null
 threat: null
 component: null
@@ -76,7 +76,7 @@ SUPERSEDES the design T-1579 asked for. Filed 2026-08-09 from the T-1579 investi
 
 WHAT WAS FALSIFIED, AND DO NOT RETRY IT. T-1579's literal ask -- 'let the auto-fix delete a waiver when the detector can PROVE the waived sites are gone' -- was already implemented once, as _rule_has_live_finding: a live finding of the target rule elsewhere in the same run was taken as proof the detector ran. It shipped, and during a real land it deleted 55 LIVE waivers, because a partially-degraded run (stale strata_core, all health checks reporting clean) still found SOME instances of a rule while missing the exact ones the waivers covered. It was reverted. A permanent regression test locks against reintroducing it:
 
-  tests/test_gates.py::TestWaive004DegradedRunGuard::test_mass_invalidation_with_live_finding_elsewhere_still_refuses
+  tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::test_mass_invalidation_with_live_finding_elsewhere_still_refuses
 
 Subsequent work did NOT re-enable an escape: T-1620 closed the two structural gaps that incident named (native-staleness detection missing strata_core, and the guard's sub-5 blind spot, via the proportional check) and its Done report says explicitly that re-enabling the escape was not its job. T-1886 only patched the proportional check's N=1 degenerate case. So today BOTH the absolute-count and proportional guards are unconditional refusals in _drop_untrustworthy_mass_stale_candidates -- that is the deliberately hardened post-incident state, NOT an oversight.
 

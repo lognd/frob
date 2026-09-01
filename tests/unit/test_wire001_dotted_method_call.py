@@ -23,7 +23,7 @@ from frob.tickets import TicketQueue
 
 def _write(root: Path, rel: str, text: str) -> Path:
     """Write `text` to `root/rel`, creating parent directories -- shared
-    scratch-repo helper mirroring `tests/test_gates.py::_write`."""
+    scratch-repo helper mirroring `tests/conftest.py::_write`."""
     path = root / rel
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
@@ -32,14 +32,14 @@ def _write(root: Path, rel: str, text: str) -> Path:
 
 def _snapshot(root: Path):
     """Build a fresh `GraphSnapshot` over `root` -- shared scratch-repo
-    helper mirroring `tests/test_gates.py::_snapshot`."""
+    helper mirroring `tests/conftest.py::_snapshot`."""
     cache = root / ".frob" / "cache.db"
     return build_graph(root, cache).danger_ok
 
 
 def _first_rule(violations, rule):
     """The first violation with `rule`, or None -- assertion convenience,
-    mirroring `tests/test_gates.py::_first_rule`."""
+    mirroring `tests/conftest.py::_first_rule`."""
     for v in violations:
         if v.rule == rule:
             return v

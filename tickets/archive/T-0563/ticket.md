@@ -16,7 +16,7 @@ evidence:
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_json_mode_prints_json_and_errors_exit_1
 - tests/unit/test_app_runners.py::TestGitlogRunner::test_json_mode_prints_json
 - tests/test_debt_runner.py::TestDebtRunner::test_json_mode_lists_debt_entries
-- tests/test_gates.py::TestRenderLintGate::test_bare_print_fires
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_bare_print_fires
 designated_repro_test: null
 threat: null
 component: null

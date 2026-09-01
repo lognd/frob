@@ -38,7 +38,7 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestScopePrework::test_scope001_merge_commit_with_no_ticket_ref_falls_back_to_parent
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_merge_commit_with_no_ticket_ref_falls_back_to_parent
 designated_repro_test: null
 threat: null
 component: null

@@ -95,9 +95,9 @@ scope_changes:
   actor: logan
   at: '2026-08-03'
 evidence:
-- tests/test_gates.py::TestDocmakeGate::test_bogus_make_target_fires_doc010
-- tests/test_gates.py::TestDocmakeGate::test_real_make_target_passes
-- tests/test_gates.py::TestDocmakeGate::test_no_makefile_is_a_noop
+- tests/gates_suite/test_doc.py::TestDocmakeGate::test_bogus_make_target_fires_doc010
+- tests/gates_suite/test_doc.py::TestDocmakeGate::test_real_make_target_passes
+- tests/gates_suite/test_doc.py::TestDocmakeGate::test_no_makefile_is_a_noop
 designated_repro_test: null
 threat: null
 component: null

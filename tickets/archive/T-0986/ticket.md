@@ -36,7 +36,7 @@ scope_changes:
 evidence:
 - tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_double_separator_target_flagged
 - tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_single_separator_target_not_flagged
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 designated_repro_test: null
 acceptance:
 - text: given a frob:tests directive whose target uses ::-separated class-method form,
@@ -45,7 +45,7 @@ acceptance:
   evidence:
   - tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_double_separator_target_flagged
   - tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_single_separator_target_not_flagged
-  - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+  - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 threat: null
 component: null
 ---

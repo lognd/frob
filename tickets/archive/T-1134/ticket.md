@@ -31,10 +31,10 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
-- tests/test_gates.py::TestInv003Gate::test_no_exclusivity_language_is_silent
-- tests/test_gates.py::TestInv003Gate::test_claim_without_verb_in_sentence_is_silent
-- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_no_exclusivity_language_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_claim_without_verb_in_sentence_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
 designated_repro_test: null
 acceptance:
 - text: GIVEN a module split moves docstring/comment prose containing exclusivity
@@ -42,10 +42,10 @@ acceptance:
     runs on the result THEN the INV006 finding names the source file's existing waiver/binding
     and offers the carried-waiver text as a fix-it (or auto-carries under a flag)
   evidence:
-  - tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
+  - tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
 evidence_changes:
 - old_node: tests/test_gates.py::TestInv006SplitAssist::test_finds_carried_waiver_for_verbatim_moved_claim
-  new_node: tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
   reason: T-1763 deleted find_carried_waiver/_inv006_split_assist.py entirely along
     with INV006 -- no functional equivalent exists anywhere else (it was an INV006-only
     split-carry helper); rebinding to the nearest still-live sibling test in INV003
@@ -54,21 +54,21 @@ evidence_changes:
   actor: logan
   at: '2026-08-07'
 - old_node: tests/test_gates.py::TestInv006SplitAssist::test_no_match_when_no_other_file_shares_the_claim
-  new_node: tests/test_gates.py::TestInv003Gate::test_no_exclusivity_language_is_silent
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_no_exclusivity_language_is_silent
   reason: T-1763 deleted find_carried_waiver/_inv006_split_assist.py entirely along
     with INV006 -- no functional equivalent exists; rebinding to the nearest still-live
     sibling test in INV003
   actor: logan
   at: '2026-08-07'
 - old_node: tests/test_gates.py::TestInv006SplitAssist::test_reworded_claim_is_not_detected_v1_disclosed
-  new_node: tests/test_gates.py::TestInv003Gate::test_claim_without_verb_in_sentence_is_silent
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_claim_without_verb_in_sentence_is_silent
   reason: T-1763 deleted find_carried_waiver/_inv006_split_assist.py entirely along
     with INV006 -- no functional equivalent exists; rebinding to the nearest still-live
     sibling test in INV003
   actor: logan
   at: '2026-08-07'
 - old_node: tests/test_gates.py::TestInv006SplitAssist::test_find_exclusivity_claim_sentences_returns_actual_prose
-  new_node: tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
   reason: T-1763 deleted find_exclusivity_claim_sentences (dead code once _inv006_split_assist.py,
     its only caller, was deleted) -- no functional equivalent exists; rebinding to
     the nearest still-live sibling test in INV003

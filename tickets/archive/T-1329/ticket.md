@@ -46,7 +46,7 @@ evidence:
 - tests/test_vet.py::TestFingerprintScan::test_yaml_load_with_explicit_loader_is_not_flagged
 - tests/test_vet.py::TestFingerprintScan::test_one_bare_yaml_load_among_remediated_calls_still_flags
 - tests/test_vet.py::TestFingerprintScan::test_scan_directory_fingerprints_excludes_the_catalog_itself
-- tests/test_gates.py::TestComplianceGate::test_compliance007_real_repo_registry_surfaces_known_gap
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance007_real_repo_registry_surfaces_known_gap
 - tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
 designated_repro_test: null
 threat: null

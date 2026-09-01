@@ -15,19 +15,19 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
-- tests/test_gates.py::TestWireGate::test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged
 designated_repro_test: null
 acceptance:
 - text: GIVEN a diff that relocates a symbol into a new file without changing its
     reachability WHEN the wire gate runs THEN WIRE001 does not fire for that symbol
   evidence:
-  - tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
 - text: GIVEN a diff that introduces a genuinely new symbol with no caller WHEN the
     wire gate runs THEN WIRE001 still fires exactly as today, proven by a regression
     test
   evidence:
-  - tests/test_gates.py::TestWireGate::test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged
 threat: null
 component: null
 ---

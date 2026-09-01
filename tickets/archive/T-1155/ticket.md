@@ -25,9 +25,9 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_gates.py::TestNewGateRuleDynamicResolution::test_resolves_when_literal_lives_in_a_different_file
-- tests/test_gates.py::TestNewGateRuleDynamicResolution::test_raises_when_literal_missing_from_every_candidate
-- tests/test_gates.py::TestNewGateRuleDynamicResolution::test_no_gates_package_at_all_is_empty_not_a_raise
+- tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution::test_resolves_when_literal_lives_in_a_different_file
+- tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution::test_raises_when_literal_missing_from_every_candidate
+- tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution::test_no_gates_package_at_all_is_empty_not_a_raise
 - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_detects_freshly_added_rule_id
 - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_no_new_rules_is_empty
 - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_unresolvable_base_ref_degrades_to_none
@@ -37,12 +37,12 @@ acceptance:
     in any gates module THEN the preflight finds it (import-time resolution or the
     generated registry, not a hard-coded file path) and new-rule detection runs
   evidence:
-  - tests/test_gates.py::TestNewGateRuleDynamicResolution::test_resolves_when_literal_lives_in_a_different_file
+  - tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution::test_resolves_when_literal_lives_in_a_different_file
 - text: GIVEN the literal genuinely cannot be resolved THEN the preflight FAILS with
     an error instead of warning-and-skipping -- a detection check must never silently
     disable itself
   evidence:
-  - tests/test_gates.py::TestNewGateRuleDynamicResolution::test_raises_when_literal_missing_from_every_candidate
+  - tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution::test_raises_when_literal_missing_from_every_candidate
 threat: null
 component: null
 ---

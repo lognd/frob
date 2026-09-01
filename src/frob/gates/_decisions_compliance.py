@@ -128,17 +128,17 @@ def _compliance005_violation(cv) -> Violation:  # noqa: ANN001
 # frob:ticket T-0788
 # frob:ticket T-0894
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_registered_in_known_gate_rules  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_fires_on_deferred_disposition  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_silent_on_handled_by_and_out_of_scope  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_missing_registry_dir_is_silent  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_real_repo_registry_passes  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_fires_on_deleted_registry_after_adoption  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_silent_on_never_adopted_registry  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_registered_in_known_gate_rules  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_fires_warn_on_self_referential_handled_by  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_silent_on_frob_catalog_entries_self_reference  # noqa: E501
-# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance007_real_repo_registry_surfaces_known_gap  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance005_registered_in_known_gate_rules  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance005_fires_on_deferred_disposition  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance005_silent_on_handled_by_and_out_of_scope  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance005_missing_registry_dir_is_silent  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance005_real_repo_registry_passes  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance006_fires_on_deleted_registry_after_adoption  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance006_silent_on_never_adopted_registry  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance007_registered_in_known_gate_rules  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance007_fires_warn_on_self_referential_handled_by  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance007_silent_on_frob_catalog_entries_self_reference  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestComplianceGate.test_compliance007_real_repo_registry_surfaces_known_gap  # noqa: E501
 # frob:enforces CHK-GATE-COMPLIANCE005
 # frob:enforces CHK-GATE-COMPLIANCE006
 # frob:enforces CHK-GATE-COMPLIANCE007

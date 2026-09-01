@@ -58,8 +58,8 @@ evidence:
 - tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional::test_below_threshold_with_more_live_waivers_than_stale_is_not_flagged
 - tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional::test_absolute_threshold_still_fires_with_no_live_count_data
 - tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional::test_partial_stale_below_threshold_and_below_live_count_is_not_flagged
-- tests/test_gates.py::TestPerfReachDegradedMarker::test_stale_strata_core_also_returns_the_marker
-- tests/test_gates.py::TestPerfReachDegradedMarker::test_stale_unrelated_native_returns_none
+- tests/gates_suite/test_run.py::TestPerfReachDegradedMarker::test_stale_strata_core_also_returns_the_marker
+- tests/gates_suite/test_run.py::TestPerfReachDegradedMarker::test_stale_unrelated_native_returns_none
 designated_repro_test: null
 threat: null
 component: null
@@ -185,8 +185,8 @@ finding for them to become a candidate from).
 - `tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional::test_below_threshold_with_more_live_waivers_than_stale_is_not_flagged` (pytest node id, verified passing when recorded)
 - `tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional::test_absolute_threshold_still_fires_with_no_live_count_data` (pytest node id, verified passing when recorded)
 - `tests/test_gates_ratchet.py::TestMassInvalidationRulesProportional::test_partial_stale_below_threshold_and_below_live_count_is_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestPerfReachDegradedMarker::test_stale_strata_core_also_returns_the_marker` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestPerfReachDegradedMarker::test_stale_unrelated_native_returns_none` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_run.py::TestPerfReachDegradedMarker::test_stale_strata_core_also_returns_the_marker` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_run.py::TestPerfReachDegradedMarker::test_stale_unrelated_native_returns_none` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 6 passed (from 6 evidence id(s))

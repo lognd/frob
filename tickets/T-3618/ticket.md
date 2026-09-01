@@ -100,7 +100,7 @@ the per-edge cost shape (e.g. call-count/pathspec assertions on the git
 invocations, not wall-clock).
 
 NOTE: the t-3586 worktree contains a worktree-local draft
-(T-draft-aa45924e, tip commit a9a8ba61e) documenting the same bug with
+(T-3625, tip commit a9a8ba61e) documenting the same bug with
 scope src/frob/tickets/_land.py + src/frob/gates/_tdd_order.py -- it
 will promote to a real id when t-3586 lands. After THIS ticket lands,
 whoever lands t-3586 should drop/merge that draft as a duplicate rather

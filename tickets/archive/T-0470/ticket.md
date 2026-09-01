@@ -30,7 +30,7 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence:
-- tests/test_gates.py::TestTestGate::test_waive003_flags_waiver_reaching_multiple_packages
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive003_flags_waiver_reaching_multiple_packages
 designated_repro_test: null
 threat: null
 component: null

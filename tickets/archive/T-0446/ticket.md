@@ -67,8 +67,8 @@ scope_changes:
 evidence:
 - tests/test_tickets.py::TestScopeMatching::test_feature_kind_implies_cli_wiring_files_in_scope
 - tests/test_tickets.py::TestScopeMatching::test_non_feature_kind_does_not_imply_cli_wiring_files
-- tests/test_gates.py::TestScopePrework::test_scope001_feature_ticket_cli_wiring_files_implicitly_in_scope
-- tests/test_gates.py::TestScopePrework::test_scope001_non_feature_ticket_cli_wiring_files_still_out_of_scope
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_feature_ticket_cli_wiring_files_implicitly_in_scope
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_non_feature_ticket_cli_wiring_files_still_out_of_scope
 designated_repro_test: null
 threat: null
 component: null

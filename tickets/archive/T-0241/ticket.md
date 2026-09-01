@@ -24,9 +24,9 @@ evidence:
 - tests/test_tickets.py::TestScopeMatching::test_dir_prefix_globs_recursively
 - tests/test_tickets.py::TestScopeMatching::test_ledger_always_in_scope
 - tests/test_tickets.py::TestScopeMatching::test_new_ticket_normalizes_comma_joined_scope
-- tests/test_gates.py::TestScopePrework::test_scope001_comma_joined_entry_splits_and_matches
-- tests/test_gates.py::TestScopePrework::test_scope001_dir_prefix_globs_recursively
-- tests/test_gates.py::TestScopePrework::test_scope001_ledger_implicitly_in_scope
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_comma_joined_entry_splits_and_matches
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_dir_prefix_globs_recursively
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_ledger_implicitly_in_scope
 designated_repro_test: null
 threat: null
 component: null

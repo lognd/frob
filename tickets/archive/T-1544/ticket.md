@@ -51,8 +51,8 @@ scope_changes:
   actor: logan
   at: '2026-08-07'
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_tick006_refiles_and_rewrites_citation
-- tests/test_gates.py::TestFixEngineTierA::test_tick006_known_id_is_never_touched
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_refiles_and_rewrites_citation
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_known_id_is_never_touched
 designated_repro_test: null
 threat: null
 component: null
@@ -123,8 +123,8 @@ forward).
 ```
 
 ### Evidence
-- `tests/test_gates.py::TestFixEngineTierA::test_tick006_refiles_and_rewrites_citation` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestFixEngineTierA::test_tick006_known_id_is_never_touched` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_refiles_and_rewrites_citation` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_known_id_is_never_touched` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

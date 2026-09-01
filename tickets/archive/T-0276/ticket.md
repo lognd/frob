@@ -15,7 +15,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_test003_waiver_in_a_file_under_the_package_matches
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test003_waiver_in_a_file_under_the_package_matches
 designated_repro_test: null
 threat: null
 component: null

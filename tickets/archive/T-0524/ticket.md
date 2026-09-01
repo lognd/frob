@@ -17,7 +17,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_tickets_lease.py::TestBreadthPerf::test_computed_once_per_doable_call
 - tests/test_capability_registry.py::TestValidateRegistryKinds::test_known_kinds_pass
-- tests/test_gates.py::TestInv003Gate::test_illustrative_example_reason_does_not_self_waive
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_illustrative_example_reason_does_not_self_waive
 designated_repro_test: null
 threat: null
 component: null

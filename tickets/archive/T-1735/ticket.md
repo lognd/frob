@@ -40,7 +40,7 @@ scope_changes:
   at: '2026-08-08'
 evidence:
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 designated_repro_test: null
 threat: null
 component: null
@@ -52,7 +52,7 @@ Two test failures, both pre-existing on main and unrelated to my own diff
 (`src/frob/tickets/_store.py`/`_reporting.py`/`tests/unit/test_ticket_store.py`/
 `docs/design/ledger-v2.md`):
 
-- `tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known`
+- `tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known`
   fails: `SYS108` (`src/frob/strata/_selfconform.py:1407`) is constructed but
   missing from `_KNOWN_GATE_RULES`.
 - `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates`
@@ -68,7 +68,7 @@ next agent who merges main.
 T-1735 named two distinct findings under one title. The SYS108-missing
 half was already fixed and landed by T-1800 (commit 4883f36a7) before
 this worktree merged main -- confirmed clean via
-`tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known`
+`tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known`
 passing on the merged tree; no code change needed here. The sibling
 duplicate ticket T-1773 (identical title, SYS108-only body) was dropped
 from this same worktree session, `--absorbed-by T-1800`.

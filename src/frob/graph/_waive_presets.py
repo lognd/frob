@@ -6,7 +6,7 @@ deduplicates, via this one table, instead of every site hand-writing its
 own copy of the same boilerplate paragraph (the NO DUPLICATION principle
 applied to comment prose, not just code). `docs/modules/gates.md`'s
 "Waiver presets" section is the documented, human-facing mirror of this
-table; `tests/test_gates.py::TestWaivePresets` is the drift-lock that
+table; `tests/gates_suite/test_waive.py::TestWaivePresets` is the drift-lock that
 keeps the two in sync -- this module is the single reference source a
 `preset=` attribute resolves against, not a second normative copy.
 

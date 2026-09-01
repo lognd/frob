@@ -32,12 +32,12 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_gates.py::TestDebtGate::test_release_gate_bump_fires_without_frob_agent
-- tests/test_gates.py::TestDebtGate::test_release_gate_bump_suppressed_under_frob_agent
-- tests/test_gates.py::TestDebtGate::test_rel001_not_land_owned_root_checkout_no_ticket
-- tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket
-- tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease
-- tests/test_gates.py::TestDebtGate::test_rel001_linked_worktree_detected
+- tests/gates_suite/test_debt.py::TestDebtGate::test_release_gate_bump_fires_without_frob_agent
+- tests/gates_suite/test_debt.py::TestDebtGate::test_release_gate_bump_suppressed_under_frob_agent
+- tests/gates_suite/test_debt.py::TestDebtGate::test_rel001_not_land_owned_root_checkout_no_ticket
+- tests/gates_suite/test_debt.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket
+- tests/gates_suite/test_debt.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease
+- tests/gates_suite/test_debt.py::TestDebtGate::test_rel001_linked_worktree_detected
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob check --ticket T-X running in a worktree (or against a ticket with
@@ -46,9 +46,9 @@ acceptance:
     GIVEN a plain root-checkout check with no ticket context THEN REL001 errors as
     today
   evidence:
-  - tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket
-  - tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease
-  - tests/test_gates.py::TestDebtGate::test_rel001_not_land_owned_root_checkout_no_ticket
+  - tests/gates_suite/test_debt.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket
+  - tests/gates_suite/test_debt.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease
+  - tests/gates_suite/test_debt.py::TestDebtGate::test_rel001_not_land_owned_root_checkout_no_ticket
 threat: null
 component: null
 ---

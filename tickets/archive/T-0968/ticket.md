@@ -149,7 +149,7 @@ evidence:
 - tests/test_secrets_gate.py::TestFakeMarking::test_literal_fake_word_in_token_is_not_flagged
 - tests/test_secrets_gate.py::TestFakeMarking::test_frob_secret_fake_marker_without_reason_still_fires
 - tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_without_reason_does_not_discharge
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 - tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_on_line_above_discharges
 - tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_on_same_line_discharges
 designated_repro_test: null

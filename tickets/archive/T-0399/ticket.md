@@ -32,8 +32,8 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 designated_repro_test: null
 acceptance:
 - text: given [dup].enforce=true and frob-core unavailable, dup_gate FAILS closed
@@ -42,8 +42,8 @@ acceptance:
     a unit test of a pure function); PASSES after this ticket's change (test_dup_gate_fails_closed_when_enforced_but_core_missing
     exercises dup_gate itself, the real production entrypoint gates registers).
   evidence:
-  - tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
-  - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+  - tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
+  - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 threat: null
 component: null
 ---

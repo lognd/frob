@@ -53,7 +53,7 @@ body_changes:
   old_length: 951
   new_length: 1491
 evidence:
-- tests/test_gates.py::TestScope002ClosureGate::test_silent_on_closed_scope
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_silent_on_closed_scope
 designated_repro_test: null
 threat: null
 component: null

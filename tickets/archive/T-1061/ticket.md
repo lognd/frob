@@ -104,7 +104,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - tests/unit/strata/test_mode_conformance.py::TestCheckModeConformance::test_a_waived_sys205_finding_is_discharged_and_reported_waived
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_mode_conformance_violation
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_mode_conformance_violation
 - tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_mode_nonconformance_exits_nonzero_with_named_gap
 designated_repro_test: null
 threat: null

@@ -31,11 +31,11 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_gates.py::TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates
-- tests/test_gates.py::TestGateOrderSetEquality::test_all_gates_is_subset_of_canonical_order
-- tests/test_gates.py::TestGateOrderSetEquality::test_canonical_order_names_no_nonexistent_gate
-- tests/test_gates.py::TestMergeCanonicalOrder::test_unknown_gate_key_raises_with_name
-- tests/test_gates.py::TestMergeCanonicalOrder::test_all_current_gates_merge_without_raising
+- tests/gates_suite/test_sys.py::TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates
+- tests/gates_suite/test_sys.py::TestGateOrderSetEquality::test_all_gates_is_subset_of_canonical_order
+- tests/gates_suite/test_sys.py::TestGateOrderSetEquality::test_canonical_order_names_no_nonexistent_gate
+- tests/gates_suite/test_sys.py::TestMergeCanonicalOrder::test_unknown_gate_key_raises_with_name
+- tests/gates_suite/test_sys.py::TestMergeCanonicalOrder::test_all_current_gates_merge_without_raising
 designated_repro_test: null
 threat: null
 component: null

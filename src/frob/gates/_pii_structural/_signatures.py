@@ -173,7 +173,8 @@ _TYPE_SIGNATURES = tuple(sig for sig in FIELD_SIGNATURES if sig.kind == "type")
 #: ecosystem with no Python equivalent (so `FIELD_SIGNATURES`'s "every
 #: entry needs a `TestDriftLock` Python fixture" contract, T-0182, does not
 #: apply -- these are proven by the real TS/Rust fixtures in
-#: `tests/test_gates.py::TestPiiStructuralCrossLanguage` instead). Kept as
+#: `tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage`
+#: instead). Kept as
 #: a SEPARATE table from `FIELD_SIGNATURES` rather than mixed in with a
 #: `langs` filter, specifically so that contract does not need bending: a
 #: python fixture built from `sig.keyword` for `secrecy::SecretString`'s

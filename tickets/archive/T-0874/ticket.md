@@ -18,14 +18,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_stats_agentic.py::test_retread_candidates_require_repeat_and_known_tree_hash
-- tests/test_gates.py::TestCoverageGate::test_waiver_suppresses_and_reports
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_waiver_suppresses_and_reports
 designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check after the purge WHEN gate:WAIVE evaluates THEN it
     reports zero warnings, and no previously-masked ERROR was introduced (any resurfaced
     finding is fixed or re-waived with a current reason)
   evidence:
-  - tests/test_gates.py::TestCoverageGate::test_waiver_suppresses_and_reports
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_waiver_suppresses_and_reports
 threat: null
 component: gates
 ---

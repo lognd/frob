@@ -14,20 +14,20 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
-- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_small_drop_within_tolerance_not_clamped
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_small_drop_within_tolerance_not_clamped
 designated_repro_test: null
 acceptance:
 - text: GIVEN a committed lock with a non-zero value for a module WHEN write_coverage_lock
     is called with module_line[module] == 0.0 for that module THEN the written lock
     records 0.0 for that module, not the stale committed value
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
 - text: GIVEN a committed lock with a non-zero value for a module WHEN write_coverage_lock
     is called with a non-zero value that drops by less than or equal to _LOCK_TOLERANCE
     THEN the ratchet clamp does not fire (unchanged pre-T-1401 behavior)
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_small_drop_within_tolerance_not_clamped
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_small_drop_within_tolerance_not_clamped
 threat: null
 component: null
 ---
@@ -39,7 +39,7 @@ suite, but no new pytest regression test could be added in that ticket:
 tests/test_gates.py falls under tests/**, which T-1235 held an exclusive
 in-progress lease on for the whole of T-1401's work.
 
-Add to tests/test_gates.py::TestCoverageLoad:
+Add to tests/gates_suite/test_coverage.py::TestCoverageLoad:
 - test_write_coverage_lock_zero_hit_module_never_clamped: seed a committed
   lock with a non-zero value for a module, then write_coverage_lock a
   CoverageData whose module_line for that same module is exactly 0.0;

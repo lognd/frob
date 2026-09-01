@@ -30,12 +30,12 @@ scope_changes:
   actor: logan
   at: '2026-08-07'
 evidence:
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 designated_repro_test: null
 threat: null
 component: null
 ---
-Found while working T-1539 (PERF012 registry-entry gap). tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known fails on main (confirmed pre-existing, unrelated to T-1539's PERF012 change): SYS108 is constructed at src/frob/strata/_selfconform.py:1421 but absent from _KNOWN_GATE_RULES in src/frob/gates/_waive.py. Same drift class as the PERF012 gap T-1539 fixes -- paste the missing entry per generated_gate_rule_ids()'s report.
+Found while working T-1539 (PERF012 registry-entry gap). tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known fails on main (confirmed pre-existing, unrelated to T-1539's PERF012 change): SYS108 is constructed at src/frob/strata/_selfconform.py:1421 but absent from _KNOWN_GATE_RULES in src/frob/gates/_waive.py. Same drift class as the PERF012 gap T-1539 fixes -- paste the missing entry per generated_gate_rule_ids()'s report.
 
 ## Done report
 
@@ -80,7 +80,7 @@ ticket's own scope (src/frob/gates/_waive.py only), not fixed here.
 ```
 
 ### Evidence
-- `tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

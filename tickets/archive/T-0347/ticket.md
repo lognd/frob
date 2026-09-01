@@ -16,9 +16,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestSysGate::test_sys004_names_stale_native_as_likely_remedy
-- tests/test_gates.py::TestSysGate::test_sys004_load_failure
-- tests/test_gates.py::TestSysGate::test_sys004_suppresses_sys001
+- tests/gates_suite/test_sys.py::TestSysGate::test_sys004_names_stale_native_as_likely_remedy
+- tests/gates_suite/test_sys.py::TestSysGate::test_sys004_load_failure
+- tests/gates_suite/test_sys.py::TestSysGate::test_sys004_suppresses_sys001
 designated_repro_test: null
 threat: null
 component: null

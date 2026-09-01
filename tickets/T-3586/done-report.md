@@ -1,0 +1,563 @@
+## Done report
+
+Split tests/test_gates.py (21836 lines, 842 tests) into 14 per-gate-
+family modules under tests/gates_suite/, using frob refactor split/
+move exclusively (never hand-copying test logic) -- established on
+T-3587's fix (module_to_path could not address any tests/** module
+before that landed) and extended in T-3596 with the gaps hit along the
+way (split's re-export shim double-collects test classes; move does
+not carry forward needed imports or repoint bare-name callers;
+move/split cannot address module-level constants; overlapping same-
+line evidence citations refuse a combined chunk). tests/test_gates.py
+is DELETED (not kept as a shim): once every class/function moved out,
+nothing lived there but a docstring, imports, and two now-inapplicable
+SCOPE001 waivers; confirmed no live import of the module survives.
+
+Verified per batch and again at the end: collection count preserved
+EXACTLY (842/842 before and after), full tests/gates_suite/ suite
+green (842/842 PASSING, not just collected). Repointed 538+ stale
+tests/test_gates.py evidence citations repo-wide (src/, tests/,
+docs/modules/gates.md) left behind by the split's own reference
+scanner (scoped to Python import/call sites, not frob:tests directive
+comments or doc prose) -- including citations split mid-word by
+canonical line-wrapping. frob check --only docblocks --only test
+--only coverage shows zero test_gates.py/gates_suite-related errors;
+every remaining finding (DRIFT 7, COV 46, DOC 2, WAIVE 1) is confirmed
+pre-existing baseline noise in files this diff never touches.
+
+Follow-ups T-3591..T-3595 (the other five monofile test suites) and
+T-3596 (the refactor tool gaps) were filed in the prior session citing
+this ticket's now-proven recipe.
+
+### Changed
+```
+ docs/audits/branch-stranded-work-2026-08-25.md     |     8 +-
+ docs/audits/check-performance.md                   |     4 +-
+ docs/design/check-fix-engine.md                    |     2 +-
+ docs/design/macos-portability.md                   |     2 +-
+ docs/modules/gates.md                              |    16 +-
+ src/frob/app/ticket_runner/_waive_audit.py         |     2 +-
+ src/frob/arch/_exceptions.py                       |     8 +-
+ src/frob/arch/_ffi.py                              |    12 +-
+ src/frob/arch/_protocol_excuse.py                  |    24 +-
+ src/frob/gates/__init__.py                         |   193 +-
+ src/frob/gates/_coverage.py                        |    38 +-
+ src/frob/gates/_dead_symbols.py                    |    10 +-
+ src/frob/gates/_debt_deprecated.py                 |    42 +-
+ src/frob/gates/_decisions_compliance.py            |    22 +-
+ src/frob/gates/_docblocks.py                       |    32 +-
+ src/frob/gates/_docstatus.py                       |    20 +-
+ src/frob/gates/_exclude_hazard.py                  |     4 +-
+ src/frob/gates/_exhaustive_handling.py             |    12 +-
+ src/frob/gates/_ffi_boundary.py                    |     8 +-
+ src/frob/gates/_fix_engine.py                      |    32 +-
+ src/frob/gates/_fix_engine_scope.py                |    24 +-
+ src/frob/gates/_fix_engine_shared.py               |     4 +-
+ src/frob/gates/_fix_engine_sync.py                 |     6 +-
+ src/frob/gates/_fix_engine_tier_b.py               |    16 +-
+ src/frob/gates/_fix_engine_tier_c.py               |     4 +-
+ src/frob/gates/_fixability_scan.py                 |     6 +-
+ src/frob/gates/_markdown_scan.py                   |     2 +-
+ src/frob/gates/_mutation_evidence.py               |     2 +-
+ src/frob/gates/_parse_failures.py                  |    10 +-
+ src/frob/gates/_pii_structural/__init__.py         |    12 +-
+ src/frob/gates/_pii_structural/_signatures.py      |     2 +-
+ src/frob/gates/_prework.py                         |    10 +-
+ src/frob/gates/_protocol_summary.py                |    50 +-
+ src/frob/gates/_render_lint.py                     |    34 +-
+ src/frob/gates/_rule_id_scan.py                    |     8 +-
+ src/frob/gates/_sys.py                             |    56 +-
+ src/frob/gates/_sys_selfaudit.py                   |    12 +-
+ src/frob/gates/_tickets_gate.py                    |    32 +-
+ src/frob/gates/_todo_fmt.py                        |    29 +-
+ src/frob/gates/_waive.py                           |    10 +-
+ src/frob/gates/_walk_lint.py                       |     2 +-
+ src/frob/gates/_wire.py                            |    40 +-
+ src/frob/gates/invariants.py                       |     4 +-
+ src/frob/graph/_waive_presets.py                   |     2 +-
+ src/frob/lang/_nodes.py                            |     8 +-
+ src/frob/strata/_design_load.py                    |     2 +-
+ src/frob/tickets/_new_gate_rule_acceptance.py      |     4 +-
+ tests/conftest.py                                  |   238 +
+ tests/gates/test_rule_id_scan_branches.py          |     2 +-
+ tests/gates_suite/test_compliance.py               |  1184 +
+ tests/gates_suite/test_coverage.py                 |  3815 ++++
+ tests/gates_suite/test_debt.py                     |   850 +
+ tests/gates_suite/test_doc.py                      |  1188 +
+ tests/gates_suite/test_fix_engine.py               |  3083 +++
+ tests/gates_suite/test_invariant.py                |  1079 +
+ tests/gates_suite/test_prework.py                  |  1097 +
+ tests/gates_suite/test_protocol.py                 |   912 +
+ tests/gates_suite/test_run.py                      |  1216 ++
+ tests/gates_suite/test_sys.py                      |  1876 ++
+ tests/gates_suite/test_test_gate.py                |  3063 +++
+ tests/gates_suite/test_tick.py                     |   945 +
+ tests/gates_suite/test_waive.py                    |   992 +
+ tests/gates_suite/test_wire.py                     |  1622 ++
+ tests/test_check_runner.py                         |     2 +-
+ tests/test_doc012_promotion.py                     |     2 +-
+ tests/test_gates.py                                | 21836 -------------------
+ tests/test_status.py                               |     2 +-
+ tests/test_tick012_gate.py                         |     4 +-
+ tests/unit/gates/test_deprecated_baseline.py       |     2 +-
+ tests/unit/gates/test_rel001_deferred_bump.py      |     2 +-
+ tests/unit/strata/test_sys003_calibration.py       |     6 +-
+ tests/unit/test_check.py                           |     2 +-
+ tests/unit/test_fmt_wiring_reachability_t2761.py   |     2 +-
+ tests/unit/test_wire001_dotted_method_call.py      |     6 +-
+ .../unit/test_wire001_pydantic_validator_rescue.py |     2 +-
+ tests/unit/test_wire_autouse_fixture.py            |     6 +-
+ tickets/T-2368/ticket.md                           |    26 +-
+ tickets/T-2370/ticket.md                           |     4 +-
+ tickets/T-2608/ticket.md                           |    12 +-
+ tickets/T-2667/ticket.md                           |     4 +-
+ tickets/T-2856/ticket.md                           |    26 +-
+ tickets/T-2988/ticket.md                           |     6 +-
+ tickets/T-3196/ticket.md                           |     4 +-
+ tickets/T-3255/ticket.md                           |     4 +-
+ tickets/T-3296/ticket.md                           |     6 +-
+ tickets/T-3298/ticket.md                           |     6 +-
+ tickets/T-3301/ticket.md                           |     6 +-
+ tickets/T-3324/ticket.md                           |    12 +-
+ tickets/T-3326/ticket.md                           |     4 +-
+ tickets/T-3336/ticket.md                           |     4 +-
+ tickets/T-3347/ticket.md                           |     6 +-
+ tickets/T-3357/ticket.md                           |     8 +-
+ tickets/T-3363/ticket.md                           |     8 +-
+ tickets/T-3449/ticket.md                           |     4 +-
+ tickets/T-3488/ticket.md                           |     4 +-
+ tickets/T-3492/ticket.md                           |     8 +-
+ tickets/T-3496/ticket.md                           |     6 +-
+ tickets/T-3532/ticket.md                           |     4 +-
+ tickets/T-3533/ticket.md                           |     4 +-
+ tickets/T-3556/ticket.md                           |     2 +-
+ tickets/T-3575/ticket.md                           |     6 +-
+ tickets/T-3586/ticket.md                           |    17 +-
+ tickets/archive/T-0015/ticket.md                   |     6 +-
+ tickets/archive/T-0020/ticket.md                   |     2 +-
+ tickets/archive/T-0025/ticket.md                   |     4 +-
+ tickets/archive/T-0028/ticket.md                   |     4 +-
+ tickets/archive/T-0031/ticket.md                   |     2 +-
+ tickets/archive/T-0034/ticket.md                   |     2 +-
+ tickets/archive/T-0037/ticket.md                   |     2 +-
+ tickets/archive/T-0039/ticket.md                   |     4 +-
+ tickets/archive/T-0042/ticket.md                   |     4 +-
+ tickets/archive/T-0048/ticket.md                   |     4 +-
+ tickets/archive/T-0085/ticket.md                   |    16 +-
+ tickets/archive/T-0088/ticket.md                   |     4 +-
+ tickets/archive/T-0090/ticket.md                   |     6 +-
+ tickets/archive/T-0092/ticket.md                   |     4 +-
+ tickets/archive/T-0095/ticket.md                   |     6 +-
+ tickets/archive/T-0097/ticket.md                   |     4 +-
+ tickets/archive/T-0101/ticket.md                   |     8 +-
+ tickets/archive/T-0108/ticket.md                   |     8 +-
+ tickets/archive/T-0127/ticket.md                   |     4 +-
+ tickets/archive/T-0135/ticket.md                   |     8 +-
+ tickets/archive/T-0148/ticket.md                   |    14 +-
+ tickets/archive/T-0160/ticket.md                   |    16 +-
+ tickets/archive/T-0164/ticket.md                   |     6 +-
+ tickets/archive/T-0165/ticket.md                   |    12 +-
+ tickets/archive/T-0168/ticket.md                   |     4 +-
+ tickets/archive/T-0191/ticket.md                   |     6 +-
+ tickets/archive/T-0203/ticket.md                   |    10 +-
+ tickets/archive/T-0205/ticket.md                   |     4 +-
+ tickets/archive/T-0213/ticket.md                   |     4 +-
+ tickets/archive/T-0214/ticket.md                   |     6 +-
+ tickets/archive/T-0225/ticket.md                   |     8 +-
+ tickets/archive/T-0231/ticket.md                   |     4 +-
+ tickets/archive/T-0232/ticket.md                   |     4 +-
+ tickets/archive/T-0233/ticket.md                   |     8 +-
+ tickets/archive/T-0234/ticket.md                   |     6 +-
+ tickets/archive/T-0237/ticket.md                   |     8 +-
+ tickets/archive/T-0240/ticket.md                   |     8 +-
+ tickets/archive/T-0241/ticket.md                   |     8 +-
+ tickets/archive/T-0252/ticket.md                   |     8 +-
+ tickets/archive/T-0265/ticket.md                   |     4 +-
+ tickets/archive/T-0275/ticket.md                   |     6 +-
+ tickets/archive/T-0276/ticket.md                   |     4 +-
+ tickets/archive/T-0291/ticket.md                   |     4 +-
+ tickets/archive/T-0292/ticket.md                   |     4 +-
+ tickets/archive/T-0294/ticket.md                   |     4 +-
+ tickets/archive/T-0297/ticket.md                   |     8 +-
+ tickets/archive/T-0298/ticket.md                   |    10 +-
+ tickets/archive/T-0299/ticket.md                   |     4 +-
+ tickets/archive/T-0301/ticket.md                   |     4 +-
+ tickets/archive/T-0307/ticket.md                   |     6 +-
+ tickets/archive/T-0311/ticket.md                   |     4 +-
+ tickets/archive/T-0315/ticket.md                   |     4 +-
+ tickets/archive/T-0318/ticket.md                   |     4 +-
+ tickets/archive/T-0320/ticket.md                   |    10 +-
+ tickets/archive/T-0324/ticket.md                   |     6 +-
+ tickets/archive/T-0333/ticket.md                   |     6 +-
+ tickets/archive/T-0336/ticket.md                   |     4 +-
+ tickets/archive/T-0347/ticket.md                   |     8 +-
+ tickets/archive/T-0352/ticket.md                   |    36 +-
+ tickets/archive/T-0361/ticket.md                   |    10 +-
+ tickets/archive/T-0364/ticket.md                   |     4 +-
+ tickets/archive/T-0373/ticket.md                   |     6 +-
+ tickets/archive/T-0374/ticket.md                   |    16 +-
+ tickets/archive/T-0394/ticket.md                   |    14 +-
+ tickets/archive/T-0397/ticket.md                   |     4 +-
+ tickets/archive/T-0399/ticket.md                   |    10 +-
+ tickets/archive/T-0403/ticket.md                   |     8 +-
+ tickets/archive/T-0404/ticket.md                   |     6 +-
+ tickets/archive/T-0408/ticket.md                   |    24 +-
+ tickets/archive/T-0412/ticket.md                   |    20 +-
+ tickets/archive/T-0415/ticket.md                   |    10 +-
+ tickets/archive/T-0422/ticket.md                   |    12 +-
+ tickets/archive/T-0425/ticket.md                   |     8 +-
+ tickets/archive/T-0438/ticket.md                   |     4 +-
+ tickets/archive/T-0443/ticket.md                   |    10 +-
+ tickets/archive/T-0446/ticket.md                   |     4 +-
+ tickets/archive/T-0452/ticket.md                   |    12 +-
+ tickets/archive/T-0459/ticket.md                   |     8 +-
+ tickets/archive/T-0462/ticket.md                   |    10 +-
+ tickets/archive/T-0464/ticket.md                   |     6 +-
+ tickets/archive/T-0465/ticket.md                   |    12 +-
+ tickets/archive/T-0470/ticket.md                   |     2 +-
+ tickets/archive/T-0483/ticket.md                   |    12 +-
+ tickets/archive/T-0499/ticket.md                   |     6 +-
+ tickets/archive/T-0504/ticket.md                   |    10 +-
+ tickets/archive/T-0506/ticket.md                   |    12 +-
+ tickets/archive/T-0509/ticket.md                   |    36 +-
+ tickets/archive/T-0515/ticket.md                   |    22 +-
+ tickets/archive/T-0516/ticket.md                   |    14 +-
+ tickets/archive/T-0520/ticket.md                   |     6 +-
+ tickets/archive/T-0522/ticket.md                   |     4 +-
+ tickets/archive/T-0524/ticket.md                   |     4 +-
+ tickets/archive/T-0525/ticket.md                   |     6 +-
+ tickets/archive/T-0527/ticket.md                   |     4 +-
+ tickets/archive/T-0528/ticket.md                   |    16 +-
+ tickets/archive/T-0529/ticket.md                   |     8 +-
+ tickets/archive/T-0541/ticket.md                   |    10 +-
+ tickets/archive/T-0542/ticket.md                   |     8 +-
+ tickets/archive/T-0543/ticket.md                   |     8 +-
+ tickets/archive/T-0545/ticket.md                   |    12 +-
+ tickets/archive/T-0547/ticket.md                   |     8 +-
+ tickets/archive/T-0548/ticket.md                   |     8 +-
+ tickets/archive/T-0549/ticket.md                   |     8 +-
+ tickets/archive/T-0550/ticket.md                   |     4 +-
+ tickets/archive/T-0552/ticket.md                   |     6 +-
+ tickets/archive/T-0553/ticket.md                   |     6 +-
+ tickets/archive/T-0557/ticket.md                   |     6 +-
+ tickets/archive/T-0558/ticket.md                   |     6 +-
+ tickets/archive/T-0563/ticket.md                   |     4 +-
+ tickets/archive/T-0564/ticket.md                   |     4 +-
+ tickets/archive/T-0567/ticket.md                   |     4 +-
+ tickets/archive/T-0576/ticket.md                   |    20 +-
+ tickets/archive/T-0581/ticket.md                   |    10 +-
+ tickets/archive/T-0584/ticket.md                   |    10 +-
+ tickets/archive/T-0589/ticket.md                   |     8 +-
+ tickets/archive/T-0590/ticket.md                   |     4 +-
+ tickets/archive/T-0596/ticket.md                   |     6 +-
+ tickets/archive/T-0598/ticket.md                   |    14 +-
+ tickets/archive/T-0639/ticket.md                   |    14 +-
+ tickets/archive/T-0685/ticket.md                   |    10 +-
+ tickets/archive/T-0688/ticket.md                   |    24 +-
+ tickets/archive/T-0690/ticket.md                   |    14 +-
+ tickets/archive/T-0704/ticket.md                   |     4 +-
+ tickets/archive/T-0719/ticket.md                   |     6 +-
+ tickets/archive/T-0726/ticket.md                   |    22 +-
+ tickets/archive/T-0730/ticket.md                   |    18 +-
+ tickets/archive/T-0731/ticket.md                   |     6 +-
+ tickets/archive/T-0739/ticket.md                   |    10 +-
+ tickets/archive/T-0746/ticket.md                   |    78 +-
+ tickets/archive/T-0747/ticket.md                   |    26 +-
+ tickets/archive/T-0753/ticket.md                   |    16 +-
+ tickets/archive/T-0756/ticket.md                   |    14 +-
+ tickets/archive/T-0762/ticket.md                   |    26 +-
+ tickets/archive/T-0767/ticket.md                   |    14 +-
+ tickets/archive/T-0783/ticket.md                   |    14 +-
+ tickets/archive/T-0788/ticket.md                   |    16 +-
+ tickets/archive/T-0797/ticket.md                   |    10 +-
+ tickets/archive/T-0807/ticket.md                   |    20 +-
+ tickets/archive/T-0813/ticket.md                   |    18 +-
+ tickets/archive/T-0814/ticket.md                   |    18 +-
+ tickets/archive/T-0820/ticket.md                   |    12 +-
+ tickets/archive/T-0833/ticket.md                   |     4 +-
+ tickets/archive/T-0839/ticket.md                   |    12 +-
+ tickets/archive/T-0840/ticket.md                   |     8 +-
+ tickets/archive/T-0841/ticket.md                   |     8 +-
+ tickets/archive/T-0842/ticket.md                   |    12 +-
+ tickets/archive/T-0851/ticket.md                   |    12 +-
+ tickets/archive/T-0861/ticket.md                   |     6 +-
+ tickets/archive/T-0871/ticket.md                   |     4 +-
+ tickets/archive/T-0874/ticket.md                   |     6 +-
+ tickets/archive/T-0886/ticket.md                   |    10 +-
+ tickets/archive/T-0894/ticket.md                   |    10 +-
+ tickets/archive/T-0895/ticket.md                   |     4 +-
+ tickets/archive/T-0896/ticket.md                   |     4 +-
+ tickets/archive/T-0897/ticket.md                   |     8 +-
+ tickets/archive/T-0898/ticket.md                   |     6 +-
+ tickets/archive/T-0899/ticket.md                   |     4 +-
+ tickets/archive/T-0900/ticket.md                   |     6 +-
+ tickets/archive/T-0901/ticket.md                   |     8 +-
+ tickets/archive/T-0902/ticket.md                   |    10 +-
+ tickets/archive/T-0903/ticket.md                   |     6 +-
+ tickets/archive/T-0905/ticket.md                   |     6 +-
+ tickets/archive/T-0906/ticket.md                   |     6 +-
+ tickets/archive/T-0923/ticket.md                   |     8 +-
+ tickets/archive/T-0924/ticket.md                   |     8 +-
+ tickets/archive/T-0926/ticket.md                   |     6 +-
+ tickets/archive/T-0927/ticket.md                   |     4 +-
+ tickets/archive/T-0929/ticket.md                   |     4 +-
+ tickets/archive/T-0931/ticket.md                   |     4 +-
+ tickets/archive/T-0932/ticket.md                   |     4 +-
+ tickets/archive/T-0940/ticket.md                   |     6 +-
+ tickets/archive/T-0942/ticket.md                   |    10 +-
+ tickets/archive/T-0943/ticket.md                   |     4 +-
+ tickets/archive/T-0947/ticket.md                   |    12 +-
+ tickets/archive/T-0949/ticket.md                   |    24 +-
+ tickets/archive/T-0954/ticket.md                   |     6 +-
+ tickets/archive/T-0961/ticket.md                   |    12 +-
+ tickets/archive/T-0964/ticket.md                   |     8 +-
+ tickets/archive/T-0965/ticket.md                   |     8 +-
+ tickets/archive/T-0966/ticket.md                   |    12 +-
+ tickets/archive/T-0968/ticket.md                   |     4 +-
+ tickets/archive/T-0972/ticket.md                   |     4 +-
+ tickets/archive/T-0973/ticket.md                   |     4 +-
+ tickets/archive/T-0974/ticket.md                   |     8 +-
+ tickets/archive/T-0976/ticket.md                   |     4 +-
+ tickets/archive/T-0986/ticket.md                   |     6 +-
+ tickets/archive/T-0990/ticket.md                   |     4 +-
+ tickets/archive/T-0994/ticket.md                   |     6 +-
+ tickets/archive/T-0997/ticket.md                   |     6 +-
+ tickets/archive/T-0998/ticket.md                   |    10 +-
+ tickets/archive/T-1010/ticket.md                   |    26 +-
+ tickets/archive/T-1017/ticket.md                   |     4 +-
+ tickets/archive/T-1021/ticket.md                   |     6 +-
+ tickets/archive/T-1038/ticket.md                   |     6 +-
+ tickets/archive/T-1041/ticket.md                   |     6 +-
+ tickets/archive/T-1049/ticket.md                   |     4 +-
+ tickets/archive/T-1056/ticket.md                   |    24 +-
+ tickets/archive/T-1061/ticket.md                   |     4 +-
+ tickets/archive/T-1062/ticket.md                   |     4 +-
+ tickets/archive/T-1064/ticket.md                   |    12 +-
+ tickets/archive/T-1072/ticket.md                   |    12 +-
+ tickets/archive/T-1074/ticket.md                   |     4 +-
+ tickets/archive/T-1076/ticket.md                   |     4 +-
+ tickets/archive/T-1077/ticket.md                   |    24 +-
+ tickets/archive/T-1081/ticket.md                   |     6 +-
+ tickets/archive/T-1087/ticket.md                   |     6 +-
+ tickets/archive/T-1107/ticket.md                   |     4 +-
+ tickets/archive/T-1110/ticket.md                   |     6 +-
+ tickets/archive/T-1111/ticket.md                   |     6 +-
+ tickets/archive/T-1114/ticket.md                   |     6 +-
+ tickets/archive/T-1115/ticket.md                   |    28 +-
+ tickets/archive/T-1129/ticket.md                   |    22 +-
+ tickets/archive/T-1133/ticket.md                   |    10 +-
+ tickets/archive/T-1134/ticket.md                   |    18 +-
+ tickets/archive/T-1137/ticket.md                   |    18 +-
+ tickets/archive/T-1138/ticket.md                   |    30 +-
+ tickets/archive/T-1139/ticket.md                   |     6 +-
+ tickets/archive/T-1146/ticket.md                   |     8 +-
+ tickets/archive/T-1148/ticket.md                   |     8 +-
+ tickets/archive/T-1155/ticket.md                   |    12 +-
+ tickets/archive/T-1159/ticket.md                   |     4 +-
+ tickets/archive/T-1161/ticket.md                   |     8 +-
+ tickets/archive/T-1170/ticket.md                   |     8 +-
+ tickets/archive/T-1174/ticket.md                   |     8 +-
+ tickets/archive/T-1176/ticket.md                   |    20 +-
+ tickets/archive/T-1177/ticket.md                   |    28 +-
+ tickets/archive/T-1180/ticket.md                   |    14 +-
+ tickets/archive/T-1183/ticket.md                   |     4 +-
+ tickets/archive/T-1187/ticket.md                   |    10 +-
+ tickets/archive/T-1188/ticket.md                   |    32 +-
+ tickets/archive/T-1205/ticket.md                   |    20 +-
+ tickets/archive/T-1207/ticket.md                   |    10 +-
+ tickets/archive/T-1230/ticket.md                   |     8 +-
+ tickets/archive/T-1231/ticket.md                   |     8 +-
+ tickets/archive/T-1232/ticket.md                   |    10 +-
+ tickets/archive/T-1236/ticket.md                   |    10 +-
+ tickets/archive/T-1244/ticket.md                   |    16 +-
+ tickets/archive/T-1261/ticket.md                   |    38 +-
+ tickets/archive/T-1262/ticket.md                   |    20 +-
+ tickets/archive/T-1263/ticket.md                   |    18 +-
+ tickets/archive/T-1264/ticket.md                   |    20 +-
+ tickets/archive/T-1265/ticket.md                   |    12 +-
+ tickets/archive/T-1266/ticket.md                   |    10 +-
+ tickets/archive/T-1272/ticket.md                   |     6 +-
+ tickets/archive/T-1290/ticket.md                   |    14 +-
+ tickets/archive/T-1314/ticket.md                   |    14 +-
+ tickets/archive/T-1323/ticket.md                   |    22 +-
+ tickets/archive/T-1329/ticket.md                   |     4 +-
+ tickets/archive/T-1338/ticket.md                   |    12 +-
+ tickets/archive/T-1348/ticket.md                   |    20 +-
+ tickets/archive/T-1363/ticket.md                   |    12 +-
+ tickets/archive/T-1364/ticket.md                   |     6 +-
+ tickets/archive/T-1366/ticket.md                   |     8 +-
+ tickets/archive/T-1371/ticket.md                   |    18 +-
+ tickets/archive/T-1375/ticket.md                   |    14 +-
+ tickets/archive/T-1376/ticket.md                   |    14 +-
+ tickets/archive/T-1396/ticket.md                   |     6 +-
+ tickets/archive/T-1401/ticket.md                   |    14 +-
+ tickets/archive/T-1402/ticket.md                   |    24 +-
+ tickets/archive/T-1406/ticket.md                   |    10 +-
+ tickets/archive/T-1407/ticket.md                   |     4 +-
+ tickets/archive/T-1408/ticket.md                   |    12 +-
+ tickets/archive/T-1420/ticket.md                   |    18 +-
+ tickets/archive/T-1428/ticket.md                   |    92 +-
+ tickets/archive/T-1430/ticket.md                   |     6 +-
+ tickets/archive/T-1431/ticket.md                   |    10 +-
+ tickets/archive/T-1435/ticket.md                   |     6 +-
+ tickets/archive/T-1436/ticket.md                   |     4 +-
+ tickets/archive/T-1441/ticket.md                   |    34 +-
+ tickets/archive/T-1442/ticket.md                   |     6 +-
+ tickets/archive/T-1455/ticket.md                   |    10 +-
+ tickets/archive/T-1489/ticket.md                   |     8 +-
+ tickets/archive/T-1502/ticket.md                   |     6 +-
+ tickets/archive/T-1527/ticket.md                   |     6 +-
+ tickets/archive/T-1531/ticket.md                   |    10 +-
+ tickets/archive/T-1532/ticket.md                   |     6 +-
+ tickets/archive/T-1539/ticket.md                   |     2 +-
+ tickets/archive/T-1544/ticket.md                   |     8 +-
+ tickets/archive/T-1545/ticket.md                   |     6 +-
+ tickets/archive/T-1558/ticket.md                   |    10 +-
+ tickets/archive/T-1577/ticket.md                   |     6 +-
+ tickets/archive/T-1578/ticket.md                   |     8 +-
+ tickets/archive/T-1579/ticket.md                   |     4 +-
+ tickets/archive/T-1582/ticket.md                   |    12 +-
+ tickets/archive/T-1583/ticket.md                   |     2 +-
+ tickets/archive/T-1590/ticket.md                   |     6 +-
+ tickets/archive/T-1592/ticket.md                   |     8 +-
+ tickets/archive/T-1620/ticket.md                   |     8 +-
+ tickets/archive/T-1640/ticket.md                   |     8 +-
+ tickets/archive/T-1641/ticket.md                   |     8 +-
+ tickets/archive/T-1643/ticket.md                   |    12 +-
+ tickets/archive/T-1646/ticket.md                   |     6 +-
+ tickets/archive/T-1649/ticket.md                   |    10 +-
+ tickets/archive/T-1652/ticket.md                   |    18 +-
+ tickets/archive/T-1654/ticket.md                   |     6 +-
+ tickets/archive/T-1657/ticket.md                   |    12 +-
+ tickets/archive/T-1660/ticket.md                   |     8 +-
+ tickets/archive/T-1666/ticket.md                   |     4 +-
+ tickets/archive/T-1683/ticket.md                   |     4 +-
+ tickets/archive/T-1700/ticket.md                   |     6 +-
+ tickets/archive/T-1725/ticket.md                   |    16 +-
+ tickets/archive/T-1735/ticket.md                   |     6 +-
+ tickets/archive/T-1746/ticket.md                   |    10 +-
+ tickets/archive/T-1761/ticket.md                   |     4 +-
+ tickets/archive/T-1763/ticket.md                   |    24 +-
+ tickets/archive/T-1773/ticket.md                   |     4 +-
+ tickets/archive/T-1774/ticket.md                   |     4 +-
+ tickets/archive/T-1782/ticket.md                   |    16 +-
+ tickets/archive/T-1783/ticket.md                   |    10 +-
+ tickets/archive/T-1784/ticket.md                   |    18 +-
+ tickets/archive/T-1800/ticket.md                   |     6 +-
+ tickets/archive/T-1803/ticket.md                   |     6 +-
+ tickets/archive/T-1807/ticket.md                   |     4 +-
+ tickets/archive/T-1817/ticket.md                   |     8 +-
+ tickets/archive/T-1819/ticket.md                   |     6 +-
+ tickets/archive/T-1824/ticket.md                   |    12 +-
+ tickets/archive/T-1830/ticket.md                   |     8 +-
+ tickets/archive/T-1861/ticket.md                   |     6 +-
+ tickets/archive/T-1879/ticket.md                   |     4 +-
+ tickets/archive/T-1881/ticket.md                   |    24 +-
+ tickets/archive/T-1886/ticket.md                   |     4 +-
+ tickets/archive/T-1887/ticket.md                   |     4 +-
+ tickets/archive/T-1904/ticket.md                   |    14 +-
+ tickets/archive/T-1911/ticket.md                   |     6 +-
+ tickets/archive/T-1917/ticket.md                   |    14 +-
+ tickets/archive/T-1921/ticket.md                   |     4 +-
+ tickets/archive/T-1924/ticket.md                   |    20 +-
+ tickets/archive/T-1937/ticket.md                   |     4 +-
+ tickets/archive/T-1942/ticket.md                   |    12 +-
+ tickets/archive/T-1945/ticket.md                   |     4 +-
+ tickets/archive/T-1959/ticket.md                   |     6 +-
+ tickets/archive/T-1962/ticket.md                   |    10 +-
+ tickets/archive/T-1964/ticket.md                   |     6 +-
+ tickets/archive/T-1969/ticket.md                   |     4 +-
+ tickets/archive/T-1974/ticket.md                   |    10 +-
+ tickets/archive/T-1977/ticket.md                   |    10 +-
+ tickets/archive/T-2001/ticket.md                   |    12 +-
+ tickets/archive/T-2013/ticket.md                   |    10 +-
+ tickets/archive/T-2014/ticket.md                   |     8 +-
+ tickets/archive/T-2015/ticket.md                   |    10 +-
+ tickets/archive/T-2020/ticket.md                   |    10 +-
+ tickets/archive/T-2066/ticket.md                   |     4 +-
+ tickets/archive/T-2080/ticket.md                   |    10 +-
+ tickets/archive/T-2101/ticket.md                   |     8 +-
+ tickets/archive/T-2128/ticket.md                   |     4 +-
+ tickets/archive/T-2205/ticket.md                   |     4 +-
+ tickets/archive/T-2230/ticket.md                   |    16 +-
+ tickets/archive/T-2243/ticket.md                   |    16 +-
+ tickets/archive/T-2284/ticket.md                   |    52 +-
+ tickets/archive/T-2314/ticket.md                   |    18 +-
+ tickets/archive/T-2327/ticket.md                   |    10 +-
+ tickets/archive/T-2328/ticket.md                   |    10 +-
+ tickets/archive/T-2338/ticket.md                   |     8 +-
+ tickets/archive/T-2351/ticket.md                   |    16 +-
+ tickets/archive/T-2372/ticket.md                   |    20 +-
+ tickets/archive/T-2384/ticket.md                   |    10 +-
+ tickets/archive/T-2389/ticket.md                   |    42 +-
+ tickets/archive/T-2400/ticket.md                   |    26 +-
+ tickets/archive/T-2438/ticket.md                   |    16 +-
+ tickets/archive/T-2441/ticket.md                   |     6 +-
+ tickets/archive/T-2454/ticket.md                   |    14 +-
+ tickets/archive/T-2523/ticket.md                   |     8 +-
+ tickets/archive/T-2543/ticket.md                   |    10 +-
+ tickets/archive/T-2549/ticket.md                   |    12 +-
+ tickets/archive/T-2550/ticket.md                   |     8 +-
+ tickets/archive/T-2551/ticket.md                   |    12 +-
+ tickets/archive/T-2581/ticket.md                   |    14 +-
+ tickets/archive/T-2688/ticket.md                   |    16 +-
+ tickets/archive/T-2690/ticket.md                   |    10 +-
+ tickets/archive/T-2693/ticket.md                   |     4 +-
+ tickets/archive/T-2702/ticket.md                   |    10 +-
+ tickets/archive/T-2704/ticket.md                   |    10 +-
+ tickets/archive/T-2705/ticket.md                   |    10 +-
+ tickets/archive/T-2707/ticket.md                   |    12 +-
+ tickets/archive/T-2710/ticket.md                   |     4 +-
+ tickets/archive/T-2719/ticket.md                   |    20 +-
+ tickets/archive/T-2720/ticket.md                   |    12 +-
+ tickets/archive/T-2722/ticket.md                   |     6 +-
+ tickets/archive/T-2740/ticket.md                   |     8 +-
+ tickets/archive/T-2762/ticket.md                   |     6 +-
+ tickets/archive/T-2766/ticket.md                   |     6 +-
+ tickets/archive/T-2776/ticket.md                   |     4 +-
+ tickets/archive/T-2777/ticket.md                   |    10 +-
+ tickets/archive/T-2806/ticket.md                   |     4 +-
+ tickets/archive/T-2808/ticket.md                   |     4 +-
+ tickets/archive/T-2827/ticket.md                   |     4 +-
+ tickets/archive/T-2828/ticket.md                   |    10 +-
+ tickets/archive/T-2836/ticket.md                   |     6 +-
+ tickets/archive/T-2843/ticket.md                   |    22 +-
+ tickets/archive/T-2865/ticket.md                   |    10 +-
+ tickets/archive/T-2873/ticket.md                   |    10 +-
+ tickets/archive/T-2874/ticket.md                   |    10 +-
+ tickets/archive/T-2892/ticket.md                   |     4 +-
+ tickets/archive/T-2902/ticket.md                   |     4 +-
+ tickets/archive/T-2906/ticket.md                   |     6 +-
+ tickets/archive/T-2920/ticket.md                   |     6 +-
+ tickets/archive/T-2922/ticket.md                   |     8 +-
+ tickets/archive/T-2928/ticket.md                   |     4 +-
+ tickets/archive/T-2999/ticket.md                   |     6 +-
+ tickets/archive/T-3034/ticket.md                   |    22 +-
+ tickets/archive/T-3115/ticket.md                   |    10 +-
+ tickets/archive/T-3140/ticket.md                   |    10 +-
+ tickets/archive/T-3145/ticket.md                   |     4 +-
+ tickets/archive/T-3148/ticket.md                   |     6 +-
+ tickets/archive/T-3149/ticket.md                   |    12 +-
+ 507 files changed, 25803 insertions(+), 24412 deletions(-)
+```
+
+### Evidence
+- `tests/gates_suite/test_prework.py::TestScopePrework::test_pre001_missing_sweep` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_doc.py::TestDriftGate::test_drift001_stale_ack_has_remedy` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov001_waiver_does_not_blanket_suppress_sibling_symbol` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_waive.py::TestWaivePresets::test_waive_preset_resolves_reason_and_matches_like_inline` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_protocol.py::TestProtocolSummaryGate::test_unresolved_callee_poisons_a_protocol_tagged_symbol` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_debt.py::TestDebtGate::test_debt002_closed_ticket_is_reported` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv001_no_evidence` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_test_gate.py::TestTestGate::test_test001_public_symbol_no_unit_edge` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_run.py::TestRunGates::test_run_gates_end_to_end` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_renamed_draft_resolved_via_git_not_refiled` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_sys.py::TestSysGate::test_noop_no_design_dir` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_backtick_styled_id_in_a_real_claim_still_fires` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_ts_interface_email_field_fires` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 14 passed (from 14 evidence id(s))
+- gates: 109 error(s), 4741 warning(s), 892 waived
+- error-findings: ARCH102@src/frob/process/_lock.py, ARCH102@src/frob/tickets/_land_squash.py, ARCH103@src/frob/tickets/_leases.py, COV001@src/frob/tickets/_land_queue.py, COV001@src/frob/tickets/_land_squash.py, COV003@tests/test_check_runner.py, COV003@tests/unit/test_scaffold_project.py, CROSSTICKET001@src/frob/strata/_design_load.py, DEPR006@frob-deprecated-baseline.lock.json, DOC001@docs/design/ledger-mirror-batching.md, DOC001@docs/design/macos-portability.md, DOC002@src/frob/tickets/_land_squash.py, DOC007@src/frob/verify/_bisect.py, DRIFT001@src/frob/app/ticket_runner/_rapid_sweep.py, DRIFT001@src/frob/app/ticket_runner/_verify.py, DRIFT001@src/frob/process/_lock.py, DRIFT001@src/frob/tickets/_land_squash.py, DRIFT002@src/frob/app/check_runner.py, DRIFT002@src/frob/verify/_bisect.py, DUP001@tests/conftest.py, DUP001@tests/gates_suite/test_sys.py, E402@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_coverage.py, E402@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_doc.py, E402@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_fix_engine.py, E402@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_invariant.py, E402@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_prework.py, E402@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_run.py, E402@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_sys.py, E402@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_test_gate.py, E402@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_waive.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/arch/_ffi.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_dead_symbols.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_ffi_boundary.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_fix_engine_shared.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_fixability_scan.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_parse_failures.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_pii_structural/_signatures.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_rule_id_scan.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_sys.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_sys_selfaudit.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_tickets_gate.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_waive.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_walk_lint.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/gates/_wire.py, E501@/home/logan/projects/frob/.claude/worktrees/t-3586/src/frob/strata/_design_load.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_compliance.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_coverage.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_debt.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_doc.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_fix_engine.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_invariant.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_prework.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_protocol.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_run.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_sys.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_test_gate.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_tick.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_waive.py, F401@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_wire.py, F811@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_coverage.py, F811@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_doc.py, F811@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_fix_engine.py, F811@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_invariant.py, F811@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_prework.py, F811@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_run.py, F811@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_sys.py, F811@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_test_gate.py, F811@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_waive.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_compliance.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_coverage.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_debt.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_doc.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_fix_engine.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_invariant.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_prework.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_protocol.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_run.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_sys.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_test_gate.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_tick.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_waive.py, I001@/home/logan/projects/frob/.claude/worktrees/t-3586/tests/gates_suite/test_wire.py, INV001@invariants/INV-011.md, INV001@invariants/INV-013.md, INV001@invariants/INV-041.md, LARGE001@.claude/hooks/root-write-guard.py, LARGE001@src/frob/arch/_mayraise.py, OPAQUE001@src/frob/_cli_parsers/_ticket/_metadata.py, PII012@tests/gates_suite/test_compliance.py, PII012@tests/test_ticket_leases.py, PRE001@tickets/T-3586, REF001@docs/design/macos-portability.md, REL001@src/frob/__init__.py, SELFAUDIT001@tests/gates_suite/test_compliance.py, SELFAUDIT001@tests/gates_suite/test_coverage.py, SELFAUDIT001@tests/gates_suite/test_debt.py, SELFAUDIT001@tests/gates_suite/test_doc.py, SELFAUDIT001@tests/gates_suite/test_fix_engine.py, SELFAUDIT001@tests/gates_suite/test_invariant.py, SELFAUDIT001@tests/gates_suite/test_prework.py, SELFAUDIT001@tests/gates_suite/test_run.py, SELFAUDIT001@tests/gates_suite/test_sys.py, SELFAUDIT001@tests/gates_suite/test_test_gate.py, SELFAUDIT001@tests/gates_suite/test_waive.py, SELFAUDIT001@tests/gates_suite/test_wire.py, TICK004@tickets.md, WAIVE011@frob-ratchet.lock.json, WIRE001@tests/gates_suite/test_sys.py, WIRE001@tests/gates_suite/test_wire.py

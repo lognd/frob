@@ -33,9 +33,9 @@ body_changes:
   old_length: 1661
   new_length: 2097
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_tick006_genuinely_lost_draft_still_caught_no_rename_no_duplicate
-- tests/test_gates.py::TestFixEngineTierA::test_tick006_already_recovered_citation_rewritten_not_refiled_again
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_disclosure_with_a_real_citing_id_is_silent
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_genuinely_lost_draft_still_caught_no_rename_no_duplicate
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_already_recovered_citation_rewritten_not_refiled_again
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_disclosure_with_a_real_citing_id_is_silent
 designated_repro_test: null
 threat: null
 component: null

@@ -59,16 +59,16 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory
-- tests/test_gates.py::TestInv004Gate::test_section_with_any_invariant_marker_is_silent
-- tests/test_gates.py::TestInv004Gate::test_section_with_no_normative_language_is_silent
-- tests/test_gates.py::TestInv004Gate::test_two_sections_only_flags_the_underspecified_one
-- tests/test_gates.py::TestInv004Gate::test_any_bound_invariant_anywhere_in_file_silences_every_section
-- tests/test_gates.py::TestInv004Gate::test_missing_docs_dir_is_silent
-- tests/test_gates.py::TestInv004Gate::test_outside_spec_dirs_is_silent
-- tests/test_gates.py::TestInv004Gate::test_markdown_waive_marker_with_reason_is_silent
-- tests/test_gates.py::TestInv004Gate::test_markdown_waive_marker_without_reason_still_warns
-- tests/test_gates.py::TestInv004Gate::test_claim_without_verb_in_sentence_is_silent
+- tests/gates_suite/test_invariant.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory
+- tests/gates_suite/test_invariant.py::TestInv004Gate::test_section_with_any_invariant_marker_is_silent
+- tests/gates_suite/test_invariant.py::TestInv004Gate::test_section_with_no_normative_language_is_silent
+- tests/gates_suite/test_invariant.py::TestInv004Gate::test_two_sections_only_flags_the_underspecified_one
+- tests/gates_suite/test_invariant.py::TestInv004Gate::test_any_bound_invariant_anywhere_in_file_silences_every_section
+- tests/gates_suite/test_invariant.py::TestInv004Gate::test_missing_docs_dir_is_silent
+- tests/gates_suite/test_invariant.py::TestInv004Gate::test_outside_spec_dirs_is_silent
+- tests/gates_suite/test_invariant.py::TestInv004Gate::test_markdown_waive_marker_with_reason_is_silent
+- tests/gates_suite/test_invariant.py::TestInv004Gate::test_markdown_waive_marker_without_reason_still_warns
+- tests/gates_suite/test_invariant.py::TestInv004Gate::test_claim_without_verb_in_sentence_is_silent
 designated_repro_test: null
 threat: null
 component: null

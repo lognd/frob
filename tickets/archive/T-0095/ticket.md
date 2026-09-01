@@ -17,8 +17,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestBaselineDelta::test_delta_filters_known_violations
-- tests/test_gates.py::TestBaselineDelta::test_baseline_stale_when_file_changes
+- tests/gates_suite/test_prework.py::TestBaselineDelta::test_delta_filters_known_violations
+- tests/gates_suite/test_prework.py::TestBaselineDelta::test_baseline_stale_when_file_changes
 - tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning
 designated_repro_test: null
 threat: null

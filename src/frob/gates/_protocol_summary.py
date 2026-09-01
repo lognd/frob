@@ -922,40 +922,40 @@ def _discharge(root: Path, symref: str, resource: str) -> Violation | None:
 # frob:doc docs/modules/gates.md#proto001-t-0813
 # frob:enforces CHK-GATE-PROTO001
 # frob:ticket T-0813
-# frob:tests tests/test_gates.py::TestProtocolSummaryGate.test_unresolved_callee_poisons_a_protocol_tagged_symbol  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolSummaryGate.test_clean_protocol_tagged_symbol_is_not_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolSummaryGate.test_untagged_symbol_with_unresolved_call_is_not_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolSummaryGate.test_unresolved_callee_poisons_a_protocol_tagged_symbol  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolSummaryGate.test_clean_protocol_tagged_symbol_is_not_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolSummaryGate.test_untagged_symbol_with_unresolved_call_is_not_flagged  # noqa: E501
 # frob:doc docs/modules/gates.md#proto002proto003-t-0746
 # frob:enforces CHK-GATE-PROTO002
 # frob:enforces CHK-GATE-PROTO003
 # frob:ticket T-0746
-# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_state_never_established_is_an_error  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_state_established_by_a_reachable_transition_is_not_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_state_equal_to_initial_is_not_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_poisoned_summary_at_a_requires_symbol_is_an_error  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_invalid_transition_precondition_never_established_is_an_error  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_valid_transition_chain_is_not_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_python_with_block_discharges_the_requirement  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolVerificationGate.test_state_never_established_is_an_error  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolVerificationGate.test_state_established_by_a_reachable_transition_is_not_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolVerificationGate.test_state_equal_to_initial_is_not_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolVerificationGate.test_poisoned_summary_at_a_requires_symbol_is_an_error  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolVerificationGate.test_invalid_transition_precondition_never_established_is_an_error  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolVerificationGate.test_valid_transition_chain_is_not_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolVerificationGate.test_python_with_block_discharges_the_requirement  # noqa: E501
 # frob:ticket T-0841
-# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_rust_file_state_never_established_is_an_error  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_rust_drop_impl_discharges_the_requirement  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_typescript_using_discharges_the_requirement  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolVerificationGate.test_rust_file_state_never_established_is_an_error  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolVerificationGate.test_rust_drop_impl_discharges_the_requirement  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolVerificationGate.test_typescript_using_discharges_the_requirement  # noqa: E501
 # frob:ticket T-0840
-# frob:tests tests/test_gates.py::TestProtocolOrderingGate.test_call_before_establishing_transition_is_an_ordering_error  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolOrderingGate.test_call_after_establishing_transition_is_not_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestProtocolOrderingGate.test_python_with_block_discharges_the_ordering_violation  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolOrderingGate.test_call_before_establishing_transition_is_an_ordering_error  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolOrderingGate.test_call_after_establishing_transition_is_not_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestProtocolOrderingGate.test_python_with_block_discharges_the_ordering_violation  # noqa: E501
 # frob:doc docs/modules/gates.md#proto005-t-0747
 # frob:enforces CHK-GATE-PROTO005
 # frob:ticket T-0747
-# frob:tests tests/test_gates.py::TestCleanupObligationGate.test_early_return_before_release_call_is_an_error  # noqa: E501
-# frob:tests tests/test_gates.py::TestCleanupObligationGate.test_release_before_return_is_not_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestCleanupObligationGate.test_escape_transfer_discharges_the_obligation  # noqa: E501
-# frob:tests tests/test_gates.py::TestCleanupObligationGate.test_self_contained_acquire_and_release_is_trusted  # noqa: E501
-# frob:tests tests/test_gates.py::TestCleanupObligationGate.test_python_with_block_discharges_the_acquisition  # noqa: E501
-# frob:tests tests/test_gates.py::TestCleanupObligationGate.test_process_exit_ok_policy_discharges_a_terminator_guarded_return  # noqa: E501
-# frob:tests tests/test_gates.py::TestCleanupObligationGate.test_exceptional_exit_with_no_release_anywhere_is_an_error  # noqa: E501
-# frob:tests tests/test_gates.py::TestCleanupObligationGate.test_deinit_never_called_for_cleanup_always_protocol_is_an_error  # noqa: E501
-# frob:tests tests/test_gates.py::TestCleanupObligationGate.test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestCleanupObligationGate.test_early_return_before_release_call_is_an_error  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestCleanupObligationGate.test_release_before_return_is_not_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestCleanupObligationGate.test_escape_transfer_discharges_the_obligation  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestCleanupObligationGate.test_self_contained_acquire_and_release_is_trusted  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestCleanupObligationGate.test_python_with_block_discharges_the_acquisition  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestCleanupObligationGate.test_process_exit_ok_policy_discharges_a_terminator_guarded_return  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestCleanupObligationGate.test_exceptional_exit_with_no_release_anywhere_is_an_error  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestCleanupObligationGate.test_deinit_never_called_for_cleanup_always_protocol_is_an_error  # noqa: E501
+# frob:tests tests/gates_suite/test_protocol.py::TestCleanupObligationGate.test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged  # noqa: E501
 # frob:ticket T-0972
 # frob:enforces CHK-GATE-PROTO004
 def protocol_summary_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:

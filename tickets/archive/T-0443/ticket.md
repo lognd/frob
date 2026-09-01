@@ -39,11 +39,11 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence:
-- tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_nonexistent_subcommand_is_stale
-- tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_anchored_passes
-- tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_unanchored_warns_unbound
-- tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_waive_suppresses_console_stale
-- tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_no_config_means_no_console_checking
+- tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift::test_nonexistent_subcommand_is_stale
+- tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_anchored_passes
+- tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_unanchored_warns_unbound
+- tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift::test_waive_suppresses_console_stale
+- tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift::test_no_config_means_no_console_checking
 designated_repro_test: null
 threat: null
 component: null

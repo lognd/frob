@@ -113,11 +113,11 @@ scope_changes:
   actor: logan
   at: '2026-08-07'
 evidence:
-- tests/test_gates.py::TestTestGate::test_waive004_exempts_a_diff_scoped_rule
-- tests/test_gates.py::TestFmt001Gate::test_directive_run_over_limit_flagged
-- tests/test_gates.py::TestFmt001Gate::test_untouched_line_not_flagged
-- tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
-- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_exempts_a_diff_scoped_rule
+- tests/gates_suite/test_waive.py::TestFmt001Gate::test_directive_run_over_limit_flagged
+- tests/gates_suite/test_waive.py::TestFmt001Gate::test_untouched_line_not_flagged
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
 designated_repro_test: null
 threat: null
 component: null
@@ -351,7 +351,7 @@ exists.
 
 TEST FAILURES TRIAGED, NEITHER MINE:
 
-- `tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_
+- `tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_
   literal_is_known` -- fails on a clean main checkout with an unmodified
   copy of the test (verified: `git show main:tests/test_gates.py`,
   identical body). `generated_gate_rule_ids()` reports `SYS108` (`src/
@@ -359,7 +359,7 @@ TEST FAILURES TRIAGED, NEITHER MINE:
   `git log` confirms SYS108 was introduced by commit 70879571, "fix
   (tickets): land T-1624" -- unrelated to T-1763. Filed as a draft
   ticket (renumbers at land) rather than fixed here or silently absorbed.
-- `tests/test_gates.py::TestFixEngineTierA::test_sys104_interface_union_
+- `tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys104_interface_union_
   applies_via_apply_tier_a_fixes` -- also fails with an unmodified copy
   of the test against a freshly-built native checkout, in isolation, not
   an xdist artifact. `apply_tier_a_fixes` applies 0 SYS104 fixes where 1
@@ -1149,11 +1149,11 @@ the rule id together, satisfying the same-line requirement.
 ```
 
 ### Evidence
-- `tests/test_gates.py::TestTestGate::test_waive004_exempts_a_diff_scoped_rule` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestFmt001Gate::test_directive_run_over_limit_flagged` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestFmt001Gate::test_untouched_line_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_exempts_a_diff_scoped_rule` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_waive.py::TestFmt001Gate::test_directive_run_over_limit_flagged` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_waive.py::TestFmt001Gate::test_untouched_line_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

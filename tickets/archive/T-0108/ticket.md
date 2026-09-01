@@ -16,9 +16,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestScopePrework::test_scope001_exempts_file_committed_by_earlier_ticket
-- tests/test_gates.py::TestScopePrework::test_scope001_still_flags_uncommitted_out_of_scope_edit
-- tests/test_gates.py::TestScopePrework::test_scope001_does_not_exempt_when_referenced_ticket_lacks_scope
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_exempts_file_committed_by_earlier_ticket
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_still_flags_uncommitted_out_of_scope_edit
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_does_not_exempt_when_referenced_ticket_lacks_scope
 designated_repro_test: null
 threat: null
 component: null

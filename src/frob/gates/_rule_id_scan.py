@@ -35,7 +35,7 @@ So generation is a deliberate, occasional action ("when generation runs"),
 not an implicit one on every import: `generated_gate_rule_ids()` is called
 by a maintainer (or a future `make`/CLI target, not built here) to produce
 the current live id set, which is then pasted into the `_KNOWN_GATE_RULES`
-literal; `tests/test_gates.py::TestKnownGateRuleIds` re-verifies the
+literal; `tests/gates_suite/test_sys.py::TestKnownGateRuleIds` re-verifies the
 checked-in literal against a fresh scan every test run, so a maintainer who
 adds a rule and forgets the paste step fails loud immediately, exactly as
 the T-0964 drift-lock always has -- the difference is the scan itself no
@@ -118,7 +118,7 @@ a `code=` kwarg (`BUDGET001` and siblings) all with the SAME mechanism,
 without needing a new regex per newly-discovered construction shape. It
 does not replace `scan_emitted_rule_ids`/`generated_gate_rule_ids` (still
 the narrow, SCANNED_BASES-scoped authority the checked-in `_KNOWN_GATE_
-RULES` literal is generated FROM, and still what `tests/test_gates.py::
+RULES` literal is generated FROM, and still what `tests/gates_suite/test_sys.py::
 TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known` drift-locks
 against) -- it is a second, wider-net drift-lock
 (`TestFindUnregisteredRuleIds.test_real_repo_registry_is_complete` in
@@ -220,7 +220,8 @@ RETIRED_RULE_IDS: frozenset[str] = frozenset(
 # frob:waive COV001 reason="same doc-anchor scope-closure tension as SCANNED_BASES \
 # above -- see T-1010's Done report"
 # frob:tests \
-# tests/test_gates.py::TestKnownGateRuleIds.test_scan_finds_a_synthetic_rule_id
+# tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_scan_finds_a_synthetic_rule_\
+# id
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_commented_out_rule_literal_is_skipped  # noqa: E501
 # frob:ticket T-1660
 def _scan_file_for_rule_literals(
@@ -324,7 +325,8 @@ def scan_emitted_rule_ids(repo_root: Path) -> dict[str, str]:
 
 # frob:waive COV001 reason="same doc-anchor scope-closure tension as SCANNED_BASES \
 # above -- see T-1010's Done report"
-# frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_retired_id_stays_excluded
+# frob:tests \
+# tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_retired_id_stays_excluded
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestGeneratedGateRuleIdsRetiredOverride.test_default_retired_set_is_module_constant  # noqa: E501
 def generated_gate_rule_ids(
     repo_root: Path, retired: frozenset[str] | None = None

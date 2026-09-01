@@ -16,8 +16,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestPairLevelIntegration::test_test007_fires_on_uncovered_boundary
-- tests/test_gates.py::TestPairLevelIntegration::test_test007_passes_when_boundary_tested
+- tests/gates_suite/test_test_gate.py::TestPairLevelIntegration::test_test007_fires_on_uncovered_boundary
+- tests/gates_suite/test_test_gate.py::TestPairLevelIntegration::test_test007_passes_when_boundary_tested
 designated_repro_test: null
 threat: null
 component: null

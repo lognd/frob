@@ -98,7 +98,7 @@ scope_changes:
   actor: logan
   at: '2026-08-27'
 evidence:
-- tests/test_gates.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
+- tests/gates_suite/test_sys.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
 designated_repro_test: null
 threat: null
 component: null
@@ -107,7 +107,7 @@ anchor_reason: null
 land_commit: 55fbe60c2c2bfb2946d6d36828d9a185e989ce47
 ---
 ## Description
-tests/test_gates.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
+tests/gates_suite/test_sys.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
 fails: the checked-in `_KNOWN_RULE_FIXABILITY` literal (production file
 under src/frob/gates/, out of T-3140's declared scope) is missing
 `{'SYS100': 'auto'}` that a fresh scan now reports. A new rule SYS100 was

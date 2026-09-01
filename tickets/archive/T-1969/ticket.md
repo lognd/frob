@@ -26,7 +26,7 @@ no_scope_declared_reason: null
 evidence:
 - tests/test_check_runner.py::TestClaudeConfigDriftStage::test_reports_drift_when_home_claude_present_but_file_differs
 - tests/test_check_runner.py::TestClaudeConfigDriftStage::test_clean_when_in_sync
-- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_returns_known_rule_id
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/test_check_runner.py::TestClaudeConfigDriftStage::test_reports_drift_when_managed_copy_absent

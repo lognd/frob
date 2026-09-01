@@ -74,7 +74,7 @@ def _blank_non_newlines(match: re.Match[str]) -> str:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:tests tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse.test_id_inside_fenced_code_block_is_not_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_code_spanned_filed_claim_does_not_fire  # noqa: E501
+# frob:tests tests/gates_suite/test_tick.py::TestTick006PhantomFiling.test_code_spanned_filed_claim_does_not_fire  # noqa: E501
 def strip_code_spans(text: str) -> str:
     """Blank out fenced code blocks and inline `` `code` `` spans so a
     prose scanner never mistakes a code EXAMPLE (a literal ticket id, a

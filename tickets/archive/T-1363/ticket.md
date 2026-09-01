@@ -47,8 +47,8 @@ scope_changes:
 evidence:
 - tests/test_coverage.py::TestNativeCoverageRefreshAbort::test_watchdog_abort_skips_xml_and_stamp_and_records_provenance
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
-- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_refuses_downward_ratchet
-- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_allow_decrease_overrides_ratchet
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_refuses_downward_ratchet
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_allow_decrease_overrides_ratchet
 designated_repro_test: null
 acceptance:
 - text: given a coverage run that exits nonzero, when it finishes, then the previous
@@ -59,8 +59,8 @@ acceptance:
 - text: given a failed or partial run, when it finishes, then frob-coverage.lock.json
     is not rewritten downward
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_refuses_downward_ratchet
-  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_allow_decrease_overrides_ratchet
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_refuses_downward_ratchet
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_allow_decrease_overrides_ratchet
 - text: given only a partial stamp exists, when a coverage-derived gate runs, then
     findings are disclosed as computed from partial data rather than reported as current
     fact
@@ -211,8 +211,8 @@ touching; each addition's reason is recorded in the scope-change log.
 ### Evidence
 - `tests/unit/test_makefile_coverage.py::TestFailedRunNeverPromotesPartialData::test_failed_run_leaves_coverage_xml_and_stamp_untouched` (pytest node id, verified passing when recorded)
 - `tests/unit/test_makefile_coverage.py::TestFailedRunNeverPromotesPartialData::test_successful_run_still_promotes_coverage_xml` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_refuses_downward_ratchet` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_allow_decrease_overrides_ratchet` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_refuses_downward_ratchet` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_allow_decrease_overrides_ratchet` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

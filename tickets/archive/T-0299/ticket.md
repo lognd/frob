@@ -30,7 +30,7 @@ evidence:
 - tests/test_dup_smart.py::TestFindClones::test_core_unavailable_is_honest_err_not_silent_downgrade
 - tests/test_dup_region.py::TestRegionKernelFindsPartialClone::test_enabled_finds_shared_region_between_otherwise_different_functions
 - tests/test_dup_rungs.py::TestR4NearMiss::test_fires_on_gapped_clone
-- tests/test_gates.py::TestActiveTicket::test_branch_regex_match
+- tests/gates_suite/test_prework.py::TestActiveTicket::test_branch_regex_match
 - tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
 - tests/test_stats.py::test_collect_combines_both
 - tests/test_perf.py::test_heat_joins_pstats_rows_onto_symbol_spans

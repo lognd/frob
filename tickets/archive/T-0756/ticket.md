@@ -83,9 +83,9 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_suppressed_on_design_load_error
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_suppressed_on_design_load_error
 - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_detects_freshly_added_rule_id
 - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_no_new_rules_is_empty
 - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_unresolvable_base_ref_degrades_to_none
@@ -103,9 +103,9 @@ acceptance:
     errors naming the new self-audit gap; GIVEN a ticket adding a gate rule id with
     no before-fails/after-passes fixture in its evidence THEN close is blocked
   evidence:
-  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation
-  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
-  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_suppressed_on_design_load_error
+  - tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation
+  - tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+  - tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_suppressed_on_design_load_error
   - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_detects_freshly_added_rule_id
   - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_no_new_rules_is_empty
   - tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds::test_unresolvable_base_ref_degrades_to_none

@@ -57,14 +57,14 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_gates.py::TestCoverageLoad::test_stamp_not_stale_when_files_unchanged
-- tests/test_gates.py::TestCoverageLoad::test_stamp_stale_when_file_changes
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_not_stale_when_files_unchanged
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_stale_when_file_changes
 designated_repro_test: null
 acceptance:
 - text: GIVEN a CI run WHEN the coverage stamp or delta baseline is absent, stale
     or tampered THEN the build fails rather than silently degrading to a pass
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_stamp_stale_when_file_changes
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_stale_when_file_changes
 threat: repudiation
 component: null
 ---

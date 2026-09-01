@@ -21,10 +21,10 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_dead_branch_is_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_local_var_dead_branch_is_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_live_branch_is_not_flagged_by_constant_fold
-- tests/test_gates.py::TestDeadSymbolGate::test_dead_caller_two_hops_deep_still_misses_confirming_open_defect
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_in_constant_folded_dead_branch_is_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_in_constant_folded_local_var_dead_branch_is_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_in_live_branch_is_not_flagged_by_constant_fold
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_dead_caller_two_hops_deep_still_misses_confirming_open_defect
 designated_repro_test: null
 threat: null
 component: null

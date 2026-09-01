@@ -41,8 +41,8 @@ body_changes:
   old_length: 1279
   new_length: 1938
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov001_passes_when_documented
-- tests/test_gates.py::TestCoverageGate::test_cov003_passes_when_evidence_collected
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov001_passes_when_documented
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_passes_when_evidence_collected
 - tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_declared_entrypoint_is_exempt
 - tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_same_file_undeclared_still_fires
 - tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_library_module_still_fires_when_another_file_is_declared

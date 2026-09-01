@@ -58,11 +58,11 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
-- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
-- tests/test_gates.py::TestInv003Gate::test_marker_naming_unknown_invariant_still_warns
-- tests/test_gates.py::TestInv003Gate::test_no_exclusivity_language_is_silent
-- tests/test_gates.py::TestInv003Gate::test_missing_docs_dir_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_marker_naming_unknown_invariant_still_warns
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_no_exclusivity_language_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_missing_docs_dir_is_silent
 designated_repro_test: null
 threat: null
 component: null

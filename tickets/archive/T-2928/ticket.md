@@ -61,8 +61,8 @@ scope_changes:
   actor: logan
   at: '2026-08-25'
 evidence:
-- tests/test_gates.py::TestWire001DiffScopingMissesPreExistingDeadSymbols::test_pre_existing_dead_symbol_untouched_by_this_diff_is_not_flagged
-- tests/test_gates.py::TestWire001DiffScopingMissesPreExistingDeadSymbols::test_the_same_dead_symbol_newly_added_by_this_diff_is_flagged
+- tests/gates_suite/test_wire.py::TestWire001DiffScopingMissesPreExistingDeadSymbols::test_pre_existing_dead_symbol_untouched_by_this_diff_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWire001DiffScopingMissesPreExistingDeadSymbols::test_the_same_dead_symbol_newly_added_by_this_diff_is_flagged
 - tests/unit/gates/test_refs.py::TestRef002FileGranularityMissesDeadSymbols::test_dead_private_symbol_in_a_well_referenced_file_is_not_flagged
 - tests/unit/gates/test_refs.py::TestRef002FileGranularityMissesDeadSymbols::test_file_containing_only_the_dead_symbol_still_fires_ref001
 designated_repro_test: null

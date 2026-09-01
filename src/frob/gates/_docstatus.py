@@ -227,9 +227,9 @@ def _doc009_check_doc(root: Path, doc_rel: str) -> Violation | None:
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-3348
 # frob:ticket T-2843
-# frob:tests tests/test_gates.py::TestDocstatusGate.test_missing_status_header_fires_doc009  # noqa: E501
-# frob:tests tests/test_gates.py::TestDocstatusGate.test_dated_status_header_passes  # noqa: E501
-# frob:tests tests/test_gates.py::TestDocstatusGate.test_unresolvable_ticket_mention_fires_doc011  # noqa: E501
+# frob:tests tests/gates_suite/test_doc.py::TestDocstatusGate.test_missing_status_header_fires_doc009  # noqa: E501
+# frob:tests tests/gates_suite/test_doc.py::TestDocstatusGate.test_dated_status_header_passes  # noqa: E501
+# frob:tests tests/gates_suite/test_doc.py::TestDocstatusGate.test_unresolvable_ticket_mention_fires_doc011  # noqa: E501
 def docstatus_gate(root: Path) -> tuple[Violation, ...]:
     """DOC009: every `docs/audits/*.md` file needs a dated status (or
     superseded-by) header -- an audit is a point-in-time snapshot, and
@@ -387,9 +387,9 @@ def _doc010_scan_doc(
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-2843
-# frob:tests tests/test_gates.py::TestDocmakeGate.test_bogus_make_target_fires_doc010  # noqa: E501
-# frob:tests tests/test_gates.py::TestDocmakeGate.test_real_make_target_passes  # noqa: E501
-# frob:tests tests/test_gates.py::TestDocmakeGate.test_no_makefile_is_a_noop  # noqa: E501
+# frob:tests tests/gates_suite/test_doc.py::TestDocmakeGate.test_bogus_make_target_fires_doc010  # noqa: E501
+# frob:tests tests/gates_suite/test_doc.py::TestDocmakeGate.test_real_make_target_passes  # noqa: E501
+# frob:tests tests/gates_suite/test_doc.py::TestDocmakeGate.test_no_makefile_is_a_noop  # noqa: E501
 def docmake_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC010: every `` `make <target>` `` citation in an obligated doc must
     name a real Makefile recipe -- the Makefile has no graph node of its
@@ -524,10 +524,10 @@ def _severity_table_violations(
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/test_gates.py::TestDocseverityGate.test_mismatched_severity_row_fires_doc013  # noqa: E501
-# frob:tests tests/test_gates.py::TestDocseverityGate.test_matching_severity_row_passes  # noqa: E501
-# frob:tests tests/test_gates.py::TestDocseverityGate.test_no_override_is_a_noop  # noqa: E501
-# frob:tests tests/test_gates.py::TestDocseverityGate.test_ambiguous_doc_word_is_never_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_doc.py::TestDocseverityGate.test_mismatched_severity_row_fires_doc013  # noqa: E501
+# frob:tests tests/gates_suite/test_doc.py::TestDocseverityGate.test_matching_severity_row_passes  # noqa: E501
+# frob:tests tests/gates_suite/test_doc.py::TestDocseverityGate.test_no_override_is_a_noop  # noqa: E501
+# frob:tests tests/gates_suite/test_doc.py::TestDocseverityGate.test_ambiguous_doc_word_is_never_flagged  # noqa: E501
 # frob:ticket T-2843
 def docseverity_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC013 (gate-gap class 4, T-2080): a markdown severity-table row's

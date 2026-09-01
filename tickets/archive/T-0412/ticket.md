@@ -134,15 +134,15 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestDebtGate::test_debt001_malformed_directive_is_reported
-- tests/test_gates.py::TestDebtGate::test_debt002_closed_ticket_is_reported
-- tests/test_gates.py::TestDebtGate::test_debt002_open_ticket_is_silent
-- tests/test_gates.py::TestDebtGate::test_debt003_expired_by_date_is_reported
-- tests/test_gates.py::TestDebtGate::test_debt003_not_yet_expired_is_silent
-- tests/test_gates.py::TestDebtGate::test_debt003_expired_by_version_is_reported
-- tests/test_gates.py::TestDebtGate::test_clean_debt_produces_no_violations
-- tests/test_gates.py::TestDebtGate::test_lists_every_debt_entry
-- tests/test_gates.py::TestDebtGate::test_release_gate_fails_while_debt_is_open
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt001_malformed_directive_is_reported
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt002_closed_ticket_is_reported
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt002_open_ticket_is_silent
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt003_expired_by_date_is_reported
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt003_not_yet_expired_is_silent
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt003_expired_by_version_is_reported
+- tests/gates_suite/test_debt.py::TestDebtGate::test_clean_debt_produces_no_violations
+- tests/gates_suite/test_debt.py::TestDebtGate::test_lists_every_debt_entry
+- tests/gates_suite/test_debt.py::TestDebtGate::test_release_gate_fails_while_debt_is_open
 - tests/test_debt_runner.py::TestDebtRunner::test_json_mode_lists_debt_entries
 - tests/test_debt_runner.py::TestDebtRunner::test_no_debt_logs_clean_message
 - tests/test_debt_runner.py::TestDebtRunner::test_human_mode_reports_expired_flag

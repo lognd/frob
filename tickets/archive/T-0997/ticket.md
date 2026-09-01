@@ -18,14 +18,14 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_lock_excludes_graph_excluded_modules
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_lock_excludes_graph_excluded_modules
 designated_repro_test: null
 acceptance:
 - text: given a fresh make coverage + re-stamp, when frob check runs, then TEST011
     deflation and TEST012 j2-divergence findings are gone and join fraction reflects
     subprocess coverage
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_lock_excludes_graph_excluded_modules
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_lock_excludes_graph_excluded_modules
 threat: null
 component: null
 ---

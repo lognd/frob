@@ -36,32 +36,32 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
-- tests/test_gates.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op
-- tests/test_gates.py::TestFixEngineTierA::test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean
-- tests/test_gates.py::TestFixEngineTierA::test_doc002_ambiguous_candidates_stay_unfixed
-- tests/test_gates.py::TestFixEngineTierA::test_doc002_zero_candidates_stay_unfixed
-- tests/test_gates.py::TestFixEngineTierA::test_tick002_renumbers_draft_and_reverifies_clean
-- tests/test_gates.py::TestFixEngineTierA::test_tick002_off_default_branch_is_a_no_op
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc002_ambiguous_candidates_stay_unfixed
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc002_zero_candidates_stay_unfixed
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick002_renumbers_draft_and_reverifies_clean
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick002_off_default_branch_is_a_no_op
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN a frob:tests edge in pytest :: form WHEN --fix runs THEN it is rewritten
     to the dotted Class.method form and DRIFT002/DOC007 re-verify clean'
   evidence:
-  - tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
-  - tests/test_gates.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op
 - text: GIVEN a frob:doc/frob:tests anchor whose slug mismatches but fuzzy-matches
     exactly one real heading slug in the target doc THEN --fix rewrites it to that
     slug; zero or multiple candidates stay unfixed with an assisted fix-it
   evidence:
-  - tests/test_gates.py::TestFixEngineTierA::test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean
-  - tests/test_gates.py::TestFixEngineTierA::test_doc002_ambiguous_candidates_stay_unfixed
-  - tests/test_gates.py::TestFixEngineTierA::test_doc002_zero_candidates_stay_unfixed
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc002_ambiguous_candidates_stay_unfixed
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc002_zero_candidates_stay_unfixed
 - text: GIVEN a TICK002 draft-survived-onto-main finding THEN --fix performs the renumber
     it already prescribes, including prose-reference rewrite once T-1125 lands
   evidence:
-  - tests/test_gates.py::TestFixEngineTierA::test_tick002_renumbers_draft_and_reverifies_clean
-  - tests/test_gates.py::TestFixEngineTierA::test_tick002_off_default_branch_is_a_no_op
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick002_renumbers_draft_and_reverifies_clean
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick002_off_default_branch_is_a_no_op
 threat: null
 component: null
 ---

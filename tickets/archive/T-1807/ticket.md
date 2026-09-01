@@ -25,7 +25,7 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_gates.py::TestWireGate::test_new_function_reached_via_module_qualified_dict_table_value_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_function_reached_via_module_qualified_dict_table_value_is_not_flagged
 designated_repro_test: null
 threat: null
 component: null
@@ -91,7 +91,7 @@ with the waiver removed.
 ```
 
 ### Evidence
-- `tests/test_gates.py::TestWireGate::test_new_function_reached_via_module_qualified_dict_table_value_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_wire.py::TestWireGate::test_new_function_reached_via_module_qualified_dict_table_value_is_not_flagged` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

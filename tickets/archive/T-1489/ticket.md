@@ -33,9 +33,9 @@ scope_changes:
   actor: logan
   at: '2026-08-03'
 evidence:
-- tests/test_gates.py::TestTestGate::test_test017_fires_on_low_join_fraction
-- tests/test_gates.py::TestTestGate::test_test011_fires_on_stale_mtime
-- tests/test_gates.py::TestTestGate::test_test011_silent_when_fresh_and_fully_joined
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test017_fires_on_low_join_fraction
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test011_fires_on_stale_mtime
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test011_silent_when_fresh_and_fully_joined
 designated_repro_test: null
 threat: null
 component: null

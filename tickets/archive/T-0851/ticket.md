@@ -33,11 +33,11 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_gates.py::TestFmt001Gate::test_directive_run_over_limit_flagged
-- tests/test_gates.py::TestFmt001Gate::test_ordinary_long_comment_not_flagged
-- tests/test_gates.py::TestFmt001Gate::test_long_code_line_not_flagged
-- tests/test_gates.py::TestFmt001Gate::test_untouched_line_not_flagged
-- tests/test_gates.py::TestFmt001Gate::test_short_directive_not_flagged
+- tests/gates_suite/test_waive.py::TestFmt001Gate::test_directive_run_over_limit_flagged
+- tests/gates_suite/test_waive.py::TestFmt001Gate::test_ordinary_long_comment_not_flagged
+- tests/gates_suite/test_waive.py::TestFmt001Gate::test_long_code_line_not_flagged
+- tests/gates_suite/test_waive.py::TestFmt001Gate::test_untouched_line_not_flagged
+- tests/gates_suite/test_waive.py::TestFmt001Gate::test_short_directive_not_flagged
 designated_repro_test: null
 threat: null
 component: null

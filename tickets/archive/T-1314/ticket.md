@@ -19,9 +19,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_suppressed_on_design_load_error
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_compliance_suppressed_on_design_load_error
 designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with a design/ directory WHEN frob check runs THEN evaluate_compliance
@@ -30,13 +30,13 @@ acceptance:
     node and no privacy-policy mitigation FAILS frob check -- not only the manual
     frob sys audit
   evidence:
-  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
+  - tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
 - text: GIVEN the folding lands THEN the green-check-red-audit divergence class is
     regression-tested (a model that fails sys audit compliance must fail frob check)
     and the tier (WARN vs ERROR) is decided and documented
   evidence:
-  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
-  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_suppressed_on_design_load_error
+  - tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
+  - tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_compliance_suppressed_on_design_load_error
 threat: null
 component: null
 ---

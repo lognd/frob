@@ -182,12 +182,12 @@ def _scan_one_python_file(
 # frob:tests tests/test_pii_structural_gate.py::TestEnvAccess.test_os_getenv_fires
 # frob:tests tests/test_pii_structural_gate.py::TestSelfMatchExclusion.test_own_file_not_scanned  # noqa: E501
 # frob:tests tests/test_pii_structural_gate.py::TestGateIsGreenOnItself.test_own_module_source_produces_no_self_finding  # noqa: E501
-# frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_interface_email_field_fires  # noqa: E501
-# frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_struct_ssn_field_fires  # noqa: E501
-# frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_process_env_fires  # noqa: E501
-# frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_env_var_fires  # noqa: E501
-# frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_unparseable_python_file_fires_parse001  # noqa: E501
-# frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_unparseable_file_under_graph_exclude_is_silent  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_ts_interface_email_field_fires  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_rust_struct_ssn_field_fires  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_ts_process_env_fires  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_rust_env_var_fires  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_unparseable_python_file_fires_parse001  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage.test_unparseable_file_under_graph_exclude_is_silent  # noqa: E501
 # frob:ticket T-0897
 # frob:enforces SEC-PII-PII-GDPR_SPECIAL_CATEGORIES
 # frob:enforces SEC-PII-PII-CCPA_CATEGORIES

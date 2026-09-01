@@ -151,11 +151,11 @@ def _sys004_native_hint(root: Path) -> str:
     )
 
 
-# frob:tests tests/test_gates.py::TestSysGate.test_sys004_load_failure
-# frob:tests tests/test_gates.py::TestSysGate.test_sys004_suppresses_sys001
-# frob:tests tests/test_gates.py::TestSysGate.test_sys004_names_stale_native_as_likely_remedy  # noqa: E501
-# frob:tests tests/test_gates.py::TestSysGate.test_sys004_names_missing_native_hint_when_genuinely_absent  # noqa: E501
-# frob:tests tests/test_gates.py::TestSysGate.test_sys004_names_real_exception_when_strata_core_fails_differently  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_sys004_load_failure
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_sys004_suppresses_sys001
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_sys004_names_stale_native_as_likely_remedy  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_sys004_names_missing_native_hint_when_genuinely_absent  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_sys004_names_real_exception_when_strata_core_fails_differently  # noqa: E501
 # frob:enforces CHK-GATE-SYS004
 def _sys004(design_ids, root: Path) -> list[Violation]:
     """SYS004: a `.strata` design file itself failed to parse/elaborate.
@@ -476,18 +476,20 @@ def _doc003(root: Path, design_ids) -> list[Violation]:  # noqa: ANN001
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0080
 # frob:ticket T-0085
-# frob:tests tests/test_gates.py::TestSysGate.test_noop_no_design_dir
-# frob:tests tests/test_gates.py::TestSysGate.test_sys001_dangling
-# frob:tests tests/test_gates.py::TestSysGate.test_sys001_valid
-# frob:tests tests/test_gates.py::TestSysGate.test_sys002_unbound
-# frob:tests tests/test_gates.py::TestSysGate.test_sys002_bound
-# frob:tests tests/test_gates.py::TestSysGate.test_sys003_import
-# frob:tests tests/test_gates.py::TestSysGate.test_sys004_load_failure
-# frob:tests tests/test_gates.py::TestSysGate.test_sys004_suppresses_sys001
-# frob:tests tests/test_gates.py::TestSysGate.test_doc003_proved_claim_passes
-# frob:tests tests/test_gates.py::TestSysGate.test_doc003_refutes_names_obligations
-# frob:tests tests/test_gates.py::TestSysGate.test_doc003_unclaimed_view_ignored
-# frob:tests tests/test_gates.py::TestSysGate.test_doc003_unknown_view
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_noop_no_design_dir
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_sys001_dangling
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_sys001_valid
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_sys002_unbound
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_sys002_bound
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_sys003_import
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_sys004_load_failure
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_sys004_suppresses_sys001
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_doc003_proved_claim_passes
+# frob:tests \
+# tests/gates_suite/test_sys.py::TestSysGate.test_doc003_refutes_names_obligations
+# frob:tests \
+# tests/gates_suite/test_sys.py::TestSysGate.test_doc003_unclaimed_view_ignored
+# frob:tests tests/gates_suite/test_sys.py::TestSysGate.test_doc003_unknown_view
 # sys_gate is opt-in via a `design/` (or `[strata].design_dir`) directory of
 # `.strata` files existing, same posture as `decisions_gate`: a repo not yet
 # using strata sees nothing. The `frob.strata` import is deferred until
@@ -561,11 +563,11 @@ def _log_sys_gate_summary(design_ids, violations: tuple[Violation, ...]) -> None
 
 # frob:ticket T-3324
 # frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
-# frob:tests tests/test_gates.py::TestSelfauditFindingsTouching.test_no_design_dir_returns_empty  # noqa: E501
-# frob:tests tests/test_gates.py::TestSelfauditFindingsTouching.test_finding_in_touched_file_is_returned  # noqa: E501
-# frob:tests tests/test_gates.py::TestSelfauditFindingsTouching.test_finding_in_untouched_file_is_filtered_out  # noqa: E501
-# frob:tests tests/test_gates.py::TestSelfauditFindingsTouching.test_clean_model_returns_empty  # noqa: E501
-# frob:tests tests/test_gates.py::TestSelfauditFindingsTouching.test_substring_filter_is_exact_regardless_of_native_availability  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestSelfauditFindingsTouching.test_no_design_dir_returns_empty  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestSelfauditFindingsTouching.test_finding_in_touched_file_is_returned  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestSelfauditFindingsTouching.test_finding_in_untouched_file_is_filtered_out  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestSelfauditFindingsTouching.test_clean_model_returns_empty  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestSelfauditFindingsTouching.test_substring_filter_is_exact_regardless_of_native_availability  # noqa: E501
 def selfaudit_findings_touching(
     root: Path, files: frozenset[str]
 ) -> tuple[Violation, ...]:
@@ -610,9 +612,9 @@ def selfaudit_findings_touching(
 
 # frob:ticket T-3575
 # frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
-# frob:tests tests/test_gates.py::TestSys111FindingsTouching.test_no_design_dir_returns_empty  # noqa: E501
-# frob:tests tests/test_gates.py::TestSys111FindingsTouching.test_ratchet_trip_in_declaring_file_is_returned  # noqa: E501
-# frob:tests tests/test_gates.py::TestSys111FindingsTouching.test_ratchet_trip_in_untouched_file_is_filtered_out  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestSys111FindingsTouching.test_no_design_dir_returns_empty  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestSys111FindingsTouching.test_ratchet_trip_in_declaring_file_is_returned  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestSys111FindingsTouching.test_ratchet_trip_in_untouched_file_is_filtered_out  # noqa: E501
 def sys111_findings_touching(
     root: Path, files: frozenset[str]
 ) -> tuple[Violation, ...]:
@@ -709,9 +711,9 @@ def _node_declaring_files(
 
 # frob:ticket T-3575
 # frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
-# frob:tests tests/test_gates.py::TestDocptrFindingsTouching.test_finding_in_touched_doc_is_returned  # noqa: E501
-# frob:tests tests/test_gates.py::TestDocptrFindingsTouching.test_finding_naming_a_touched_target_is_returned  # noqa: E501
-# frob:tests tests/test_gates.py::TestDocptrFindingsTouching.test_finding_in_untouched_files_is_filtered_out  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestDocptrFindingsTouching.test_finding_in_touched_doc_is_returned  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestDocptrFindingsTouching.test_finding_naming_a_touched_target_is_returned  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestDocptrFindingsTouching.test_finding_in_untouched_files_is_filtered_out  # noqa: E501
 def docptr_findings_touching(
     root: Path, files: frozenset[str]
 ) -> tuple[Violation, ...]:

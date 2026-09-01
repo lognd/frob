@@ -28,8 +28,8 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_parametrized_evidence_with_dot_in_case_id
-- tests/test_gates.py::TestTestGate::test_test003_satisfied_by_parametrized_case_with_dot_in_case_id
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_passes_for_parametrized_evidence_with_dot_in_case_id
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test003_satisfied_by_parametrized_case_with_dot_in_case_id
 designated_repro_test: null
 threat: null
 component: null

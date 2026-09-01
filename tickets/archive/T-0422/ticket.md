@@ -74,11 +74,11 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_dunder_method_is_not_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_test_function_is_not_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_tests_edge_target_is_not_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_dunder_method_is_not_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_test_function_is_not_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_tests_edge_target_is_not_flagged
 - tests/test_graph.py::TestCallGraph::test_build_reference_graph_catches_dispatch_table_entry
 designated_repro_test: null
 threat: null

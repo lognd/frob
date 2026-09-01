@@ -32,8 +32,8 @@ evidence:
 - tests/test_testing.py::TestNativeFingerprint::test_fingerprint_changes_absent_to_built
 - tests/test_testing.py::TestNativeFingerprint::test_fingerprint_changes_on_rebuild
 - tests/test_testing.py::TestNativeFingerprint::test_single_file_extension_fingerprinted
-- tests/test_gates.py::TestCoverageGate::test_cov003_names_unbuilt_native_as_remedy
-- tests/test_gates.py::TestCoverageGate::test_cov003_honest_remedy_when_no_native_missing
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_names_unbuilt_native_as_remedy
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_honest_remedy_when_no_native_missing
 designated_repro_test: null
 acceptance:
 - text: given a repo whose test suite importorskip-gates on a native extension, when

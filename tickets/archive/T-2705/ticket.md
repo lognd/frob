@@ -33,10 +33,10 @@ scope_changes:
   actor: logan
   at: '2026-08-20'
 evidence:
-- tests/test_gates.py::TestDocmakeGate::test_nested_project_target_resolves_against_nested_makefile
-- tests/test_gates.py::TestDocmakeGate::test_nested_project_bogus_target_still_fires
-- tests/test_gates.py::TestDocmakeGate::test_root_level_doc_still_resolves_against_root_makefile
-- tests/test_gates.py::TestDocmakeGate::test_nested_doc_falls_back_to_root_target_when_absent_nested
+- tests/gates_suite/test_doc.py::TestDocmakeGate::test_nested_project_target_resolves_against_nested_makefile
+- tests/gates_suite/test_doc.py::TestDocmakeGate::test_nested_project_bogus_target_still_fires
+- tests/gates_suite/test_doc.py::TestDocmakeGate::test_root_level_doc_still_resolves_against_root_makefile
+- tests/gates_suite/test_doc.py::TestDocmakeGate::test_nested_doc_falls_back_to_root_target_when_absent_nested
 designated_repro_test: null
 threat: null
 component: null

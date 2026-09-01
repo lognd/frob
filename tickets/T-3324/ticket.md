@@ -42,11 +42,11 @@ scope_changes:
   actor: logan
   at: '2026-08-30'
 evidence:
-- tests/test_gates.py::TestSelfauditFindingsTouching::test_no_design_dir_returns_empty
-- tests/test_gates.py::TestSelfauditFindingsTouching::test_finding_in_touched_file_is_returned
-- tests/test_gates.py::TestSelfauditFindingsTouching::test_finding_in_untouched_file_is_filtered_out
-- tests/test_gates.py::TestSelfauditFindingsTouching::test_clean_model_returns_empty
-- tests/test_gates.py::TestSelfauditFindingsTouching::test_substring_filter_is_exact_regardless_of_native_availability
+- tests/gates_suite/test_sys.py::TestSelfauditFindingsTouching::test_no_design_dir_returns_empty
+- tests/gates_suite/test_sys.py::TestSelfauditFindingsTouching::test_finding_in_touched_file_is_returned
+- tests/gates_suite/test_sys.py::TestSelfauditFindingsTouching::test_finding_in_untouched_file_is_filtered_out
+- tests/gates_suite/test_sys.py::TestSelfauditFindingsTouching::test_clean_model_returns_empty
+- tests/gates_suite/test_sys.py::TestSelfauditFindingsTouching::test_substring_filter_is_exact_regardless_of_native_availability
 - tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_no_findings_is_a_noop
 - tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_findings_in_touched_files_refuses_and_unwinds
 - tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_finding_outside_touched_files_is_not_this_ticket_s_concern

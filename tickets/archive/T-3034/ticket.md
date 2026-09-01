@@ -144,9 +144,9 @@ evidence:
 - tests/system/test_cli_graph.py::TestAck::test_ack_then_drift_after_change
 - tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd::test_docs_kind_cmd_evidence_path_still_works
 - tests/test_dup_smart.py::TestFindClones::test_core_unavailable_is_honest_err_not_silent_downgrade
-- tests/test_gates.py::TestAutofixManifest::test_killed_mid_handler_leaves_manifest_naming_completed_fixes
-- tests/test_gates.py::TestOptInGates::test_perf_gate_still_reports_genuine_parse_failure
-- tests/test_gates.py::TestFixEngineTierABatch2::test_docenum001_fails_before_fix_and_passes_after
+- tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_killed_mid_handler_leaves_manifest_naming_completed_fixes
+- tests/gates_suite/test_run.py::TestOptInGates::test_perf_gate_still_reports_genuine_parse_failure
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_docenum001_fails_before_fix_and_passes_after
 - tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_chronically_over_broad_glob_warns
 - tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_in_progress_over_broad_glob_still_warns
 - tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_refuses_over_broad_scope
@@ -185,13 +185,13 @@ suffixes are truncated pytest -q summary text, not part of the node id:
   tests/test_app_daemon_proxy.py::TestDifferentialParity::test_check_delta_gates_only_json_daemon_matches_in_process
   tests/test_clean.py::test_makefile_coverage_recipe_never_escalates_clean_tier
   tests/test_dup_smart.py::TestFindClones::test_core_unavailable_is_honest_err_not_silent_downgrade
-  tests/test_gates.py::TestAutofixManifest::test_killed_mid_handler_leaves_manifest_naming_completed_fixes
-  tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_unanchored_warns_unbound
-  tests/test_gates.py::TestFixEngineTierA::test_excluded_handler_is_skipped_and_file_untouched
-  tests/test_gates.py::TestFixEngineTierABatch2::test_docenum001_fails_before_fix_and_passes_after
-  tests/test_gates.py::TestOptInGates::test_perf_gate_still_reports_genuine_parse_failure
-  tests/test_gates.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
-  tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
+  tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_killed_mid_handler_leaves_manifest_naming_completed_fixes
+  tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_unanchored_warns_unbound
+  tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_excluded_handler_is_skipped_and_file_untouched
+  tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_docenum001_fails_before_fix_and_passes_after
+  tests/gates_suite/test_run.py::TestOptInGates::test_perf_gate_still_reports_genuine_parse_failure
+  tests/gates_suite/test_sys.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
+  tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
   tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_chronically_over_broad_glob_warns
   tests/test_gates_tick009_tick010.py::TestTick009ScopeBreadthNudges::test_in_progress_over_broad_glob_still_warns
   tests/test_makefile_lock_sync.py::test_upload_commits_uv_lock_with_pyproject

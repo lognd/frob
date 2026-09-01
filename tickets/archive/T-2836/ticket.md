@@ -58,13 +58,13 @@ body_changes:
   old_length: 858
   new_length: 1104
 evidence:
-- tests/test_gates.py::TestDoc012CommandSectionGate::test_documented_subcommand_passes
+- tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate::test_documented_subcommand_passes
 designated_repro_test: null
 acceptance:
 - text: given CHK-GATE-DOC012, when frob check --json runs, then it no longer appears
     as a REG008 finding
   evidence:
-  - tests/test_gates.py::TestDoc012CommandSectionGate::test_documented_subcommand_passes
+  - tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate::test_documented_subcommand_passes
 threat: null
 component: null
 anchor: false

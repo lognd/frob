@@ -29,17 +29,17 @@ scope_changes:
   actor: logan
   at: '2026-08-01'
 evidence:
-- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_an_audit_entry
-- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_audit_log_appends_across_calls
-- tests/test_gates.py::TestCoverageLoad::test_load_lock_audit_log_missing_file_returns_empty
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_records_an_audit_entry
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_audit_log_appends_across_calls
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_load_lock_audit_log_missing_file_returns_empty
 designated_repro_test: null
 acceptance:
 - text: GIVEN a session WHEN frob-coverage.lock.json changes THEN the write is attributable
     to an explicit stamp_coverage call that succeeded
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_an_audit_entry
-  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_audit_log_appends_across_calls
-  - tests/test_gates.py::TestCoverageLoad::test_load_lock_audit_log_missing_file_returns_empty
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_records_an_audit_entry
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_audit_log_appends_across_calls
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_load_lock_audit_log_missing_file_returns_empty
 threat: null
 component: null
 ---

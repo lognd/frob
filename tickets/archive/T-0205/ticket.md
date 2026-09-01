@@ -18,7 +18,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_testing.py::TestSelect::test_direct_hit
-- tests/test_gates.py::TestCoverageGate::test_waive002_honors_loaded_policy_rule_ids
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_waive002_honors_loaded_policy_rule_ids
 designated_repro_test: null
 threat: null
 component: null

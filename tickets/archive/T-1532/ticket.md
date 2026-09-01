@@ -15,8 +15,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestWireGate::test_new_function_passed_bare_to_process_job_constructor_is_not_flagged
-- tests/test_gates.py::TestWireGate::test_new_function_never_passed_to_a_job_constructor_is_still_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_function_passed_bare_to_process_job_constructor_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_function_never_passed_to_a_job_constructor_is_still_flagged
 designated_repro_test: null
 threat: null
 component: null

@@ -23,8 +23,8 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_gates.py::TestDocseverityGate::test_mismatched_severity_row_fires_doc013
-- tests/test_gates.py::TestDocseverityGate::test_matching_severity_row_passes
+- tests/gates_suite/test_doc.py::TestDocseverityGate::test_mismatched_severity_row_fires_doc013
+- tests/gates_suite/test_doc.py::TestDocseverityGate::test_matching_severity_row_passes
 designated_repro_test: null
 threat: null
 component: null

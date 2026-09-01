@@ -41,19 +41,19 @@ python -m pytest tests/test_gates.py -q` in that worktree fails 12 MORE
 tests than the unset baseline (18 vs 6), all Err(WorktreeLeaseViolation)
 against the test's own tmp_path repo, e.g.:
 
-  tests/test_gates.py::TestDebtGate::test_rel001_not_land_owned_root_checkout_no_ticket
-  tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket
-  tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease
-  tests/test_gates.py::TestFixEngineTierA::test_tick002_renumbers_draft_and_reverifies_clean
-  tests/test_gates.py::TestFixEngineTierA::test_tick006_refiles_and_rewrites_citation
-  tests/test_gates.py::TestFixEngineTierA::test_tick006_genuinely_nonexistent_id_still_fires_with_merge_target
-  tests/test_gates.py::TestFixEngineTierA::test_tick006_ticket_id_scopes_to_landing_ticket_only
-  tests/test_gates.py::TestFixEngineTierA::test_tick006_genuinely_lost_draft_still_caught_no_rename_no_duplicate
-  tests/test_gates.py::TestFixEngineTierA::test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket
-  tests/test_gates.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover
-  tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket
-  tests/test_gates.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
-  tests/test_gates.py::TestCov002StrataModuleCoverage::test_module_level_ticket_edge_covers_nested_declaration
+  tests/gates_suite/test_debt.py::TestDebtGate::test_rel001_not_land_owned_root_checkout_no_ticket
+  tests/gates_suite/test_debt.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket
+  tests/gates_suite/test_debt.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease
+  tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick002_renumbers_draft_and_reverifies_clean
+  tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_refiles_and_rewrites_citation
+  tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_genuinely_nonexistent_id_still_fires_with_merge_target
+  tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_ticket_id_scopes_to_landing_ticket_only
+  tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_genuinely_lost_draft_still_caught_no_rename_no_duplicate
+  tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket
+  tests/gates_suite/test_coverage.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover
+  tests/gates_suite/test_coverage.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket
+  tests/gates_suite/test_coverage.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
+  tests/gates_suite/test_coverage.py::TestCov002StrataModuleCoverage::test_module_level_ticket_edge_covers_nested_declaration
 
 Captured log line for the first case:
   ERROR frob.tickets._worktree_guard: worktree-guard: agent leased to

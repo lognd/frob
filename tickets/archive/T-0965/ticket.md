@@ -15,9 +15,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov002_scope_grace_covers_ticket_created_and_closed_in_same_diff
-- tests/test_gates.py::TestCoverageGate::test_cov002_scope_grace_without_same_diff_close_still_fires
-- tests/test_gates.py::TestCoverageGate::test_open_scopes_grace_requires_both_root_and_diff
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov002_scope_grace_covers_ticket_created_and_closed_in_same_diff
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov002_scope_grace_without_same_diff_close_still_fires
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_open_scopes_grace_requires_both_root_and_diff
 designated_repro_test: null
 threat: null
 component: null

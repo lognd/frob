@@ -45,7 +45,7 @@ evidence:
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
 designated_repro_test: null
 evidence_changes:
-- old_node: tests/test_gates.py::TestFixEngineTierA::test_sys104_interface_union_applies_via_apply_tier_a_fixes
+- old_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys104_interface_union_applies_via_apply_tier_a_fixes
   new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
   reason: 'T-1870 deleted SYS104 (interface conformance) and its writer (frob sys
     sync-interface) in their entirety, per an explicit owner directive that no code
@@ -59,7 +59,7 @@ evidence_changes:
     '
   actor: logan
   at: '2026-08-08'
-- old_node: tests/test_gates.py::TestFixEngineTierA::test_sys104_no_design_dir_is_a_no_op
+- old_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys104_no_design_dir_is_a_no_op
   new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
   reason: 'T-1870 deleted SYS104 (interface conformance) and its writer (frob sys
     sync-interface) in their entirety, per an explicit owner directive that no code
@@ -73,7 +73,7 @@ evidence_changes:
     '
   actor: logan
   at: '2026-08-08'
-- old_node: tests/test_gates.py::TestFixEngineTierA::test_sys100_may_via_union_applies_via_apply_tier_a_fixes
+- old_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys100_may_via_union_applies_via_apply_tier_a_fixes
   new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
   reason: 'T-2922 deleted fix_sys100_may_via_union/fix_sys100_extended_whole_node_grant
 
@@ -102,7 +102,7 @@ evidence_changes:
     '
   actor: logan
   at: '2026-08-25'
-- old_node: tests/test_gates.py::TestFixEngineTierA::test_sys100_no_design_dir_is_a_no_op
+- old_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys100_no_design_dir_is_a_no_op
   new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
   reason: 'T-2922 deleted fix_sys100_may_via_union/fix_sys100_extended_whole_node_grant
 

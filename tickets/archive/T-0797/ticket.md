@@ -52,8 +52,8 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_gates.py::TestDeprecatedGate::test_deprecated_is_registered_in_all_gates
-- tests/test_gates.py::TestDeprecatedGate::test_deprecated_fires_through_real_gate_dispatch
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_deprecated_is_registered_in_all_gates
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_deprecated_fires_through_real_gate_dispatch
 - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
 designated_repro_test: null
 acceptance:
@@ -62,8 +62,8 @@ acceptance:
     in gate output; frob check --only deprecated is accepted; a regression test locks
     the gate registration
   evidence:
-  - tests/test_gates.py::TestDeprecatedGate::test_deprecated_is_registered_in_all_gates
-  - tests/test_gates.py::TestDeprecatedGate::test_deprecated_fires_through_real_gate_dispatch
+  - tests/gates_suite/test_debt.py::TestDeprecatedGate::test_deprecated_is_registered_in_all_gates
+  - tests/gates_suite/test_debt.py::TestDeprecatedGate::test_deprecated_fires_through_real_gate_dispatch
   - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
 threat: null
 component: null

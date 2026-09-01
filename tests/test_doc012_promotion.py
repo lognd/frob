@@ -12,7 +12,7 @@ the identical mechanism without duplicating the fixture factory itself.
 Follow-up filed and parented to T-2299 (see tickets/ for the current id
 -- filed as a draft that renumbers at land, so not hardcoded here): fold
 this file's must-fail fixture back into
-tests/test_gates.py::TestDoc012CommandSectionGate once T-2314 releases
+tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate once T-2314 releases
 its tests/test_gates.py lease, and update that class's own
 test_undocumented_subcommand_fails assertion (currently asserts
 Severity.WARN, now stale) to Severity.ERROR in the same pass.

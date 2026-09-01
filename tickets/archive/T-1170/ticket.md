@@ -32,9 +32,9 @@ scope_changes:
   actor: logan
   at: '2026-07-29'
 evidence:
-- tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
-- tests/test_gates.py::TestDocanchorGate::test_resolvable_heading_and_explicit_anchor_pass
-- tests/test_gates.py::TestFixEngineTierA::test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean
+- tests/gates_suite/test_doc.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
+- tests/gates_suite/test_doc.py::TestDocanchorGate::test_resolvable_heading_and_explicit_anchor_pass
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc002_unique_fuzzy_candidate_rewritten_and_reverifies_clean
 designated_repro_test: null
 threat: null
 component: null

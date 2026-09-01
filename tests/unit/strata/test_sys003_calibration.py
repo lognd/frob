@@ -13,7 +13,7 @@ not an exemption).
 
 This module proves the narrowing is safe using frob.strata's own Python
 model-construction API directly (the same pattern
-`tests/test_gates.py::TestSysGate::test_sys003_import` already uses,
+`tests/gates_suite/test_sys.py::TestSysGate::test_sys003_import` already uses,
 since the surface grammar does not lex `code=`/`flow` declarations for
 ad-hoc synthetic models): a `testsuite -> declared` edge with a Flow must
 be silent, but the gate must still fire on (a) `production -> testsuite`
@@ -33,7 +33,7 @@ from frob.strata import DesignIds, Flow, KernelModel, Node
 
 def _write(root: Path, rel: str, text: str) -> Path:
     """Write `text` to `root/rel`, creating parent dirs -- local twin of
-    `tests/test_gates.py::_write` (kept local so this module has no
+    `tests/conftest.py::_write` (kept local so this module has no
     import-time coupling to that file's fixture-heavy module body)."""
     path = root / rel
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -43,7 +43,7 @@ def _write(root: Path, rel: str, text: str) -> Path:
 
 def _snapshot(root: Path):
     """Build a fresh graph snapshot for `sys_gate`, local twin of
-    `tests/test_gates.py::_snapshot`."""
+    `tests/conftest.py::_snapshot`."""
     cache = root / ".frob" / "cache.db"
     return build_graph(root, cache).danger_ok
 

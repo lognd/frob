@@ -27,8 +27,8 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/unit/test_config.py::test_reads_override
 - tests/unit/test_arch.py::TestLargeFile::test_calibrated_frob_toml_threshold_suppresses_600_line_flag
-- tests/test_gates.py::TestArchGateThresholds::test_arch_gate_uses_calibrated_default_not_library_default
-- tests/test_gates.py::TestArchGateThresholds::test_arch001_respects_explicit_frob_toml_override
+- tests/gates_suite/test_sys.py::TestArchGateThresholds::test_arch_gate_uses_calibrated_default_not_library_default
+- tests/gates_suite/test_sys.py::TestArchGateThresholds::test_arch001_respects_explicit_frob_toml_override
 designated_repro_test: null
 threat: null
 component: null

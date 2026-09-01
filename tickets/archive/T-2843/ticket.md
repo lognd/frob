@@ -75,28 +75,28 @@ scope_changes:
   actor: logan
   at: '2026-08-22'
 evidence:
-- tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
-- tests/test_gates.py::TestDocstatusGate::test_missing_status_header_fires_doc009
-- tests/test_gates.py::TestDocmakeGate::test_bogus_make_target_fires_doc010
-- tests/test_gates.py::TestDocseverityGate::test_mismatched_severity_row_fires_doc013
-- tests/test_gates.py::TestDocseverityGate::test_matching_severity_row_passes
+- tests/gates_suite/test_doc.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
+- tests/gates_suite/test_doc.py::TestDocstatusGate::test_missing_status_header_fires_doc009
+- tests/gates_suite/test_doc.py::TestDocmakeGate::test_bogus_make_target_fires_doc010
+- tests/gates_suite/test_doc.py::TestDocseverityGate::test_mismatched_severity_row_fires_doc013
+- tests/gates_suite/test_doc.py::TestDocseverityGate::test_matching_severity_row_passes
 designated_repro_test: null
 acceptance:
 - text: given frob.gates._doclink_docanchor.py after this lands, when its line count
     is read, then it is under frob.toml's max_file_lines=800 threshold, holding only
     doclink_gate/docanchor_gate (DOC001/DOC002)
   evidence:
-  - tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
+  - tests/gates_suite/test_doc.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
 - text: given the new module holding docstatus_gate/docmake_gate/docseverity_gate,
     when frob check runs, then every existing frob:doc/frob:enforces/frob:tests citation
     for those three gates still resolves (repointed if their target changed, not broken)
   evidence:
-  - tests/test_gates.py::TestDocstatusGate::test_missing_status_header_fires_doc009
-  - tests/test_gates.py::TestDocmakeGate::test_bogus_make_target_fires_doc010
-  - tests/test_gates.py::TestDocseverityGate::test_mismatched_severity_row_fires_doc013
+  - tests/gates_suite/test_doc.py::TestDocstatusGate::test_missing_status_header_fires_doc009
+  - tests/gates_suite/test_doc.py::TestDocmakeGate::test_bogus_make_target_fires_doc010
+  - tests/gates_suite/test_doc.py::TestDocseverityGate::test_mismatched_severity_row_fires_doc013
 - text: given the full test suite, when it runs after the split, then it passes unchanged
   evidence:
-  - tests/test_gates.py::TestDocseverityGate::test_matching_severity_row_passes
+  - tests/gates_suite/test_doc.py::TestDocseverityGate::test_matching_severity_row_passes
 threat: null
 component: null
 anchor: false

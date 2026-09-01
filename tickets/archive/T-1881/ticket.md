@@ -82,10 +82,10 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_dead_branch_is_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_local_var_dead_branch_is_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_live_branch_is_not_flagged_by_constant_fold
-- tests/test_gates.py::TestDeadSymbolGate::test_dead_caller_two_hops_deep_still_misses_confirming_open_defect
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_in_constant_folded_dead_branch_is_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_in_constant_folded_local_var_dead_branch_is_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_in_live_branch_is_not_flagged_by_constant_fold
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_dead_caller_two_hops_deep_still_misses_confirming_open_defect
 designated_repro_test: null
 acceptance:
 - text: 'MEASURED: DEAD001/WIRE001/REF002/OPAQUE001/COV003 detected 1 of 13 provably-dead
@@ -95,9 +95,9 @@ acceptance:
     and this measurement disproves that for the single most common way code dies in
     a migration (a live branch whose condition became a compile-time constant).'
   evidence:
-  - tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_dead_branch_is_flagged
-  - tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_local_var_dead_branch_is_flagged
-  - tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_live_branch_is_not_flagged_by_constant_fold
+  - tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_in_constant_folded_dead_branch_is_flagged
+  - tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_in_constant_folded_local_var_dead_branch_is_flagged
+  - tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_in_live_branch_is_not_flagged_by_constant_fold
 - text: All 12 misses resolve with SHALLOW, intra-procedural constant folding -- a
     callee whose entire body is one unconditional 'return <literal>' with no parameter
     read, folded through the comparison at its call site or one local-variable hop
@@ -105,16 +105,16 @@ acceptance:
     is a day-scope fix, not a month-scope one; see evidence/denominator.md for the
     per-symbol trace.
   evidence:
-  - tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_dead_branch_is_flagged
-  - tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_constant_folded_local_var_dead_branch_is_flagged
-  - tests/test_gates.py::TestDeadSymbolGate::test_call_site_in_live_branch_is_not_flagged_by_constant_fold
+  - tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_in_constant_folded_dead_branch_is_flagged
+  - tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_in_constant_folded_local_var_dead_branch_is_flagged
+  - tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_call_site_in_live_branch_is_not_flagged_by_constant_fold
 - text: Separately, 2 of the 12 misses (_require_merge_driver_args, _archived_ids_for_merge_driver)
     were dead via the ordinary SYNTACTIC route (their only caller's dispatch-table
     entry was deleted outright) yet still went undetected, suggesting DEAD001's call-graph
     walk may not transitively propagate dead-caller status past one hop -- a second,
     narrower defect worth its own look.
   evidence:
-  - tests/test_gates.py::TestDeadSymbolGate::test_dead_caller_two_hops_deep_still_misses_confirming_open_defect
+  - tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_dead_caller_two_hops_deep_still_misses_confirming_open_defect
 threat: null
 component: null
 anchor: false

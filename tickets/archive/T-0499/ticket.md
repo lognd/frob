@@ -60,8 +60,8 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
-- tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_is_frozenset
 - tests/unit/strata/test_audit.py::TestExhaustiveness::test_known_rule_ids_reaches_compliance_caught_by_check
 designated_repro_test: null
 threat: null

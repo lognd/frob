@@ -25,29 +25,29 @@ scope_changes:
   actor: logan
   at: '2026-07-29'
 evidence:
-- tests/test_gates.py::TestInvariantGate::test_inv001_no_evidence
-- tests/test_gates.py::TestInvariantGate::test_inv001_passes_with_collected_evidence
-- tests/test_gates.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005
-- tests/test_gates.py::TestInvariantGate::test_inv002_no_anchor
-- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
-- tests/test_gates.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory
-- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
+- tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv001_no_evidence
+- tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv001_passes_with_collected_evidence
+- tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005
+- tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv002_no_anchor
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+- tests/gates_suite/test_invariant.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_in_source_without_anchor_warns
-  new_node: tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
   reason: T-1763 deleted INV006 and TestInv006Gate; rebinding to INV003's equivalent
     still-live test
   actor: logan
   at: '2026-08-07'
 - old_node: tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_with_bound_invariant_anchor_is_silent
-  new_node: tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
   reason: T-1763 deleted INV006 and TestInv006Gate; rebinding to INV003's equivalent
     still-live test
   actor: logan
   at: '2026-08-07'
 - old_node: tests/test_gates.py::TestInv006SplitAssist::test_finds_carried_waiver_for_verbatim_moved_claim
-  new_node: tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
   reason: T-1763 deleted find_carried_waiver/_inv006_split_assist.py entirely along
     with INV006 -- no functional equivalent exists; rebinding to the nearest still-live
     sibling test in INV003
@@ -115,12 +115,12 @@ the terminal split).
 ```
 
 ### Evidence
-- `tests/test_gates.py::TestInvariantGate::test_inv001_no_evidence` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestInvariantGate::test_inv001_passes_with_collected_evidence` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestInvariantGate::test_inv002_no_anchor` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv001_no_evidence` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv001_passes_with_collected_evidence` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_invariant.py::TestInvariantGate::test_inv002_no_anchor` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_invariant.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_in_source_without_anchor_warns` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_with_bound_invariant_anchor_is_silent` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestInv006SplitAssist::test_finds_carried_waiver_for_verbatim_moved_claim` (pytest node id, verified passing when recorded)

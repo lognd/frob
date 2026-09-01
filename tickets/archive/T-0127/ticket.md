@@ -12,7 +12,7 @@ sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestDocanchorGate::test_unresolvable_anchor_fires
+- tests/gates_suite/test_doc.py::TestDocanchorGate::test_unresolvable_anchor_fires
 designated_repro_test: null
 threat: null
 component: null

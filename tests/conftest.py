@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator
 
@@ -10,12 +11,17 @@ if TYPE_CHECKING:
     from frob.graph import GraphSnapshot
 
 import frob.lang as lang_mod
+from frob.gates import Severity, Violation
+from frob.gitio import Hunk
+from frob.graph import build_graph
 from frob.lang import PARSE_ARTIFACT_CACHE_ENV, reset_parse_cache
 from frob.mutate import restore_stale_journals
 from frob.testing._stackdump import STACKDUMP_ENV as _STACKDUMP_ENV  # noqa: F401
 from frob.testing._stackdump import (
     install_stackdump_handler as _install_stackdump_handler,
 )
+from frob.tickets import Origin, Ticket, TicketKind, TicketState
+from frob.tickets._store import write_ticket
 from frob.tickets._worktree_guard import (
     FROB_AGENT_ENV,
     FROB_WORKTREE_ENV,
@@ -1362,3 +1368,235 @@ def cpp_sample():
 @pytest.fixture
 def rust_sample():
     return RUST_SAMPLE
+
+
+_WIDGET_PY = '''class Widget:
+    """A widget."""
+
+    def render(self, value: int) -> str:
+        """Render the widget."""
+        # frob:doc docs/x.md#widget
+        return str(value)
+'''
+
+
+_DESIGN_STRATA = """module m
+node client : foreign { clearance Public; }
+node api : authenticated { clearance Internal; }
+node vault : trusted { clearance Secret; }
+flow f_login : client -> api
+boundary b_login endorse f_login : foreign -> authenticated when "jwt_verified"
+"""
+
+
+def _git_init(root: Path) -> None:
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "t@example.com"], cwd=root, check=True
+    )
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+    if not any(root.iterdir()):
+        (root / ".gitkeep").write_text("")
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "commit", "-q", "-m", "base", "--allow-empty"], cwd=root, check=True
+    )
+
+
+def _snapshot(root: Path):
+    cache = root / ".frob" / "cache.db"
+    return build_graph(root, cache).danger_ok
+
+
+def _write(root: Path, rel: str, text: str) -> Path:
+    path = root / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+    return path
+
+
+def _violation(rule="R1", file="a.py", message="m", severity=Severity.WARN, line=1):
+    from frob.gates import Violation
+
+    return Violation(
+        rule=rule, severity=severity, file=file, line=line, message=message
+    )
+
+
+# frob:ticket T-0807
+def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
+    """Run `argv` in `cwd`, raising on a nonzero exit -- a thin `subprocess.run`
+    wrapper for the real-git-repo fixtures T-0807's linked-worktree/lease
+    tests need (mirrors `tests/test_tickets_leases.py::_run`)."""
+    return subprocess.run(
+        argv, cwd=str(cwd), check=True, capture_output=True, text=True
+    )
+
+
+def _rules(violations) -> list[str]:
+    """The rule id of every violation, in order."""
+    return [v.rule for v in violations]
+
+
+def _files(violations) -> set[str]:
+    """The set of files named by the violations."""
+    return {v.file for v in violations}
+
+
+def _first_rule(violations, rule):
+    """The first violation with `rule`, or None -- assertion convenience."""
+    for v in violations:
+        if v.rule == rule:
+            return v
+    return None
+
+
+def _by_rule(violations, rule) -> list:
+    """Every violation carrying `rule` -- assertion convenience."""
+    return [v for v in violations if v.rule == rule]
+
+
+def _marker_line(root: Path, ticket_id: str) -> int:
+    """The 1-indexed line number of `ticket_id`'s `<!-- ticket:... -->`
+    marker in `root/tickets.md`, for building a `Hunk` span that targets
+    exactly that ticket's ledger entry."""
+    marker = f"<!-- ticket:{ticket_id} -->"
+    lines = (root / "tickets.md").read_text(encoding="utf-8").splitlines()
+    for i, line in enumerate(lines, start=1):
+        if marker in line:
+            return i
+    raise AssertionError(f"marker for {ticket_id} not found in tickets.md")
+
+
+# frob:ticket T-0564
+def _state_line(root: Path, ticket_id: str) -> int:
+    """The 1-indexed line number of `ticket_id`'s YAML `state:` field in
+    `root/tickets.md` -- deliberately BELOW the marker line, for building a
+    `Hunk` span that targets the state-transition line without ever
+    overlapping the marker line itself (T-0564 regression coverage)."""
+    marker = f"<!-- ticket:{ticket_id} -->"
+    lines = (root / "tickets.md").read_text(encoding="utf-8").splitlines()
+    in_block = False
+    for i, line in enumerate(lines, start=1):
+        if marker in line:
+            in_block = True
+            continue
+        if in_block and line.startswith("state:"):
+            return i
+    raise AssertionError(f"state: line for {ticket_id} not found in tickets.md")
+
+
+# frob:ticket T-0415
+def _module_level_process_violation(root: Path, tag: str) -> tuple[Violation, ...]:
+    """Picklable process-pool test gate (T-0415): a module-level function
+    (required -- `ProcessPoolExecutor` cannot pickle a local closure) that
+    returns one `Violation` whose message embeds the worker's own pid, so a
+    test can prove the job actually executed in a separate process rather
+    than merely running serially in-process."""
+    import os
+
+    return (
+        Violation(
+            rule="TESTPROC",
+            severity=Severity.WARN,
+            file=str(root),
+            line=1,
+            message=f"{tag}:{os.getpid()}",
+        ),
+    )
+
+
+def _ticket(
+    *,
+    ticket_id: str = "T-0001",
+    state: TicketState = TicketState.QUEUED,
+    scope: tuple[str, ...] = (),
+    evidence: tuple[str, ...] = (),
+    attachments: tuple = (),
+    body: str = "## Description\nx\n\n## Done report\ndone\n",
+    kind: TicketKind = TicketKind.FEATURE,
+) -> Ticket:
+    return Ticket(
+        id=ticket_id,
+        title="Sample",
+        state=state,
+        kind=kind,
+        origin=Origin.HUMAN,
+        created=date(2026, 1, 1),
+        scope=scope,
+        evidence=evidence,
+        attachments=attachments,
+        body=body,
+    )
+
+
+def _write_ticket(root: Path, ticket: Ticket) -> None:
+    """Write `ticket` into `root`'s v1 monofile ledger.
+
+    Seeds `tickets.md` first so `write_ticket` resolves to 'single' mode:
+    T-1553 made a bare `tmp_path` default to v2, but this file's ledger
+    assertions (`_marker_line`, COV002's closing-diff grace) are about
+    `tickets.md` hunks specifically -- COV002's grace reads the ledger
+    monofile diff and has no v2 equivalent yet (T-1582)."""
+    ledger = root / "tickets.md"
+    if not ledger.exists():
+        ledger.write_text("# Tickets\n", encoding="utf-8")
+    write_ticket(root, ticket).danger_ok
+
+
+# frob:ticket T-1582
+def _write_ticket_v2(root: Path, ticket: Ticket) -> None:
+    """`_write_ticket`'s v2-mode twin: writes straight through `write_ticket`
+    on a bare `tmp_path` (T-1553 default v2, no `tickets.md` seed) so the
+    write resolves to `tickets/<id>/ticket.md` -- the COV002 v2-grace tests
+    build their `Hunk`s against that path directly instead of a marker-line
+    offset into a shared monofile."""
+    write_ticket(root, ticket).danger_ok
+
+
+def _v2_ticket_file_hunk(ticket_id: str) -> Hunk:
+    """The `Hunk` a v2-mode diff carries for `ticket_id`'s own
+    `tickets/<id>/ticket.md` -- one ticket owns the WHOLE file, so unlike
+    v1's marker/state-line offsets there is no span to compute; any hunk
+    on this path means this ticket's file was touched."""
+    return Hunk(file=f"tickets/{ticket_id}/ticket.md", span=(1, 1))
+
+
+# frob:waive DEAD001 reason="loaded dynamically via importlib.import_module by \
+# doc012_gate's shared _load_parser_factory (dotted-path config value), never a direct \
+# call-graph caller"
+_DOC012_FAKE_CONFIG = (
+    '[[docblocks.commands]]\nprog = "acme"\n'
+    'parser = "tests.conftest:_doc012_fake_parser_factory"\n'
+)
+
+
+def _doc012_fake_parser_factory():
+    """A tiny synthetic `argparse.ArgumentParser` with two top-level
+    subcommands (`widget`, `gadget`) -- importable via
+    `tests.conftest:_doc012_fake_parser_factory` (`tests/` is a real
+    package), kept independent of frob's own live command count for the
+    same reason `tests/test_docblocks_gate.py::_fake_parser_factory`
+    (DOC005's own fixture) is."""
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="acme")
+    sub = parser.add_subparsers(dest="subcommand")
+    sub.add_parser("widget", help="widget things")
+    sub.add_parser("gadget", help="gadget things")
+    return parser
+
+
+def _complex_function_source(fn_name: str) -> str:
+    """A python module with one function long enough to trip the 30-line
+    default `max_function_lines` but short enough to stay under the
+    calibrated 60-line threshold (T-0373), and structurally complex enough
+    (>=8 branches) to pass `_py_is_complex`'s cyclomatic-proxy filter."""
+    lines = [f"def {fn_name}(cfg):", "    result = {}"]
+    for i in range(8):
+        lines.append(f'    if cfg.get("flag_{i}"):')
+        lines.append(f'        result["k{i}"] = {i}')
+    for i in range(20):
+        lines.append(f'    step_{i} = cfg.get("step_{i}", "default")')
+    lines.append("    return result, " + ", ".join(f"step_{i}" for i in range(20)))
+    return "\n".join(lines) + "\n"

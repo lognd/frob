@@ -16,8 +16,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
-- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_returns_known_rule_id
 - tests/test_registry_exhaustiveness.py::TestDisposition::test_handled_by_real_rule_passes
 - tests/test_registry_exhaustiveness.py::TestEnforcesConformance::test_handled_by_with_frob_enforces_edge_is_silent
 - tests/test_registry_exhaustiveness.py::TestEnforcesConformance::test_handled_by_with_no_frob_enforces_edge_warns

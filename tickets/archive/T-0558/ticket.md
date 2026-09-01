@@ -72,8 +72,8 @@ scope_changes:
 evidence:
 - tests/test_graph.py::TestParseFailures::test_parse_error_is_recorded_as_parse_failure
 - tests/test_graph.py::TestParseFailures::test_native_parser_unavailable_is_not_a_parse_failure
-- tests/test_gates.py::TestParseFailureGate::test_parse_failure_is_an_error_violation
-- tests/test_gates.py::TestParseFailureGate::test_no_parse_failures_is_clean
+- tests/gates_suite/test_waive.py::TestParseFailureGate::test_parse_failure_is_an_error_violation
+- tests/gates_suite/test_waive.py::TestParseFailureGate::test_no_parse_failures_is_clean
 designated_repro_test: null
 threat: null
 component: null

@@ -92,8 +92,8 @@ def _declared_python_source_roots(root: Path) -> tuple[Path, ...]:
 
 # frob:doc docs/modules/lang.md#declared-project-identity-t-2195t-2389
 # frob:ticket T-2389
-# frob:tests tests/test_gates.py::TestEnvVarDocGate.test_undocumented_env_var_fires_for_a_differently_named_project  # noqa: E501
-# frob:tests tests/test_gates.py::TestRootAssetDirGate.test_unreferenced_root_directory_fires_for_a_differently_named_project  # noqa: E501
+# frob:tests tests/gates_suite/test_invariant.py::TestEnvVarDocGate.test_undocumented_env_var_fires_for_a_differently_named_project  # noqa: E501
+# frob:tests tests/gates_suite/test_invariant.py::TestRootAssetDirGate.test_unreferenced_root_directory_fires_for_a_differently_named_project  # noqa: E501
 def declared_project_package_name(root: Path) -> str | None:
     """`root`'s own declared package name (`pyproject.toml` `[project].
     name`), or `None` if it cannot be read/parsed (T-2389, promoted out
@@ -120,8 +120,8 @@ def declared_project_package_name(root: Path) -> str | None:
 
 # frob:doc docs/modules/lang.md#declared-project-identity-t-2195t-2389
 # frob:ticket T-2389
-# frob:tests tests/test_gates.py::TestEnvVarDocGate.test_undocumented_env_var_fires_for_a_differently_named_project  # noqa: E501
-# frob:tests tests/test_gates.py::TestRootAssetDirGate.test_unreferenced_root_directory_fires_for_a_differently_named_project  # noqa: E501
+# frob:tests tests/gates_suite/test_invariant.py::TestEnvVarDocGate.test_undocumented_env_var_fires_for_a_differently_named_project  # noqa: E501
+# frob:tests tests/gates_suite/test_invariant.py::TestRootAssetDirGate.test_unreferenced_root_directory_fires_for_a_differently_named_project  # noqa: E501
 def declared_source_prefixes(root: Path) -> tuple[str, ...]:
     """Every `root`-relative POSIX path prefix (`"src/frob/"`-shaped,
     always ending in `/`) this project's OWN tracked source files can

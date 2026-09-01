@@ -41,12 +41,12 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 evidence:
-- tests/test_gates.py::TestReleaseOpenMilestoneViolations::test_open_ticket_in_cut_milestone_refuses
-- tests/test_gates.py::TestReleaseOpenMilestoneViolations::test_open_ticket_in_other_milestone_does_not_refuse
-- tests/test_gates.py::TestReleaseOpenMilestoneViolations::test_terminal_ticket_in_cut_milestone_does_not_refuse
-- tests/test_gates.py::TestReleaseOpenMilestoneViolations::test_no_open_tickets_in_milestone_succeeds
-- tests/test_gates.py::TestReleaseOpenMilestoneViolations::test_names_every_blocking_ticket
-- tests/test_gates.py::TestReleaseOpenMilestoneViolations::test_queue_unavailable_does_not_crash
+- tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations::test_open_ticket_in_cut_milestone_refuses
+- tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations::test_open_ticket_in_other_milestone_does_not_refuse
+- tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations::test_terminal_ticket_in_cut_milestone_does_not_refuse
+- tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations::test_no_open_tickets_in_milestone_succeeds
+- tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations::test_names_every_blocking_ticket
+- tests/gates_suite/test_debt.py::TestReleaseOpenMilestoneViolations::test_queue_unavailable_does_not_crash
 designated_repro_test: null
 threat: null
 component: null

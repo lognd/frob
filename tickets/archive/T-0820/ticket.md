@@ -16,11 +16,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTick007UndispatchedStale::test_stale_critical_fires
-- tests/test_gates.py::TestTick007UndispatchedStale::test_fresh_critical_is_silent
-- tests/test_gates.py::TestTick007UndispatchedStale::test_medium_priority_never_fires
-- tests/test_gates.py::TestTick007UndispatchedStale::test_blocked_ticket_is_silent
-- tests/test_gates.py::TestTick007UndispatchedStale::test_real_repo_scan_runs_end_to_end_without_crashing
+- tests/gates_suite/test_tick.py::TestTick007UndispatchedStale::test_stale_critical_fires
+- tests/gates_suite/test_tick.py::TestTick007UndispatchedStale::test_fresh_critical_is_silent
+- tests/gates_suite/test_tick.py::TestTick007UndispatchedStale::test_medium_priority_never_fires
+- tests/gates_suite/test_tick.py::TestTick007UndispatchedStale::test_blocked_ticket_is_silent
+- tests/gates_suite/test_tick.py::TestTick007UndispatchedStale::test_real_repo_scan_runs_end_to_end_without_crashing
 designated_repro_test: null
 threat: null
 component: null

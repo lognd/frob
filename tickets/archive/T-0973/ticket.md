@@ -66,7 +66,7 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_gates.py::TestSeverityOverrides::test_sec110_promoted_to_error_gates_a_real_repo_toml
+- tests/gates_suite/test_run.py::TestSeverityOverrides::test_sec110_promoted_to_error_gates_a_real_repo_toml
 - tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_internal_git_env_restores_prior_value
 - tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_matching_worktree_passes
 - tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision::test_env_zero_skips_serial_pools

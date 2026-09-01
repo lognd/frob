@@ -26,13 +26,13 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/test_gates.py::TestDoc012CommandSectionGate::test_undocumented_subcommand_fails
+- tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate::test_undocumented_subcommand_fails
 designated_repro_test: null
 acceptance:
-- text: given tests/test_gates.py::TestDoc012CommandSectionGate.test_undocumented_subcommand_fails,
+- text: given tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_undocumented_subcommand_fails,
     when read, then it asserts Severity.ERROR not Severity.WARN
   evidence:
-  - tests/test_gates.py::TestDoc012CommandSectionGate::test_undocumented_subcommand_fails
+  - tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate::test_undocumented_subcommand_fails
 threat: null
 component: null
 anchor: false
@@ -44,7 +44,7 @@ command-section drift-lock" section, src/frob/gates/_docblocks.py::
 _doc012_violation) from WARN to ERROR now that the disclosed T-1783
 backlog measures zero.
 
-tests/test_gates.py::TestDoc012CommandSectionGate.test_undocumented_
+tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_undocumented_
 subcommand_fails still asserts `v.severity == Severity.WARN` -- stale
 after the promotion. T-2299 could not fix this directly because
 tests/test_gates.py carried a live cross-worktree lease (T-2314) at

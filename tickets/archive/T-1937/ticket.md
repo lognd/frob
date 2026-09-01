@@ -52,7 +52,7 @@ evidence:
 - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_reports_a_candidate_missing_from_both_known_and_retired
 - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_retired_id_is_excluded_even_when_shape_matches
 - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_real_repo_registry_is_complete
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 designated_repro_test: null
 threat: null
 component: null

@@ -62,10 +62,10 @@ scope_changes:
   actor: logan
   at: '2026-08-27'
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov008_fires_when_diff_deletes_a_cited_test
-- tests/test_gates.py::TestCoverageGate::test_cov008_silent_on_uncited_deletion
-- tests/test_gates.py::TestCoverageGate::test_cov008_silent_on_rename_with_rebound_citation
-designated_repro_test: tests/test_gates.py::TestCoverageGate::test_cov008_fires_when_diff_deletes_a_cited_test
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov008_fires_when_diff_deletes_a_cited_test
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov008_silent_on_uncited_deletion
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov008_silent_on_rename_with_rebound_citation
+designated_repro_test: tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov008_fires_when_diff_deletes_a_cited_test
 acceptance:
 - text: 'test_cov008_fires_when_diff_deletes_a_cited_test is the before-fails/after-passes
     fixture: at the parent commit (before COV008 existed) coverage_gate never emits
@@ -73,9 +73,9 @@ acceptance:
     the parent tree), and after this change coverage_gate correctly PASSES the assertion
     by emitting the COV008 violation'
   evidence:
-  - tests/test_gates.py::TestCoverageGate::test_cov008_fires_when_diff_deletes_a_cited_test
-  - tests/test_gates.py::TestCoverageGate::test_cov008_silent_on_uncited_deletion
-  - tests/test_gates.py::TestCoverageGate::test_cov008_silent_on_rename_with_rebound_citation
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov008_fires_when_diff_deletes_a_cited_test
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov008_silent_on_uncited_deletion
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov008_silent_on_rename_with_rebound_citation
 threat: null
 component: null
 anchor: false

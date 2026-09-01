@@ -42,7 +42,7 @@ evidence:
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_fragments_module_fs_read_is_declared_not_selfaudit001
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_checker_fleet_deploy_vet_have_no_undeclared_fs_write_selfaudit001
 - tests/unit/strata/test_sys003_calibration.py::TestSys003ZeroOnFrobsOwnRepo::test_sys003_zero_against_live_repo_design
-- tests/test_gates.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
+- tests/gates_suite/test_run.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
 designated_repro_test: null
 threat: null
 component: null

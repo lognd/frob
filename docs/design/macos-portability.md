@@ -89,7 +89,7 @@ follow-up's own first task is to measure against a macOS box or the
 
 - **Bucket D -- citation/text scans return 0 (13 tests).**
   `tests/test_tickets_live_tracker.py` (11) and
-  `tests/test_gates.py::TestWireGate` (2) all show a scan that finds N
+  `tests/gates_suite/test_wire.py::TestWireGate` (2) all show a scan that finds N
   hits on Linux finding 0 on macOS -- one shared root cause (GNU vs BSD
   `grep` flags, `-P`/PCRE support, or APFS case-insensitivity breaking a
   path-keyed match) rather than 13 independent bugs.

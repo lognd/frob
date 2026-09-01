@@ -22,8 +22,8 @@ evidence:
 - tests/test_graph.py::TestGeneratedSource::test_is_generated_source_detects_do_not_edit_and_at_markers
 - tests/test_graph.py::TestGeneratedSource::test_is_generated_source_false_for_hand_authored_file
 - tests/test_graph.py::TestGeneratedSource::test_is_generated_source_false_for_missing_file
-- tests/test_gates.py::TestCoverageGate::test_cov001_exempts_generated_file_with_marker
-- tests/test_gates.py::TestCoverageGate::test_cov001_still_fires_without_generated_marker
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov001_exempts_generated_file_with_marker
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov001_still_fires_without_generated_marker
 designated_repro_test: null
 threat: null
 component: null

@@ -90,7 +90,7 @@ evidence:
 - tests/unit/strata/test_litmus_cwe.py::TestFixtureCoverageIsExhaustive::test_every_catalog_entry_has_a_fixture_mapping
 - tests/unit/strata/test_managed.py::TestManagedDischargeFromParsedSurfaceSource::test_managed_node_with_same_shape_discharges
 - tests/unit/strata/test_store_code_may.py::TestStoreMayFeedsThreat003::test_store_with_exec_may_fires_undischarged_cwe_94
-- tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes
+- tests/gates_suite/test_sys.py::TestSysGate::test_doc003_proved_claim_passes
 designated_repro_test: null
 threat: null
 component: null
@@ -129,7 +129,7 @@ Verification (foreground, timeout-wrapped, per playbook section 3b):
 - pytest on every touched/covering test file: tests/unit/strata/
   test_threat.py, test_litmus_cwe.py, test_managed.py,
   test_store_code_may.py, test_sysdoc.py, test_audit.py, plus
-  tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes --
+  tests/gates_suite/test_sys.py::TestSysGate::test_doc003_proved_claim_passes --
   all green.
 - `frob check --only archgate --only wire --only dead_symbols --only
   drift --only doclink --only fmt`: 0 errors (49 LARGE001 warnings, down

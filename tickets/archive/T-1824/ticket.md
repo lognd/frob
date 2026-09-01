@@ -17,11 +17,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestSuspectDeflatedSymbols::test_def_line_hit_body_zero_flagged
-- tests/test_gates.py::TestSuspectDeflatedSymbols::test_genuinely_dead_code_not_flagged_without_tests_edge
-- tests/test_gates.py::TestSuspectDeflatedSymbols::test_uniformly_covered_symbol_not_flagged
-- tests/test_gates.py::TestSuspectDeflatedSymbols::test_single_line_symbol_not_flagged
-- tests/test_gates.py::TestSuspectDeflatedSymbols::test_load_coverage_logs_warning_for_suspect_symbol
+- tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols::test_def_line_hit_body_zero_flagged
+- tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols::test_genuinely_dead_code_not_flagged_without_tests_edge
+- tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols::test_uniformly_covered_symbol_not_flagged
+- tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols::test_single_line_symbol_not_flagged
+- tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols::test_load_coverage_logs_warning_for_suspect_symbol
 designated_repro_test: null
 threat: null
 component: null

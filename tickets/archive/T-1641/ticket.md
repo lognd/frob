@@ -105,9 +105,9 @@ scope_changes:
   actor: logan
   at: '2026-08-06'
 evidence:
-- tests/test_gates.py::TestDocstatusGate::test_unresolvable_ticket_mention_fires_doc011
-- tests/test_gates.py::TestDocstatusGate::test_ticket_mention_inside_line_wrapped_inline_code_does_not_fire_doc011
-- tests/test_gates.py::TestDocstatusGate::test_ticket_mention_across_blank_line_still_fires_doc011
+- tests/gates_suite/test_doc.py::TestDocstatusGate::test_unresolvable_ticket_mention_fires_doc011
+- tests/gates_suite/test_doc.py::TestDocstatusGate::test_ticket_mention_inside_line_wrapped_inline_code_does_not_fire_doc011
+- tests/gates_suite/test_doc.py::TestDocstatusGate::test_ticket_mention_across_blank_line_still_fires_doc011
 - tests/test_docptr_gate.py::TestDoc006Config::test_profile_section_not_flagged
 designated_repro_test: null
 threat: null

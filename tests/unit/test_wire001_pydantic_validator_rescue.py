@@ -131,7 +131,7 @@ class TestWire001PydanticValidatorRescue:
         with no pydantic decorator and no caller outside its own test
         still fires WIRE001 -- the fix narrows the rescue to the
         pydantic-validator shape specifically, it does not disable
-        WIRE001 generally. Mirrors tests/test_gates.py::TestWireGate::
+        WIRE001 generally. Mirrors tests/gates_suite/test_wire.py::TestWireGate::
         test_new_public_function_with_no_caller_is_flagged."""
         _write(
             tmp_path,

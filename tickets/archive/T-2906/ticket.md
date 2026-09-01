@@ -193,8 +193,8 @@ evidence:
 - tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_no_unclaimed_cells
 - tests/test_dup.py::TestBashCsharpR1Fires::test_r1_fires_on_bash
 - tests/test_dup.py::TestBashCsharpR1Fires::test_r1_fires_on_csharp
-- tests/test_gates.py::TestDoc004CsharpUsingDrift::test_using_of_tracked_namespace_unanchored_warns
-- tests/test_gates.py::TestDoc004CsharpUsingDrift::test_using_of_tracked_namespace_anchored_passes
+- tests/gates_suite/test_doc.py::TestDoc004CsharpUsingDrift::test_using_of_tracked_namespace_unanchored_warns
+- tests/gates_suite/test_doc.py::TestDoc004CsharpUsingDrift::test_using_of_tracked_namespace_anchored_passes
 - tests/test_lang_support.py::TestDeriveLanguageRegistry::test_bash_and_csharp_capability_dup_docblock_are_implemented
 designated_repro_test: null
 threat: null

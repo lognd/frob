@@ -17,10 +17,10 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCppSourceAccurateCollection::test_single_source_target_is_source_accurate
-- tests/test_gates.py::TestCppSourceAccurateCollection::test_multi_source_target_falls_back_loudly
-- tests/test_gates.py::TestCppSourceAccurateCollection::test_no_compile_commands_falls_back_loudly
-- tests/test_gates.py::TestCppSourceAccurateCollection::test_gtest_discover_tests_include_and_dot_names
+- tests/gates_suite/test_test_gate.py::TestCppSourceAccurateCollection::test_single_source_target_is_source_accurate
+- tests/gates_suite/test_test_gate.py::TestCppSourceAccurateCollection::test_multi_source_target_falls_back_loudly
+- tests/gates_suite/test_test_gate.py::TestCppSourceAccurateCollection::test_no_compile_commands_falls_back_loudly
+- tests/gates_suite/test_test_gate.py::TestCppSourceAccurateCollection::test_gtest_discover_tests_include_and_dot_names
 designated_repro_test: null
 threat: null
 component: null

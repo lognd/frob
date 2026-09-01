@@ -32,18 +32,18 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
+- tests/gates_suite/test_compliance.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
 - tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
 designated_repro_test: null
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on a fixture with a known exception
     surface THEN the may-raise sets are queryable and every child gate/advisory fires
     per its own acceptance
   evidence:
-  - tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
+  - tests/gates_suite/test_compliance.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
   - tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
-  - tests/test_gates.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
+  - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
 threat: null
 component: null
 ---

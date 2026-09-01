@@ -88,9 +88,9 @@ evidence:
 - tests/test_lang.py::TestFromImportSubmoduleResolution::test_from_package_import_submodule_resolves_to_the_file
 - tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
 - tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands
-- tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_still_fires_through_relative_facade
-- tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_chases_relative_import_reexport
-designated_repro_test: tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_chases_relative_import_reexport
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_third_file_reachable_still_fires_through_relative_facade
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_third_file_reachable_chases_relative_import_reexport
+designated_repro_test: tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_third_file_reachable_chases_relative_import_reexport
 threat: null
 component: null
 anchor: false

@@ -45,16 +45,16 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
-- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
-- tests/test_gates.py::TestInv003Gate::test_markdown_waive_marker_with_reason_is_silent
-- tests/test_gates.py::TestInv003Gate::test_no_exclusivity_language_is_silent
-- tests/test_gates.py::TestInv003Gate::test_outside_spec_dirs_is_silent
-- tests/test_gates.py::TestInv003Gate::test_missing_docs_dir_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_markdown_waive_marker_with_reason_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_no_exclusivity_language_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_outside_spec_dirs_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_missing_docs_dir_is_silent
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_in_source_without_anchor_warns
-  new_node: tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
   reason: T-1763 deleted INV006 (338 waivers, zero live findings across its whole
     lifetime) and its whole TestInv006Gate test class; this archived ticket's evidence
     pointed at a now-deleted INV006 test -- rebinding to INV003's equivalent still-live
@@ -64,31 +64,31 @@ evidence_changes:
   actor: logan
   at: '2026-08-07'
 - old_node: tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_with_bound_invariant_anchor_is_silent
-  new_node: tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
   reason: T-1763 deleted INV006 and TestInv006Gate; rebinding to INV003's equivalent
     still-live test (the doc-side sibling INV006 was modeled on)
   actor: logan
   at: '2026-08-07'
 - old_node: tests/test_gates.py::TestInv006Gate::test_waived_with_reason_is_silent
-  new_node: tests/test_gates.py::TestInv003Gate::test_markdown_waive_marker_with_reason_is_silent
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_markdown_waive_marker_with_reason_is_silent
   reason: T-1763 deleted INV006 and TestInv006Gate; rebinding to INV003's equivalent
     still-live waiver test
   actor: logan
   at: '2026-08-07'
 - old_node: tests/test_gates.py::TestInv006Gate::test_no_exclusivity_language_is_silent
-  new_node: tests/test_gates.py::TestInv003Gate::test_no_exclusivity_language_is_silent
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_no_exclusivity_language_is_silent
   reason: T-1763 deleted INV006 and TestInv006Gate; rebinding to INV003's equivalent
     still-live test
   actor: logan
   at: '2026-08-07'
 - old_node: tests/test_gates.py::TestInv006Gate::test_outside_src_dirs_is_silent
-  new_node: tests/test_gates.py::TestInv003Gate::test_outside_spec_dirs_is_silent
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_outside_spec_dirs_is_silent
   reason: T-1763 deleted INV006 and TestInv006Gate; rebinding to INV003's equivalent
     still-live test
   actor: logan
   at: '2026-08-07'
 - old_node: tests/test_gates.py::TestInv006Gate::test_missing_src_dir_is_silent
-  new_node: tests/test_gates.py::TestInv003Gate::test_missing_docs_dir_is_silent
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_missing_docs_dir_is_silent
   reason: T-1763 deleted INV006 and TestInv006Gate; rebinding to INV003's equivalent
     still-live test
   actor: logan

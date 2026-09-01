@@ -38,8 +38,8 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestDsl001::test_malformed_frob_doc_directive_flagged
-- tests/test_gates.py::TestDsl001::test_waive_reason_and_tests_kind_not_double_flagged
+- tests/gates_suite/test_waive.py::TestDsl001::test_malformed_frob_doc_directive_flagged
+- tests/gates_suite/test_waive.py::TestDsl001::test_waive_reason_and_tests_kind_not_double_flagged
 - tests/unit/test_check_tool_unavailable.py::TestVitestUnverifiedZeroExit::test_run_vitest_warns_on_unparseable_zero_exit
 - tests/unit/test_check.py::TestDetectProjectType::test_package_json_alone_is_typescript
 designated_repro_test: null

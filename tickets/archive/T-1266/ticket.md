@@ -25,8 +25,8 @@ scope_changes:
   actor: logan
   at: '2026-08-01'
 evidence:
-- tests/test_gates.py::TestNativeTestCollectors::test_cpp_directive_resolves_via_real_ctest_node_id
-- tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
+- tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_cpp_directive_resolves_via_real_ctest_node_id
+- tests/gates_suite/test_test_gate.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
 designated_repro_test: null
 acceptance:
 - text: GIVEN a CMake C/C++ project with CMAKE_EXPORT_COMPILE_COMMANDS enabled and
@@ -35,14 +35,14 @@ acceptance:
     node id (not the name/path structural fallback) the same way a TS frob:tests edge
     now resolves against a real vitest node id.
   evidence:
-  - tests/test_gates.py::TestNativeTestCollectors::test_cpp_directive_resolves_via_real_ctest_node_id
+  - tests/gates_suite/test_test_gate.py::TestNativeTestCollectors::test_cpp_directive_resolves_via_real_ctest_node_id
 - text: GIVEN a C/C++ frob:tests edge that still cannot resolve against a real collected
     node id (no configured build dir, or an ambiguous multi-source match) WHEN gates
     run THEN TEST013's disclosed-unverified signal fires for that edge (per T-0552's
     existing mechanism) rather than the edge silently satisfying TEST001-004 with
     no execution evidence at all.
   evidence:
-  - tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
+  - tests/gates_suite/test_test_gate.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
 threat: null
 component: null
 ---

@@ -107,8 +107,8 @@ evidence:
 - tests/unit/strata/test_shrink.py::TestShrinkNeverWidensOrBinds::test_unbound_capability_file_stays_an_error_and_shrink_does_not_bind_it
 - tests/unit/strata/test_shrink.py::TestNoWideningPathRepoWide::test_widening_functions_no_longer_exist_in_sync_may
 - tests/unit/strata/test_shrink.py::TestNoWideningPathRepoWide::test_no_module_under_src_frob_defines_or_imports_a_widening_function
-- tests/test_gates.py::TestFixEngineTierA::test_sys100_core_violation_still_fires_and_is_not_auto_resolved
-- tests/test_gates.py::TestFixEngineTierA::test_sys100_extended_violation_still_fires_and_is_not_auto_resolved
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys100_core_violation_still_fires_and_is_not_auto_resolved
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys100_extended_violation_still_fires_and_is_not_auto_resolved
 designated_repro_test: null
 threat: null
 component: null

@@ -56,8 +56,8 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_gates.py::TestWireGate::test_test_helper_called_from_a_real_test_in_the_same_file_is_not_flagged
-- tests/test_gates.py::TestWireGate::test_test_helper_called_only_from_a_non_test_helper_is_still_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_test_helper_called_from_a_real_test_in_the_same_file_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_test_helper_called_only_from_a_non_test_helper_is_still_flagged
 designated_repro_test: null
 threat: null
 component: null
@@ -107,7 +107,7 @@ Split `_is_reached_outside_diff_tests`'s per-path scan body into
 `_wire_scan_decision` to keep the parent function under ARCH001's
 60-line threshold.
 
-Updated `tests/test_gates.py::TestWireGate.
+Updated `tests/gates_suite/test_wire.py::TestWireGate.
 test_test_helper_called_only_from_its_own_defining_file_is_still_flagged`
 (the test that locked in the OLD, now-superseded behavior) into two
 tests: one confirming the new same-file-test-caller allowance, one
@@ -127,8 +127,8 @@ Changed:
 - tickets/archive/T-1558/ticket.md: fixed stale evidence citation
 
 Evidence:
-- tests/test_gates.py::TestWireGate.test_test_helper_called_from_a_real_test_in_the_same_file_is_not_flagged
-- tests/test_gates.py::TestWireGate.test_test_helper_called_only_from_a_non_test_helper_is_still_flagged
+- tests/gates_suite/test_wire.py::TestWireGate.test_test_helper_called_from_a_real_test_in_the_same_file_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate.test_test_helper_called_only_from_a_non_test_helper_is_still_flagged
 - 29/29 tests/test_gates.py -k TestWireGate pass
 - 18/18 tests/test_tickets_mutation_evidence.py pass
 

@@ -29,11 +29,11 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov006_flags_test_with_no_call_graph_reachability
-- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_calls_the_bound_symbol
-- tests/test_gates.py::TestCoverageGate::test_cov006_never_fires_for_a_public_target
-- tests/test_gates.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
-- tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_doc_anchor_on_public_symbol
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_flags_test_with_no_call_graph_reachability
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_silent_when_test_calls_the_bound_symbol
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_never_fires_for_a_public_target
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_silent_for_doc_anchor_on_public_symbol
 designated_repro_test: null
 threat: null
 component: null

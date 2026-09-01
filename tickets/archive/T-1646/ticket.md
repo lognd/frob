@@ -26,8 +26,8 @@ scope_changes:
   at: '2026-08-06'
 evidence:
 - tests/test_gates_fix_engine.py::TestFixSuppress001PairedSuppression::test_mypy_suppressed_ty_unsuppressed_gets_paired_suppression
-- tests/test_gates.py::TestAutofixManifest::test_apply_tier_a_fixes_clears_manifest_on_clean_finish
-- tests/test_gates.py::TestAutofixManifest::test_write_then_clear_roundtrip
+- tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_apply_tier_a_fixes_clears_manifest_on_clean_finish
+- tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_write_then_clear_roundtrip
 designated_repro_test: null
 threat: null
 component: null

@@ -15,8 +15,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestScopePrework::test_scope001_fires_when_no_scope_declared
-- tests/test_gates.py::TestScopePrework::test_scope001_empty_scope_ledger_still_implicitly_in_scope
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_fires_when_no_scope_declared
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_empty_scope_ledger_still_implicitly_in_scope
 designated_repro_test: null
 threat: null
 component: null

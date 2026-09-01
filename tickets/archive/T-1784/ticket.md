@@ -61,20 +61,20 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/test_gates.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires
-- tests/test_gates.py::TestRootAssetDirGate::test_directory_referenced_under_src_frob_is_silent
-- tests/test_gates.py::TestRootAssetDirGate::test_directory_referenced_in_pyproject_is_silent
-- tests/test_gates.py::TestRootAssetDirGate::test_directory_with_external_reader_declaration_is_silent
-- tests/test_gates.py::TestRootAssetDirGate::test_makefile_referenced_directory_is_silent
-- tests/test_gates.py::TestRootAssetDirGate::test_allowlisted_directories_are_silent
-designated_repro_test: tests/test_gates.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires
+- tests/gates_suite/test_invariant.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires
+- tests/gates_suite/test_invariant.py::TestRootAssetDirGate::test_directory_referenced_under_src_frob_is_silent
+- tests/gates_suite/test_invariant.py::TestRootAssetDirGate::test_directory_referenced_in_pyproject_is_silent
+- tests/gates_suite/test_invariant.py::TestRootAssetDirGate::test_directory_with_external_reader_declaration_is_silent
+- tests/gates_suite/test_invariant.py::TestRootAssetDirGate::test_makefile_referenced_directory_is_silent
+- tests/gates_suite/test_invariant.py::TestRootAssetDirGate::test_allowlisted_directories_are_silent
+designated_repro_test: tests/gates_suite/test_invariant.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires
 acceptance:
 - text: given a repo-root directory with zero code references, when frob check runs,
     then ROOT001 fires -- FAIL before this rule existed (frob.gates._root_asset_dirs.root_asset_dir_gate
     did not exist, ModuleNotFoundError), PASS after (root_asset_dir_gate reports ROOT001
     for the fixture directory)
   evidence:
-  - tests/test_gates.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires
+  - tests/gates_suite/test_invariant.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires
 threat: null
 component: null
 anchor: false

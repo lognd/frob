@@ -55,8 +55,8 @@ generated_gate_rule_ids partially, scope_digest, prework_gate,
 test_gate, release_gate, perf_gate, run_gates) already carry real,
 behavioral frob:tests-bound unit tests exercising both clean and
 finding-producing branches (e.g. tests/test_secrets_gate.py,
-tests/test_gates.py::TestParseFailureGate,
-tests/test_gates.py::TestKnownGateRuleIds, tests/test_gates.py's
+tests/gates_suite/test_waive.py::TestParseFailureGate,
+tests/gates_suite/test_sys.py::TestKnownGateRuleIds, tests/test_gates.py's
 TestScopeDigest*/TestPreworkGate*/TestTestGate*/TestReleaseGate*/
 TestPerfGate*/TestRunGates* classes). Their reported 0.0% is most
 plausibly the known coverage-attribution gap tracked by T-1235/T-1395

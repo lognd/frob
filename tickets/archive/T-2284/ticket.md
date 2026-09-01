@@ -47,48 +47,48 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
-- tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
-- tests/test_gates.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
-- tests/test_gates.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
-designated_repro_test: tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
+designated_repro_test: tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
 acceptance:
 - text: 'A Tier-A handler that would modify a file outside the landing ticket''s scope
     is skipped, with the skip reported naming handler/file/reason (fails today: it
     writes and the land is refused afterwards)'
   evidence:
-  - tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
-  - tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
-  - tests/test_gates.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
-  - tests/test_gates.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
 - text: A file under another ticket's live lease is never modified; state which check
     takes precedence and why
   evidence:
-  - tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
-  - tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
-  - tests/test_gates.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
-  - tests/test_gates.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
 - text: 'MUST-STILL-PASS: a handler fixing a file the landing ticket owns still runs
     and commits (SYS111 ratchet bump is the shape); a land with no out-of-scope activity
     is byte-identical to today'
   evidence:
-  - tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
-  - tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
-  - tests/test_gates.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
-  - tests/test_gates.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
 - text: The skip is visible in the land's own output, not only in a log
   evidence:
-  - tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
-  - tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
-  - tests/test_gates.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
-  - tests/test_gates.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
 - text: State whether any handler is inherently repo-wide (REL002 is the candidate)
     and what it should do instead of being silently exempt
   evidence:
-  - tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
-  - tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
-  - tests/test_gates.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
-  - tests/test_gates.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
 threat: null
 component: null
 anchor: false

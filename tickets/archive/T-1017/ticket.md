@@ -17,7 +17,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_doc_target
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_warns_on_unscoped_doc_target
 - tests/test_graph.py::TestScopePrivateHelperGaps::test_flags_scoped_caller_of_unscoped_private_helper
 designated_repro_test: null
 threat: null

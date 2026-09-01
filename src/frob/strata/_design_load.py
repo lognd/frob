@@ -72,7 +72,8 @@ UNBOUND_REQUIRED_KINDS: tuple[EdgeKind, ...] = (EdgeKind.BOUNDARY, EdgeKind.SECR
 #: (src/frob/gates/__init__.py) so `sys_gate`'s design-dir opt-in check
 #: never imports `frob.strata` for a repo with no design dir at all
 #: (T-0135). The two are locked in sync by
-#: `tests/test_gates.py::TestSysGate::test_default_design_dir_mirror_stays_in_sync`.
+#: `tests/gates_suite/test_sys.py::TestSysGate::
+#: test_default_design_dir_mirror_stays_in_sync`.
 # frob:doc docs/strata/surface.md#directives-t-0080
 DEFAULT_DESIGN_DIR = "design"
 

@@ -76,7 +76,7 @@ scope_changes:
   at: '2026-08-02'
 evidence:
 - tests/test_serve.py::TestRunTouchedTests::test_no_diff_selects_nothing
-- tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
 designated_repro_test: null
 threat: null
 component: null

@@ -28,18 +28,18 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
-- tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_declared_matches_no_drift
-- tests/test_gates.py::TestFfiBoundaryGate::test_ctypes_call_without_declaration_fires_ffi002
-- tests/test_gates.py::TestFfiBoundaryGate::test_ctypes_call_with_empty_declaration_clean
+- tests/gates_suite/test_compliance.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
+- tests/gates_suite/test_compliance.py::TestFfiBoundaryGate::test_pyo3_declared_matches_no_drift
+- tests/gates_suite/test_compliance.py::TestFfiBoundaryGate::test_ctypes_call_without_declaration_fires_ffi002
+- tests/gates_suite/test_compliance.py::TestFfiBoundaryGate::test_ctypes_call_with_empty_declaration_clean
 designated_repro_test: null
 acceptance:
 - text: GIVEN a pyo3 function whose Rust side constructs PyValueError but whose frob:raises
     omits it WHEN the gate runs THEN a drift error names both sides; GIVEN a ctypes
     boundary with no frob:raises THEN a finding demands the declaration
   evidence:
-  - tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
-  - tests/test_gates.py::TestFfiBoundaryGate::test_ctypes_call_without_declaration_fires_ffi002
+  - tests/gates_suite/test_compliance.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
+  - tests/gates_suite/test_compliance.py::TestFfiBoundaryGate::test_ctypes_call_without_declaration_fires_ffi002
 threat: null
 component: null
 ---

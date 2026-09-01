@@ -311,7 +311,8 @@ def _walk001_violation(rel_path: str, site: _WalkSite) -> Violation:
 # frob:ticket T-0861
 # frob:doc docs/modules/gates.md#rule-catalog
 # frob:tests tests/test_walk_lint_gate.py::TestRglob.test_raw_rglob_fires
-# frob:tests tests/test_gates.py::TestRenderLintGate.test_render_package_exempt
+# frob:tests \
+# tests/gates_suite/test_sys.py::TestRenderLintGate.test_render_package_exempt
 def tracked_python_files_for_gate(
     root: Path, *, log_prefix: str, pathspec: str = "src/frob"
 ) -> tuple[str, ...]:

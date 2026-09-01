@@ -17,9 +17,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestWireGate::test_wire002_clean_when_permanent_true_on_private_test_helper
-- tests/test_gates.py::TestWireGate::test_wire002_still_fires_when_permanent_true_outside_tests_tree
-- tests/test_gates.py::TestWireGate::test_wire002_still_fires_when_permanent_true_on_public_test_symbol
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire002_clean_when_permanent_true_on_private_test_helper
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire002_still_fires_when_permanent_true_outside_tests_tree
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire002_still_fires_when_permanent_true_on_public_test_symbol
 - tests/unit/test_mutation_sweep_queue.py::TestEnqueuePendingSweep::test_enqueue_persists_entry
 designated_repro_test: null
 threat: null

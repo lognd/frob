@@ -14,8 +14,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_test005_unmeasured_symbol_in_measured_file_flags_as_zero
-- tests/test_gates.py::TestTestGate::test_test005_symbol_in_unmeasured_file_still_skipped
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test005_unmeasured_symbol_in_measured_file_flags_as_zero
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test005_symbol_in_unmeasured_file_still_skipped
 designated_repro_test: null
 threat: null
 component: null

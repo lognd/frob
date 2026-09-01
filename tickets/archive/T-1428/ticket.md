@@ -107,68 +107,68 @@ scope_changes:
   actor: logan
   at: '2026-08-02'
 evidence:
-- tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
-- tests/test_gates.py::TestWireGate::test_new_function_called_from_non_test_code_is_not_flagged
-- tests/test_gates.py::TestWireGate::test_new_rule_id_missing_from_known_gate_rules_is_flagged
-- tests/test_gates.py::TestWireGate::test_new_rule_id_present_in_known_gate_rules_is_not_flagged
-- tests/test_gates.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
-- tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
-- tests/test_gates.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
-- tests/test_gates.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_is_closed
-- tests/test_gates.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_function_called_from_non_test_code_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_rule_id_missing_from_known_gate_rules_is_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_rule_id_present_in_known_gate_rules_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_is_closed
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
 designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket diff adding a function, parameter, or registry entry that no
     non-test code reaches WHEN the gate runs THEN it is refused, reconstructed as
     a fixture from a real prior instance
   evidence:
-  - tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
-  - tests/test_gates.py::TestWireGate::test_new_function_called_from_non_test_code_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_new_rule_id_missing_from_known_gate_rules_is_flagged
-  - tests/test_gates.py::TestWireGate::test_new_rule_id_present_in_known_gate_rules_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
-  - tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
-  - tests/test_gates.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_is_closed
-  - tests/test_gates.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_function_called_from_non_test_code_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_rule_id_missing_from_known_gate_rules_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_rule_id_present_in_known_gate_rules_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_is_closed
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
 - text: GIVEN a properly wired change WHEN the gate runs THEN it is permitted, so
     the rule is not simply refusing every addition
   evidence:
-  - tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
-  - tests/test_gates.py::TestWireGate::test_new_function_called_from_non_test_code_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_new_rule_id_missing_from_known_gate_rules_is_flagged
-  - tests/test_gates.py::TestWireGate::test_new_rule_id_present_in_known_gate_rules_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
-  - tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
-  - tests/test_gates.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_is_closed
-  - tests/test_gates.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_function_called_from_non_test_code_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_rule_id_missing_from_known_gate_rules_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_rule_id_present_in_known_gate_rules_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_is_closed
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
 - text: GIVEN a deliberate two-phase landing WHEN the addition names the follow-up
     ticket expected to wire it THEN it is permitted and that obligation is recorded
     rather than forgotten
   evidence:
-  - tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
-  - tests/test_gates.py::TestWireGate::test_new_function_called_from_non_test_code_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_new_rule_id_missing_from_known_gate_rules_is_flagged
-  - tests/test_gates.py::TestWireGate::test_new_rule_id_present_in_known_gate_rules_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
-  - tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
-  - tests/test_gates.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_is_closed
-  - tests/test_gates.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_function_called_from_non_test_code_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_rule_id_missing_from_known_gate_rules_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_rule_id_present_in_known_gate_rules_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_is_closed
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
 - text: GIVEN a new CLI flag whose dest never appears in AppConfig from_external copy
     lists WHEN the gate runs THEN it is caught, since that wiring is a string in a
     list and invisible to the call graph
   evidence:
-  - tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
-  - tests/test_gates.py::TestWireGate::test_new_function_called_from_non_test_code_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_new_rule_id_missing_from_known_gate_rules_is_flagged
-  - tests/test_gates.py::TestWireGate::test_new_rule_id_present_in_known_gate_rules_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
-  - tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
-  - tests/test_gates.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_is_closed
-  - tests/test_gates.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_function_called_from_non_test_code_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_rule_id_missing_from_known_gate_rules_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_rule_id_present_in_known_gate_rules_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_missing
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_fires_when_follow_up_ticket_is_closed
+  - tests/gates_suite/test_wire.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
 threat: null
 component: null
 ---

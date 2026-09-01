@@ -32,7 +32,7 @@ from frob.app.config import AppConfig
 # tests -- no production caller to wire it to by design" permanent="true"
 def _write(root: Path, rel: str, text: str) -> Path:
     """Write `text` to `root/rel`, creating parent dirs -- shared fixture
-    helper matching the repo-wide `tests/test_gates.py::_write` shape."""
+    helper matching the repo-wide `tests/conftest.py::_write` shape."""
     path = root / rel
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)

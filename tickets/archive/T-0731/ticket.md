@@ -18,8 +18,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestDebtGate::test_release_gate_bump_fires_without_frob_agent
-- tests/test_gates.py::TestDebtGate::test_release_gate_bump_suppressed_under_frob_agent
+- tests/gates_suite/test_debt.py::TestDebtGate::test_release_gate_bump_fires_without_frob_agent
+- tests/gates_suite/test_debt.py::TestDebtGate::test_release_gate_bump_suppressed_under_frob_agent
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_commit_refused_changelog
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_commit_refused_uv_lock
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_commit_refused_pyproject_version

@@ -24,8 +24,8 @@ no_scope_declared_reason: null
 evidence:
 - tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_sys111_finding_in_touched_files_refuses_and_unwinds
 - tests/test_ticket_work_and_land_finish.py::TestSelfauditFindingsInTouchedFiles::test_docptr_finding_in_touched_files_refuses_and_unwinds
-- tests/test_gates.py::TestSys111FindingsTouching::test_ratchet_trip_in_declaring_file_is_returned
-- tests/test_gates.py::TestDocptrFindingsTouching::test_finding_in_touched_doc_is_returned
+- tests/gates_suite/test_sys.py::TestSys111FindingsTouching::test_ratchet_trip_in_declaring_file_is_returned
+- tests/gates_suite/test_sys.py::TestDocptrFindingsTouching::test_finding_in_touched_doc_is_returned
 designated_repro_test: null
 threat: null
 component: null

@@ -25,9 +25,9 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_todo002_unbound_directive
-- tests/test_gates.py::TestCoverageGate::test_todo001_bare_comment_in_touched_file
-- tests/test_gates.py::TestCoverageGate::test_todo002_edge_to_closed_ticket
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_todo002_unbound_directive
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_todo001_bare_comment_in_touched_file
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_todo002_edge_to_closed_ticket
 designated_repro_test: null
 threat: null
 component: null

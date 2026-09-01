@@ -1496,8 +1496,8 @@ _WIRE003_HIDDEN_DIRECT_DISPATCH_VERBS: tuple[str, ...] = ("refactor", "narrative
 
 
 # frob:ticket T-3115
-# frob:tests tests/test_gates.py::TestWireGate.test_wire003_direct_dispatch_verb_refactor_is_not_flagged kind="unit"  # noqa: E501
-# frob:tests tests/test_gates.py::TestWireGate.test_wire003_still_flags_a_verb_shaped_like_the_hidden_set kind="unit"  # noqa: E501
+# frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_wire003_direct_dispatch_verb_refactor_is_not_flagged kind="unit"  # noqa: E501
+# frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_wire003_still_flags_a_verb_shaped_like_the_hidden_set kind="unit"  # noqa: E501
 def _wire003_hidden_verb_tokens() -> frozenset[str]:
     """Subcommand/sub-subcommand NAMES for the direct-dispatch verbs in
     `_WIRE003_HIDDEN_DIRECT_DISPATCH_VERBS` (T-3115), resolved against
@@ -1536,7 +1536,7 @@ def _wire003_hidden_verb_tokens() -> frozenset[str]:
 
 
 # frob:ticket T-3115
-# frob:tests tests/test_gates.py::TestWireGate.test_wire003_direct_dispatch_verb_refactor_is_not_flagged kind="unit"  # noqa: E501
+# frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_wire003_direct_dispatch_verb_refactor_is_not_flagged kind="unit"  # noqa: E501
 def _wire003_live_verb_tokens() -> frozenset[str]:
     """Every subcommand/sub-subcommand NAME string reachable anywhere in
     the LIVE `frob` CLI dispatch tree (T-1725: resolve against the real
@@ -1618,31 +1618,41 @@ def _wire003_stale_verb_references(root: Path) -> list[Violation]:
 # frob:ticket T-1428
 # frob:ticket T-1725
 # frob:tests \
-# tests/test_gates.py::TestWireGate.test_new_public_function_with_no_caller_is_flagged
-# frob:tests tests/test_gates.py::TestWireGate.test_new_function_called_from_non_test_code_is_not_flagged  # noqa: E501
+# tests/gates_suite/test_wire.py::TestWireGate.test_new_public_function_with_no_caller_\
+# is_flagged
+# frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_new_function_called_from_non_test_code_is_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_gates.py::TestWireGate.test_relocated_symbol_via_file_split_is_not_flagged
-# frob:tests tests/test_gates.py::TestWireGate.test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged  # noqa: E501
+# tests/gates_suite/test_wire.py::TestWireGate.test_relocated_symbol_via_file_split_is_\
+# not_flagged
+# frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_genuinely_new_symbol_in_a_split_sibling_file_is_still_flagged  # noqa: E501
 # frob:tests \
-# tests/test_gates.py::TestWireGate.test_new_kwonly_param_never_passed_is_flagged
-# frob:tests tests/test_gates.py::TestWireGate.test_new_kwonly_param_passed_at_call_site_is_not_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestWireGate.test_new_cli_dest_missing_from_config_external_is_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestWireGate.test_new_cli_dest_present_in_config_external_is_not_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestWireGate.test_new_rule_id_missing_from_known_gate_rules_is_flagged  # noqa: E501
-# frob:tests tests/test_gates.py::TestWireGate.test_new_rule_id_present_in_known_gate_rules_is_not_flagged  # noqa: E501
+# tests/gates_suite/test_wire.py::TestWireGate.test_new_kwonly_param_never_passed_is_fl\
+# agged
+# frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_new_kwonly_param_passed_at_call_site_is_not_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_new_cli_dest_missing_from_config_external_is_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_new_cli_dest_present_in_config_external_is_not_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_new_rule_id_missing_from_known_gate_rules_is_flagged  # noqa: E501
+# frob:tests tests/gates_suite/test_wire.py::TestWireGate.test_new_rule_id_present_in_known_gate_rules_is_not_flagged  # noqa: E501
 # frob:tests \
-# tests/test_gates.py::TestWireGate.test_wire002_fires_when_follow_up_ticket_missing
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire002_fires_when_follow_up_ticket\
+# _missing
 # frob:tests \
-# tests/test_gates.py::TestWireGate.test_wire002_fires_when_follow_up_ticket_is_closed
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire002_fires_when_follow_up_ticket\
+# _is_closed
 # frob:tests \
-# tests/test_gates.py::TestWireGate.test_wire002_clean_when_follow_up_ticket_is_open
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire002_clean_when_follow_up_ticket\
+# _is_open
 # frob:tests \
-# tests/test_gates.py::TestWireGate.test_wire003_matcher_pattern_stale_verb_is_flagged
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire003_matcher_pattern_stale_verb_\
+# is_flagged
 # frob:tests \
-# tests/test_gates.py::TestWireGate.test_wire003_suggestion_string_stale_verb_is_flagged
-# frob:tests tests/test_gates.py::TestWireGate.test_wire003_real_verbs_are_not_flagged
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire003_suggestion_string_stale_ver\
+# b_is_flagged
 # frob:tests \
-# tests/test_gates.py::TestWireGate.test_wire003_dotted_module_path_is_not_flagged
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire003_real_verbs_are_not_flagged
+# frob:tests \
+# tests/gates_suite/test_wire.py::TestWireGate.test_wire003_dotted_module_path_is_not_f\
+# lagged
 # frob:enforces CHK-GATE-WIRE001
 # frob:enforces CHK-GATE-WIRE002
 # frob:enforces CHK-GATE-WIRE003

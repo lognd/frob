@@ -217,8 +217,9 @@ def _map_pyo3_error(raw: str) -> str | None:
 
 # frob:doc docs/modules/gates.md#ffi001-ffi002-t-0690
 # frob:ticket T-0690
-# frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001
-# frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_pyo3_declared_matches_no_drift  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001
+# frob:tests tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_declared_matches_no_drift  # noqa: E501
 def scan_pyo3_raises(source: str) -> tuple[PyO3FunctionRaises, ...]:
     """Every `#[pyfunction]` in `source` (T-0690, Rust source text) with its
     OBSERVED raised-type set: a raw brace-depth-tracked scan (not a full
@@ -305,8 +306,9 @@ def _scan_function_body(lines: list[str], start: int) -> frozenset[str]:
 
 # frob:doc docs/modules/gates.md#ffi001-ffi002-t-0690
 # frob:ticket T-0690
-# frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001
-# frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_pyo3_declared_matches_no_drift  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001
+# frob:tests tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_declared_matches_no_drift  # noqa: E501
 def parse_pyi_declared_raises(source: str) -> dict[str, frozenset[str]]:
     """Every `.pyi` stub function's declared `# frob:raises <Type>` set
     (T-0690), keyed on function name -- the SAME above-the-def directive
@@ -357,8 +359,8 @@ class CtypesBoundaryCall(BaseModel):
 
 # frob:doc docs/modules/gates.md#ffi001-ffi002-t-0690
 # frob:ticket T-0690
-# frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_ctypes_call_without_declaration_fires_ffi002  # noqa: E501
-# frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_ctypes_call_with_empty_declaration_clean  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_without_declaration_fires_ffi002  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_with_empty_declaration_clean  # noqa: E501
 def scan_ctypes_boundary_calls(source: str) -> tuple[CtypesBoundaryCall, ...]:
     """Every call made through a ctypes-loaded library handle in `source`
     (T-0690, python source text): first finds every `handle =

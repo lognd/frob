@@ -371,19 +371,20 @@ def _doc004_block_violations(
 # frob:tests \
 # tests/test_docblocks_gate.py::TestRustNamespace.test_external_crate_use_not_flagged
 # frob:tests \
-# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_nonexistent_subcommand_is_sta\
-# le
+# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_nonexistent_subcomm\
+# and_is_stale
 # frob:tests \
-# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_anchored_pass\
-# es
+# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_anc\
+# hored_passes
 # frob:tests \
-# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_unanchored_wa\
-# rns_unbound
+# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_una\
+# nchored_warns_unbound
 # frob:tests \
-# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_waive_suppresses_console_stale
+# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_waive_suppresses_co\
+# nsole_stale
 # frob:tests \
-# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_no_config_means_no_console_ch\
-# ecking
+# tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift.test_no_config_means_no_\
+# console_checking
 def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC004: scan every tracked `.md` doc's fenced code blocks for
     references to THIS PROJECT's own code surface (manifest-derived
@@ -885,14 +886,17 @@ def _doc012_violation(name: str, prog: str) -> Violation:
 
 # frob:doc docs/modules/gates.md#doc012-dedicated-command-section-drift-lock-t-1783
 # frob:tests \
-# tests/test_gates.py::TestDoc012CommandSectionGate.test_undocumented_subcommand_fails
+# tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_undocumented_subcomm\
+# and_fails
 # frob:tests \
-# tests/test_gates.py::TestDoc012CommandSectionGate.test_documented_subcommand_passes
+# tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_documented_subcomman\
+# d_passes
 # frob:tests \
-# tests/test_gates.py::TestDoc012CommandSectionGate.test_table_row_alone_does_not_satis\
-# fy
+# tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_table_row_alone_does\
+# _not_satisfy
 # frob:tests \
-# tests/test_gates.py::TestDoc012CommandSectionGate.test_no_config_means_no_checking
+# tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate.test_no_config_means_no_c\
+# hecking
 # frob:enforces CHK-GATE-DOC012
 def doc012_gate(root: Path) -> tuple[Violation, ...]:
     """DOC012 (T-1783): for every top-level subcommand the SAME live

@@ -22,14 +22,14 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestDeadSymbolGate::test_waiver_directly_above_symbol_suppresses_it
-- tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_pydantic_field_validator_is_not_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_autouse_pytest_fixture_is_not_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_dunder_method_is_not_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_test_function_is_not_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_tests_edge_target_is_not_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_waiver_directly_above_symbol_suppresses_it
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_pydantic_field_validator_is_not_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_autouse_pytest_fixture_is_not_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_dunder_method_is_not_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_test_function_is_not_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_tests_edge_target_is_not_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
 designated_repro_test: null
 threat: null
 component: null

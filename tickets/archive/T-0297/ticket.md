@@ -18,9 +18,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov005_directive_rebound_to_private_symbol_flags
-- tests/test_gates.py::TestCoverageGate::test_cov005_same_symbol_no_rebind_is_clean
-- tests/test_gates.py::TestCoverageGate::test_cov005_no_old_blob_is_clean
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov005_directive_rebound_to_private_symbol_flags
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov005_same_symbol_no_rebind_is_clean
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov005_no_old_blob_is_clean
 designated_repro_test: null
 acceptance:
 - text: given a frob:tests/doc/waive/ticket directive that a refactor displaced from

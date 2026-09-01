@@ -47,7 +47,7 @@ evidence:
 - tests/unit/test_arch.py::TestPythonAdapter::test_adapt_parses_frob_raises_declaration_on_call_line
 - tests/unit/test_arch.py::TestMayRaiseResolver::test_declared_raises_substitutes_for_opaque_boundary_call
 - tests/unit/test_arch.py::TestMayRaiseResolver::test_declared_raises_empty_set_is_honored_not_treated_as_absent
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_declared_frob_raises_directive_discharges_exhaust002
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_declared_frob_raises_directive_discharges_exhaust002
 designated_repro_test: null
 threat: null
 component: null

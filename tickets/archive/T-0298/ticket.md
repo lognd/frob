@@ -30,10 +30,10 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_file_level_evidence
-- tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_directory_level_evidence
-- tests/test_gates.py::TestCoverageGate::test_cov003_rejects_empty_directory_level_evidence
-- tests/test_gates.py::TestCoverageGate::test_cov003_prefers_node_level_over_path_level
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_passes_for_file_level_evidence
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_passes_for_directory_level_evidence
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_rejects_empty_directory_level_evidence
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_prefers_node_level_over_path_level
 designated_repro_test: null
 acceptance:
 - text: given ticket evidence naming a whole test FILE (tests/test_vet.py) or a DIRECTORY

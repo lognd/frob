@@ -100,8 +100,8 @@ scope_changes:
   actor: logan
   at: '2026-08-09'
 evidence:
-- tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
-- tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_already_canonical_is_a_no_op
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_already_canonical_is_a_no_op
 - tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_leaves_an_out_of_scope_file_untouched
 - tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_none_preserves_whole_tree_behaviour
 - tests/test_gates_fix_engine.py::TestFmt001OnlyPathsLandScoping::test_only_paths_skips_nonexistent_path_without_error

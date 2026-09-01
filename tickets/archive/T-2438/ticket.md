@@ -23,26 +23,26 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_match_waiver_symref_formatting_difference_still_waives
-- tests/test_gates.py::TestTestGate::test_match_waiver_logs_diagnostic_on_genuine_symref_mismatch
-- tests/test_gates.py::TestTestGate::test_match_waiver_different_symbol_same_file_still_not_waived
-designated_repro_test: tests/test_gates.py::TestTestGate::test_match_waiver_symref_formatting_difference_still_waives
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_symref_formatting_difference_still_waives
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_logs_diagnostic_on_genuine_symref_mismatch
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_different_symbol_same_file_still_not_waived
+designated_repro_test: tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_symref_formatting_difference_still_waives
 acceptance:
 - text: Given a symbol-bound frob:waive whose symref differs from the violation's
     symref only in formatting, when the gate runs, then the finding is waived rather
     than silently kept.
   evidence:
-  - tests/test_gates.py::TestTestGate::test_match_waiver_symref_formatting_difference_still_waives
+  - tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_symref_formatting_difference_still_waives
 - text: Given a symref-carrying violation with no matching symbol-exact waiver but
     a same-file same-rule waiver present, when matching fails, then a diagnostic names
     both strings rather than returning None silently.
   evidence:
-  - tests/test_gates.py::TestTestGate::test_match_waiver_logs_diagnostic_on_genuine_symref_mismatch
+  - tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_logs_diagnostic_on_genuine_symref_mismatch
 - text: Given a waiver bound to a DIFFERENT symbol in the same file, when an unrelated
     finding is checked, then it is still kept, proving precision was not traded for
     a blanket file waiver.
   evidence:
-  - tests/test_gates.py::TestTestGate::test_match_waiver_different_symbol_same_file_still_not_waived
+  - tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_different_symbol_same_file_still_not_waived
 threat: null
 component: gates
 anchor: false

@@ -16,8 +16,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_test002_satisfied_by_rust_directive_bound_cross_file
-- tests/test_gates.py::TestTestGate::test_test002_rust_directive_from_non_test_symbol_does_not_satisfy
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test002_satisfied_by_rust_directive_bound_cross_file
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test002_rust_directive_from_non_test_symbol_does_not_satisfy
 designated_repro_test: null
 threat: null
 component: null

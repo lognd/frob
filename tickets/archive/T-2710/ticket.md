@@ -25,7 +25,7 @@ no_scope_declared_reason: null
 evidence:
 - tests/unit/test_check.py::TestGatesErrorResultRealTicketError::test_real_ticket_error_names_specific_mode
 - tests/unit/test_check.py::TestGatesErrorResultRealTicketError::test_dummy_sentinel_still_a_defensive_fallback
-- tests/test_gates.py::TestRunGatesQueueFailureThreadsRealTicketError::test_duplicate_id_across_active_and_archive_surfaces_as_ticketerror
+- tests/gates_suite/test_run.py::TestRunGatesQueueFailureThreadsRealTicketError::test_duplicate_id_across_active_and_archive_surfaces_as_ticketerror
 designated_repro_test: null
 threat: null
 component: null

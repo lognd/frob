@@ -23,8 +23,8 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov006_violation_carries_edge_src_as_symref
-- tests/test_gates.py::TestCoverageGate::test_cov006_waiver_does_not_blanket_suppress_the_whole_file
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_violation_carries_edge_src_as_symref
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_waiver_does_not_blanket_suppress_the_whole_file
 designated_repro_test: null
 threat: null
 component: null

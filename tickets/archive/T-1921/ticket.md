@@ -187,7 +187,7 @@ WHAT T-1904 ITSELF DID. Re-applied the T-1579 branch's docstring note
 the "ALSO OWED" item T-1904's body named. No behavior changed; both count
 guards (absolute and proportional) remain unconditional refusals, and the
 standing regression lock
-(`tests/test_gates.py::TestWaive004DegradedRunGuard::
+(`tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::
 test_mass_invalidation_with_live_finding_elsewhere_still_refuses`) is
 untouched and still passing.
 

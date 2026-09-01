@@ -51,8 +51,8 @@ scope_changes:
   actor: logan
   at: '2026-07-29'
 evidence:
-- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refuses_below_deflation_floor
-- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_deflation_floor_skipped_below_min_known_modules
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_refuses_below_deflation_floor
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_deflation_floor_skipped_below_min_known_modules
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_red_suite_keeps_coverage_data
 - tests/test_coverage.py::TestWorkerCrashRetryArgvStripsWorkerCount::test_retry_argv_contains_neither_n_flag_nor_its_value
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_produces_coverage_xml_after_worker_crash_recovery
@@ -64,8 +64,8 @@ acceptance:
     fail the target -- load-sensitive flakes (the four known self-model/serve-watch
     specimens) no longer block combine/xml/stamp
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refuses_below_deflation_floor
-  - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_deflation_floor_skipped_below_min_known_modules
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_refuses_below_deflation_floor
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_deflation_floor_skipped_below_min_known_modules
   - tests/test_coverage.py::TestNativeCoverageRefresh::test_red_suite_keeps_coverage_data
   - tests/test_coverage.py::TestWorkerCrashRetryArgvStripsWorkerCount::test_retry_argv_contains_neither_n_flag_nor_its_value
   - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_produces_coverage_xml_after_worker_crash_recovery
@@ -75,8 +75,8 @@ acceptance:
     whose module-coverage fraction is below a sanity floor refuses to stamp (extending
     TEST011's deflation heuristic into a hard pre-stamp guard)
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refuses_below_deflation_floor
-  - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_deflation_floor_skipped_below_min_known_modules
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_refuses_below_deflation_floor
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_deflation_floor_skipped_below_min_known_modules
   - tests/test_coverage.py::TestNativeCoverageRefresh::test_red_suite_keeps_coverage_data
   - tests/test_coverage.py::TestWorkerCrashRetryArgvStripsWorkerCount::test_retry_argv_contains_neither_n_flag_nor_its_value
   - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_produces_coverage_xml_after_worker_crash_recovery

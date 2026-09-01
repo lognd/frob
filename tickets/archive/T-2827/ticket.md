@@ -46,7 +46,7 @@ body_changes:
   old_length: 1545
   new_length: 2260
 evidence:
-- tests/test_gates.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire002_clean_when_follow_up_ticket_is_open
 - tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_confirmatory_finding_is_warn_for_feature_kind
 designated_repro_test: null
 threat: null

@@ -185,7 +185,7 @@ body_changes:
   old_length: 7354
   new_length: 9767
 evidence:
-- tests/test_gates.py::TestTestGate::test_match_waiver_prefix_reach_gated_to_package_scoped_rules
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_match_waiver_prefix_reach_gated_to_package_scoped_rules
 designated_repro_test: null
 threat: null
 component: null

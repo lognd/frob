@@ -15,9 +15,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_fires_on_cross_file_same_test_collision
-- tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_silent_when_symbol_has_explicit_edge
-- tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_silent_when_no_leaf_name_collision
+- tests/gates_suite/test_test_gate.py::TestTest014AmbiguousConventionMatch::test_fires_on_cross_file_same_test_collision
+- tests/gates_suite/test_test_gate.py::TestTest014AmbiguousConventionMatch::test_silent_when_symbol_has_explicit_edge
+- tests/gates_suite/test_test_gate.py::TestTest014AmbiguousConventionMatch::test_silent_when_no_leaf_name_collision
 designated_repro_test: null
 threat: null
 component: null

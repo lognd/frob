@@ -16,8 +16,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_test003_satisfied_by_parametrized_test_node_id
-- tests/test_gates.py::TestTestGate::test_node_id_collected_direct
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test003_satisfied_by_parametrized_test_node_id
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_node_id_collected_direct
 designated_repro_test: null
 threat: null
 component: null

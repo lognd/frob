@@ -69,10 +69,10 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/test_gates.py::TestFixEngineTierABatch2::test_docenum001_fails_before_fix_and_passes_after
-- tests/test_gates.py::TestFixEngineTierABatch2::test_docenum001_already_in_sync_is_a_no_op
-- tests/test_gates.py::TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule
-- tests/test_gates.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_docenum001_fails_before_fix_and_passes_after
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_docenum001_already_in_sync_is_a_no_op
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule
+- tests/gates_suite/test_sys.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
 designated_repro_test: null
 threat: null
 component: null

@@ -42,14 +42,14 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_disclosed_follow_up_with_no_citation_fires
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_disclosure_with_a_real_citing_id_is_silent
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_not_yet_ticketed_with_no_citation_fires
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_explicit_no_ticket_needed_reason_is_silent
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_no_disclosure_phrase_is_silent
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_one_finding_per_ticket_not_per_phrase
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_numeric_count_residual_is_not_a_disclosure
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_rule_id_shaped_residue_is_not_a_disclosure
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_disclosed_follow_up_with_no_citation_fires
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_disclosure_with_a_real_citing_id_is_silent
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_not_yet_ticketed_with_no_citation_fires
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_explicit_no_ticket_needed_reason_is_silent
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_no_disclosure_phrase_is_silent
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_one_finding_per_ticket_not_per_phrase
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_numeric_count_residual_is_not_a_disclosure
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_rule_id_shaped_residue_is_not_a_disclosure
 designated_repro_test: null
 acceptance:
 - text: GIVEN a done report whose prose discloses deferred work (left for a follow-up,
@@ -57,7 +57,7 @@ acceptance:
     finding fires unless the same report cites an open ticket id (or an explicit no-ticket-needed
     reason) within the disclosure's vicinity
   evidence:
-  - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_disclosure_with_a_real_citing_id_is_silent
+  - tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_disclosure_with_a_real_citing_id_is_silent
 - text: GIVEN the TICK011 fixture in TestTick011DisclosedCutWithoutTicket.test_disclosed_follow_up_with_no_citation_fires
     (a Done report disclosing deferred work with no ticket cited) WHEN run against
     the pre-T-1129 tickets_gate (no TICK011 check existed) THEN it FAILS to detect
@@ -65,7 +65,7 @@ acceptance:
     THEN it PASSES (fires exactly 1 TICK011 finding) -- proven through the production
     tickets_gate() invocation, not a pure-function unit call
   evidence:
-  - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_disclosed_follow_up_with_no_citation_fires
+  - tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_disclosed_follow_up_with_no_citation_fires
 threat: null
 component: null
 ---

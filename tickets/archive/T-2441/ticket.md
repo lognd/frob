@@ -24,8 +24,8 @@ no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
 - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_real_repo_registry_is_complete
-- tests/test_gates.py::TestKnownGateRuleIds::test_bare_port001_registered
-designated_repro_test: tests/test_gates.py::TestKnownGateRuleIds::test_bare_port001_registered
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_bare_port001_registered
+designated_repro_test: tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_bare_port001_registered
 threat: null
 component: null
 anchor: false

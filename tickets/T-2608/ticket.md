@@ -35,11 +35,11 @@ scope_changes:
   actor: logan
   at: '2026-08-30'
 evidence:
-- tests/test_gates.py::TestScope002ClosureGate::test_groups_many_symbols_pointing_at_the_same_missing_file
-- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_doc_target
-- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_private_helper
-- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_test_target
-- tests/test_gates.py::TestScope002ClosureGate::test_silent_on_closed_scope
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_groups_many_symbols_pointing_at_the_same_missing_file
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_warns_on_unscoped_doc_target
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_warns_on_unscoped_private_helper
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_warns_on_unscoped_test_target
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_silent_on_closed_scope
 designated_repro_test: null
 threat: null
 component: null

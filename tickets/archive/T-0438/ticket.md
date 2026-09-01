@@ -15,7 +15,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates
+- tests/gates_suite/test_sys.py::TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates
 designated_repro_test: null
 threat: null
 component: null

@@ -15,11 +15,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestAutofixManifest::test_clear_autofix_manifest_swallows_oserror
-- tests/test_gates.py::TestScopePrework::test_record_prework_returns_err_on_oserror
-- tests/test_gates.py::TestScopePrework::test_load_prework_returns_none_on_malformed_json
-- tests/test_gates.py::TestScopePrework::test_load_prework_returns_none_on_schema_mismatch
-- tests/test_gates.py::TestBaselineDelta::test_load_baseline_malformed_json_is_none
+- tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_clear_autofix_manifest_swallows_oserror
+- tests/gates_suite/test_prework.py::TestScopePrework::test_record_prework_returns_err_on_oserror
+- tests/gates_suite/test_prework.py::TestScopePrework::test_load_prework_returns_none_on_malformed_json
+- tests/gates_suite/test_prework.py::TestScopePrework::test_load_prework_returns_none_on_schema_mismatch
+- tests/gates_suite/test_prework.py::TestBaselineDelta::test_load_baseline_malformed_json_is_none
 - tests/test_gates_ratchet.py::TestLoadRatchetLockErrorPaths::test_malformed_json_treated_as_empty
 - tests/test_gates_ratchet.py::TestLoadRatchetLockErrorPaths::test_schema_mismatch_treated_as_empty
 - tests/test_gates_ratchet.py::TestRatchetEnabledRulesErrorPaths::test_malformed_toml_returns_empty

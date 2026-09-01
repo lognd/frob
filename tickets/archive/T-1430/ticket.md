@@ -15,8 +15,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestWireGate::test_new_kwonly_param_never_passed_is_flagged
-- tests/test_gates.py::TestWireGate::test_new_kwonly_param_passed_at_call_site_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_kwonly_param_never_passed_is_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_kwonly_param_passed_at_call_site_is_not_flagged
 designated_repro_test: null
 threat: null
 component: null

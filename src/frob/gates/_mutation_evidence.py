@@ -310,7 +310,7 @@ def _double_quote_char_ranges(body: str) -> tuple[tuple[int, int], ...]:
     exactly this narrower set, not the full union `_quoted_char_ranges`
     returns: T-1700 already established that an id styled in `` `backtick
     code` `` right after plain-prose "Filed:" is a real, checkable claim
-    (`tests/test_gates.py::TestTick006PhantomFiling::
+    (`tests/gates_suite/test_tick.py::TestTick006PhantomFiling::
     test_backtick_styled_id_in_a_real_claim_still_fires`) -- applying the
     FULL `_quoted_char_ranges` set (which also excludes code spans) to
     the id's own offset would silently regress that exact precedent.

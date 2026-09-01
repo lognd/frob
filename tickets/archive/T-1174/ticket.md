@@ -17,9 +17,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestOptInGates::test_dup_gate_off_by_default
-- tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
-- tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
+- tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_off_by_default
+- tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
+- tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
 designated_repro_test: null
 threat: null
 component: null

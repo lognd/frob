@@ -244,7 +244,7 @@ evidence:
 - tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn::test_two_helpers_spawning_identical_subprocess_is_flagged
 - tests/unit/perf/test_effect_summaries.py::TestUnknownIdentityEquality::test_two_unknowns_with_the_same_reason_text_are_not_equal
 - tests/test_doctor.py::test_run_diagnosis_natives_present
-- tests/test_gates.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_no_handling_caller_recommends_result
+- tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_no_handling_caller_recommends_result
 - tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 designated_repro_test: null
 acceptance:

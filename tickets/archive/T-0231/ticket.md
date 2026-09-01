@@ -22,7 +22,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_version_flag_prints_version_and_exits_zero
 - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_names_apply_flag_in_label
-- tests/test_gates.py::TestDoclinkGate::test_orphan_hint_does_not_point_at_missing_docs_root
+- tests/gates_suite/test_doc.py::TestDoclinkGate::test_orphan_hint_does_not_point_at_missing_docs_root
 designated_repro_test: null
 threat: null
 component: null

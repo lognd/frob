@@ -29,8 +29,8 @@ scope_changes:
   actor: logan
   at: '2026-08-29'
 evidence:
-- tests/test_gates.py::TestScopePrework::test_scope001_exempts_new_tickets_own_bookkeeping_shard_filed_from_another
-- tests/test_gates.py::TestScopePrework::test_scope001_still_flags_hand_edit_of_unreferenced_tickets_shard
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_exempts_new_tickets_own_bookkeeping_shard_filed_from_another
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_still_flags_hand_edit_of_unreferenced_tickets_shard
 designated_repro_test: null
 threat: null
 component: null

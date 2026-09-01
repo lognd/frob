@@ -25,8 +25,8 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_gates.py::TestConventionUnitBinding::test_test001_exempts_claude_hooks_path
-designated_repro_test: tests/test_gates.py::TestConventionUnitBinding::test_test001_exempts_claude_hooks_path
+- tests/gates_suite/test_test_gate.py::TestConventionUnitBinding::test_test001_exempts_claude_hooks_path
+designated_repro_test: tests/gates_suite/test_test_gate.py::TestConventionUnitBinding::test_test001_exempts_claude_hooks_path
 threat: null
 component: null
 ---

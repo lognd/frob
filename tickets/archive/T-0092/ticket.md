@@ -19,7 +19,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_rust_evidence_id
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_passes_for_rust_evidence_id
 designated_repro_test: null
 threat: null
 component: null

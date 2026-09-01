@@ -29,7 +29,7 @@ def _write(root: Path, rel: str, text: str) -> Path:
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
     """Run `argv` in `cwd`, raising on a nonzero exit -- mirrors
-    `tests/test_gates.py::_run`."""
+    `tests/conftest.py::_run`."""
     return subprocess.run(
         argv, cwd=str(cwd), check=True, capture_output=True, text=True
     )

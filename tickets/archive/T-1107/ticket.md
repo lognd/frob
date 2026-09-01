@@ -23,11 +23,11 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_gates.py::TestInv003Gate::test_no_exclusivity_language_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_no_exclusivity_language_is_silent
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/test_gates.py::TestInv006Gate::test_new_renumber_file_has_no_unanchored_exclusivity_claim
-  new_node: tests/test_gates.py::TestInv003Gate::test_no_exclusivity_language_is_silent
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_no_exclusivity_language_is_silent
   reason: T-1763 deleted INV006 and TestInv006Gate entirely -- the specific self-check
     this evidence proved (a renumbered file carries no unanchored exclusivity claim)
     no longer applies since the rule it exercised is gone; rebinding to INV003's nearest

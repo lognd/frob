@@ -18,9 +18,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_waive002_flags_arch_category_as_ineffective
-- tests/test_gates.py::TestCoverageGate::test_waive002_flags_unknown_rule_id_as_ineffective
-- tests/test_gates.py::TestCoverageGate::test_waive002_end_to_end_via_run_gates
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_waive002_flags_arch_category_as_ineffective
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_waive002_flags_unknown_rule_id_as_ineffective
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_waive002_end_to_end_via_run_gates
 designated_repro_test: null
 threat: null
 component: null

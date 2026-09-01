@@ -61,19 +61,19 @@ scope_changes:
   actor: logan
   at: '2026-08-11'
 evidence:
-- tests/test_gates.py::TestEnvVarDocGate::test_undocumented_env_var_fires
-- tests/test_gates.py::TestEnvVarDocGate::test_documented_by_literal_string_is_silent
-- tests/test_gates.py::TestEnvVarDocGate::test_documented_by_constant_name_is_silent
-- tests/test_gates.py::TestEnvVarDocGate::test_file_scoped_waiver_covers_it
-- tests/test_gates.py::TestEnvVarDocGate::test_non_frob_env_prefixed_constants_are_ignored
-designated_repro_test: tests/test_gates.py::TestEnvVarDocGate::test_undocumented_env_var_fires
+- tests/gates_suite/test_invariant.py::TestEnvVarDocGate::test_undocumented_env_var_fires
+- tests/gates_suite/test_invariant.py::TestEnvVarDocGate::test_documented_by_literal_string_is_silent
+- tests/gates_suite/test_invariant.py::TestEnvVarDocGate::test_documented_by_constant_name_is_silent
+- tests/gates_suite/test_invariant.py::TestEnvVarDocGate::test_file_scoped_waiver_covers_it
+- tests/gates_suite/test_invariant.py::TestEnvVarDocGate::test_non_frob_env_prefixed_constants_are_ignored
+designated_repro_test: tests/gates_suite/test_invariant.py::TestEnvVarDocGate::test_undocumented_env_var_fires
 acceptance:
 - text: given a FROB_* env var constant with no docs/ mention, when frob check runs,
     then ENV001 fires -- FAIL before this rule existed (frob.gates._env_var_docs.env_var_doc_gate
     did not exist, ModuleNotFoundError), PASS after (env_var_doc_gate reports ENV001
     for the fixture constant)
   evidence:
-  - tests/test_gates.py::TestEnvVarDocGate::test_undocumented_env_var_fires
+  - tests/gates_suite/test_invariant.py::TestEnvVarDocGate::test_undocumented_env_var_fires
 threat: null
 component: null
 anchor: false

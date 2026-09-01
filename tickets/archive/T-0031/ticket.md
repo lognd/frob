@@ -24,7 +24,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_tickets.py::TestSingleFileLedger::test_migrate_collapses_dir_into_ledger
-- tests/test_gates.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
+- tests/gates_suite/test_coverage.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
 designated_repro_test: null
 threat: null
 component: null

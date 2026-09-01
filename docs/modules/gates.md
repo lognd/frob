@@ -659,7 +659,7 @@ mechanism, so it stays visible and auditable instead of vanishing.
 PROTO001 carries) means only `frob.arch._protocol_excuse
 .python_with_discharge` is wired into this repo-scan gate today -- the
 Rust/C++/TypeScript/GC predicates are doctrine-complete and directly
-unit-tested (`TestProtocolLanguageExcuseDischarge` in `tests/test_gates.py`),
+unit-tested (`TestProtocolLanguageExcuseDischarge` in `tests/gates_suite/test_protocol.py`),
 but wiring them into a real cross-file scan is blocked on those languages
 getting `build_call_graph` support at all (filed as T-0841, mirroring
 T-0745's own T-0809 disclosure rather than building a second, unreviewed
@@ -1604,7 +1604,7 @@ the mandatory reason requirement: instead of `reason="..."`, the site
 names a preset, and the reason resolves from the single table below
 (`frob.graph._waive_presets.WAIVE_PRESETS`, machine-read -- this table
 IS the source of truth, this section is its documented mirror, and
-`tests/test_gates.py::TestWaivePresets` drift-locks the two together).
+`tests/gates_suite/test_waive.py::TestWaivePresets` drift-locks the two together).
 A preset is NOT a blanket waiver: the site still carries an explicit
 `frob:waive RULE preset="name"` directive naming the exact rule it
 suppresses, at the exact site it suppresses it -- only the REASON PROSE
@@ -1916,7 +1916,7 @@ flagged either way -- same "cannot analyse, so do not claim a verdict"
 posture as `_module_join_fraction`'s own sample-size floor.
 
 T-1824's own declared scope (`src/frob/gates/_coverage.py`,
-`tests/test_gates.py`) could compute the list but could not reach
+`tests/gates_suite/test_coverage.py`) could compute the list but could not reach
 `frob.gates.__init__` (where every Violation-emitting gate function lives)
 or `frob.gates._waive`'s `_KNOWN_GATE_RULES` registry, so it landed as a
 WARNING log line only inside `load_coverage`. T-1877 closes that gap:
@@ -2880,7 +2880,7 @@ as designed, not a bug -- DEAD001 already owns "does any private symbol
 anywhere in the tree have zero callers" (unconditional, WARN); making
 WIRE001 also answer that question would duplicate DEAD001 at ERROR
 severity, a distinct feature decision, not a fix. Regression fixture:
-`tests/test_gates.py::TestWire001DiffScopingMissesPreExistingDeadSymbols`
+`tests/gates_suite/test_wire.py::TestWire001DiffScopingMissesPreExistingDeadSymbols`
 (a must-stay-quiet case for the exact T-2900/T-2905 shape, paired with a
 must-still-fire control proving the SAME dead symbol is caught the
 moment it is genuinely introduced by the diff being measured).
@@ -4560,7 +4560,7 @@ newly introduced undocumented subcommand now fails `frob check`
 immediately rather than silently re-accumulating the same backlog. See
 `tests/test_doc012_promotion.py::TestDoc012PromotedToError` for the
 must-fail fixture proving the promotion actually changed severity (filed
-in its own file, disjoint from `tests/test_gates.py`'s own
+in its own file, disjoint from `tests/gates_suite/test_doc.py`'s own
 `TestDoc012CommandSectionGate`, because that file carried a live
 cross-worktree lease -- T-2314 -- at promotion time; a follow-up
 `frob:todo T-2299` in that new file tracks folding it back in and
@@ -5800,7 +5800,7 @@ contract are tested against synthetic rule ids in
 `tests/test_gates_ratchet.py`/`tests/test_pool_runner.py`; the live-gate
 integration itself (opt-in config read, baseline hit stays warn, fresh
 finding errors, calibration against this repo's own committed
-`frob-ratchet.lock.json`) is tested in `tests/test_gates.py`. Any other
+`frob-ratchet.lock.json`) is tested in `tests/gates_suite/`. Any other
 warn-first rule can opt in the same way: add its id to `[gates.ratchet]
 rules`, baseline its current findings with `frob pool snapshot`, and call
 `resolve_ratchet_severity` at that gate's own severity-decision call
@@ -6299,8 +6299,8 @@ check --fix` CLI flag itself (argument parsing in
 `src/frob/_cli_parsers/_check.py`, orchestration in
 `src/frob/app/check_runner.py`) was wired up separately (T-1260) and
 calls `apply_tier_a_fixes` directly -- `src/frob/gates/**`/
-`src/frob/tickets/**`/`tests/test_gates.py` stay this module's own
-scope, the CLI wiring is a sibling ticket's. `tests/test_gates.py::
+`src/frob/tickets/**`/`tests/gates_suite/test_fix_engine.py` stay this
+module's own scope, the CLI wiring is a sibling ticket's. `tests/gates_suite/test_fix_engine.py::
 TestFixEngineTierA`/`TestFixEngineTierABatch2` exercise every handler at
 the function level against real `GraphSnapshot`s/`TicketQueue`s,
 GIVEN/WHEN/THEN per each ticket's own acceptance criteria.

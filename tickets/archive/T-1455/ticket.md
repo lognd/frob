@@ -17,18 +17,18 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov004_matching_sha_is_clean
-- tests/test_gates.py::TestCoverageGate::test_cov004_missing_attachment
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov004_matching_sha_is_clean
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov004_missing_attachment
 designated_repro_test: null
 acceptance:
 - text: GIVEN an attachment whose file exists with a byte-exact sha256 WHEN the COV
     gate runs THEN COV004 does not fire
   evidence:
-  - tests/test_gates.py::TestCoverageGate::test_cov004_matching_sha_is_clean
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov004_matching_sha_is_clean
 - text: GIVEN a missing or content-drifted attachment WHEN the COV gate runs THEN
     COV004 fires
   evidence:
-  - tests/test_gates.py::TestCoverageGate::test_cov004_missing_attachment
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov004_missing_attachment
 threat: null
 component: null
 ---

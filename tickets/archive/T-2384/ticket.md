@@ -67,8 +67,8 @@ body_changes:
   old_length: 5243
   new_length: 5424
 evidence:
-- tests/test_gates.py::TestEnvVarDocGate::test_undocumented_env_var_fires_for_a_differently_named_project
-- tests/test_gates.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires_for_a_differently_named_project
+- tests/gates_suite/test_invariant.py::TestEnvVarDocGate::test_undocumented_env_var_fires_for_a_differently_named_project
+- tests/gates_suite/test_invariant.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires_for_a_differently_named_project
 - tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_second_repo_does_not_delete_first_repos_entries
 - tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_same_repo_sync_twice_is_a_no_op_second_run
 - tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_manifest_records_only_this_repos_owned_entries
@@ -86,8 +86,8 @@ acceptance:
     with the frob repo's own pre-change finding count unchanged as the must-still-pass
     control.
   evidence:
-  - tests/test_gates.py::TestEnvVarDocGate::test_undocumented_env_var_fires_for_a_differently_named_project
-  - tests/test_gates.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires_for_a_differently_named_project
+  - tests/gates_suite/test_invariant.py::TestEnvVarDocGate::test_undocumented_env_var_fires_for_a_differently_named_project
+  - tests/gates_suite/test_invariant.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires_for_a_differently_named_project
 - text: Given two different frob-enabled repos that both sync agents/ and skills/
     into the same ~/.claude, when each runs frob sync-skills in turn, then neither
     run removes or overwrites an entry installed by the other, and running either

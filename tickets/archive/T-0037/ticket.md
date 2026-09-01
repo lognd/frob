@@ -24,7 +24,7 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
 - tests/test_dup_smart.py::TestFindClones::test_finds_renamed_clone_pair
-- tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_independent_gates_run_without_git
+- tests/gates_suite/test_test_gate.py::TestGatesDegradeWithoutDiff::test_diff_independent_gates_run_without_git
 designated_repro_test: null
 threat: null
 component: null

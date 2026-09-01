@@ -55,9 +55,9 @@ evidence:
 - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_const_ref_resolves_against_assignment_in_another_file
 - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_missing_scanned_base_directory_is_skipped_not_an_error
 - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_unresolved_const_ref_is_left_out
-- tests/test_gates.py::TestFfiBoundaryGate::test_ctypes_call_with_empty_declaration_clean
-- tests/test_gates.py::TestFfiBoundaryGate::test_ctypes_call_without_declaration_fires_ffi002
-- tests/test_gates.py::TestKnownGateRuleIds::test_scan_finds_a_synthetic_rule_id
+- tests/gates_suite/test_compliance.py::TestFfiBoundaryGate::test_ctypes_call_with_empty_declaration_clean
+- tests/gates_suite/test_compliance.py::TestFfiBoundaryGate::test_ctypes_call_without_declaration_fires_ffi002
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_scan_finds_a_synthetic_rule_id
 - tests/unit/test_arch.py::test_arch_end_to_end_analyze_then_render
 designated_repro_test: null
 threat: null

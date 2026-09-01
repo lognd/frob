@@ -82,7 +82,7 @@ evidence:
 - tests/unit/test_arch.py::TestPatternRecommender::test_manual_callback_list_recommends_observer
 - tests/unit/test_arch_ocp.py::TestNonExhaustiveEnumMatch::test_missing_member_flagged
 - tests/test_gates_fmt_directives.py::TestCanonicalizeText::test_idempotent_on_already_canonical_text
-- tests/test_gates.py::TestProtocolSummaryGate::test_real_repo_scan_runs_end_to_end_without_crashing
+- tests/gates_suite/test_protocol.py::TestProtocolSummaryGate::test_real_repo_scan_runs_end_to_end_without_crashing
 - tests/test_graph_affects.py::TestAffects::test_transitive_uses_contract_chain
 - tests/test_graph_lock.py::TestAckDrift::test_acknowledge_records_every_describes_facet
 - tests/test_graph.py::test_graph_build_lock_drift_integration

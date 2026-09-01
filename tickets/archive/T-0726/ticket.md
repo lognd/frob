@@ -36,16 +36,16 @@ scope_changes:
   actor: logan
   at: '2026-07-22'
 evidence:
-- tests/test_gates.py::TestTick006PhantomFiling::test_phantom_filed_colon_fires
-- tests/test_gates.py::TestTick006PhantomFiling::test_phantom_filed_as_fires
-- tests/test_gates.py::TestTick006PhantomFiling::test_filed_colon_real_active_id_is_silent
-- tests/test_gates.py::TestTick006PhantomFiling::test_filed_colon_none_is_silent
-- tests/test_gates.py::TestTick006PhantomFiling::test_filed_as_real_archived_id_is_silent
-- tests/test_gates.py::TestTick006PhantomFiling::test_negation_not_filed_is_silent
-- tests/test_gates.py::TestTick006PhantomFiling::test_negation_no_ticket_filed_is_silent
-- tests/test_gates.py::TestTick006PhantomFiling::test_description_prose_mentioning_other_ticket_is_silent
-- tests/test_gates.py::TestTick006PhantomFiling::test_no_done_report_heading_is_silent
-- tests/test_gates.py::TestTick006PhantomFiling::test_filed_bare_draft_without_colon_fires
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_phantom_filed_colon_fires
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_phantom_filed_as_fires
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_filed_colon_real_active_id_is_silent
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_filed_colon_none_is_silent
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_filed_as_real_archived_id_is_silent
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_negation_not_filed_is_silent
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_negation_no_ticket_filed_is_silent
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_description_prose_mentioning_other_ticket_is_silent
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_no_done_report_heading_is_silent
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_filed_bare_draft_without_colon_fires
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN a Done report claiming Filed: T-draft-abc123 with no such block WHEN

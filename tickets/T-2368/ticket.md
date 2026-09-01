@@ -73,10 +73,10 @@ body_changes:
   old_length: 2345
   new_length: 6107
 evidence:
-- tests/test_gates.py::TestPlace001Gate::test_directive_directly_above_def_is_silent
-- tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
-- tests/test_gates.py::TestPlace001Gate::test_no_nearby_symbol_at_all_is_silent
-- tests/test_gates.py::TestPlace001Gate::test_per_field_pydantic_idiom_is_silent
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_directive_directly_above_def_is_silent
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_missed_following_binding_fires
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_no_nearby_symbol_at_all_is_silent
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_per_field_pydantic_idiom_is_silent
 - tests/gates/test_comment_placement.py::TestCplace001::test_symref_binds_to_the_enclosing_function
 - tests/test_pii_structural_gate.py::TestDdlSchema::test_alembic_positional_column_ssn_fires
 designated_repro_test: null
@@ -84,11 +84,11 @@ acceptance:
 - text: given PLACE001/PII011 (the two codes T-2368 actually closes), when frob check
     --json runs, then zero unwaived findings remain for both
   evidence:
-  - tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
+  - tests/gates_suite/test_invariant.py::TestPlace001Gate::test_missed_following_binding_fires
 - text: given PLACE001's and PII011's gate modules, when severity is read, then it
     is ERROR not WARNING
   evidence:
-  - tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
+  - tests/gates_suite/test_invariant.py::TestPlace001Gate::test_missed_following_binding_fires
 acceptance_amendments:
 - op: replace
   index: 0
@@ -184,10 +184,10 @@ body_changes:
   old_length: 1415
   new_length: 2346
 evidence:
-- tests/test_gates.py::TestPlace001Gate::test_directive_directly_above_def_is_silent
-- tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
-- tests/test_gates.py::TestPlace001Gate::test_no_nearby_symbol_at_all_is_silent
-- tests/test_gates.py::TestPlace001Gate::test_per_field_pydantic_idiom_is_silent
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_directive_directly_above_def_is_silent
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_missed_following_binding_fires
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_no_nearby_symbol_at_all_is_silent
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_per_field_pydantic_idiom_is_silent
 - tests/gates/test_comment_placement.py::TestCplace001::test_symref_binds_to_the_enclosing_function
 - tests/test_pii_structural_gate.py::TestDdlSchema::test_alembic_positional_column_ssn_fires
 designated_repro_test: null
@@ -195,11 +195,11 @@ acceptance:
 - text: given PLACE001/PII011 (the two codes T-2368 actually closes), when frob check
     --json runs, then zero unwaived findings remain for both
   evidence:
-  - tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
+  - tests/gates_suite/test_invariant.py::TestPlace001Gate::test_missed_following_binding_fires
 - text: given PLACE001's and PII011's gate modules, when severity is read, then it
     is ERROR not WARNING
   evidence:
-  - tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
+  - tests/gates_suite/test_invariant.py::TestPlace001Gate::test_missed_following_binding_fires
 acceptance_amendments:
 - op: replace
   index: 0
@@ -246,4 +246,4 @@ Closure is two-part per the epic (T-0969): (1) zero findings for every code abov
 
 Narrow `scope` to the actual files touched once you've run the gate and see which ~71 files are involved; do not take a broad blanket scope.
 
-frob:waive BUG002 reason="T-2368s PLACE001 fix is a two-line textual edit to a comment position in tests/test_gates.py and tests/unit/test_ticket_store.py, not a change to any functions logic -- there is no pre-fix commit at which a test exercising this repos own directive placement could fail (the PLACE001 gate logic itself is unchanged and already covered by tests/test_gates.py::TestPlace001Gate); what changed is which of two ambiguous placements one specific comment sits at. The severity promotions (PLACE001/PII011 WARN to ERROR) are proven instead by the amended tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires, which now asserts Severity.ERROR and fails against the pre-promotion severity -- that is the actual behavior change this ticket makes, and it is the criterion the amended acceptance[0]/[1] are bound to."
+frob:waive BUG002 reason="T-2368s PLACE001 fix is a two-line textual edit to a comment position in tests/test_gates.py and tests/unit/test_ticket_store.py, not a change to any functions logic -- there is no pre-fix commit at which a test exercising this repos own directive placement could fail (the PLACE001 gate logic itself is unchanged and already covered by tests/gates_suite/test_invariant.py::TestPlace001Gate); what changed is which of two ambiguous placements one specific comment sits at. The severity promotions (PLACE001/PII011 WARN to ERROR) are proven instead by the amended tests/gates_suite/test_invariant.py::TestPlace001Gate::test_missed_following_binding_fires, which now asserts Severity.ERROR and fails against the pre-promotion severity -- that is the actual behavior change this ticket makes, and it is the criterion the amended acceptance[0]/[1] are bound to."

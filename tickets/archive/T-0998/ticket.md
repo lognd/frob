@@ -27,10 +27,10 @@ evidence:
 - tests/test_graph_affects.py::TestScopeTestGaps::test_clean_when_both_sides_in_scope
 - tests/test_graph.py::TestScopePrivateHelperGaps::test_only_used_by_scope_true_when_no_external_caller
 - tests/test_graph.py::TestScopePrivateHelperGaps::test_clean_when_callee_also_in_scope
-- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_doc_target
-- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_private_helper
-- tests/test_gates.py::TestScope002ClosureGate::test_warns_on_unscoped_test_target
-- tests/test_gates.py::TestScope002ClosureGate::test_silent_on_closed_scope
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_warns_on_unscoped_doc_target
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_warns_on_unscoped_private_helper
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_warns_on_unscoped_test_target
+- tests/gates_suite/test_prework.py::TestScope002ClosureGate::test_silent_on_closed_scope
 designated_repro_test: null
 acceptance:
 - text: given a ticket scoped to a code file with a frob:doc edge to an unscoped doc,

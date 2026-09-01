@@ -59,11 +59,11 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_sys111_bumps_growth_this_lands_diff_caused
-- tests/test_gates.py::TestFixEngineTierA::test_sys111_leaves_a_pre_existing_breach_untouched
-- tests/test_gates.py::TestFixEngineTierA::test_sys111_no_design_dir_is_a_no_op
-- tests/test_gates.py::TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule
-designated_repro_test: tests/test_gates.py::TestFixEngineTierA::test_sys111_bumps_growth_this_lands_diff_caused
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_bumps_growth_this_lands_diff_caused
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_leaves_a_pre_existing_breach_untouched
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_no_design_dir_is_a_no_op
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule
+designated_repro_test: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_bumps_growth_this_lands_diff_caused
 threat: null
 component: null
 anchor: false

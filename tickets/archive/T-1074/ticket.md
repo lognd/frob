@@ -41,7 +41,7 @@ scope_changes:
   at: '2026-07-29'
 - op: add
   glob: tests/test_gates.py
-  reason: 'tests/test_gates.py::TestCppSourceAccurateCollection._mock_ctest monkeypatches
+  reason: 'tests/gates_suite/test_test_gate.py::TestCppSourceAccurateCollection._mock_ctest monkeypatches
     collect_mod.shutil by module attribute; must be repointed at frob.testing._collect_cpp
     after the T-1074 split moved the cpp collector out of _collect.py.
 

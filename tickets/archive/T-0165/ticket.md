@@ -17,11 +17,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestDocanchorGate::test_unresolvable_anchor_reports_slug_and_nearest_match
-- tests/test_gates.py::TestDocanchorGate::test_unresolvable_anchor_fires
-- tests/test_gates.py::TestDocanchorGate::test_missing_file_fires
-- tests/test_gates.py::TestDocanchorGate::test_malformed_target_missing_fragment_fires
-- tests/test_gates.py::TestDocanchorGate::test_resolvable_heading_and_explicit_anchor_pass
+- tests/gates_suite/test_doc.py::TestDocanchorGate::test_unresolvable_anchor_reports_slug_and_nearest_match
+- tests/gates_suite/test_doc.py::TestDocanchorGate::test_unresolvable_anchor_fires
+- tests/gates_suite/test_doc.py::TestDocanchorGate::test_missing_file_fires
+- tests/gates_suite/test_doc.py::TestDocanchorGate::test_malformed_target_missing_fragment_fires
+- tests/gates_suite/test_doc.py::TestDocanchorGate::test_resolvable_heading_and_explicit_anchor_pass
 designated_repro_test: null
 threat: null
 component: null

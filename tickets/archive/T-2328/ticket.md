@@ -69,10 +69,10 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/test_gates.py::TestFixEngineScopeLease::test_narrowed_live_lease_wins_over_stale_declared_scope
-- tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
-- tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
-- tests/test_gates.py::TestFixEngineScopeLease::test_in_scope_fix_is_kept_unchanged
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_narrowed_live_lease_wins_over_stale_declared_scope
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_in_scope_fix_is_kept_unchanged
 designated_repro_test: null
 attachments:
 - path: archive/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md

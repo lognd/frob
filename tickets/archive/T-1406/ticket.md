@@ -23,8 +23,8 @@ scope_changes:
   actor: logan
   at: '2026-08-02'
 evidence:
-- tests/test_gates.py::TestCoverageLoad::test_module_join_fraction_excludes_files_outside_declared_cov_root
-- tests/test_gates.py::TestCoverageLoad::test_scope_known_paths_no_declared_roots_falls_back_unchanged
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_module_join_fraction_excludes_files_outside_declared_cov_root
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_scope_known_paths_no_declared_roots_falls_back_unchanged
 designated_repro_test: null
 acceptance:
 - text: GIVEN a clean make coverage run over --cov=src/frob WHEN load_coverage computes
@@ -32,13 +32,13 @@ acceptance:
     appear in coverage.xml under the measured --cov root(s), not every .py file in
     the repo
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_module_join_fraction_excludes_files_outside_declared_cov_root
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_module_join_fraction_excludes_files_outside_declared_cov_root
 - text: GIVEN module_join_fraction cannot be scoped this way for some reason WHEN
     a maintainer reads _module_join_fraction's docstring or the _DEFLATION_FLOOR comment
     THEN it explicitly documents that the denominator includes non-instrumentable
     files and why the floor still holds despite that
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_scope_known_paths_no_declared_roots_falls_back_unchanged
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_scope_known_paths_no_declared_roots_falls_back_unchanged
 threat: null
 component: null
 ---

@@ -35,15 +35,15 @@ scope_changes:
   actor: logan
   at: '2026-07-26'
 evidence:
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_partial_catch_of_named_type_fires_exhaust002
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_catch_all_of_unknown_does_not_fire_exhaust001
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_declared_frob_raises_directive_discharges_exhaust002
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_function_with_no_catches_is_not_a_boundary
-- tests/test_gates.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_no_handling_caller_recommends_result
-- tests/test_gates.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_handling_caller_not_flagged
-- tests/test_gates.py::TestErrorsAsValuesAdvisory::test_private_raiser_not_flagged
-- tests/test_gates.py::TestErrorsAsValuesAdvisory::test_only_ubiquitous_or_unknown_raises_not_flagged
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_partial_catch_of_named_type_fires_exhaust002
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_catch_all_of_unknown_does_not_fire_exhaust001
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_declared_frob_raises_directive_discharges_exhaust002
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_function_with_no_catches_is_not_a_boundary
+- tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_no_handling_caller_recommends_result
+- tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_handling_caller_not_flagged
+- tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory::test_private_raiser_not_flagged
+- tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory::test_only_ubiquitous_or_unknown_raises_not_flagged
 designated_repro_test: null
 acceptance:
 - text: GIVEN a boundary catching a strict subset of its guarded may-raise set WHEN
@@ -51,8 +51,8 @@ acceptance:
     with unhandling callers WHEN arch advisories run THEN a Result recommendation
     fires with the raise sites
   evidence:
-  - tests/test_gates.py::TestExhaustiveHandlingGate::test_partial_catch_of_named_type_fires_exhaust002
-  - tests/test_gates.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_no_handling_caller_recommends_result
+  - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_partial_catch_of_named_type_fires_exhaust002
+  - tests/gates_suite/test_compliance.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_no_handling_caller_recommends_result
 threat: null
 component: null
 ---

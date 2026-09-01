@@ -20,9 +20,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
-- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
-- tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_is_frozenset
 designated_repro_test: null
 threat: null
 component: null

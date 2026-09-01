@@ -14,8 +14,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestWireGate::test_new_errorset_class_referenced_by_bare_member_access_is_not_flagged
-- tests/test_gates.py::TestWireGate::test_new_class_never_referenced_by_member_access_is_still_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_errorset_class_referenced_by_bare_member_access_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_class_never_referenced_by_member_access_is_still_flagged
 designated_repro_test: null
 threat: null
 component: null

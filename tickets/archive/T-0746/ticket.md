@@ -20,25 +20,25 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
-- tests/test_gates.py::TestProtocolVerificationGate::test_state_established_by_a_reachable_transition_is_not_flagged
-- tests/test_gates.py::TestProtocolVerificationGate::test_state_equal_to_initial_is_not_flagged
-- tests/test_gates.py::TestProtocolVerificationGate::test_poisoned_summary_at_a_requires_symbol_is_an_error
-- tests/test_gates.py::TestProtocolVerificationGate::test_invalid_transition_precondition_never_established_is_an_error
-- tests/test_gates.py::TestProtocolVerificationGate::test_valid_transition_chain_is_not_flagged
-- tests/test_gates.py::TestProtocolVerificationGate::test_python_with_block_discharges_the_requirement
-- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_drop_impl_discharges
-- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_mem_forget_revokes_the_drop_discharge
-- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_manually_drop_revokes_the_discharge
-- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_no_drop_impl_is_not_discharged
-- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_cpp_raii_destructor_discharges
-- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_cpp_no_destructor_is_not_discharged
-- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_python_with_block_discharges
-- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_python_no_with_block_is_not_discharged
-- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_using_discharges
-- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_try_finally_discharges
-- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_bare_call_is_not_discharged
-- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_gc_finalizer_never_discharges
+- tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
+- tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_state_established_by_a_reachable_transition_is_not_flagged
+- tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_state_equal_to_initial_is_not_flagged
+- tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_poisoned_summary_at_a_requires_symbol_is_an_error
+- tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_invalid_transition_precondition_never_established_is_an_error
+- tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_valid_transition_chain_is_not_flagged
+- tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_python_with_block_discharges_the_requirement
+- tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_rust_drop_impl_discharges
+- tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_rust_mem_forget_revokes_the_drop_discharge
+- tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_rust_manually_drop_revokes_the_discharge
+- tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_rust_no_drop_impl_is_not_discharged
+- tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_cpp_raii_destructor_discharges
+- tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_cpp_no_destructor_is_not_discharged
+- tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_python_with_block_discharges
+- tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_python_no_with_block_is_not_discharged
+- tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_typescript_using_discharges
+- tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_typescript_try_finally_discharges
+- tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_typescript_bare_call_is_not_discharged
+- tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_gc_finalizer_never_discharges
 designated_repro_test: null
 acceptance:
 - text: GIVEN a C fixture where net_requires-annotated functions are reachable without
@@ -47,25 +47,25 @@ acceptance:
     discharge, and with mem::forget observed THEN the excuse is revoked and the ERROR
     returns
   evidence:
-  - tests/test_gates.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
-  - tests/test_gates.py::TestProtocolVerificationGate::test_state_established_by_a_reachable_transition_is_not_flagged
-  - tests/test_gates.py::TestProtocolVerificationGate::test_state_equal_to_initial_is_not_flagged
-  - tests/test_gates.py::TestProtocolVerificationGate::test_poisoned_summary_at_a_requires_symbol_is_an_error
-  - tests/test_gates.py::TestProtocolVerificationGate::test_invalid_transition_precondition_never_established_is_an_error
-  - tests/test_gates.py::TestProtocolVerificationGate::test_valid_transition_chain_is_not_flagged
-  - tests/test_gates.py::TestProtocolVerificationGate::test_python_with_block_discharges_the_requirement
-  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_drop_impl_discharges
-  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_mem_forget_revokes_the_drop_discharge
-  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_manually_drop_revokes_the_discharge
-  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_no_drop_impl_is_not_discharged
-  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_cpp_raii_destructor_discharges
-  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_cpp_no_destructor_is_not_discharged
-  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_python_with_block_discharges
-  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_python_no_with_block_is_not_discharged
-  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_using_discharges
-  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_try_finally_discharges
-  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_bare_call_is_not_discharged
-  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_gc_finalizer_never_discharges
+  - tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
+  - tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_state_established_by_a_reachable_transition_is_not_flagged
+  - tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_state_equal_to_initial_is_not_flagged
+  - tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_poisoned_summary_at_a_requires_symbol_is_an_error
+  - tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_invalid_transition_precondition_never_established_is_an_error
+  - tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_valid_transition_chain_is_not_flagged
+  - tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_python_with_block_discharges_the_requirement
+  - tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_rust_drop_impl_discharges
+  - tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_rust_mem_forget_revokes_the_drop_discharge
+  - tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_rust_manually_drop_revokes_the_discharge
+  - tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_rust_no_drop_impl_is_not_discharged
+  - tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_cpp_raii_destructor_discharges
+  - tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_cpp_no_destructor_is_not_discharged
+  - tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_python_with_block_discharges
+  - tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_python_no_with_block_is_not_discharged
+  - tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_typescript_using_discharges
+  - tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_typescript_try_finally_discharges
+  - tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_typescript_bare_call_is_not_discharged
+  - tests/gates_suite/test_protocol.py::TestProtocolLanguageExcuseDischarge::test_gc_finalizer_never_discharges
 threat: null
 component: null
 ---

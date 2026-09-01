@@ -14,7 +14,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
 designated_repro_test: null
 threat: null
 component: null

@@ -23,16 +23,16 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_gates.py::TestParseFailureGate::test_partial_parse_in_graph_excluded_path_is_silent
-- tests/test_gates.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
+- tests/gates_suite/test_waive.py::TestParseFailureGate::test_partial_parse_in_graph_excluded_path_is_silent
+- tests/gates_suite/test_waive.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
 designated_repro_test: null
 acceptance:
 - text: given tests/fixtures/lang/broken.py (graph-excluded, intentionally malformed),
     when the full frob check runs, then PARSE002 reports no finding for it while a
     partially-parsed NON-excluded file still fires PARSE002
   evidence:
-  - tests/test_gates.py::TestParseFailureGate::test_partial_parse_in_graph_excluded_path_is_silent
-  - tests/test_gates.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
+  - tests/gates_suite/test_waive.py::TestParseFailureGate::test_partial_parse_in_graph_excluded_path_is_silent
+  - tests/gates_suite/test_waive.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
 threat: null
 component: null
 ---

@@ -49,26 +49,26 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/test_gates.py::TestOptInGates::test_perf_gate_reports_a_repo_relative_file_not_absolute
-- tests/test_gates.py::TestOptInGates::test_frob_waive_perf004_suppresses_the_named_finding
-- tests/test_gates.py::TestOptInGates::test_frob_waive_perf004_does_not_blanket_suppress_other_sites
-- tests/test_gates.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
-designated_repro_test: tests/test_gates.py::TestOptInGates::test_perf_gate_reports_a_repo_relative_file_not_absolute
+- tests/gates_suite/test_run.py::TestOptInGates::test_perf_gate_reports_a_repo_relative_file_not_absolute
+- tests/gates_suite/test_run.py::TestOptInGates::test_frob_waive_perf004_suppresses_the_named_finding
+- tests/gates_suite/test_run.py::TestOptInGates::test_frob_waive_perf004_does_not_blanket_suppress_other_sites
+- tests/gates_suite/test_run.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
+designated_repro_test: tests/gates_suite/test_run.py::TestOptInGates::test_perf_gate_reports_a_repo_relative_file_not_absolute
 acceptance:
 - text: given a PERF site carrying a frob:waive PERF00x directive, when gate:PERF
     runs, then the finding is suppressed
   evidence:
-  - tests/test_gates.py::TestOptInGates::test_frob_waive_perf004_suppresses_the_named_finding
+  - tests/gates_suite/test_run.py::TestOptInGates::test_frob_waive_perf004_suppresses_the_named_finding
 - text: given a PERF site with no waiver, when gate:PERF runs, then the finding is
     still reported (not a blanket suppression)
   evidence:
-  - tests/test_gates.py::TestOptInGates::test_frob_waive_perf004_does_not_blanket_suppress_other_sites
+  - tests/gates_suite/test_run.py::TestOptInGates::test_frob_waive_perf004_does_not_blanket_suppress_other_sites
 - text: given the investigation confirmed gate:PERF's Python producer (perf_rules)
     already routes through the same _apply_waivers spine as every other gate (no architectural
     inability to honour waivers), the fix corrects the path-shape bug instead of adding
     a refuse-loudly path; verified via the same evidence proving waivers now work
   evidence:
-  - tests/test_gates.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
+  - tests/gates_suite/test_run.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
 acceptance_amendments:
 - op: replace
   index: 2

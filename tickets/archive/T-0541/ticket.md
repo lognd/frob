@@ -15,10 +15,10 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestRunGates::test_run_gates_blocks_prework_when_diff_load_fails_with_no_ticket
-- tests/test_gates.py::TestRunGates::test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source
-- tests/test_gates.py::TestRunGates::test_run_gates_skips_scope_without_ticket
-- tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff
+- tests/gates_suite/test_run.py::TestRunGates::test_run_gates_blocks_prework_when_diff_load_fails_with_no_ticket
+- tests/gates_suite/test_run.py::TestRunGates::test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source
+- tests/gates_suite/test_run.py::TestRunGates::test_run_gates_skips_scope_without_ticket
+- tests/gates_suite/test_run.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff
 designated_repro_test: null
 threat: null
 component: null

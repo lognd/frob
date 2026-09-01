@@ -15,8 +15,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestSeverityOverrides::test_override_downgrades_and_ignores_garbage
-- tests/test_gates.py::TestSeverityOverrides::test_no_frob_toml_is_identity
+- tests/gates_suite/test_run.py::TestSeverityOverrides::test_override_downgrades_and_ignores_garbage
+- tests/gates_suite/test_run.py::TestSeverityOverrides::test_no_frob_toml_is_identity
 designated_repro_test: null
 threat: null
 component: null

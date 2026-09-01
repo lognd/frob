@@ -111,10 +111,12 @@ def _selfaudit_violation(
 # frob:enforces CHK-GATE-SYS109
 # frob:enforces CHK-GATE-SYS112
 # frob:tests \
-# tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_folds_selfconform_violation
+# tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_folds_selfconform_\
+# violation
 # frob:tests \
-# tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_clean_model_no_violations
-# frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_suppressed_on_design_load_error  # noqa: E501
+# tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_clean_model_no_vio\
+# lations
+# frob:tests tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_suppressed_on_design_load_error  # noqa: E501
 def _selfaudit_violations(
     root: Path,
     design_ids,
@@ -350,9 +352,10 @@ def _compliance_selfaudit_violation(view: str, cv, design_dir: str) -> Violation
 # frob:ticket T-1314
 # frob:invariant INV-041
 # frob:tests \
-# tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_folds_compliance_violation
-# frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_compliance_clean_model_no_violations  # noqa: E501
-# frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_compliance_suppressed_on_design_load_error  # noqa: E501
+# tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_folds_compliance_v\
+# iolation
+# frob:tests tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_compliance_clean_model_no_violations  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestSelfAuditGate.test_selfaudit001_compliance_suppressed_on_design_load_error  # noqa: E501
 def _compliance_selfaudit_violations(
     root: Path,
     design_ids,  # noqa: ANN001

@@ -17,7 +17,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestConventionUnitBinding::test_test001_exempts_strata_flow_declarations
+- tests/gates_suite/test_test_gate.py::TestConventionUnitBinding::test_test001_exempts_strata_flow_declarations
 designated_repro_test: null
 threat: null
 component: null

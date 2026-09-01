@@ -81,8 +81,8 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorVenvShims::test_flags_shebang_outside_venv
 - tests/system/test_cli_doctor.py::TestDoctorVenvShims::test_clean_shebang_reports_nothing
 - tests/system/test_cli_doctor.py::TestDoctorVenvShims::test_no_venv_directory_reports_nothing
-- tests/test_gates.py::TestCoverageGate::test_load_tests_captures_python_collection_failure_detail
-- tests/test_gates.py::TestCoverageGate::test_coverage_gate_reports_one_violation_on_python_collection_failure
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_load_tests_captures_python_collection_failure_detail
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_coverage_gate_reports_one_violation_on_python_collection_failure
 designated_repro_test: null
 acceptance:
 - text: GIVEN .venv/bin entrypoint scripts whose shebang points outside this venv
@@ -94,7 +94,7 @@ acceptance:
     THEN it emits ONE error naming the collection failure and its stderr tail instead
     of an unresolved-evidence COV003 for every archived ticket
   evidence:
-  - tests/test_gates.py::TestCoverageGate::test_coverage_gate_reports_one_violation_on_python_collection_failure
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_coverage_gate_reports_one_violation_on_python_collection_failure
 threat: null
 component: null
 ---

@@ -16,10 +16,10 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
-- tests/test_gates.py::TestParseFailureGate::test_no_partial_parses_is_clean
-- tests/test_gates.py::TestParseFailureGate::test_no_parse_failures_is_clean
-- tests/test_gates.py::TestParseFailureGate::test_parse_failure_is_an_error_violation
+- tests/gates_suite/test_waive.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
+- tests/gates_suite/test_waive.py::TestParseFailureGate::test_no_partial_parses_is_clean
+- tests/gates_suite/test_waive.py::TestParseFailureGate::test_no_parse_failures_is_clean
+- tests/gates_suite/test_waive.py::TestParseFailureGate::test_parse_failure_is_an_error_violation
 designated_repro_test: null
 threat: null
 component: null

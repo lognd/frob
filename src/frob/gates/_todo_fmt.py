@@ -100,13 +100,14 @@ def _pyproject_version_at(root: Path, sha: str) -> str | None:
 
 # frob:ticket T-0783
 # frob:tests \
-# tests/test_gates.py::TestCoverageGate.test_todo003_fires_after_version_bump_since_def\
-# erral_landed
+# tests/gates_suite/test_coverage.py::TestCoverageGate.test_todo003_fires_after_version\
+# _bump_since_deferral_landed
 # frob:tests \
-# tests/test_gates.py::TestCoverageGate.test_todo003_silent_when_no_version_bump_since_\
-# deferral
+# tests/gates_suite/test_coverage.py::TestCoverageGate.test_todo003_silent_when_no_vers\
+# ion_bump_since_deferral
 # frob:tests \
-# tests/test_gates.py::TestCoverageGate.test_todo003_silent_when_ticket_closes
+# tests/gates_suite/test_coverage.py::TestCoverageGate.test_todo003_silent_when_ticket_\
+# closes
 # frob:enforces CHK-GATE-TODO003
 def _todo003_long_deferred(
     root: Path, snapshot: GraphSnapshot, queue: TicketQueue
@@ -298,11 +299,16 @@ def _fmt001_touched_lines(diff: Diff, file: str) -> set[int]:
     return lines
 
 
-# frob:tests tests/test_gates.py::TestFmt001Gate.test_directive_run_over_limit_flagged
-# frob:tests tests/test_gates.py::TestFmt001Gate.test_ordinary_long_comment_not_flagged
-# frob:tests tests/test_gates.py::TestFmt001Gate.test_long_code_line_not_flagged
-# frob:tests tests/test_gates.py::TestFmt001Gate.test_untouched_line_not_flagged
-# frob:tests tests/test_gates.py::TestFmt001Gate.test_short_directive_not_flagged
+# frob:tests \
+# tests/gates_suite/test_waive.py::TestFmt001Gate.test_directive_run_over_limit_flagged
+# frob:tests \
+# tests/gates_suite/test_waive.py::TestFmt001Gate.test_ordinary_long_comment_not_flagged
+# frob:tests \
+# tests/gates_suite/test_waive.py::TestFmt001Gate.test_long_code_line_not_flagged
+# frob:tests \
+# tests/gates_suite/test_waive.py::TestFmt001Gate.test_untouched_line_not_flagged
+# frob:tests \
+# tests/gates_suite/test_waive.py::TestFmt001Gate.test_short_directive_not_flagged
 def _fmt001_file(
     root: Path, file: str, limit: int | None, touched: set[int]
 ) -> list[Violation]:
@@ -420,7 +426,8 @@ def _fmt001_violations_for_runs(
 
 # frob:doc docs/modules/gates.md#fmt001-t-0851
 # frob:enforces CHK-GATE-FMT001
-# frob:tests tests/test_gates.py::TestFmt001Gate.test_directive_run_over_limit_flagged
+# frob:tests \
+# tests/gates_suite/test_waive.py::TestFmt001Gate.test_directive_run_over_limit_flagged
 # frob:ticket T-2761
 def fmt_gate(root: Path, diff: Diff) -> tuple[Violation, ...]:
     """FMT001 (warn): a diff-touched `frob:` directive comment line over

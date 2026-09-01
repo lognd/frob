@@ -1,5 +1,5 @@
 """T-1279 TEST005 burn-down: `frob.gates._rule_id_scan` branches not
-exercised by the existing tests/test_gates.py::TestKnownGateRuleIds
+exercised by the existing tests/gates_suite/test_sys.py::TestKnownGateRuleIds
 suite -- the comment-skip line, a scanned base directory that does not
 exist under the given repo_root, and a `rule=CONST_NAME` reference whose
 constant is never assigned anywhere in the scanned tree (left

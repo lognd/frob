@@ -31,7 +31,7 @@ body_changes:
   new_length: 1949
 evidence:
 - tests/unit/test_coordinator_scripts.py::TestFleetStatusLarge001WaiverParses::test_waiver_still_suppresses_large001
-- tests/test_gates.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
+- tests/gates_suite/test_run.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
 designated_repro_test: null
 threat: null
 component: null

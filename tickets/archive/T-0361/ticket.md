@@ -19,10 +19,10 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_app_runner_map
 - tests/system/test_cli_vet.py::TestHookMode::test_old_package_passes
 - tests/test_dup_inline.py::TestCallGraphBounds::test_call_edge
-- tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_honors_graph_excludes
-- tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_skips_builtin_skip_dirs
-- tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_xref_hits_are_real_symbols
-- tests/test_gates.py::test_gates_run_gates_integration
+- tests/gates_suite/test_prework.py::TestPreworkSweepBounds::test_sweep_ticket_honors_graph_excludes
+- tests/gates_suite/test_prework.py::TestPreworkSweepBounds::test_sweep_ticket_skips_builtin_skip_dirs
+- tests/gates_suite/test_prework.py::TestPreworkSweepBounds::test_sweep_ticket_xref_hits_are_real_symbols
+- tests/gates_suite/test_coverage.py::test_gates_run_gates_integration
 - tests/test_graph.py::TestLoadGraph::test_cache_stale_after_edit
 - tests/test_graph.py::test_graph_build_lock_drift_integration
 - tests/test_ticket_land.py::TestPreworkSweepRefresh::test_land_refreshes_stale_sweep_after_unrelated_main_change

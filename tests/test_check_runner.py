@@ -206,7 +206,7 @@ class TestApplyTierAAndReverify:
         now. `frob.gates.run_gates` is stubbed rather than driving TODO001
         for real (a diff-driven gate needing a git base ref) -- this test
         is about the CLI wiring reaching Tier C's dispatch table, which
-        `tests/test_gates.py::TestFixEngineTierC` already covers directly
+        `tests/gates_suite/test_fix_engine.py::TestFixEngineTierC` already covers directly
         for `emit_todo001_fixit`'s own rewrite logic."""
         # frob:tests src/frob/app/check_runner.py::_apply_tier_a_and_reverify \
         # kind="unit"

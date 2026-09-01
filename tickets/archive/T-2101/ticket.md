@@ -22,8 +22,8 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_sys111_before_snapshot_excludes_litmus_like_the_live_tree
-designated_repro_test: tests/test_gates.py::TestFixEngineTierA::test_sys111_before_snapshot_excludes_litmus_like_the_live_tree
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_before_snapshot_excludes_litmus_like_the_live_tree
+designated_repro_test: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_before_snapshot_excludes_litmus_like_the_live_tree
 acceptance:
 - text: Given design/litmus/** fixture files declaring colliding node ids across files,
     when fix_sys111_capability_ratchet_sync computes its BEFORE snapshot via git archive
@@ -31,7 +31,7 @@ acceptance:
     excluded and load_design_ids reports 0 errors, matching the live/current-tree
     load_design_ids call
   evidence:
-  - tests/test_gates.py::TestFixEngineTierA::test_sys111_before_snapshot_excludes_litmus_like_the_live_tree
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys111_before_snapshot_excludes_litmus_like_the_live_tree
 threat: null
 component: null
 anchor: false

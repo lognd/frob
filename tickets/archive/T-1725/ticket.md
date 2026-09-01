@@ -61,10 +61,10 @@ scope_changes:
   actor: logan
   at: '2026-08-07'
 evidence:
-- tests/test_gates.py::TestWireGate::test_wire003_matcher_pattern_stale_verb_is_flagged
-- tests/test_gates.py::TestWireGate::test_wire003_suggestion_string_stale_verb_is_flagged
-- tests/test_gates.py::TestWireGate::test_wire003_real_verbs_are_not_flagged
-- tests/test_gates.py::TestWireGate::test_wire003_dotted_module_path_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire003_matcher_pattern_stale_verb_is_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire003_suggestion_string_stale_verb_is_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire003_real_verbs_are_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_wire003_dotted_module_path_is_not_flagged
 designated_repro_test: null
 threat: null
 component: null
@@ -191,10 +191,10 @@ rather than a second suppression style.
 ```
 
 ### Evidence
-- `tests/test_gates.py::TestWireGate::test_wire003_matcher_pattern_stale_verb_is_flagged` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestWireGate::test_wire003_suggestion_string_stale_verb_is_flagged` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestWireGate::test_wire003_real_verbs_are_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestWireGate::test_wire003_dotted_module_path_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_wire.py::TestWireGate::test_wire003_matcher_pattern_stale_verb_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_wire.py::TestWireGate::test_wire003_suggestion_string_stale_verb_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_wire.py::TestWireGate::test_wire003_real_verbs_are_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_wire.py::TestWireGate::test_wire003_dotted_module_path_is_not_flagged` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

@@ -14,9 +14,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_test002_noop_parametrize_does_not_inflate_case_count
-- tests/test_gates.py::TestTestGate::test_case_count_root_none_skips_assertion_check
-- tests/test_gates.py::TestTestGate::test_case_count_root_aware_caps_noop_parametrize
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test002_noop_parametrize_does_not_inflate_case_count
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_case_count_root_none_skips_assertion_check
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_case_count_root_aware_caps_noop_parametrize
 designated_repro_test: null
 threat: null
 component: null

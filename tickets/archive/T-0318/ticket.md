@@ -19,7 +19,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_test003_satisfied_by_proptest_macro_block
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test003_satisfied_by_proptest_macro_block
 - tests/test_lang.py::TestParseTsRustCppC::test_rust_directive_binds_above_proptest_macro_block
 - tests/test_lang.py::TestParseTsRustCppC::test_rust_non_test_macro_does_not_bind
 designated_repro_test: null

@@ -730,13 +730,18 @@ def _dead_only_names(root: Path, files: tuple[str, ...]) -> frozenset[str]:
 # frob:ticket T-0422
 # frob:ticket T-1881
 # frob:tests \
-# tests/test_gates.py::TestDeadSymbolGate.test_unwired_private_function_is_flagged
+# tests/gates_suite/test_wire.py::TestDeadSymbolGate.test_unwired_private_function_is_f\
+# lagged
 # frob:tests \
-# tests/test_gates.py::TestDeadSymbolGate.test_called_private_helper_is_not_flagged
-# frob:tests tests/test_gates.py::TestDeadSymbolGate.test_dunder_method_is_not_flagged
-# frob:tests tests/test_gates.py::TestDeadSymbolGate.test_test_function_is_not_flagged
+# tests/gates_suite/test_wire.py::TestDeadSymbolGate.test_called_private_helper_is_not_\
+# flagged
 # frob:tests \
-# tests/test_gates.py::TestDeadSymbolGate.test_tests_edge_target_is_not_flagged
+# tests/gates_suite/test_wire.py::TestDeadSymbolGate.test_dunder_method_is_not_flagged
+# frob:tests \
+# tests/gates_suite/test_wire.py::TestDeadSymbolGate.test_test_function_is_not_flagged
+# frob:tests \
+# tests/gates_suite/test_wire.py::TestDeadSymbolGate.test_tests_edge_target_is_not_flag\
+# ged
 # frob:enforces CHK-GATE-DEAD001
 # frob:waive ARCH001 reason="the per-package reference-graph cache (called_by_package) \
 # is built lazily inside the loop and keyed by the record being examined; splitting \

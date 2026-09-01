@@ -27,7 +27,7 @@ T-0924's own scope is the specific COMPLIANCE/HOST/KRB/LINT/PII/
 RELWAIVE002/THREAT batch; PARSE002 is a new, unrelated gap from a
 different landing, so it is filed separately rather than folded into
 T-0924's fix. T-0924 records PARSE002 in
-`tests/test_gates.py::TestKnownGateRuleIds._KNOWN_ISSUE_ALLOWLIST`
+`tests/gates_suite/test_sys.py::TestKnownGateRuleIds._KNOWN_ISSUE_ALLOWLIST`
 (citing this ticket) so its own drift-lock test can stay green without
 silently expanding scope; this ticket is that allowlist entry's paydown
 target.

@@ -15,8 +15,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov001_waiver_does_not_blanket_suppress_sibling_symbol
-- tests/test_gates.py::TestCoverageGate::test_waiver_suppresses_and_reports
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov001_waiver_does_not_blanket_suppress_sibling_symbol
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_waiver_suppresses_and_reports
 designated_repro_test: null
 threat: null
 component: null

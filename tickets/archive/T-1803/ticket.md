@@ -29,8 +29,8 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_gates.py::TestTestGate::test_waive008_fires_on_a_now_rescued_autouse_fixture
-- tests/test_gates.py::TestTestGate::test_waive008_stays_silent_on_a_non_rescued_symbol
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive008_fires_on_a_now_rescued_autouse_fixture
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive008_stays_silent_on_a_non_rescued_symbol
 designated_repro_test: null
 threat: null
 component: null

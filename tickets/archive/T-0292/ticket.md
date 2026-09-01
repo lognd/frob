@@ -17,7 +17,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov003_remediation_hint_names_no_nonexistent_flag
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_remediation_hint_names_no_nonexistent_flag
 designated_repro_test: null
 acceptance:
 - text: given a COV003 evidence-resolution failure, when the error message prints

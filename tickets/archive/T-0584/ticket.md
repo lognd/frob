@@ -27,10 +27,10 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_gates.py::TestScopePrework::test_pre001_passes_with_partial_sweep_matching_digest
-- tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_partial_on_budget_exceeded
-- tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_resumes_pending_patterns
-- tests/test_gates.py::TestScopePrework::test_prework_sweep_default_partial_is_false_and_treated_as_final
+- tests/gates_suite/test_prework.py::TestScopePrework::test_pre001_passes_with_partial_sweep_matching_digest
+- tests/gates_suite/test_prework.py::TestPreworkSweepBounds::test_sweep_ticket_partial_on_budget_exceeded
+- tests/gates_suite/test_prework.py::TestPreworkSweepBounds::test_sweep_ticket_resumes_pending_patterns
+- tests/gates_suite/test_prework.py::TestScopePrework::test_prework_sweep_default_partial_is_false_and_treated_as_final
 designated_repro_test: null
 threat: null
 component: null

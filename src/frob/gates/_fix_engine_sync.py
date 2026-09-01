@@ -360,7 +360,7 @@ def fix_rel002_release_sync(root: Path) -> list[FixApplied]:
 # `frob.strata._selfconform`/`sys_gate`'s production entrypoint still
 # fires SYS100 (and SELFAUDIT001's fold of it) exactly as before, unwaived,
 # on any undeclared capability use -- see
-# tests/test_gates.py::TestFixEngineTierA::
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::
 # test_sys100_core_violation_still_fires_and_is_not_auto_resolved and
 # ::test_sys100_extended_violation_still_fires_and_is_not_auto_resolved
 # for the must-still-fire / must-not-auto-resolve proof pair. Only the
@@ -1205,8 +1205,8 @@ def _capability_counts_at_head(root: Path) -> "dict[str, int] | None":
 
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
-# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys111_bumps_growth_this_lands_diff_caused kind="unit"  # noqa: E501
-# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys111_leaves_a_pre_existing_breach_untouched kind="unit"  # noqa: E501
+# frob:tests tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_sys111_bumps_growth_this_lands_diff_caused kind="unit"  # noqa: E501
+# frob:tests tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_sys111_leaves_a_pre_existing_breach_untouched kind="unit"  # noqa: E501
 # frob:ticket T-2001
 def fix_sys111_capability_ratchet_sync(root: Path) -> list[FixApplied]:
     """Tier-A fix (T-2001): re-baseline `capability-via-ratchet.lock.json`'s

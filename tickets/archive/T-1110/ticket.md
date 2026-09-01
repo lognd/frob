@@ -48,7 +48,7 @@ evidence:
 - tests/test_pii_structural_gate.py::TestFieldNames::test_camelcase_password_hash_field_fires
 - tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
 - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_foreign_file_with_capability_fires_sys103
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 designated_repro_test: null
 acceptance:
 - text: GIVEN a full frob check WHEN the dead/coverage/refs gates run THEN DEAD001,
@@ -60,7 +60,7 @@ acceptance:
   - tests/test_pii_structural_gate.py::TestFieldNames::test_camelcase_password_hash_field_fires
   - tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
   - tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_foreign_file_with_capability_fires_sys103
-  - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+  - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 threat: null
 component: null
 ---

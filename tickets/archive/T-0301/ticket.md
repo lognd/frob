@@ -23,7 +23,7 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_lang.py::TestParseTsRustCppC::test_rust_directive_binds_above_multiline_rustdoc
 - tests/test_lang.py::TestParseTsRustCppC::test_rust_directive_binds_regardless_of_indentation_mismatch
-- tests/test_gates.py::TestTestGate::test_test005_skips_test_file_symbols
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test005_skips_test_file_symbols
 - tests/test_testing.py::TestCollectRustTests::test_collect_rust_tests_skips_lib_less_crate
 - tests/test_testing.py::TestCollectRustTests::test_collect_rust_tests_still_errs_on_genuine_compile_error
 - tests/test_tickets_evidence_cli.py::TestTicketEvidenceRustOracle::test_rust_node_id_from_fake_cargo_collect_cache_resolves

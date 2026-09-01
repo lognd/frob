@@ -26,10 +26,10 @@ scope_changes:
   actor: logan
   at: '2026-07-29'
 evidence:
-- tests/test_gates.py::TestSysGate::test_noop_no_design_dir
-- tests/test_gates.py::TestSysGate::test_sys001_dangling
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+- tests/gates_suite/test_sys.py::TestSysGate::test_noop_no_design_dir
+- tests/gates_suite/test_sys.py::TestSysGate::test_sys001_dangling
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_selfconform_violation
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
 designated_repro_test: null
 threat: null
 component: null

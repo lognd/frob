@@ -245,7 +245,7 @@ refused by land. The two verbs disagree about what "closeable" means, and the
 disagreement is in the evidence requirement, not only in the report heading.
 
 EJ's workaround was to bind an ACCURATE but incidental evidence id
-(tests/test_gates.py::TestDebtGate::test_debt002_open_ticket_is_silent -- real
+(tests/gates_suite/test_debt.py::TestDebtGate::test_debt002_open_ticket_is_silent -- real
 behaviour its directive relies on). That is the honest version of the
 workaround, but it is still a workaround: the ticket had no behaviour change to
 evidence, and the requirement pushed it toward binding something adjacent.

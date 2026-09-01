@@ -48,8 +48,8 @@ scope_changes:
 evidence:
 - tests/test_gate_cache.py::TestRunReplay::test_sweep_write_invalidates_a_ticket_scoped_replay
 - tests/test_gate_cache.py::TestRunReplay::test_unrelated_lookup_survives_unchanged
-- tests/test_gates.py::TestScopePrework::test_pre001_missing_sweep
-- tests/test_gates.py::TestScopePrework::test_pre001_stale_sweep
+- tests/gates_suite/test_prework.py::TestScopePrework::test_pre001_missing_sweep
+- tests/gates_suite/test_prework.py::TestScopePrework::test_pre001_stale_sweep
 - tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn::test_replay_annotated_summary_still_parses
 designated_repro_test: tests/test_gate_cache.py::TestRunReplay::test_sweep_write_invalidates_a_ticket_scoped_replay
 threat: null

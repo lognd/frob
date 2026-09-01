@@ -43,10 +43,10 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_tick006_renamed_draft_resolved_via_git_not_refiled
-- tests/test_gates.py::TestFixEngineTierA::test_tick006_already_recovered_citation_rewritten_not_refiled_again
-- tests/test_gates.py::TestFixEngineTierA::test_tick006_ticket_id_scopes_to_landing_ticket_only
-- tests/test_gates.py::TestFixEngineTierA::test_tick006_genuinely_lost_draft_still_caught_no_rename_no_duplicate
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_renamed_draft_resolved_via_git_not_refiled
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_already_recovered_citation_rewritten_not_refiled_again
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_ticket_id_scopes_to_landing_ticket_only
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_genuinely_lost_draft_still_caught_no_rename_no_duplicate
 designated_repro_test: null
 threat: null
 component: null

@@ -36,9 +36,9 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_gates.py::TestProtocolOrderingGate::test_call_before_establishing_transition_is_an_ordering_error
-- tests/test_gates.py::TestProtocolOrderingGate::test_call_after_establishing_transition_is_not_flagged
-- tests/test_gates.py::TestProtocolOrderingGate::test_python_with_block_discharges_the_ordering_violation
+- tests/gates_suite/test_protocol.py::TestProtocolOrderingGate::test_call_before_establishing_transition_is_an_ordering_error
+- tests/gates_suite/test_protocol.py::TestProtocolOrderingGate::test_call_after_establishing_transition_is_not_flagged
+- tests/gates_suite/test_protocol.py::TestProtocolOrderingGate::test_python_with_block_discharges_the_ordering_violation
 - tests/test_graph.py::TestCallGraph::test_build_ordered_call_graph_preserves_source_text_call_order
 - tests/test_graph.py::TestCallGraph::test_build_ordered_call_graph_resolves_a_rust_private_callee
 designated_repro_test: null

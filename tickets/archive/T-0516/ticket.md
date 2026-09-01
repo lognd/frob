@@ -15,12 +15,12 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_two_hop_wrapper_chain
-- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_wrapper_called_via_import_alias
-- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_same_file_public_wrapper
-- tests/test_gates.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target
-- tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
-- tests/test_gates.py::TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_two_hop_wrapper_chain
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_silent_when_wrapper_called_via_import_alias
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_same_file_public_wrapper
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
+- tests/gates_suite/test_sys.py::TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates
 designated_repro_test: null
 threat: null
 component: null

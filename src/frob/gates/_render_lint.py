@@ -262,18 +262,17 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 # _LIVENESS_SCAN_CHECKERS dict-dispatch (same shape as _load_family_reporters' \
 # archgate/perf/strata/graph/vet entries in frob.gates._coverage_sites, which carry an \
 # identical WIRE001 waiver for the identical reason) -- static call-graph analysis of \
-# a dict-value assignment cannot see the real runtime caller" \
-# follow_up="T-3504"
+# a dict-value assignment cannot see the real runtime caller" follow_up="T-3504"
 # frob:ticket T-2740
 # frob:tests \
-# tests/test_gates.py::TestRenderLintGate.test_render001_scans_true_for_a_real_scanned_\
-# file kind="unit"
+# tests/gates_suite/test_sys.py::TestRenderLintGate.test_render001_scans_true_for_a_rea\
+# l_scanned_file kind="unit"
 # frob:tests \
-# tests/test_gates.py::TestRenderLintGate.test_render001_scans_false_for_an_exempt_pat\
-# h kind="unit"
+# tests/gates_suite/test_sys.py::TestRenderLintGate.test_render001_scans_false_for_an_e\
+# xempt_path kind="unit"
 # frob:tests \
-# tests/test_gates.py::TestRenderLintGate.test_render001_scans_false_for_a_path_outside\
-# _any_pathspec kind="unit"
+# tests/gates_suite/test_sys.py::TestRenderLintGate.test_render001_scans_false_for_a_pa\
+# th_outside_any_pathspec kind="unit"
 def render001_scans(root: Path, rel_path: str) -> bool:
     """True iff RENDER001's own scan set would actually examine `rel_path`
     for a bare stdout write -- the exact membership test `render_lint_gate`
@@ -292,14 +291,17 @@ def render001_scans(root: Path, rel_path: str) -> bool:
 
 
 # frob:doc docs/modules/render.md#renderer
-# frob:tests tests/test_gates.py::TestRenderLintGate.test_bare_print_fires
-# frob:tests tests/test_gates.py::TestRenderLintGate.test_render_package_exempt
-# frob:tests tests/test_gates.py::TestRenderLintGate.test_stderr_directed_print_is_silent  # noqa: E501
-# frob:tests tests/test_gates.py::TestRenderLintGate.test_unparseable_file_fires_parse001  # noqa: E501
-# frob:tests tests/test_gates.py::TestRenderLintGate.test_claude_hooks_dir_exempt
-# frob:tests tests/test_gates.py::TestRenderLintGate.test_fleet_status_file_exempt
-# frob:tests tests/test_gates.py::TestRenderLintGate.test_exemption_is_file_scoped_not_dir_scoped  # noqa: E501
-# frob:tests tests/test_gates.py::TestRenderLintGate.test_scan_now_covers_hooks_and_fleet_status  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestRenderLintGate.test_bare_print_fires
+# frob:tests \
+# tests/gates_suite/test_sys.py::TestRenderLintGate.test_render_package_exempt
+# frob:tests tests/gates_suite/test_sys.py::TestRenderLintGate.test_stderr_directed_print_is_silent  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestRenderLintGate.test_unparseable_file_fires_parse001  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_sys.py::TestRenderLintGate.test_claude_hooks_dir_exempt
+# frob:tests \
+# tests/gates_suite/test_sys.py::TestRenderLintGate.test_fleet_status_file_exempt
+# frob:tests tests/gates_suite/test_sys.py::TestRenderLintGate.test_exemption_is_file_scoped_not_dir_scoped  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestRenderLintGate.test_scan_now_covers_hooks_and_fleet_status  # noqa: E501
 # frob:ticket T-2719
 # frob:ticket T-0563
 # frob:ticket T-0897

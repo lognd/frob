@@ -45,7 +45,7 @@ body_changes:
   old_length: 2377
   new_length: 4473
 evidence:
-- tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
+- tests/gates_suite/test_doc.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
 designated_repro_test: null
 threat: null
 component: null

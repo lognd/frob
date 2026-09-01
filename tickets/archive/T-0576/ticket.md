@@ -78,15 +78,15 @@ scope_changes:
   actor: logan
   at: '2026-07-22'
 evidence:
-- tests/test_gates.py::TestDeprecatedGate::test_depr001_malformed_directive_is_reported
-- tests/test_gates.py::TestDeprecatedGate::test_depr001_malformed_sunset_is_reported
-- tests/test_gates.py::TestDeprecatedGate::test_depr002_closed_ticket_is_reported
-- tests/test_gates.py::TestDeprecatedGate::test_depr003_in_window_warns
-- tests/test_gates.py::TestDeprecatedGate::test_depr004_past_sunset_errors
-- tests/test_gates.py::TestDeprecatedGate::test_clean_deprecated_produces_no_violations
-- tests/test_gates.py::TestDeprecatedGate::test_lists_every_deprecated_entry
-- tests/test_gates.py::TestDeprecatedGate::test_release_gate_fails_while_deprecated_is_past_sunset
-- tests/test_gates.py::TestDeprecatedGate::test_release_gate_silent_while_deprecated_in_window
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr001_malformed_directive_is_reported
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr001_malformed_sunset_is_reported
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr002_closed_ticket_is_reported
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr003_in_window_warns
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr004_past_sunset_errors
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_clean_deprecated_produces_no_violations
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_lists_every_deprecated_entry
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_release_gate_fails_while_deprecated_is_past_sunset
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_release_gate_silent_while_deprecated_in_window
 - tests/unit/graph/test_dsl.py::TestDeprecatedDirective::test_well_formed_directive_parses_to_deprecated_edge
 - tests/unit/graph/test_dsl.py::TestDeprecatedDirective::test_missing_sunset_is_malformed
 - tests/unit/graph/test_dsl.py::TestDeprecatedDirective::test_missing_ticket_is_malformed

@@ -49,7 +49,7 @@ evidence:
 - tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_finds_registry_tracked_by_disposition
 - tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_finds_strata_waiver_ticket_clause
 - tests/test_tickets_live_tracker.py::TestTransitionRefusesOnLiveTrackerCitation::test_close_refused_when_registry_cites_this_ticket
-- tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
 designated_repro_test: null
 threat: null
 component: null
@@ -64,7 +64,7 @@ all in the same shape -- a scan that finds N citations/references on
 Linux finds 0 on macOS:
 
 - tests/test_tickets_live_tracker.py (11 tests, all "assert 0 == N")
-- tests/test_gates.py::TestWireGate (2 tests, "assert not True")
+- tests/gates_suite/test_wire.py::TestWireGate (2 tests, "assert not True")
 
 Suspected root causes (need measuring against a real macOS box or the
 CI log with -vv, per the parent ticket's note -- this ticket owns that

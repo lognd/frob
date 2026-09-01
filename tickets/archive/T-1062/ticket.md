@@ -421,7 +421,7 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorScaffoldConformance::test_run_diagnosis_unhealthy_when_scaffold_blocks_missing
 - tests/system/test_cli_doctor.py::TestDoctorStaleTicketLeases::test_run_diagnosis_healthy_with_no_stale_leases
 - tests/system/test_scaffold_dx.py::test_python_toolchain_scaffold_passes_check_immediately[python-tool]
-- tests/test_gates.py::TestOptInGates::test_fuzz_gate_off_by_default
+- tests/gates_suite/test_run.py::TestOptInGates::test_fuzz_gate_off_by_default
 - tests/test_gitio.py::TestWorkingDiff::test_covers_committed_staged_unstaged_and_untracked
 - tests/test_graph.py::TestBuildIncremental::test_fingerprint_bump_rebuilds
 - tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry

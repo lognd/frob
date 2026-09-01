@@ -72,7 +72,7 @@ BUCKETS (assertion text from the run):
     `ps -o lstart` equivalents or the PLATFORM001 declared boundary with the
     tests asserting the DECLARED direction (T-3076 pattern).
  D. Citation / text scans return 0 (13): tests/test_tickets_live_tracker.py (11,
-    all `assert 0 == N`), tests/test_gates.py::TestWireGate (2, `assert not True`).
+    all `assert 0 == N`), tests/gates_suite/test_wire.py::TestWireGate (2, `assert not True`).
     Same shape: a scan that finds N on Linux finds 0 on macOS. Suspects:
     `git grep` flag differences, BSD `grep -P`, or path case-insensitivity
     (APFS) breaking a path-keyed match. Measure one of them on a macOS box

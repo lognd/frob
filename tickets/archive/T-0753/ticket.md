@@ -21,12 +21,12 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_waive004_fires_on_valid_rule_zero_findings
-- tests/test_gates.py::TestTestGate::test_waive004_stays_silent_on_a_genuinely_needed_waiver
-- tests/test_gates.py::TestTestGate::test_waive005_expired_until_is_error
-- tests/test_gates.py::TestTestGate::test_waive005_future_until_passes
-- tests/test_gates.py::TestTestGate::test_waive_until_bad_date_is_malformed
-- tests/test_gates.py::TestCoverageGate::test_waive002_flags_unknown_rule_id_as_ineffective
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_fires_on_valid_rule_zero_findings
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_stays_silent_on_a_genuinely_needed_waiver
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive005_expired_until_is_error
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive005_future_until_passes
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive_until_bad_date_is_malformed
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_waive002_flags_unknown_rule_id_as_ineffective
 designated_repro_test: null
 acceptance:
 - text: GIVEN a waiver naming an unrecognized rule THEN error; GIVEN a valid-rule
@@ -34,7 +34,7 @@ acceptance:
     GIVEN an until-dated waiver past its date THEN error demanding re-review; AND
     the 3 live DEAD001 waivers are gone
   evidence:
-  - tests/test_gates.py::TestCoverageGate::test_waive002_flags_unknown_rule_id_as_ineffective
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_waive002_flags_unknown_rule_id_as_ineffective
 threat: null
 component: null
 ---

@@ -40,12 +40,12 @@ scope_changes:
 evidence:
 - tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_declared_entrypoint_is_exempt
 - tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_same_file_undeclared_still_fires
-- tests/test_gates.py::TestCoverageGate::test_cov007_still_fires_for_a_python_private_helper_after_t2549
-- tests/test_gates.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_still_fires_for_a_python_private_helper_after_t2549
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
 - tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_library_module_still_fires_when_another_file_is_declared
 designated_repro_test: tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_declared_entrypoint_is_exempt
 designated_repro_changes:
-- old_value: tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_a_declared_entrypoint_executable
+- old_value: tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_silent_for_a_declared_entrypoint_executable
   new_value: tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_declared_entrypoint_is_exempt
   reason: the original designation named a tests/test_gates.py node; that file is
     under T-2543's live lease, so the controls moved to their own file and the repro
@@ -53,13 +53,13 @@ designated_repro_changes:
   actor: logan
   at: '2026-08-18'
 evidence_changes:
-- old_node: tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_a_declared_entrypoint_executable
+- old_node: tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_silent_for_a_declared_entrypoint_executable
   new_node: tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_declared_entrypoint_is_exempt
   reason: the control moved out of tests/test_gates.py, which is under T-2543's live
     write lease
   actor: logan
   at: '2026-08-18'
-- old_node: tests/test_gates.py::TestCoverageGate::test_cov007_fires_for_the_same_file_when_it_is_not_declared
+- old_node: tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_fires_for_the_same_file_when_it_is_not_declared
   new_node: tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_same_file_undeclared_still_fires
   reason: the control moved out of tests/test_gates.py, which is under T-2543's live
     write lease

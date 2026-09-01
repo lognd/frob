@@ -18,13 +18,13 @@ scope_breadth_ack_reason: null
 evidence:
 - tests/test_tickets_lease.py::TestDoable::test_ignore_lease_returns_raw_list
 - tests/test_tickets_tiers.py::TestDoableLeafOnly::test_epic_and_story_never_surface
-- tests/test_gates.py::TestTick008UnknownLedgerFields::test_fires_on_unknown_field
+- tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_fires_on_unknown_field
 designated_repro_test: null
 acceptance:
 - text: GIVEN a full unscoped frob check THEN WAIVE004 warnings are zero and gate
     errors remain zero
   evidence:
-  - tests/test_gates.py::TestTick008UnknownLedgerFields::test_fires_on_unknown_field
+  - tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_fires_on_unknown_field
 threat: null
 component: null
 ---

@@ -32,7 +32,7 @@ Repro: `tests/test_gates.py`'s original (pre-fmt, HEAD) line is one single
 over-limit `frob:tests` directive with a trailing `kind="..."` attribute:
 
 ```
-    # frob:tests tests/test_gates.py::TestConventionUnitBinding.test_test009_satisfied_by_e2e_edge kind="unit"
+    # frob:tests tests/gates_suite/test_test_gate.py::TestConventionUnitBinding.test_test009_satisfied_by_e2e_edge kind="unit"
 ```
 
 Running `frob fmt .` wraps this at the word boundary right after
@@ -42,7 +42,7 @@ canonicalizer emits:
 
 ```
     # frob:tests \
-    # tests/test_gates.py::TestConventionUnitBinding.test_test009_satisfied_by_e2e_edge\
+    # tests/gates_suite/test_test_gate.py::TestConventionUnitBinding.test_test009_satisfied_by_e2e_edge\
     #  kind="unit"
 ```
 

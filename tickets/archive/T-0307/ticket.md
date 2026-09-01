@@ -18,8 +18,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_test002_parametrized_test_counts_each_case
-- tests/test_gates.py::TestTestGate::test_case_count_direct
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test002_parametrized_test_counts_each_case
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_case_count_direct
 designated_repro_test: null
 threat: null
 component: null

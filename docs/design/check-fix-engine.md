@@ -359,7 +359,7 @@ Concretely:
   non-`"manual"` output, exactly as `_KNOWN_GATE_RULES` works today (a
   rule absent from the literal is `"manual"` by construction, not an
   omission).
-- `tests/test_gates.py::TestRuleFixability`: re-verifies the checked-in
+- `tests/gates_suite/test_sys.py::TestRuleFixability`: re-verifies the checked-in
   literal against a fresh `generated_fixability()` call every test run --
   a maintainer who wires a new Tier A/B/C handler and forgets to update
   the literal fails loud immediately, same drift-lock shape as

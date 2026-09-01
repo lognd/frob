@@ -27,8 +27,8 @@ evidence:
 - tests/test_waive_gate.py::TestWaive007CommentChannel::test_ticket_attr_bound_to_unresolvable_id_fires
 - tests/test_waive_gate.py::TestWaive007StrataChannel::test_strata_ticket_attr_bound_to_unresolvable_id_fires
 - tests/test_registry_exhaustiveness.py::TestDuplicateId::test_duplicate_id_across_files_fails
-- tests/test_gates.py::TestTick008UnknownLedgerFields::test_fires_on_unknown_field
-- tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_fires_on_cross_file_same_test_collision
+- tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_fires_on_unknown_field
+- tests/gates_suite/test_test_gate.py::TestTest014AmbiguousConventionMatch::test_fires_on_cross_file_same_test_collision
 designated_repro_test: null
 threat: null
 component: null

@@ -97,7 +97,7 @@ evidence:
 - tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_long_utility_docstring_stays_quiet
 - tests/gates/test_docstring_archaeology.py::TestDocarch001Violations::test_private_symbol_exempt_even_with_archaeology
 - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_real_repo_registry_is_complete
-- tests/test_gates.py::test_gates_run_gates_integration
+- tests/gates_suite/test_coverage.py::test_gates_run_gates_integration
 - tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
 - tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_utility_only_does_not_fire_through_run_gates
 designated_repro_test: null
@@ -116,7 +116,7 @@ acceptance:
   - tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_fires_through_run_gates
   - tests/gates/test_docstring_archaeology.py::TestDocarch001Wiring::test_utility_only_does_not_fire_through_run_gates
   - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_real_repo_registry_is_complete
-  - tests/test_gates.py::test_gates_run_gates_integration
+  - tests/gates_suite/test_coverage.py::test_gates_run_gates_integration
 acceptance_amendments:
 - op: replace
   index: 0

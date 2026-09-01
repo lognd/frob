@@ -102,10 +102,12 @@ def _partial_parse_violations(root: Path) -> tuple[Violation, ...]:
 # frob:ticket T-0561
 # frob:ticket T-0905
 # frob:ticket T-0902
-# frob:tests tests/test_gates.py::TestParseFailureGate.test_parse_failure_is_an_error_violation  # noqa: E501
-# frob:tests tests/test_gates.py::TestParseFailureGate.test_no_parse_failures_is_clean
-# frob:tests tests/test_gates.py::TestParseFailureGate.test_partial_parse_is_an_error_violation  # noqa: E501
-# frob:tests tests/test_gates.py::TestParseFailureGate.test_no_partial_parses_is_clean
+# frob:tests tests/gates_suite/test_waive.py::TestParseFailureGate.test_parse_failure_is_an_error_violation  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_waive.py::TestParseFailureGate.test_no_parse_failures_is_clean
+# frob:tests tests/gates_suite/test_waive.py::TestParseFailureGate.test_partial_parse_is_an_error_violation  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_waive.py::TestParseFailureGate.test_no_partial_parses_is_clean
 # frob:enforces CHK-GATE-PARSE001
 # frob:enforces CHK-GATE-PARSE002
 # frob:enforces CHK-THEME-FAIL-OPEN
@@ -142,7 +144,7 @@ def parse_failure_gate(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 
 # frob:doc docs/modules/gates.md#rule-catalog
-# frob:tests tests/test_gates.py::TestRenderLintGate.test_unparseable_file_fires_parse001  # noqa: E501
+# frob:tests tests/gates_suite/test_sys.py::TestRenderLintGate.test_unparseable_file_fires_parse001  # noqa: E501
 def local_parse001_violation(
     rel_path: str,
     reason: str,

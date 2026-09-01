@@ -13,11 +13,11 @@ sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_same_file_public_wrapper
-- tests/test_gates.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target
-- tests/test_gates.py::TestCoverageGate::test_cov006_flags_test_with_no_call_graph_reachability
-- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_calls_the_bound_symbol
-- tests/test_gates.py::TestCoverageGate::test_cov006_never_fires_for_a_public_target
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_same_file_public_wrapper
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_flags_test_with_no_call_graph_reachability
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_silent_when_test_calls_the_bound_symbol
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_never_fires_for_a_public_target
 designated_repro_test: null
 threat: null
 component: null

@@ -96,8 +96,8 @@ scope_changes:
 evidence:
 - tests/unit/gates/test_lock_producer.py::TestProducerStatusVerdicts::test_must_fire_abandoned_when_code_moved_and_no_pin
 - tests/unit/gates/test_lock_producer.py::TestProducerStatusVerdicts::test_must_stay_quiet_when_pinned
-- tests/test_gates.py::TestTestGate::test_test012_abandoned_producer_fires_error
-- tests/test_gates.py::TestTestGate::test_test012_pinned_producer_stays_quiet
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test012_abandoned_producer_fires_error
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test012_pinned_producer_stays_quiet
 - tests/test_status.py::TestBuildStatusReportIntegration::test_baseline_locks_section_is_always_populated
 - tests/test_status.py::TestBuildStatusReportIntegration::test_print_status_human_renders_every_baseline_lock_verdict
 designated_repro_test: null

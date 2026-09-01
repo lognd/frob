@@ -26,7 +26,7 @@ no_scope_declared_reason: null
 evidence:
 - tests/unit/test_check.py::TestParseArtifactCacheWarmedBeforeGraphBuild::test_env_var_set_before_load_inputs_builds_graph
 - tests/unit/test_check.py::TestParseArtifactCacheWarmedBeforeGraphBuild::test_stamp_is_idempotent_across_both_call_sites
-- tests/test_gates.py::test_gates_run_gates_integration
+- tests/gates_suite/test_coverage.py::test_gates_run_gates_integration
 designated_repro_test: null
 threat: null
 component: null

@@ -16,7 +16,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestSysGate::test_sys001_dangling
+- tests/gates_suite/test_sys.py::TestSysGate::test_sys001_dangling
 - tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
 - tests/system/test_cli_check.py::TestCheckSkipFlags::test_json_output
 - tests/system/test_cli_check.py::TestCheckGatesStage::test_only_gates_passes_once_bound_and_tested

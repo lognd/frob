@@ -26,16 +26,16 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_gates.py::TestTestGate::test_waive004_suppressed_entirely_on_a_scoped_run
-- tests/test_gates.py::TestTestGate::test_waive004_fires_on_valid_rule_zero_findings
-- tests/test_gates.py::TestTestGate::test_waive004_stays_silent_on_a_genuinely_needed_waiver
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_suppressed_entirely_on_a_scoped_run
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_fires_on_valid_rule_zero_findings
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_stays_silent_on_a_genuinely_needed_waiver
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob check --only <stage> or any diff-scoped run WHEN a waiver matches
     0 findings because its gate did not run THEN no WAIVE004 advisory is emitted (the
     rule only fires on full unscoped runs where match-absence is meaningful)
   evidence:
-  - tests/test_gates.py::TestTestGate::test_waive004_suppressed_entirely_on_a_scoped_run
+  - tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_suppressed_entirely_on_a_scoped_run
 threat: null
 component: null
 ---

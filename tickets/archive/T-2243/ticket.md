@@ -82,9 +82,9 @@ scope_changes:
   actor: logan
   at: '2026-08-16'
 evidence:
-- tests/test_gates.py::TestTick006PhantomFiling::test_prose_quoting_another_tickets_criterion_does_not_fire
-- tests/test_gates.py::TestTick006PhantomFiling::test_genuine_dangling_citation_outside_any_quote_still_fires
-- tests/test_gates.py::TestTick006PhantomFiling::test_code_spanned_filed_claim_does_not_fire
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_prose_quoting_another_tickets_criterion_does_not_fire
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_genuine_dangling_citation_outside_any_quote_still_fires
+- tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_code_spanned_filed_claim_does_not_fire
 - tests/test_gates_mutation_evidence.py::TestQuotedRanges::test_double_quoted_span_quoted
 designated_repro_test: null
 acceptance:
@@ -92,19 +92,19 @@ acceptance:
     a phantom filing (fixture: T-2226''s real Done report text, known to have produced
     T-2238)'
   evidence:
-  - tests/test_gates.py::TestTick006PhantomFiling::test_prose_quoting_another_tickets_criterion_does_not_fire
+  - tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_prose_quoting_another_tickets_criterion_does_not_fire
 - text: 'MUST-STILL-PASS: a genuine dangling citation still triggers TICK006 and still
     auto-files its recovery ticket'
   evidence:
-  - tests/test_gates.py::TestTick006PhantomFiling::test_genuine_dangling_citation_outside_any_quote_still_fires
+  - tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_genuine_dangling_citation_outside_any_quote_still_fires
 - text: An id inside a fenced block, inline code span, or blockquote is treated as
     prose, consistent with T-2218's landed semantics
   evidence:
-  - tests/test_gates.py::TestTick006PhantomFiling::test_code_spanned_filed_claim_does_not_fire
+  - tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_code_spanned_filed_claim_does_not_fire
 - text: Classification derives from parsed markdown structure, never indentation or
     surrounding-word heuristics
   evidence:
-  - tests/test_gates.py::TestTick006PhantomFiling::test_prose_quoting_another_tickets_criterion_does_not_fire
+  - tests/gates_suite/test_tick.py::TestTick006PhantomFiling::test_prose_quoting_another_tickets_criterion_does_not_fire
   - tests/test_gates_mutation_evidence.py::TestQuotedRanges::test_double_quoted_span_quoted
 threat: null
 component: null

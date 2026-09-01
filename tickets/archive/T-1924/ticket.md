@@ -32,14 +32,14 @@ scope_changes:
   actor: logan
   at: '2026-08-09'
 evidence:
-- tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_files_missing_entries_and_reverifies_clean
-- tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_already_in_sync_is_a_no_op
-- tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_resyncs_pyproject_and_uv_lock_from_manifest
-- tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_already_in_sync_touches_nothing
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_reg010_files_missing_entries_and_reverifies_clean
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_reg010_already_in_sync_is_a_no_op
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_rel002_resyncs_pyproject_and_uv_lock_from_manifest
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_rel002_already_in_sync_touches_nothing
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
-designated_repro_test: tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_files_missing_entries_and_reverifies_clean
+designated_repro_test: tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_reg010_files_missing_entries_and_reverifies_clean
 evidence_changes:
-- old_node: tests/test_gates.py::TestFixEngineTierA::test_sys100_may_via_union_applies_via_apply_tier_a_fixes
+- old_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys100_may_via_union_applies_via_apply_tier_a_fixes
   new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
   reason: 'T-2922 deleted fix_sys100_may_via_union/fix_sys100_extended_whole_node_grant
 
@@ -68,7 +68,7 @@ evidence_changes:
     '
   actor: logan
   at: '2026-08-25'
-- old_node: tests/test_gates.py::TestFixEngineTierA::test_sys100_no_design_dir_is_a_no_op
+- old_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys100_no_design_dir_is_a_no_op
   new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
   reason: 'T-2922 deleted fix_sys100_may_via_union/fix_sys100_extended_whole_node_grant
 
@@ -97,7 +97,7 @@ evidence_changes:
     '
   actor: logan
   at: '2026-08-25'
-- old_node: tests/test_gates.py::TestFixEngineTierA::test_sys100_extended_whole_node_grant_applies_via_apply_tier_a_fixes
+- old_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys100_extended_whole_node_grant_applies_via_apply_tier_a_fixes
   new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
   reason: 'T-2922 deleted fix_sys100_may_via_union/fix_sys100_extended_whole_node_grant
 
@@ -126,7 +126,7 @@ evidence_changes:
     '
   actor: logan
   at: '2026-08-25'
-- old_node: tests/test_gates.py::TestFixEngineTierA::test_sys100_extended_no_design_dir_is_a_no_op
+- old_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys100_extended_no_design_dir_is_a_no_op
   new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
   reason: 'T-2922 deleted fix_sys100_may_via_union/fix_sys100_extended_whole_node_grant
 

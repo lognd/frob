@@ -26,8 +26,8 @@ scope_changes:
   actor: logan
   at: '2026-08-05'
 evidence:
-- tests/test_gates.py::TestTestGate::test_waive004_exempts_diff_scoped_rules[wire001]
-- tests/test_gates.py::TestTestGate::test_waive004_exempts_diff_scoped_rules[scope001]
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_exempts_diff_scoped_rules[wire001]
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_exempts_diff_scoped_rules[scope001]
 designated_repro_test: null
 threat: null
 component: null

@@ -21,9 +21,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_test011_fires_on_stale_mtime
-- tests/test_gates.py::TestTestGate::test_test011_silent_when_fresh_and_fully_joined
-- tests/test_gates.py::TestCoverageLoad::test_load_coverage_flags_stale_by_mtime
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test011_fires_on_stale_mtime
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test011_silent_when_fresh_and_fully_joined
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_load_coverage_flags_stale_by_mtime
 designated_repro_test: null
 threat: null
 component: null

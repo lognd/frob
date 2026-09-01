@@ -45,9 +45,9 @@ scope_changes:
 evidence:
 - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
 - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
-- tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
-- tests/test_gates.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
-- tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
 designated_repro_test: null
 acceptance:
 - text: GIVEN main after the T-0695 checks WHEN frob check runs THEN gate:ARCH reports
@@ -56,9 +56,9 @@ acceptance:
   evidence:
   - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
   - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
-  - tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
-  - tests/test_gates.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
-  - tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
+  - tests/gates_suite/test_run.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
+  - tests/gates_suite/test_run.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
+  - tests/gates_suite/test_run.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
 threat: null
 component: null
 ---

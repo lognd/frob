@@ -18,9 +18,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_test003_exempts_strata_design_files
-- tests/test_gates.py::TestConventionUnitBinding::test_test009_fires_on_unbound_design_file
-- tests/test_gates.py::TestConventionUnitBinding::test_test009_satisfied_by_e2e_edge
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test003_exempts_strata_design_files
+- tests/gates_suite/test_test_gate.py::TestConventionUnitBinding::test_test009_fires_on_unbound_design_file
+- tests/gates_suite/test_test_gate.py::TestConventionUnitBinding::test_test009_satisfied_by_e2e_edge
 designated_repro_test: null
 threat: null
 component: null

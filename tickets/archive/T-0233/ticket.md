@@ -16,9 +16,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov001_broken_doc_edge_does_not_suppress_finding
-- tests/test_gates.py::TestCoverageGate::test_cov001_passes_when_documented
-- tests/test_gates.py::test_gates_run_gates_integration
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov001_broken_doc_edge_does_not_suppress_finding
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov001_passes_when_documented
+- tests/gates_suite/test_coverage.py::test_gates_run_gates_integration
 designated_repro_test: null
 threat: null
 component: null

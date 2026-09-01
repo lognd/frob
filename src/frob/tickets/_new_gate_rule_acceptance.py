@@ -201,8 +201,8 @@ def _extract_known_rules(text: str) -> frozenset[str] | None:
 # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_detects_freshly_added_rule_id  # noqa: E501
 # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_no_new_rules_is_empty  # noqa: E501
 # frob:tests tests/test_tickets_new_gate_rule_acceptance.py::TestNewGateRuleIds.test_unresolvable_base_ref_degrades_to_none  # noqa: E501
-# frob:tests tests/test_gates.py::TestNewGateRuleDynamicResolution.test_resolves_when_literal_lives_in_a_different_file  # noqa: E501
-# frob:tests tests/test_gates.py::TestNewGateRuleDynamicResolution.test_raises_when_literal_missing_from_every_candidate  # noqa: E501
+# frob:tests tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution.test_resolves_when_literal_lives_in_a_different_file  # noqa: E501
+# frob:tests tests/gates_suite/test_run.py::TestNewGateRuleDynamicResolution.test_raises_when_literal_missing_from_every_candidate  # noqa: E501
 def new_gate_rule_ids(root: Path, base_ref: str = "main") -> tuple[str, ...] | None:
     """Rule ids present in the CURRENT working tree's `_KNOWN_GATE_RULES`
     (dynamically located among `src/frob/gates/*.py` under `root`,

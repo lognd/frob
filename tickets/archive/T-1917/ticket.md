@@ -37,21 +37,21 @@ scope_changes:
   actor: logan
   at: '2026-08-09'
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_tick002_dropped_draft_is_exempt
-- tests/test_gates.py::TestFixEngineTierA::test_tick002_done_draft_still_fires
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick002_dropped_draft_is_exempt
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick002_done_draft_still_fires
 designated_repro_test: null
 acceptance:
 - text: TICK002 exempts a dropped-and-archived draft (residue with no live state to
     renumber out of) while still firing on a draft that reached done without ever
     being renumbered
   evidence:
-  - tests/test_gates.py::TestFixEngineTierA::test_tick002_dropped_draft_is_exempt
-  - tests/test_gates.py::TestFixEngineTierA::test_tick002_done_draft_still_fires
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick002_dropped_draft_is_exempt
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick002_done_draft_still_fires
 - text: uv run frob check --only tickets on main's HEAD (or an equivalent on-main
     measurement) reports 0 TICK002 findings after the fix lands
   evidence:
-  - tests/test_gates.py::TestFixEngineTierA::test_tick002_dropped_draft_is_exempt
-  - tests/test_gates.py::TestFixEngineTierA::test_tick002_done_draft_still_fires
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick002_dropped_draft_is_exempt
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick002_done_draft_still_fires
 threat: null
 component: null
 anchor: false

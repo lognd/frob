@@ -1274,7 +1274,7 @@ class TestDupArchWaiverAwareSummaries:
         the calibrated 60-line default (T-0373's frob.toml [arch] table),
         and structurally complex enough (>=8 branches) to pass
         `_py_is_complex`'s cyclomatic-proxy filter. Mirrors
-        `tests/test_gates.py::_complex_function_source`."""
+        `tests/conftest.py::_complex_function_source`."""
         lines = [f"def {fn_name}(cfg):", "    result = {}"]
         for i in range(8):
             lines.append(f'    if cfg.get("flag_{i}"):')

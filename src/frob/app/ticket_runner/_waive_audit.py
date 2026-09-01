@@ -767,7 +767,7 @@ def _run_complete_subcommand(root: Path, cfg: AppConfig) -> None:
 # covers. It shipped, and during a real land it deleted 55 LIVE waivers
 # during a partially-degraded run that still found some instances of a
 # rule while missing the exact sites those waivers covered. Reverted;
-# `tests/test_gates.py::TestWaive004DegradedRunGuard::
+# `tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::
 # test_mass_invalidation_with_live_finding_elsewhere_still_refuses` locks
 # against reintroducing it. T-1904 (successor) established that a SOUND
 # escape needs per-site analysis-coverage proof, which is a materially

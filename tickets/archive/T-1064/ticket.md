@@ -53,12 +53,12 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_gates.py::TestTestGate::test_waive004_exempts_a_diff_scoped_rule
-- tests/test_gates.py::TestTestGate::test_waive004_still_fires_for_a_non_exempt_rule_with_the_same_shape
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_exempts_a_diff_scoped_rule
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_still_fires_for_a_non_exempt_rule_with_the_same_shape
 designated_repro_test: null
 evidence_changes:
-- old_node: tests/test_gates.py::TestTestGate::test_waive004_exempts_a_structurally_unverifiable_rule
-  new_node: tests/test_gates.py::TestTestGate::test_waive004_exempts_a_diff_scoped_rule
+- old_node: tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_exempts_a_structurally_unverifiable_rule
+  new_node: tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_exempts_a_diff_scoped_rule
   reason: 'T-1763 renamed this test in place (same file, same class): INV006 was the
     self-suppressing example this test used to construct, deleted for producing zero
     live findings across its whole lifetime; the test now exercises the diff-scoped
@@ -148,8 +148,8 @@ across every gate group.
 ```
 
 ### Evidence
-- `tests/test_gates.py::TestTestGate::test_waive004_exempts_a_structurally_unverifiable_rule` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestTestGate::test_waive004_still_fires_for_a_non_exempt_rule_with_the_same_shape` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_exempts_a_structurally_unverifiable_rule` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_test_gate.py::TestTestGate::test_waive004_still_fires_for_a_non_exempt_rule_with_the_same_shape` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

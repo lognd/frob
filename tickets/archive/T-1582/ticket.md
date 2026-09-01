@@ -16,11 +16,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov002_v2_done_ticket_covers_own_closing_diff
-- tests/test_gates.py::TestCoverageGate::test_cov002_v2_grace_covers_ticket_created_and_closed_in_same_diff
-- tests/test_gates.py::TestCoverageGate::test_cov002_v2_marker_touch_without_state_transition_still_fires
-- tests/test_gates.py::TestCoverageGate::test_cov002_v2_done_ticket_without_grace_still_fires
-- tests/test_gates.py::TestCoverageGate::test_cov002_v2_stale_done_ticket_unrelated_touch_still_fires
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov002_v2_done_ticket_covers_own_closing_diff
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov002_v2_grace_covers_ticket_created_and_closed_in_same_diff
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov002_v2_marker_touch_without_state_transition_still_fires
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov002_v2_done_ticket_without_grace_still_fires
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov002_v2_stale_done_ticket_unrelated_touch_still_fires
 designated_repro_test: null
 threat: null
 component: null
@@ -29,4 +29,4 @@ COV002's closing-diff grace (_cov002 / _ledger_states_at_base, src/frob/gates/__
 
 This repo has not hit it yet only because main is still a v1 monofile; every NEW frob repo is v2 from its first commit and gets the false COV002 immediately.
 
-Fix: teach _ledger_states_at_base to resolve state at base per store mode -- v2 reads tickets/<id>/ticket.md at diff.base, v1 keeps the monofile-hunk path -- and make the hunk-membership test ('was this ticket's ledger entry touched in this diff') mode-aware too. Tests: tests/test_gates.py::TestCoverageGate currently pins itself to v1 via _write_ticket's tickets.md seed; add a v2-mode mirror of each grace case rather than converting the v1 ones, so both backends stay covered.
+Fix: teach _ledger_states_at_base to resolve state at base per store mode -- v2 reads tickets/<id>/ticket.md at diff.base, v1 keeps the monofile-hunk path -- and make the hunk-membership test ('was this ticket's ledger entry touched in this diff') mode-aware too. Tests: tests/gates_suite/test_coverage.py::TestCoverageGate currently pins itself to v1 via _write_ticket's tickets.md seed; add a v2-mode mirror of each grace case rather than converting the v1 ones, so both backends stay covered.

@@ -66,10 +66,10 @@ scope_changes:
   actor: logan
   at: '2026-08-25'
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_sys100_core_violation_still_fires_and_is_not_auto_resolved
-- tests/test_gates.py::TestFixEngineTierA::test_sys100_extended_violation_still_fires_and_is_not_auto_resolved
-- tests/test_gates.py::TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule
-designated_repro_test: tests/test_gates.py::TestFixEngineTierA::test_sys100_core_violation_still_fires_and_is_not_auto_resolved
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys100_core_violation_still_fires_and_is_not_auto_resolved
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys100_extended_violation_still_fires_and_is_not_auto_resolved
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_tier_a_handlers_dict_covers_every_batch_rule
+designated_repro_test: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_sys100_core_violation_still_fires_and_is_not_auto_resolved
 threat: null
 component: null
 anchor: false

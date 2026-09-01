@@ -82,11 +82,11 @@ body_changes:
   old_length: 7321
   new_length: 7541
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
 - tests/test_check_runner.py::TestApplyTierAAndReverify::test_doc007_finding_fixed_and_reverified_clean
-- tests/test_gates.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed
-- tests/test_gates.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
-- tests/test_gates.py::TestRuleFixability::test_every_known_rule_id_maps_to_exactly_one_tier
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
+- tests/gates_suite/test_sys.py::TestRuleFixability::test_every_known_rule_id_maps_to_exactly_one_tier
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob check --fix WHEN Tier-A findings exist THEN deterministic semantics-preserving
@@ -94,23 +94,23 @@ acceptance:
     draft renumber, generated-registry regeneration, release sync, full-run-verified
     stale-waiver removal) and the affected gates re-run clean in the same invocation
   evidence:
-  - tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
   - tests/test_check_runner.py::TestApplyTierAAndReverify::test_doc007_finding_fixed_and_reverified_clean
 - text: 'GIVEN a Tier-B fix WHEN applied THEN it is transactional: affected gates
     plus the finding''s bound tests re-run per fix and any regression rolls that fix
     back with a disclosed report'
   evidence:
-  - tests/test_gates.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed
 - text: GIVEN a Tier-C (content-required) finding THEN --fix never edits it and never
     inserts a waiver; it emits a structured fix-it (file, line, proposed patch) for
     explicit acceptance -- an obligation can never be auto-discharged by waiver
   evidence:
-  - tests/test_gates.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
 - text: GIVEN the generated rule registry THEN every rule id carries a fixability
     tier (auto/verified/assisted/manual) that is generated-verified against the fix
     engine's actual handler table, so an unwired fixability claim is a check failure
   evidence:
-  - tests/test_gates.py::TestRuleFixability::test_every_known_rule_id_maps_to_exactly_one_tier
+  - tests/gates_suite/test_sys.py::TestRuleFixability::test_every_known_rule_id_maps_to_exactly_one_tier
 threat: null
 component: null
 anchor: false

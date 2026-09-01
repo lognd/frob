@@ -15,24 +15,24 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
-- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_still_clamps_a_nonzero_drop
-- tests/test_gates.py::TestCoverageLoad::test_unjoined_modules_are_enumerated_not_silently_omitted
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_still_clamps_a_nonzero_drop
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_unjoined_modules_are_enumerated_not_silently_omitted
 designated_repro_test: null
 acceptance:
 - text: GIVEN a make coverage run WHEN the lock is stamped THEN every module_line
     value equals the coverage computed from that run coverage.xml for the same module
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_still_clamps_a_nonzero_drop
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_still_clamps_a_nonzero_drop
 - text: GIVEN a module with zero recorded hits in coverage.xml WHEN the lock is stamped
     THEN it records zero for that module, never a non-zero value carried from elsewhere
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_records_a_genuine_zero
 - text: GIVEN the stamped lock WHEN load_coverage reports module_join_fraction below
     0.95 THEN the unjoined modules are enumerated explicitly rather than silently
     omitted
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_unjoined_modules_are_enumerated_not_silently_omitted
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_unjoined_modules_are_enumerated_not_silently_omitted
 threat: null
 component: null
 ---

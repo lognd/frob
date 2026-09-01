@@ -17,10 +17,10 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_is_symref_gates
-- tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_skips_unresolved_callee_sentinel
-- tests/test_gates.py::TestDupPipelineClosureConsumers::test_is_symref_dup
-- tests/test_gates.py::TestDupPipelineClosureConsumers::test_callee_name_map_skips_unresolved_callee_sentinel
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_is_symref_gates
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_third_file_reachable_skips_unresolved_callee_sentinel
+- tests/gates_suite/test_waive.py::TestDupPipelineClosureConsumers::test_is_symref_dup
+- tests/gates_suite/test_waive.py::TestDupPipelineClosureConsumers::test_callee_name_map_skips_unresolved_callee_sentinel
 designated_repro_test: null
 acceptance:
 - text: GIVEN a call-graph closure containing a sentinel or non path::qualname entry
@@ -28,10 +28,10 @@ acceptance:
     they skip or handle it without raising; a regression test feeds a sentinel entry
     through each consumer
   evidence:
-  - tests/test_gates.py::TestCoverageGate::test_is_symref_gates
-  - tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_skips_unresolved_callee_sentinel
-  - tests/test_gates.py::TestDupPipelineClosureConsumers::test_is_symref_dup
-  - tests/test_gates.py::TestDupPipelineClosureConsumers::test_callee_name_map_skips_unresolved_callee_sentinel
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_is_symref_gates
+  - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_third_file_reachable_skips_unresolved_callee_sentinel
+  - tests/gates_suite/test_waive.py::TestDupPipelineClosureConsumers::test_is_symref_dup
+  - tests/gates_suite/test_waive.py::TestDupPipelineClosureConsumers::test_callee_name_map_skips_unresolved_callee_sentinel
 threat: null
 component: null
 ---

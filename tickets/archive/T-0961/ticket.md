@@ -15,11 +15,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
-- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_returns_known_rule_id
 designated_repro_test: null
 acceptance:
-- text: 'FAIL before this ticket''s fix: tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- text: 'FAIL before this ticket''s fix: tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
     would newly flag REL201/REL210/REL211/REL222/REL230/REL231/REL240/REL241/REL250/REL261/REL271/REL281/REL290/REL291/REL300/REL301/REL310/REL311/REL321/REL331/REL340/REL351/REL360/REL371/REL372/REL380/REL381/REL382/REL383/SYS204
     as unknown the moment any one of them were exercised through a `rule="..."` literal
     (they were reachable only via named `REL_*`/`SYS_*` constants, so the drift-lock
@@ -27,12 +27,12 @@ acceptance:
     (the production surface `frob check`/`frob sys audit` actually consult to accept
     or reject a rule id) did not contain them. PASS after this ticket''s fix: all
     30 ids are members of `known_gate_rule_ids()` (frob.gates._KNOWN_GATE_RULES),
-    and the same drift-lock test (tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known)
+    and the same drift-lock test (tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known)
     passes with `_KNOWN_ISSUE_ALLOWLIST` empty, proving the fix through the production
     `known_gate_rule_ids()` invocation the real gate pipeline uses, not a bare unit
     test of the frozenset literal alone.'
   evidence:
-  - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+  - tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 threat: null
 component: null
 ---

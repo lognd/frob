@@ -33,12 +33,12 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 designated_repro_test: null
 threat: null
 component: null
 ---
-tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 fails on current main: SYSWAIVE003 (src/frob/strata/_selfconform.py:1387,
 introduced by T-0671's staleness-gated waiver mechanism) is emitted but
 missing from frob.gates._rule_id_scan._KNOWN_GATE_RULES. Found while

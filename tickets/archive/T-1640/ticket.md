@@ -19,19 +19,19 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestInv003Gate::test_markdown_waive_marker_with_reason_is_silent
-- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_markdown_waive_marker_with_reason_is_silent
+- tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_inside_a_waiver_reason_is_not_flagged
-  new_node: tests/test_gates.py::TestInv003Gate::test_markdown_waive_marker_with_reason_is_silent
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_markdown_waive_marker_with_reason_is_silent
   reason: T-1763 deleted INV006 and its whole _strip_directive_reason_prose mechanism
     -- no functional equivalent exists; rebinding to the nearest still-live waiver-related
     test in INV003
   actor: logan
   at: '2026-08-07'
 - old_node: tests/test_gates.py::TestInv006Gate::test_exclusivity_claim_outside_a_reason_attribute_still_warns
-  new_node: tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+  new_node: tests/gates_suite/test_invariant.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
   reason: T-1763 deleted INV006 and its whole _strip_directive_reason_prose mechanism
     -- no functional equivalent exists; rebinding to the nearest still-live test in
     INV003

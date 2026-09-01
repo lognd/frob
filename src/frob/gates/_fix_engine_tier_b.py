@@ -133,8 +133,8 @@ _TIERBDEMO_MARKER_PREFIX = "# frob:tierbdemo "
 
 # frob:doc docs/design/check-fix-engine.md#transaction--rollback-model-tier-b
 # frob:tests \
-# tests/test_gates.py::TestFixEngineTierB.test_clean_fix_commits_and_is_reported_fixed \
-# kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_clean_fix_commits_and_i\
+# s_reported_fixed kind="unit"
 # frob:waive EXHAUST003 reason="T-1262: leaked Unknown traces to \
 # path.relative_to/iter_files, cross-module calls the resolver cannot see through; the \
 # one documented raise path (OSError on read_text/write_text) is caught above"
@@ -273,14 +273,14 @@ def _dead001_delete_one_symbol(
 
 # frob:doc docs/design/check-fix-engine.md#transaction--rollback-model-tier-b
 # frob:tests \
-# tests/test_gates.py::TestFixEngineTierB.test_dead001_removes_unreferenced_private_sym\
-# bol kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_removes_unrefer\
+# enced_private_symbol kind="unit"
 # frob:tests \
-# tests/test_gates.py::TestFixEngineTierB.test_dead001_skips_a_waived_finding \
-# kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_skips_a_waived_\
+# finding kind="unit"
 # frob:tests \
-# tests/test_gates.py::TestFixEngineTierB.test_dead001_at_most_one_deletion_per_file_pe\
-# r_pass kind="unit"
+# tests/gates_suite/test_fix_engine.py::TestFixEngineTierB.test_dead001_at_most_one_del\
+# etion_per_file_per_pass kind="unit"
 def fix_dead001_unreferenced_symbol_removal(
     root: Path, snapshot: GraphSnapshot, queue: TicketQueue
 ) -> list[TierBFix]:

@@ -211,10 +211,11 @@ def _ffi002_violations(root: Path) -> list[Violation]:
 
 # frob:doc docs/modules/gates.md#ffi001-ffi002-t-0690
 # frob:ticket T-0690
-# frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001
-# frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_pyo3_declared_matches_no_drift  # noqa: E501
-# frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_ctypes_call_without_declaration_fires_ffi002  # noqa: E501
-# frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_ctypes_call_with_empty_declaration_clean  # noqa: E501
+# frob:tests \
+# tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001
+# frob:tests tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_pyo3_declared_matches_no_drift  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_without_declaration_fires_ffi002  # noqa: E501
+# frob:tests tests/gates_suite/test_compliance.py::TestFfiBoundaryGate.test_ctypes_call_with_empty_declaration_clean  # noqa: E501
 # frob:enforces CHK-GATE-FFI001
 # frob:enforces CHK-GATE-FFI002
 def ffi_boundary_gate(root: Path, repo_root: Path) -> tuple[Violation, ...]:

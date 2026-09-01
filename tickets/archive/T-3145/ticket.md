@@ -81,7 +81,7 @@ reverified by an agent working under a real FROB_WORKTREE lease. Worked
 around locally in T-3108's own new fixture module
 (tests/test_gates_tick006_sibling_worktree.py) via
 monkeypatch.delenv("FROB_WORKTREE", raising=False), but the EXISTING
-tests/test_gates.py::TestFixEngineTierA TICK006 fixtures (already bound as
+tests/gates_suite/test_fix_engine.py::TestFixEngineTierA TICK006 fixtures (already bound as
 evidence for T-1544/T-2690/T-2702 and other landed tickets) do NOT have this
 guard and are exposed to the same failure mode the next time an agent
 reverifies their evidence from inside a leased worktree.

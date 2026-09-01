@@ -26,11 +26,11 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_gates.py::TestTick008UnknownLedgerFields::test_fires_on_unknown_field
-- tests/test_gates.py::TestTick008UnknownLedgerFields::test_fuzzy_hint_on_near_miss_typo
-- tests/test_gates.py::TestTick008UnknownLedgerFields::test_silent_on_clean_ledger
-- tests/test_gates.py::TestTick008UnknownLedgerFields::test_real_repo_ledger_is_tick008_clean
-- tests/test_gates.py::TestTick008UnknownLedgerFields::test_waivable
+- tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_fires_on_unknown_field
+- tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_fuzzy_hint_on_near_miss_typo
+- tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_silent_on_clean_ledger
+- tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_real_repo_ledger_is_tick008_clean
+- tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_waivable
 designated_repro_test: null
 threat: null
 component: null

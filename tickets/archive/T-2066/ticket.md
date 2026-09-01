@@ -51,7 +51,7 @@ bodies for constant-fold`, 2 files: `src/frob/gates/_dead_symbols.py`,
 ```
 ERROR: land: T-1959 branch deletes or renames test node(s) bound as
 evidence on T-1579, which no longer resolve:
-['tests/test_gates.py::TestWaive004DegradedRunGuard::test_mass_invalidation_with_live_finding_elsewhere_proceeds']
+['tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::test_mass_invalidation_with_live_finding_elsewhere_proceeds']
 ERROR: ticket land failed: OrphanedEvidenceDeletion: this branch's own
 committed changes delete or rename a pytest test node bound as evidence
 on a DIFFERENT ticket...

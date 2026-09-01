@@ -37,8 +37,8 @@ scope_changes:
   at: '2026-08-08'
 evidence:
 - tests/test_tickets.py::TestScopeMatching::test_own_shard_always_in_scope
-- tests/test_gates.py::TestScopePrework::test_scope001_own_sharded_ledger_shard_implicitly_in_scope
-- tests/test_gates.py::TestScopePrework::test_scope001_another_tickets_shard_still_out_of_scope
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_own_sharded_ledger_shard_implicitly_in_scope
+- tests/gates_suite/test_prework.py::TestScopePrework::test_scope001_another_tickets_shard_still_out_of_scope
 designated_repro_test: null
 threat: null
 component: null

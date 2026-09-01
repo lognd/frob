@@ -67,7 +67,7 @@ evidence:
 - tests/system/test_cli_ticket_promote.py::TestPromoteCLI::test_promoting_an_already_final_id_is_a_no_op
 - tests/system/test_fleet_status_ticket_readiness_arch001.py::TestFleetStatusTicketReadinessArch001::test_ticket_readiness_is_not_an_arch001_finding
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_fragments_module_fs_read_is_declared_not_selfaudit001
-- tests/test_gates.py::TestAutofixManifest::test_write_then_clear_roundtrip
+- tests/gates_suite/test_fix_engine.py::TestAutofixManifest::test_write_then_clear_roundtrip
 - tests/test_gates_fmt_directives.py::TestMarkerFor::test_python_uses_hash
 designated_repro_test: null
 threat: null

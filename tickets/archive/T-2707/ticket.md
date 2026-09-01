@@ -75,11 +75,11 @@ evidence:
 - tests/unit/strata/test_parse.py::TestStrataCoreImportError::test_names_the_real_exception_not_the_generic_guess
 - tests/unit/strata/test_parse.py::TestStrataCoreImportError::test_parse_module_log_names_captured_detail
 - tests/unit/strata/test_facts.py::TestFactsStrataCoreImportError::test_names_the_real_exception
-- tests/test_gates.py::TestSysGate::test_sys004_load_failure
-- tests/test_gates.py::TestSysGate::test_sys004_suppresses_sys001
-- tests/test_gates.py::TestSysGate::test_sys004_names_stale_native_as_likely_remedy
-- tests/test_gates.py::TestSysGate::test_sys004_names_missing_native_hint_when_genuinely_absent
-- tests/test_gates.py::TestSysGate::test_sys004_names_real_exception_when_strata_core_fails_differently
+- tests/gates_suite/test_sys.py::TestSysGate::test_sys004_load_failure
+- tests/gates_suite/test_sys.py::TestSysGate::test_sys004_suppresses_sys001
+- tests/gates_suite/test_sys.py::TestSysGate::test_sys004_names_stale_native_as_likely_remedy
+- tests/gates_suite/test_sys.py::TestSysGate::test_sys004_names_missing_native_hint_when_genuinely_absent
+- tests/gates_suite/test_sys.py::TestSysGate::test_sys004_names_real_exception_when_strata_core_fails_differently
 designated_repro_test: null
 threat: null
 component: null

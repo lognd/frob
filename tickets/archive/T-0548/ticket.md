@@ -14,9 +14,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTest015VacuousCredit::test_fires_on_no_op_test_body
-- tests/test_gates.py::TestTest015VacuousCredit::test_silent_when_any_matching_test_asserts
-- tests/test_gates.py::TestTest015VacuousCredit::test_silent_when_no_test_matches_at_all
+- tests/gates_suite/test_test_gate.py::TestTest015VacuousCredit::test_fires_on_no_op_test_body
+- tests/gates_suite/test_test_gate.py::TestTest015VacuousCredit::test_silent_when_any_matching_test_asserts
+- tests/gates_suite/test_test_gate.py::TestTest015VacuousCredit::test_silent_when_no_test_matches_at_all
 designated_repro_test: null
 threat: null
 component: null

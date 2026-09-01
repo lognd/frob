@@ -45,42 +45,42 @@ scope_changes:
   actor: logan
   at: '2026-07-29'
 evidence:
-- tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
-- tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_already_canonical_is_a_no_op
-- tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_files_missing_entries_and_reverifies_clean
-- tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_already_in_sync_is_a_no_op
-- tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_resyncs_pyproject_and_uv_lock_from_manifest
-- tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_already_in_sync_touches_nothing
-- tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_removes_stale_waiver_on_a_full_unscoped_run
-- tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_refuses_a_scoped_run
-- tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_leaves_a_multi_line_continued_waiver_alone
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_already_canonical_is_a_no_op
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_reg010_files_missing_entries_and_reverifies_clean
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_reg010_already_in_sync_is_a_no_op
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_rel002_resyncs_pyproject_and_uv_lock_from_manifest
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_rel002_already_in_sync_touches_nothing
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_waive004_removes_stale_waiver_on_a_full_unscoped_run
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_waive004_refuses_a_scoped_run
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_waive004_leaves_a_multi_line_continued_waiver_alone
 designated_repro_test: null
 acceptance:
 - text: GIVEN an E501 finding on a line carrying a frob:waive comment WHEN --fix runs
     THEN frob fmt is invoked and the line re-verifies clean
   evidence:
-  - tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
-  - tests/test_gates.py::TestFixEngineTierABatch2::test_fmt001_already_canonical_is_a_no_op
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_already_canonical_is_a_no_op
 - text: GIVEN a REG008/REG010 missing gate_rule_entries finding WHEN --fix runs THEN
     sync_gate_rule_entries regenerates the missing entries and REG010 re-verifies
     clean
   evidence:
-  - tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_files_missing_entries_and_reverifies_clean
-  - tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_already_in_sync_is_a_no_op
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_reg010_files_missing_entries_and_reverifies_clean
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_reg010_already_in_sync_is_a_no_op
 - text: GIVEN a REL002 version-quartet mismatch WHEN --fix runs THEN the existing
     release sync path regenerates the three derived artifacts from the manifest and
     REL002 re-verifies clean, with pyproject.toml/CHANGELOG.md/uv.lock never hand-edited
   evidence:
-  - tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_resyncs_pyproject_and_uv_lock_from_manifest
-  - tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_already_in_sync_touches_nothing
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_rel002_resyncs_pyproject_and_uv_lock_from_manifest
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_rel002_already_in_sync_touches_nothing
 - text: GIVEN a WAIVE004 finding produced by a genuine full unscoped frob check run
     WHEN --fix runs THEN the stale frob:waive line is removed and WAIVE004 re-verifies
     clean; GIVEN the same finding from a --only/--ticket-scoped run THEN --fix refuses
     to act on it and leaves the waiver untouched
   evidence:
-  - tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_removes_stale_waiver_on_a_full_unscoped_run
-  - tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_refuses_a_scoped_run
-  - tests/test_gates.py::TestFixEngineTierABatch2::test_waive004_leaves_a_multi_line_continued_waiver_alone
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_waive004_removes_stale_waiver_on_a_full_unscoped_run
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_waive004_refuses_a_scoped_run
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_waive004_leaves_a_multi_line_continued_waiver_alone
 threat: null
 component: null
 ---

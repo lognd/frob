@@ -75,9 +75,9 @@ evidence:
 - tests/unit/strata/test_effects.py::TestAmbientCapabilityReason::test_node_label_resolves_the_nearest_preceding_header
 - tests/unit/strata/test_effects.py::TestAmbientCapabilityReason::test_reason_present_is_silent
 - tests/unit/strata/test_effects.py::TestAmbientCapabilityReason::test_enumerated_grant_needs_no_reason
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_sys112_ambient_reason_violation
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_sys112_silent_with_a_because_reason
-designated_repro_test: tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_sys112_ambient_reason_violation
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_sys112_ambient_reason_violation
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_sys112_silent_with_a_because_reason
+designated_repro_test: tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_sys112_ambient_reason_violation
 threat: null
 component: null
 anchor: false

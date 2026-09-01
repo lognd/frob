@@ -56,10 +56,10 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/test_gates.py::TestDoc012CommandSectionGate::test_undocumented_subcommand_fails
-- tests/test_gates.py::TestDoc012CommandSectionGate::test_documented_subcommand_passes
-- tests/test_gates.py::TestDoc012CommandSectionGate::test_table_row_alone_does_not_satisfy
-- tests/test_gates.py::TestDoc012CommandSectionGate::test_no_config_means_no_checking
+- tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate::test_undocumented_subcommand_fails
+- tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate::test_documented_subcommand_passes
+- tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate::test_table_row_alone_does_not_satisfy
+- tests/gates_suite/test_doc.py::TestDoc012CommandSectionGate::test_no_config_means_no_checking
 designated_repro_test: null
 threat: null
 component: null

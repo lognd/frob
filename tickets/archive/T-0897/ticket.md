@@ -86,9 +86,9 @@ scope_changes:
   actor: logan
   at: '2026-07-26'
 evidence:
-- tests/test_gates.py::TestRenderLintGate::test_unparseable_file_fires_parse001
-- tests/test_gates.py::TestPiiStructuralCrossLanguage::test_unparseable_python_file_fires_parse001
-- tests/test_gates.py::TestPiiStructuralCrossLanguage::test_unparseable_file_under_graph_exclude_is_silent
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_unparseable_file_fires_parse001
+- tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_unparseable_python_file_fires_parse001
+- tests/gates_suite/test_compliance.py::TestPiiStructuralCrossLanguage::test_unparseable_file_under_graph_exclude_is_silent
 - tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_undecodable_file_fires_parse001
 - tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_undecodable_file_under_graph_exclude_is_silent
 designated_repro_test: null

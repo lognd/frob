@@ -16,7 +16,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_test001_002_explicit_unit_edge_honored_regardless_of_test_name
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test001_002_explicit_unit_edge_honored_regardless_of_test_name
 designated_repro_test: null
 threat: null
 component: null

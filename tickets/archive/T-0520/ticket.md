@@ -176,9 +176,9 @@ evidence:
 - tests/test_clean.py::test_scan_skips_tracked_files
 - tests/unit/cve/test_parser.py::test_parse_missing_file
 - tests/test_decisions.py::test_dec002_accepted_decision_unanchored
-- tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
+- tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
 - tests/test_fuzz.py::TestFuzz003::test_flags_stale_stamp
-- tests/test_gates.py::TestCoverageGate::test_cov003_rejects_empty_directory_level_evidence
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_rejects_empty_directory_level_evidence
 - tests/test_dup_inline.py::TestCallGraphBounds::test_public_callee_never_becomes_an_edge
 - tests/test_lang.py::TestErrors::test_syntax_error_yields_partial_symbols
 - tests/unit/test_logging_module.py::test_below_level_filter

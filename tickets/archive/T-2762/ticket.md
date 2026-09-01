@@ -70,8 +70,8 @@ repo itself):
 
 - tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_errors_on_real_repo
 - tests/test_waive_gate.py::TestWaive007RealRepo::test_zero_findings_on_real_repo
-- tests/test_gates.py::TestProtocolSummaryGate::test_real_repo_scan_runs_end_to_end_without_crashing
-- tests/test_gates.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
+- tests/gates_suite/test_protocol.py::TestProtocolSummaryGate::test_real_repo_scan_runs_end_to_end_without_crashing
+- tests/gates_suite/test_run.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
 
 A scoped run of these 4 together under `pytest -n 2 --dist loadscope`
 (no grouping applied) completed without a node-down/timeout, but

@@ -19,7 +19,7 @@ evidence:
 - tests/system/test_cli_perf.py::TestPerfCollect::test_collect_resolves_a_real_python_hot_frame
 - tests/system/test_cli_perf.py::TestPerfCollect::test_collect_json_output_is_valid_json
 - tests/system/test_cli_perf.py::TestPerfCollect::test_collect_autodetects_cpuprofile_format
-- tests/test_gates.py::TestProcessPoolGates::test_open_process_pool_preloads_forkserver_when_available
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_open_process_pool_preloads_forkserver_when_available
 - tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_real_pool_worker_under_parent_shared_holder_completes
 - tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_independent_process_without_marker_still_blocks
 designated_repro_test: null

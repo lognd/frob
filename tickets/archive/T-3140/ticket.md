@@ -31,7 +31,7 @@ evidence:
 - tests/test_makefile_lock_sync.py::test_upload_commits_uv_lock_with_pyproject
 - tests/test_app_daemon_proxy.py::TestDifferentialParity::test_check_delta_gates_only_json_daemon_matches_in_process
 - tests/unit/test_app_runners_t1822_already_landed.py::TestRenderAlreadyLandedMarkers::test_no_markers_prints_nothing_and_returns_empty
-- tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_unanchored_warns_unbound
+- tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_unanchored_warns_unbound
 designated_repro_test: null
 threat: null
 component: null
@@ -69,7 +69,7 @@ Each of the 8 below, with what was actually observed:
    src/frob/app/release_runner.py's actual sequencing to confirm the property
    really still holds before rewriting the test to assert it there.
 
-4. tests/test_gates.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
+4. tests/gates_suite/test_sys.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
    `_KNOWN_RULE_FIXABILITY` (checked into src/frob/gates/, NOT tests/ --
    outside this ticket's declared scope) is missing `{'SYS100': 'auto'}` that
    a fresh scan now reports. Looks like simple checked-in-literal drift (a new
@@ -86,7 +86,7 @@ Each of the 8 below, with what was actually observed:
    `frob exports src/frob` (etc) and either regenerate __init__.py or confirm
    these are deliberately excluded.
 
-6. tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
+6. tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
    `assert not any(...)` failed -- something IS being flagged that shouldn't
    be. Not root-caused; needs the actual WIRE violation read directly
    (`frob check --only wire` against this test's fixture) to see which CLI
@@ -129,7 +129,7 @@ Each of the 8 below, with what was actually observed:
    WARN should be logged at a lower level / only when a package-prefix glob
    is actually present in scope.
 
-10. tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_unanchored_warns_unbound
+10. tests/gates_suite/test_doc.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_unanchored_warns_unbound
     `assert all(v.severity == Severity.WARN for v in warned)` failed -- some
     DOC004 violations for "$ frob check --delta" now come back at a
     different severity than WARN. Not root-caused; needs the actual

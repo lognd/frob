@@ -14,8 +14,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestDeprecatedGate::test_depr005_reference_set_combines_consumers_and_xref
-- tests/test_gates.py::test_gates_run_gates_integration
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr005_reference_set_combines_consumers_and_xref
+- tests/gates_suite/test_coverage.py::test_gates_run_gates_integration
 - tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth::test_growth_beyond_baseline_fires_at_the_right_file_and_line
 - tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth::test_same_count_as_baseline_does_not_fire
 - tests/unit/gates/test_deprecated_baseline.py::TestDeprecatedCurrentReferencesImportGating::test_unrelated_same_name_call_in_non_importing_file_is_excluded
@@ -28,8 +28,8 @@ acceptance:
     stage drops from 17.9s toward ~2-3s native and per-symbol cost stops growing linearly
     (report candidate #2)'
   evidence:
-  - tests/test_gates.py::TestDeprecatedGate::test_depr005_reference_set_combines_consumers_and_xref
-  - tests/test_gates.py::test_gates_run_gates_integration
+  - tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr005_reference_set_combines_consumers_and_xref
+  - tests/gates_suite/test_coverage.py::test_gates_run_gates_integration
   - tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth::test_growth_beyond_baseline_fires_at_the_right_file_and_line
   - tests/unit/gates/test_deprecated_baseline.py::TestDepr005ViolationsGrowth::test_same_count_as_baseline_does_not_fire
   - tests/unit/gates/test_deprecated_baseline.py::TestDeprecatedCurrentReferencesImportGating::test_unrelated_same_name_call_in_non_importing_file_is_excluded

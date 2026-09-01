@@ -50,8 +50,8 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_sharded_ticket_diff
-- tests/test_gates.py::TestRunGates::test_no_active_ticket_violation_names_the_diff_base
+- tests/gates_suite/test_run.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_sharded_ticket_diff
+- tests/gates_suite/test_run.py::TestRunGates::test_no_active_ticket_violation_names_the_diff_base
 designated_repro_test: null
 threat: null
 component: null
@@ -143,8 +143,8 @@ outside this ticket's declared scope.
 ```
 
 ### Evidence
-- `tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_sharded_ticket_diff` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestRunGates::test_no_active_ticket_violation_names_the_diff_base` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_run.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_sharded_ticket_diff` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_run.py::TestRunGates::test_no_active_ticket_violation_names_the_diff_base` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

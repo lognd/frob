@@ -15,7 +15,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov002_grace_matches_hunk_anywhere_in_ticket_block
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov002_grace_matches_hunk_anywhere_in_ticket_block
 designated_repro_test: null
 threat: null
 component: null

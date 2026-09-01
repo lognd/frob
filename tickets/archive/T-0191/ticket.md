@@ -21,8 +21,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
-- tests/test_gates.py::TestOptInGates::test_dup_gate_planted_clone_waived_passes
+- tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
+- tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_planted_clone_waived_passes
 designated_repro_test: null
 threat: null
 component: null

@@ -125,13 +125,13 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_pre_fix_dirty_snapshot_captures_uncommitted_content
-- tests/test_gates.py::TestFixEngineScopeLease::test_uncommitted_in_scope_edit_survives_a_disqualified_tier_a_revert
-- tests/test_gates.py::TestFixEngineScopeLease::test_committed_edit_is_unaffected_by_a_disqualified_tier_a_revert
-- tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
-- tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
-- tests/test_gates.py::TestFixEngineScopeLease::test_in_scope_fix_is_kept_unchanged
-- tests/test_gates.py::TestFixEngineScopeLease::test_narrowed_live_lease_wins_over_stale_declared_scope
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_pre_fix_dirty_snapshot_captures_uncommitted_content
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_uncommitted_in_scope_edit_survives_a_disqualified_tier_a_revert
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_committed_edit_is_unaffected_by_a_disqualified_tier_a_revert
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_in_scope_fix_is_kept_unchanged
+- tests/gates_suite/test_fix_engine.py::TestFixEngineScopeLease::test_narrowed_live_lease_wins_over_stale_declared_scope
 designated_repro_test: null
 threat: null
 component: null

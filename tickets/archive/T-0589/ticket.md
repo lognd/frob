@@ -28,9 +28,9 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_gates.py::TestTestGate::test_test001_zero_branch_coverage_flags_when_opted_in
-- tests/test_gates.py::TestTestGate::test_test001_zero_branch_coverage_silent_when_flag_off
-- tests/test_gates.py::TestTestGate::test_test001_nonzero_branch_coverage_stays_silent_when_opted_in
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test001_zero_branch_coverage_flags_when_opted_in
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test001_zero_branch_coverage_silent_when_flag_off
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test001_nonzero_branch_coverage_stays_silent_when_opted_in
 designated_repro_test: null
 threat: null
 component: null

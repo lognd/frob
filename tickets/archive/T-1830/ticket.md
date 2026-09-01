@@ -15,9 +15,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTestGate::test_test006_missing_stamp
-- tests/test_gates.py::TestTestGate::test_test006_stale_stamp
-- tests/test_gates.py::TestTestGate::test_test006_stale_on_new_file_not_in_stamp
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test006_missing_stamp
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test006_stale_stamp
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test006_stale_on_new_file_not_in_stamp
 designated_repro_test: null
 threat: null
 component: null

@@ -44,11 +44,11 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestTestGate::test_test012_missing_lock_warns
-- tests/test_gates.py::TestTestGate::test_test012_drifted_module_warns
-- tests/test_gates.py::TestTestGate::test_test012_matching_lock_is_clean
-- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refreshes_committed_lock
-- tests/test_gates.py::TestCoverageLoad::test_coverage_lock_diff_flags_drift_and_missing_module
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test012_missing_lock_warns
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test012_drifted_module_warns
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test012_matching_lock_is_clean
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_refreshes_committed_lock
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_coverage_lock_diff_flags_drift_and_missing_module
 designated_repro_test: null
 threat: null
 component: null

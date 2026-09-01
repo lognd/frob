@@ -32,7 +32,7 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/test_gates.py::TestWaive004ExaminedSitesGuard::test_original_55_waiver_incident_shape_partial_examination_still_refuses
+- tests/gates_suite/test_waive.py::TestWaive004ExaminedSitesGuard::test_original_55_waiver_incident_shape_partial_examination_still_refuses
 designated_repro_test: null
 threat: null
 component: null
@@ -60,7 +60,7 @@ T-1579/T-1592/T-1904 incident writeup) describing:
 - _drop_unexamined_archgate_candidates as a third, additive guard stacked
   on top of the two existing ones, gated on rule id in the archgate
   family, granting nothing for any other family
-- the regression test tests/test_gates.py::TestWaive004ExaminedSitesGuard,
+- the regression test tests/gates_suite/test_waive.py::TestWaive004ExaminedSitesGuard,
   especially test_original_55_waiver_incident_shape_partial_examination_
   still_refuses (the original incident's shape narrowed to per-site)
 

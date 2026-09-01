@@ -15,16 +15,16 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
-- tests/test_gates.py::TestCoverageGate::test_cov006_flags_test_with_no_call_graph_reachability
-- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_calls_the_bound_symbol
-- tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_fires_on_cross_file_same_test_collision
-- tests/test_gates.py::TestTest015VacuousCredit::test_fires_on_no_op_test_body
+- tests/gates_suite/test_invariant.py::TestPlace001Gate::test_missed_following_binding_fires
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_flags_test_with_no_call_graph_reachability
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_silent_when_test_calls_the_bound_symbol
+- tests/gates_suite/test_test_gate.py::TestTest014AmbiguousConventionMatch::test_fires_on_cross_file_same_test_collision
+- tests/gates_suite/test_test_gate.py::TestTest015VacuousCredit::test_fires_on_no_op_test_body
 - tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_missing_row_for_real_command_fails
 - tests/unit/graph/test_dsl.py::TestDeprecatedDirective::test_missing_sunset_is_malformed
 - tests/test_perf.py::TestPerf007RedundantComputation::test_two_stages_calling_the_same_uncached_parse_is_flagged
 - tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_declared_entry_is_loaded
-- tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
 designated_repro_test: null
 threat: null
 component: null

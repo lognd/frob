@@ -1624,33 +1624,33 @@ scope_changes:
   actor: logan
   at: '2026-08-01'
 evidence:
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_unresolvable_callee_fires_exhaust003_not_exhaust001
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_ambiguous_bare_reraise_still_fires_exhaust001
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_historical_ticket_outside_active_window_is_silent_by_default
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_recent_ticket_outside_old_window_still_fires_exactly_as_today
-- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_include_history_env_opt_in_restores_the_historical_finding
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_catch_all_of_unknown_does_not_fire_exhaust001
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_unresolvable_callee_fires_exhaust003_not_exhaust001
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_ambiguous_bare_reraise_still_fires_exhaust001
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_historical_ticket_outside_active_window_is_silent_by_default
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_recent_ticket_outside_old_window_still_fires_exactly_as_today
+- tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_include_history_env_opt_in_restores_the_historical_finding
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_catch_all_of_unknown_does_not_fire_exhaust001
 designated_repro_test: null
 acceptance:
 - text: GIVEN an EXHAUST001 finding whose only escape is an unresolvable (Unknown)
     callee WHEN the gate runs THEN it does not demand a catch-all handler under EXHAUST001,
     and any resolution-coverage concern is reported as its own distinct signal
   evidence:
-  - tests/test_gates.py::TestExhaustiveHandlingGate::test_unresolvable_callee_fires_exhaust003_not_exhaust001
+  - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_unresolvable_callee_fires_exhaust003_not_exhaust001
 - text: GIVEN a genuinely unhandled resolvable exception escape WHEN the gate runs
     THEN EXHAUST001 still fires exactly as today, proven by a regression test
   evidence:
-  - tests/test_gates.py::TestExhaustiveHandlingGate::test_ambiguous_bare_reraise_still_fires_exhaust001
+  - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_ambiguous_bare_reraise_still_fires_exhaust001
 - text: GIVEN a Done report for a ticket outside the active window WHEN the tickets
     gate runs THEN TICK011 does not fire on it by default
   evidence:
-  - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_historical_ticket_outside_active_window_is_silent_by_default
+  - tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_historical_ticket_outside_active_window_is_silent_by_default
 - text: GIVEN a Done report written now that discloses a cut with no ticket cited
     WHEN the tickets gate runs THEN TICK011 still fires exactly as today, proven by
     a regression test
   evidence:
-  - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_recent_ticket_outside_old_window_still_fires_exactly_as_today
+  - tests/gates_suite/test_tick.py::TestTick011DisclosedCutWithoutTicket::test_recent_ticket_outside_old_window_still_fires_exactly_as_today
 threat: null
 component: null
 ---

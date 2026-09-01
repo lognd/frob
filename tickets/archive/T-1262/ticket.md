@@ -30,27 +30,27 @@ scope_changes:
   actor: logan
   at: '2026-08-03'
 evidence:
-- tests/test_gates.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed
-- tests/test_gates.py::TestFixEngineTierB::test_regressing_fix_is_rolled_back_byte_for_byte
-- tests/test_gates.py::TestFixEngineTierB::test_new_error_violation_after_fix_rolls_back
-- tests/test_gates.py::TestFixEngineTierB::test_multiple_fixes_verified_sequentially_not_batched
-- tests/test_gates.py::TestFixEngineTierB::test_no_marker_files_is_a_no_op
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_regressing_fix_is_rolled_back_byte_for_byte
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_new_error_violation_after_fix_rolls_back
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_multiple_fixes_verified_sequentially_not_batched
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_no_marker_files_is_a_no_op
 designated_repro_test: null
 acceptance:
 - text: GIVEN a Tier-B fix that applies cleanly WHEN its affected_gates and bound_tests
     all re-verify clean THEN the fix is committed and reported as fixed
   evidence:
-  - tests/test_gates.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed
 - text: GIVEN a Tier-B fix that introduces a regression WHEN affected_gates or bound_tests
     fail after applying THEN every touched file is restored byte-for-byte from its
     pre-fix backup and a FixRolledBack record discloses which gate/test regressed
   evidence:
-  - tests/test_gates.py::TestFixEngineTierB::test_regressing_fix_is_rolled_back_byte_for_byte
-  - tests/test_gates.py::TestFixEngineTierB::test_new_error_violation_after_fix_rolls_back
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_regressing_fix_is_rolled_back_byte_for_byte
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_new_error_violation_after_fix_rolls_back
 - text: GIVEN N Tier-B fixes in one --fix invocation THEN each is applied and verified
     sequentially, never batched, so a rollback never has to bisect more than one fix
   evidence:
-  - tests/test_gates.py::TestFixEngineTierB::test_multiple_fixes_verified_sequentially_not_batched
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_multiple_fixes_verified_sequentially_not_batched
 threat: null
 component: null
 ---

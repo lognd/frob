@@ -46,10 +46,10 @@ scope_changes:
   at: '2026-07-29'
 evidence:
 - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
-- tests/test_gates.py::TestComplianceGate::test_compliance007_real_repo_registry_surfaces_known_gap
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance007_real_repo_registry_surfaces_known_gap
 - tests/unit/strata/test_compliance.py::TestCmplRegistryBacking::test_self_referential_handled_by_is_flagged
-- tests/test_gates.py::TestComplianceGate::test_compliance007_fires_warn_on_self_referential_handled_by
-- tests/test_gates.py::TestComplianceGate::test_compliance007_silent_on_frob_catalog_entries_self_reference
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance007_fires_warn_on_self_referential_handled_by
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance007_silent_on_frob_catalog_entries_self_reference
 designated_repro_test: null
 acceptance:
 - text: GIVEN a CMPL-* row whose handled_by names a rule/RegulationEntry id that does
@@ -58,7 +58,7 @@ acceptance:
     integrity check, applied to handled_by too)
   evidence:
   - tests/unit/strata/test_compliance.py::TestCmplRegistry::test_check_cmpl_registry_loads_real_file
-  - tests/test_gates.py::TestComplianceGate::test_compliance007_real_repo_registry_surfaces_known_gap
+  - tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance007_real_repo_registry_surfaces_known_gap
   - tests/unit/strata/test_compliance.py::TestCmplRegistryBacking::test_self_referential_handled_by_is_flagged
 - text: GIVEN a repo with strata models that declare exposure:public-web or other
     compliance-relevant attrs but evaluate_compliance is never invoked in the gate
@@ -67,19 +67,19 @@ acceptance:
     compensating control -- not silently assumed covered by COMPLIANCE005's registry-only
     check
   evidence:
-  - tests/test_gates.py::TestComplianceGate::test_compliance007_fires_warn_on_self_referential_handled_by
+  - tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance007_fires_warn_on_self_referential_handled_by
 - text: GIVEN the real repo's own compliance.yaml and current wiring WHEN this ticket
     closes THEN docs/design/registry/EXHAUSTIVENESS-GATE.md states plainly what compliance_gate
     does and does not verify
   evidence:
-  - tests/test_gates.py::TestComplianceGate::test_compliance007_silent_on_frob_catalog_entries_self_reference
+  - tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance007_silent_on_frob_catalog_entries_self_reference
 - text: GIVEN a synthetic compliance.yaml with a CMPL_REGISTRY_UNIT_IDS row set to
     handled_by:COMPLIANCE005 WHEN compliance_gate runs THEN COMPLIANCE007 FAILs the
     row with WARN severity BEFORE this fix's self-reference detection existed there
     was no such finding, and AFTER it exists check_cmpl_registry/compliance_gate PASSes
     the row through to a named, correctly-severitied violation
   evidence:
-  - tests/test_gates.py::TestComplianceGate::test_compliance007_fires_warn_on_self_referential_handled_by
+  - tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance007_fires_warn_on_self_referential_handled_by
 threat: null
 component: null
 ---

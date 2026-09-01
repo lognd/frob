@@ -67,8 +67,8 @@ scope_changes:
   actor: logan
   at: '2026-08-03'
 evidence:
-- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refuses_zero_canary_module
-- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_canary_check_skipped_when_module_unknown
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_refuses_zero_canary_module
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_canary_check_skipped_when_module_unknown
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN a coverage run that lost subprocess or pool-worker data THEN the stamp
@@ -76,8 +76,8 @@ acceptance:
     canaries (src/frob/__main__.py nonzero while system tests exist), not only module_join_fraction
     which reads ~1.0 under source=-inflated zeros'
   evidence:
-  - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refuses_zero_canary_module
-  - tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_canary_check_skipped_when_module_unknown
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_refuses_zero_canary_module
+  - tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_canary_check_skipped_when_module_unknown
 threat: null
 component: null
 ---

@@ -37,8 +37,8 @@ scope_changes:
   at: '2026-08-16'
 evidence:
 - tests/test_graph.py::TestCallGraph::test_build_reference_graph_catches_dispatch_table_entry
-- tests/test_gates.py::TestDeadSymbolGate::test_dead_symbol_gate_verifies_imports_across_a_same_named_collision
-designated_repro_test: tests/test_gates.py::TestDeadSymbolGate::test_dead_symbol_gate_verifies_imports_across_a_same_named_collision
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_dead_symbol_gate_verifies_imports_across_a_same_named_collision
+designated_repro_test: tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_dead_symbol_gate_verifies_imports_across_a_same_named_collision
 acceptance:
 - text: 'Measured: ''git grep verify_imports=True -- src/'' returns only a docstring
     line (src/frob/graph/callgraph.py:397). No production caller opts in, and no open

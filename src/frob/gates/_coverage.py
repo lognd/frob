@@ -379,15 +379,17 @@ def _symbol_branch(
 
 # frob:ticket T-1824
 # frob:tests \
-# tests/test_gates.py::TestSuspectDeflatedSymbols.test_def_line_hit_body_zero_flagged
+# tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_def_line_hit_body\
+# _zero_flagged
 # frob:tests \
-# tests/test_gates.py::TestSuspectDeflatedSymbols.test_genuinely_dead_code_not_flagged_\
-# without_tests_edge
+# tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_genuinely_dead_co\
+# de_not_flagged_without_tests_edge
 # frob:tests \
-# tests/test_gates.py::TestSuspectDeflatedSymbols.test_uniformly_covered_symbol_not_fla\
-# gged
+# tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_uniformly_covered\
+# _symbol_not_flagged
 # frob:tests \
-# tests/test_gates.py::TestSuspectDeflatedSymbols.test_single_line_symbol_not_flagged
+# tests/gates_suite/test_coverage.py::TestSuspectDeflatedSymbols.test_single_line_symbo\
+# l_not_flagged
 def _suspect_deflated_symbols(
     snapshot: GraphSnapshot | None,
     hits_by_class_line: dict[str, dict[int, tuple[int, int]]],
@@ -721,7 +723,7 @@ def _known_repo_paths(root: Path, snapshot: GraphSnapshot | None) -> frozenset[s
 
 # frob:ticket T-0997
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_lock_excludes_graph_excluded_modules  # noqa: E501
+# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_lock_excludes_graph_excluded_modules  # noqa: E501
 def exclude_filtered_coverage(
     data: CoverageData, snapshot: GraphSnapshot
 ) -> CoverageData:
@@ -843,8 +845,9 @@ _CANARY_MODULES: tuple[str, ...] = ("src/frob/__main__.py",)
 
 # frob:ticket T-1236
 # frob:tests \
-# tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_zero_canary_module
-# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_canary_check_skipped_when_module_unknown  # noqa: E501
+# tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refuses_zero\
+# _canary_module
+# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_canary_check_skipped_when_module_unknown  # noqa: E501
 def _canary_deflation(module_line: Mapping[str, float]) -> str | None:
     """Name of the first known canary module reading exactly 0.0% coverage.
 
@@ -895,10 +898,10 @@ def _provenance_drop(root: Path, current_module_count: int) -> tuple[int, float]
 
 # frob:ticket T-1435
 # frob:ticket T-1517
-# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_below_deflation_floor  # noqa: E501
-# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_deflation_floor_skipped_below_min_known_modules  # noqa: E501
-# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop  # noqa: E501
-# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_provenance_check_skipped_without_committed_lock  # noqa: E501
+# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refuses_below_deflation_floor  # noqa: E501
+# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_deflation_floor_skipped_below_min_known_modules  # noqa: E501
+# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop  # noqa: E501
+# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_provenance_check_skipped_without_committed_lock  # noqa: E501
 def _filtered_coverage_or_deflated(
     root: Path, snapshot: GraphSnapshot
 ) -> Result[CoverageData | None, GateError]:
@@ -1022,7 +1025,7 @@ def _filtered_coverage_or_deflated(
 
 # frob:ticket T-1517
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refuses_below_deflation_floor  # noqa: E501
+# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refuses_below_deflation_floor  # noqa: E501
 def stamp_coverage(
     root: Path, snapshot: GraphSnapshot | None = None
 ) -> Result[Unit, GateError]:
@@ -1152,9 +1155,10 @@ def _apply_lock_ratchet(root: Path, rounded: dict[str, float]) -> None:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:tests \
-# tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refreshes_committed_lock
-# frob:tests tests/test_gates.py::TestCoverageLoad.test_write_coverage_lock_refuses_downward_ratchet  # noqa: E501
-# frob:tests tests/test_gates.py::TestCoverageLoad.test_write_coverage_lock_allow_decrease_overrides_ratchet  # noqa: E501
+# tests/gates_suite/test_coverage.py::TestCoverageLoad.test_stamp_coverage_refreshes_co\
+# mmitted_lock
+# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_write_coverage_lock_refuses_downward_ratchet  # noqa: E501
+# frob:tests tests/gates_suite/test_coverage.py::TestCoverageLoad.test_write_coverage_lock_allow_decrease_overrides_ratchet  # noqa: E501
 def write_coverage_lock(
     root: Path, data: CoverageData, *, allow_decrease: bool = False
 ) -> Result[Unit, GateError]:

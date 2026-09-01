@@ -22,11 +22,11 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_a_strata_node_whose_clearance_is_not_public
-- tests/test_gates.py::TestCoverageGate::test_cov007_still_fires_for_a_python_private_helper_after_t2549
-- tests/test_gates.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
-- tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_doc_anchor_on_public_symbol
-designated_repro_test: tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_a_strata_node_whose_clearance_is_not_public
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_silent_for_a_strata_node_whose_clearance_is_not_public
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_still_fires_for_a_python_private_helper_after_t2549
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
+- tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_silent_for_doc_anchor_on_public_symbol
+designated_repro_test: tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov007_silent_for_a_strata_node_whose_clearance_is_not_public
 threat: null
 component: null
 anchor: false

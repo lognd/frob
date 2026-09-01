@@ -22,7 +22,7 @@ def _ticket(
     state: TicketState,
     scope: tuple[str, ...] = (),
 ) -> Ticket:
-    """A minimal `Ticket` fixture -- mirrors `tests/test_gates.py::_ticket`'s
+    """A minimal `Ticket` fixture -- mirrors `tests/conftest.py::_ticket`'s
     own shape, kept local so this file has no import-time dependency on
     that (T-2550-owned, while in-progress) module."""
     return Ticket(
@@ -39,7 +39,7 @@ def _ticket(
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
     """Run `argv` in `cwd`, raising on a nonzero exit -- mirrors
-    `tests/test_gates.py::_run`, kept local for the same reason `_ticket`
+    `tests/conftest.py::_run`, kept local for the same reason `_ticket`
     is."""
     return subprocess.run(
         argv, cwd=str(cwd), check=True, capture_output=True, text=True

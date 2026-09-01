@@ -29,7 +29,7 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_gates.py::TestDriftGate::test_no_drift_when_clean
+- tests/gates_suite/test_doc.py::TestDriftGate::test_no_drift_when_clean
 designated_repro_test: null
 threat: null
 component: null

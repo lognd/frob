@@ -70,10 +70,10 @@ scope_changes:
   actor: logan
   at: '2026-08-20'
 evidence:
-- tests/test_gates.py::TestDocseverityGate::test_mismatched_severity_row_fires_doc013
-- tests/test_gates.py::TestDocseverityGate::test_matching_severity_row_passes
-- tests/test_gates.py::TestDocseverityGate::test_no_override_is_a_noop
-- tests/test_gates.py::TestDocseverityGate::test_ambiguous_doc_word_is_never_flagged
+- tests/gates_suite/test_doc.py::TestDocseverityGate::test_mismatched_severity_row_fires_doc013
+- tests/gates_suite/test_doc.py::TestDocseverityGate::test_matching_severity_row_passes
+- tests/gates_suite/test_doc.py::TestDocseverityGate::test_no_override_is_a_noop
+- tests/gates_suite/test_doc.py::TestDocseverityGate::test_ambiguous_doc_word_is_never_flagged
 designated_repro_test: null
 threat: null
 component: null

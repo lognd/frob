@@ -41,8 +41,8 @@ scope_changes:
   actor: logan
   at: '2026-08-02'
 evidence:
-- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop
-- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_provenance_check_skipped_without_committed_lock
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_refuses_locally_scoped_run_via_provenance_drop
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_stamp_coverage_provenance_check_skipped_without_committed_lock
 designated_repro_test: null
 threat: null
 component: null

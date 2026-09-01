@@ -24,8 +24,8 @@ scope_changes:
   at: '2026-08-01'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
-- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_refuses_downward_ratchet
-- tests/test_gates.py::TestCoverageLoad::test_write_coverage_lock_allow_decrease_overrides_ratchet
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_refuses_downward_ratchet
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_write_coverage_lock_allow_decrease_overrides_ratchet
 designated_repro_test: null
 threat: null
 component: null

@@ -125,9 +125,11 @@ def _waive001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 
 # frob:ticket T-0404
-# frob:tests tests/test_gates.py::TestDsl001.test_malformed_frob_doc_directive_flagged
 # frob:tests \
-# tests/test_gates.py::TestDsl001.test_waive_reason_and_tests_kind_not_double_flagged
+# tests/gates_suite/test_waive.py::TestDsl001.test_malformed_frob_doc_directive_flagged
+# frob:tests \
+# tests/gates_suite/test_waive.py::TestDsl001.test_waive_reason_and_tests_kind_not_doub\
+# le_flagged
 # frob:enforces CHK-GATE-DSL001
 def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DSL001: a malformed `frob:` directive not already claimed by a
@@ -191,7 +193,8 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # `_rule_id_scan`'s module docstring) and stay purely hand-maintained here
 # as before this ticket.
 # frob:tests \
-# tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
+# tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_i\
+# s_known
 # frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_real_repo_registry_is_complete  # noqa: E501
 # frob-zone-start known-gate-rules T-1002
@@ -1324,8 +1327,9 @@ _KNOWN_GATE_RULES = frozenset(
 
 # frob:ticket T-0499
 # frob:doc docs/modules/gates.md#public-api
-# frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_returns_known_rule_id
-# frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_is_frozenset
+# frob:tests \
+# tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_returns_known_rule_id
+# frob:tests tests/gates_suite/test_sys.py::TestKnownGateRuleIds.test_is_frozenset
 def known_gate_rule_ids() -> frozenset[str]:
     """Return every rule id a gate can emit, for strata `caught_by`
     resolution to recognize rule-id-shaped references (e.g. THREAT006's

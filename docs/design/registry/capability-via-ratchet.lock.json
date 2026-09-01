@@ -211,14 +211,14 @@
       "ticket": "T-1628"
     },
     "testsuite::env": {
-      "accepted_count": 23,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 22,
+      "reason": "T-3618: T-3586's split removed the now-dead tests/test_gates.py via entry (the file no longer exists, its content moved to tests/gates_suite/*.py, none of which observe env); measured live via-list count.",
+      "ticket": "T-3618"
     },
     "testsuite::env.read": {
-      "accepted_count": 20,
-      "reason": "T-3506: measured drift at land time -- a sibling ticket landed a new genuinely-observed env.read site between T-3465's bump and this land, ahead of its own ratchet bump; re-measured and bumped to the current live count so this land is not blocked on unrelated debt. T-3465's own reason (below, superseded count) still applies to the prior 19.",
-      "ticket": "T-3465"
+      "accepted_count": 21,
+      "reason": "T-3618: T-3586's tests/test_gates.py split relocated content into tests/gates_suite/*.py -- adds the real, new tests/gates_suite/test_run.py env.read site; measured live via-list count.",
+      "ticket": "T-3618"
     },
     "testsuite::env.write": {
       "accepted_count": 6,
@@ -226,14 +226,14 @@
       "ticket": "T-3029"
     },
     "testsuite::eval": {
-      "accepted_count": 15,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 14,
+      "reason": "T-3618: T-3586's split removed the now-dead tests/test_gates.py via entry (the file no longer exists, its content moved to tests/gates_suite/*.py, none of which observe eval); measured live via-list count.",
+      "ticket": "T-3618"
     },
     "testsuite::exec": {
-      "accepted_count": 237,
-      "reason": "T-3607: test_graph_cache.py's TestRecreateConcurrentReaderSurvives spawns a real subprocess.Popen sibling reader process -- the only way to reproduce the concurrent-recreate-vs-live-reader race the SIGBUS fix guards against -- grows testsuite exec via-list by 1 site (236 -> 237).",
-      "ticket": "T-3607"
+      "accepted_count": 246,
+      "reason": "T-3618: land-time re-measurement -- concurrent fleet lands added further genuinely-observed exec sites on testsuite between this ticket's own capability relocation and its land attempt; re-measured and bumped to the current live via-list count (242 -> 246) so this land is not blocked on unrelated drift, per the T-3506 land-time-drift precedent.",
+      "ticket": "T-3618"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -241,19 +241,19 @@
       "ticket": "T-1628"
     },
     "testsuite::ffi": {
-      "accepted_count": 3,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 2,
+      "reason": "T-3618: T-3586's split removed the now-dead tests/test_gates.py via entry (the file no longer exists, its content moved to tests/gates_suite/*.py, none of which observe ffi); measured live via-list count.",
+      "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 176,
-      "reason": "T-3506: tests/unit/test_process_lock.py's TestNoDirectFcntlOutsideSharedPrimitive test reads every src/frob/**/*.py file's own source text via Path.read_text to AST-scan for a direct fcntl import, growing this pair's via-list count by one; a sibling ticket also landed one more genuinely-observed fs.read site concurrently -- bumping the ceiling to the current measured count (2 above T-3484's prior 174), not a fresh unscoped grant.",
-      "ticket": "T-3506"
+      "accepted_count": 181,
+      "reason": "T-3618: land-time re-measurement -- concurrent fleet lands added a further genuinely-observed fs.read site on testsuite between this ticket's own capability relocation and its land attempt; re-measured and bumped to the current live via-list count (180 -> 181) so this land is not blocked on unrelated drift, per the T-3506 land-time-drift precedent.",
+      "ticket": "T-3618"
     },
     "testsuite::fs.write": {
-      "accepted_count": 420,
-      "reason": "T-3607: test_graph_cache.py's quarantine-sweep tests write synthetic quarantined sidecar files (write_bytes/os.utime) to prove _sweep_stale_quarantined_sidecars' age-based cleanup -- grows testsuite fs.write via-list by 1 site (419 -> 420).",
-      "ticket": "T-3607"
+      "accepted_count": 431,
+      "reason": "T-3618: land-time re-measurement -- concurrent fleet lands added further genuinely-observed fs.write sites on testsuite between this ticket's own capability relocation and its land attempt; re-measured and bumped to the current live via-list count (426 -> 431) so this land is not blocked on unrelated drift, per the T-3506 land-time-drift precedent.",
+      "ticket": "T-3618"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
@@ -261,9 +261,9 @@
       "ticket": "T-1628"
     },
     "testsuite::net": {
-      "accepted_count": 13,
-      "reason": "T-2923: tests/unit/strata/test_shrink.py declares this grant (real requests.get(...) needle literals exercising the net.connect observation these fixtures need); confirmed genuine by reading the declaring test file, not assumed from the ticket title alone.",
-      "ticket": "T-2923"
+      "accepted_count": 14,
+      "reason": "T-3618: T-3586's tests/test_gates.py split relocated content into tests/gates_suite/*.py -- removes the now-dead tests/test_gates.py via entry and adds the real net(.connect) sites the split's own files exercise (test_fix_engine.py, test_sys.py); measured live via-list count.",
+      "ticket": "T-3618"
     },
     "testsuite::net-mutate": {
       "accepted_count": 1,
@@ -369,8 +369,8 @@
     "ticket": "T-2923"
   },
   "testsuite::net": {
-    "accepted_count": 13,
-    "reason": "T-2923: tests/unit/strata/test_shrink.py declares this grant (real requests.get(...) needle literals exercising the net.connect observation these fixtures need); confirmed genuine by reading the declaring test file, not assumed from the ticket title alone.",
-    "ticket": "T-2923"
+    "accepted_count": 14,
+    "reason": "T-3618: T-3586's tests/test_gates.py split relocated content into tests/gates_suite/*.py -- removes the now-dead tests/test_gates.py via entry and adds the real net(.connect) sites the split's own files exercise (test_fix_engine.py, test_sys.py); measured live via-list count.",
+    "ticket": "T-3618"
   }
 }

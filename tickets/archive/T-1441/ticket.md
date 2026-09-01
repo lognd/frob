@@ -77,28 +77,28 @@ scope_changes:
   actor: logan
   at: '2026-08-02'
 evidence:
-- tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
-- tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
-- tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
-- tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
-- tests/test_gates.py::TestSysGate::test_sys001_dangling
-- tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
-- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+- tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
+- tests/gates_suite/test_sys.py::TestSysGate::test_sys001_dangling
+- tests/gates_suite/test_sys.py::TestSysGate::test_doc003_proved_claim_passes
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
+- tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
 designated_repro_test: null
 acceptance:
 - text: GIVEN the two split commits WHEN frob check --only archgate --only wire --only
     dead_symbols --only drift runs THEN 0 errors and LARGE001 no longer lists _sys.py
     or _dead_symbols.py
   evidence:
-  - tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
-  - tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
-  - tests/test_gates.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
-  - tests/test_gates.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
-  - tests/test_gates.py::TestSysGate::test_sys001_dangling
-  - tests/test_gates.py::TestSysGate::test_doc003_proved_claim_passes
-  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
-  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
+  - tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+  - tests/gates_suite/test_wire.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_new_public_function_with_no_caller_is_flagged
+  - tests/gates_suite/test_wire.py::TestWireGate::test_relocated_symbol_via_file_split_is_not_flagged
+  - tests/gates_suite/test_sys.py::TestSysGate::test_sys001_dangling
+  - tests/gates_suite/test_sys.py::TestSysGate::test_doc003_proved_claim_passes
+  - tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_folds_compliance_violation
+  - tests/gates_suite/test_sys.py::TestSelfAuditGate::test_selfaudit001_clean_model_no_violations
 threat: null
 component: null
 ---

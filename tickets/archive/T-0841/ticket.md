@@ -15,9 +15,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestProtocolVerificationGate::test_rust_file_state_never_established_is_an_error
-- tests/test_gates.py::TestProtocolVerificationGate::test_rust_drop_impl_discharges_the_requirement
-- tests/test_gates.py::TestProtocolVerificationGate::test_typescript_using_discharges_the_requirement
+- tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_rust_file_state_never_established_is_an_error
+- tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_rust_drop_impl_discharges_the_requirement
+- tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_typescript_using_discharges_the_requirement
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_resolves_a_rust_private_callee_by_pub_keyword
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_does_not_resolve_a_rust_pub_callee
 designated_repro_test: null

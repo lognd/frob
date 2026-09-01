@@ -96,7 +96,7 @@ picked up by the generator scan) -- so _KNOWN_GATE_RULES' PERF01x block is maint
 by a human remembering to paste every new id, and PERF012 was the one that got missed when
 PERF010/011/013/014 were added (T-1225). Filed T-1800 for a second, unrelated
 instance of the exact same failure mode found in the process (SYS108 missing from
-_KNOWN_GATE_RULES, tests/test_gates.py::TestKnownGateRuleIds red on main already) -- not
+_KNOWN_GATE_RULES, tests/gates_suite/test_sys.py::TestKnownGateRuleIds red on main already) -- not
 fixed here, out of this ticket's scope.
 
 No frob:enforces CHK-GATE-PERF012 directive was added to code (would have satisfied REG008,

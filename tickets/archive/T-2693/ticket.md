@@ -35,7 +35,7 @@ body_changes:
   old_length: 1290
   new_length: 1833
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket
 designated_repro_test: null
 threat: null
 component: null

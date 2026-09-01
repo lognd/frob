@@ -28,7 +28,7 @@ evidence:
 - tests/system/test_cli_check.py::TestCheckTicketScopedAlwaysReportsOnFailure::test_ticket_scoped_nonzero_exit_has_diagnostic_output
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
 - tests/test_dup_rungs.py::TestR6Probing::test_fires_on_equivalent_functions_with_renamed_multi_arg_params
-- tests/test_gates.py::TestCoverageLoad::test_parses_line_to_symbol_span
+- tests/gates_suite/test_coverage.py::TestCoverageLoad::test_parses_line_to_symbol_span
 designated_repro_test: null
 acceptance:
 - text: given the intentional frob:secret-fake fixture marker (_secrets.py _FAKE_MARKER,

@@ -17,18 +17,18 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestDebtGate::test_debt001_malformed_directive_is_reported
-- tests/test_gates.py::TestDebtGate::test_debt002_closed_ticket_is_reported
-- tests/test_gates.py::TestDebtGate::test_debt003_expired_by_date_is_reported
-- tests/test_gates.py::TestDebtGate::test_clean_debt_produces_no_violations
-- tests/test_gates.py::TestDebtGate::test_lists_every_debt_entry
-- tests/test_gates.py::TestDeprecatedGate::test_depr001_malformed_directive_is_reported
-- tests/test_gates.py::TestDeprecatedGate::test_depr002_closed_ticket_is_reported
-- tests/test_gates.py::TestDeprecatedGate::test_depr003_in_window_warns
-- tests/test_gates.py::TestDeprecatedGate::test_depr004_past_sunset_errors
-- tests/test_gates.py::TestDeprecatedGate::test_depr005_new_caller_errors
-- tests/test_gates.py::TestDeprecatedGate::test_clean_deprecated_produces_no_violations
-- tests/test_gates.py::TestDeprecatedGate::test_lists_every_deprecated_entry
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt001_malformed_directive_is_reported
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt002_closed_ticket_is_reported
+- tests/gates_suite/test_debt.py::TestDebtGate::test_debt003_expired_by_date_is_reported
+- tests/gates_suite/test_debt.py::TestDebtGate::test_clean_debt_produces_no_violations
+- tests/gates_suite/test_debt.py::TestDebtGate::test_lists_every_debt_entry
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr001_malformed_directive_is_reported
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr002_closed_ticket_is_reported
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr003_in_window_warns
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr004_past_sunset_errors
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr005_new_caller_errors
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_clean_deprecated_produces_no_violations
+- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_lists_every_deprecated_entry
 designated_repro_test: null
 acceptance:
 - text: GIVEN src/frob/gates/__init__.py WHEN the remaining gate families (DEBT/DEPR,
@@ -38,7 +38,7 @@ acceptance:
     800-line large-file threshold with no public API change and all existing tests
     pass
   evidence:
-  - tests/test_gates.py::TestDebtGate::test_debt001_malformed_directive_is_reported
+  - tests/gates_suite/test_debt.py::TestDebtGate::test_debt001_malformed_directive_is_reported
 threat: null
 component: null
 ---

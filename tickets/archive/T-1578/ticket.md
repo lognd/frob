@@ -19,9 +19,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestPerfReachDegradedMarker::test_no_stale_natives_returns_none
-- tests/test_gates.py::TestPerfReachDegradedMarker::test_stale_frob_core_returns_the_marker
-- tests/test_gates.py::TestPerfReachDegradedMarker::test_stale_unrelated_native_returns_none
+- tests/gates_suite/test_run.py::TestPerfReachDegradedMarker::test_no_stale_natives_returns_none
+- tests/gates_suite/test_run.py::TestPerfReachDegradedMarker::test_stale_frob_core_returns_the_marker
+- tests/gates_suite/test_run.py::TestPerfReachDegradedMarker::test_stale_unrelated_native_returns_none
 - tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy::test_healthy_natives_return_true
 - tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy::test_stale_after_autorebuild_attempt_returns_false
 - tests/test_ticket_work_and_land_finish.py::TestWorktreeNativesVerifiablyHealthy::test_unimportable_native_returns_false

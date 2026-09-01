@@ -19,9 +19,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_honors_graph_excludes
-- tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_skips_builtin_skip_dirs
-- tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_xref_hits_are_real_symbols
+- tests/gates_suite/test_prework.py::TestPreworkSweepBounds::test_sweep_ticket_honors_graph_excludes
+- tests/gates_suite/test_prework.py::TestPreworkSweepBounds::test_sweep_ticket_skips_builtin_skip_dirs
+- tests/gates_suite/test_prework.py::TestPreworkSweepBounds::test_sweep_ticket_xref_hits_are_real_symbols
 designated_repro_test: null
 threat: null
 component: null

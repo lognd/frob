@@ -40,9 +40,9 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_gates.py::TestFixEngineTierB::test_dead001_removes_unreferenced_private_symbol
-- tests/test_gates.py::TestFixEngineTierB::test_dead001_skips_a_waived_finding
-- tests/test_gates.py::TestFixEngineTierB::test_dead001_at_most_one_deletion_per_file_per_pass
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_dead001_removes_unreferenced_private_symbol
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_dead001_skips_a_waived_finding
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_dead001_at_most_one_deletion_per_file_per_pass
 designated_repro_test: null
 threat: null
 component: null
@@ -127,9 +127,9 @@ loses one per pass. All 5 pre-existing `TestFixEngineTierB` tests and 8
 ```
 
 ### Evidence
-- `tests/test_gates.py::TestFixEngineTierB::test_dead001_removes_unreferenced_private_symbol` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestFixEngineTierB::test_dead001_skips_a_waived_finding` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestFixEngineTierB::test_dead001_at_most_one_deletion_per_file_per_pass` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_dead001_removes_unreferenced_private_symbol` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_dead001_skips_a_waived_finding` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_fix_engine.py::TestFixEngineTierB::test_dead001_at_most_one_deletion_per_file_per_pass` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

@@ -22,9 +22,9 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_gates.py::TestTestGate::test_test006_stale_on_new_file_not_in_stamp
-- tests/test_gates.py::TestTestGate::test_changelog_mentions_rejects_substring_in_prose
-- tests/test_gates.py::TestTestGate::test_changelog_mentions_accepts_real_heading_entry
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test006_stale_on_new_file_not_in_stamp
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_changelog_mentions_rejects_substring_in_prose
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_changelog_mentions_accepts_real_heading_entry
 designated_repro_test: null
 threat: null
 component: null

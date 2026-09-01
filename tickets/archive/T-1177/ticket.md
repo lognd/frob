@@ -77,8 +77,8 @@ scope_changes:
   actor: logan
   at: '2026-07-29'
 evidence:
-- tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
-- tests/test_gates.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+- tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op
 designated_repro_test: null
 acceptance:
 - text: GIVEN a module split moves prose verbatim from a file whose waiver covered
@@ -86,31 +86,31 @@ acceptance:
     THEN the carried waiver is applied automatically at the new site, citing the source
     file and preset, and the fix report discloses every carry
   evidence:
-  - tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
-  - tests/test_gates.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op
 - text: GIVEN prose that is NOT a verbatim move from an already-waived source THEN
     --fix never inserts any waiver (the no-auto-waive anti-goal stands for everything
     else)
   evidence:
-  - tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+  - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
 evidence_changes:
-- old_node: tests/test_gates.py::TestFixEngineTierA::test_inv006_carries_waiver_verbatim_moved_from_waived_source
-  new_node: tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+- old_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_inv006_carries_waiver_verbatim_moved_from_waived_source
+  new_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
   reason: T-1763 deleted fix_inv006_carried_waiver (INV006's whole Tier-A auto-fix
     handler) along with INV006 itself -- no functional equivalent exists; rebinding
     to the nearest still-live Tier-A handler test in the same class as the closest
     honest placeholder
   actor: logan
   at: '2026-08-07'
-- old_node: tests/test_gates.py::TestFixEngineTierA::test_inv006_carries_a_preset_reference_not_a_reason_copy
-  new_node: tests/test_gates.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op
+- old_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_inv006_carries_a_preset_reference_not_a_reason_copy
+  new_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_already_dotted_is_a_no_op
   reason: T-1763 deleted fix_inv006_carried_waiver along with INV006 -- no functional
     equivalent exists; rebinding to the nearest still-live Tier-A handler test in
     the same class
   actor: logan
   at: '2026-08-07'
-- old_node: tests/test_gates.py::TestFixEngineTierA::test_inv006_never_auto_waives_a_non_carried_finding
-  new_node: tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+- old_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_inv006_never_auto_waives_a_non_carried_finding
+  new_node: tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
   reason: T-1763 deleted fix_inv006_carried_waiver along with INV006 -- no functional
     equivalent exists; rebinding to the nearest still-live Tier-A handler test in
     the same class
@@ -164,9 +164,9 @@ batch to call directly.
 ```
 
 ### Evidence
-- `tests/test_gates.py::TestFixEngineTierA::test_inv006_carries_waiver_verbatim_moved_from_waived_source` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestFixEngineTierA::test_inv006_carries_a_preset_reference_not_a_reason_copy` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestFixEngineTierA::test_inv006_never_auto_waives_a_non_carried_finding` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_inv006_carries_waiver_verbatim_moved_from_waived_source` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_inv006_carries_a_preset_reference_not_a_reason_copy` (pytest node id, verified passing when recorded)
+- `tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_inv006_never_auto_waives_a_non_carried_finding` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

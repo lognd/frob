@@ -53,9 +53,9 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_gates.py::TestComplianceGate::test_compliance005_registered_in_known_gate_rules
-- tests/test_gates.py::TestComplianceGate::test_compliance006_silent_on_never_adopted_registry
-- tests/test_gates.py::TestComplianceGate::test_compliance006_fires_on_deleted_registry_after_adoption
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance005_registered_in_known_gate_rules
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance006_silent_on_never_adopted_registry
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance006_fires_on_deleted_registry_after_adoption
 - tests/test_registry_exhaustiveness.py::TestPathEverTracked::test_never_committed_path_is_false
 - tests/test_registry_exhaustiveness.py::TestPathEverTracked::test_deleted_after_commit_is_true
 - tests/test_registry_exhaustiveness.py::TestPathEverTracked::test_git_failure_is_false
@@ -72,7 +72,7 @@ acceptance:
     exercises compliance_gate exactly as frob check dispatches it, not a pure-function
     unit test in isolation.
   evidence:
-  - tests/test_gates.py::TestComplianceGate::test_compliance006_fires_on_deleted_registry_after_adoption
+  - tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance006_fires_on_deleted_registry_after_adoption
 threat: null
 component: null
 ---

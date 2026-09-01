@@ -15,8 +15,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestConventionUnitBinding::test_test001_satisfied_by_convention_name
-- tests/test_gates.py::TestConventionUnitBinding::test_short_symbol_names_do_not_match_everything
+- tests/gates_suite/test_test_gate.py::TestConventionUnitBinding::test_test001_satisfied_by_convention_name
+- tests/gates_suite/test_test_gate.py::TestConventionUnitBinding::test_short_symbol_names_do_not_match_everything
 designated_repro_test: null
 threat: null
 component: null

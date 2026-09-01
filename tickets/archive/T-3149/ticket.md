@@ -48,7 +48,7 @@ scope_changes:
     (''_STRING_FIELDS = (\n    "bar_dest",\n)\n'').
 
 
-    tests/test_gates.py::TestWireGate::
+    tests/gates_suite/test_wire.py::TestWireGate::
 
     test_new_cli_dest_present_in_config_external_is_not_flagged predates
 
@@ -96,7 +96,7 @@ scope_changes:
     (''_STRING_FIELDS = (\n    "bar_dest",\n)\n'').
 
 
-    tests/test_gates.py::TestWireGate::
+    tests/gates_suite/test_wire.py::TestWireGate::
 
     test_new_cli_dest_present_in_config_external_is_not_flagged predates
 
@@ -118,8 +118,8 @@ scope_changes:
   actor: logan
   at: '2026-08-27'
 evidence:
-- tests/test_gates.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
-- tests/test_gates.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
 designated_repro_test: null
 threat: null
 component: null
@@ -128,7 +128,7 @@ anchor_reason: null
 land_commit: 2a12e43799a565136a7c8b8f1b27fdddb08dbceb
 ---
 ## Description
-tests/test_gates.py::TestWireGate::
+tests/gates_suite/test_wire.py::TestWireGate::
 test_new_cli_dest_present_in_config_external_is_not_flagged fails:
 `wire_gate` (src/frob/gates/_wire.py, production file, out of T-3140's
 declared scope) fires WIRE001 for a CLI dest that IS present in

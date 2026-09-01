@@ -47,7 +47,7 @@ scope_changes:
   at: '2026-07-28'
 evidence:
 - tests/test_decisions.py::test_dec001_dangling_decision_edge
-- tests/test_gates.py::TestComplianceGate::test_compliance005_real_repo_registry_passes
+- tests/gates_suite/test_compliance.py::TestComplianceGate::test_compliance005_real_repo_registry_passes
 designated_repro_test: null
 acceptance:
 - text: GIVEN src/frob/gates/__init__.py WHEN the remaining families (SCOPE/PREWORK,

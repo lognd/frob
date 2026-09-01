@@ -76,8 +76,8 @@ evidence:
 - tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_provenance_propagates_through_callees
 - tests/unit/test_arch.py::TestSubscriptProvenance::test_type_with_a_confirmed_source_is_not_subscript_derived
 - tests/unit/test_arch.py::TestSubscriptProvenance::test_slice_only_function_has_no_subscript_provenance
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_subscript_only_leak_fires_exhaust004_not_exhaust002
-- tests/test_gates.py::TestExhaustiveHandlingGate::test_confirmed_and_subscript_leaks_split_across_both_rules
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_subscript_only_leak_fires_exhaust004_not_exhaust002
+- tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_confirmed_and_subscript_leaks_split_across_both_rules
 designated_repro_test: tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
 designated_repro_changes:
 - old_value: tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
@@ -109,8 +109,8 @@ acceptance:
 - text: given this repo's own source, when the exhaustive_handling gate runs unbudgeted
     with the gate cache bypassed, then the EXHAUST002 count is below 25
   evidence:
-  - tests/test_gates.py::TestExhaustiveHandlingGate::test_subscript_only_leak_fires_exhaust004_not_exhaust002
-  - tests/test_gates.py::TestExhaustiveHandlingGate::test_confirmed_and_subscript_leaks_split_across_both_rules
+  - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_subscript_only_leak_fires_exhaust004_not_exhaust002
+  - tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate::test_confirmed_and_subscript_leaks_split_across_both_rules
 threat: null
 component: null
 anchor: false

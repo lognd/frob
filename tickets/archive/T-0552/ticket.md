@@ -15,8 +15,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
-- tests/test_gates.py::TestTest013NativeUnverified::test_silent_on_executed_edge
+- tests/gates_suite/test_test_gate.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
+- tests/gates_suite/test_test_gate.py::TestTest013NativeUnverified::test_silent_on_executed_edge
 designated_repro_test: null
 threat: null
 component: null

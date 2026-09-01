@@ -19,7 +19,7 @@ designated_repro_test: null
 threat: null
 component: null
 ---
-`tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known`
+`tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known`
 fails on main: PARSE002 (introduced by T-0905/T-0902,
 `src/frob/gates/_parse_failures.py:68`) is emitted but missing from
 `_KNOWN_GATE_RULES` (and not in `_KNOWN_ISSUE_ALLOWLIST` either). Found

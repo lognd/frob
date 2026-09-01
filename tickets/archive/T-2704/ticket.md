@@ -33,10 +33,10 @@ scope_changes:
   actor: logan
   at: '2026-08-20'
 evidence:
-- tests/test_gates.py::TestDoclinkGate::test_valid_parent_relative_link_with_two_dotdots_resolves
-- tests/test_gates.py::TestDoclinkGate::test_genuinely_missing_target_still_fires_doc008_after_dotdot_fix
-- tests/test_gates.py::TestDoclinkGate::test_dotdot_link_escaping_above_repo_root_is_refused
-- tests/test_gates.py::TestDoclinkGate::test_broken_relative_link_target_fires_doc008
+- tests/gates_suite/test_doc.py::TestDoclinkGate::test_valid_parent_relative_link_with_two_dotdots_resolves
+- tests/gates_suite/test_doc.py::TestDoclinkGate::test_genuinely_missing_target_still_fires_doc008_after_dotdot_fix
+- tests/gates_suite/test_doc.py::TestDoclinkGate::test_dotdot_link_escaping_above_repo_root_is_refused
+- tests/gates_suite/test_doc.py::TestDoclinkGate::test_broken_relative_link_target_fires_doc008
 designated_repro_test: null
 threat: null
 component: null

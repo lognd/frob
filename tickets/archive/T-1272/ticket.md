@@ -12,8 +12,8 @@ sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_gates.py::TestWaivePresets::test_waive_preset_resolves_reason_and_matches_like_inline
-- tests/test_gates.py::TestWaivePresets::test_unknown_preset_is_malformed_directive
+- tests/gates_suite/test_waive.py::TestWaivePresets::test_waive_preset_resolves_reason_and_matches_like_inline
+- tests/gates_suite/test_waive.py::TestWaivePresets::test_unknown_preset_is_malformed_directive
 designated_repro_test: null
 threat: null
 component: null

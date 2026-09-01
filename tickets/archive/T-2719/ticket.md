@@ -30,15 +30,15 @@ scope_changes:
   actor: logan
   at: '2026-08-20'
 evidence:
-- tests/test_gates.py::TestRenderLintGate::test_bare_print_fires
-- tests/test_gates.py::TestRenderLintGate::test_render_package_exempt
-- tests/test_gates.py::TestRenderLintGate::test_stderr_directed_print_is_silent
-- tests/test_gates.py::TestRenderLintGate::test_unparseable_file_fires_parse001
-- tests/test_gates.py::TestRenderLintGate::test_claude_hooks_dir_exempt
-- tests/test_gates.py::TestRenderLintGate::test_fleet_status_file_exempt
-- tests/test_gates.py::TestRenderLintGate::test_exemption_is_file_scoped_not_dir_scoped
-- tests/test_gates.py::TestRenderLintGate::test_scan_now_covers_hooks_and_fleet_status
-designated_repro_test: tests/test_gates.py::TestRenderLintGate::test_scan_now_covers_hooks_and_fleet_status
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_bare_print_fires
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_render_package_exempt
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_stderr_directed_print_is_silent
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_unparseable_file_fires_parse001
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_claude_hooks_dir_exempt
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_fleet_status_file_exempt
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_exemption_is_file_scoped_not_dir_scoped
+- tests/gates_suite/test_sys.py::TestRenderLintGate::test_scan_now_covers_hooks_and_fleet_status
+designated_repro_test: tests/gates_suite/test_sys.py::TestRenderLintGate::test_scan_now_covers_hooks_and_fleet_status
 threat: null
 component: null
 anchor: false

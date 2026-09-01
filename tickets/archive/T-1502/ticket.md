@@ -27,8 +27,8 @@ scope_changes:
   actor: logan
   at: '2026-08-05'
 evidence:
-- tests/test_gates.py::TestWireGate::test_new_function_passed_bare_to_a_wrapper_marker_is_not_flagged
-- tests/test_gates.py::TestWireGate::test_new_function_named_like_a_wrapper_argument_but_never_passed_is_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_function_passed_bare_to_a_wrapper_marker_is_not_flagged
+- tests/gates_suite/test_wire.py::TestWireGate::test_new_function_named_like_a_wrapper_argument_but_never_passed_is_flagged
 - tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache::test_hit_skips_extract
 - tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache::test_miss_populates_cache
 designated_repro_test: null

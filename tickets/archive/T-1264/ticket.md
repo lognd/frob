@@ -66,10 +66,10 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_gates.py::TestRuleFixability::test_every_known_rule_id_maps_to_exactly_one_tier
-- tests/test_gates.py::TestRuleFixability::test_conflicting_registration_raises_fixabilityconflict
-- tests/test_gates.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
-- tests/test_gates.py::TestRuleFixability::test_sync_gate_rule_fixability_backfills_missing_field
+- tests/gates_suite/test_sys.py::TestRuleFixability::test_every_known_rule_id_maps_to_exactly_one_tier
+- tests/gates_suite/test_sys.py::TestRuleFixability::test_conflicting_registration_raises_fixabilityconflict
+- tests/gates_suite/test_sys.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
+- tests/gates_suite/test_sys.py::TestRuleFixability::test_sync_gate_rule_fixability_backfills_missing_field
 - tests/test_registry_staleness.py::TestSyncGateRuleEntries::test_already_in_sync_returns_empty_tuple
 designated_repro_test: null
 acceptance:
@@ -77,22 +77,22 @@ acceptance:
     one of auto/verified/assisted/manual, with manual as the correct default for a
     rule with no handler in any table
   evidence:
-  - tests/test_gates.py::TestRuleFixability::test_every_known_rule_id_maps_to_exactly_one_tier
+  - tests/gates_suite/test_sys.py::TestRuleFixability::test_every_known_rule_id_maps_to_exactly_one_tier
 - text: GIVEN a rule id registered in more than one of TIER_A_HANDLERS/TIER_B_HANDLERS/TIER_C_EMITTERS
     WHEN generated_fixability() runs THEN it raises FixabilityConflict rather than
     silently picking one
   evidence:
-  - tests/test_gates.py::TestRuleFixability::test_conflicting_registration_raises_fixabilityconflict
+  - tests/gates_suite/test_sys.py::TestRuleFixability::test_conflicting_registration_raises_fixabilityconflict
 - text: GIVEN the checked-in _KNOWN_RULE_FIXABILITY literal WHEN it drifts from a
     fresh generated_fixability() scan (a handler added without updating the literal)
     THEN TestRuleFixability fails loud
   evidence:
-  - tests/test_gates.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
+  - tests/gates_suite/test_sys.py::TestRuleFixability::test_checked_in_literal_matches_a_fresh_scan
 - text: 'GIVEN check-coverage.yaml''s CHK-GATE-<rule> entries THEN each carries a
     fixability: field kept in sync the same idempotent way gate_rule_entries already
     is'
   evidence:
-  - tests/test_gates.py::TestRuleFixability::test_sync_gate_rule_fixability_backfills_missing_field
+  - tests/gates_suite/test_sys.py::TestRuleFixability::test_sync_gate_rule_fixability_backfills_missing_field
 threat: null
 component: null
 ---
@@ -108,7 +108,7 @@ TIER_C_EMITTERS (_fix_engine_tier_c.py), and known_gate_rule_ids()
 assisted/manual -- raising FixabilityConflict if a rule id appears in
 more than one table. Add the checked-in _KNOWN_RULE_FIXABILITY literal
 (frob.gates.__init__ or a similarly central module) plus
-tests/test_gates.py::TestRuleFixability re-verifying it against a fresh
+tests/gates_suite/test_sys.py::TestRuleFixability re-verifying it against a fresh
 scan. Extend docs/design/registry/check-coverage.yaml's CHK-GATE-<rule>
 entries with a fixability: field, synthesized the same idempotent way
 sync_gate_rule_entries already synthesizes missing entries (reuse that
