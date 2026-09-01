@@ -2,7 +2,7 @@
 id: T-3635
 title: 'post-land sweep regression from T-3591: 17 new (rule, file) identit(ies),
   827 finding(s) (DOC006, DRIFT002, F401, SEC110)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-01'
@@ -70,6 +70,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: BUG002 no-behavior-change for a doc/import-hygiene fix
+  actor: logan
+  at: '2026-09-01'
+  old_length: 5337
+  new_length: 5646
+evidence:
+- tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds
 designated_repro_test: null
 threat: null
 component: null
@@ -122,3 +132,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - SEC110  tests/ticket_land_suite/test_wip.py  -> attributed to T-3591 (commit a719e2602dab, already closed/dropped -- filed below) via tests/ticket_land_suite/test_wip.py::TestWipAddIgnoredPathFallback
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:no-behavior-change reason="pure metadata/import-hygiene fix: repoints self-referential frob:tests directives to their post-split file, prunes a now-unused import block, and waives 2 pre-existing future-facing DOC006 findings in another ticket's planning text -- no gate logic or test behavior changes."
