@@ -17,6 +17,7 @@ scope:
 - src/frob/arch/_mayraise.py
 - src/frob/arch/_mayraise_tables.py
 - docs/modules/arch.md
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,13 @@ scope_changes:
   glob: docs/modules/arch.md
   reason: DRIFT002/AFFECT001 doc-anchor re-verification for UNKNOWN/UBIQUITOUS_TIER
     after the split
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: frob.lock
+  reason: frob ack (doc re-verification for the moved UNKNOWN/UBIQUITOUS_TIER constants)
+    writes to frob.lock; declaring it in scope so SCOPE001 does not flag frobs own
+    ledger bookkeeping for this ticket
   actor: logan
   at: '2026-09-01'
 designated_repro_test: null
