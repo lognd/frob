@@ -1,7 +1,7 @@
 ---
 id: T-3658
 title: restore pathlib import line pruned from PY_SAMPLE fixture literal
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
