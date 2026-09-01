@@ -42,6 +42,13 @@ body_changes:
   at: '2026-09-01'
   old_length: 765
   new_length: 2455
+- mode: append
+  reason: record cluster1-complete + cluster3-partial (4/8) progress and the T-draft-d028adeb
+    blocker for whoever resumes this worktree
+  actor: logan
+  at: '2026-09-01'
+  old_length: 2871
+  new_length: 4151
 designated_repro_test: null
 threat: null
 component: null
@@ -111,3 +118,30 @@ statement for the moved names.
 
 ## Unblock log
 - 2026-09-01: unblocked by T-3596 -- T-3596 landed at 4fb806e3d03e; the move/split import-carry, bare-name-repoint, free-variable, and decorator-preservation gaps this split needs are fixed
+
+
+
+## Progress note (blocked by T-draft-d028adeb)
+
+Cluster 1 (msvcrt) COMPLETE and verified: frob.process._lock_msvcrt.py
+created, _msvcrt_acquire_blocking/_msvcrt_release moved cleanly (real
+import + all T-3596 structural checks pass).
+
+Cluster 3 (derived-state-lock) PARTIALLY moved (4 of 8 symbols), each
+individually verified (real import, decorators_preserved, no_self_import,
+no_undefined_names all PASS): held_registry_keys, _worker_inherits_hold,
+_process_already_holds, _derived_lock_path already live in
+frob.process._derived_lock.py as of this worktree's HEAD.
+
+Remaining 4 symbols (DerivedStateLockUnavailable, _canonical_registry_key,
+derived_state_lock, derived_state_write_lock) cannot move -- every
+attempt (full 8-symbol split, per-symbol move, 4-symbol split of just
+the remainder) hits the circular import documented in T-draft-d028adeb
+and rolls back cleanly (T-3596's own verify checks correctly refuse the
+commit; nothing broken landed). Once T-draft-d028adeb's fix lands,
+resume from this worktree's HEAD and move/split the remaining 4 symbols
+-- the msvcrt cluster and the first 4 derived-lock symbols do not need
+to be redone.
+
+Cluster 2 (portable flock primitive) is untouched, staying at
+frob.process._lock per the split plan -- it never needed a move.
