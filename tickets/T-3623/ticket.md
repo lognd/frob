@@ -1,7 +1,7 @@
 ---
 id: T-3623
 title: 'T-3607 fallout: fresh-rebuilt cache db visible without schema'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
