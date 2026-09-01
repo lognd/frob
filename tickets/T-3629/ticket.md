@@ -19,6 +19,8 @@ scope:
 - tests/unit/test_land_squash_stage.py
 - src/frob/tickets/_land_splice.py
 - docs/design/land-splice-test-then-impl.md
+- tests/unit/test_land_splice_test_then_impl.py
+- tickets/T-3566/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,6 +52,18 @@ scope_changes:
 - op: add
   glob: docs/design/land-splice-test-then-impl.md
   reason: moved symbols frob:doc anchor lives there; may need AFFECT001/DRIFT002 re-verification
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/test_land_splice_test_then_impl.py
+  reason: refactor split auto-updated this tests import statement and an unrelated
+    tickets historical-attribution reference to the moved symbols path
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tickets/T-3566/ticket.md
+  reason: refactor split auto-updated this tests import statement and an unrelated
+    tickets historical-attribution reference to the moved symbols path
   actor: logan
   at: '2026-09-01'
 body_changes:
