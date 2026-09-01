@@ -1153,7 +1153,9 @@ def _python_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
 
 
 # frob:ticket T-2798
-# frob:tests tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_binding_capabilities_with_and_without_precomputed_candidates_agree kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_binding_ca\
+# pabilities_with_and_without_precomputed_candidates_agree kind="unit"  # noqa: E501
 def _python_binding_capabilities(
     path: Path,
     table: dict[str, tuple[str, ...]],
@@ -1277,7 +1279,9 @@ def _wrapper_function_capabilities(
 # frob:ticket T-2223
 # frob:ticket T-2798
 # frob:doc docs/modules/vet.md#one-hop-public-cross-file-wrapper-resolution-t-2223
-# frob:tests tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_local_wrapper_capabilities_with_and_without_precomputed_candidates_agree kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_local_wrap\
+# per_capabilities_with_and_without_precomputed_candidates_agree kind="unit"  # noqa: E501
 # frob:waive COV007 reason="docs/modules/vet.md's One-hop public cross-file wrapper \
 # resolution (T-2223) section individually frob:describes this symbol by its own \
 # qualified path -- a deliberate per-symbol anchor, not a duplicate"
@@ -1377,8 +1381,8 @@ def _python_binding_operations(
 
 # frob:ticket T-1752
 # frob:tests \
-# tests/test_vet.py::TestCapabilityScan.test_wrapper_capabilities_resolve_cross_file_vi\
-# a_call_graph kind="unit"
+# tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_wrapper_capab\
+# ilities_resolve_cross_file_via_call_graph kind="unit"
 def _build_wrapper_call_graph(root: Path, python_paths: Sequence[str]) -> CallGraph:
     """`frob.graph.callgraph.build_call_graph` over `python_paths` (repo-
     root-relative POSIX paths), built ONCE per scanned source tree and

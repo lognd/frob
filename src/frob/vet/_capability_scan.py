@@ -396,8 +396,8 @@ def _fingerprint_refinement_confirms(
 
 # frob:ticket T-0153
 # frob:tests \
-# tests/test_vet.py::TestFingerprintBindingResolution.test_python_aliased_pickle_loads_\
-# still_matches
+# tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution.test_python_ali\
+# ased_pickle_loads_still_matches
 def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
     """The `frob.strata.CVE_FINGERPRINTS` entries whose needle(s) matched in
     `path`'s raw text, OR whose needle(s) match a binding-resolved
@@ -502,9 +502,15 @@ def _body_reaches_decode_and_exec(body: str) -> bool:
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-2358
 # frob:ticket T-2798
-# frob:tests tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_python_exec_and_net_detected kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_scan_file_capabilities_still_resolves_cross_file_wrapper kind="unit"  # noqa: E501
-# frob:tests tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_scan_file_capabilities_sees_a_genuine_sibling_change kind="unit"  # noqa: E501
+# frob:tests \
+# tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_python_exec_a\
+# nd_net_detected kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_scan_file_\
+# capabilities_still_resolves_cross_file_wrapper kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_scan_file_\
+# capabilities_sees_a_genuine_sibling_change kind="unit"  # noqa: E501
 def scan_file_capabilities(path: Path) -> frozenset[str]:
     """Capability tokens observed in one source file's raw text (T-0209:
     needle hits fully inside a tree-sitter comment span are excluded --
@@ -1456,7 +1462,7 @@ def _structural_opaque_findings(
 # frob.gates._opaque.opaque_gate, a sibling package under src/frob/gates/ -- DEAD001's \
 # intra-package reference graph is built per-directory (dead_symbol_gate's docstring) \
 # so a cross-package caller in a different directory is invisible to it; directly \
-# unit-tested via the frob:tests directives in tests/test_vet.py"
+# unit-tested via the frob:tests directives in tests/vet_suite/"
 def _opaque_indirection_findings(path: Path) -> tuple[_OpaqueFinding, ...]:
     """`RUNTIME_OPAQUE_CONSTRUCTS` sites in `path` (T-0665, coordinator-
     signed category 1: "evasion-indicative dynamic lookup") -- the

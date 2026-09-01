@@ -2,7 +2,7 @@
 id: T-3647
 title: 'post-land sweep regression from T-3593: 4 new (rule, file) identit(ies), 48
   finding(s) (DRIFT002)'
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-09-01'

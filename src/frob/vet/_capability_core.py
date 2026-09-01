@@ -1012,8 +1012,8 @@ _SEGMENT_SEP_RE = re.compile(r"::|\.")
 
 # frob:ticket T-2507
 # frob:tests \
-# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_family_prefix_still_re\
-# aches_sibling_family
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
+# st_family_prefix_still_reaches_sibling_family
 def _dotted_segments(target: str) -> list[str]:
     """Split a resolved identity or registry needle into its dotted
     segments (T-2507) -- `"::"` (rust/c++ path separator, e.g.
@@ -1029,29 +1029,29 @@ def _dotted_segments(target: str) -> list[str]:
 
 # frob:ticket T-2507
 # frob:tests \
-# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_module_prefix_matches_\
-# with_and_without_trailing_dot
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
+# st_module_prefix_matches_with_and_without_trailing_dot
 # frob:tests \
-# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_call_target_matches_wi\
-# th_and_without_trailing_paren
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
+# st_call_target_matches_with_and_without_trailing_paren
 # frob:tests \
-# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_bare_identifier_matche\
-# s_with_and_without_trailing_paren
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
+# st_bare_identifier_matches_with_and_without_trailing_paren
 # frob:tests \
-# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_family_prefix_still_re\
-# aches_sibling_family
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
+# st_family_prefix_still_reaches_sibling_family
 # frob:tests \
-# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_no_false_positive_on_m\
-# odule_name_substring
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
+# st_no_false_positive_on_module_name_substring
 # frob:tests \
-# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_no_false_positive_on_c\
-# all_target_substring
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
+# st_no_false_positive_on_call_target_substring
 # frob:tests \
-# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_no_false_positive_on_b\
-# are_identifier_substring
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
+# st_no_false_positive_on_bare_identifier_substring
 # frob:tests \
-# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_module_prefix_does_not\
-# _match_unrelated_leading_segment
+# tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary.te\
+# st_module_prefix_does_not_match_unrelated_leading_segment
 def _needle_matches_resolved(needle: str, resolved: str) -> bool:
     """True if `needle` (a registry needle string -- a bare identifier
     like `"Popen"`, a dotted module prefix like `"subprocess."`, a fully-
@@ -1130,7 +1130,9 @@ SCANNED_LANGUAGES: frozenset[str] = frozenset(_EXT_LANGUAGE.values())
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-2358
-# frob:tests tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_language_for_known_and_unknown_extensions kind="unit"  # noqa: E501
+# frob:tests \
+# tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan.test_language_for_\
+# known_and_unknown_extensions kind="unit"  # noqa: E501
 def language_for(path: Path) -> str | None:
     """The pattern-table bucket for `path`'s extension (T-0158: C/C++ is now
     a first-class `"c-cpp"` bucket, not `None`), or `None` for an extension
