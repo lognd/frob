@@ -19,11 +19,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_rapid_sweep.py
 - tests/conftest.py
-- tests/integration/test_gitlog.py
-- tests/test_mutate_journal.py
-- tests/unit/test_conftest_parse_reset.py
-- tests/unit/test_conftest_stackdump.py
-- tests/unit/test_conftest_suite_result_status.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -67,6 +62,41 @@ scope_changes:
     pytest_configure, pytest_collection_modifyitems, pytest_sessionfinish, _reset_parse_cache_before_test,
     _stall_detected) already covered by this ticket''s declared tests/conftest.py
     scope -- declaring coverage, not new code touch'
+  actor: logan
+  at: '2026-09-01'
+- op: remove
+  glob: tests/integration/test_gitlog.py
+  reason: revert speculative scope-closure additions -- SCOPE002 cascades transitively
+    through tests/conftest.py's full pre-existing coverage graph regardless of this
+    split's actual diff; out of scope for T-3595, filing separately if it blocks land
+  actor: logan
+  at: '2026-09-01'
+- op: remove
+  glob: tests/test_mutate_journal.py
+  reason: revert speculative scope-closure additions -- SCOPE002 cascades transitively
+    through tests/conftest.py's full pre-existing coverage graph regardless of this
+    split's actual diff; out of scope for T-3595, filing separately if it blocks land
+  actor: logan
+  at: '2026-09-01'
+- op: remove
+  glob: tests/unit/test_conftest_parse_reset.py
+  reason: revert speculative scope-closure additions -- SCOPE002 cascades transitively
+    through tests/conftest.py's full pre-existing coverage graph regardless of this
+    split's actual diff; out of scope for T-3595, filing separately if it blocks land
+  actor: logan
+  at: '2026-09-01'
+- op: remove
+  glob: tests/unit/test_conftest_stackdump.py
+  reason: revert speculative scope-closure additions -- SCOPE002 cascades transitively
+    through tests/conftest.py's full pre-existing coverage graph regardless of this
+    split's actual diff; out of scope for T-3595, filing separately if it blocks land
+  actor: logan
+  at: '2026-09-01'
+- op: remove
+  glob: tests/unit/test_conftest_suite_result_status.py
+  reason: revert speculative scope-closure additions -- SCOPE002 cascades transitively
+    through tests/conftest.py's full pre-existing coverage graph regardless of this
+    split's actual diff; out of scope for T-3595, filing separately if it blocks land
   actor: logan
   at: '2026-09-01'
 designated_repro_test: null
