@@ -1,7 +1,7 @@
 ---
 id: T-3654
 title: 'cache round 5: exponential backoff for readonly-database contention on darwin'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -20,6 +20,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_graph_cache.py::TestLockBackoff::test_backoff_doubles_up_to_the_cap
+- tests/unit/test_graph_cache.py::TestLockBackoff::test_backoff_never_exceeds_remaining_budget
+- tests/unit/test_graph_cache.py::TestLockBackoff::test_backoff_is_never_negative
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_two_processes_connecting_concurrently_never_see_no_such_table_meta
 designated_repro_test: null
 threat: null
 component: null

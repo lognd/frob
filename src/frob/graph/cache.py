@@ -198,6 +198,38 @@ CREATE TABLE IF NOT EXISTS parsed_artifacts (
 _LOCK_POLL_SECONDS = 2.0
 _LOCK_TOTAL_TIMEOUT_SECONDS = 30.0
 
+# frob:ticket T-3654
+_LOCK_BACKOFF_BASE_SECONDS = 0.05
+_LOCK_BACKOFF_CAP_SECONDS = _LOCK_POLL_SECONDS
+
+
+# frob:ticket T-3654
+# frob:tests tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_doubles_up_to_the_cap  # noqa: E501
+# frob:tests tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_never_exceeds_remaining_budget  # noqa: E501
+def _lock_backoff_seconds(attempt: int, *, remaining: float) -> float:
+    """The delay (seconds) before lock-retry attempt number `attempt`
+    (0-indexed) -- exponential backoff starting at
+    `_LOCK_BACKOFF_BASE_SECONDS`, doubling each attempt, capped at the
+    former fixed poll interval (`_LOCK_BACKOFF_CAP_SECONDS`), and never
+    longer than `remaining` time left on the caller's deadline (T-3654).
+
+    Round 5 of the cache lock-contention saga: T-3644 retired WAL and
+    widened lock-error matching to cover sqlite's `readonly database`
+    shape, but run 33513484322's darwin sibling still exhausted the
+    retry budget and surfaced `CacheLocked`. The prior retry loops slept
+    a FIXED `_LOCK_POLL_SECONDS` (2.0s) between polls against the 30s
+    deadline -- effectively ~15 evenly-spaced attempts, a small FIXED
+    COUNT in practice, not backoff. Under darwin's slower filesystem
+    contention a narrow lock window can fall between two of those widely
+    spaced polls. Starting with a much shorter delay and doubling up to
+    the same 2.0s cap keeps the total attempts made within the SAME
+    30s budget far higher early on (when contention is most likely to be
+    brief), while never sleeping past the caller's own remaining
+    deadline (so the final hard error still fires promptly once the
+    budget is truly exhausted)."""
+    delay = _LOCK_BACKOFF_BASE_SECONDS * (2**attempt)
+    return max(0.0, min(delay, _LOCK_BACKOFF_CAP_SECONDS, remaining))
+
 
 # frob:ticket T-3644
 # frob:tests tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
@@ -260,7 +292,7 @@ def _with_lock_retry(op, *, what: str):  # noqa: ANN001, ANN202
     (or a read), both idempotent under retry.
     """
     deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
-    warned = False
+    attempt = 0
     while True:
         try:
             return op()
@@ -275,20 +307,53 @@ def _with_lock_retry(op, *, what: str):  # noqa: ANN001, ANN202
                     _LOCK_TOTAL_TIMEOUT_SECONDS,
                 )
                 raise CacheLocked(str(exc)) from exc
-            if not warned:
-                _log.warning(
-                    "cache: %s locked, retrying (up to %.0fs remaining)",
-                    what,
-                    remaining,
-                )
-                warned = True
-            else:
-                _log.debug(
-                    "cache: %s still locked, retrying (%.0fs remaining)",
-                    what,
-                    remaining,
-                )
-            time.sleep(_LOCK_POLL_SECONDS)
+            # T-3654: WARNING every retry (not just the first) -- keeping
+            # the whole retry sequence loud, per this ticket's acceptance
+            # criterion; a WARN-level line per attempt is cheap next to a
+            # genuine lock exhaustion going silently unnoticed.
+            _log.warning(
+                "cache: %s locked, retrying (up to %.0fs remaining)",
+                what,
+                remaining,
+            )
+            time.sleep(_lock_backoff_seconds(attempt, remaining=remaining))
+            attempt += 1
+
+
+# frob:ticket T-3654
+# frob:tests tests/unit/test_graph_cache.py::TestLockBackoff.test_backoff_doubles_up_to_the_cap  # noqa: E501
+def _connect_with_backoff(path: Path) -> sqlite3.Connection:
+    """`sqlite3.connect(path)`, retrying a transient lock with exponential
+    backoff against `_LOCK_TOTAL_TIMEOUT_SECONDS` (T-3654, split out of
+    `_open` to keep it under ARCH001's size threshold).
+
+    `sqlite3.connect`'s own `timeout=` argument IS this loop's poll
+    interval (it busy-waits internally on SQLITE_BUSY), so backoff here
+    means shrinking/growing that per-attempt timeout across retries
+    rather than adding an extra explicit sleep between calls -- see
+    `_lock_backoff_seconds`'s own docstring for why (darwin's slower fs
+    contention, run 33513484322, exhausted the prior fixed-interval
+    budget)."""
+    deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
+    attempt = 0
+    while True:
+        remaining = deadline - time.monotonic()
+        per_attempt_timeout = _lock_backoff_seconds(
+            attempt, remaining=max(remaining, 0.0)
+        )
+        try:
+            return sqlite3.connect(str(path), timeout=per_attempt_timeout)
+        except sqlite3.OperationalError as exc:
+            remaining = deadline - time.monotonic()
+            if not _is_transient_lock_error(exc) or remaining <= 0:
+                raise
+            _log.warning(
+                "cache: waiting on lock at %s (another frob process is "
+                "writing the cache; up to %.0fs remaining)",
+                path,
+                remaining,
+            )
+            attempt += 1
 
 
 def _open(path: Path) -> sqlite3.Connection:
@@ -317,26 +382,7 @@ def _open(path: Path) -> sqlite3.Connection:
     line the first time a poll actually blocks, while keeping the same
     30s overall budget.
     """
-    deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
-    warned = False
-    while True:
-        try:
-            conn = sqlite3.connect(str(path), timeout=_LOCK_POLL_SECONDS)
-            break
-        except sqlite3.OperationalError as exc:
-            remaining = deadline - time.monotonic()
-            if not _is_transient_lock_error(exc) or remaining <= 0:
-                raise
-            if not warned:
-                _log.warning(
-                    "cache: waiting on lock at %s (another frob process is "
-                    "writing the cache; up to %.0fs)",
-                    path,
-                    _LOCK_TOTAL_TIMEOUT_SECONDS,
-                )
-                warned = True
-            else:
-                _log.debug("cache: still waiting on lock at %s", path)
+    conn = _connect_with_backoff(path)
     # These pragmas can touch page structure, so on a non-sqlite file they
     # raise here -- swallow it and let connect()'s schema SELECT be the one
     # place that detects corruption and triggers recreate (T-0019/T-0029).
@@ -906,12 +952,19 @@ def _poll_and_reread(
     existing: int | None,
     deadline: float,
     why: str,
+    *,
+    attempt: int = 0,
 ) -> tuple[sqlite3.Connection, int | None]:
-    """Sleep one poll interval, then re-read the schema version (T-1239/T-1416).
+    """Sleep one (exponentially backed-off, T-3654) poll interval, then
+    re-read the schema version (T-1239/T-1416).
 
     Raises the caller's original exception (via bare `raise`) if `deadline`
     has already passed -- a contending process that never finishes is a
-    real timeout, not something to poll on forever.
+    real timeout, not something to poll on forever. `attempt` (0-indexed,
+    incremented by the caller each time this is called for the SAME
+    contention loop) drives `_lock_backoff_seconds` so repeated schema-
+    application races poll faster early on, same rationale as
+    `_with_lock_retry`'s own T-3654 backoff.
     """
     remaining = deadline - time.monotonic()
     if remaining <= 0:
@@ -922,7 +975,7 @@ def _poll_and_reread(
         why,
         remaining,
     )
-    time.sleep(_LOCK_POLL_SECONDS)
+    time.sleep(_lock_backoff_seconds(attempt, remaining=remaining))
     return _read_schema_version(conn, path)
 
 
@@ -949,6 +1002,7 @@ def _apply_schema_with_recovery(
     still propagates uncaught.
     """
     deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
+    attempt = 0
     while True:
         try:
             return _apply_schema(conn, existing, path)
@@ -956,8 +1010,14 @@ def _apply_schema_with_recovery(
             if not _is_transient_lock_error(exc):
                 raise
             conn, existing = _poll_and_reread(
-                conn, path, existing, deadline, "locked during schema application"
+                conn,
+                path,
+                existing,
+                deadline,
+                "locked during schema application",
+                attempt=attempt,
             )
+            attempt += 1
         except sqlite3.IntegrityError as exc:
             if not _is_concurrent_meta_key_race(exc):
                 return _recreate_and_reapply(conn, path, exc)
@@ -967,7 +1027,9 @@ def _apply_schema_with_recovery(
                 existing,
                 deadline,
                 "hit a concurrent schema-migration race (UNIQUE on meta.key)",
+                attempt=attempt,
             )
+            attempt += 1
         except sqlite3.DatabaseError as exc:
             return _recreate_and_reapply(conn, path, exc)
 

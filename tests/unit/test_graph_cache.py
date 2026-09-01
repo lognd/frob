@@ -415,3 +415,39 @@ class TestConnectNeverReturnsAStaleConnection:
 
         with pytest.raises(sqlite3.ProgrammingError):
             stale.execute("SELECT 1 FROM meta LIMIT 1")
+
+
+# frob:ticket T-3654
+class TestLockBackoff:
+    """T-3654 (cache round 5): `_lock_backoff_seconds` replaces the prior
+    fixed `_LOCK_POLL_SECONDS` sleep between lock-retry attempts with
+    exponential backoff, so darwin's slower fs contention (run
+    33513484322) gets far more attempts within the same overall
+    deadline instead of exhausting a small, evenly-spaced retry count."""
+
+    # frob:tests src/frob/graph/cache.py::_lock_backoff_seconds
+    def test_backoff_doubles_up_to_the_cap(self) -> None:
+        delays = [
+            graph_cache._lock_backoff_seconds(attempt, remaining=100.0)
+            for attempt in range(8)
+        ]
+        assert delays[0] == graph_cache._LOCK_BACKOFF_BASE_SECONDS
+        for earlier, later in zip(delays, delays[1:]):
+            assert later >= earlier, "backoff must never shrink between attempts"
+        assert delays[-1] == graph_cache._LOCK_BACKOFF_CAP_SECONDS, (
+            "backoff must saturate at the former fixed poll interval, "
+            "not grow unbounded"
+        )
+
+    # frob:tests src/frob/graph/cache.py::_lock_backoff_seconds
+    def test_backoff_never_exceeds_remaining_budget(self) -> None:
+        # a late, large attempt number would normally hit the cap, but a
+        # near-exhausted deadline must win -- the final hard error still
+        # has to fire promptly, not sleep past it
+        delay = graph_cache._lock_backoff_seconds(10, remaining=0.01)
+        assert delay <= 0.01
+
+    # frob:tests src/frob/graph/cache.py::_lock_backoff_seconds
+    def test_backoff_is_never_negative(self) -> None:
+        delay = graph_cache._lock_backoff_seconds(0, remaining=0.0)
+        assert delay >= 0.0
