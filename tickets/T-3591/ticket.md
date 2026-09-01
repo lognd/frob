@@ -18,11 +18,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/test_ticket_land.py
-- tests/conftest.py
+- tests/ticket_land_suite/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/conftest.py
+  reason: conftest.py leased by T-3608; use ticket-owned shared module for cross-family
+    helpers per recipe fallback
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/ticket_land_suite/**
+  reason: conftest.py leased by T-3608; use ticket-owned shared module for cross-family
+    helpers per recipe fallback
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
