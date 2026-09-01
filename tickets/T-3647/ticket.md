@@ -2,8 +2,8 @@
 id: T-3647
 title: 'post-land sweep regression from T-3593: 4 new (rule, file) identit(ies), 48
   finding(s) (DRIFT002)'
-state: queued
-kind: bug
+state: in-progress
+kind: docs
 origin: agent
 created: '2026-09-01'
 priority: high
@@ -32,6 +32,24 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: T-1684's sweep auto-filed this as kind=bug (DRIFT002 is a doc-gate finding),
+    but the fix is purely comment/citation repointing after T-3593's split -- no executable
+    code changed, so BUG002/BUG003's parent-commit repro classification cannot apply
+    (there is no code regression to reproduce). Reclassifying to match the actual
+    work.
+  actor: logan
+  at: '2026-09-01'
+evidence:
+- tests/vet_suite/test_opaque_indirection.py::TestNeedleMatchesResolvedTokenBoundary::test_family_prefix_still_reaches_sibling_family
+- tests/vet_suite/test_capability_scan_python.py::TestCapabilityScan::test_wrapper_capabilities_resolve_cross_file_via_call_graph
+- tests/vet_suite/test_fingerprint.py::TestFingerprintBindingResolution::test_python_aliased_pickle_loads_still_matches
+- tests/vet_suite/test_supply_chain.py::TestSupplyChainCiActionPin::test_workflow_branch_ref_flagged
+kind_history:
+- 2026-09-01 bug->docs evidence=4 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
