@@ -1,7 +1,7 @@
 ---
 id: T-3626
 title: 'LARGE001: split .claude/hooks/root-write-guard.py (834 lines)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-01'
