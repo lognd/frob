@@ -1,7 +1,7 @@
 ---
 id: T-3638
 title: archive-race allocator aborts on transient active/archive TOCTOU overlap
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'

@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from datetime import date
 from pathlib import Path
 
@@ -1026,14 +1027,65 @@ def _worst_over_broad_multiple(
     return worst if worst > 0 else None
 
 
+# T-3638: `_load_merged`'s two component reads (`load_all` for active,
+# `load_archive` for archived) are two SEPARATE, unlocked glob scans in
+# v2 mode -- a concurrent `archive_v2` call moves one ticket directory
+# per `git_mv_dir`, under that ticket's own per-ticket `ticket_lock`
+# only (never `allocator_lock`, which this allocation already holds, nor
+# any whole-tree lock `_load_merged`'s reader could contend on). A
+# rename landing between those two glob reads is a genuine TOCTOU
+# window, not real lock contention: the allocator's `load_all` can see a
+# ticket still active, and by the time its `load_archive` runs a moment
+# later the same ticket has already landed in the archive glob too, so
+# `_load_merged`'s active/archive overlap guard (correctly conservative
+# for a REAL duplicate-id corruption) fires on what is actually a
+# perfectly healthy in-flight archive, not a corrupt ledger. Bounded at
+# a few immediate re-reads: the window this closes is a single directory
+# rename, not a long operation, so a transient overlap self-heals on the
+# very next read as soon as the move completes.
+_ARCHIVE_TOCTOU_RETRY_ATTEMPTS = 5
+# T-3638: a `git mv` subprocess (`git_mv_dir`) runs on the millisecond
+# scale, not microseconds -- retrying `_load_merged` in a tight loop with
+# no delay could exhaust every attempt before the concurrent rename's
+# subprocess even returns. A short, fixed sleep between attempts (not
+# exponential backoff -- this window is expected to close in one hop, not
+# to need escalating patience) gives the mover a real chance to finish.
+_ARCHIVE_TOCTOU_RETRY_SLEEP_S = 0.05
+
+
 def _allocate_and_check_ticket_id(root: Path) -> Result[str, TicketError]:
     """Load the active+archived ticket state and allocate a fresh id,
-    erroring on an archive-load failure or an id collision."""
+    erroring on an archive-load failure or a genuine id collision.
+
+    T-3638: `_load_merged` is retried a bounded number of times if it
+    reports `DuplicateId` -- see `_ARCHIVE_TOCTOU_RETRY_ATTEMPTS`'s own
+    docstring for why a transient active/archive overlap must be
+    re-read, not treated as a hard failure, before this call gives up
+    and surfaces the id-allocation error to its own caller.
+    """
     loaded = load_all(root)
     if loaded.is_err:
         return Err(loaded.danger_err)
     existing = loaded.danger_ok
     merged = _load_merged(root)
+    attempt = 1
+    while merged.is_err and merged.danger_err is TicketError.DuplicateId:
+        if attempt >= _ARCHIVE_TOCTOU_RETRY_ATTEMPTS:
+            break
+        _log.warning(
+            "tickets: id allocation saw a transient active/archive overlap "
+            "(attempt %d/%d) -- re-reading, likely a concurrent archive "
+            "move mid-rename rather than a real duplicate id",
+            attempt,
+            _ARCHIVE_TOCTOU_RETRY_ATTEMPTS,
+        )
+        time.sleep(_ARCHIVE_TOCTOU_RETRY_SLEEP_S)
+        loaded = load_all(root)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        existing = loaded.danger_ok
+        merged = _load_merged(root)
+        attempt += 1
     if merged.is_err:
         _log.error("tickets: id allocation aborted, archive unreadable")
         return Err(merged.danger_err)
