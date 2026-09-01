@@ -16,7 +16,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/arch/_mayraise.py
 - src/frob/arch/_mayraise_tables.py
-- docs/modules/arch.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,12 +31,6 @@ scope_changes:
 - op: add
   glob: src/frob/arch/_mayraise_tables.py
   reason: new module created by the split, holds the moved rule tables
-  actor: logan
-  at: '2026-09-01'
-- op: add
-  glob: docs/modules/arch.md
-  reason: DRIFT002/AFFECT001 need doc-anchor re-verification (frob ack) after UNKNOWN/UBIQUITOUS_TIER
-    moved to the new _mayraise_tables.py module
   actor: logan
   at: '2026-09-01'
 designated_repro_test: null
