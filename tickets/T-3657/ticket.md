@@ -2,7 +2,7 @@
 id: T-3657
 title: 'win32 round 15: SIGINT persists under CREATE_NO_WINDOW; discriminate in-process
   vs child sender'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -23,6 +23,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope::test_no_op_on_non_win32
+- tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope::test_no_op_when_env_unset
+- tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope::test_installs_and_removes_handler_when_requested
+- tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope::test_handler_swallows_ctrl_c_and_ctrl_break
+- tests/unit/test_process_guard.py::TestWin32ConsoleCtrlIgnoreScope::test_handler_passes_through_other_events
+- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_exists_and_runs_on_windows
+- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_has_a_bounded_timeout
+- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_sets_frob_disable_exec_before_main
+- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_reuses_the_same_fixture
+- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_pins_project_to_checkout
+- tests/test_ci_workflow_matrix.py::TestWindowsZeroSpawnDiagVariant::test_zerospawn_diag_step_precedes_the_windows_test_step
 designated_repro_test: null
 threat: null
 component: null
