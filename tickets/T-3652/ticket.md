@@ -1,7 +1,7 @@
 ---
 id: T-3652
 title: stale matrix-test window misses Start-Process --project arg (T-3648 growth)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepResolvesFrobCheckoutEnv::test_windows_diag_step_uv_run_pins_project_to_checkout
 designated_repro_test: null
 threat: null
 component: null

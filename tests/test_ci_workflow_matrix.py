@@ -65,7 +65,16 @@ class TestWindowsDiagStepResolvesFrobCheckoutEnv:
         ).read_text(encoding="utf-8")
         idx = text.find("Diagnose frob check hang on windows")
         assert idx != -1, "windows diag step (T-3589) was removed/renamed"
-        step_text = text[idx : idx + 8000]
+        # T-3652: slice to the NEXT step (`\n      - name:`) instead of a
+        # fixed char budget -- T-3648's added instrumentation (SIGINT/
+        # SIGBREAK handler, FROB_WIN32_SPAWN_DEBUG) grew this step past a
+        # prior fixed 8000-char window, so the real Start-Process
+        # invocation fell outside it and only an unrelated prose comment
+        # mentioning "--project" remained inside, silently voiding this
+        # assertion (run 33513484322, both POSIX legs). A step-bounded
+        # slice tracks the step's real length instead of guessing a size.
+        next_step_idx = text.find("\n      - name:", idx + 1)
+        step_text = text[idx : next_step_idx if next_step_idx != -1 else idx + 20000]
         assert '"--project", "$env:GITHUB_WORKSPACE",' in step_text, (
             "the diag step's `uv run python <script>` has no --project "
             "pin -- uv resolves the venv from cwd, which has no "
