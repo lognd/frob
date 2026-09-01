@@ -50,9 +50,9 @@ New (rule, file) identit(ies) filed here:
 
 Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
 
-- ARCH102  src/frob/tickets/_land_squash.py  -> attributed to T-3546 (commit 9bbccf76e249, already closed/dropped -- filed below) via src/frob/tickets/_land_squash.py::_apply_pathset_diff_to_scratch_index
-- COV001  src/frob/tickets/_land_squash.py  -> attributed to T-3546 (commit 9bbccf76e249, already closed/dropped -- filed below) via src/frob/tickets/_land_squash.py::_apply_pathset_diff_to_scratch_index
-- DOC002  src/frob/tickets/_land_squash.py  -> attributed to T-3546 (commit 9bbccf76e249, already closed/dropped -- filed below) via src/frob/tickets/_land_squash.py::_apply_pathset_diff_to_scratch_index
+- ARCH102  src/frob/tickets/_land_squash.py  -> attributed to T-3546 (commit 9bbccf76e249, already closed/dropped -- filed below) via src/frob/tickets/_land_splice.py::_apply_pathset_diff_to_scratch_index
+- COV001  src/frob/tickets/_land_squash.py  -> attributed to T-3546 (commit 9bbccf76e249, already closed/dropped -- filed below) via src/frob/tickets/_land_splice.py::_apply_pathset_diff_to_scratch_index
+- DOC002  src/frob/tickets/_land_squash.py  -> attributed to T-3546 (commit 9bbccf76e249, already closed/dropped -- filed below) via src/frob/tickets/_land_splice.py::_apply_pathset_diff_to_scratch_index
 - DOC006  docs/design/land-splice-test-then-impl.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 - SELFAUDIT001  docs/design/registry/capability-via-ratchet.lock.json  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 

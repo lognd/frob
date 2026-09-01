@@ -286,9 +286,9 @@
       "ticket": "T-3574"
     },
     "tickets_ledger::env.read": {
-      "accepted_count": 2,
-      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
-      "ticket": "T-3029"
+      "accepted_count": 3,
+      "reason": "T-3629: the ARCH102 split moved the env.read site from _land_squash.py to the new _land_splice.py, and the via-list ratchet counts SITES, not files -- this checkout's own declared via-list grew by 1 (2 -> 3) as a direct result of adding the new module to design/frob.strata's env.read via-list; re-measured locally against this checkout's own HEAD.",
+      "ticket": "T-3629"
     },
     "tickets_ledger::eval": {
       "accepted_count": 3,
@@ -306,9 +306,9 @@
       "ticket": "T-2986"
     },
     "tickets_ledger::fs.write": {
-      "accepted_count": 22,
-      "reason": "T-3574: the reconcile cache work grew this pair's via-list by 1 site (21 -> 22); measured on CI run 33376126399, re-measured locally via TestFrobSelfModel::test_sys_gate_zero_violations against this checkout's own HEAD, not assumed from the ticket title alone.",
-      "ticket": "T-3574"
+      "accepted_count": 23,
+      "reason": "T-3629: the ARCH102 split of _land_squash.py added the new _land_splice.py to the fs.write via-list (23rd site) -- design/frob.strata's own declared list grew by 1 as a direct, expected consequence of the split, re-measured locally against this checkout's own HEAD.",
+      "ticket": "T-3629"
     },
     "verify::exec": {
       "accepted_count": 2,

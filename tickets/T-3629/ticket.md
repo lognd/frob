@@ -1,7 +1,7 @@
 ---
 id: T-3629
 title: 'ARCH102: split src/frob/tickets/_land_squash.py (38 exports, 3 clusters)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-01'
@@ -86,6 +86,9 @@ body_changes:
   at: '2026-09-01'
   old_length: 779
   new_length: 2706
+evidence:
+- tests/unit/test_land_splice_test_then_impl.py::TestClassifyTestThenImplPaths::test_mixed_paths_split_into_two_groups
+- tests/unit/test_land_splice_test_then_impl.py::TestComposeTestThenImplCommits::test_two_commits_chain_correctly
 designated_repro_test: null
 threat: null
 component: null

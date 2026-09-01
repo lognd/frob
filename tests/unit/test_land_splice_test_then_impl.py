@@ -1,4 +1,4 @@
-"""T-3546: `frob.tickets._land_squash.classify_test_then_impl_paths`/
+"""T-3546: `frob.tickets._land_splice.classify_test_then_impl_paths`/
 `compose_test_then_impl_commits` -- the UNWIRED mechanical primitives for
 the tests-first-then-implementation land splice design
 (`docs/design/land-splice-test-then-impl.md`). Proven against a scratch
@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from frob.tickets._land_squash import (
+from frob.tickets._land_splice import (
     classify_test_then_impl_paths,
     compose_test_then_impl_commits,
 )
