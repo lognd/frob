@@ -65,15 +65,16 @@ class TestWindowsDiagStepResolvesFrobCheckoutEnv:
         ).read_text(encoding="utf-8")
         idx = text.find("Diagnose frob check hang on windows")
         assert idx != -1, "windows diag step (T-3589) was removed/renamed"
-        step_text = text[idx : idx + 6200]
-        assert '--project `"$env:GITHUB_WORKSPACE`"' in step_text, (
+        step_text = text[idx : idx + 8000]
+        assert '"--project", "$env:GITHUB_WORKSPACE",' in step_text, (
             "the diag step's `uv run python <script>` has no --project "
-            "pin -- uv resolves the venv from cwd (Push-Location'd into "
-            "the throwaway fixture, which has no pyproject.toml/frob "
-            "installed), so the diag process dies with ModuleNotFoundError "
-            "before its faulthandler watchdog ever arms (T-3597). T-3624 "
-            "round 10 moved the invocation into a `cmd /c` string, so the "
-            "`--project` value is now escaped-quoted rather than bare."
+            "pin -- uv resolves the venv from cwd, which has no "
+            "pyproject.toml/frob installed unless pinned, so the diag "
+            "process dies with ModuleNotFoundError before its "
+            "faulthandler watchdog ever arms (T-3597). T-3624 round 12 "
+            "moved the invocation to Start-Process -ArgumentList, so "
+            "each argument (including --project's value) is now its own "
+            "array element rather than one shell-quoted string."
         )
 
     def test_windows_diag_step_still_scans_the_fixture_not_the_repo(self) -> None:
@@ -83,28 +84,11 @@ class TestWindowsDiagStepResolvesFrobCheckoutEnv:
         scanning this whole repo."""
         # frob:tests .github/workflows/ci.yml
         step = _windows_diag_step()
-        run_lines = [line for line in step["run"].splitlines() if line.strip()]
-        invoke_idx = next(
-            i for i, line in enumerate(run_lines) if "& cmd /c $cmdLine" in line
-        )
-        preceding = [
-            line.strip()
-            for line in run_lines[:invoke_idx]
-            if not line.strip().startswith("#")
-        ]
-        assert "Push-Location $fixture" in preceding, (
-            "expected a Push-Location $fixture somewhere before the cmd "
-            "/c invocation -- --project must pin DEPENDENCY resolution "
-            "only, not also move frob check's scan target off the "
-            "fixture and onto the real repo"
-        )
-        last_push_idx = (
-            len(preceding) - 1 - preceding[::-1].index("Push-Location $fixture")
-        )
-        assert "Pop-Location" not in preceding[last_push_idx:], (
-            "a Pop-Location appears between the LAST Push-Location "
-            "$fixture and the cmd /c invocation -- the diag child would "
-            "no longer run with the fixture as its cwd"
+        assert "-WorkingDirectory $fixture" in step["run"], (
+            "expected the diag child's Start-Process invocation to pass "
+            "-WorkingDirectory $fixture -- --project must pin DEPENDENCY "
+            "resolution only, not also move frob check's scan target off "
+            "the fixture and onto the real repo"
         )
 
 
@@ -200,31 +184,75 @@ class TestWindowsDiagStepDoesNotGateTheJob:
         )
 
     # frob:tests .github/workflows/ci.yml
-    def test_cmd_invocation_line_itself_has_no_native_pwsh_redirect(self) -> None:
+    def test_diag_invocation_uses_start_process_not_a_native_pwsh_command(
+        self,
+    ) -> None:
         """T-3609's original concern (a native pwsh command's stderr
         redirect turning under Stop into a terminating NativeCommand
-        Error) still applies to whatever pwsh invokes NATIVELY. T-3624
-        round 10 moved the actual uv/python invocation inside a `cmd /c`
-        string -- redirects INSIDE that string are cmd's own, not pwsh's,
-        and are fine; the pwsh-level `& cmd /c $cmdLine` call itself must
-        still carry no bare `2>` of its own."""
+        Error) applies to whatever pwsh invokes NATIVELY as a bare
+        command. T-3624 round 10's `cmd /c` wrapper was ITSELF invoked as
+        a native pwsh command and died silently at that exact boundary
+        (round 11, run 33480116817) -- round 12 replaces both the `uv`
+        invocation and the `cmd /c` wrapper around it with `Start-
+        Process`, which pwsh never treats as a native command at all, so
+        neither stream-redirect promotion nor a silent kill at the
+        invocation line can recur."""
         step = _windows_diag_step()
-        run_lines = step["run"].splitlines()
-        invoke_line = next(line for line in run_lines if "& cmd /c $cmdLine" in line)
-        assert "2>&1" in invoke_line, (
-            "the cmd /c invocation should merge stderr into the captured "
-            "output stream (2>&1) rather than leaving it to pwsh's "
-            "native-command handling under Stop"
+        assert "Start-Process" in step["run"]
+        code_lines = [
+            line
+            for line in step["run"].splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+        assert not any("cmd /c" in line for line in code_lines), (
+            "the cmd /c wrapper (T-3624 round 10) died silently at its "
+            "own invocation line (round 11, run 33480116817) -- round 12 "
+            "removes it entirely in favor of Start-Process (a historical "
+            "mention of 'cmd /c' in an explanatory comment is fine, only "
+            "actual CODE using it is not)"
         )
 
-    def test_cmd_line_string_redirects_uv_streams_to_files(self) -> None:
-        """The uv/python invocation, run through cmd /c rather than as a
-        native pwsh command, still captures both streams to files so
-        breadcrumb output survives even a killed step (T-3624 round 10
-        direction 2)."""
+    def test_diag_invocation_redirects_uv_streams_to_files(self) -> None:
+        """The uv/python invocation, run through Start-Process rather
+        than a native pwsh/cmd command, still captures both streams to
+        files so breadcrumb output survives even a killed/terminated
+        child (T-3624 round 12)."""
         step = _windows_diag_step()
-        assert '1>`"$diagOut`"' in step["run"]
-        assert '2>`"$diagErr`"' in step["run"]
+        assert "-RedirectStandardOutput $diagOut" in step["run"]
+        assert "-RedirectStandardError $diagErr" in step["run"]
+
+    # frob:tests .github/workflows/ci.yml
+    def test_diag_invocation_is_wrapped_in_try_catch(self) -> None:
+        """T-3624 round 12: the whole Start-Process/Wait-Process region is
+        wrapped in try/catch printing 'invoke threw: $_' -- round 11's
+        failure mode was a silent kill with zero diagnostic output, so no
+        exception path through this invocation may ever go unreported
+        again."""
+        run_text = _windows_diag_step()["run"]
+        assert "invoke threw: $_" in run_text, (
+            "expected the diag step's Start-Process invocation to be "
+            "wrapped in a try/catch that prints 'invoke threw: $_' on "
+            "any exception -- otherwise a failure mode this step has not "
+            "yet seen could die as silently as round 11's cmd /c did"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_diag_invocation_output_capture_is_unconditional(self) -> None:
+        """T-3624 round 12: Get-Content of both redirect files and the
+        exit-code print must run in a `finally` block, not only on the
+        happy path -- round 11 died with NO output at all because
+        everything after the invocation line was unreachable once it
+        threw."""
+        run_text = _windows_diag_step()["run"]
+        finally_idx = run_text.find("} finally {")
+        assert finally_idx != -1, (
+            "expected a `finally` block around the diag invocation's "
+            "output-capture/exit-code reporting"
+        )
+        finally_block = run_text[finally_idx:]
+        assert "Get-Content $diagOut" in finally_block
+        assert "Get-Content $diagErr" in finally_block
+        assert "frob check diag exit code:" in finally_block
 
     # frob:tests .github/workflows/ci.yml
     def test_diag_step_sets_error_action_preference_continue_first(self) -> None:
@@ -317,8 +345,8 @@ class TestWindowsDiagStepDoesNotGateTheJob:
             "fixture dir + pyproject.toml written",
             "fixture git init + initial commit done",
             "diag python file written",
-            "about to invoke uv via cmd /c",
-            "cmd /c returned",
+            "about to invoke uv via Start-Process",
+            "Start-Process invocation returned",
         ):
             assert marker in run_text, f"expected a breadcrumb containing {marker!r}"
 

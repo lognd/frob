@@ -1,7 +1,7 @@
 ---
 id: T-3637
 title: 'Windows diag round 12: replace cmd /c invocation with Start-Process'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -20,6 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_invocation_is_wrapped_in_try_catch
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_invocation_output_capture_is_unconditional
 designated_repro_test: null
 threat: null
 component: null

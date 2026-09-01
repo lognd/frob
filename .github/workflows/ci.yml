@@ -445,38 +445,70 @@ jobs:
           # the child dies with ModuleNotFoundError: No module named
           # 'frob' before the watchdog ever runs, voiding this whole
           # diagnostic. --project pins dependency resolution to the
-          # checkout while Push-Location above still leaves cwd (and
-          # therefore frob check's scan target) at the fixture.
+          # checkout while the invocation's own -WorkingDirectory (T-3624
+          # round 12) still leaves cwd (and therefore frob check's scan
+          # target) at the fixture.
           #
-          # T-3624 round 10: run the child through `cmd /c` instead of
-          # letting pwsh invoke it as a native command -- this removes
-          # pwsh's own native-command stream/signal handling entirely
-          # from the picture (T-3619 round 9's ErrorActionPreference fix
-          # did not stop the step from dying at ~1.6s with no output, so
-          # the suspect widened from "stderr promotion" to "pwsh's
-          # native-command handling generally"). Both streams are
-          # captured to files so output survives even if the killer is
-          # in pwsh's own stream plumbing; %ERRORLEVEL% is echoed
-          # explicitly since $LASTEXITCODE across a `cmd /c` boundary is
-          # not always reliable.
+          # T-3624 round 10 ran the child through `cmd /c`, hoping to
+          # remove pwsh's own native-command stream/signal handling from
+          # the picture -- round 11's own breadcrumbs (run 33480116817)
+          # prove that did NOT work: all four breadcrumbs up to "about to
+          # invoke uv via cmd /c" printed, then the step died ~1.3s later
+          # at the `& cmd /c $cmdLine` line itself with exit 1 and no
+          # further output -- $ErrorActionPreference='Continue' was
+          # already active, so this is another pwsh native-stream
+          # landmine, this time at the cmd boundary rather than uv's own.
+          #
+          # T-3624 round 12: stop fighting pwsh stream semantics
+          # entirely -- reuse the SAME `Start-Process -RedirectStandard
+          # Output/-RedirectStandardError` pattern the "Test (windows,
+          # timed with hang guard)" step below already runs successfully
+          # on this exact runner (no pwsh native-command stream/signal
+          # handling is ever invoked for a `Start-Process`-launched
+          # child; its I/O goes straight to files). `-WorkingDirectory
+          # $fixture` replaces the old Push-Location/Pop-Location pair
+          # (frob check must still scan the fixture, not this repo);
+          # `-ArgumentList` passes each argument as its own array element
+          # so there is no shell-quoting step for `$env:GITHUB_WORKSPACE`
+          # or `$diagPy` to survive at all. Wait-Process is bounded at
+          # 290s (comfortably above the 240s in-process faulthandler
+          # watchdog below, comfortably under this step's own 5-minute
+          # `timeout-minutes`) so a genuinely wedged child still gets
+          # force-terminated rather than hanging the job forever. Output
+          # capture and the exit-code print are UNCONDITIONAL (`finally`)
+          # so they run whether Wait-Process returned normally, timed
+          # out, or Start-Process itself threw -- round 11's silent kill
+          # must never recur.
           $diagOut = Join-Path $env:RUNNER_TEMP "diag.out"
           $diagErr = Join-Path $env:RUNNER_TEMP "diag.err"
           $diagPy = Join-Path $env:RUNNER_TEMP "frob_check_diag.py"
-          $cmdLine = "uv run --project `"$env:GITHUB_WORKSPACE`" python `"$diagPy`" 1>`"$diagOut`" 2>`"$diagErr`" & echo child-exit=%ERRORLEVEL%"
           $started = Get-Date
-          Push-Location $fixture
-          Write-Host "T-3624 breadcrumb: about to invoke uv via cmd /c"
-          $cmdOutput = & cmd /c $cmdLine 2>&1 | Out-String
-          $elapsed = (Get-Date) - $started
-          Pop-Location
-          Write-Host "T-3624 breadcrumb: cmd /c returned (elapsed: $($elapsed.TotalSeconds)s)"
-          Write-Host "T-3624: cmd wrapper output: $cmdOutput"
-          $exitCode = if ($cmdOutput -match 'child-exit=(-?\d+)') { [int]$Matches[1] } else { -1 }
-          Write-Host "--- diag.out ---"
-          if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
-          Write-Host "--- diag.err ---"
-          if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
-          Write-Host "frob check diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          $elapsed = [TimeSpan]::Zero
+          $exitCode = -1
+          Write-Host "T-3624 breadcrumb: about to invoke uv via Start-Process"
+          try {
+            $p = Start-Process -FilePath "uv" `
+              -ArgumentList "run", "--project", "$env:GITHUB_WORKSPACE", "python", "$diagPy" `
+              -WorkingDirectory $fixture `
+              -PassThru -RedirectStandardOutput $diagOut -RedirectStandardError $diagErr
+            try {
+              Wait-Process -Id $p.Id -Timeout 290 -ErrorAction Stop
+              $exitCode = $p.ExitCode
+            } catch {
+              Write-Host "T-3624 breadcrumb: Wait-Process timed out at 290s -- terminating"
+              Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            }
+          } catch {
+            Write-Host "T-3624: invoke threw: $_"
+          } finally {
+            $elapsed = (Get-Date) - $started
+            Write-Host "T-3624 breadcrumb: Start-Process invocation returned (elapsed: $($elapsed.TotalSeconds)s)"
+            Write-Host "--- diag.out ---"
+            if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "--- diag.err ---"
+            if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "frob check diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          }
           # T-3604: the ONLY true-failure signal this step exists to
           # catch is the 240s faulthandler watchdog actually firing --
           # everything else (a clean run, or `frob check` legitimately
