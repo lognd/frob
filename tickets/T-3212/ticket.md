@@ -2,7 +2,7 @@
 id: T-3212
 title: 'macOS CI: triage SYS107/SYS003 selfconform finding and resolved-root/load_lock
   path clusters (T-2942 remainder)'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -46,3 +46,6 @@ Split out of T-2942: after fixing the two clusters reachable/reproducible from T
 3. (2 failures) 'load_lock: no lock file at /private/var/folders/...' -- plausibly a macOS /var -> /private/var symlink mismatch between where frob.graph.lock's frob.lock is written vs looked up; check every load_lock/write_lock call site resolves consistently (.resolve() on both sides or neither).
 
 Verify each against the FRESH CI evidence (run 33135896391) before assuming the old run's line numbers/counts still apply.
+
+## Drop reason
+- 2026-08-31: Already resolved: verified none of the 4 scope files appear in run 33135896391 failures; 18/18 + 19/19 local passes on the named tests. Its stale lease on tests/system/test_cli_evidence_enforcement.py is blocking T-1661.
