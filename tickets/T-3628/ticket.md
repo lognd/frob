@@ -16,6 +16,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_lock.py
 - tests/unit/test_process_lock.py
+- src/frob/process/_derived_lock.py
+- src/frob/process/_lock_msvcrt.py
+- docs/modules/process.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +34,24 @@ scope_changes:
   glob: tests/unit/test_process_lock.py
   reason: narrow overbroad glob that phantom-matches T-3591s live lease on tests/ticket_land_suite/**;
     the real test file is tests/unit/test_process_lock.py
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: src/frob/process/_derived_lock.py
+  reason: ARCH102 cluster-3 split creates these new destination modules; docs anchor
+    already existed and moves with the symbols
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: src/frob/process/_lock_msvcrt.py
+  reason: ARCH102 cluster-3 split creates these new destination modules; docs anchor
+    already existed and moves with the symbols
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: docs/modules/process.md
+  reason: ARCH102 cluster-3 split creates these new destination modules; docs anchor
+    already existed and moves with the symbols
   actor: logan
   at: '2026-09-01'
 body_changes:
