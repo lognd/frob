@@ -1,7 +1,7 @@
 ---
 id: T-3655
 title: hotgraph sampler overhead flake exceeds even widened CI tolerance
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
