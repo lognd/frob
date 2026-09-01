@@ -15,11 +15,31 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land_squash.py
-- tests/**/*land_squash*
+- tests/unit/test_land_squash_residue_reclaim.py
+- tests/unit/test_land_squash_stage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**/*land_squash*
+  reason: narrow overbroad glob that phantom-matches T-1661s live lease on tests/unit/strata/**;
+    the real test files live in tests/unit/
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/test_land_squash_residue_reclaim.py
+  reason: narrow overbroad glob that phantom-matches T-1661s live lease on tests/unit/strata/**;
+    the real test files live in tests/unit/
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/test_land_squash_stage.py
+  reason: narrow overbroad glob that phantom-matches T-1661s live lease on tests/unit/strata/**;
+    the real test files live in tests/unit/
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
