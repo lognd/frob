@@ -1,7 +1,7 @@
 ---
 id: T-3648
 title: win32 frob check dies by injected KeyboardInterrupt at executor thread start
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -19,10 +19,23 @@ scope:
 - src/frob/process/_pytest_spawn.py
 - src/frob/check/__init__.py
 - src/frob/__main__.py
+- tests/unit/test_process_guard.py
+- docs/modules/process.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_process_guard.py
+  reason: test file and affected doc touched by the win32 console-group fix
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: docs/modules/process.md
+  reason: test file and affected doc touched by the win32 console-group fix
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
