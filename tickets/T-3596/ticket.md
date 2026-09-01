@@ -2,7 +2,7 @@
 id: T-3596
 title: 'frob refactor move/split: no import carry-forward, no caller-side bare-name
   repoint'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-08-31'
@@ -28,6 +28,13 @@ body_changes:
   at: '2026-09-01'
   old_length: 2778
   new_length: 6426
+- mode: append
+  reason: T-3591's split hit four additional documented gap classes beyond T-3586's
+    original two
+  actor: logan
+  at: '2026-09-01'
+  old_length: 6426
+  new_length: 9532
 designated_repro_test: null
 threat: null
 component: null
@@ -141,3 +148,55 @@ failure the tool's own verification missed.
 T-3628 could not complete its ARCH102 split using this tool as a
 result -- filed here per that ticket's own "append tool gaps to T-3596"
 instruction rather than working around the bug with a hand-copy.
+
+
+T-3591 found four MORE gap classes in the same move/split verbs (tests/test_ticket_land.py -> tests/ticket_land_suite/ split, 100 classes, 345 tests):
+
+3. MOVE DROPS @pytest.fixture (AND OTHER) DECORATORS. Moving a
+   decorated function (frob refactor move tests.mod:v2_repo
+   tests.pkg.conftest:v2_repo where v2_repo carried @pytest.fixture)
+   silently drops the decorator line -- import_resolution/module_import/
+   pytest_collect all report PASS because a bare function with that name
+   collects fine; the break only surfaces as a downstream 'fixture not
+   found' error in tests that request it as a fixture, in a totally
+   different file, minutes later. No verification step actually
+   round-trips the AST decorator_list.
+
+4. MOVE CANNOT TOUCH A MODULE-LEVEL CONSTANT AT ALL (v1 scope per
+   frob.refactor._resolve.resolve_symbol's own docstring -- known, but
+   worth reinforcing with a second incident): _V1_PINNED_CLASSES
+   (frozenset) and _STATE_BY_RANK (dict) both needed hand-relocation.
+   Worse: when a constant is referenced only by a function that DID
+   move, neither verb's caller-side bare-name repoint (gap 2 above)
+   fires for the constant either, so the NameError shows up only inside
+   a hypothesis @given property test's counterexample shrink, not at
+   collection time.
+
+5. SPLIT's PER-CHUNK IMPORT CARRY-FORWARD SCATTERS IMPORTS MID-FILE
+   INSTEAD OF HOISTING TO THE TOP. Each chunk transaction (T-3122's
+   needed_import_ops_for_symbols) inserts its own copy of whatever
+   imports THAT chunk's moved class needs at the insertion point of
+   that specific chunk -- across a 14-symbol --chunk-size 1 split
+   landing all classes in the same destination file, this produced 5-15
+   duplicate/scattered import statements per file (ruff E402 module-
+   import-not-at-top-of-file), sometimes hundreds of lines below the
+   file's real top. ruff --fix cannot repair E402 (needs semantic
+   hoisting, not just reordering within a block); required a custom
+   AST-based hoist-and-dedupe pass across all 14 split files by hand.
+
+6. EVIDENCE-CITATION CARRY-FORWARD CAN WRITE THE WRONG DESTINATION
+   FOR A LATER-CONSOLIDATED FILE. When a ticket's evidence/frob:tests
+   citation is rewritten by the split's own transaction, it appears to
+   bind to whatever chunk-transaction ran LAST for that class rather
+   than the class's true final module -- 124 evidence citations across
+   26 ticket.md files ended up all pointing at one particular
+   destination file (test_land_core.py) regardless of which of 14
+   files the cited class actually landed in. Root cause not confirmed
+   (possibly a stale symbol->module index reused across chunk calls in
+   the same split invocation, or a caching artifact from re-running
+   split multiple times against overlapping symbol sets); reproduced
+   twice, fixed by hand cross-checking every citation against the
+   actual class definitions in the destination files. This one is the
+   most dangerous of the six: it silently orphans OTHER tickets'
+   evidence and only surfaces at land time via OrphanedEvidenceDeletion,
+   not at split time.
