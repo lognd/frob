@@ -157,12 +157,31 @@ def _ast_qualnames(source: str) -> set[str]:
     return names
 
 
-def _revisions_oldest_first(root: Path, path: str) -> list[str]:
+# frob:tests tests/gates/test_tdd_order.py::TestPerfShape.test_since_bounds_the_log_walk_to_a_revision_range  # noqa: E501
+def _revisions_oldest_first(
+    root: Path, path: str, *, since: str | None = None
+) -> list[str]:
     """Every commit sha touching `path`, OLDEST first -- the sequence
     `resolve_symbol_introduction` scans forward over looking for the
     qualname's first real appearance. `git log` itself lists newest-
-    first, so this just reverses it."""
-    spawned = run_argv(("git", "-C", str(root), "log", "--format=%H", "--", path))
+    first, so this just reverses it.
+
+    T-3618 (perf): `since`, when given, bounds the walk to `since..HEAD`
+    instead of `path`'s ENTIRE history -- the land call site (`frob.
+    tickets._land._check_tdd_order`) passes this land's own merge-base,
+    since a diff-scoped edge's introducing commit is by construction one
+    of this land's own worktree commits, never something predating the
+    branch point. Measured (T-3618's own Done report): unbounded walks
+    against a long-history file cost ~200-300s PER EDGE; bounding to
+    merge-base..HEAD collapses that to the size of the land's own branch,
+    typically a handful of commits. `since=None` (every direct caller
+    outside the land path, and every existing test) keeps the prior
+    full-history behavior unchanged."""
+    argv: tuple[str, ...] = ("git", "-C", str(root), "log", "--format=%H")
+    if since is not None:
+        argv += (f"{since}..HEAD",)
+    argv += ("--", path)
+    spawned = run_argv(argv)
     if spawned.is_err or spawned.danger_ok.returncode != 0:
         return []
     shas = [ln.strip() for ln in spawned.danger_ok.stdout.splitlines() if ln.strip()]
@@ -176,21 +195,50 @@ def _revisions_oldest_first(root: Path, path: str) -> list[str]:
 # one one-line git spawn would introduce an undeclared cross-component Flow (the same \
 # T-2429 lesson ARCHSCHEMA001's own docstring already cites), so this stays a small, \
 # independently-evolving duplicate rather than a coupling"
-def _show_file_at_revision(root: Path, rev: str, path: str) -> str | None:
+def _show_file_at_revision(
+    root: Path,
+    rev: str,
+    path: str,
+    *,
+    cache: dict[tuple[str, str], str | None] | None = None,
+) -> str | None:
     """`git show <rev>:<path>`'s content, or `None` if that path did not
     exist at `rev` (renamed away, not yet added, or any other spawn/exit
     failure) -- `_ast_qualnames` never sees a nonexistent-file sentinel
-    mistaken for real (empty) source."""
+    mistaken for real (empty) source.
+
+    T-3618 (perf): `cache`, keyed by `(rev, path)`, lets `resolve_symbol_
+    introduction` share one `git show` spawn across every qualname bound
+    to the same file/revision pair within a single `tdd_order_violations`
+    call -- multiple `frob:tests` edges commonly point at qualnames in
+    the SAME file (T-3618's own measurement: several edges against
+    `gates/__init__.py`), and without this each edge re-walked and re-
+    spawned `git show` per revision independently. `cache=None` (every
+    caller outside `resolve_symbol_introduction`'s own batching, and
+    every existing test) keeps the prior always-spawn behavior."""
+    if cache is not None and (rev, path) in cache:
+        return cache[(rev, path)]
     spawned = run_argv(("git", "-C", str(root), "show", f"{rev}:{path}"))
     if spawned.is_err or spawned.danger_ok.returncode != 0:
-        return None
-    return spawned.danger_ok.stdout
+        result = None
+    else:
+        result = spawned.danger_ok.stdout
+    if cache is not None:
+        cache[(rev, path)] = result
+    return result
 
 
 # frob:doc docs/modules/gates.md#tdd001-t-3009
 # frob:tests tests/gates/test_tdd_order.py::TestResolveSymbolIntroduction.test_resolves_the_commit_that_added_the_symbol  # noqa: E501
 # frob:tests tests/gates/test_tdd_order.py::TestResolveSymbolIntroduction.test_returns_none_for_a_symbol_never_added  # noqa: E501
-def resolve_symbol_introduction(root: Path, symref: str) -> str | None:
+def resolve_symbol_introduction(
+    root: Path,
+    symref: str,
+    *,
+    since: str | None = None,
+    revisions_cache: dict[tuple[str, str | None], list[str]] | None = None,
+    content_cache: dict[tuple[str, str], str | None] | None = None,
+) -> str | None:
     """The sha of the commit that FIRST introduced `symref` (a
     `path::qualname` string, the same shape `frob:tests`/`frob:doc`
     directives already bind) in `root`'s git history, or `None` if it
@@ -202,21 +250,37 @@ def resolve_symbol_introduction(root: Path, symref: str) -> str | None:
     function/class qualname set (`_ast_qualnames`) contains it -- never a
     text search. A bare path (no `::` in `symref`) instead returns that
     history's OLDEST commit directly (the file's own first-tracked
-    revision) since there is no qualname to locate within it."""
+    revision) since there is no qualname to locate within it.
+
+    T-3618 (perf): `since` bounds the underlying `_revisions_oldest_
+    first` walk (see that function's own docstring); `revisions_cache`
+    (keyed by `(path, since)`) and `content_cache` (keyed by `(rev,
+    path)`) let `tdd_order_violations` share both the per-path history
+    walk and the per-revision `git show` read across every edge in one
+    call, instead of each edge re-walking and re-reading independently.
+    All three default to the prior unbounded, uncached behavior when
+    omitted, so every direct caller and existing test is unaffected."""
     path = symref_path(symref)
     qualname = symref_qualname(symref)
-    revisions = _revisions_oldest_first(root, path)
+    cache_key = (path, since)
+    if revisions_cache is not None and cache_key in revisions_cache:
+        revisions = revisions_cache[cache_key]
+    else:
+        revisions = _revisions_oldest_first(root, path, since=since)
+        if revisions_cache is not None:
+            revisions_cache[cache_key] = revisions
     if not revisions:
         _log.warning(
-            "TDD001: could not resolve introducing commit for %s (no history for %s)",
+            "TDD001: could not resolve introducing commit for %s (no history for %s%s)",
             symref,
             path,
+            f" since {since}" if since is not None else "",
         )
         return None
     if qualname is None:
         return revisions[0]
     for rev in revisions:
-        source = _show_file_at_revision(root, rev, path)
+        source = _show_file_at_revision(root, rev, path, cache=content_cache)
         if source is None:
             continue
         if qualname in _ast_qualnames(source):
@@ -314,13 +378,16 @@ def _tdd001_unresolved_message(artifact_symref: str, test_symref: str) -> str:
 # frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_stays_quiet_on_a_genuine_test_first_pair  # noqa: E501
 # frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_reports_unresolved_rather_than_passing_on_an_unresolvable_pair  # noqa: E501
 # frob:tests tests/gates/test_tdd_order.py::TestTddOrderViolations.test_ignores_non_tests_edges  # noqa: E501
+# frob:tests tests/gates/test_tdd_order.py::TestPerfShape.test_shared_file_is_walked_and_read_exactly_once_across_edges  # noqa: E501
 # frob:waive WIRE001 reason="T-3009's own scope is the ordering check and its rule, \
 # not the land-time call site -- mirrors bug_repro_violations, which is likewise \
 # called from frob.tickets._land rather than from within this module; T-3057 wired the \
 # call site (frob.tickets._land._check_tdd_order), closing the follow-up this waiver \
 # used to point at" follow_up="T-3381"
 # frob:enforces CHK-GATE-TDD001
-def tdd_order_violations(root: Path, edges: Sequence[Edge]) -> list[Violation]:
+def tdd_order_violations(
+    root: Path, edges: Sequence[Edge], *, since: str | None = None
+) -> list[Violation]:
     """TDD001's whole surface: every `EdgeKind.TESTS` edge (`src` = the
     artifact/implementation symbol the directive sits on, `target` = the
     test it names -- the existing one-level `frob:tests` binding T-3004
@@ -333,15 +400,38 @@ def tdd_order_violations(root: Path, edges: Sequence[Edge]) -> list[Violation]:
     (and T-3004 section 2's both-directions doctrine) require. MUST be
     called pre-land against a ticket's own worktree branch -- see this
     module's own docstring for why a post-land call against `main` cannot
-    observe the fact this rule checks."""
+    observe the fact this rule checks.
+
+    T-3618 (perf): `since`, when given, is threaded to every `resolve_
+    symbol_introduction` call to bound its git-log walk (see that
+    function's own docstring); this call also builds ONE pair of
+    revisions/content caches shared across every edge, so N edges
+    touching the same file (measured: multiple edges against `gates/
+    __init__.py` in T-3586's split) walk and read that file's history
+    exactly once between them, not once per edge. `since=None` (every
+    existing test) keeps the prior unbounded, uncached behavior."""
     out: list[Violation] = []
+    revisions_cache: dict[tuple[str, str | None], list[str]] = {}
+    content_cache: dict[tuple[str, str], str | None] = {}
     for edge in edges:
         if edge.kind is not EdgeKind.TESTS:
             continue
         artifact_symref = edge.src
         test_symref = edge.target
-        artifact_commit = resolve_symbol_introduction(root, artifact_symref)
-        test_commit = resolve_symbol_introduction(root, test_symref)
+        artifact_commit = resolve_symbol_introduction(
+            root,
+            artifact_symref,
+            since=since,
+            revisions_cache=revisions_cache,
+            content_cache=content_cache,
+        )
+        test_commit = resolve_symbol_introduction(
+            root,
+            test_symref,
+            since=since,
+            revisions_cache=revisions_cache,
+            content_cache=content_cache,
+        )
         order = classify_order(
             root, artifact_commit=artifact_commit, test_commit=test_commit
         )

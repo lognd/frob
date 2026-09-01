@@ -1469,8 +1469,7 @@ class TestRecordLandCommit:
         # exactly ONE commit for this land -- HEAD IS the landing commit,
         # not one commit ahead of it (the old follow-up-commit shape).
         assert (
-            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
-            == report.commit_sha
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == report.commit_sha
         )
 
         landed = load_all(repo)
@@ -7756,6 +7755,92 @@ class TestCheckTddOrder:
         )
         result = _land_mod._check_tdd_order(tmp_path, ticket, "main")
         assert result.is_ok
+
+    def test_passes_the_resolved_merge_base_as_since(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3618 (perf): `_check_tdd_order` must resolve merge-base(base_
+        ref, HEAD) and thread it into `tdd_order_violations` as `since`
+        -- the bound that turns each edge's git-log walk from `path`'s
+        ENTIRE history into just this land's own branch range. Pinning
+        the ARGUMENT `tdd_order_violations` receives (not wall-clock) is
+        this ticket's own acceptance bar for a perf regression test."""
+        # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_passes_the_resolved_merge_base_as_since  # noqa: E501
+        import frob.gates._tdd_order as _tdd_mod
+        import frob.gitio as _gitio_mod
+        import frob.graph as _graph_mod
+        from frob.gitio import Diff, Hunk
+
+        ticket = self._ticket()
+        snapshot = self._snapshot()
+
+        monkeypatch.setattr(
+            _gitio_mod,
+            "working_diff",
+            lambda *a, **k: Ok(
+                Diff(base="deadbeef", hunks=(Hunk(file="m.py", span=(1, 10)),))
+            ),
+        )
+        monkeypatch.setattr(_graph_mod, "load_graph", lambda *a, **k: Ok(snapshot))
+
+        received: dict[str, object] = {}
+
+        def _spy(root: object, edges: object, *, since: object = None) -> tuple:
+            received["since"] = since
+            return ()
+
+        monkeypatch.setattr(_tdd_mod, "tdd_order_violations", _spy)
+        monkeypatch.setattr(
+            _land_mod,
+            "run_argv",
+            lambda argv: Ok(
+                type("Spawned", (), {"returncode": 0, "stdout": "abc123\n"})()
+            ),
+        )
+
+        result = _land_mod._check_tdd_order(tmp_path, ticket, "main")
+        assert result.is_ok
+        assert received["since"] == "abc123"
+
+    def test_falls_back_to_unbounded_when_merge_base_is_unresolvable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: Any
+    ) -> None:
+        """An unresolvable merge-base (this test's `tmp_path` is not even
+        a git repo) must degrade to `since=None` -- the PRIOR unbounded
+        behavior -- rather than skipping TDD001 outright, and must log
+        the fallback loudly rather than silently eating the cost
+        regression it re-introduces."""
+        # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_falls_back_to_unbounded_when_merge_base_is_unresolvable  # noqa: E501
+        import frob.gates._tdd_order as _tdd_mod
+        import frob.gitio as _gitio_mod
+        import frob.graph as _graph_mod
+        from frob.gitio import Diff, Hunk
+
+        ticket = self._ticket()
+        snapshot = self._snapshot()
+
+        monkeypatch.setattr(
+            _gitio_mod,
+            "working_diff",
+            lambda *a, **k: Ok(
+                Diff(base="deadbeef", hunks=(Hunk(file="m.py", span=(1, 10)),))
+            ),
+        )
+        monkeypatch.setattr(_graph_mod, "load_graph", lambda *a, **k: Ok(snapshot))
+
+        received: dict[str, object] = {}
+
+        def _spy(root: object, edges: object, *, since: object = None) -> tuple:
+            received["since"] = since
+            return ()
+
+        monkeypatch.setattr(_tdd_mod, "tdd_order_violations", _spy)
+
+        with caplog.at_level("WARNING", logger="frob.tickets._land"):
+            result = _land_mod._check_tdd_order(tmp_path, ticket, "main")
+        assert result.is_ok
+        assert received["since"] is None
+        assert any("merge-base" in r.message for r in caplog.records)
 
 
 # frob:ticket T-0854

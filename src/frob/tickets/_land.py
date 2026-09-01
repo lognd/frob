@@ -4174,6 +4174,8 @@ def _check_mutation_evidence(
 # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_logs_a_warning_for_an_implementation_first_pair_without_blocking  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_stays_quiet_when_no_tests_edges_are_touched  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_never_refuses_the_land  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_passes_the_resolved_merge_base_as_since  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestCheckTddOrder.test_falls_back_to_unbounded_when_merge_base_is_unresolvable  # noqa: E501
 def _check_tdd_order(
     worktree: Path, ticket: Ticket, base_ref: str
 ) -> Result[None, LandError]:
@@ -4218,7 +4220,36 @@ def _check_tdd_order(
     if not scoped_edges:
         return Ok(None)
 
-    violations = tdd_order_violations(worktree, scoped_edges)
+    # T-3618 (perf): bound every edge's git-log walk to this land's own
+    # merge-base..HEAD range instead of each artifact/test symbol's
+    # ENTIRE file history -- a diff-scoped edge's introducing commit is
+    # by construction one of this land's own worktree commits (never
+    # something predating the branch point), so the walk never needs to
+    # look further back than that. Measured (T-3618's Done report): an
+    # unbounded walk against a long-history file cost ~200-300s PER EDGE,
+    # making a 14-file split land's TDD001 phase run 50-150 minutes; a
+    # bounded walk against the same worktree's own (small) commit range
+    # is the fix this ticket's acceptance bar (<120s total) requires. A
+    # merge-base resolution failure degrades to `since=None` (the prior
+    # unbounded behavior) rather than skipping the check outright -- this
+    # phase is WARN-only already, so the cost regression is the only risk
+    # of falling back, logged loudly rather than silently eaten.
+    merge_base_result = run_argv(
+        ("git", "-C", str(worktree), "merge-base", base_ref, "HEAD")
+    )
+    if merge_base_result.is_ok and merge_base_result.danger_ok.returncode == 0:
+        since = merge_base_result.danger_ok.stdout.strip() or None
+    else:
+        since = None
+        _log.warning(
+            "land: %s: TDD001 could not resolve merge-base(%s, HEAD) -- falling "
+            "back to UNBOUNDED per-edge history walks (T-3618 perf bound "
+            "unavailable, may be slow)",
+            ticket.id,
+            base_ref,
+        )
+
+    violations = tdd_order_violations(worktree, scoped_edges, since=since)
     for v in violations:
         _log.warning(
             "land: %s TDD001 (WARN-only, T-3057) %s: %s",

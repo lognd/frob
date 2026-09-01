@@ -7476,16 +7476,30 @@ never two:
   ancestry itself cannot order those. Never rendered as a silent pass --
   an honest "cannot tell" beats a comfortable "fine".
 
-`tdd_order_violations(root, edges)` is the whole surface: it filters
-`edges` to `EdgeKind.TESTS` (`src`=artifact, `target`=test, the existing
-one-level binding T-3004 section 1 identifies as the thing to
-generalise) and classifies each pair. It MUST be called pre-land against
-a ticket's own worktree branch -- a post-land call against `main` cannot
-observe the ordering fact this rule checks. Wiring this into `frob
-ticket land`'s pre-land check path (mirroring BUG002's own
-`bug_repro_violations` call site in `frob.tickets._land`) is deferred to
-a follow-up ticket -- this ticket's scope is the check and its rule, not
-the waterfall gate T-3004 section 9 explicitly defers.
+`tdd_order_violations(root, edges, *, since=None)` is the whole surface:
+it filters `edges` to `EdgeKind.TESTS` (`src`=artifact, `target`=test,
+the existing one-level binding T-3004 section 1 identifies as the thing
+to generalise) and classifies each pair. It MUST be called pre-land
+against a ticket's own worktree branch -- a post-land call against
+`main` cannot observe the ordering fact this rule checks. Wired into
+`frob ticket land`'s pre-land check path via `frob.tickets._land.
+_check_tdd_order` (mirroring BUG002's own `bug_repro_violations` call
+site), WARN-only for now.
+
+PERFORMANCE (T-3618): `resolve_symbol_introduction`'s per-symbol git-log
+walk was unbounded -- against a long-history file, measured at ~200-300s
+PER EDGE, which made a multi-file split land's TDD001 phase run 50-150
+minutes. `_check_tdd_order` now resolves this land's own `merge-
+base(base_ref, HEAD)` and threads it through as `since`, bounding every
+edge's walk to `since..HEAD` instead of the artifact/test symbol's ENTIRE
+file history -- a diff-scoped edge's introducing commit is, by
+construction, one of this land's own worktree commits. `tdd_order_
+violations` also builds one shared revisions/content cache across all of
+a call's edges, so N edges touching the same file (the measured shape:
+several edges against one file in a large split) walk and read that
+file's history exactly once between them, not once per edge. A merge-
+base resolution failure degrades to `since=None` (the prior unbounded
+behavior, logged loudly) rather than skipping the check.
 
 ## frob.nodeid (T-3350)
 

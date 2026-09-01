@@ -10,6 +10,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+import frob.gates._tdd_order as _tdd_order_mod
 from frob.findings import Severity
 from frob.gates._tdd_order import (
     TDDOrder,
@@ -306,3 +307,101 @@ class TestTddOrderViolations:
             origin="m.py",
         )
         assert tdd_order_violations(tmp_path, [edge]) == []
+
+
+# frob:ticket T-3618
+class TestPerfShape:
+    """T-3618: TDD001's land-time git-log walk was unbudgeted (~200-300s
+    PER EDGE against a file with a long history, measured on T-3586's
+    land) because every edge independently re-walked its symbol's file's
+    FULL history and re-spawned `git show` per revision, with no bound
+    and no sharing across edges touching the same file. These tests pin
+    the fix's SHAPE -- git-invocation call counts and the `since..HEAD`
+    pathspec bound -- never wall-clock, per this ticket's own acceptance
+    bar (a wall-clock assertion would be flaky and would not explain a
+    regression)."""
+
+    # frob:ticket T-3618
+    def test_since_bounds_the_log_walk_to_a_revision_range(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """`_revisions_oldest_first(..., since=X)` must invoke `git log`
+        with an `X..HEAD` range argument, not a bare `-- path` (full
+        history) invocation -- the exact bound the land call site relies
+        on to turn an unbounded per-file walk into a bounded one."""
+        _init_repo(tmp_path)
+        base = _commit_file(tmp_path, "m.py", "def widget():\n    pass\n", "base")
+        _commit_file(tmp_path, "m.py", "def widget():\n    return 1\n", "second")
+
+        seen_argv: list[tuple[str, ...]] = []
+        real_run_argv = _tdd_order_mod.run_argv
+
+        def _spy(argv: tuple[str, ...]):
+            seen_argv.append(tuple(argv))
+            return real_run_argv(argv)
+
+        monkeypatch.setattr(_tdd_order_mod, "run_argv", _spy)
+
+        _tdd_order_mod._revisions_oldest_first(tmp_path, "m.py", since=base)
+
+        log_calls = [argv for argv in seen_argv if "log" in argv]
+        assert len(log_calls) == 1
+        (log_argv,) = log_calls
+        assert f"{base}..HEAD" in log_argv
+
+    # frob:ticket T-3618
+    def test_shared_file_is_walked_and_read_exactly_once_across_edges(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """Two `frob:tests` edges whose artifact symbols live in the SAME
+        file (the measured T-3586 shape: several edges against one long-
+        history file) must cost exactly ONE `git log` walk and, per
+        distinct revision actually inspected, exactly ONE `git show` --
+        never one of each per edge. This is the call-count assertion
+        that pins `tdd_order_violations`'s shared revisions/content
+        cache."""
+        _init_repo(tmp_path)
+        _commit_file(
+            tmp_path,
+            "m.py",
+            "def alpha():\n    pass\n",
+            "alpha first",
+        )
+        _commit_file(
+            tmp_path,
+            "m.py",
+            "def alpha():\n    pass\n\n\ndef beta():\n    pass\n",
+            "beta second",
+        )
+        _commit_file(
+            tmp_path,
+            "t.py",
+            "def test_alpha():\n    pass\n\n\ndef test_beta():\n    pass\n",
+            "tests",
+        )
+        edges = [
+            _tests_edge("m.py::alpha", "t.py::test_alpha"),
+            _tests_edge("m.py::beta", "t.py::test_beta"),
+        ]
+
+        seen_argv: list[tuple[str, ...]] = []
+        real_run_argv = _tdd_order_mod.run_argv
+
+        def _spy(argv: tuple[str, ...]):
+            seen_argv.append(tuple(argv))
+            return real_run_argv(argv)
+
+        monkeypatch.setattr(_tdd_order_mod, "run_argv", _spy)
+
+        tdd_order_violations(tmp_path, edges)
+
+        log_calls = [argv for argv in seen_argv if "log" in argv]
+        # One `git log` per DISTINCT path across all edges (m.py, t.py) --
+        # never one per edge (4 edge-sides across 2 edges would be 4
+        # without the cache).
+        log_paths = {argv[-1] for argv in log_calls}
+        assert len(log_calls) == len(log_paths) == 2
+
+        show_calls = [argv for argv in seen_argv if "show" in argv]
+        show_refs = [argv[-1] for argv in show_calls]
+        assert len(show_refs) == len(set(show_refs))
