@@ -2,7 +2,7 @@
 id: T-3653
 title: 'refactor split: stale carry-forward import in destination becomes circular
   when its own referenced symbol later moves into the same destination'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -16,10 +16,29 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/refactor/**
+- docs/commands/refactor.md
+- tests/test_refactor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/commands/refactor.md
+  reason: 'SCOPE002: doc/test coverage closure for the src/frob/refactor package this
+    fix touches pulls in the package''s existing frob:doc target and frob:tests suite
+    file'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/test_refactor.py
+  reason: 'SCOPE002: doc/test coverage closure for the src/frob/refactor package this
+    fix touches pulls in the package''s existing frob:doc target and frob:tests suite
+    file'
+  actor: logan
+  at: '2026-09-01'
+evidence:
+- tests/test_refactor.py::TestGapRegressions::test_gap5_stale_dest_import_becomes_circular_when_its_own_symbol_later_moves_in
 designated_repro_test: null
 threat: null
 component: null
