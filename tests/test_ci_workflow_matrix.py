@@ -353,3 +353,82 @@ class TestWindowsDiagStepRunsUnbudgeted:
             "gates-security/lint/static -- a hang in one of those stage "
             "groups would never reach this diagnostic (T-3604)"
         )
+
+
+def _code_lines_array_lines() -> list[str]:
+    """The raw lines of the diag step's `$codeLines = @( ... )` pwsh
+    array literal, from the line after `@(` up to (excluding) the
+    closing `)` line -- shared by the syntactic-balance tests below."""
+    run_lines = _windows_diag_step()["run"].splitlines()
+    start = next(i for i, line in enumerate(run_lines) if "$codeLines = @(" in line)
+    end = next(
+        i for i in range(start + 1, len(run_lines)) if run_lines[i].strip() == ")"
+    )
+    return run_lines[start + 1 : end]
+
+
+def _strip_inline_comment(line: str) -> str:
+    """Strip a trailing pwsh `# ...` comment from an element line, if the
+    `#` appears AFTER the last quote character (i.e. genuinely outside
+    the string literal) -- a naive `line.split('#')[0]` would wrongly
+    truncate a quoted string that happens to contain a literal `#`."""
+    last_quote = max(line.rfind("'"), line.rfind('"'))
+    hash_idx = line.find("#", last_quote + 1) if last_quote != -1 else line.find("#")
+    return line if hash_idx == -1 else line[:hash_idx]
+
+
+class TestCodeLinesArrayLiteralIsSyntacticallyBalanced:
+    """T-3633 (round 11): pwsh is not available on this (WSL) CI host, so
+    a ParserError in the $codeLines array literal can only ever be
+    caught by a human reading a failed job log after the fact. This
+    statically re-derives pwsh's own array-literal balance rule so a
+    future round's edit gets caught before it ever reaches a runner:
+    round 10 shipped exactly this defect -- a trailing comma after the
+    last element ("    raise",) right before the closing `)` -- and
+    NONE of that round's instrumentation ever ran (run 33472403980,
+    ParserError at ~0.5s, before even the liveness-marker print)."""
+
+    # frob:tests .github/workflows/ci.yml
+    def test_last_array_element_has_no_trailing_comma(self) -> None:
+        """pwsh's `@()` array grammar treats a bare trailing `,` as an
+        operator expecting a following expression -- a comma right
+        before the closing `)` is a hard ParserError ("Missing
+        expression after ','"), unlike Python/JS where it is tolerated.
+        The LAST non-blank, non-comment line inside the array must NOT
+        end with a comma once any trailing inline `# ...` comment is
+        stripped."""
+        content_lines = [
+            line
+            for line in _code_lines_array_lines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+        assert content_lines, "expected at least one element in $codeLines"
+        last = _strip_inline_comment(content_lines[-1]).rstrip()
+        assert not last.endswith(","), (
+            f"the last $codeLines element {last!r} ends with a trailing "
+            "comma -- pwsh's array grammar parses that as 'expecting "
+            "another expression', a hard ParserError right before the "
+            "closing ')' (T-3633, exactly what run 33472403980 hit)"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_every_non_last_element_line_ends_with_a_comma(self) -> None:
+        """Every element EXCEPT the last must end with a comma (ignoring
+        any trailing inline `# ...` comment) -- a missing comma between
+        two adjacent element strings would make pwsh parse them as one
+        juxtaposed expression instead of two separate array entries,
+        silently corrupting the emitted python source instead of raising
+        a ParserError."""
+        content_lines = [
+            line
+            for line in _code_lines_array_lines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+        for line in content_lines[:-1]:
+            stripped = _strip_inline_comment(line).rstrip()
+            assert stripped.endswith(","), (
+                f"$codeLines element {stripped!r} does not end with a "
+                "comma but is not the last element -- pwsh would parse "
+                "it and the next element as one juxtaposed expression "
+                "instead of two separate array entries"
+            )

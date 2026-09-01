@@ -434,7 +434,7 @@ jobs:
             "except BaseException as exc:",
             "    print(f'diag-python: main() raised {exc!r}', flush=True)",
             "    traceback.print_exc()",
-            "    raise",
+            "    raise"  # T-3633: no trailing comma -- pwsh ParserError
           )
           Set-Content -Path (Join-Path $env:RUNNER_TEMP "frob_check_diag.py") -Value $codeLines
           Write-Host "T-3624 breadcrumb: diag python file written"

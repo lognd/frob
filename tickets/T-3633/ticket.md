@@ -1,7 +1,7 @@
 ---
 id: T-3633
 title: 'windows diag round 11: pwsh trailing-comma ParserError in $codeLines'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -20,6 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ci_workflow_matrix.py::TestCodeLinesArrayLiteralIsSyntacticallyBalanced::test_last_array_element_has_no_trailing_comma
+- tests/test_ci_workflow_matrix.py::TestCodeLinesArrayLiteralIsSyntacticallyBalanced::test_every_non_last_element_line_ends_with_a_comma
 designated_repro_test: null
 threat: null
 component: null
