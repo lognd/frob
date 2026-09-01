@@ -1,7 +1,7 @@
 ---
 id: T-3605
 title: 'COV003: T-3410 cmd: evidence invalid for bug-kind ticket'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_scaffold_project.py::test_scaffolded_docs_make_targets_exist_in_makefile
 designated_repro_test: null
 threat: null
 component: null

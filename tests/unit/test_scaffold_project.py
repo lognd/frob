@@ -369,3 +369,49 @@ def test_ci_template_frob_check_gate_fails_loudly_not_silently(
         assert "uv tool install frob" in text, (
             f"{project_type}: the error must name the install command"
         )
+
+
+# frob:ticket T-3605
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_scaffolded_docs_make_targets_exist_in_makef\
+# ile
+def test_scaffolded_docs_make_targets_exist_in_makefile(tmp_path: Path) -> None:
+    """T-3410 regression: `docs/index.md.j2`'s ``make <target>`` references
+    must resolve against the same template set's rendered Makefile, and
+    must not name any target the shared python Makefile.j2 dropped in
+    T-3400 (test/lint/typecheck/check/coverage) -- catches a scaffold doc
+    documenting a deleted make target before it ships to a new user."""
+    result = render_project("python-library", "probe", tmp_path, force=True)
+    assert result.is_ok, result.err
+    rendered = result.danger_ok
+
+    makefile_paths = [p for p in rendered if p.name == "Makefile"]
+    assert makefile_paths, "python-library: no rendered Makefile"
+    makefile_targets = {
+        line.split(":", 1)[0].strip()
+        for line in makefile_paths[0].read_text().splitlines()
+        if line and not line.startswith((" ", "\t", "#", "."))
+        and ":" in line
+        and line.split(":", 1)[0].strip().isidentifier()
+    }
+    assert "install" in makefile_targets
+    assert "test" not in makefile_targets, "T-3400 dropped `make test`"
+
+    for doc_name in ("index.md", "README.md"):
+        doc_paths = [p for p in rendered if p.name == doc_name]
+        assert doc_paths, f"python-library: no rendered {doc_name}"
+        text = doc_paths[0].read_text()
+        referenced = {
+            token.split()[0]
+            for line in text.splitlines()
+            if line.strip().startswith("make ")
+            for token in [line.strip()[len("make ") :]]
+        }
+        stale = referenced - makefile_targets
+        assert not stale, (
+            f"{doc_name} references make target(s) {stale} absent from "
+            "the rendered Makefile (T-3410 regression)"
+        )
+        assert "frob check" in text, (
+            f"{doc_name} must steer to `frob check` per T-3400/T-3410"
+        )

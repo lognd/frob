@@ -28,9 +28,17 @@ scope_changes:
   actor: logan
   at: '2026-08-29'
 evidence:
-- cmd:pytest tests/unit/test_scaffold_project.py tests/unit/test_scaffold_managed.py
-  tests/system/test_scaffold_dx.py -q exit=0 sha256=f6f0a5c777f7
+- tests/unit/test_scaffold_project.py::test_scaffolded_docs_make_targets_exist_in_makefile
 designated_repro_test: null
+evidence_changes:
+- old_node: cmd:pytest tests/unit/test_scaffold_project.py tests/unit/test_scaffold_managed.py
+    tests/system/test_scaffold_dx.py -q exit=0 sha256=f6f0a5c777f7
+  new_node: tests/unit/test_scaffold_project.py::test_scaffolded_docs_make_targets_exist_in_makefile
+  reason: 'COV003 T-3605: cmd: evidence channel invalid for bug-kind tickets; replaced
+    with real pytest node id added under T-3605 that directly covers the docs/index.md.j2
+    make-target claim'
+  actor: logan
+  at: '2026-08-31'
 threat: null
 component: null
 anchor: false
