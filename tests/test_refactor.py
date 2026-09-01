@@ -3588,3 +3588,77 @@ class TestGapRegressions:
             text=True,
         )
         assert import_result.returncode == 0, import_result.stderr
+
+    # frob:ticket T-3653
+    def test_gap5_stale_dest_import_becomes_circular_when_its_own_symbol_later_moves_in(
+        self, tmp_path
+    ):
+        # frob:tests \
+        # tests/test_refactor.py::TestGapRegressions.test_gap5_stale_dest_import_become\
+        # s_circular_when_its_own_symbol_later_moves_in
+        """T-3653's own repro shape: `_worker` (references `_key`, still in
+        `mod.py`) is `move`d into `helpers.py` first -- gap 3's free-
+        variable carry-forward correctly adds `from pkg.mod import _key`
+        at the top of `helpers.py`, since `_key` is not resident there
+        yet (`move` -- not `split` -- deliberately isolates T-3653's own
+        stale-import gap from T-3660's SEPARATE reexport-shim circular-
+        import gap, which a `split`'s own shim would additionally
+        trigger here). A LATER `split` moving `_key` ITSELF into that
+        SAME `helpers.py` must strip the now-stale `from pkg.mod import
+        _key` left behind by the first move -- otherwise `helpers.py`
+        both imports `_key` from `pkg.mod` AND defines it locally, a real
+        `ImportError` (partially initialized module) T-3650's own self-
+        import guard never catches (it only ever guards a NEW carry-
+        forward against a name already resident, never revisits an OLD
+        one)."""
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def _key(x):\n    return x\n\n\ndef _worker(x):\n    return _key(x)\n",
+        )
+        _commit_all(root, "initial")
+
+        move_result = run_refactor(
+            root,
+            RefactorKind.MOVE,
+            SymbolRef(module="pkg.mod", qualname="_worker"),
+            SymbolRef(module="pkg.helpers", qualname="_worker"),
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert move_result.is_ok
+        assert move_result.danger_ok.success is True, move_result.danger_ok
+        dest_text = (root / "src/pkg/helpers.py").read_text(encoding="utf-8")
+        assert "from pkg.mod import _key" in dest_text
+
+        second_split = run_split(
+            root,
+            source_module="pkg.mod",
+            symbols=["_key"],
+            destination_module="pkg.helpers",
+            chunk_size=1,
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert second_split.is_ok
+        report = second_split.danger_ok
+        assert report.success is True, report.chunks
+
+        dest_text = (root / "src/pkg/helpers.py").read_text(encoding="utf-8")
+        assert "from pkg.mod import _key" not in dest_text
+        assert "def _key(" in dest_text
+
+        import_result = subprocess.run(
+            [
+                "python",
+                "-c",
+                "import sys; sys.path.insert(0, 'src'); "
+                "from pkg.helpers import _worker\n"
+                "assert _worker(3) == 3\n",
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        assert import_result.returncode == 0, import_result.stderr

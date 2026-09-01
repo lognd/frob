@@ -49,6 +49,7 @@ from frob.refactor._scan import (
     bare_name_repoint_ops,
     needed_import_ops_for_symbols,
     scan_references,
+    stale_dest_import_ops,
 )
 
 _log = get_logger(__name__)
@@ -203,6 +204,7 @@ def build_plan(
     dest_file_path = module_to_path(repo_root, destination.module)
     move_span = [(move_start, resolved.end_line)]
     carry_forward_ops: list[RewriteOp] = []
+    stale_import_ops: list[RewriteOp] = []
     repoint_ops: list[RewriteOp] = []
     if str(dest_file_path) != resolved.file_path:
         moving_names = frozenset({old_leaf}) | also_moving
@@ -213,6 +215,15 @@ def build_plan(
             source.module,
             moving_names,
         )
+        # T-3653: `moving_names` (this call's own symbol plus its batch
+        # siblings) is about to be newly DEFINED at `dest_file_path`'s own
+        # top level -- strip/delete any EXISTING import in that same file
+        # that still names one of them (a prior split/move's own carry-
+        # forward or repoint import, now stale), so `dest_file_path` never
+        # both imports a name from its old source AND defines it locally
+        # (the T-3650 self-import guard's own gap: it only ever guards a
+        # NEW carry-forward, never revisits an OLD one already resident).
+        stale_import_ops = stale_dest_import_ops(dest_file_path, moving_names)
         if not is_split:
             repoint_ops = bare_name_repoint_ops(
                 Path(resolved.file_path),
@@ -294,7 +305,7 @@ def build_plan(
         kind=kind,
         source=resolved,
         destination=destination,
-        move_ops=(delete_op, *carry_forward_ops, append_op),
+        move_ops=(delete_op, *stale_import_ops, *carry_forward_ops, append_op),
         reference_ops=tuple(reference_ops),
         aliases=tuple(aliases),
         unresolved=tuple(unresolved),

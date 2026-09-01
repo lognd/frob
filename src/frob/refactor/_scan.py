@@ -26,6 +26,7 @@ __all__ = [
     "find_python_files",
     "needed_import_ops_for_symbols",
     "scan_references",
+    "stale_dest_import_ops",
 ]
 
 
@@ -314,6 +315,74 @@ def needed_import_ops_for_symbols(
             f"{dest_file}",
         )
     ]
+
+
+# frob:doc docs/commands/refactor.md#split-verb-t-1201
+# frob:ticket T-3653
+# frob:tests \
+# tests/test_refactor.py::TestGapRegressions.test_gap5_stale_dest_import_becomes_circular_when_its_own_symbol_later_moves_in  # noqa: E501
+def stale_dest_import_ops(
+    dest_file: Path, moving_names: frozenset[str]
+) -> list[RewriteOp]:
+    """T-3653: `needed_import_ops_for_symbols`/T-3650 only ever guard a
+    NEW carry-forward import from self-importing a name already resident
+    at `dest_file` -- neither one revisits an EXISTING top-level import
+    statement a PRIOR split/move already wrote into `dest_file`, when the
+    name that OLD import references is `moving_names` (this call's own
+    batch, about to be newly DEFINED at `dest_file`'s own top level).
+    Left alone, `dest_file` ends up both importing a name from its old
+    source module AND defining it locally -- a genuine `ImportError`
+    (partially initialized module) at real import time, which `apply_
+    plan`'s Verify phase catches and rolls back, but which this function
+    exists to prevent from ever being attempted.
+
+    Returns one `RewriteOp` per stale `ImportFrom` statement touched:
+    the statement's exact span rewritten with `moving_names` stripped
+    from its alias list (preserving every other name's own `as`-alias),
+    or deleted outright (`new_text=""`) if stripping empties it. Empty
+    list if `dest_file` does not exist yet, or none of its own top-level
+    imports name anything in `moving_names`."""
+    if not dest_file.exists():
+        return []
+    dest_lines = dest_file.read_text(encoding="utf-8").splitlines()
+    dest_tree = ast.parse("\n".join(dest_lines), filename=str(dest_file))
+    ops: list[RewriteOp] = []
+    for node in dest_tree.body:
+        if not isinstance(node, ast.ImportFrom):
+            continue
+        stale = [a for a in node.names if (a.asname or a.name) in moving_names]
+        if not stale:
+            continue
+        keep = [a for a in node.names if (a.asname or a.name) not in moving_names]
+        end = node.end_lineno if node.end_lineno is not None else node.lineno
+        if keep:
+            names_text = ", ".join(
+                f"{a.name} as {a.asname}" if a.asname else a.name for a in keep
+            )
+            module_text = ("." * node.level) + (node.module or "")
+            new_stmt = (
+                " " * node.col_offset
+            ) + f"from {module_text} import {names_text}"
+        else:
+            new_stmt = ""
+        _log.info(
+            "refactor.split: stripping stale carry-forward name(s) %s from "
+            "%s's own existing import at line %d (T-3653 self-import guard)",
+            sorted(a.asname or a.name for a in stale),
+            dest_file,
+            node.lineno,
+        )
+        ops.append(
+            RewriteOp(
+                file_path=str(dest_file),
+                start_line=node.lineno,
+                end_line=end,
+                old_text=f"<import at line {node.lineno}>",
+                new_text=new_stmt,
+                reason=f"strip stale carry-forward import of {sorted(a.asname or a.name for a in stale)} now defined locally",  # noqa: E501
+            )
+        )
+    return ops
 
 
 def _names_referenced_outside_moved_spans(
@@ -688,11 +757,16 @@ def scan_references(
     `getattr`/`importlib` reference, out of v1's static-AST scope) so the
     disclosed report never silently drops it.
     """
+    # T-3653: lazy import, same module-cycle reason `_directives.py`'s and
+    # `_prose.py`'s own lazy `module_to_path` imports already document.
+    from frob.refactor._resolve import module_to_path
+
     ops: list[RewriteOp] = []
     aliases: list[AliasRecord] = []
     unresolved: list[str] = []
     old_ref = resolved.ref
     dest_leaf = destination.qualname.split(".")[-1]
+    dest_file_path = str(module_to_path(repo_root, destination.module))
 
     for file_path in find_python_files(repo_root):
         if str(file_path) == resolved.file_path:
@@ -710,6 +784,18 @@ def scan_references(
                     imports_moved_symbol = any(
                         alias.name == old_ref.qualname for alias in node.names
                     )
+                    if imports_moved_symbol and str(file_path) == dest_file_path:
+                        # T-3653: this import lives in the SYMBOL'S OWN
+                        # destination file -- a stale carry-forward/repoint
+                        # a PRIOR move left behind, now about to become a
+                        # self-import once this move lands `old_ref.
+                        # qualname` locally. `_transaction.build_plan`'s
+                        # own `stale_dest_import_ops` (via `_scan.
+                        # stale_dest_import_ops`) already strips/rewrites
+                        # this exact node; repointing it here too would
+                        # target the identical line and refuse as an
+                        # `OverlappingRewrites` conflict.
+                        continue
                     if imports_moved_symbol and _shares_line_with_sibling_statement(
                         tree, node
                     ):

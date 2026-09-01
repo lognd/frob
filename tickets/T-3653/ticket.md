@@ -2,7 +2,7 @@
 id: T-3653
 title: 'refactor split: stale carry-forward import in destination becomes circular
   when its own referenced symbol later moves into the same destination'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
