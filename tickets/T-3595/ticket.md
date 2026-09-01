@@ -19,10 +19,56 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_rapid_sweep.py
 - tests/conftest.py
+- tests/integration/test_gitlog.py
+- tests/test_mutate_journal.py
+- tests/unit/test_conftest_parse_reset.py
+- tests/unit/test_conftest_stackdump.py
+- tests/unit/test_conftest_suite_result_status.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/integration/test_gitlog.py
+  reason: 'SCOPE002: these files exercise conftest.py fixtures/hooks (run_bounded_subprocess,
+    pytest_configure, pytest_collection_modifyitems, pytest_sessionfinish, _reset_parse_cache_before_test,
+    _stall_detected) already covered by this ticket''s declared tests/conftest.py
+    scope -- declaring coverage, not new code touch'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/test_mutate_journal.py
+  reason: 'SCOPE002: these files exercise conftest.py fixtures/hooks (run_bounded_subprocess,
+    pytest_configure, pytest_collection_modifyitems, pytest_sessionfinish, _reset_parse_cache_before_test,
+    _stall_detected) already covered by this ticket''s declared tests/conftest.py
+    scope -- declaring coverage, not new code touch'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/test_conftest_parse_reset.py
+  reason: 'SCOPE002: these files exercise conftest.py fixtures/hooks (run_bounded_subprocess,
+    pytest_configure, pytest_collection_modifyitems, pytest_sessionfinish, _reset_parse_cache_before_test,
+    _stall_detected) already covered by this ticket''s declared tests/conftest.py
+    scope -- declaring coverage, not new code touch'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/test_conftest_stackdump.py
+  reason: 'SCOPE002: these files exercise conftest.py fixtures/hooks (run_bounded_subprocess,
+    pytest_configure, pytest_collection_modifyitems, pytest_sessionfinish, _reset_parse_cache_before_test,
+    _stall_detected) already covered by this ticket''s declared tests/conftest.py
+    scope -- declaring coverage, not new code touch'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/test_conftest_suite_result_status.py
+  reason: 'SCOPE002: these files exercise conftest.py fixtures/hooks (run_bounded_subprocess,
+    pytest_configure, pytest_collection_modifyitems, pytest_sessionfinish, _reset_parse_cache_before_test,
+    _stall_detected) already covered by this ticket''s declared tests/conftest.py
+    scope -- declaring coverage, not new code touch'
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
