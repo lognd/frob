@@ -15,6 +15,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/arch/_mayraise.py
+- src/frob/arch/_mayraise_tables.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
   reason: no test file matches this glob (no *mayraise* test file exists); the glob
     only phantom-matches T-1661s live lease on tests/unit/strata/**, so drop it --
     this is a pure src-file decomposition, no test-file scope needed
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: src/frob/arch/_mayraise_tables.py
+  reason: new module created by the split, holds the moved rule tables
   actor: logan
   at: '2026-09-01'
 designated_repro_test: null
