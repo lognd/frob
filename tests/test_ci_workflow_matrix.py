@@ -68,7 +68,7 @@ class TestWindowsDiagStepResolvesFrobCheckoutEnv:
         ).read_text(encoding="utf-8")
         idx = text.find("Diagnose frob check hang on windows")
         assert idx != -1, "windows diag step (T-3589) was removed/renamed"
-        step_text = text[idx : idx + 4000]
+        step_text = text[idx : idx + 4400]
         assert "uv run --project $env:GITHUB_WORKSPACE python" in step_text, (
             "the diag step's `uv run python <script>` has no --project "
             "pin -- uv resolves the venv from cwd (Push-Location'd into "
@@ -91,7 +91,7 @@ class TestWindowsDiagStepResolvesFrobCheckoutEnv:
         ).read_text(encoding="utf-8")
         idx = text.find("Diagnose frob check hang on windows")
         assert idx != -1
-        step_text = text[idx : idx + 4000]
+        step_text = text[idx : idx + 4400]
         run_idx = step_text.find("uv run --project")
         assert run_idx != -1
         preceding = step_text[:run_idx]
@@ -215,6 +215,55 @@ class TestWindowsDiagStepDoesNotGateTheJob:
             "this turns uv's own resolver-chatter stderr line into a "
             "terminating error, killing the script before it ever "
             "measures elapsed time (T-3609, run 33451274911)"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_diag_step_sets_error_action_preference_continue_first(self) -> None:
+        """T-3619 (round 9): pwsh steps default to
+        $ErrorActionPreference='Stop', which promotes a native command's
+        FIRST stderr line into a terminating error -- this is the actual
+        mechanism that killed rounds 7 (uv resolver chatter) and 8/9
+        (frob's own gitio WARNING), independent of the T-3609 stderr-
+        redirect fix, since Stop kills the step on interleaved stderr
+        too. The step script must flip to Continue before any command
+        that can write to stderr runs."""
+        step = _windows_diag_step()
+        code_lines = [
+            line
+            for line in step["run"].splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+        assert code_lines, "diag step has no run lines"
+        assert code_lines[0].strip().startswith(
+            "$ErrorActionPreference = 'Continue'"
+        ), (
+            "the diag step's first non-blank run line must set "
+            "$ErrorActionPreference = 'Continue' -- otherwise the "
+            "default Stop preference turns the first stderr line any "
+            "native command prints (uv chatter, frob's gitio warnings) "
+            "into a terminating NativeCommandError before the script's "
+            "own elapsed-time/exit-code handling ever runs (T-3619)"
+        )
+
+    # frob:tests .github/workflows/ci.yml
+    def test_diag_fixture_repo_has_an_initial_commit(self) -> None:
+        """T-3619 (round 9): the fixture repo is `git init` with zero
+        commits, so frob's gitio helper (`git rev-parse --abbrev-ref
+        HEAD`) fails rc=128 with "ambiguous argument 'HEAD'" and frob
+        aborts with "frob: interrupted" before the diagnostic's own
+        watchdog/exit-code logic ever gets a signal to read. The step
+        must create one empty commit right after `git init`."""
+        step = _windows_diag_step()
+        run_lines = step["run"].splitlines()
+        init_idx = next(
+            i for i, line in enumerate(run_lines) if "git init" in line
+        )
+        following = "\n".join(run_lines[init_idx + 1 : init_idx + 4])
+        assert "commit" in following and "--allow-empty" in following, (
+            "expected a `git commit --allow-empty` shortly after `git "
+            "init` in the diag step -- a commitless fixture repo makes "
+            "frob's own git rev-parse HEAD fail rc=128 and frob abort "
+            "with 'frob: interrupted' (T-3619)"
         )
 
     # frob:tests .github/workflows/ci.yml

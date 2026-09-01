@@ -364,6 +364,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         timeout-minutes: 5
         run: |
+          $ErrorActionPreference = 'Continue'  # T-3619 round 9: Stop kills the step on any native stderr
           $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
           New-Item -ItemType Directory -Force -Path (Join-Path $fixture "src\demo") | Out-Null
           Set-Content -Path (Join-Path $fixture "src\demo\__init__.py") -Value '"""Empty demo package."""'
@@ -385,6 +386,7 @@ jobs:
           )
           Push-Location $fixture
           git init -q
+          git -c user.email=ci@frob -c user.name=CI commit --allow-empty -q -m init  # T-3619: fixture needs a HEAD
           Pop-Location
           # T-3589: built as a joined array (not a PowerShell here-string)
           # so every line stays a normal, YAML-indented `run:` statement --

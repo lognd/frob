@@ -2,7 +2,7 @@
 id: T-3619
 title: 'windows CI diag round 9: ErrorActionPreference kills step on stderr, commitless
   fixture'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-31'
@@ -21,6 +21,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_step_sets_error_action_preference_continue_first
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_diag_fixture_repo_has_an_initial_commit
 designated_repro_test: null
 threat: null
 component: null
