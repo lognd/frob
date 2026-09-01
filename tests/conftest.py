@@ -1558,6 +1558,7 @@ def frob_self_scan_snapshot(
 
 PY_SAMPLE = b"""\
 import os
+from pathlib import Path
 
 def helper(x: int) -> str:
     return str(x) + "hello"
