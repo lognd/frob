@@ -25,9 +25,8 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/unit/test_graph_build_lock.py
-  reason: 'SCOPE002: cache.py::connect/_inprocess_write_lock/_is_transient_lock_error
-    are covered by this file''s two-process test, which is also T-3669''s acceptance
-    evidence for the handle-lifecycle fix'
+  reason: 'SCOPE002: cache.py::connect and the lock helpers are covered by this file''s
+    two-process test, T-3669''s acceptance evidence'
   actor: logan
   at: '2026-09-01'
 designated_repro_test: null
