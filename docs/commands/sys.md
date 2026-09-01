@@ -368,15 +368,50 @@ residue rather than force them into this ticket's own scope:
   narrower duplicate of `frob sys audit` -- see the filed docs-decision
   ticket.
 - `capacity`: T-1927 (done) built `frob sys capacity --population N`;
-  `--at DATE` still needs a growth-rate grammar T-2016's own design
-  work never got implemented. Not yet built.
-  <!-- frob:until T-3527 -->
+  T-3527 (done) implemented T-2016's growth-rate grammar and wired
+  `--since DATE --at DATE` -- this residue item is CLOSED.
 - `threats`: T-3519 found this bullet stale -- T-1925 (done) built the
   `ThreatViolation.node`-to-boundary join and wired `frob sys threats`
   (`_run_threats`, `threat_violations_for_boundary`) for real; this
   residue item is CLOSED, kept here only as the historical record of
   what T-1480 originally deferred.
 
+## `frob sys capacity` (T-1927/T-2016)
+
+<a id="frob-sys-capacity-t-1927-t-2016"></a>
+
+<!-- frob:describes src/frob/app/sys_runner.py::_run_capacity -->
+
+`frob sys capacity [path] [--population N] [--since DATE --at DATE]`
+prints `_capacity.py::project_capacity`'s CAP001 findings: nodes whose
+demand exceeds their declared `Capacity`
+(docs/strata/reliability.md#population-projected-capacity-t-1927).
+Vacuous-pass doctrine: exits 0 and logs "no violations" when the model
+is clean, exits 1 on any violation OR a load/build/project error.
+
+### Usage
+
+```
+frob sys capacity [path]
+frob sys capacity [path] --population 1000000
+frob sys capacity [path] --since 2026-01-01 --at 2027-01-01
+frob sys capacity [path] --population 1000000 --since 2026-01-01 --at 2027-01-01
+```
+
+- No flags: unscaled, the model's own declared demand as-is.
+- `--population N`: scale the model's summed `users` baseline linearly
+  to `N`. Fails closed (`StrataError.UnknownReference`) if the model
+  declares no baseline `users` population.
+- `--since DATE --at DATE` (T-2016,
+  docs/strata/kernel.md#growth-rate-declarations-t-2016): project every
+  `growth`-declaring node's demand compound-forward across the elapsed
+  time between the two ISO-8601 dates, applied per-node BEFORE fan-in
+  summation. Required together -- either alone fails closed the same
+  way an unscalable `--population` does. Growth periods (`w`/`mo`/`y`)
+  are fixed-length, not calendar-aware; a real February is not
+  specially handled.
+- `--population` and `--since`/`--at` compose: growth projects first,
+  then the population scalar applies to the already-grown aggregate.
 
 ## `frob sys shrink` (T-2923)
 

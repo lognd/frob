@@ -22,7 +22,7 @@ from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from ._models import Quantity
+from ._models import Growth, Quantity
 
 
 # frob:doc docs/strata/surface.md#parser
@@ -213,6 +213,12 @@ class NodeDecl(BaseModel):
     # own service ability, this is inbound load reaching it).
     users: float | None = None
     rate: Quantity | None = None
+    # `growth PERCENT per PERIOD`, T-2016 (docs/strata/kernel.md
+    # #growth-rate-declarations-t-2016): an optional modifier on EITHER
+    # clause above, independent of one another -- see `Growth`'s own
+    # docstring for the compound-arithmetic semantics.
+    users_growth: Growth | None = None
+    rate_growth: Growth | None = None
     residence: str | None = None
     errors_total: bool = False
     panics_contained_by: str | None = None
@@ -526,6 +532,9 @@ class StoreDecl(BaseModel):
     # semantics) -- a store can be a demand-declaring entry point too.
     users: float | None = None
     rate: Quantity | None = None
+    # `growth PERCENT per PERIOD`, T-2016; same shape as `NodeDecl`'s.
+    users_growth: Growth | None = None
+    rate_growth: Growth | None = None
     residence: str | None = None
     engine: str | None = None
     immutable: bool = False

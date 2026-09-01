@@ -82,6 +82,15 @@ _UNITS: dict[str, tuple[str, float]] = {
     "min": ("time", 60.0),
     "h": ("time", 3600.0),
     "d": ("time", 86400.0),
+    # T-2016 growth-rate `PERIOD` units (docs/strata/kernel.md
+    # #growth-rate-declarations-t-2016): deliberately FIXED-length, not
+    # calendar-aware (no Feb-is-28-days, no leap years) -- the same
+    # simplification `d` above already makes for every other time
+    # quantity in this grammar. A model wanting calendar precision is out
+    # of scope for a static capacity-planning tool.
+    "w": ("time", 7 * 86400.0),
+    "mo": ("time", 30 * 86400.0),
+    "y": ("time", 365 * 86400.0),
     "B": ("size", 1.0),
     "KiB": ("size", 1024.0),
     "MiB": ("size", 1024.0**2),
@@ -142,6 +151,46 @@ class Quantity(BaseModel):
             )
             return Err(StrataError.UnitMismatch)
         return Ok(self.base_value().danger_ok <= other.base_value().danger_ok)
+
+
+# frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
+# frob:tests tests/unit/strata/test_capacity_projection.py::TestProjectCapacityGrowth.test_at_projects_growth_and_can_fire  # noqa: E501
+class Growth(BaseModel):
+    """T-2016: a `growth PERCENT per PERIOD` modifier on a `users`/`rate`
+    demand declaration -- compound, not linear (docs/strata/kernel.md
+    #growth-rate-declarations-t-2016's own "Arithmetic" section): the
+    declared value multiplies by `1 + pct/100` once per elapsed `period`,
+    never added linearly (linear decay can cross zero for a negative
+    rate; compound decay asymptotes toward zero and never does, the
+    materially safer default for a tool whose job is refusing to
+    silently produce a meaningless number)."""
+
+    model_config = {}
+
+    pct: float
+    period: str  # one of _UNITS's time-dimension keys, e.g. "w"/"mo"/"y"
+
+    def period_seconds(self) -> Result[float, StrataError]:
+        """The period unit's length in seconds, or `Err(UnknownUnit)` for
+        an unresolvable period (fails closed, same posture as
+        `Quantity.base_value()`)."""
+        # frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
+        entry = _UNITS.get(self.period)
+        if entry is None or entry[0] != "time":
+            _log.warning("growth: unknown or non-time period unit %r", self.period)
+            return Err(StrataError.UnknownUnit)
+        return Ok(entry[1])
+
+    def factor(self, elapsed_seconds: float) -> Result[float, StrataError]:
+        """The compounding multiplier `(1 + pct/100) ** (elapsed / period)`
+        for a given elapsed time in seconds (docs/strata/kernel.md
+        #growth-rate-declarations-t-2016's compound-arithmetic formula)."""
+        # frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
+        period_s = self.period_seconds()
+        if period_s.is_err:
+            return Err(period_s.danger_err)
+        periods_elapsed = elapsed_seconds / period_s.danger_ok
+        return Ok((1.0 + self.pct / 100.0) ** periods_elapsed)
 
 
 # frob:doc docs/strata/kernel.md#data-models
@@ -347,6 +396,18 @@ class Node(BaseModel):
     # from these values.
     users: float | None = None
     rate: Quantity | None = None
+    # T-2016: optional `growth PERCENT per PERIOD` modifier on EITHER
+    # T-0702 clause above, independent of one another (docs/strata/
+    # kernel.md#growth-rate-declarations-t-2016). A growth field paired
+    # with no matching demand field (e.g. `users_growth` set but `users`
+    # `None`) is inert rather than rejected -- `_facts.py::
+    # aggregate_demand`'s seed construction only ever reads a growth
+    # field alongside the demand field it modifies, so an orphaned one
+    # simply never applies; grammar-side this cannot occur (the parser
+    # only emits a growth field when its clause immediately follows the
+    # matching `users`/`rate` clause it modifies).
+    users_growth: Growth | None = None
+    rate_growth: Growth | None = None
     residence: str | None = None  # host/zone/region atom for scenario rewrites
     crash: CrashContract | None = None  # `on crash { ... }` contract, T-0074
     breach: BreachContract | None = None  # `on breach { ... }` contract, T-0076

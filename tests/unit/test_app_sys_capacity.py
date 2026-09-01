@@ -9,6 +9,7 @@ file outside declared scope is fine), per the NO DUPLICATION convention.
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -43,6 +44,16 @@ _NO_BASELINE_MODEL = """\
 module m
 node evil : foreign
 node api : trusted { capacity 10 req/s replicas 1..1; }
+flow f1 : evil -> api
+"""
+
+#: T-2016: `api`'s current demand (10 users) is comfortably under its
+#: capacity (15 req/s), but a year of 100% growth on `evil`'s 10-user
+#: seed pushes it over.
+_GROWTH_MODEL = """\
+module m
+node evil : foreign { users 10 growth 100% per y; }
+node api : trusted { capacity 15 req/s replicas 1..1; }
 flow f1 : evil -> api
 """
 
@@ -92,6 +103,53 @@ class TestSysCapacity:
             sys_run(cfg)
         assert exc.value.code == 1
         assert "no baseline" in caplog.text
+
+    def test_at_date_reports_projected_elapsed(self, tmp_path: Path, caplog) -> None:
+        """T-2016: `--since`/`--at` project a growth-declaring node's
+        demand before the fan-in sum, same as `test_population_scales_
+        and_can_fire` does for `--population`."""
+        repo = _init_design_repo(tmp_path, _GROWTH_MODEL)
+        cfg = AppConfig(
+            sys_command="capacity",
+            sys_path=repo,
+            sys_capacity_since=datetime(2026, 1, 1),
+            sys_capacity_at=datetime(2027, 1, 1),
+        )
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            sys_run(cfg)
+        assert exc.value.code == 1
+        assert "node=api" in caplog.text
+
+    def test_since_without_at_is_an_error(self, tmp_path: Path, caplog) -> None:
+        """T-2016: `--since` given without its required `--at` pair fails
+        closed (`StrataError.UnknownReference`), never silently ignored."""
+        repo = _init_design_repo(tmp_path, _GROWTH_MODEL)
+        cfg = AppConfig(
+            sys_command="capacity",
+            sys_path=repo,
+            sys_capacity_since=datetime(2026, 1, 1),
+        )
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            sys_run(cfg)
+        assert exc.value.code == 1
+
+    def test_since_and_at_flags_survive_real_argv_parsing(self) -> None:
+        """Same live-fire regression class `test_population_flag_survives_
+        real_argv_parsing` guards, for the new `--since`/`--at` flags."""
+        parser = _build_parser()
+        ns = parser.parse_args(
+            [
+                "sys",
+                "capacity",
+                "--since",
+                "2026-01-01",
+                "--at",
+                "2027-01-01",
+            ]
+        )
+        cfg = AppConfig.from_args(ns)
+        assert cfg.sys_capacity_since == datetime(2026, 1, 1)
+        assert cfg.sys_capacity_at == datetime(2027, 1, 1)
 
     def test_population_flag_survives_real_argv_parsing(self) -> None:
         """Regression guard (T-1927's own live-fire incident): `--population`

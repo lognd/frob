@@ -225,6 +225,8 @@ def _elaborate_node(decl: NodeDecl) -> Node:
         capacity=capacity,
         users=decl.users,
         rate=decl.rate,
+        users_growth=decl.users_growth,
+        rate_growth=decl.rate_growth,
         residence=decl.residence,
         deploy=deploy,
         waives=waives,

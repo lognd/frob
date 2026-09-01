@@ -18,6 +18,7 @@ large-file gate threshold -- no behavior change, same argparse tree.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 from pathlib import Path
 
 
@@ -827,16 +828,22 @@ def _add_sys_threats_parser(sys_sub) -> None:
 
 # frob:ticket T-1927
 def _add_sys_capacity_parser(sys_sub) -> None:
-    """Register `frob sys capacity [--population N]` (T-1927): the
-    roadmap-phase-5 `capacity` verb, a thin wrapper over
-    `frob.strata._capacity.project_capacity`. `--at DATE` from the
-    roadmap's target signature is NOT wired here -- disclosed scope cut,
-    see `project_capacity`'s own module docstring and the residue ticket
-    it names."""
+    """Register `frob sys capacity [--population N] [--since DATE --at
+    DATE]` (T-1927/T-2016): the roadmap-phase-5 `capacity` verb, a thin
+    wrapper over `frob.strata._capacity.project_capacity`. `--since`/
+    `--at` (T-2016, docs/strata/kernel.md#growth-rate-declarations-t-2016)
+    project a `growth`-declaring node's demand to `--at`, elapsed from
+    `--since` -- both required together or neither at all
+    (`project_capacity` fails closed on a mismatched pair). ISO-8601
+    datetimes only (`datetime.fromisoformat`); FIXED-length `w`/`mo`/`y`
+    growth periods make no claim of calendar precision (no Feb-is-28-
+    days, no leap years), so a real February can surprise you here --
+    documented in this flag's own help text, not just the kernel docs."""
     sys_capacity_p = sys_sub.add_parser(
         "capacity",
         help="print CAP001 findings: nodes whose demand exceeds "
-        "capacity, optionally projected to a population (T-1927)",
+        "capacity, optionally projected to a population and/or a date "
+        "(T-1927/T-2016)",
     )
     sys_capacity_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
     sys_capacity_p.add_argument(
@@ -846,6 +853,24 @@ def _add_sys_capacity_parser(sys_sub) -> None:
         default=None,
         help="scale the model's own declared `users` demand linearly to "
         "this population before checking capacity",
+    )
+    sys_capacity_p.add_argument(
+        "--since",
+        dest="sys_capacity_since",
+        type=datetime.fromisoformat,
+        default=None,
+        help="T-2016: ISO-8601 baseline date `growth`-declaring nodes "
+        "project FROM; requires --at. Growth periods (w/mo/y) are "
+        "fixed-length, not calendar-aware -- a real February is not "
+        "specially handled",
+    )
+    sys_capacity_p.add_argument(
+        "--at",
+        dest="sys_capacity_at",
+        type=datetime.fromisoformat,
+        default=None,
+        help="T-2016: ISO-8601 target date to project `growth`-declaring "
+        "nodes' demand to; requires --since",
     )
 
 

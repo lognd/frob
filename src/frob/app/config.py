@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import enum
+from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
@@ -1153,6 +1154,14 @@ class AppConfig(BaseModel):
     sys_threats_boundary: str | None = None
     # T-1927: `frob sys capacity [--population N]` -- optional population scale.
     sys_capacity_population: float | None = None
+    # T-2016: `frob sys capacity --since DATE --at DATE` -- optional
+    # growth-rate projection window (docs/strata/kernel.md
+    # #growth-rate-declarations-t-2016); both or neither, never one alone
+    # (`_capacity.py::project_capacity` fails closed on a mismatched
+    # pair). ISO-8601 datetimes, parsed by the CLI layer
+    # (`_cli_parsers/_misc.py`), stored here already-parsed.
+    sys_capacity_since: datetime | None = None
+    sys_capacity_at: datetime | None = None
     # T-2923: `frob sys shrink [--check]` -- drop SYS101 declared-but-
     # never-observed may capabilities; --check reports without writing.
     # This is the ONLY .strata-writing sys verb and the ONLY direction it

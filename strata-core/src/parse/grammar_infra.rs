@@ -41,6 +41,10 @@ impl Parser {
         // semantics), so it can be the demand-declaring endpoint too.
         let mut users: Option<f64> = None;
         let mut demand_rate: Option<serde_json::Value> = None;
+        // T-2016: optional `growth PERCENT per PERIOD` trailing modifier,
+        // same shape as `node`'s clause (grammar_node.rs).
+        let mut users_growth: Option<serde_json::Value> = None;
+        let mut rate_growth: Option<serde_json::Value> = None;
         let mut engine: Option<String> = None;
         let mut immutable = false;
         let mut append_only = false;
@@ -249,12 +253,18 @@ impl Parser {
                     // T-0702: same `users NUMBER` shape as `node`'s clause.
                     self.advance();
                     users = Some(self.expect_number("users population")?);
+                    if self.at_keyword("growth") {
+                        users_growth = Some(self.parse_growth_clause()?);
+                    }
                 } else if self.at_keyword("rate") {
                     // T-0702: same `rate NUMBER UNIT` shape as `node`'s
                     // clause, top-level and distinct from `capacity`'s own
                     // nested rate quantity.
                     self.advance();
                     demand_rate = Some(self.parse_quantity("rate")?);
+                    if self.at_keyword("growth") {
+                        rate_growth = Some(self.parse_growth_clause()?);
+                    }
                 } else if self.at_keyword("engine") {
                     self.advance();
                     engine = Some(self.expect_ident("engine name")?);
@@ -356,6 +366,8 @@ impl Parser {
             "capacity": capacity,
             "users": users,
             "rate": demand_rate,
+            "users_growth": users_growth,
+            "rate_growth": rate_growth,
             "residence": residence,
             "engine": engine,
             "immutable": immutable,

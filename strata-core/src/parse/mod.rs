@@ -2109,6 +2109,84 @@ mod tests {
         assert_eq!(s["rate"]["unit"], "req/s");
     }
 
+    // T-2016: `growth PERCENT per PERIOD` trailing modifier on `users`/
+    // `rate` (docs/strata/kernel.md#growth-rate-declarations-t-2016).
+
+    #[test]
+    fn parses_node_users_growth() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            node checkout_api : trusted {
+                users 50000 growth 12% per year;
+            }"#);
+        let n = &v["nodes"][0];
+        assert_eq!(n["users"], 50000.0);
+        assert_eq!(n["users_growth"]["pct"], 12.0);
+        assert_eq!(n["users_growth"]["period"], "year");
+        assert_eq!(n["rate_growth"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn parses_node_rate_growth() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            node entry_a : trusted {
+                rate 500 req/s growth 8% per mo;
+            }"#);
+        let n = &v["nodes"][0];
+        assert_eq!(n["rate"]["value"], 500.0);
+        assert_eq!(n["rate_growth"]["pct"], 8.0);
+        assert_eq!(n["rate_growth"]["period"], "mo");
+        assert_eq!(n["users_growth"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn parses_node_users_and_rate_each_with_independent_growth() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            node entry_a : trusted {
+                users 50000 growth 12% per y;
+                rate 500 req/s growth 5% per w;
+            }"#);
+        let n = &v["nodes"][0];
+        assert_eq!(n["users_growth"]["pct"], 12.0);
+        assert_eq!(n["users_growth"]["period"], "y");
+        assert_eq!(n["rate_growth"]["pct"], 5.0);
+        assert_eq!(n["rate_growth"]["period"], "w");
+    }
+
+    #[test]
+    fn parses_node_users_without_growth_defaults_null() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nnode entry_a : trusted { users 300000; }");
+        let n = &v["nodes"][0];
+        assert_eq!(n["users_growth"], serde_json::Value::Null);
+        assert_eq!(n["rate_growth"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn parses_store_users_growth() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0261 node/store symmetry: same `growth` shape on `store`.
+        let v = ok(r#"module m
+            store db : trusted {
+                users 500000 growth 3% per mo;
+            }"#);
+        let s = &v["stores"][0];
+        assert_eq!(s["users_growth"]["pct"], 3.0);
+        assert_eq!(s["users_growth"]["period"], "mo");
+    }
+
+    #[test]
+    fn growth_clause_missing_percent_symbol_is_a_parse_error() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err(r#"module m
+            node entry_a : trusted {
+                users 50000 growth 12 per year;
+            }"#);
+        assert!(e["message"].as_str().unwrap().contains("expected"));
+    }
+
     #[test]
     fn parses_node_rate_does_not_collide_with_capacity_rate() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"

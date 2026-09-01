@@ -1612,8 +1612,9 @@ node legacy_bootloader_stage : trusted {
 ## Population-projected capacity (`frob sys capacity`, T-1927)
 
 `frob.strata._capacity::project_capacity` is the roadmap-phase-5 `frob
-sys capacity [--population N]` evaluator (docs/strata/roadmap.md "CLI
-surface (target)") -- distinct from REL380/REL381 above: those compare a
+sys capacity [--population N] [--since DATE --at DATE]` evaluator
+(docs/strata/roadmap.md "CLI surface (target)") -- distinct from
+REL380/REL381 above: those compare a
 serialization point's DECLARED demand against its SINGLE-replica
 capacity (deliberately unscaled by `replicas_max`, since exclusivity
 collapses concurrency to 1 regardless of replica count); this evaluator
@@ -1635,22 +1636,23 @@ already over capacity". Requesting a `population` when the model
 declares no baseline fails closed (`StrataError.UnknownReference`)
 rather than silently reporting a meaningless "no violations".
 
-<!-- frob:until T-3527 -->
+<!-- frob:describes src/frob/strata/_capacity.py::project_capacity -->
 
-**Disclosed scope cut (T-2016, filed by T-1927):** the roadmap's target
-signature is `frob sys capacity [--population N | --at DATE]`; only
-`--population N` is implemented. `--at DATE` needs a growth-rate
-declaration on `Node.users`/`rate` the T-0702 surface grammar does not
-have yet -- adding one is a language change, out of scope for "an
-evaluator over the model as it exists today". `--population N` needed
-no new grammar: it scales the model's OWN already-declared `users`
-population linearly, sound with today's data alone. T-2016 produced a
-DESIGN (not yet implemented) for the missing grammar --
-docs/strata/kernel.md#growth-rate-declarations-t-2016 -- including why
-`project_capacity`'s single-scalar architecture cannot simply be reused
-for a per-node growth rate, and one open decision (a model-level
-`as_of DATE` vs. a CLI-only `--since DATE`) that needs an owner call
-before implementation starts.
+**T-2016 implemented:** the roadmap's target signature, `frob sys
+capacity [--population N | --since DATE --at DATE]`, is now fully wired.
+`--since DATE --at DATE` project every `growth`-declaring node's
+`users`/`rate` demand (docs/strata/kernel.md
+#growth-rate-declarations-t-2016) compound-forward from `--since` to
+`--at`, elapsed-time-scaled BEFORE `FactBase.aggregate_demand`'s BFS
+fan-in sum runs -- each node's own growth rate applies to its own seed
+independently, never a single shared/averaged scalar. `--since`/`--at`
+are required together; either alone fails closed
+(`StrataError.UnknownReference`), the same posture an unscalable
+`--population` baseline already takes. `--population` still composes on
+top: growth projects first, then the linear population scale applies to
+the already-grown aggregate. A model with no `growth` declarations
+behaves byte-for-byte as before T-2016 either way (`elapsed_seconds=
+None` is the untouched code path).
 
 ## See also
 

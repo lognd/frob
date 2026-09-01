@@ -138,3 +138,62 @@ class TestProjectCapacityScaled:
         model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
         report = project_capacity(model, _facts_for(model)).danger_ok
         assert report.baseline_population is None
+
+
+class TestProjectCapacityGrowth:
+    """T-2016 --since/--at DATE coverage (docs/strata/kernel.md
+    #growth-rate-declarations-t-2016)."""
+
+    # frob:tests src/frob/strata/_capacity.py::project_capacity kind="unit"
+    def test_at_projects_growth_and_can_fire(self):
+        from datetime import datetime
+
+        from frob.strata import Growth
+
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="entry",
+                    trust="foreign",
+                    users=100.0,
+                    users_growth=Growth(pct=100.0, period="y"),
+                ),
+                Node(id="api", trust="trusted", capacity=_capacity(150.0)),
+            ),
+            flows=(Flow(id="f1", src="entry", dst="api"),),
+        )
+        facts = _facts_for(model)
+        unscaled = project_capacity(model, facts).danger_ok
+        assert unscaled.violations == ()
+        grown = project_capacity(
+            model,
+            facts,
+            since=datetime(2026, 1, 1),
+            at=datetime(2027, 1, 1),
+        ).danger_ok
+        assert grown.elapsed_seconds == 365 * 86400.0
+        assert [v.node for v in grown.violations] == ["api"]
+
+    # frob:tests src/frob/strata/_capacity.py::project_capacity kind="unit"
+    def test_since_without_at_fails_closed(self):
+        from datetime import datetime
+
+        model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
+        result = project_capacity(model, _facts_for(model), since=datetime(2026, 1, 1))
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_capacity.py::project_capacity kind="unit"
+    def test_at_without_since_fails_closed(self):
+        from datetime import datetime
+
+        model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
+        result = project_capacity(model, _facts_for(model), at=datetime(2027, 1, 1))
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_capacity.py::project_capacity kind="unit"
+    def test_no_since_or_at_leaves_elapsed_seconds_none(self):
+        model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
+        report = project_capacity(model, _facts_for(model)).danger_ok
+        assert report.elapsed_seconds is None

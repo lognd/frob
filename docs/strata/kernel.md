@@ -413,16 +413,19 @@ separate, sibling ticket -- this page documents the grammar and
 propagation primitive only.
 
 <a id="growth-rate-declarations-t-2016"></a>
-### Growth-rate declarations (T-2016 design -- NOT implemented)
+### Growth-rate declarations (T-2016)
 
-**Status: design only.** No grammar, elaboration, or evaluator code
-exists for this section yet -- filed as a T-1927 residue
-(docs/strata/reliability.md#population-projected-capacity-t-1927) to
-unblock `frob sys capacity --at DATE` (docs/strata/roadmap.md "CLI
-surface (target)"), currently unimplemented for exactly this reason.
-This section is the game plan an implementer should follow, not a
-description of shipped behavior; nothing here should be cited as an
-existing `frob:describes` target.
+<!-- frob:describes strata-core/src/parse/grammar_core.rs::Parser.parse_growth_clause -->
+<!-- frob:describes src/frob/strata/_models.py::Growth -->
+<!-- frob:describes src/frob/strata/_facts.py::FactBase.aggregate_demand -->
+
+**Status: implemented (T-3527).** The `growth PERCENT per PERIOD`
+grammar clause below, `Growth`'s compound-arithmetic elaboration, and
+`FactBase.aggregate_demand`'s per-node reordering are all shipped;
+`frob sys capacity --since DATE --at DATE` is wired end to end
+(docs/strata/reliability.md#population-projected-capacity-t-1927). This
+section remains the accurate description of the shipped grammar and
+arithmetic below -- it is no longer a plan.
 
 > **UNMISSABLE: this is not "add a grammar clause".** Implementing
 > `--at DATE` REQUIRES changing `FactBase.aggregate_demand`'s own
@@ -491,12 +494,12 @@ Example:
 
 ```
 node checkout_api {
-    users 50000 growth 12% per year;
+    users 50000 growth 12% per y;
     capacity { service_rate 2000 req/s; replicas_max 40; }
 }
 ```
 
-**Arithmetic: compound, not linear.** `growth 12% per year` means the
+**Arithmetic: compound, not linear.** `growth 12% per y` means the
 declared `users`/`rate` value multiplies by `1.12` once per elapsed
 year, compounding -- NOT `+12% of the ORIGINAL value, added once per
 year` (linear). Compounding is the standard convention for a stated
@@ -577,22 +580,18 @@ model-level `as_of` construct at all). No `as_of` grammar will be added.
   elaboration rule for no real safety benefit the formula does not
   already provide.
 
-**Suggested landing shape**, if/when this proceeds: (1) the `growth`
-grammar clause plus the three new fixed-length time units, elaborated
-onto `Node`/new fields mirroring `users`/`rate`'s own precedent; (2)
-`--since DATE`/`--at DATE` wired on the `frob sys capacity` CLI (the
-anchor-date decision above -- no model grammar addition for it); (3)
-**the larger piece**, `aggregate_demand`'s synthetic per-node seed rate
-reordered to accept and apply that node's own growth projection BEFORE
-`strata_core.propagated_demand`'s BFS summation runs, plus
-re-verification of every existing `aggregate_demand` consumer's
-regression coverage against the reordered implementation (the
-`UNMISSABLE` note above) -- this is the step that makes the whole
-feature a shared-primitive change, not a leaf addition, and should be
-scoped/estimated as such before anyone commits to a timeline. Only
-once (3) exists does `project_capacity` itself need any change, and
-that change is small: accept and forward the new date parameters into
-the (now growth-aware) `FactBase` call, since it already consumes
+**Landing shape (T-3527, shipped):** (1) the `growth` grammar clause
+plus the three new fixed-length time units, elaborated onto `Node`
+(`users_growth`/`rate_growth` fields mirroring `users`/`rate`'s own
+precedent); (2) `--since DATE`/`--at DATE` wired on the `frob sys
+capacity` CLI (the anchor-date decision above -- no model grammar
+addition for it); (3) `aggregate_demand`'s synthetic per-node seed rate
+reordered to accept an optional `elapsed_seconds` and apply that node's
+own growth projection BEFORE `strata_core.propagated_demand`'s BFS
+summation runs, with `elapsed_seconds=None` (the default) reproducing
+the pre-T-2016 behavior byte-for-byte for every existing caller.
+`project_capacity` forwards `--since`/`--at` as elapsed seconds into the
+now growth-aware `FactBase` call, since it already consumed
 `aggregate_demand`'s output as a black box.
 
 

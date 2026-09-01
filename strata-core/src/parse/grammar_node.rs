@@ -25,6 +25,13 @@ impl Parser {
         // (mirrors `platform`/`residence`), not accumulates.
         let mut users: Option<f64> = None;
         let mut demand_rate: Option<serde_json::Value> = None;
+        // T-2016: optional `growth PERCENT per PERIOD` trailing modifier
+        // on either T-0702 clause above (docs/strata/kernel.md
+        // #growth-rate-declarations-t-2016) -- each clause carries its
+        // own, independent growth (a node's `users` and `rate` may grow
+        // at different rates, or only one of the two may grow at all).
+        let mut users_growth: Option<serde_json::Value> = None;
+        let mut rate_growth: Option<serde_json::Value> = None;
         let mut errors_total = false;
         let mut panics_contained_by: Option<String> = None;
         let mut observe: Option<serde_json::Value> = None;
@@ -328,6 +335,9 @@ impl Parser {
                     // demand (docs/strata/kernel.md#demand-t-0702).
                     self.advance();
                     users = Some(self.expect_number("users population")?);
+                    if self.at_keyword("growth") {
+                        users_growth = Some(self.parse_growth_clause()?);
+                    }
                 } else if self.at_keyword("rate") {
                     // T-0702: `rate NUMBER UNIT` -- an arrival-rate entry
                     // demand, same QUANTITY shape `flow`'s `rate` clause
@@ -336,6 +346,9 @@ impl Parser {
                     // from `capacity`'s own nested rate quantity.
                     self.advance();
                     demand_rate = Some(self.parse_quantity("rate")?);
+                    if self.at_keyword("growth") {
+                        rate_growth = Some(self.parse_growth_clause()?);
+                    }
                 } else if self.at_keyword("skew") {
                     // skew := "skew" "zipf" NUMBER; desugars straight to a
                     // node attr "skew=<alpha>" (docs/strata/kernel.md
@@ -571,6 +584,8 @@ impl Parser {
             "capacity": capacity,
             "users": users,
             "rate": demand_rate,
+            "users_growth": users_growth,
+            "rate_growth": rate_growth,
             "residence": residence,
             "errors_total": errors_total,
             "panics_contained_by": panics_contained_by,

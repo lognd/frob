@@ -1,7 +1,7 @@
 ---
 id: T-3527
 title: implement growth-rate grammar for frob sys capacity --at DATE
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-30'
@@ -27,6 +27,14 @@ scope:
 - src/frob/app/config.py
 - src/frob/app/_cli_parsers/_misc.py
 - docs/commands/sys.md
+- src/frob/_cli_parsers/_misc.py
+- src/frob/strata/_infra.py
+- src/frob/strata/__init__.py
+- src/frob/app/_config_external.py
+- docs/strata/surface.md
+- tests/unit/strata/test_demand.py
+- tests/unit/strata/test_capacity_projection.py
+- tests/unit/test_app_sys_capacity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -106,6 +114,85 @@ scope_changes:
     change must update its doc in the same land'
   actor: logan
   at: '2026-08-31'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: declared glob src/frob/app/_cli_parsers/_misc.py does not exist; the real
+    --population/--at/--since CLI parser for sys capacity lives at src/frob/_cli_parsers/_misc.py
+    (no app/ segment) -- adding the correct path rather than failing
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: declared glob src/frob/app/_cli_parsers/_misc.py does not exist; the real
+    --population/--at/--since CLI parser for sys capacity lives at src/frob/_cli_parsers/_misc.py
+    (no app/ segment) -- adding the correct path rather than failing
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/strata/_infra.py
+  reason: StoreDecl -> Node elaboration lives in _infra.py::_elaborate_store, not
+    _elaborate.py -- store-side growth wiring (T-0261 node/store users/rate symmetry,
+    already exercised by the Rust grammar tests) needs this file to thread users_growth/rate_growth
+    the same way node's does
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/strata/__init__.py
+  reason: Growth (new _models.py public symbol) needs re-export through the package
+    __init__ same as every other kernel model (Capacity, Quantity, ...) or it is unreachable
+    to test/CLI code outside the strata package
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: AppConfig.from_external's generic argv-to-model copy only forwards fields
+    listed in per-type allowlists (_FLOAT_FIELDS etc); sys_capacity_since/sys_capacity_at
+    are datetime fields with no existing group, so --since/--at parse correctly but
+    are silently dropped (None) through real CLI wiring without this file -- exactly
+    the T-1927 live-fire regression class _config_external.py's own tests already
+    guard for --population
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: docs/strata/surface.md
+  reason: AFFECT001 needs surface.md#parser/#stdinfra updated for the new users_growth/rate_growth
+    NodeDecl/StoreDecl fields; the other three globs are the test files I wrote/extended
+    for this feature's coverage, flagged by SCOPE001
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/strata/test_demand.py
+  reason: AFFECT001 needs surface.md#parser/#stdinfra updated for the new users_growth/rate_growth
+    NodeDecl/StoreDecl fields; the other three globs are the test files I wrote/extended
+    for this feature's coverage, flagged by SCOPE001
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/strata/test_capacity_projection.py
+  reason: AFFECT001 needs surface.md#parser/#stdinfra updated for the new users_growth/rate_growth
+    NodeDecl/StoreDecl fields; the other three globs are the test files I wrote/extended
+    for this feature's coverage, flagged by SCOPE001
+  actor: logan
+  at: '2026-08-31'
+- op: add
+  glob: tests/unit/test_app_sys_capacity.py
+  reason: AFFECT001 needs surface.md#parser/#stdinfra updated for the new users_growth/rate_growth
+    NodeDecl/StoreDecl fields; the other three globs are the test files I wrote/extended
+    for this feature's coverage, flagged by SCOPE001
+  actor: logan
+  at: '2026-08-31'
+evidence:
+- tests/unit/strata/test_demand.py::TestAggregateDemandGrowth::test_growth_scales_seed_before_fan_in
+- tests/unit/strata/test_demand.py::TestAggregateDemandGrowth::test_elapsed_seconds_none_reproduces_ungrown_value
+- tests/unit/strata/test_demand.py::TestAggregateDemandGrowth::test_each_node_grows_by_its_own_independent_rate
+- tests/unit/strata/test_demand.py::TestAggregateDemandGrowth::test_rate_growth_applies_independently_of_users_growth
+- tests/unit/strata/test_capacity_projection.py::TestProjectCapacityGrowth::test_at_projects_growth_and_can_fire
+- tests/unit/strata/test_capacity_projection.py::TestProjectCapacityGrowth::test_since_without_at_fails_closed
+- tests/unit/strata/test_capacity_projection.py::TestProjectCapacityGrowth::test_at_without_since_fails_closed
+- tests/unit/strata/test_capacity_projection.py::TestProjectCapacityGrowth::test_no_since_or_at_leaves_elapsed_seconds_none
+- tests/unit/test_app_sys_capacity.py::TestSysCapacity::test_at_date_reports_projected_elapsed
+- tests/unit/test_app_sys_capacity.py::TestSysCapacity::test_since_without_at_is_an_error
+- tests/unit/test_app_sys_capacity.py::TestSysCapacity::test_since_and_at_flags_survive_real_argv_parsing
 designated_repro_test: null
 threat: null
 component: null

@@ -54,6 +54,7 @@ from __future__ import annotations
 
 import sys
 import tomllib
+from datetime import datetime
 from pathlib import Path
 
 from frob.app._style import style_fail, style_ok, style_rule, style_warn
@@ -1095,7 +1096,10 @@ def _run_threats(cfg: AppConfig) -> None:
 
 # frob:ticket T-1927
 # frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_no_population_reports_current_violations  # noqa: E501
-def _print_capacity_report(report, *, population: float | None) -> bool:
+# frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_at_date_reports_projected_elapsed  # noqa: E501
+def _print_capacity_report(
+    report, *, population: float | None, at: datetime | None = None
+) -> bool:
     """Print `frob sys capacity`'s CAP001 findings; returns True iff none
     fired -- vacuous-pass doctrine, same as `_print_threats_report`."""
     if not report.violations:
@@ -1106,6 +1110,12 @@ def _print_capacity_report(report, *, population: float | None) -> bool:
                 population,
                 report.scale_factor,
                 report.baseline_population,
+            )
+        elif at is not None:
+            _log.info(
+                "sys capacity: no violations projected at=%s (elapsed_seconds=%s)",
+                at,
+                report.elapsed_seconds,
             )
         else:
             _log.info("sys capacity: no violations at current demand")
@@ -1123,16 +1133,21 @@ def _print_capacity_report(report, *, population: float | None) -> bool:
 
 # frob:ticket T-1927
 # frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_population_scales_and_can_fire  # noqa: E501
+# frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_since_without_at_is_an_error  # noqa: E501
 def _run_capacity(cfg: AppConfig) -> None:
-    """`frob sys capacity [--population N]` (T-1927): load every `.strata`
-    design file under the repo's design dir (reusing `_load_audit_model`'s
-    parse+merge, same as `audit`/`trace`/`threats`), build a `FactBase`,
-    and print `project_capacity`'s CAP001 findings -- optionally scaled to
-    `cfg.sys_capacity_population`. Exits 1 on a load/build/project error
-    (including `StrataError.UnknownReference` for a `--population` with
-    no baseline `users` population to scale against) or any violation
-    printed -- vacuous-pass doctrine, same as `_run_audit`/`_run_trace`/
-    `_run_threats`."""
+    """`frob sys capacity [--population N] [--since DATE --at DATE]`
+    (T-1927/T-2016): load every `.strata` design file under the repo's
+    design dir (reusing `_load_audit_model`'s parse+merge, same as
+    `audit`/`trace`/`threats`), build a `FactBase`, and print
+    `project_capacity`'s CAP001 findings -- optionally scaled to
+    `cfg.sys_capacity_population` and/or projected to
+    `cfg.sys_capacity_at` elapsed from `cfg.sys_capacity_since` (T-2016,
+    docs/strata/kernel.md#growth-rate-declarations-t-2016). Exits 1 on a
+    load/build/project error (including `StrataError.UnknownReference`
+    for a `--population` with no baseline `users` population to scale
+    against, or a `--since`/`--at` given without its pair) or any
+    violation printed -- vacuous-pass doctrine, same as `_run_audit`/
+    `_run_trace`/`_run_threats`."""
     root = _resolve_design_root(cfg, "capacity")
     loaded = _load_audit_model(root)
     if loaded is None:
@@ -1145,14 +1160,20 @@ def _run_capacity(cfg: AppConfig) -> None:
         sys.exit(1)
 
     report = project_capacity(
-        model, facts.danger_ok, population=cfg.sys_capacity_population
+        model,
+        facts.danger_ok,
+        population=cfg.sys_capacity_population,
+        since=cfg.sys_capacity_since,
+        at=cfg.sys_capacity_at,
     )
     if report.is_err:
         _log.error("sys capacity: %s", report.danger_err)
         sys.exit(1)
 
     if not _print_capacity_report(
-        report.danger_ok, population=cfg.sys_capacity_population
+        report.danger_ok,
+        population=cfg.sys_capacity_population,
+        at=cfg.sys_capacity_at,
     ):
         sys.exit(1)
 

@@ -1,34 +1,33 @@
-"""T-1927: population-projected capacity evaluator for `frob sys capacity
-[--population N]` (docs/strata/roadmap.md "CLI surface (target)").
+"""T-1927/T-2016: population- and growth-rate-projected capacity evaluator
+for `frob sys capacity [--population N] [--since DATE --at DATE]`
+(docs/strata/roadmap.md "CLI surface (target)").
 
 Filed as a T-1480 residue rather than folded into that ticket: no
 existing evaluator projects a `Capacity` threshold against a POPULATION
 parameter at all (`_starvation.py`'s REL380/REL381 utilization checks
 compare `FactBase.aggregate_demand` as DECLARED, never scaled) -- this is
 new modeling work, not a CLI-glue gap over an already-shipped primitive.
-
-Scope cut, disclosed rather than silently dropped (T-2016, filed by this
-ticket): `--at DATE` from the roadmap's target signature is NOT
-implemented here. Projecting to a DATE needs a growth-rate declaration on
-`Node.users`/`rate` (docs/strata/kernel.md#demand-declarations-t-0702)
-that the surface grammar does not have yet -- inventing one is a language
-change, out of this ticket's "evaluator over the existing model" scope.
 `--population N` needs no new grammar: it scales the model's OWN already-
 declared `users` population linearly, which is sound with today's data.
 
-T-2016 designed (not yet implemented) the missing grammar --
-docs/strata/kernel.md#growth-rate-declarations-t-2016 -- including why
-this module's own single-scalar `scale` cannot simply be reused for a
-per-node growth rate (each demand-declaring node's synthetic seed rate
-needs its OWN growth projection applied BEFORE `aggregate_demand`'s BFS
-summation, not a scalar applied after) and one open decision (a
-model-level `as_of DATE` vs. a CLI-only `--since DATE`) an implementer
-needs from the ticket owner before starting.
+T-2016 (docs/strata/kernel.md#growth-rate-declarations-t-2016) implements
+`--since DATE --at DATE`: unlike `--population`'s single post-hoc scalar,
+a `growth`-declaring node's seed is scaled by ITS OWN compound growth
+factor BEFORE `FactBase.aggregate_demand`'s BFS summation runs
+(`elapsed_seconds` threaded through to `aggregate_demand` itself, per
+that function's own UNMISSABLE design note) -- this module only computes
+the elapsed time between `--since`/`--at` and forwards it, since
+`aggregate_demand` already consumes growth as a per-node input. The
+CLI-only `--since`/`--at` pair (no model-level `as_of` construct) was the
+ticket-owner's decided anchor-date design (kernel.md's own "The anchor
+date -- DECIDED" section) -- a model without `growth` behaves exactly as
+before either way.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 
 from typani.result import Err, Ok, Result
 
@@ -79,6 +78,65 @@ class CapacityReport:
     violations: tuple[CapacityViolation, ...] = ()
     scale_factor: float = 1.0
     baseline_population: float | None = None
+    #: T-2016: the elapsed time (in seconds) `--since DATE --at DATE`
+    #: projected growth over, or `None` for an unprojected run -- same
+    #: "distinguishable, not just absent" transparency `scale_factor`
+    #: already gives `--population`.
+    elapsed_seconds: float | None = None
+
+
+def _elapsed_seconds(since: datetime, at: datetime) -> float:
+    """`(at - since)` in seconds -- may be negative (a `--at` before
+    `--since` is not specially rejected, kernel.md's own "No retroactive/
+    negative-time projection guardrail" note: the compound growth formula
+    already produces a coherent, smaller-not-negative answer)."""
+    return (at - since).total_seconds()
+
+
+# frob:doc docs/strata/reliability.md#population-projected-capacity-t-1927
+def _resolve_population_scale(
+    model: KernelModel, population: float | None
+) -> Result[tuple[float, float | None], StrataError]:
+    """`project_capacity`'s `--population` half: returns `(scale,
+    baseline)`, or `Err(StrataError.UnknownReference)` when `population`
+    is given but the model declares no baseline `users` population to
+    scale against -- split out of `project_capacity` itself to keep that
+    function under ARCH001's complexity threshold (T-2016 added the
+    since/at half alongside it)."""
+    # frob:doc docs/strata/reliability.md#population-projected-capacity-t-1927
+    baseline = _baseline_population(model)
+    if population is None:
+        return Ok((1.0, baseline))
+    if baseline is None or baseline <= 0:
+        _log.error(
+            "capacity: --population %s requested but model declares no "
+            "baseline `users` population to scale against",
+            population,
+        )
+        return Err(StrataError.UnknownReference)
+    return Ok((population / baseline, baseline))
+
+
+# frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
+def _resolve_elapsed_seconds(
+    since: datetime | None, at: datetime | None
+) -> Result[float | None, StrataError]:
+    """`project_capacity`'s T-2016 `--since`/`--at` half: `None` when
+    neither is given (ungrown, byte-for-byte pre-T-2016 behavior),
+    elapsed seconds when both are given, or `Err(StrataError.
+    UnknownReference)` when only one is given -- an ambiguous request is
+    refused, never silently defaulted."""
+    # frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
+    if (since is None) != (at is None):
+        _log.error(
+            "capacity: --since and --at must be given together (since=%s, at=%s)",
+            since,
+            at,
+        )
+        return Err(StrataError.UnknownReference)
+    if since is None or at is None:
+        return Ok(None)
+    return Ok(_elapsed_seconds(since, at))
 
 
 def _baseline_population(model: KernelModel) -> float | None:
@@ -136,15 +194,22 @@ def _capacity_violation(
 
 
 # frob:doc docs/strata/reliability.md#population-projected-capacity-t-1927
+# frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
 # frob:ticket T-1927
 def project_capacity(
-    model: KernelModel, facts: FactBase, *, population: float | None = None
+    model: KernelModel,
+    facts: FactBase,
+    *,
+    population: float | None = None,
+    since: datetime | None = None,
+    at: datetime | None = None,
 ) -> Result[CapacityReport, StrataError]:
-    """T-1927: the `frob sys capacity [--population N]` evaluator --
-    every node declaring a `Capacity` (docs/strata/kernel.md
-    #capacity-semantics) whose `FactBase.aggregate_demand` (T-0702's
-    users/rate propagation closure), scaled to `population`, exceeds
-    `service_rate * replicas_max` is a `CapacityViolation`.
+    """T-1927/T-2016: the `frob sys capacity [--population N] [--since
+    DATE --at DATE]` evaluator -- every node declaring a `Capacity`
+    (docs/strata/kernel.md#capacity-semantics) whose `FactBase.
+    aggregate_demand` (T-0702's users/rate propagation closure), scaled
+    to `population` and/or projected to `at`, exceeds `service_rate *
+    replicas_max` is a `CapacityViolation`.
 
     `population is None` runs unscaled (`scale_factor=1.0`, the model's
     OWN declared demand as-is -- "is today's declared model already over
@@ -157,18 +222,29 @@ def project_capacity(
     "no violations found" (deny-by-default, the same posture
     `check_catalog_completeness`'s unknown-view refusal takes for an
     unanswerable question, `_threat.py`).
+
+    `at` (T-2016) requires `since` -- the CLI-only anchor-date pair
+    kernel.md's own "The anchor date -- DECIDED" section settled on, no
+    model-level `as_of` construct. Both `None` (the default) runs
+    ungrown, `elapsed_seconds=None`, byte-for-byte the pre-T-2016
+    behavior. `at` given without `since` (or vice versa) is
+    `Err(StrataError.UnknownReference)`, the same fails-closed posture
+    `population`'s own unscalable-baseline case takes just above --
+    an ambiguous request is refused, never silently defaulted. `--at`
+    and `--population` compose: growth projects each node's OWN seed
+    first (inside `aggregate_demand`), then `population`'s scalar applies
+    to the already-grown aggregate, same order the linear scale already
+    ran in before T-2016.
     """
-    scale = 1.0
-    baseline = _baseline_population(model)
-    if population is not None:
-        if baseline is None or baseline <= 0:
-            _log.error(
-                "capacity: --population %s requested but model declares no "
-                "baseline `users` population to scale against",
-                population,
-            )
-            return Err(StrataError.UnknownReference)
-        scale = population / baseline
+    scale_result = _resolve_population_scale(model, population)
+    if scale_result.is_err:
+        return Err(scale_result.danger_err)
+    scale, baseline = scale_result.danger_ok
+
+    elapsed_result = _resolve_elapsed_seconds(since, at)
+    if elapsed_result.is_err:
+        return Err(elapsed_result.danger_err)
+    elapsed_seconds = elapsed_result.danger_ok
 
     violations: list[CapacityViolation] = []
     for node in sorted(model.nodes, key=lambda n: n.id):
@@ -180,7 +256,7 @@ def project_capacity(
         # evaluator projects, and only `aggregate_demand` seeds from them
         # (`propagated_demand` alone only sums explicit `Flow.rate`
         # values, which a `users`-declaring model may never set).
-        aggregate = facts.aggregate_demand(node.id)
+        aggregate = facts.aggregate_demand(node.id, elapsed_seconds=elapsed_seconds)
         projected_demand = aggregate.value * scale
         if projected_demand > capacity:
             violations.append(_capacity_violation(node.id, projected_demand, capacity))
@@ -190,6 +266,7 @@ def project_capacity(
             violations=tuple(violations),
             scale_factor=scale,
             baseline_population=baseline,
+            elapsed_seconds=elapsed_seconds,
         )
     )
 

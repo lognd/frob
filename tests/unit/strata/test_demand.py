@@ -161,3 +161,83 @@ def test_store_users_and_rate_elaborate_same_as_node():
     facts = _facts_for("module m\nstore db : trusted { users 500000; }")
     node = facts.nodes["db"]
     assert node.users == 500000.0
+
+
+class TestAggregateDemandGrowth:
+    """T-2016 growth-rate projection coverage (docs/strata/kernel.md
+    #growth-rate-declarations-t-2016): `elapsed_seconds` scales a
+    declaring node's OWN seed BEFORE fan-in summation, per
+    `aggregate_demand`'s own UNMISSABLE design note."""
+
+    # frob:tests \
+    # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_growth_scales_se\
+    # ed_before_fan_in
+    def test_growth_scales_seed_before_fan_in(self):
+        """One year at 100%/year growth doubles a 1000-user seed."""
+        facts = _facts_for(
+            """module m
+            node entry_a : trusted { users 1000 growth 100% per y; }
+            store db : trusted { }
+            flow f1: entry_a -> db { }
+            """
+        )
+        unscaled = facts.aggregate_demand("db")
+        assert unscaled == AggregateDemand(declared=True, value=1000.0, witness=("db",))
+        grown = facts.aggregate_demand("db", elapsed_seconds=365 * 86400.0)
+        assert grown.value == 2000.0
+
+    # frob:tests \
+    # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_elapsed_seconds_\
+    # none_reproduces_ungrown_value
+    def test_elapsed_seconds_none_reproduces_ungrown_value(self):
+        """`elapsed_seconds=None` (the default) is byte-for-byte the
+        pre-T-2016 behavior, even when a node declares `growth`."""
+        facts = _facts_for(
+            """module m
+            node entry_a : trusted { users 1000 growth 50% per y; }
+            store db : trusted { }
+            flow f1: entry_a -> db { }
+            """
+        )
+        assert facts.aggregate_demand("db").value == 1000.0
+
+    # frob:tests \
+    # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_each_node_grows_\
+    # by_its_own_independent_rate
+    def test_each_node_grows_by_its_own_independent_rate(self):
+        """T-2016's core acceptance criterion: two demand-declaring nodes
+        growing at different rates must scale INDEPENDENTLY before
+        summing, not by one shared/averaged rate."""
+        facts = _facts_for(
+            """module m
+            node entry_a : trusted { users 1000 growth 100% per y; }
+            node entry_b : trusted { users 1000; }
+            store db : trusted { }
+            flow f1: entry_a -> db { }
+            flow f2: entry_b -> db { }
+            """
+        )
+        grown = facts.aggregate_demand("db", elapsed_seconds=365 * 86400.0)
+        # entry_a doubles to 2000, entry_b stays 1000 (no growth declared).
+        assert grown.value == 3000.0
+
+    # frob:tests \
+    # tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_rate_growth_appl\
+    # ies_independently_of_users_growth
+    def test_rate_growth_applies_independently_of_users_growth(self):
+        """`users_growth` and `rate_growth` on the SAME node scale their
+        own component only, composing additively after growth like the
+        ungrown case already does."""
+        facts = _facts_for(
+            """module m
+            node entry_a : trusted {
+                users 1000 growth 100% per y;
+                rate 500 req/s growth 0% per y;
+            }
+            store db : trusted { }
+            flow f1: entry_a -> db { }
+            """
+        )
+        grown = facts.aggregate_demand("db", elapsed_seconds=365 * 86400.0)
+        # users doubles to 2000, rate stays 500 (0% growth) -> 2500 total.
+        assert grown.value == 2500.0

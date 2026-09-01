@@ -289,6 +289,27 @@ impl Parser {
         Ok(json!({"value": value, "unit": unit}))
     }
 
+    /// GROWTH := "growth" NUMBER '%' "per" PERIOD, T-2016
+    /// (docs/strata/kernel.md#growth-rate-declarations-t-2016): an
+    /// optional trailing modifier on a `users`/`rate` T-0702 clause,
+    /// consumed inline by the caller BEFORE the statement's own `;` --
+    /// shared by `node`'s and `store`'s `users`/`rate` branches
+    /// (grammar_node.rs, grammar_infra.rs), same one-helper-not-two
+    /// discipline `parse_quantity` already sets for this file. PERIOD is
+    /// a bare IDENT here (validated against the fixed w/mo/y set in
+    /// Python's `_models.py::_UNITS`, not re-validated in Rust -- the
+    /// grammar accepts any ident and the elaborator/model layer is the
+    /// single source of truth for which units are legal, mirroring how
+    /// `parse_unit` above never validates its own unit string either).
+    fn parse_growth_clause(&mut self) -> Result<serde_json::Value, ParseError> {
+        self.advance(); // 'growth'
+        let pct = self.expect_number("growth percent")?;
+        self.expect_symbol('%')?;
+        self.expect_keyword("per")?;
+        let period = self.expect_ident("growth period (w/mo/y)")?;
+        Ok(json!({"pct": pct, "period": period}))
+    }
+
     /// ATTRVAL := (IDENT | STRING) ['=' ((IDENT | STRING) | '[' (IDENT | STRING) (',' (IDENT | STRING))* ','? ']')].
     ///
     /// T-1198: the bracket-list form (`attr interface=[Foo, Bar, Baz];`) is

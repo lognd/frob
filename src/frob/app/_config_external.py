@@ -347,6 +347,10 @@ _INT_FIELDS = (
 # frob:tests tests/unit/test_app_sys_capacity.py::TestSysCapacity.test_population_flag_survives_real_argv_parsing  # noqa: E501
 _FLOAT_FIELDS = ("vet_timeout", "perf_interval_s", "sys_capacity_population")
 
+# T-2016: datetime-typed CLI flags, forwarded as their already-parsed
+# `datetime` objects (see `_apply_datetime_fields`'s own docstring).
+_DATETIME_FIELDS = ("sys_capacity_since", "sys_capacity_at")
+
 _LIST_FIELDS = (
     "check_only",
     "ack_refs",
@@ -672,6 +676,22 @@ def _apply_float_fields(args: argparse.Namespace, d: dict) -> None:
             d[field] = val
 
 
+def _apply_datetime_fields(args: argparse.Namespace, d: dict) -> None:
+    """Copy every present `_DATETIME_FIELDS` value from `args` into `d`, in
+    place -- same shape as `_apply_float_fields` above, its own group
+    because argparse already hands these back as parsed `datetime`
+    objects (`type=datetime.fromisoformat` on the flag itself,
+    `_cli_parsers/_misc.py::_add_sys_capacity_parser`), not strings to
+    convert here. T-2016: `sys_capacity_since`/`sys_capacity_at` are the
+    first members -- without this group they would repeat T-1927's own
+    live-fire incident (a value that parses correctly but is missing
+    from its type's allowlist is silently dropped, not raised)."""
+    for field in _DATETIME_FIELDS:
+        val = getattr(args, field, None)
+        if val is not None:
+            d[field] = val
+
+
 # frob:ticket T-1659
 # frob:waive OPAQUE001 reason="T-1038/T-1659: same closed, statically-declared \
 # _LIST_FIELDS tuple (plus the one ad-hoc literal-named exports_exclude field) as \
@@ -753,16 +773,18 @@ _AD_HOC_FORWARDED_FIELDS = frozenset(
 def _all_forwarded_field_names() -> frozenset[str]:
     """T-2004: every `AppConfig` field name `_build_external_config_kwargs`
     can possibly forward from a parsed `argparse.Namespace` -- the union
-    of the six `_apply_*_fields` type-group tuples PLUS `_AD_HOC_
-    FORWARDED_FIELDS`, read directly off this module's own live tuples
-    (never a separately hand-typed mirror list -- the exact "not a third
-    hand-maintained list" acceptance criterion T-2004 names: a copy of a
-    copy is a new desync source, not a check)."""
+    of the seven `_apply_*_fields` type-group tuples (T-2016 added
+    `_DATETIME_FIELDS`) PLUS `_AD_HOC_FORWARDED_FIELDS`, read directly off
+    this module's own live tuples (never a separately hand-typed mirror
+    list -- the exact "not a third hand-maintained list" acceptance
+    criterion T-2004 names: a copy of a copy is a new desync source, not
+    a check)."""
     return (
         frozenset(_STRING_FIELDS)
         | frozenset(_PATH_FIELDS)
         | frozenset(_INT_FIELDS)
         | frozenset(_FLOAT_FIELDS)
+        | frozenset(_DATETIME_FIELDS)
         | frozenset(_LIST_FIELDS)
         | frozenset(_BOOL_FLAGS)
         | _AD_HOC_FORWARDED_FIELDS
@@ -867,6 +889,7 @@ def _build_external_config_kwargs(
     _resolve_ticket_worktree(d)
     _apply_int_fields(args, d)
     _apply_float_fields(args, d)
+    _apply_datetime_fields(args, d)
     _apply_list_fields(args, d)
     _apply_scalar_overrides(args, d)
     _apply_bool_flags(args, d)

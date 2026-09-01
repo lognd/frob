@@ -1178,7 +1178,15 @@ per grammar production:
 - `NodeDecl` <!-- frob:describes src/frob/strata/_ast.py::NodeDecl -->
   -- id, trust, is_abstract, clearance, attrs, capacity, residence, users,
   rate (T-0702: entry-demand declarations, docs/strata/kernel.md
-  #demand-t-0702).
+  #demand-t-0702), users_growth, rate_growth (T-2016: optional `growth
+  PERCENT per PERIOD` modifier on either demand clause,
+  docs/strata/kernel.md#growth-rate-declarations-t-2016 -- NOT the same
+  `growth` keyword as the flow-level `growth NUM %` attr desugar
+  documented below; this one is a dedicated `NodeDecl`/`StoreDecl` field
+  pair with its own `PERIOD` unit, parsed by a different grammar
+  production (`grammar_node.rs`/`grammar_infra.rs` vs. `grammar_flow.rs`)
+  for a different consumer (`_facts.py::FactBase.aggregate_demand`'s per-node
+  seed projection, not a flow attr string).
 - `Capacity` <!-- frob:describes src/frob/strata/_ast.py::Capacity -->
   -- the parsed `capacity RATE UNIT replicas MIN..MAX` node property.
 - `FlowDecl` <!-- frob:describes src/frob/strata/_ast.py::FlowDecl -->
@@ -1307,7 +1315,13 @@ mappings are cheap and change often, unlike the parser and closure kernels
 
 The second vocabulary: `store`/`cache`/`queue`/`cdn`/`balancer` are all
 pure sugar over `Node`/`Flow`/`Boundary` (charter law 1) -- the prover
-never learns any of these five words. Grammar
+never learns any of these five words. `store_prop`'s `node_prop`
+inheritance below carries `users`/`rate` (T-0702) and, as of T-2016,
+their optional `growth PERCENT per PERIOD` modifiers straight onto
+`StoreDecl` the same way `NodeDecl` gets them (`_infra.py::
+elaborate_store` elaborates `users_growth`/`rate_growth` identically to
+`node`'s own elaboration, see the "Parser" section above for the
+`NodeDecl` field detail). Grammar
 (`strata-core/src/parse/grammar_infra.rs`,
 `parse_store`/`parse_cache`/`parse_queue`/`parse_cdn`/`parse_balancer`):
 

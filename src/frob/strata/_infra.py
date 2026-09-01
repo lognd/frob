@@ -171,6 +171,8 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
             capacity=_store_capacity(decl),
             users=decl.users,
             rate=decl.rate,
+            users_growth=decl.users_growth,
+            rate_growth=decl.rate_growth,
             residence=decl.residence,
             deploy=deploy,
             waives=waives_result.danger_ok,

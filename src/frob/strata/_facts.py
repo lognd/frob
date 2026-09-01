@@ -45,6 +45,7 @@ from ._models import (
     _IDEMPOTENT,
     Boundary,
     Flow,
+    Growth,
     KernelModel,
     Lattice,
     Node,
@@ -129,6 +130,37 @@ def _flow_fanout(flow: Flow) -> float:
                 _log.warning("flow %s: malformed fanout attr %r", flow.id, attr)
                 return 1.0
     return 1.0
+
+
+# frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
+def _grown_component(
+    base_value: float,
+    growth: Growth | None,
+    elapsed_seconds: float | None,
+    node_id: str,
+) -> float:
+    """One `users`/`rate` seed component, scaled by its OWN `growth`
+    compound factor at `elapsed_seconds` (T-2016) -- the per-node,
+    pre-summation projection `aggregate_demand`'s UNMISSABLE design note
+    requires, applied here rather than as a post-hoc scalar on the
+    function's return value. Returns `base_value` unchanged when
+    `elapsed_seconds is None` (no `--at` requested), `growth is None` (the
+    node declares no growth on this component), or the growth's period
+    unit is unresolvable (fails toward the smaller, already-declared
+    number rather than dropping the node's seed)."""
+    # frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
+    if elapsed_seconds is None or growth is None:
+        return base_value
+    factor = growth.factor(elapsed_seconds)
+    if factor.is_err:
+        _log.warning(
+            "aggregate_demand: node %s growth period unresolvable (%s), "
+            "using ungrown value",
+            node_id,
+            factor.danger_err,
+        )
+        return base_value
+    return base_value * factor.danger_ok
 
 
 def _lattice_is_acyclic(lattice: Lattice) -> bool:
@@ -327,9 +359,13 @@ class FactBase:
         return value, tuple(witness)
 
     # frob:doc docs/strata/kernel.md#demand-declarations-t-0702
+    # frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
     # frob:ticket T-0972
     # frob:tests tests/unit/strata/test_demand.py::TestAggregateDemand.test_two_entry_nodes_sum_at_fan_in  # noqa: E501
-    def aggregate_demand(self, node_id: str) -> AggregateDemand:
+    # frob:tests tests/unit/strata/test_demand.py::TestAggregateDemandGrowth.test_growth_scales_seed_before_fan_in  # noqa: E501
+    def aggregate_demand(
+        self, node_id: str, *, elapsed_seconds: float | None = None
+    ) -> AggregateDemand:
         """Aggregate inbound demand at `node_id`, seeded by every node's
         declared `users`/`rate` entry demand and SUMMED at fan-in exactly
         like `propagated_demand` (T-0702): a `users`/`rate`-declaring node
@@ -339,6 +375,23 @@ class FactBase:
         `strata_core.propagated_demand`'s existing fanout-aware summation
         engine unchanged (no `strata-core/src/lib.rs` change needed or
         made -- out of this ticket's declared scope, module docstring).
+
+        `elapsed_seconds` (T-2016, `--at DATE` support,
+        docs/strata/kernel.md#growth-rate-declarations-t-2016): when given
+        and non-None, each demand-declaring node's OWN `users`/`rate`
+        component of its synthetic seed is scaled by ITS OWN
+        `users_growth`/`rate_growth` compound factor at this elapsed time
+        BEFORE the seed is summed into `edges` and handed to
+        `strata_core.propagated_demand`'s BFS -- per the UNMISSABLE design
+        note this cannot be a post-hoc scalar applied to the function's
+        RETURN value, since by then which source contributed how much has
+        already been collapsed away by the summation. `None` (the
+        default) reproduces the pre-T-2016 unscaled behavior byte-for-
+        byte -- every existing caller's call shape is unaffected. A node
+        with a growth field but an unresolvable period unit degrades that
+        one component to its UNGROWN value (fails toward the smaller,
+        already-declared number, never toward silently dropping the
+        node's seed entirely).
 
         Returns `AggregateDemand(declared=False)` when NO declaring node's
         demand reaches `node_id` at all (including `node_id` itself
@@ -366,10 +419,14 @@ class FactBase:
             if node.rate is not None:
                 base = node.rate.base_value()
                 if base.is_ok:
-                    seed += base.danger_ok
+                    seed += _grown_component(
+                        base.danger_ok, node.rate_growth, elapsed_seconds, node.id
+                    )
                     declares = True
             if node.users is not None:
-                seed += node.users
+                seed += _grown_component(
+                    node.users, node.users_growth, elapsed_seconds, node.id
+                )
                 declares = True
             if declares:
                 declaring_ids.add(node.id)
