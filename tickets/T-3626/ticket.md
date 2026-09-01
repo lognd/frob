@@ -15,12 +15,30 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/root-write-guard.py
-- tests/**/*root_write_guard*
-- tests/**/*root-write-guard*
+- tests/test_hook_root_write_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**/*root_write_guard*
+  reason: narrow overbroad globs that phantom-match T-1661s live lease on tests/unit/strata/**;
+    the real test file is tests/test_hook_root_write_guard.py
+  actor: logan
+  at: '2026-09-01'
+- op: remove
+  glob: tests/**/*root-write-guard*
+  reason: narrow overbroad globs that phantom-match T-1661s live lease on tests/unit/strata/**;
+    the real test file is tests/test_hook_root_write_guard.py
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/test_hook_root_write_guard.py
+  reason: narrow overbroad globs that phantom-match T-1661s live lease on tests/unit/strata/**;
+    the real test file is tests/test_hook_root_write_guard.py
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
