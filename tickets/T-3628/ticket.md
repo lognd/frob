@@ -6,8 +6,6 @@ kind: feature
 origin: human
 created: '2026-09-01'
 priority: medium
-blocked_by:
-- T-draft-d028adeb
 parent: null
 tier: ticket
 sprint: null
@@ -118,6 +116,7 @@ statement for the moved names.
 
 ## Unblock log
 - 2026-09-01: unblocked by T-3596 -- T-3596 landed at 4fb806e3d03e; the move/split import-carry, bare-name-repoint, free-variable, and decorator-preservation gaps this split needs are fixed
+- 2026-09-01: unblocked by T-draft-d028adeb -- T-draft-d028adeb was promoted to T-3650, which landed at b1435d44523d fixing the self-import carry-forward bug this ticket's remaining moves needed
 
 
 
