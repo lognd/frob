@@ -41,9 +41,9 @@ state are already fully present on `root`).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_full_success_reports_absorption_not_commit_failed` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_full_success_reports_absorption_not_commit_failed` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

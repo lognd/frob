@@ -1,7 +1,7 @@
 ## Done report
 
 Changed:
-- tests/test_ticket_land.py::TestPreCommitUnscopedSweep.test_true_verdict_lands_normally
+- tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep.test_true_verdict_lands_normally
 - tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard.test_branch_drift_before_final_commit_refuses_by_construction
 - tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish.test_cli_land_invoked_with_root_equal_to_worktree_still_verifies
 - tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree.test_root_never_goes_dirty_while_the_record_is_made
@@ -76,7 +76,7 @@ Per-test verdict (all 5 reproduced locally by node id with -p no:xdist first):
    the CAS publish, i.e. the write is still verified to always happen
    off-tree. Verified stable across 20 repeat runs post-fix.
 
-Evidence: tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally, tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard::test_branch_drift_before_final_commit_refuses_by_construction, tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_cli_land_invoked_with_root_equal_to_worktree_still_verifies (xfail, blocked on T-3444), tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_probe_catches_the_in_root_write_positive_control, tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_root_never_goes_dirty_while_the_record_is_made
+Evidence: tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally, tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard::test_branch_drift_before_final_commit_refuses_by_construction, tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_cli_land_invoked_with_root_equal_to_worktree_still_verifies (xfail, blocked on T-3444), tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_probe_catches_the_in_root_write_positive_control, tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_root_never_goes_dirty_while_the_record_is_made
 
 Filed: T-3444 (REF001 missing tickets-archive.md exemption -- out of scope, src/frob/gates/_refs.py)
 
@@ -89,7 +89,7 @@ Gates: frob check --ticket T-3442 --budget 300 clean on gate:SCOPE/gate:PREWORK/
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard::test_branch_drift_before_final_commit_refuses_by_construction` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_cli_land_invoked_with_root_equal_to_worktree_still_verifies` (pytest node id, verified passing when recorded)
 - `tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_probe_catches_the_in_root_write_positive_control` (pytest node id, verified passing when recorded)

@@ -28,7 +28,7 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_ticket_land.py::TestUnionZoneMerge::test_resolve_stages
+- tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_resolve_stages
 - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_persists_resume_state_for_deferred_groups
 designated_repro_test: null
 threat: null

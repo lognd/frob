@@ -110,7 +110,7 @@ own measurement surfaced, blocking full completion until fixed.
 
 ### Evidence
 
-- `tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land`
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land`
   -- acceptance index 0; designated repro (`--designate-repro-force`,
   same tool-limitation rationale as T-2140: the check's own repro-run
   spawn has a fixed 60s cap, shorter than the deadlock's ~100-200s
@@ -138,7 +138,7 @@ landed, several unrelated main lands since).
 
 ### Evidence
 - `tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping::test_heavy_subprocess_marker_groups_per_file` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_leases.py::TestRefusesTerminalState::test_refuses_done_ticket` (pytest node id, verified passing when recorded)
 
 ### Captured claims

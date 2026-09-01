@@ -18,7 +18,7 @@ place so there is little churn for a cache to save), and `_store_mode` now
 checks the archive glob too, so a v2 repo whose active tree has been fully
 drained still reads as 'v2' rather than misdetecting as fresh/legacy.
 
-Three regression tests added to tests/test_ticket_land.py::TestArchiveV2,
+Three regression tests added to tests/ticket_land_suite/test_archive.py::TestArchiveV2,
 each bound to one acceptance criterion:
 - test_archive_moves_directory_via_git_mv_no_content_rewrite: a real git
   repo, archive() the ticket, assert the moved file's bytes are identical
@@ -84,10 +84,10 @@ pre-existing ones enumerated above, confirmed unrelated to this diff).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveV2::test_archived_v2_ticket_still_resolves_as_blocker` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveV2::test_first_ever_archive_uses_real_git_mv_not_rename_fallback` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archived_v2_ticket_still_resolves_as_blocker` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_first_ever_archive_uses_real_git_mv_not_rename_fallback` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

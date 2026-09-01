@@ -16,7 +16,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_own_draft_id_reference_in_done_report
+- tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_own_draft_id_reference_in_done_report
 designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree ledger whose Done reports reference T-draft ids WHEN land
@@ -25,7 +25,7 @@ acceptance:
     a regression test lands a draft-referencing Done report and asserts zero stale
     draft ids
   evidence:
-  - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_own_draft_id_reference_in_done_report
+  - tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_own_draft_id_reference_in_done_report
 threat: null
 component: null
 ---

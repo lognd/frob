@@ -168,9 +168,9 @@ diff.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestMergeConflictOutsideLedger::test_real_conflict_outside_tickets_md_aborts` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_wip.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestMergeConflictOutsideLedger::test_real_conflict_outside_tickets_md_aborts` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_review.py::TestCloseStrictMode::test_strict_flag_alone_does_not_gate_without_config` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_review.py::TestCloseStrictMode::test_config_gate_alone_does_not_enforce_without_strict_flag` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_review.py::TestCloseStrictMode::test_both_gates_on_succeeds_with_matching_approve_review` (pytest node id, verified passing when recorded)

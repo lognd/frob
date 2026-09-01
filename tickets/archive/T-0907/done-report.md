@@ -38,12 +38,12 @@ Changed: `src/frob/tickets/_land.py`'s `_verified_reset_root`,
 
 Evidence (6 pytest node ids, bound to acceptance criteria 0/1 as shown
 above):
-- tests/test_ticket_land.py::TestVerifiedResetRoot::test_resets_to_the_explicit_pre_land_tip_when_current_matches
-- tests/test_ticket_land.py::TestVerifiedResetRoot::test_refuses_and_does_not_reset_when_current_tip_has_drifted
-- tests/test_ticket_land.py::TestLandRepairMarker::test_no_marker_is_a_silent_no_op
-- tests/test_ticket_land.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker
-- tests/test_ticket_land.py::TestLandRepairMarker::test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker
-- tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
+- tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_resets_to_the_explicit_pre_land_tip_when_current_matches
+- tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_refuses_and_does_not_reset_when_current_tip_has_drifted
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_no_marker_is_a_silent_no_op
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker
+- tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
   (real SIGKILL delivered mid-squash-apply via a forked child process;
   asserts root's tip is unchanged after the kill and a retry lands
   cleanly)

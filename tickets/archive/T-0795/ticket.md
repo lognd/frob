@@ -17,10 +17,10 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff
-- tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
-- tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
-- tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_still_refuses_when_worktree_has_diverged_commits
+- tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff
+- tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
+- tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
+- tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree::test_still_refuses_when_worktree_has_diverged_commits
 designated_repro_test: null
 acceptance:
 - text: GIVEN a land that merged and finalized in the worktree but failed before committing
@@ -29,10 +29,10 @@ acceptance:
     land invoked with cwd inside the worktree THEN the error names the actual mistake
     (run from the root checkout) instead of the T-0640 false-green diagnosis
   evidence:
-  - tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff
-  - tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
-  - tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
-  - tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_still_refuses_when_worktree_has_diverged_commits
+  - tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff
+  - tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
+  - tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
+  - tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree::test_still_refuses_when_worktree_has_diverged_commits
 threat: null
 component: null
 ---

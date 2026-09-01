@@ -49,9 +49,9 @@ evidence:
 - tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_empty_repo_has_no_citations
 - tests/test_tickets_live_tracker.py::TestTransitionRefusesOnLiveTrackerCitation::test_close_refused_when_registry_cites_this_ticket
 - tests/test_tickets_live_tracker.py::TestTransitionRefusesOnLiveTrackerCitation::test_close_allowed_when_no_citation
-- tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck::test_citations_found_blocks
-- tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck::test_no_citations_is_ok
-- tests/test_ticket_land.py::TestDraftFinalizeRewritesRegistryYamlRefs::test_registry_yaml_deferred_ref_rewritten_to_final_id
+- tests/ticket_land_suite/test_claim_close.py::TestLiveTrackerCitationPrecheck::test_citations_found_blocks
+- tests/ticket_land_suite/test_claim_close.py::TestLiveTrackerCitationPrecheck::test_no_citations_is_ok
+- tests/ticket_land_suite/test_draft.py::TestDraftFinalizeRewritesRegistryYamlRefs::test_registry_yaml_deferred_ref_rewritten_to_final_id
 - tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_repointed_citation_no_longer_matches
 - tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_unresolvable_base_ref_fails_closed
 designated_repro_test: null

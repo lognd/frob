@@ -37,9 +37,9 @@ citation instead of only incidentally by T-1258's tests.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestFrobDirNeverLeaksIntoGitAdd::test_frob_scratch_files_are_gitignored_not_tracked` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestFrobDirNeverLeaksIntoGitAdd::test_two_branches_with_divergent_frob_scratch_never_add_add_conflict` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestFrobDirNeverLeaksIntoGitAdd::test_frob_scratch_files_are_gitignored_not_tracked` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestFrobDirNeverLeaksIntoGitAdd::test_two_branches_with_divergent_frob_scratch_never_add_add_conflict` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

@@ -15,9 +15,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestFrobDirNeverLeaksIntoGitAdd::test_frob_scratch_files_are_gitignored_not_tracked
-- tests/test_ticket_land.py::TestFrobDirNeverLeaksIntoGitAdd::test_two_branches_with_divergent_frob_scratch_never_add_add_conflict
-- tests/test_ticket_land.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
+- tests/ticket_land_suite/test_land_core.py::TestFrobDirNeverLeaksIntoGitAdd::test_frob_scratch_files_are_gitignored_not_tracked
+- tests/ticket_land_suite/test_land_core.py::TestFrobDirNeverLeaksIntoGitAdd::test_two_branches_with_divergent_frob_scratch_never_add_add_conflict
+- tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
 designated_repro_test: null
 threat: null
 component: null

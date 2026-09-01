@@ -18,8 +18,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestPreworkSweepRefresh::test_land_refreshes_stale_sweep_after_unrelated_main_change
-- tests/test_ticket_land.py::TestPreworkSweepRefresh::test_sweep_refresh_failure_does_not_block_landing
+- tests/ticket_land_suite/test_land_core.py::TestPreworkSweepRefresh::test_land_refreshes_stale_sweep_after_unrelated_main_change
+- tests/ticket_land_suite/test_land_core.py::TestPreworkSweepRefresh::test_sweep_refresh_failure_does_not_block_landing
 designated_repro_test: null
 threat: null
 component: null

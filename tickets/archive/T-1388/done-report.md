@@ -49,12 +49,12 @@ refuse.
 Changed: none (no code change -- see above; only a new regression test)
 
 Added:
-  tests/test_ticket_land.py::TestWaiveRewrapNotDeletion.test_real_fmt001_fixer_rewrap_does_not_trip_the_guard
+  tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion.test_real_fmt001_fixer_rewrap_does_not_trip_the_guard
 
 Evidence: 1 new test exercising the real FMT001 fixer's own output
 through the real `land()` dry-run path (not a synthetic rewrap) -- see
 evidence list below. Full class: 3 passed
-(`tests/test_ticket_land.py::TestWaiveRewrapNotDeletion`).
+(`tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion`).
 
 Gates: `frob check --only test --ticket T-1388` 0 errors. `frob check
 --only coverage --only scope --only prework --only fmt --only archgate
@@ -97,7 +97,7 @@ about a specific already-closed commit, not a recurring gap.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_real_fmt001_fixer_rewrap_does_not_trip_the_guard` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion::test_real_fmt001_fixer_rewrap_does_not_trip_the_guard` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

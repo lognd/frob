@@ -333,7 +333,7 @@ Order of operations, and why it is this order:
     on `LandReport` for the OTHER `bump_version` implementations the
     `land()` signature still accepts (`frob ticket land`'s tests supply
     a synthetic one that reports a real version, see
-    `tests/test_ticket_land.py::TestReleaseBump`).
+    `tests/ticket_land_suite/test_release.py::TestReleaseBump`).
 
     **T-0992 monotonicity assertion**: `_apply_release_bump` independently
     reads main's own pre-land `pyproject.toml` version via `git show
@@ -2658,7 +2658,7 @@ the worktree's last merge is or how much main has moved; findings whose
 file is NOT in it are dropped. A genuine out-of-scope, undeclared
 `frob:waive` deletion the branch's OWN commits made still refuses
 normally, since its file IS in `_branch_changed_files`'s own set (proven
-by `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal
+by `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal
 .test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses`,
 alongside the false-positive regression test
 `.test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse`).

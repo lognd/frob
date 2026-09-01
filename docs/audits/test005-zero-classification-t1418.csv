@@ -217,7 +217,7 @@ src/frob/release/__init__.py|stamp|attribution artifact||tests/test_release_work
 src/frob/release/__init__.py|authoritative_version|attribution artifact||tests/test_release_worktree_lease.py;tests/test_ticket_land.py;tests/unit/test_release_stamp_guard.py
 src/frob/release/__init__.py|rewrite_pyproject_version|attribution artifact||tests/test_release_worktree_lease.py;tests/test_ticket_land.py;tests/unit/test_release_stamp_guard.py
 src/frob/release/__init__.py|changelog_skeleton_entry|attribution artifact||tests/test_release_worktree_lease.py;tests/test_ticket_land.py;tests/unit/test_release_stamp_guard.py
-src/frob/release/__init__.py|set_manifest_version|attribution artifact||tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity.test_manifest_version_written_same_step_as_pyproject
+src/frob/release/__init__.py|set_manifest_version|attribution artifact||tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity.test_manifest_version_written_same_step_as_pyproject
 src/frob/release/__init__.py|diff_class|attribution artifact||tests/test_release_worktree_lease.py;tests/test_ticket_land.py;tests/unit/test_release_stamp_guard.py
 src/frob/release/__init__.py|required_version|attribution artifact (partial)|67.9|tests/test_release_worktree_lease.py;tests/test_ticket_land.py;tests/unit/test_release_stamp_guard.py
 src/frob/release/__init__.py|satisfies|attribution artifact (partial)|70.0|tests/test_release_worktree_lease.py;tests/test_ticket_land.py;tests/unit/test_release_stamp_guard.py

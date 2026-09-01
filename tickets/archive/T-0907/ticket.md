@@ -17,25 +17,25 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestVerifiedResetRoot::test_resets_to_the_explicit_pre_land_tip_when_current_matches
-- tests/test_ticket_land.py::TestVerifiedResetRoot::test_refuses_and_does_not_reset_when_current_tip_has_drifted
-- tests/test_ticket_land.py::TestLandRepairMarker::test_no_marker_is_a_silent_no_op
-- tests/test_ticket_land.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker
-- tests/test_ticket_land.py::TestLandRepairMarker::test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker
-- tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
+- tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_resets_to_the_explicit_pre_land_tip_when_current_matches
+- tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_refuses_and_does_not_reset_when_current_tip_has_drifted
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_no_marker_is_a_silent_no_op
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker
+- tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
 designated_repro_test: null
 acceptance:
 - text: GIVEN a land killed by SIGTERM mid-staging WHEN the next frob command runs
     THEN main's tip equals the pre-land tip and the repair path reports what was cleaned
   evidence:
-  - tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
+  - tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
 - text: GIVEN a land whose failure-unwind runs WHEN main's tip differs from the tip
     recorded at this run's start THEN the unwind refuses loudly instead of resetting
   evidence:
-  - tests/test_ticket_land.py::TestVerifiedResetRoot::test_refuses_and_does_not_reset_when_current_tip_has_drifted
+  - tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_refuses_and_does_not_reset_when_current_tip_has_drifted
 evidence_changes:
-- old_node: tests/test_ticket_land.py::TestLandRepairMarker::test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker
-  new_node: tests/test_ticket_land.py::TestLandRepairMarker::test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker
+- old_node: tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker
+  new_node: tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker
   reason: T-1963 renamed/rewrote this test (refuse-on-drift -> recover-unconditionally,
     since tip drift is the near-guaranteed case under parallel dispatch, not a rare
     edge case) but its own land silently orphaned T-0907's evidence citation rather
@@ -93,12 +93,12 @@ Changed: `src/frob/tickets/_land.py`'s `_verified_reset_root`,
 
 Evidence (6 pytest node ids, bound to acceptance criteria 0/1 as shown
 above):
-- tests/test_ticket_land.py::TestVerifiedResetRoot::test_resets_to_the_explicit_pre_land_tip_when_current_matches
-- tests/test_ticket_land.py::TestVerifiedResetRoot::test_refuses_and_does_not_reset_when_current_tip_has_drifted
-- tests/test_ticket_land.py::TestLandRepairMarker::test_no_marker_is_a_silent_no_op
-- tests/test_ticket_land.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker
-- tests/test_ticket_land.py::TestLandRepairMarker::test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker
-- tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
+- tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_resets_to_the_explicit_pre_land_tip_when_current_matches
+- tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_refuses_and_does_not_reset_when_current_tip_has_drifted
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_no_marker_is_a_silent_no_op
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker
+- tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
   (real SIGKILL delivered mid-squash-apply via a forked child process;
   asserts root's tip is unchanged after the kill and a retry lands
   cleanly)

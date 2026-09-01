@@ -28,7 +28,7 @@ src/frob/release/__init__.py):
    emits a diagnostic naming the incoherent quartet explicitly and prescribing
    `frob release sync`, instead of the bare "not strictly greater" message.
 
-Regression tests added to tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity:
+Regression tests added to tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity:
 - test_manifest_version_written_same_step_as_pyproject: a bump_version callback that
   bumps pyproject.toml but never touches .frob-release.json (models the actual
   incident) -- asserts the manifest is force-resynced to the new version, the api map
@@ -55,8 +55,8 @@ ticket's acceptance criteria).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity::test_manifest_version_written_same_step_as_pyproject` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity::test_incoherent_quartet_refusal_names_desync` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity::test_manifest_version_written_same_step_as_pyproject` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity::test_incoherent_quartet_refusal_names_desync` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

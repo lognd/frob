@@ -99,8 +99,8 @@ previously-unchecked path.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_no_foreign_commit_unwinds_to_the_merge_commit_not_pre_merge` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

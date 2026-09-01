@@ -19,22 +19,22 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
-- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_in_scope_waive_deletion_is_allowed
-- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_declared_in_done_report_waive_deletion_is_allowed
-- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_merge_base_drift_deletion_on_main_side_not_counted
+- tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+- tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_in_scope_waive_deletion_is_allowed
+- tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_declared_in_done_report_waive_deletion_is_allowed
+- tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_merge_base_drift_deletion_on_main_side_not_counted
 designated_repro_test: null
 acceptance:
 - text: GIVEN a branch commit that deletes an out-of-scope undeclared frob:waive line
     WHEN frob ticket land runs THEN it refuses before merge naming file and rule
   evidence:
-  - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+  - tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
 - text: GIVEN the same deletion but owned by a landing ticket's scope or properly
     declared THEN land proceeds
   evidence:
-  - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_in_scope_waive_deletion_is_allowed
-  - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_declared_in_done_report_waive_deletion_is_allowed
-  - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_merge_base_drift_deletion_on_main_side_not_counted
+  - tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_in_scope_waive_deletion_is_allowed
+  - tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_declared_in_done_report_waive_deletion_is_allowed
+  - tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_merge_base_drift_deletion_on_main_side_not_counted
 threat: tampering
 component: null
 ---

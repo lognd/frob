@@ -9,12 +9,12 @@ tests/test_gates.py::TestCoverageGate.test_cov006_third_file_reachable_chases_re
 tests/test_gates.py::TestCoverageGate.test_cov006_third_file_reachable_still_fires_through_relative_facade
 tests/test_vet.py::TestCapabilityScan.test_public_sibling_wrapper_exec_is_resolved_one_hop (kind=unit, unchanged directive; now passes COV006 via detector fix)
 tests/test_lang.py::TestFromImportSubmoduleResolution (6 tests: added per-test frob:waive COV006, closure-attribution blind spot, alias breaks name-based callgraph resolution)
-tests/test_ticket_land.py::TestWipAddIgnoredPathFallback.test_gitignored_frob_falls_back_and_still_lands (kind=unit -> integration)
-tests/test_ticket_land.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides (kind unit(implicit) -> integration)
-tests/test_ticket_land.py::TestLandCompleteness.test_land_brings_tracked_edit_untracked_new_file_and_deletion (_worktree_full_changeset: unit -> integration)
-tests/test_ticket_land.py::TestLandCompleteness.test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty (_worktree_full_changeset: unit -> integration)
-tests/test_ticket_land.py::TestLandFailedTicket.test_failed_ticket_with_a_failure_log_lands_cleanly (_has_failure_log: unit -> integration)
-tests/test_ticket_land.py::TestArchiveSpliceDiscipline.test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch (_merge_ledger_tickets: unit -> integration, matching its own sibling directive one line below)
+tests/ticket_land_suite/test_wip.py::TestWipAddIgnoredPathFallback.test_gitignored_frob_falls_back_and_still_lands (kind=unit -> integration)
+tests/ticket_land_suite/test_land_core.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides (kind unit(implicit) -> integration)
+tests/ticket_land_suite/test_land_core.py::TestLandCompleteness.test_land_brings_tracked_edit_untracked_new_file_and_deletion (_worktree_full_changeset: unit -> integration)
+tests/ticket_land_suite/test_land_core.py::TestLandCompleteness.test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty (_worktree_full_changeset: unit -> integration)
+tests/ticket_land_suite/test_land_core.py::TestLandFailedTicket.test_failed_ticket_with_a_failure_log_lands_cleanly (_has_failure_log: unit -> integration)
+tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline.test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch (_merge_ledger_tickets: unit -> integration, matching its own sibling directive one line below)
 
 Split across all 18 T-2550-scoped COV006 findings:
 - 1 real detector gap (trace 1, tests/test_vet.py TestCapabilityScan, plus 5 more
@@ -58,8 +58,8 @@ then the gates.py fix) landed on the ticket branch before land.
 Evidence:
 tests/test_vet.py::TestCapabilityScan::test_public_sibling_wrapper_exec_is_resolved_one_hop
 tests/test_lang.py::TestFromImportSubmoduleResolution::test_from_package_import_submodule_resolves_to_the_file
-tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
-tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands
+tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
+tests/ticket_land_suite/test_wip.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands
 tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_still_fires_through_relative_facade
 tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_chases_relative_import_reexport (designated repro,
   FAILED_AT_PARENT verified against pre-fix commit 2c6177111 via --check-repro)
@@ -92,8 +92,8 @@ added to every changed class/method).
 ### Evidence
 - `tests/test_vet.py::TestCapabilityScan::test_public_sibling_wrapper_exec_is_resolved_one_hop` (pytest node id, verified passing when recorded)
 - `tests/test_lang.py::TestFromImportSubmoduleResolution::test_from_package_import_submodule_resolves_to_the_file` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_wip.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_still_fires_through_relative_facade` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_chases_relative_import_reexport` (pytest node id, verified passing when recorded)
 

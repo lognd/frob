@@ -12,10 +12,10 @@ T-3054's title/body was empty (no scope, no description) -- investigated via the
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_insufficient_deadline_skips_regardless_of_profile` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_ample_deadline_still_runs_the_spawn` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_no_declared_deadline_is_unchanged` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_unparseable_deadline_is_unchanged` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_insufficient_deadline_skips_regardless_of_profile` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_ample_deadline_still_runs_the_spawn` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_no_declared_deadline_is_unchanged` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_unparseable_deadline_is_unchanged` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

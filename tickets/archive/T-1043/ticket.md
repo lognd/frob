@@ -15,7 +15,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestGitSubprocessFailures::test_unowned_deletions_diff_failure_after_merge
+- tests/ticket_land_suite/test_land_core.py::TestGitSubprocessFailures::test_unowned_deletions_diff_failure_after_merge
 designated_repro_test: null
 threat: null
 component: null

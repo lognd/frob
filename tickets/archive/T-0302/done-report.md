@@ -4,8 +4,8 @@ Changed:
 - tests/unit/strata/test_selfconform.py::TestBindingErrorPropagation::test_ambiguous_code_binding_propagates_as_err
 - tests/unit/strata/test_host_isolation.py::TestHostIsolationWaivers::test_propagates_lateral_isolation_error
 - tests/unit/strata/test_host_isolation.py::TestHostIsolationWaivers::test_propagates_vertical_isolation_error
-- tests/test_ticket_land.py::TestSpliceLedger::test_malformed_ours_propagates_as_err
-- tests/test_ticket_land.py::TestSpliceLedger::test_malformed_theirs_propagates_as_err
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedger::test_malformed_ours_propagates_as_err
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedger::test_malformed_theirs_propagates_as_err
 
 Per-function branch coverage, before -> after (`make coverage` then
 `uv run frob check --only test`):

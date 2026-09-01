@@ -6,7 +6,7 @@ Changed: src/frob/app/ticket_runner.py::_run_pytest_directly
 Changed: src/frob/app/ticket_runner.py::_WORKTREE_LEASE_ENV_VARS
 Changed: tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv
 
-Evidence: tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv::test_strips_worktree_and_agent_env, tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv::test_missing_lease_env_is_fine (both recorded via frob ticket evidence); manual repro confirmed tests/test_ticket_land.py::TestLand now passes when spawned by _run_pytest_directly with FROB_WORKTREE/FROB_AGENT set in the caller's own env (the exact leak scenario T-0884 describes).
+Evidence: tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv::test_strips_worktree_and_agent_env, tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv::test_missing_lease_env_is_fine (both recorded via frob ticket evidence); manual repro confirmed tests/ticket_land_suite/test_land_core.py::TestLand now passes when spawned by _run_pytest_directly with FROB_WORKTREE/FROB_AGENT set in the caller's own env (the exact leak scenario T-0884 describes).
 
 Filed: none
 

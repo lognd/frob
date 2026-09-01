@@ -29,26 +29,26 @@ scope_changes:
   actor: logan
   at: '2026-08-03'
 evidence:
-- tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion
-- tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_that_also_changes_content_still_refuses
-- tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
-- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+- tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion
+- tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion::test_rewrap_that_also_changes_content_still_refuses
+- tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+- tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
 designated_repro_test: null
 acceptance:
 - text: GIVEN a diff that only re-flows a frob:waive comment's line wrapping WHEN
     the land deletion filter runs THEN it is not treated as a deletion
   evidence:
-  - tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion
-  - tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_that_also_changes_content_still_refuses
-  - tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
-  - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+  - tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion
+  - tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion::test_rewrap_that_also_changes_content_still_refuses
+  - tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+  - tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
 - text: GIVEN a diff that genuinely deletes a frob:waive directive WHEN the filter
     runs THEN it still refuses as today
   evidence:
-  - tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion
-  - tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_that_also_changes_content_still_refuses
-  - tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
-  - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+  - tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion
+  - tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion::test_rewrap_that_also_changes_content_still_refuses
+  - tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+  - tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
 threat: null
 component: null
 ---

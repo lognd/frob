@@ -2,7 +2,7 @@
 id: T-3591
 title: Split tests/test_ticket_land.py (12596 lines) into a per-gate-family package,
   reusing T-3586's recipe
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-08-31'
@@ -43,6 +43,13 @@ scope_changes:
     this file's cross-import must repoint to the new conftest.py home
   actor: logan
   at: '2026-09-01'
+evidence:
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedger::test_disjoint_ids_both_kept
+- tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite
+- tests/ticket_land_suite/test_land_core.py::TestLand::test_refuses_on_dirty_main
+- tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_resets_to_the_explicit_pre_land_tip_when_current_matches
+- tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty::test_terminal_side_always_wins_over_non_terminal
+- tests/unit/test_land_finalize_anchor.py::TestSkipCloseForAnchorNoCloseRequested::test_non_anchor_ticket_is_unaffected
 designated_repro_test: null
 threat: null
 component: null

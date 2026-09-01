@@ -62,7 +62,7 @@ that seam.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

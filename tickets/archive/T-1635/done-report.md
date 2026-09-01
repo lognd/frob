@@ -31,7 +31,7 @@ handed off:
    shared _CONCURRENCY_TIMEOUT_S = 30 constant; locking behavior under
    test is unaffected.
 
-4. tests/test_ticket_land.py::TestClaimDivergencePostMerge's two
+4. tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge's two
    T-0832-regression assertions checked `"-1" not in <message
    containing the randomly-minted T-draft-<hex> ticket id verbatim>`.
    Reproduced failing once in three consecutive runs on an unchanged

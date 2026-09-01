@@ -30,11 +30,11 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/test_ticket_land.py::TestDirtOwnerTickets::test_dirty_main_refusal_names_the_owning_ticket
-- tests/test_ticket_land.py::TestDirtOwnerTickets::test_path_owned_by_another_open_ticket_names_it
-- tests/test_ticket_land.py::TestDirtOwnerTickets::test_path_owned_by_landing_ticket_itself_is_excluded
-- tests/test_ticket_land.py::TestDirtOwnerTickets::test_path_owned_by_no_open_ticket_is_excluded
-designated_repro_test: tests/test_ticket_land.py::TestDirtOwnerTickets::test_dirty_main_refusal_names_the_owning_ticket
+- tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_dirty_main_refusal_names_the_owning_ticket
+- tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_path_owned_by_another_open_ticket_names_it
+- tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_path_owned_by_landing_ticket_itself_is_excluded
+- tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_path_owned_by_no_open_ticket_is_excluded
+designated_repro_test: tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_dirty_main_refusal_names_the_owning_ticket
 threat: null
 component: null
 anchor: false

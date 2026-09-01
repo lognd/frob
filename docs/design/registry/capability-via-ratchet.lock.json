@@ -211,9 +211,9 @@
       "ticket": "T-1628"
     },
     "testsuite::env": {
-      "accepted_count": 22,
-      "reason": "T-3618: T-3586's split removed the now-dead tests/test_gates.py via entry (the file no longer exists, its content moved to tests/gates_suite/*.py, none of which observe env); measured live via-list count.",
-      "ticket": "T-3618"
+      "accepted_count": 37,
+      "reason": "T-3591: T-1201 split of tests/test_ticket_land.py into tests/ticket_land_suite/ moved its exec/env/fs.read/fs.write-observing test code across 14 new files plus conftest.py; via-list entries relocated 1:1 in the same diff. Measured live via-list count.",
+      "ticket": "T-3591"
     },
     "testsuite::env.read": {
       "accepted_count": 21,
@@ -231,9 +231,9 @@
       "ticket": "T-3618"
     },
     "testsuite::exec": {
-      "accepted_count": 246,
-      "reason": "T-3618: land-time re-measurement -- concurrent fleet lands added further genuinely-observed exec sites on testsuite between this ticket's own capability relocation and its land attempt; re-measured and bumped to the current live via-list count (242 -> 246) so this land is not blocked on unrelated drift, per the T-3506 land-time-drift precedent.",
-      "ticket": "T-3618"
+      "accepted_count": 261,
+      "reason": "T-3591: same split, exec via-list relocation -- measured live via-list count.",
+      "ticket": "T-3591"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -246,14 +246,14 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 181,
-      "reason": "T-3618: land-time re-measurement -- concurrent fleet lands added a further genuinely-observed fs.read site on testsuite between this ticket's own capability relocation and its land attempt; re-measured and bumped to the current live via-list count (180 -> 181) so this land is not blocked on unrelated drift, per the T-3506 land-time-drift precedent.",
-      "ticket": "T-3618"
+      "accepted_count": 196,
+      "reason": "T-3591: same split, fs.read via-list relocation -- measured live via-list count.",
+      "ticket": "T-3591"
     },
     "testsuite::fs.write": {
-      "accepted_count": 431,
-      "reason": "T-3618: land-time re-measurement -- concurrent fleet lands added further genuinely-observed fs.write sites on testsuite between this ticket's own capability relocation and its land attempt; re-measured and bumped to the current live via-list count (426 -> 431) so this land is not blocked on unrelated drift, per the T-3506 land-time-drift precedent.",
-      "ticket": "T-3618"
+      "accepted_count": 446,
+      "reason": "T-3591: same split, fs.write via-list relocation -- measured live via-list count.",
+      "ticket": "T-3591"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

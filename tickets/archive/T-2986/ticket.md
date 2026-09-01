@@ -182,14 +182,14 @@ scope_changes:
   actor: logan
   at: '2026-08-26'
 evidence:
-- tests/test_ticket_land.py::TestArchiveV2::test_archived_ticket_attachment_still_resolves_for_cov004
+- tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archived_ticket_attachment_still_resolves_for_cov004
 designated_repro_test: null
 acceptance:
 - text: Given a done ticket with a recorded attachment (path + sha256) is archived
     via `frob ticket archive`, when `frob check --only docblocks` or `--only coverage`
     (COV004) runs afterward, then no COV004 violation fires for that ticket's attachment.
   evidence:
-  - tests/test_ticket_land.py::TestArchiveV2::test_archived_ticket_attachment_still_resolves_for_cov004
+  - tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archived_ticket_attachment_still_resolves_for_cov004
 threat: null
 component: null
 anchor: false

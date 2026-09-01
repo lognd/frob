@@ -50,9 +50,9 @@ worktree).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_no_marker_is_a_silent_empty_result` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker::test_no_marker_is_a_silent_empty_result` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker::test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker::test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

@@ -15,7 +15,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically
+- tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically
 designated_repro_test: null
 threat: null
 component: null

@@ -32,12 +32,12 @@ scope_changes:
   actor: logan
   at: '2026-08-07'
 evidence:
-- tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit::test_sole_rapid_debt_dirt_is_committed
-- tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit::test_a_second_dirty_file_blocks_the_auto_commit
-- tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit::test_no_dirt_at_all_is_a_noop
-- tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket::test_path_inside_an_open_tickets_scope_is_not_orphaned
-- tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket::test_path_outside_every_open_tickets_scope_is_orphaned
-- tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket::test_a_done_tickets_scope_does_not_count
+- tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit::test_sole_rapid_debt_dirt_is_committed
+- tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit::test_a_second_dirty_file_blocks_the_auto_commit
+- tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit::test_no_dirt_at_all_is_a_noop
+- tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnedByNoOpenTicket::test_path_inside_an_open_tickets_scope_is_not_orphaned
+- tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnedByNoOpenTicket::test_path_outside_every_open_tickets_scope_is_orphaned
+- tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnedByNoOpenTicket::test_a_done_tickets_scope_does_not_count
 designated_repro_test: null
 threat: null
 component: null
@@ -126,12 +126,12 @@ No root-cause fix needed under DEAD001/WIRE001/OPAQUE001/REF002.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit::test_sole_rapid_debt_dirt_is_committed` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit::test_a_second_dirty_file_blocks_the_auto_commit` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRapidDebtOnlyDriftAutoCommit::test_no_dirt_at_all_is_a_noop` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket::test_path_inside_an_open_tickets_scope_is_not_orphaned` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket::test_path_outside_every_open_tickets_scope_is_orphaned` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDirtOwnedByNoOpenTicket::test_a_done_tickets_scope_does_not_count` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit::test_sole_rapid_debt_dirt_is_committed` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit::test_a_second_dirty_file_blocks_the_auto_commit` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRapidDebtOnlyDriftAutoCommit::test_no_dirt_at_all_is_a_noop` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnedByNoOpenTicket::test_path_inside_an_open_tickets_scope_is_not_orphaned` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnedByNoOpenTicket::test_path_outside_every_open_tickets_scope_is_orphaned` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnedByNoOpenTicket::test_a_done_tickets_scope_does_not_count` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 6 passed (from 6 evidence id(s))

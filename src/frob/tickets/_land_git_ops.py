@@ -423,9 +423,10 @@ def _verified_reset_root(
 # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_dirty_without_a_marker_is_never_reclaimed  # noqa: E501
 # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_land_calls_reclaim_before_acquiring_its_own_lock  # noqa: E501
 # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_orphaned_residue_from_a_dead_land_is_cleared_before_the_dirtymain_refusal  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestLand.test_refuses_on_dirty_main
-# frob:tests tests/test_ticket_land.py::TestUvLockSync.test_dirty_lock_with_other_change_still_refuses  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestUvLockSync.test_dirty_lock_version_plus_other_line_still_refuses  # noqa: E501
+# frob:tests \
+# tests/ticket_land_suite/test_land_core.py::TestLand.test_refuses_on_dirty_main
+# frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_dirty_lock_with_other_change_still_refuses  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_dirty_lock_version_plus_other_line_still_refuses  # noqa: E501
 def reclaim_orphaned_squash_residue(
     root: Path, ticket_id: str
 ) -> Result[bool, LandError]:
@@ -956,7 +957,7 @@ def _merged_lock_doc(ours_text: str, theirs_text: str) -> dict | None:
 
 
 # frob:ticket T-1434
-# frob:tests tests/test_ticket_land.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_core.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides  # noqa: E501
 # frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to run_argv, a \
 # cross-module Result-returning wrapper the resolver cannot see through, and \
 # ours.danger_ok.stdout/theirs.danger_ok.stdout attribute access on its own return \
@@ -1198,8 +1199,8 @@ def _read_text_at_ref(worktree: Path, ref: str, relative_path: str) -> str | Non
 
 
 # frob:ticket T-0959
-# frob:tests tests/test_ticket_land.py::TestArchiveSpliceDiscipline.test_splice_and_stage_archive_merges_by_id_never_overwrites  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestArchiveSpliceDiscipline.test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline.test_splice_and_stage_archive_merges_by_id_never_overwrites  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline.test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish  # noqa: E501
 def _parse_archive_side(
     text: str, side: str, checkout: Path
 ) -> Result[dict[str, Ticket], LandError]:
@@ -2112,7 +2113,7 @@ def _committed_out_of_scope_waive_deletions(
 
 
 # frob:ticket T-1003
-# frob:tests tests/test_ticket_land.py::TestUvLockSync.test_worktree_side_lock_flap_auto_restored_before_wip_commit kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_release.py::TestUvLockSync.test_worktree_side_lock_flap_auto_restored_before_wip_commit kind="integration"  # noqa: E501
 def _wip_commit(
     worktree: Path, ticket_id: str, *, dry_run: bool
 ) -> Result[bool, LandError]:
@@ -2208,7 +2209,7 @@ def _wip_add_excluding_frob(worktree: Path, ticket_id: str) -> Result[None, Land
 
 
 # frob:ticket T-0847
-# frob:tests tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty.test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_wip.py::TestWipCommitNormalizationOnlyDirty.test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed  # noqa: E501
 def _do_wip_commit(worktree: Path, ticket_id: str) -> Result[bool, LandError]:
     """`git add -A && git commit` a WIP snapshot in `worktree`, under
     `FROB_LAND_INTERNAL=1` (T-0828) so the T-0731 land-owned-files

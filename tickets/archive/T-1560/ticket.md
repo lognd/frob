@@ -16,7 +16,7 @@ evidence:
 - tests/test_tickets.py::TestV2StateTransitions::test_transitions_mined_oldest_first
 - tests/test_tickets.py::TestV2StateTransitions::test_no_history_returns_empty_tuple
 - tests/test_tickets.py::TestV2StateTransitions::test_byte_similar_sibling_ticket_does_not_drop_transitions
-- tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
+- tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN a full unscoped frob check on main THEN gate errors are 0: the 16 WIRE002
@@ -29,7 +29,7 @@ acceptance:
   - tests/test_tickets.py::TestV2StateTransitions::test_transitions_mined_oldest_first
   - tests/test_tickets.py::TestV2StateTransitions::test_no_history_returns_empty_tuple
   - tests/test_tickets.py::TestV2StateTransitions::test_byte_similar_sibling_ticket_does_not_drop_transitions
-  - tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
+  - tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
 threat: null
 component: null
 ---

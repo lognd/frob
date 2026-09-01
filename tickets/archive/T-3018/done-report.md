@@ -79,8 +79,8 @@ repo-wide and untouched by this diff.
 - `tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend::test_unknown_pid_open_process_fails_reports_false` (pytest node id, verified passing when recorded)
 - `tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend::test_never_requests_kill_capable_access_rights` (pytest node id, verified passing when recorded)
 - `tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend::test_tristate_never_returns_ambiguous_on_windows_backend` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestProbeLandLockPidLivenessDelegatesToSharedModule::test_windows_backend_alive_pid_is_true` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestProbeLandLockPidLivenessDelegatesToSharedModule::test_windows_backend_never_ambiguous` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestProbeLandLockPidLivenessDelegatesToSharedModule::test_windows_backend_alive_pid_is_true` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestProbeLandLockPidLivenessDelegatesToSharedModule::test_windows_backend_never_ambiguous` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 13 passed (from 13 evidence id(s))

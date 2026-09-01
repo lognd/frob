@@ -132,7 +132,7 @@ every merge-touched file.
 - `tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_honors_graph_excludes` (pytest node id, verified passing when recorded)
 - `tests/test_gates_fmt_directives.py::TestFormatPaths::test_check_mode_reports_without_writing` (pytest node id, verified passing when recorded)
 - `tests/test_pii_structural_gate.py::TestFieldNames::test_password_field_fires` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSpliceLedger::test_same_id_newer_state_wins` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedger::test_same_id_newer_state_wins` (pytest node id, verified passing when recorded)
 - `tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork::test_archive_refuses_when_a_live_lease_exists` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_leases.py::TestSweepWorktrees::test_expired_lease_clean_removed` (pytest node id, verified passing when recorded)
 - `tests/unit/perf/test_advisories.py::TestNestedLoopFaninAdvisories::test_hot_loop_with_multiple_callers_fires` (pytest node id, verified passing when recorded)

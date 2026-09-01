@@ -51,7 +51,7 @@ Changed:
 - src/frob/tickets/_land.py::_repair_stale_land_marker (docstring updated to match)
 
 Evidence:
-- tests/test_ticket_land.py::TestLandRepairMarker::test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker
   (renamed/rewritten from the old test_repair_refuses_loudly_... -- the ticket-
   described acceptance criterion 2: a land crashed while another land landed for
   real meanwhile must still leave root landable without manual intervention).
@@ -61,10 +61,10 @@ Evidence:
   mechanical NO_VERDICT-at-parent-commit reason as T-1999/T-1638 (the test did not
   exist at the parent commit) -- the real before/after behavior was verified
   directly via the saved-patch revert above.
-- tests/test_ticket_land.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker
   -- sanity companion, the tip-matches case (T-0907's original scenario) is
   unaffected.
-- tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
+- tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
   -- the existing real-SIGKILL regression test (acceptance criterion 1's shape,
   already covered by T-0907's own infrastructure) still passes unchanged.
 
@@ -90,9 +90,9 @@ since the fix changes an existing test's expected behavior).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandRepairMarker::test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

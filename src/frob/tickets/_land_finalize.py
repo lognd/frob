@@ -213,7 +213,7 @@ def _finalize_draft_id(
 
 
 # frob:ticket T-0637
-# frob:tests tests/test_ticket_land.py::TestStandaloneSiblingDraftSurvivesLand.test_sibling_draft_ticket_finalized_and_lands_alongside  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_draft.py::TestStandaloneSiblingDraftSurvivesLand.test_sibling_draft_ticket_finalized_and_lands_alongside  # noqa: E501
 def _finalize_sibling_drafts(
     root: Path, worktree: Path, landed_final_id: str
 ) -> Result[dict[str, str], LandError]:
@@ -330,10 +330,10 @@ def _finalize_sibling_drafts(
 
 
 # frob:ticket T-2425
-# frob:tests tests/test_ticket_land.py::TestForeignOwnedDraftWorktree.test_no_leases_is_none  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestForeignOwnedDraftWorktree.test_own_worktree_lease_is_not_foreign  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestForeignOwnedDraftWorktree.test_foreign_live_lease_names_the_worktree  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestForeignOwnedDraftWorktree.test_ttl_expired_foreign_lease_is_not_foreign  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_draft.py::TestForeignOwnedDraftWorktree.test_no_leases_is_none  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_draft.py::TestForeignOwnedDraftWorktree.test_own_worktree_lease_is_not_foreign  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_draft.py::TestForeignOwnedDraftWorktree.test_foreign_live_lease_names_the_worktree  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_draft.py::TestForeignOwnedDraftWorktree.test_ttl_expired_foreign_lease_is_not_foreign  # noqa: E501
 def _foreign_owned_draft_worktree(worktree: Path, draft_id: str) -> str | None:
     """The lease-recorded worktree path of a LIVE, non-TTL-expired,
     DIFFERENT-worktree lease on `draft_id`, or `None` if no such lease
@@ -368,7 +368,7 @@ def _foreign_owned_draft_worktree(worktree: Path, draft_id: str) -> str | None:
 
 
 # frob:ticket T-0811
-# frob:tests tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand.test_land_rewrites_own_draft_id_reference_in_done_report  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand.test_land_rewrites_own_draft_id_reference_in_done_report  # noqa: E501
 # frob:ticket T-0976
 def _rewrite_draft_references_in_one_ledger(
     worktree: Path,
@@ -486,7 +486,7 @@ _WAIVE_REWRITE_EXCLUDED_LEDGERS = frozenset({"tickets.md", "tickets-archive.md"}
 
 
 # frob:ticket T-0812
-# frob:tests tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand.test_land_rewrites_strata_waive_clause_draft_id_reference  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand.test_land_rewrites_strata_waive_clause_draft_id_reference  # noqa: E501
 def _rewrite_draft_references_in_waive_sites(
     worktree: Path, mapping: dict[str, str]
 ) -> Result[None, LandError]:

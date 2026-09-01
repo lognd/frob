@@ -90,12 +90,12 @@ thing outside this ticket's own diff).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits::test_worktree_only_edit_is_carried_forward` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits::test_main_only_edit_is_left_alone` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits::test_both_sides_edit_the_same_way_converges_silently` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits::test_both_sides_edit_differently_refuses` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits::test_no_base_available_falls_back_to_done_report_heuristic` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLand::test_sibling_evidence_rebind_carried_forward_end_to_end` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits::test_worktree_only_edit_is_carried_forward` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits::test_main_only_edit_is_left_alone` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits::test_both_sides_edit_the_same_way_converges_silently` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits::test_both_sides_edit_differently_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits::test_no_base_available_falls_back_to_done_report_heuristic` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLand::test_sibling_evidence_rebind_carried_forward_end_to_end` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 6 passed (from 6 evidence id(s))

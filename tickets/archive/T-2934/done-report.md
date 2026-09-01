@@ -74,8 +74,8 @@ module backed by real fcntl.flock, same technique T-2918 used).
 ### Evidence
 - `tests/unit/test_process_lock.py::TestDerivedStateLockPlatformBackends::test_no_lock_primitive_refuses_loudly` (pytest node id, verified passing when recorded)
 - `tests/unit/test_process_lock.py::TestDerivedStateLockPlatformBackends::test_windows_backend_round_trips` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockPlatformBackends::test_no_lock_primitive_raises_land_lock_timeout` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockPlatformBackends::test_windows_backend_round_trips` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockPlatformBackends::test_no_lock_primitive_raises_land_lock_timeout` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockPlatformBackends::test_windows_backend_round_trips` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends::test_no_lock_primitive_refuses_loudly` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends::test_windows_backend_round_trips` (pytest node id, verified passing when recorded)
 - `tests/test_walk_lint_gate.py::TestPlatform001::test_typed_result_refusal_is_quiet` (pytest node id, verified passing when recorded)

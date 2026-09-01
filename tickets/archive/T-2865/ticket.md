@@ -30,8 +30,8 @@ body_changes:
 evidence:
 - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov006_third_file_reachable_chases_relative_import_reexport
 - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA::test_tick006_renamed_draft_resolved_via_git_not_refiled
-- tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
-- tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr
+- tests/ticket_land_suite/test_wip.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
+- tests/ticket_land_suite/test_claim_close.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr
 designated_repro_test: null
 threat: null
 component: null
@@ -57,9 +57,9 @@ exercised:
     -> src/frob/gates/__init__.py::_cov006_resolve_relative_module
   - tests/gates_suite/test_fix_engine.py::TestFixEngineTierA.test_tick006_renamed_draft_resolved_via_git_not_refiled
     -> src/frob/gates/_fix_engine.py::_resolve_via_git_rename
-  - tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty.test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
+  - tests/ticket_land_suite/test_wip.py::TestWipCommitNormalizationOnlyDirty.test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
     -> src/frob/tickets/_land_git_ops.py::_do_wip_commit
-  - tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr.test_wip_commit_failure_logs_stderr
+  - tests/ticket_land_suite/test_claim_close.py::TestGitFailureMessageCarriesStderr.test_wip_commit_failure_logs_stderr
     -> src/frob/tickets/_land_git_ops.py::_do_wip_commit
 
 Re-measured after writing: COV006 warning count is 0. Each waiver comment

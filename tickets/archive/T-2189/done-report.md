@@ -8,7 +8,7 @@ Changed:
   `dry_run=dry_run`; dirty-branch log message now describes the correct
   outcome for each case)
 
-Evidence: tests/test_ticket_land.py::TestLandPlan::test_dry_run_tick_gate_dirty_still_fully_unwinds
+Evidence: tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_dry_run_tick_gate_dirty_still_fully_unwinds
 (designated BUG002 repro, confirmed FAILED_AT_PARENT against 71adbd42d,
 the commit where the test exists but the fix does not -- reproduces the
 real incident exactly: `check_ticks=lambda: False` on a `dry_run=True`

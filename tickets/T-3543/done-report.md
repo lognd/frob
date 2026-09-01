@@ -8,15 +8,15 @@ src/frob/tickets/_land_squash.py::_finish_real_land_report (no longer calls _rec
 src/frob/tickets/_land_squash.py::_record_land_commit (docstring note, unused by primary path)
 src/frob/app/ticket_runner/_lifecycle.py::_find_landing_commit
 scripts/verify_lands.py::load_land_commit
-tests/test_ticket_land.py::TestRecordLandCommit (renamed/rewrote the field-write test to assert derive-on-read)
+tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit (renamed/rewrote the field-write test to assert derive-on-read)
 tests/unit/test_land_record_commit.py (new TestDeriveLandCommitByGrep)
 docs/modules/tickets-landing.md, docs/guides/coordinator-scripts.md
 
 Evidence:
 tests/unit/test_land_record_commit.py::TestDeriveLandCommitByGrep::test_finds_the_squash_apply_commit_by_id_and_title_grep (new must-fire)
 tests/unit/test_land_record_commit.py::TestDeriveLandCommitByGrep::test_returns_none_when_no_matching_commit_exists (new must-stay-quiet)
-tests/test_ticket_land.py::TestRecordLandCommit::test_land_commit_is_derivable_with_no_follow_up_commit (real land() end-to-end: exactly one commit, land_commit None, grep-derive resolves)
-tests/test_ticket_land.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id (unaffected --plan path, still green)
+tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_land_commit_is_derivable_with_no_follow_up_commit (real land() end-to-end: exactly one commit, land_commit None, grep-derive resolves)
+tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id (unaffected --plan path, still green)
 tests/unit/test_coordinator_scripts.py::TestLoadLandCommit::test_returns_land_commit_for_a_landed_ticket (old-ticket field-first path, unaffected)
 Full test_land_record_commit.py (8 tests) and TestRecordLandCommit (3 tests) run and green.
 
@@ -32,8 +32,8 @@ Gates: frob check --ticket T-3543 --budget 300 clean of attributable errors (2 r
 ### Evidence
 - `tests/unit/test_land_record_commit.py::TestDeriveLandCommitByGrep::test_finds_the_squash_apply_commit_by_id_and_title_grep` (pytest node id, verified passing when recorded)
 - `tests/unit/test_land_record_commit.py::TestDeriveLandCommitByGrep::test_returns_none_when_no_matching_commit_exists` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRecordLandCommit::test_land_commit_is_derivable_with_no_follow_up_commit` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_land_commit_is_derivable_with_no_follow_up_commit` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id` (pytest node id, verified passing when recorded)
 - `tests/unit/test_coordinator_scripts.py::TestLoadLandCommit::test_returns_land_commit_for_a_landed_ticket` (pytest node id, verified passing when recorded)
 
 ### Captured claims

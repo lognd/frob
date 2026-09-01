@@ -89,7 +89,7 @@ verified clean and complete without needing that class at all.
 - `tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_matches_base_ref_tip_true_for_identical_content` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_matches_base_ref_tip_false_for_differing_content` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_filters_to_scope_and_python` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

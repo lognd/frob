@@ -97,7 +97,7 @@ evidence:
 - tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess::test_finds_a_process_cwd_into_the_path
 - tests/unit/test_land_finish_idempotent.py::TestTicketTerminalStateOnMain::test_done_ticket_returns_its_state
 - tests/test_ticket_merge_driver.py::TestArchivedIdsForMergeDriver::test_not_mid_merge_falls_back_to_disk_based_archived_ids
-- tests/test_ticket_land.py::TestFrobDirNeverLeaksIntoGitAdd::test_frob_scratch_files_are_gitignored_not_tracked
+- tests/ticket_land_suite/test_land_core.py::TestFrobDirNeverLeaksIntoGitAdd::test_frob_scratch_files_are_gitignored_not_tracked
 - tests/gates_suite/test_fix_engine.py::TestFixEngineTierABatch2::test_fmt001_wraps_overlong_directive_line_and_reverifies_clean
 designated_repro_test: null
 threat: null

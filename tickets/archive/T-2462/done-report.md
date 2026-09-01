@@ -45,7 +45,7 @@ MEASURABLE DELIVERABLE: two lands with disjoint code scopes now complete
 without ANY manual conflict-resolution step on EITHER shared release
 artifact -- CHANGELOG.md (T-2445) or pyproject.toml/.frob-release.json
 (this ticket). Verified directly:
-tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::
+tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest::
 test_stale_worktree_manifest_still_lands_main_plus_one lands a real
 ticket through the REAL _apply_release_bump_for_land callback and
 asserts pyproject.toml/.frob-release.json are BYTE-IDENTICAL to main's
@@ -102,7 +102,7 @@ change (commit cae6baf6bd7d50d32162c3f903c41f2c7d4e2f3d).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_writes_fragment_and_regenerates_changelog_no_pyproject_touch` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_needed_writes_fragment_but_returns_none_and_never_stamps` (pytest node id, verified passing when recorded)
 - `tests/unit/gates/test_rel001_deferred_bump.py::TestReleaseGatePlainCheckoutDeferredPosture::test_pending_bump_with_fragment_is_warn_not_error` (pytest node id, verified passing when recorded)

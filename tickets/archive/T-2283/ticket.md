@@ -23,12 +23,12 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
-designated_repro_test: tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
+- tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
+designated_repro_test: tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
 acceptance:
 - text: All 4 named tests pass
   evidence:
-  - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
+  - tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
 threat: null
 component: null
 anchor: false

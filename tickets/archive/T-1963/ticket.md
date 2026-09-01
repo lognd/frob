@@ -30,10 +30,10 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/test_ticket_land.py::TestLandRepairMarker::test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker
-- tests/test_ticket_land.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker
-- tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
-designated_repro_test: tests/test_ticket_land.py::TestLandRepairMarker::test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_resets_root_when_current_tip_matches_the_marker
+- tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
+designated_repro_test: tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_recovers_even_when_current_tip_has_drifted_from_the_marker
 threat: null
 component: null
 anchor: false

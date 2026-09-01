@@ -31,8 +31,8 @@ scope_changes:
   actor: logan
   at: '2026-08-16'
 evidence:
-- tests/test_ticket_land.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land
-designated_repro_test: tests/test_ticket_land.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land
+- tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land
+designated_repro_test: tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land
 acceptance:
 - text: 'Measured: _land_plan_check_ticks_fn (src/frob/app/ticket_runner/_land_cmd.py:2770)
     spawns ''frob check --only tickets'' and returns int(match.group(1)) == 0, so
@@ -42,7 +42,7 @@ acceptance:
     purely-ledger worktree (128 insertions, tickets/T-2197/ only, zero source files)
     was refused with PlanTickGateDirty. This test MUST fail against current main.'
   evidence:
-  - tests/test_ticket_land.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land
+  - tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land
 - text: 'The circularity is the point: --plan is the sanctioned path for design-phase
     and ledger-only work, decomposing a rotting EPIC into leaves IS ledger-only work,
     and TICK004 fires precisely on those undecomposed epics. So the alarm blocks the
@@ -50,7 +50,7 @@ acceptance:
     worktree''s own diff, not on a global count -- a ledger-only land that adds one
     ticket file cannot have caused a 20-day-old rot alarm.'
   evidence:
-  - tests/test_ticket_land.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land
+  - tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land
 - text: Read the gate result from structured output, not by regexing rendered text.
     The current tick_line_re = re.compile(r'gate:TICK\s+(\d+)\s+errors?') parses human-facing
     CLI output, so a wording or formatting change silently flips the result to None
@@ -58,7 +58,7 @@ acceptance:
     --json already exists and scripts/check_summary.py already parses it (key is 'code',
     not 'rule'). Do NOT fix this by making the regex more permissive.
   evidence:
-  - tests/test_ticket_land.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land
+  - tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land
 threat: null
 component: null
 anchor: false

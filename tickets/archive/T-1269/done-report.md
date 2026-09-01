@@ -58,12 +58,12 @@ Acceptance:
     bound (merge-conflict abort + TICK-gate-dirty full unwind, both
     verified against real git state before/after).
 
-Evidence: tests/test_ticket_land.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically,
-tests/test_ticket_land.py::TestLandPlan::test_merge_conflict_aborts_and_refuses,
-tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge,
-tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge,
-tests/test_ticket_land.py::TestLandPlan::test_cli_dispatches_to_land_plan_and_reports
-(5 new tests, all passing: `uv run pytest tests/test_ticket_land.py::TestLandPlan -q`
+Evidence: tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically,
+tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_merge_conflict_aborts_and_refuses,
+tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge,
+tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_dry_run_unwinds_the_merge,
+tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_cli_dispatches_to_land_plan_and_reports
+(5 new tests, all passing: `uv run pytest tests/ticket_land_suite/test_land_plan.py::TestLandPlan -q`
 -> 5 passed; full file re-run clean: `uv run pytest tests/test_ticket_land.py -q`
 -> 210 passed, after confirming two single-run failures earlier in this
 session were pre-existing subprocess-spawn flakiness under system load,
@@ -100,11 +100,11 @@ touched set (repo-wide baselines that pre-exist this change).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandPlan::test_merge_conflict_aborts_and_refuses` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandPlan::test_cli_dispatches_to_land_plan_and_reports` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_merge_conflict_aborts_and_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_dry_run_unwinds_the_merge` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_cli_dispatches_to_land_plan_and_reports` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

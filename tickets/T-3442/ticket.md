@@ -27,7 +27,7 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally
+- tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally
 - tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard::test_branch_drift_before_final_commit_refuses_by_construction
 - tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_cli_land_invoked_with_root_equal_to_worktree_still_verifies
 - tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_probe_catches_the_in_root_write_positive_control
@@ -42,7 +42,7 @@ land_commit: ebd12535d2472aa330c9e7facac3dd17b2af2caa
 MEASURED on GitHub Actions run 33282540898 (ubuntu-latest, HEAD b94cea5d0, 2026-08-30) -- the first run that completed to 100% (20 failures of 12689). This failure is in the cross-platform set (fails on macOS too unless noted). Reproduce locally by node id with -p no:xdist first; if it passes locally, the defect is an environment dependency (git identity, tmp path shape, missing tool, timing) and the fix must make the test hermetic, not skip it.
 
 FIVE land-pipeline tests fail on CI (ubuntu AND macOS):
-  tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally
+  tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally
       assert PosixPath(.../main/.frob/warm-sweep-stage) == PosixPath(.../main)
   tests/test_ticket_work_and_land_finish.py::TestBranchDriftGuard::test_branch_drift_before_final_commit_refuses_by_construction
       land() succeeded despite root drifting off main mid-land -- the T-1920 guard did not fire

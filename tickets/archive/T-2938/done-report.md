@@ -73,7 +73,7 @@ Filed: none (no out-of-scope discovery this ticket needed to defer).
 - `tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand::test_stale_baseline_refuses_to_attribute` (pytest node id, verified passing when recorded)
 - `tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand::test_no_captured_claims_section_is_a_noop` (pytest node id, verified passing when recorded)
 - `tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 6 passed (from 6 evidence id(s))

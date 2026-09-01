@@ -83,25 +83,25 @@ scope_changes:
   actor: logan
   at: '2026-07-26'
 evidence:
-- tests/test_ticket_land.py::TestTick005LandRegressions::test_no_regression_when_terminal_ticket_stays_terminal
-- tests/test_ticket_land.py::TestTick005LandRegressions::test_detects_terminal_ticket_regressed_to_non_terminal
-- tests/test_ticket_land.py::TestTick005LandRegressions::test_archived_ids_are_excluded
-- tests/test_ticket_land.py::TestTick005LandRegressions::test_malformed_text_degrades_to_no_regressions
-- tests/test_ticket_land.py::TestLandRefusesOnTerminalStateRegression::test_land_refuses_and_unwinds_when_sweep_finds_a_regression
-- tests/test_ticket_land.py::TestLandPushCliWiring::test_flag_parses_to_true
-- tests/test_ticket_land.py::TestLandPushCliWiring::test_flag_omitted_defaults_false
-- tests/test_ticket_land.py::TestPushAfterLand::test_dry_run_never_pushes
-- tests/test_ticket_land.py::TestPushAfterLand::test_real_land_pushes_the_current_branch
-- tests/test_ticket_land.py::TestPushAfterLand::test_push_failure_exits_nonzero
-- tests/test_ticket_land.py::TestPushAfterLand::test_exec_disabled_exits_nonzero
+- tests/ticket_land_suite/test_verify_reset.py::TestTick005LandRegressions::test_no_regression_when_terminal_ticket_stays_terminal
+- tests/ticket_land_suite/test_verify_reset.py::TestTick005LandRegressions::test_detects_terminal_ticket_regressed_to_non_terminal
+- tests/ticket_land_suite/test_verify_reset.py::TestTick005LandRegressions::test_archived_ids_are_excluded
+- tests/ticket_land_suite/test_verify_reset.py::TestTick005LandRegressions::test_malformed_text_degrades_to_no_regressions
+- tests/ticket_land_suite/test_verify_reset.py::TestLandRefusesOnTerminalStateRegression::test_land_refuses_and_unwinds_when_sweep_finds_a_regression
+- tests/ticket_land_suite/test_push.py::TestLandPushCliWiring::test_flag_parses_to_true
+- tests/ticket_land_suite/test_push.py::TestLandPushCliWiring::test_flag_omitted_defaults_false
+- tests/ticket_land_suite/test_push.py::TestPushAfterLand::test_dry_run_never_pushes
+- tests/ticket_land_suite/test_push.py::TestPushAfterLand::test_real_land_pushes_the_current_branch
+- tests/ticket_land_suite/test_push.py::TestPushAfterLand::test_push_failure_exits_nonzero
+- tests/ticket_land_suite/test_push.py::TestPushAfterLand::test_exec_disabled_exits_nonzero
 designated_repro_test: null
 acceptance:
 - text: GIVEN a land with --push WHEN the land completes THEN the push happens only
     after every land verification passed; GIVEN the TICK005 rule defined WHEN land
     runs THEN the regression sweep executes and blocks on failure
   evidence:
-  - tests/test_ticket_land.py::TestLandRefusesOnTerminalStateRegression::test_land_refuses_and_unwinds_when_sweep_finds_a_regression
-  - tests/test_ticket_land.py::TestPushAfterLand::test_real_land_pushes_the_current_branch
+  - tests/ticket_land_suite/test_verify_reset.py::TestLandRefusesOnTerminalStateRegression::test_land_refuses_and_unwinds_when_sweep_finds_a_regression
+  - tests/ticket_land_suite/test_push.py::TestPushAfterLand::test_real_land_pushes_the_current_branch
 threat: null
 component: null
 ---

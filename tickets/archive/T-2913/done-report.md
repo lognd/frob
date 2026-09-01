@@ -6,7 +6,7 @@ Changed:
   check_gates/check_gate_findings under rapid instead of the real
   closures)
 - docs/modules/tickets-landing.md (new section, T-2913)
-- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid (new,
+- tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid (new,
   2 tests)
 
 ### Investigation (measure-first, per coordinator brief)
@@ -135,10 +135,10 @@ queueing effect entirely (e.g. the same `wait_for_land_slot.py`
 primitive the playbook describes for land, applied more broadly), is
 unconfirmed. Left for the coordinator to direct, per instruction.
 
-Evidence: tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_rapid_profile_skips_inline_check_gates_spawn (designated repro, FAILED_AT_PARENT verified),
-tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn,
-tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land,
-tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds
+Evidence: tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid::test_rapid_profile_skips_inline_check_gates_spawn (designated repro, FAILED_AT_PARENT verified),
+tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn,
+tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land,
+tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds
 
 Filed: T-2924 (option (a), merge-delta scoping for
 non-rapid profiles -- deferred follow-up, see above). The land.lock/
@@ -166,10 +166,10 @@ posture.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_rapid_profile_skips_inline_check_gates_spawn` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid::test_rapid_profile_skips_inline_check_gates_spawn` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

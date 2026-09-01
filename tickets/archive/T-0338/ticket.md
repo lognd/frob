@@ -83,13 +83,13 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_ticket_land.py::TestReleaseBump::test_bump_applied_and_reported
-- tests/test_ticket_land.py::TestReleaseBump::test_no_bump_needed_reports_none
-- tests/test_ticket_land.py::TestReleaseBump::test_bump_failure_unwinds_squash
-- tests/test_ticket_land.py::TestReleaseBump::test_no_callback_is_noop
-- tests/test_ticket_land.py::TestRebuildNatives::test_invoked_when_native_source_touched
-- tests/test_ticket_land.py::TestRebuildNatives::test_skipped_when_no_native_source_touched
-- tests/test_ticket_land.py::TestRebuildNatives::test_rebuild_failure_does_not_block_land
+- tests/ticket_land_suite/test_release.py::TestReleaseBump::test_bump_applied_and_reported
+- tests/ticket_land_suite/test_release.py::TestReleaseBump::test_no_bump_needed_reports_none
+- tests/ticket_land_suite/test_release.py::TestReleaseBump::test_bump_failure_unwinds_squash
+- tests/ticket_land_suite/test_release.py::TestReleaseBump::test_no_callback_is_noop
+- tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_invoked_when_native_source_touched
+- tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_skipped_when_no_native_source_touched
+- tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_rebuild_failure_does_not_block_land
 - tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_rewrites_version_and_prepends_changelog_entry
 - tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_missing_version_line_fails
 - tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_no_manifest_is_noop

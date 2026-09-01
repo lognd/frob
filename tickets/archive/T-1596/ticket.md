@@ -42,7 +42,7 @@ remain UNRESOLVED after that work and need a fresh investigation:
      (hits/misses counter assertion off by one -- possibly a second,
      still-undiscovered process-lifetime cache/counter beyond the
      artifact-cache env var already fixed)
-   - tests/test_ticket_land.py::TestClaimDivergencePostMerge -- passed in
+   - tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge -- passed in
      every isolated/combined repro attempt, never reproduced the failure
      directly; only ever observed in a full-suite run's short summary.
 
@@ -52,7 +52,7 @@ remain UNRESOLVED after that work and need a fresh investigation:
    these are genuinely worker-assignment-sensitive, not something a
    smaller repro caught:
    - tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims::test_claims_captured_from_real_callables
-   - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
+   - tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
    - tests/test_ticket_reverify.py::TestReverifyCli::test_surfaces_now_failing_evidence_loudly
    - tests/test_tickets_scope_mutation.py::TestNewFileCarveOut::test_new_file_under_broad_lease_is_exempt
 

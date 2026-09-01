@@ -53,4 +53,4 @@ on the touched files (all clean), `uv run frob check --ticket T-0537`
 - `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_forward_progress_across_a_merge_is_clean` (pytest node id, verified passing when recorded)
 - `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_non_merge_commit_never_checked` (pytest node id, verified passing when recorded)
 - `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_archived_ticket_is_not_flagged` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done` (pytest node id, verified passing when recorded)

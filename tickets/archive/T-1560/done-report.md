@@ -77,7 +77,7 @@ Changed:
 - `tests/test_tickets.py::TestV2StateTransitions::test_transitions_mined_oldest_first` (pytest node id, verified passing when recorded)
 - `tests/test_tickets.py::TestV2StateTransitions::test_no_history_returns_empty_tuple` (pytest node id, verified passing when recorded)
 - `tests/test_tickets.py::TestV2StateTransitions::test_byte_similar_sibling_ticket_does_not_drop_transitions` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

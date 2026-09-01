@@ -30,8 +30,8 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 evidence:
-- tests/test_ticket_land.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content
-- tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
+- tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content
+- tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
 designated_repro_test: null
 threat: null
 component: null

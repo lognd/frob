@@ -160,9 +160,9 @@ and still passes, 1 passed.
 - `tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_empty_repo_has_no_citations` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_live_tracker.py::TestTransitionRefusesOnLiveTrackerCitation::test_close_refused_when_registry_cites_this_ticket` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_live_tracker.py::TestTransitionRefusesOnLiveTrackerCitation::test_close_allowed_when_no_citation` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck::test_citations_found_blocks` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck::test_no_citations_is_ok` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDraftFinalizeRewritesRegistryYamlRefs::test_registry_yaml_deferred_ref_rewritten_to_final_id` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestLiveTrackerCitationPrecheck::test_citations_found_blocks` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestLiveTrackerCitationPrecheck::test_no_citations_is_ok` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_draft.py::TestDraftFinalizeRewritesRegistryYamlRefs::test_registry_yaml_deferred_ref_rewritten_to_final_id` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_repointed_citation_no_longer_matches` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_live_tracker.py::TestLiveTrackerCitations::test_unresolvable_base_ref_fails_closed` (pytest node id, verified passing when recorded)
 

@@ -199,7 +199,7 @@ a genuinely hand-edited `uv.lock`, anything -- got silently `git reset
 ever got a chance to see the dirt and refuse. That both destroyed real
 uncommitted content and defeated the DirtyMain safety check for every
 land where nothing else currently held the lock (confirmed directly via
-`tests/test_ticket_land.py::TestLand::test_refuses_on_dirty_main` and
+`tests/ticket_land_suite/test_land_core.py::TestLand::test_refuses_on_dirty_main` and
 both `TestUvLockSync` dirty-lock tests, which failed exactly this way
 against the pre-fix code).
 

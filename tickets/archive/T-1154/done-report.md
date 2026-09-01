@@ -70,15 +70,15 @@ confirming the test fails, then restored the fix and reconfirmed green.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_merges_by_id_never_overwrites` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveResurrection::test_archived_id_never_resurrected` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSpliceLedger::test_malformed_ours_propagates_as_err` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSpliceLedger::test_malformed_theirs_propagates_as_err` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSpliceLedger::test_same_id_newer_state_wins` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_merges_by_id_never_overwrites` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveResurrection::test_archived_id_never_resurrected` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedger::test_malformed_ours_propagates_as_err` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedger::test_malformed_theirs_propagates_as_err` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedger::test_same_id_newer_state_wins` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 9 passed (from 9 evidence id(s))

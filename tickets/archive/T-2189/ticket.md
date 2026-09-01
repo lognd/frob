@@ -41,8 +41,8 @@ scope_changes:
   actor: logan
   at: '2026-08-16'
 evidence:
-- tests/test_ticket_land.py::TestLandPlan::test_dry_run_tick_gate_dirty_still_fully_unwinds
-designated_repro_test: tests/test_ticket_land.py::TestLandPlan::test_dry_run_tick_gate_dirty_still_fully_unwinds
+- tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_dry_run_tick_gate_dirty_still_fully_unwinds
+designated_repro_test: tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_dry_run_tick_gate_dirty_still_fully_unwinds
 threat: null
 component: null
 anchor: false

@@ -25,8 +25,8 @@ evidence:
 - tests/unit/strata/test_native_staleness.py::TestStaleNatives::test_default_native_source_dirs_match_repo_convention
 - tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit::test_exits_nonzero_and_prints_when_stale
 - tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit::test_returns_none_when_not_stale
-- tests/test_ticket_land.py::TestWarnIfNativeStale::test_real_land_logs_stale_native_warning
-- tests/test_ticket_land.py::TestWarnIfNativeStale::test_real_land_no_warning_when_native_fresh
+- tests/ticket_land_suite/test_land_core.py::TestWarnIfNativeStale::test_real_land_logs_stale_native_warning
+- tests/ticket_land_suite/test_land_core.py::TestWarnIfNativeStale::test_real_land_no_warning_when_native_fresh
 designated_repro_test: null
 threat: null
 component: null

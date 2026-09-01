@@ -16,15 +16,15 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
-- tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_merges_by_id_never_overwrites
-- tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish
-- tests/test_ticket_land.py::TestArchiveResurrection::test_archived_id_never_resurrected
-- tests/test_ticket_land.py::TestSpliceLedger::test_malformed_ours_propagates_as_err
-- tests/test_ticket_land.py::TestSpliceLedger::test_malformed_theirs_propagates_as_err
-- tests/test_ticket_land.py::TestSpliceLedger::test_same_id_newer_state_wins
-- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done
-- tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive
+- tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
+- tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_merges_by_id_never_overwrites
+- tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish
+- tests/ticket_land_suite/test_archive.py::TestArchiveResurrection::test_archived_id_never_resurrected
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedger::test_malformed_ours_propagates_as_err
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedger::test_malformed_theirs_propagates_as_err
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedger::test_same_id_newer_state_wins
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done
+- tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive
 designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree whose tickets-archive.md (or tickets.md blocks outside the
@@ -32,12 +32,12 @@ acceptance:
     land merges THEN main's newer content wins wholesale and the landed diff contains
     no reversion of main-side ledger/archive content the ticket never touched
   evidence:
-  - tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
+  - tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
 - text: GIVEN a ticket that DID deliberately edit tickets-archive.md (e.g. an evidence-path
     migration) THEN its edits land normally -- staleness detection distinguishes unchanged-since-branch
     from deliberately-edited
   evidence:
-  - tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive
+  - tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive
 threat: null
 component: null
 ---

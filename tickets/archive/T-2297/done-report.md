@@ -34,7 +34,7 @@ Changed: scripts/fleet_status.py (noqa annotations + line-wrap, no behavior
 change), tests/test_ticket_land.py (removed unused local, no behavior
 change)
 
-Evidence: tests/test_ticket_land.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
+Evidence: tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
 (passes)
 
 Filed: none (the one non-code finding -- the garbled blank identity -- is
@@ -57,7 +57,7 @@ resolved by an earlier ticket in this same sweep batch (T-2260).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

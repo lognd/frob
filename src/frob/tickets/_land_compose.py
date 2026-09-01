@@ -314,7 +314,7 @@ def _squash_into_worktree(
 # frob:doc \
 # docs/modules/tickets-landing.md#frobtickets_land_compose----disposable-worktree-three\
 # -way-squash-compose-t-3107
-# frob:tests tests/test_ticket_land.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn.test_concurrent_write_between_squash_and_splice_survives_land  # noqa: E501
 @contextmanager
 def compose_squash_in_disposable_worktree(
     repo: Path, base_commit: str, branch_name: str

@@ -73,7 +73,7 @@ scope_changes:
   actor: logan
   at: '2026-08-02'
 evidence:
-- tests/test_ticket_land.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides
+- tests/ticket_land_suite/test_land_core.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides
 designated_repro_test: null
 threat: null
 component: null

@@ -30,7 +30,7 @@ scope_changes:
   actor: logan
   at: '2026-08-05'
 evidence:
-- tests/test_ticket_land.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore
+- tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN this repo''s own ledger has been migrated to v2 in a quiet window (no
@@ -41,7 +41,7 @@ acceptance:
     delivers the T-1259 acceptance[5] draft-death regression test against v2, proving
     the TICK002/TICK006 draft-death class is structurally impossible on the v2 layout.'
   evidence:
-  - tests/test_ticket_land.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore
+  - tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore
 acceptance_amendments:
 - op: replace
   index: 0
@@ -72,7 +72,7 @@ acceptance_amendments:
     \ Description) require but\n   explicitly defer to the coordinator's judgment,\
     \ not a worktree agent's.\n   Filed T-draft-313a764b (renumbers at land) to carry\
     \ the deletion\n   forward once that precondition holds.\n\nWhat this ticket DID\
-    \ ship: the T-1259 acceptance[5] draft-death\nregression test against v2 (tests/test_ticket_land.py::TestArchiveV2::\n\
+    \ ship: the T-1259 acceptance[5] draft-death\nregression test against v2 (tests/ticket_land_suite/test_archive.py::TestArchiveV2::\n\
     test_v2_draft_survives_a_concurrent_worktree_restore), confirming the\nTICK002/TICK006\
     \ draft-death class is structurally impossible on the v2\nper-ticket-file layout\
     \ (disjoint git objects, no shared-file restore can\never touch an uncommitted\

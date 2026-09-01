@@ -66,9 +66,9 @@ Changed:
 - src/frob/tickets/_land.py::_land_locked (wires the new twin call)
 
 Evidence:
-- tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness::test_every_call_site_guard_is_registered
-- tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness::test_every_registry_entry_has_a_twin_or_a_stated_reason
-- tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness::test_registered_twins_are_actually_wired_into_the_land_sequence
+- tests/ticket_land_suite/test_verify_reset.py::TestCommittedDiffGuardRegistryCompleteness::test_every_call_site_guard_is_registered
+- tests/ticket_land_suite/test_verify_reset.py::TestCommittedDiffGuardRegistryCompleteness::test_every_registry_entry_has_a_twin_or_a_stated_reason
+- tests/ticket_land_suite/test_verify_reset.py::TestCommittedDiffGuardRegistryCompleteness::test_registered_twins_are_actually_wired_into_the_land_sequence
 `--designate-repro --designate-repro-force` used on the first for the same
 mechanical NO_VERDICT-at-parent-commit reason as every other ticket in this series
 (the whole test class is new, added in the same commit as the registry it tests) --
@@ -106,9 +106,9 @@ branch history -- not touched by this ticket's diff.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness::test_every_call_site_guard_is_registered` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness::test_every_registry_entry_has_a_twin_or_a_stated_reason` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness::test_registered_twins_are_actually_wired_into_the_land_sequence` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestCommittedDiffGuardRegistryCompleteness::test_every_call_site_guard_is_registered` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestCommittedDiffGuardRegistryCompleteness::test_every_registry_entry_has_a_twin_or_a_stated_reason` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestCommittedDiffGuardRegistryCompleteness::test_registered_twins_are_actually_wired_into_the_land_sequence` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

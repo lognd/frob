@@ -39,20 +39,20 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity::test_manifest_version_written_same_step_as_pyproject
-- tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity::test_incoherent_quartet_refusal_names_desync
+- tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity::test_manifest_version_written_same_step_as_pyproject
+- tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity::test_incoherent_quartet_refusal_names_desync
 designated_repro_test: null
 acceptance:
 - text: given a land whose REL001 bump succeeds, when the land commit is inspected,
     then .frob-release.json's version field equals pyproject.toml's version (quartet
     coherent) in that same commit
   evidence:
-  - tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity::test_manifest_version_written_same_step_as_pyproject
+  - tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity::test_manifest_version_written_same_step_as_pyproject
 - text: given a repo whose manifest version lags pyproject (the desync this ticket
     fixes), when frob ticket land runs, then the refusal message names the desync
     explicitly and points at frob release sync, instead of the bare monotonicity refusal
   evidence:
-  - tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity::test_incoherent_quartet_refusal_names_desync
+  - tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity::test_incoherent_quartet_refusal_names_desync
 threat: null
 component: null
 ---

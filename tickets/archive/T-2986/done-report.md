@@ -50,7 +50,7 @@ change (confirmed via the ticket's own pre-triage measurement) and after
 (measured explicitly this ticket, exit=0, 164 active tickets counted
 correctly).
 
-Regression test: tests/test_ticket_land.py::TestArchiveV2::
+Regression test: tests/ticket_land_suite/test_archive.py::TestArchiveV2::
 test_archived_ticket_attachment_still_resolves_for_cov004 -- archives a
 v2 ticket carrying a self-contained-shaped attachment, asserts the
 recorded path is rewritten to the archive/ prefix, asserts the file
@@ -79,7 +79,7 @@ status showing no diff to that file).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestArchiveV2::test_archived_ticket_attachment_still_resolves_for_cov004` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archived_ticket_attachment_still_resolves_for_cov004` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

@@ -59,7 +59,7 @@ unrelated, landed on main by a sibling agent's T-1738).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry` (pytest node id, verified passing when recorded)
 - `tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_clean_run_advances_watermark_and_compacts_queue` (pytest node id, verified passing when recorded)
 - `tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings` (pytest node id, verified passing when recorded)
 - `tests/unit/verify/test_worker.py::TestInFlightMarkerCrashSafety::test_death_between_green_result_and_watermark_write_is_never_assumed_green` (pytest node id, verified passing when recorded)

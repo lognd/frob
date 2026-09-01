@@ -20,10 +20,10 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_ticket_land.py::TestGitSubprocessFailures::test_squash_command_failure
-- tests/test_ticket_land.py::TestGitSubprocessFailures::test_final_commit_failure
-- tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
-- tests/test_ticket_land.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content
+- tests/ticket_land_suite/test_land_core.py::TestGitSubprocessFailures::test_squash_command_failure
+- tests/ticket_land_suite/test_land_core.py::TestGitSubprocessFailures::test_final_commit_failure
+- tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
+- tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content
 designated_repro_test: null
 threat: null
 component: null

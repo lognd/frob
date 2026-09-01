@@ -35,7 +35,7 @@ def scratch_repo(tmp_path: Path) -> Path:
     test in this module composes against.
 
     T-3163: gitignores `.frob/` from the very first commit (mirroring
-    `tests/test_ticket_land.py::_git_init`'s own established T-1393
+    `tests/ticket_land_suite/conftest.py::_git_init`'s own established T-1393
     pattern) -- `compose_squash_in_disposable_worktree` now takes `repo`'s
     `ledger_lock` for its whole lifetime, which creates `.frob/tickets.
     lock` as a side effect; an un-gitignored fixture would surface that

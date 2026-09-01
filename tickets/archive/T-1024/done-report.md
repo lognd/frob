@@ -31,7 +31,7 @@ traces them to commit 73a1955d, well before this ticket. Left untouched,
 out of scope.
 
 Touched-set tests run foreground and passed:
-tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty (3)
+tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty (3)
 tests/test_vet.py::TestEvasionTaxonomyExhaustiveness (5)
 
 ### Changed

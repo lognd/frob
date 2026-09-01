@@ -27,11 +27,11 @@ evidence:
 - tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork::test_archive_refuses_when_a_live_lease_exists
 - tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork::test_archive_force_overrides_the_live_lease_refusal
 - tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork::test_archive_ignores_a_stale_lease_from_a_removed_worktree
-- tests/test_ticket_land.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie::test_evidence_and_acceptance_rich_side_wins_a_same_rank_reportless_tie
-- tests/test_ticket_land.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie::test_acceptance_binding_unioned_even_when_the_reportless_higher_rank_side_wins
-- tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_a_side_only_id_missing_from_theirs_survives_the_splice
-- tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_malformed_side_is_refused_not_silently_treated_as_empty
-- tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie::test_evidence_and_acceptance_rich_side_wins_a_same_rank_reportless_tie
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie::test_acceptance_binding_unioned_even_when_the_reportless_higher_rank_side_wins
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard::test_a_side_only_id_missing_from_theirs_survives_the_splice
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard::test_malformed_side_is_refused_not_silently_treated_as_empty
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused
 designated_repro_test: null
 acceptance:
 - text: GIVEN a live non-stale lease WHEN frob ticket archive runs THEN it refuses
@@ -39,7 +39,7 @@ acceptance:
     it THEN its start/evidence/acceptance survive the finalize
   evidence:
   - tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork::test_archive_refuses_when_a_live_lease_exists
-  - tests/test_ticket_land.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie::test_evidence_and_acceptance_rich_side_wins_a_same_rank_reportless_tie
+  - tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie::test_evidence_and_acceptance_rich_side_wins_a_same_rank_reportless_tie
 threat: null
 component: null
 ---

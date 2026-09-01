@@ -823,8 +823,8 @@ def _unscoped_error_findings(
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#public-seam-for-cross-node-callers-t-2450
 # frob:tests \
-# tests/test_ticket_land.py::TestUnscopedErrorFindingsPublicSeam.test_delegates_with_th\
-# e_same_arguments
+# tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam.te\
+# st_delegates_with_the_same_arguments
 def unscoped_error_findings(
     root: Path,
     ticket_id: str,
@@ -1637,7 +1637,7 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
 
 
 # frob:ticket T-1523
-# frob:tests tests/test_ticket_land.py::TestPostLandVerifyPendingMarker.test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker.test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared  # noqa: E501
 def _report_stale_post_land_verify_markers(root: Path) -> None:
     """Reconcile every leftover T-1523 post-land-verify-pending marker
     under `root` -- called at the very START of `_land_core`, before this
@@ -3491,7 +3491,7 @@ def _land_pre_commit_sweep_fn(
 
 
 # frob:ticket T-2198
-# frob:tests tests/test_ticket_land.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
 def _land_plan_tick_findings(
     root: Path, *, cwd: Path | None = None
 ) -> frozenset[tuple[str, str]] | None:
@@ -3548,7 +3548,7 @@ def _land_plan_tick_findings(
 
 
 # frob:ticket T-2198
-# frob:tests tests/test_ticket_land.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
 def _land_plan_pre_merge_tick_baseline(
     root: Path,
 ) -> frozenset[tuple[str, str]] | None:
@@ -3578,8 +3578,8 @@ def _land_plan_pre_merge_tick_baseline(
 
 
 # frob:ticket T-2198
-# frob:tests tests/test_ticket_land.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
 def _land_plan_check_ticks_fn(root: Path, baseline: frozenset[tuple[str, str]] | None):  # noqa: ANN201
     """Build a zero-arg `check_ticks` closure for `land_plan` (T-2198,
     replacing T-1269's global-count version): compares a POST-merge
@@ -3632,8 +3632,8 @@ def _land_plan_check_ticks_fn(root: Path, baseline: frozenset[tuple[str, str]] |
 
 # frob:ticket T-1269
 # frob:ticket T-2198
-# frob:tests tests/test_ticket_land.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestLandPlan.test_cli_dispatches_to_land_plan_and_reports  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_land_plan.py::TestLandPlan.test_cli_dispatches_to_land_plan_and_reports  # noqa: E501
 def _land_plan_cmd(root: Path, cfg: AppConfig) -> None:
     """`frob ticket land --plan --worktree PATH [--dry-run]` (T-1269): land
     a design-phase worktree via `frob.tickets.land_plan` -- merge, finalize

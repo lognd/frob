@@ -198,7 +198,7 @@ evidence:
 - tests/unit/test_process_lock.py::TestDerivedStateLockPlatformBackends::test_windows_backend_round_trips
 - tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends::test_windows_backend_round_trips
 - tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends::test_windows_backend_round_trips
-- tests/test_ticket_land.py::TestLandLockPlatformBackends::test_windows_backend_round_trips
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockPlatformBackends::test_windows_backend_round_trips
 - tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends::test_windows_backend_round_trips
 - tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends::test_windows_backend_round_trips
 - tests/unit/test_rapid_sweep.py::TestBaselineLock::test_windows_backend_serializes_two_concurrent_holders

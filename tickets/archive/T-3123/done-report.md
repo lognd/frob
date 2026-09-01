@@ -31,10 +31,10 @@ tests/test_ticket_land.py, unmasked by this fix).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_a_leaves_frob_worktree_set_like_apply_agent_env_does` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_b_does_not_see_a_leaked_frob_worktree` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_apply_agent_env_leak_is_contained_to_its_own_test` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_must_stay_quiet_after_apply_agent_env_leak` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_a_leaves_frob_worktree_set_like_apply_agent_env_does` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_b_does_not_see_a_leaked_frob_worktree` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_apply_agent_env_leak_is_contained_to_its_own_test` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_must_stay_quiet_after_apply_agent_env_leak` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

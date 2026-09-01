@@ -79,16 +79,16 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_relative_worktree_arg_resolves_to_absolute
-- tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_absolute_worktree_arg_unchanged
+- tests/ticket_land_suite/test_push.py::TestLandWorktreeResolvedAtArgParse::test_relative_worktree_arg_resolves_to_absolute
+- tests/ticket_land_suite/test_push.py::TestLandWorktreeResolvedAtArgParse::test_absolute_worktree_arg_unchanged
 designated_repro_test: null
 acceptance:
 - text: given frob ticket land invoked with a RELATIVE --worktree path from the repo
     root, when land runs worktree-venv subprocesses, then the venv python resolves
     correctly and the land proceeds identically to the absolute-path invocation
   evidence:
-  - tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_relative_worktree_arg_resolves_to_absolute
-  - tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_absolute_worktree_arg_unchanged
+  - tests/ticket_land_suite/test_push.py::TestLandWorktreeResolvedAtArgParse::test_relative_worktree_arg_resolves_to_absolute
+  - tests/ticket_land_suite/test_push.py::TestLandWorktreeResolvedAtArgParse::test_absolute_worktree_arg_unchanged
 threat: null
 component: null
 ---

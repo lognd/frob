@@ -22,7 +22,7 @@ trail):
   precondition).
 
 What shipped: the T-1259 acceptance[5] draft-death regression test
-against v2 (tests/test_ticket_land.py::TestArchiveV2::
+against v2 (tests/ticket_land_suite/test_archive.py::TestArchiveV2::
 test_v2_draft_survives_a_concurrent_worktree_restore), reproducing the
 T-1115/T-1126/T-1127/T-1128 draft-death shape (a draft ticket lost to a
 section 10b-style ledger restore) directly against the v2 per-ticket-
@@ -50,7 +50,7 @@ evidence, since the CLI wiring for `frob ticket migrate --to v2`
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_v2_draft_survives_a_concurrent_worktree_restore` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))
@@ -80,7 +80,7 @@ large to force through safely in this session:
    forward once that precondition holds.
 
 What this ticket DID ship: the T-1259 acceptance[5] draft-death
-regression test against v2 (tests/test_ticket_land.py::TestArchiveV2::
+regression test against v2 (tests/ticket_land_suite/test_archive.py::TestArchiveV2::
 test_v2_draft_survives_a_concurrent_worktree_restore), confirming the
 TICK002/TICK006 draft-death class is structurally impossible on the v2
 per-ticket-file layout (disjoint git objects, no shared-file restore can

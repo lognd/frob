@@ -23,10 +23,11 @@ from frob.tickets._land_finalize import (
 from frob.tickets._leases import lease_holder_worktree
 from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
 from frob.tickets._store import load_all
-from tests.test_ticket_land import _commit_all, _git_init, _run
+from tests.ticket_land_suite.conftest import _commit_all, _git_init, _run
 
 # NOTE (T-1874): the git-plumbing helpers above (`_run`/`_git_init`/
-# `_commit_all`) are imported from `tests.test_ticket_land`, not
+# `_commit_all`) are imported from `tests.ticket_land_suite.conftest`
+# (T-1201 split moved them out of `tests.test_ticket_land`), not
 # reimplemented here, deliberately: that module already carries this
 # testsuite node's `may "exec"`/`may "fs.write"` (`design/frob.strata`)
 # declarations for its own `subprocess.run`/`.write_text(` call sites.

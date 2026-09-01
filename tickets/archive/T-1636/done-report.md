@@ -173,8 +173,8 @@ separately verified unscoped above).
 - `tests/unit/strata/test_code_binding.py::TestObservedCallNames::test_call_names_skips_unresolvable_subscript_call` (pytest node id, verified passing when recorded)
 - `tests/unit/test_app_lazy_exports.py::TestLazyRunnerRunAttrs::test_accessing_one_alias_does_not_import_the_others` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_store.py::TestYamlLoader::test_prefers_csafeloader_when_libyaml_present` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion::test_rewrap_only_diff_is_not_flagged_as_a_deletion` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestFingerprintScan::test_yaml_load_with_explicit_loader_is_not_flagged` (pytest node id, verified passing when recorded)
 
 ### Captured claims

@@ -85,7 +85,7 @@ and this hazard's blast radius shrinks with it. This ticket's own fix
 mid-refusal, not just the specific manual-ledger-commit pattern T-1615
 removes.
 
-Evidence: tests/test_ticket_land.py::TestVerifiedResetRoot's 4 tests (unstage primitive + both drift branches), TestDescribeRootDirtNamesStagedState's 3 tests (staged-vs-unstaged message distinction), TestCommitSquashApplyUnwindsOnCommitFailure's 1 test (the genuine gap fixed), TestLandPlanUnwindNeverDiscardsForeignCommits's 2 tests (the --plan path's own instance of the same gap, plus the pre-existing T-1495 regression lock re-verified still passing).
+Evidence: tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot's 4 tests (unstage primitive + both drift branches), TestDescribeRootDirtNamesStagedState's 3 tests (staged-vs-unstaged message distinction), TestCommitSquashApplyUnwindsOnCommitFailure's 1 test (the genuine gap fixed), TestLandPlanUnwindNeverDiscardsForeignCommits's 2 tests (the --plan path's own instance of the same gap, plus the pre-existing T-1495 regression lock re-verified still passing).
 
 Filed: none (grepped `frob ticket list` for "staged"/"index"/"land
 unstage" first; no duplicates).
@@ -114,16 +114,16 @@ responsible for. `frob test --base main` and the full
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestVerifiedResetRoot::test_drift_refusal_still_unstages_the_index` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestVerifiedResetRoot::test_unstage_index_only_never_moves_head_or_touches_tracked_content` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestVerifiedResetRoot::test_resets_to_the_explicit_pre_land_tip_when_current_matches` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestVerifiedResetRoot::test_refuses_and_does_not_reset_when_current_tip_has_drifted` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDescribeRootDirtNamesStagedState::test_staged_dirt_is_called_out_explicitly` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDescribeRootDirtNamesStagedState::test_working_tree_only_dirt_is_unchanged` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDescribeRootDirtNamesStagedState::test_porcelain_dirty_paths_staged_only_reports_index_status` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCommitSquashApplyUnwindsOnCommitFailure::test_commit_failure_unwinds_the_staged_squash` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_refusal_still_unstages_own_leftover_content` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_drift_refusal_still_unstages_the_index` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_unstage_index_only_never_moves_head_or_touches_tracked_content` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_resets_to_the_explicit_pre_land_tip_when_current_matches` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_refuses_and_does_not_reset_when_current_tip_has_drifted` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestDescribeRootDirtNamesStagedState::test_staged_dirt_is_called_out_explicitly` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestDescribeRootDirtNamesStagedState::test_working_tree_only_dirt_is_unchanged` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestDescribeRootDirtNamesStagedState::test_porcelain_dirty_paths_staged_only_reports_index_status` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestCommitSquashApplyUnwindsOnCommitFailure::test_commit_failure_unwinds_the_staged_squash` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_refusal_still_unstages_own_leftover_content` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_plan.py::TestLandPlanUnwindNeverDiscardsForeignCommits::test_foreign_commit_after_own_last_commit_refuses_instead_of_discarding` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 10 passed (from 10 evidence id(s))

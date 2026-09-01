@@ -74,11 +74,11 @@ Filed: none.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestDriftRefusalRestoresModifiedTrackedContent::test_must_fire_modified_tracked_ledger_file_restored_to_head` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDriftRefusalRestoresModifiedTrackedContent::test_must_still_pass_untracked_leftover_is_not_touched` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDriftRefusalRestoresModifiedTrackedContent::test_no_drift_no_restore_needed` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestVerifiedResetRoot::test_drift_refusal_still_unstages_the_index` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestVerifiedResetRoot::test_resets_to_the_explicit_pre_land_tip_when_current_matches` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestDriftRefusalRestoresModifiedTrackedContent::test_must_fire_modified_tracked_ledger_file_restored_to_head` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestDriftRefusalRestoresModifiedTrackedContent::test_must_still_pass_untracked_leftover_is_not_touched` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestDriftRefusalRestoresModifiedTrackedContent::test_no_drift_no_restore_needed` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_drift_refusal_still_unstages_the_index` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestVerifiedResetRoot::test_resets_to_the_explicit_pre_land_tip_when_current_matches` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

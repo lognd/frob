@@ -23,8 +23,8 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_ticket_land.py::TestSyncGateRulesForLandDiffTarget::test_edit_to_waive_py_is_detected
-- tests/test_ticket_land.py::TestSyncGateRulesForLandDiffTarget::test_unrelated_waive_py_edit_is_noop
+- tests/ticket_land_suite/test_push.py::TestSyncGateRulesForLandDiffTarget::test_edit_to_waive_py_is_detected
+- tests/ticket_land_suite/test_push.py::TestSyncGateRulesForLandDiffTarget::test_unrelated_waive_py_edit_is_noop
 designated_repro_test: null
 threat: null
 component: null
@@ -85,8 +85,8 @@ _KNOWN_GATE_RULES text must still no-op.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestSyncGateRulesForLandDiffTarget::test_edit_to_waive_py_is_detected` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSyncGateRulesForLandDiffTarget::test_unrelated_waive_py_edit_is_noop` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_push.py::TestSyncGateRulesForLandDiffTarget::test_edit_to_waive_py_is_detected` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_push.py::TestSyncGateRulesForLandDiffTarget::test_unrelated_waive_py_edit_is_noop` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

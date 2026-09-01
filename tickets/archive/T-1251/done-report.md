@@ -65,10 +65,10 @@ per TICK011.
 Evidence: tests/test_ticket_land.py -- 176/176 pass (verified twice; one
 xdist-parallel flake in TestClaimDivergencePostMerge unrelated to this
 diff, reproduced pass in isolation both times). Bound node ids:
-- tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_merges_by_id_never_overwrites
-- tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish
-- tests/test_ticket_land.py::TestUvLockSync::test_worktree_side_lock_flap_auto_restored_before_wip_commit
-- tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
+- tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_merges_by_id_never_overwrites
+- tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_worktree_side_lock_flap_auto_restored_before_wip_commit
+- tests/ticket_land_suite/test_wip.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
 
 Filed: T-1334 (arch: split _land_finalize.py's draft/squash/release families -- T-1251 residue)
 
@@ -89,10 +89,10 @@ to this ticket's files) remains in the report.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_merges_by_id_never_overwrites` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUvLockSync::test_worktree_side_lock_flap_auto_restored_before_wip_commit` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_merges_by_id_never_overwrites` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestUvLockSync::test_worktree_side_lock_flap_auto_restored_before_wip_commit` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_wip.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

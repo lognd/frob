@@ -39,13 +39,13 @@ release_bumped_to and natives_rebuilt fields, both reported by the CLI.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestReleaseBump::test_bump_applied_and_reported` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestReleaseBump::test_no_bump_needed_reports_none` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestReleaseBump::test_bump_failure_unwinds_squash` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestReleaseBump::test_no_callback_is_noop` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRebuildNatives::test_invoked_when_native_source_touched` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRebuildNatives::test_skipped_when_no_native_source_touched` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRebuildNatives::test_rebuild_failure_does_not_block_land` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestReleaseBump::test_bump_applied_and_reported` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestReleaseBump::test_no_bump_needed_reports_none` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestReleaseBump::test_bump_failure_unwinds_squash` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestReleaseBump::test_no_callback_is_noop` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_invoked_when_native_source_touched` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_skipped_when_no_native_source_touched` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_rebuild_failure_does_not_block_land` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_rewrites_version_and_prepends_changelog_entry` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_missing_version_line_fails` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_no_manifest_is_noop` (pytest node id, verified passing when recorded)

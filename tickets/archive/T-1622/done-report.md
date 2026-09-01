@@ -80,7 +80,7 @@ queued ticket for that investigation. I did not touch it.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_a_sibling_drafts_citation_in_the_primary_done_report` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_a_sibling_drafts_citation_in_the_primary_done_report` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

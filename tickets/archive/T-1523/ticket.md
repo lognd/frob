@@ -27,9 +27,9 @@ scope_changes:
   actor: logan
   at: '2026-08-05'
 evidence:
-- tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_no_marker_is_a_silent_empty_result
-- tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor
-- tests/test_ticket_land.py::TestPostLandVerifyPendingMarker::test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared
+- tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker::test_no_marker_is_a_silent_empty_result
+- tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker::test_stale_marker_reports_verified_true_when_commit_is_a_clean_ancestor
+- tests/ticket_land_suite/test_verify_reset.py::TestPostLandVerifyPendingMarker::test_orphaned_marker_from_a_killed_prior_run_is_reported_and_cleared
 designated_repro_test: null
 threat: null
 component: null

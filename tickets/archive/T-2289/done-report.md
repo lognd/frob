@@ -54,7 +54,7 @@ criteria require --
   - test_genuine_sibling_conflict_still_refuses: MUST-STILL-FAIL. A
     genuine sibling ticket's `done` -> `queued` regression still refuses
     with LandError.TerminalStateRegression, unchanged.
-Also updated tests/test_ticket_land.py::TestLedgerV2LandMergeStory::
+Also updated tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::
 test_same_ticket_conflict_surfaces_loudly_no_splice, which exercised
 exactly this same-ticket-own-row conflict shape and asserted the OLD
 "always surfaces loudly" behavior T-2289 deliberately narrows for this
@@ -89,7 +89,7 @@ test_ticket_land.py`, unrelated to the edit at line ~3481+).
 - `tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard::test_regressed_sibling_is_detected_by_rank_comparison` (pytest node id, verified passing when recorded)
 - `tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard::test_no_regression_when_sibling_state_only_improves_or_holds` (pytest node id, verified passing when recorded)
 - `tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard::test_pre_fix_shape_would_have_silently_reverted_sibling` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice` (pytest node id, verified passing when recorded)
 - `tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve::test_self_conflict_lands_by_keeping_newer_state` (pytest node id, verified passing when recorded)
 
 ### Captured claims

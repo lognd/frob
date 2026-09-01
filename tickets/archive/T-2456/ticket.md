@@ -80,10 +80,10 @@ evidence:
 - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_extracts_deferred_groups_from_json_stdout
 - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_for_non_json_stdout
 - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_when_no_deferral_present
-- tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups
-- tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral
-- tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line
-- tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent
+- tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups
+- tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral
+- tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line
+- tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent
 designated_repro_test: null
 acceptance:
 - text: Given a land whose frob check was budget-truncated, when it reports, then
@@ -93,30 +93,30 @@ acceptance:
   - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_extracts_deferred_groups_from_json_stdout
   - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_for_non_json_stdout
   - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_when_no_deferral_present
-  - tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups
-  - tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral
-  - tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line
-  - tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent
+  - tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups
+  - tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral
+  - tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line
+  - tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent
 - text: Given a branch introducing a trivial ruff E501 violation, when it is landed,
     then the violation is caught rather than reaching main silently.
   evidence:
   - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_extracts_deferred_groups_from_json_stdout
   - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_for_non_json_stdout
   - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_when_no_deferral_present
-  - tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups
-  - tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral
-  - tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line
-  - tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent
+  - tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups
+  - tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral
+  - tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line
+  - tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent
 - text: Given a land whose check runs to completion with no findings, when it reports,
     then it lands cleanly with no added friction.
   evidence:
   - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_extracts_deferred_groups_from_json_stdout
   - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_for_non_json_stdout
   - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_when_no_deferral_present
-  - tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups
-  - tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral
-  - tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line
-  - tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent
+  - tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups
+  - tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral
+  - tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line
+  - tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent
 threat: null
 component: tickets
 anchor: false

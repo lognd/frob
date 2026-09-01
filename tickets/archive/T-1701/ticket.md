@@ -61,9 +61,9 @@ scope_changes:
   actor: logan
   at: '2026-08-06'
 evidence:
-- tests/test_ticket_land.py::TestLandDroppedTicket::test_dropped_ticket_with_a_reason_lands_cleanly
-- tests/test_ticket_land.py::TestLandDroppedTicket::test_dropped_ticket_with_no_reason_refuses
-- tests/test_ticket_land.py::TestCloseFailAfterMerge::test_close_fails_after_merge_when_main_dropped_same_id
+- tests/ticket_land_suite/test_land_core.py::TestLandDroppedTicket::test_dropped_ticket_with_a_reason_lands_cleanly
+- tests/ticket_land_suite/test_land_core.py::TestLandDroppedTicket::test_dropped_ticket_with_no_reason_refuses
+- tests/ticket_land_suite/test_land_core.py::TestCloseFailAfterMerge::test_close_fails_after_merge_when_main_dropped_same_id
 designated_repro_test: null
 threat: null
 component: null

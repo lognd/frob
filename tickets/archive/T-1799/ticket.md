@@ -25,9 +25,9 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_ticket_land.py::TestCommitsTouchingPath::test_names_the_real_commit_that_touched_the_file
-- tests/test_ticket_land.py::TestCommitsTouchingPath::test_empty_when_the_path_was_never_touched
-- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+- tests/ticket_land_suite/test_land_core.py::TestCommitsTouchingPath::test_names_the_real_commit_that_touched_the_file
+- tests/ticket_land_suite/test_land_core.py::TestCommitsTouchingPath::test_empty_when_the_path_was_never_touched
+- tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge
 designated_repro_test: null
 threat: null
 component: null

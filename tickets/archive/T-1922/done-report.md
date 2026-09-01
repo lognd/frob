@@ -55,7 +55,7 @@ immediately after -- never via `git stash`):
 `test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse`
 FAILED with the filter disabled (refused `OutOfScopeWaiveDeletion`
 exactly matching the real T-1918 log line shape), PASSED with it
-restored. `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal`
+restored. `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal`
 (all 8, including every pre-existing T-1332/T-1550/T-1799 case) --
 8 passed both before and after.
 
@@ -122,9 +122,9 @@ exist.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_already_landed_sibling_deletion_on_shared_worktree_not_recounted` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_already_landed_sibling_deletion_on_shared_worktree_not_recounted` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

@@ -1074,7 +1074,7 @@ _CLAIMS_ERROR_FINDINGS_RE = re.compile(r"^- error-findings: (.+)$")
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity kind="integration"  # noqa: E501
 class DoneReportClaims(BaseModel):
     """Structured, CAPTURED (never hand-typed) Done-report claims (T-0754):
     `test_count` is the number of a ticket's non-cmd evidence ids observed
@@ -1138,7 +1138,7 @@ class DoneReportClaims(BaseModel):
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 def render_claims_block(claims: DoneReportClaims) -> str:
     """Render `claims` as a Done report `### Captured claims` section
     (T-0754) -- the mechanical inverse of `parse_claims_from_done_report`,
@@ -1188,7 +1188,7 @@ def render_claims_block(claims: DoneReportClaims) -> str:
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_free_prose_elsewhere_never_masquerades_as_claims kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
     """Recover a `### Captured claims` section from `body`'s `## Done
     report`, the inverse of `render_claims_block` (T-0754). Returns `None`

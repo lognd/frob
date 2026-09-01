@@ -28,11 +28,11 @@ Changed:
   src/frob/tickets/_land.py::_LOCK_VERSION_LINE (new)
 
 Evidence:
-  tests/test_ticket_land.py::TestUvLockSync::test_bump_then_lock_synced_in_commit
-  tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse
-  tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
-  tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
-  tests/test_ticket_land.py::TestUvLockSync::test_lock_sync_spawn_failure_unwinds_squash
+  tests/ticket_land_suite/test_release.py::TestUvLockSync::test_bump_then_lock_synced_in_commit
+  tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse
+  tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
+  tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
+  tests/ticket_land_suite/test_release.py::TestUvLockSync::test_lock_sync_spawn_failure_unwinds_squash
   (all 5 bound to acceptance[0] via `frob ticket evidence --accepts 0`)
   Full `tests/test_ticket_land.py` regression run: 71 passed
   (`uv run --frozen pytest tests/test_ticket_land.py -q -p no:cacheprovider`)
@@ -82,8 +82,8 @@ commit, never staged.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestUvLockSync::test_bump_then_lock_synced_in_commit` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUvLockSync::test_lock_sync_spawn_failure_unwinds_squash` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestUvLockSync::test_bump_then_lock_synced_in_commit` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestUvLockSync::test_lock_sync_spawn_failure_unwinds_squash` (pytest node id, verified passing when recorded)

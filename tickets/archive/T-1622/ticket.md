@@ -51,7 +51,7 @@ scope_changes:
   actor: logan
   at: '2026-08-06'
 evidence:
-- tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_a_sibling_drafts_citation_in_the_primary_done_report
+- tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_a_sibling_drafts_citation_in_the_primary_done_report
 designated_repro_test: null
 threat: null
 component: null

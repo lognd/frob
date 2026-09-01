@@ -25,7 +25,7 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_ticket_land.py::TestLand::test_non_version_pyproject_edit_survives_land
+- tests/ticket_land_suite/test_land_core.py::TestLand::test_non_version_pyproject_edit_survives_land
 designated_repro_test: null
 threat: null
 component: null
@@ -129,7 +129,7 @@ itself -- not folded into this ticket's own scope.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLand::test_non_version_pyproject_edit_survives_land` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLand::test_non_version_pyproject_edit_survives_land` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

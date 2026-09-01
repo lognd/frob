@@ -56,9 +56,9 @@ scope_changes:
   actor: logan
   at: '2026-07-29'
 evidence:
-- tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
-- tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_in_scope_waive_deletion_is_allowed
-- tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_declared_in_done_report_waive_deletion_is_allowed
+- tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+- tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_in_scope_waive_deletion_is_allowed
+- tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_declared_in_done_report_waive_deletion_is_allowed
 - tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::test_native001_degraded_run_deletes_nothing
 - tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::test_skipped_stage_degraded_run_deletes_nothing
 - tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::test_mass_invalidation_of_one_rule_deletes_nothing
@@ -80,9 +80,9 @@ acceptance:
     frob ticket land runs THEN the land refuses before merge with an error naming
     the file and deleted waiver
   evidence:
-  - tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
-  - tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_in_scope_waive_deletion_is_allowed
-  - tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_declared_in_done_report_waive_deletion_is_allowed
+  - tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge
+  - tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_in_scope_waive_deletion_is_allowed
+  - tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_declared_in_done_report_waive_deletion_is_allowed
 - text: GIVEN fix_waive004_stale_waiver whose verification run_gates() executed with
     stale natives or a skipped stage THEN it deletes nothing
   evidence:

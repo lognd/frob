@@ -68,7 +68,7 @@ covering test files) was run foreground with an explicit `timeout`,
 never backgrounded.
 
 Disclosed cut: the full unscoped suite run also surfaced ONE additional
-failure, `tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge`,
+failure, `tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge`,
 which passes standalone in 0.45s -- an xdist-parallel-run flake, not one
 of this ticket's five named failures and not touched by this diff. Not
 fixed here (out of scope); filed as T-1393.

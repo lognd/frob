@@ -36,18 +36,18 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_ticket_land.py::TestLandChainedCdRootResolution::test_root_equal_to_a_real_linked_worktree_resolves_and_lands
-- tests/test_ticket_land.py::TestLandChainedCdRootResolution::test_root_equal_to_the_primary_checkout_itself_still_refuses
-- tests/test_ticket_land.py::TestUvLockSync::test_worktree_side_lock_flap_auto_restored_before_wip_commit
-- tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse
-- tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
+- tests/ticket_land_suite/test_land_core.py::TestLandChainedCdRootResolution::test_root_equal_to_a_real_linked_worktree_resolves_and_lands
+- tests/ticket_land_suite/test_land_core.py::TestLandChainedCdRootResolution::test_root_equal_to_the_primary_checkout_itself_still_refuses
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_worktree_side_lock_flap_auto_restored_before_wip_commit
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse
+- tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
 designated_repro_test: null
 acceptance:
 - text: given a shell whose cwd is inside the worktree and flapped uv.lock files on
     both sides, when frob ticket land runs, then it lands correctly with no manual
     checkout or cd
   evidence:
-  - tests/test_ticket_land.py::TestLandChainedCdRootResolution::test_root_equal_to_a_real_linked_worktree_resolves_and_lands
+  - tests/ticket_land_suite/test_land_core.py::TestLandChainedCdRootResolution::test_root_equal_to_a_real_linked_worktree_resolves_and_lands
 threat: null
 component: null
 ---

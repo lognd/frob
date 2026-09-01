@@ -135,9 +135,9 @@ evidence:
 - tests/unit/test_design_invariants.py::TestInv008::test_bound_property_test_clears
 - tests/unit/test_design_invariants.py::TestInv008::test_non_property_kind_test_does_not_clear
 - tests/unit/test_design_invariants.py::TestInv008::test_no_obligation_attr_is_unaffected
-- tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_terminal_side_always_wins_over_non_terminal
-- tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_strictly_higher_rank_poorer_side_always_wins
-- tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_richer_side_wins_at_equal_or_lower_rank
+- tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty::test_terminal_side_always_wins_over_non_terminal
+- tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty::test_strictly_higher_rank_poorer_side_always_wins
+- tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty::test_richer_side_wins_at_equal_or_lower_rank
 designated_repro_test: null
 acceptance:
 - text: GIVEN _normalized.py gains a tree_sitter import WHEN the INV gate runs THEN
@@ -145,7 +145,7 @@ acceptance:
     a violating change fails it; both known cases seeded
   evidence:
   - tests/unit/test_design_invariants.py::TestInv007::test_forbidden_import_fires
-  - tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_strictly_higher_rank_poorer_side_always_wins
+  - tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty::test_strictly_higher_rank_poorer_side_always_wins
 threat: null
 component: null
 ---

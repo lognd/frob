@@ -72,12 +72,12 @@ scope_changes:
   actor: logan
   at: '2026-08-25'
 evidence:
-- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_rapid_profile_skips_inline_check_gates_spawn
-- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds
-- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_unreadable_profile_config_fails_closed_and_still_runs_spawn
-designated_repro_test: tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_rapid_profile_skips_inline_check_gates_spawn
+- tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid::test_rapid_profile_skips_inline_check_gates_spawn
+- tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds
+- tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid::test_unreadable_profile_config_fails_closed_and_still_runs_spawn
+designated_repro_test: tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid::test_rapid_profile_skips_inline_check_gates_spawn
 threat: null
 component: null
 anchor: false

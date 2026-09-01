@@ -16,11 +16,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_through_changelog_guard_hook_succeeds
-- tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_internal_git_env_restores_prior_value
-- tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_argv_and_stderr
-- tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_spawn_error
-- tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr
+- tests/ticket_land_suite/test_claim_close.py::TestLandInternalEnvThroughHook::test_land_through_changelog_guard_hook_succeeds
+- tests/ticket_land_suite/test_claim_close.py::TestLandInternalEnvThroughHook::test_land_internal_git_env_restores_prior_value
+- tests/ticket_land_suite/test_claim_close.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_argv_and_stderr
+- tests/ticket_land_suite/test_claim_close.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_spawn_error
+- tests/ticket_land_suite/test_claim_close.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr
 designated_repro_test: null
 acceptance:
 - text: GIVEN the T-0731 pre-commit hook active via core.hooksPath WHEN land creates
@@ -28,7 +28,7 @@ acceptance:
     set FROB_LAND_INTERNAL and succeed; a regression test installs the hook in the
     fixture repo and lands through it
   evidence:
-  - tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_through_changelog_guard_hook_succeeds
+  - tests/ticket_land_suite/test_claim_close.py::TestLandInternalEnvThroughHook::test_land_through_changelog_guard_hook_succeeds
 threat: null
 component: null
 ---

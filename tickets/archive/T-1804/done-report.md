@@ -64,8 +64,8 @@ tests; nothing dead, unwired, opaque, or under-referenced was added.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestUnscopedErrorFindingsExcludesNoTicketNoise::test_pre001_and_scope001_are_excluded_but_real_findings_survive` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUnscopedErrorFindingsExcludesNoTicketNoise::test_only_no_ticket_noise_present_returns_empty_not_none` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsExcludesNoTicketNoise::test_pre001_and_scope001_are_excluded_but_real_findings_survive` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsExcludesNoTicketNoise::test_only_no_ticket_noise_present_returns_empty_not_none` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

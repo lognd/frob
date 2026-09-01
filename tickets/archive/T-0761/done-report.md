@@ -46,7 +46,7 @@ land" case -- only this misconfiguration reproduces it. This closes the
 T-0235 case it claims to cover but missed here" gap named in the ticket:
 the assertion no longer degrades to "nothing to check" silently.
 
-REGRESSION TEST (`tests/test_ticket_land.py::TestLandCompleteness::
+REGRESSION TEST (`tests/ticket_land_suite/test_land_core.py::TestLandCompleteness::
 test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty`):
 reproduces the exact incident shape deterministically -- a new source file
 is committed directly onto the fixture repo's own checked-out branch (no
@@ -69,7 +69,7 @@ tests/test_ticket_land.py   | +47 (one new regression test)
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty` (pytest node id, verified passing post-fix, verified failing pre-fix)
+- `tests/ticket_land_suite/test_land_core.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty` (pytest node id, verified passing post-fix, verified failing pre-fix)
 
 ### Gates
 - `uv run frob check --ticket T-0761 --only lint` clean
@@ -92,4 +92,4 @@ this Done report recorded, for a reviewer to close.
 (no changed files detected)
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty` (pytest node id, verified passing when recorded)

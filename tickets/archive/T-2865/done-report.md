@@ -3,8 +3,8 @@
 Changed:
 tests/test_gates.py::TestCoverageGate.test_cov006_third_file_reachable_chases_relative_import_reexport
 tests/test_gates.py::TestFixEngineTierA.test_tick006_renamed_draft_resolved_via_git_not_refiled
-tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty.test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
-tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr.test_wip_commit_failure_logs_stderr
+tests/ticket_land_suite/test_wip.py::TestWipCommitNormalizationOnlyDirty.test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
+tests/ticket_land_suite/test_claim_close.py::TestGitFailureMessageCarriesStderr.test_wip_commit_failure_logs_stderr
 
 Each of the four now carries an individual `frob:waive COV006` comment
 scoped to its own `frob:tests` edge, citing the T-2550 call-graph-blindness
@@ -38,8 +38,8 @@ ticket's acceptance is zero live warnings only, by design.
 ### Evidence
 - `tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_chases_relative_import_reexport` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestFixEngineTierA::test_tick006_renamed_draft_resolved_via_git_not_refiled` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_wip.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

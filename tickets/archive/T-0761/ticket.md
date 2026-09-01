@@ -16,14 +16,14 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty
+- tests/ticket_land_suite/test_land_core.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty
 designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree branch adding a new source file WHEN frob ticket land runs
     THEN the landed commit contains that file OR land refuses with a completeness
     error; a regression test reproduces the land-drops-code shape
   evidence:
-  - tests/test_ticket_land.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty
+  - tests/ticket_land_suite/test_land_core.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty
 threat: null
 component: null
 ---

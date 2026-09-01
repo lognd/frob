@@ -54,7 +54,7 @@ evidence:
 - tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand::test_stale_baseline_refuses_to_attribute
 - tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand::test_no_captured_claims_section_is_a_noop
 - tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
-- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn
+- tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn
 designated_repro_test: null
 threat: null
 component: null

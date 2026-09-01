@@ -89,7 +89,7 @@ same commit as the fix) -- the real repro was verified directly via the saved-
 patch revert above.
 
 Also added `# frob:ticket T-2017` edges to the 3 test methods in
-`tests/test_ticket_land.py::TestCommittedDiffGuardRegistryCompleteness` the
+`tests/ticket_land_suite/test_verify_reset.py::TestCommittedDiffGuardRegistryCompleteness` the
 coordinator flagged as carrying COV002 findings after T-1940 landed (changed with
 no edge to an open ticket) -- T-2017 is their natural home, being the live defect
 in exactly the registry those tests cover.

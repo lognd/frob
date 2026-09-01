@@ -36,7 +36,7 @@ FIX.
    attempting an illegal `dropped -> done` transition.
 
    Deliberately gated on `_has_drop_reason`, not bare `state ==
-   DROPPED`: `tests/test_ticket_land.py::TestCloseFailAfterMerge::
+   DROPPED`: `tests/ticket_land_suite/test_land_core.py::TestCloseFailAfterMerge::
    test_close_fails_after_merge_when_main_dropped_same_id` (pre-existing,
    unmodified) exercises a genuine RACE this must not paper over -- main
    independently ends up DROPPED for the same ticket id via an unrelated

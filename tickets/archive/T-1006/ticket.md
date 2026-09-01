@@ -782,9 +782,9 @@ scope_changes:
   actor: logan
   at: '2026-07-28'
 evidence:
-- tests/test_ticket_land.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace
-- tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
-- tests/test_ticket_land.py::TestMergeConflictOutsideLedger::test_real_conflict_outside_tickets_md_aborts
+- tests/ticket_land_suite/test_land_core.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace
+- tests/ticket_land_suite/test_wip.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
+- tests/ticket_land_suite/test_land_core.py::TestMergeConflictOutsideLedger::test_real_conflict_outside_tickets_md_aborts
 - tests/test_tickets_review.py::TestCloseStrictMode::test_strict_flag_alone_does_not_gate_without_config
 - tests/test_tickets_review.py::TestCloseStrictMode::test_config_gate_alone_does_not_enforce_without_strict_flag
 - tests/test_tickets_review.py::TestCloseStrictMode::test_both_gates_on_succeeds_with_matching_approve_review
@@ -813,7 +813,7 @@ coverage` run in a clean worktree (merged to main tip) shows ~118 test
 failures that are NOT caused by coverage instrumentation -- reproduced
 several individually WITHOUT --cov and they still fail (e.g.
 tests/test_registry_reconciliation_patterns.py::TestExhaustivenessGateOverRealPatterns::test_no_patterns_violations,
-tests/test_ticket_land.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace,
+tests/ticket_land_suite/test_land_core.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace,
 tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root).
 These span registry-reconciliation exhaustiveness self-checks
 (patterns/compliance/secrets/supply_chain/weaknesses/system_design all

@@ -1,6 +1,6 @@
 ## Done report
 
-frob:no-behavior-change reason="only the two frob:tests directive lines on _restrict_to_branch_own_files changed (re-pointed at the real, currently-collecting regression tests T-1922 actually shipped, tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal's two methods, instead of a tests/unit/test_land_committed_waive_deletion_own_files.py file that was never created). No production logic in src/frob/tickets/_land.py changed at all. There is no defect for a designated repro test to reproduce; the bound evidence (the same two real tests) correctly PASSES at both parent and fix, which is exactly what a no-behavior-change claim predicts."
+frob:no-behavior-change reason="only the two frob:tests directive lines on _restrict_to_branch_own_files changed (re-pointed at the real, currently-collecting regression tests T-1922 actually shipped, tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal's two methods, instead of a tests/unit/test_land_committed_waive_deletion_own_files.py file that was never created). No production logic in src/frob/tickets/_land.py changed at all. There is no defect for a designated repro test to reproduce; the bound evidence (the same two real tests) correctly PASSES at both parent and fix, which is exactly what a no-behavior-change claim predicts."
 
 Per the coordinator's note, this ticket's body also describes the four
 COV003 orphans (T-0185/T-1351/T-1507/T-1512) -- that half is stale and
@@ -27,7 +27,7 @@ class as T-1954's DOC002 sibling finding from the same land.
 
 Fix: re-pointed both `frob:tests` directives at the real, currently-
 collecting node ids. Verified both collect and pass:
-`pytest tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses`
+`pytest tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses`
 -> `collected=2 failed=0`.
 
 Verification: `frob check --only docanchor --only drift` (unscoped,
@@ -43,8 +43,8 @@ Filed: none.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

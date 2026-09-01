@@ -16,7 +16,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestStandaloneSiblingDraftSurvivesLand::test_sibling_draft_ticket_finalized_and_lands_alongside
+- tests/ticket_land_suite/test_draft.py::TestStandaloneSiblingDraftSurvivesLand::test_sibling_draft_ticket_finalized_and_lands_alongside
 designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree ledger with a standalone T-draft block WHEN frob ticket land

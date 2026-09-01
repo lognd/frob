@@ -50,8 +50,8 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_two_unmeasured_gate_claims_never_vacuously_match
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_two_unmeasured_gate_claims_never_vacuously_match
 designated_repro_test: null
 threat: null
 component: null

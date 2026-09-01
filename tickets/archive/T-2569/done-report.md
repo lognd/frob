@@ -46,9 +46,9 @@ also confirmed identical on clean main.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_still_passing_returns_true` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_no_longer_passing_returns_false` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_unmeasured_returns_false_with_distinct_message` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose::test_still_passing_returns_true` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose::test_no_longer_passing_returns_false` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose::test_unmeasured_returns_false_with_distinct_message` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_land_release.py::TestVerifyOneBucketPassingSpawnFailureIsUnmeasured::test_spawn_failed_is_unmeasured_not_failed` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_land_release.py::TestVerifyOneBucketPassingSpawnFailureIsUnmeasured::test_individual_reverify_spawn_failure_is_unmeasured` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_land_release.py::TestReverifyFailingBucketIndividually::test_only_the_genuinely_failing_id_is_excluded` (pytest node id, verified passing when recorded)

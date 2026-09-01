@@ -16,14 +16,14 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestUnboundAcceptancePreflightBeforeMerge::test_unbound_acceptance_refused_pre_merge_no_commits_created
+- tests/ticket_land_suite/test_dirt_ownership.py::TestUnboundAcceptancePreflightBeforeMerge::test_unbound_acceptance_refused_pre_merge_no_commits_created
 designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket with an unbound acceptance criterion WHEN frob ticket land
     runs THEN it errors naming the unbound criterion and creates NO merge/finalize
     commit (git log unchanged), not fail-after-merge
   evidence:
-  - tests/test_ticket_land.py::TestUnboundAcceptancePreflightBeforeMerge::test_unbound_acceptance_refused_pre_merge_no_commits_created
+  - tests/ticket_land_suite/test_dirt_ownership.py::TestUnboundAcceptancePreflightBeforeMerge::test_unbound_acceptance_refused_pre_merge_no_commits_created
 threat: null
 component: null
 ---

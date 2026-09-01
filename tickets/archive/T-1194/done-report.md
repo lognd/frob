@@ -53,15 +53,15 @@ call sites and the archive/sibling/newer-winner property suites.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestSpliceLedger::test_same_id_newer_state_wins` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSpliceOnlyTicket::test_render_that_would_drop_an_id_is_refused` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSiblingDoneReportPreserved::test_sibling_done_report_survives_landing_another_ticket` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveResurrection::test_archived_id_never_resurrected` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_terminal_side_always_wins_over_non_terminal` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_strictly_higher_rank_poorer_side_always_wins` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty::test_richer_side_wins_at_equal_or_lower_rank` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedger::test_same_id_newer_state_wins` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSpliceOnlyTicket::test_render_that_would_drop_an_id_is_refused` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSiblingDoneReportPreserved::test_sibling_done_report_survives_landing_another_ticket` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveResurrection::test_archived_id_never_resurrected` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty::test_terminal_side_always_wins_over_non_terminal` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty::test_strictly_higher_rank_poorer_side_always_wins` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_push.py::TestNewerWinnerQualifiedPreferenceProperty::test_richer_side_wins_at_equal_or_lower_rank` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_id_title_mismatch_is_refused_not_silently_overwritten` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_same_id_same_title_still_resolves_via_newer` (pytest node id, verified passing when recorded)
 

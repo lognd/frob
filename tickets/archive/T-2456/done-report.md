@@ -57,10 +57,10 @@ clean-when-incomplete (budget_deferred= is unconditionally printed,
 - `tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_extracts_deferred_groups_from_json_stdout` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_for_non_json_stdout` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_when_no_deferral_present` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 7 passed (from 7 evidence id(s))

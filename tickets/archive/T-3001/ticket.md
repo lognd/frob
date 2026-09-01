@@ -83,8 +83,8 @@ scope_changes:
   actor: logan
   at: '2026-08-26'
 evidence:
-- tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode::test_full_mode_omits_budget_flag_and_sets_allow_full_check_env
-- tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode::test_full_mode_default_is_false_preserves_prior_budgeted_behavior
+- tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullMode::test_full_mode_omits_budget_flag_and_sets_allow_full_check_env
+- tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullMode::test_full_mode_default_is_false_preserves_prior_budgeted_behavior
 designated_repro_test: null
 threat: null
 component: null

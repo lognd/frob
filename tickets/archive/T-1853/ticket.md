@@ -25,8 +25,8 @@ scope_changes:
 evidence:
 - tests/test_tickets_live_tracker.py::TestLandCheckSkipsNonTerminalAnchor::test_in_progress_land_not_blocked_by_citation
 - tests/test_tickets_live_tracker.py::TestLandCheckSkipsNonTerminalAnchor::test_done_land_still_blocked_by_citation
-- tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck::test_citations_found_blocks
-- tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck::test_no_citations_is_ok
+- tests/ticket_land_suite/test_claim_close.py::TestLiveTrackerCitationPrecheck::test_citations_found_blocks
+- tests/ticket_land_suite/test_claim_close.py::TestLiveTrackerCitationPrecheck::test_no_citations_is_ok
 designated_repro_test: tests/test_tickets_live_tracker.py::TestLandCheckSkipsNonTerminalAnchor::test_in_progress_land_not_blocked_by_citation
 threat: null
 component: null

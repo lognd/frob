@@ -73,7 +73,7 @@ count separately rather than fix them all here.
 
 One known pre-existing test failure unrelated to this change, confirmed
 reproducing identically on unmodified main:
-tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally
+tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally
 (a warm-sweep-stage path assertion, unrelated to DirtyMain/git status) --
 not touched.
 

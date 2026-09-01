@@ -13,9 +13,9 @@ sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_holder_metadata_written_on_acquire
-- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_lock_released_after_context_exits
-- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_timeout_raises_when_a_foreign_holder_never_releases
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_holder_metadata_written_on_acquire
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_lock_released_after_context_exits
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_timeout_raises_when_a_foreign_holder_never_releases
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_no_lock_file_reports_nothing
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_live_holder_pid_is_reported_alive_and_healthy
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_dead_holder_pid_is_reported_dead_but_self_healing_and_healthy

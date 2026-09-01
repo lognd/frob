@@ -29,22 +29,22 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_ticket_land.py::TestUvLockSync::test_bump_then_lock_synced_in_commit
-- tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse
-- tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
-- tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
-- tests/test_ticket_land.py::TestUvLockSync::test_lock_sync_spawn_failure_unwinds_squash
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_bump_then_lock_synced_in_commit
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_lock_sync_spawn_failure_unwinds_squash
 designated_repro_test: null
 acceptance:
 - text: GIVEN a land whose version bump changes pyproject WHEN the land commits THEN
     uv.lock is re-synced and committed in the same land commit and a subsequent uv
     run in any checkout produces no lock drift
   evidence:
-  - tests/test_ticket_land.py::TestUvLockSync::test_bump_then_lock_synced_in_commit
-  - tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse
-  - tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
-  - tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
-  - tests/test_ticket_land.py::TestUvLockSync::test_lock_sync_spawn_failure_unwinds_squash
+  - tests/ticket_land_suite/test_release.py::TestUvLockSync::test_bump_then_lock_synced_in_commit
+  - tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse
+  - tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
+  - tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
+  - tests/ticket_land_suite/test_release.py::TestUvLockSync::test_lock_sync_spawn_failure_unwinds_squash
 threat: null
 component: null
 ---

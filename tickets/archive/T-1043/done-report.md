@@ -18,7 +18,7 @@ in tests/test_ticket_land.py. Test-only change; no production code touched.
 (no changed files detected)
 
 ### Evidence
-- `tests/test_ticket_land.py::TestGitSubprocessFailures::test_unowned_deletions_diff_failure_after_merge` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestGitSubprocessFailures::test_unowned_deletions_diff_failure_after_merge` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

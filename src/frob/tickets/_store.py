@@ -547,7 +547,7 @@ def _v2_glob(root: Path) -> list[Path]:
 
 # frob:ticket T-1256
 # frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
-# frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
 def v2_archive_dir(root: Path, ticket_id: str) -> Path:
     """The `tickets/archive/T-####/` directory an archived v2-mode ticket
     owns (design section 4.3) -- `archive_v2`'s `git mv` destination, same
@@ -949,7 +949,7 @@ def _mine_v2_path_transitions(
 
 # frob:ticket T-1256
 # frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
-# frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
 # frob:waive DUP002 reason="near-duplicate of _renumber_v2._git_mv_ticket_dir (T-1420 \
 # split of _new_renumber's v2 backend) by design -- _renumber_v2 already imports \
 # helpers back from _new_renumber, and _new_renumber already imports _load_merged FROM \
@@ -1128,8 +1128,8 @@ def _render_ledger(tickets: dict[str, Ticket], header: str = _LEDGER_HEADER) -> 
 
 # frob:ticket T-0764
 # frob:tests \
-# tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an\
-# _id_is_refused kind="unit"  # noqa: E501
+# tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard.test_rende\
+# r_that_would_drop_an_id_is_refused kind="unit"
 # frob:ticket T-0601
 def _check_ledger_id_integrity(
     tickets: dict[str, Ticket], rendered: str

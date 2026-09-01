@@ -91,16 +91,16 @@ scope_changes:
   at: '2026-08-11'
 evidence:
 - tests/unit/test_conftest_stackdump.py::TestHeavySubprocessGrouping::test_heavy_subprocess_marker_groups_per_file
-- tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+- tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
 - tests/test_ticket_leases.py::TestRefusesTerminalState::test_refuses_done_ticket
-designated_repro_test: tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+designated_repro_test: tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
 acceptance:
 - text: given tests/test_ticket_land.py, when run through the repo default invocation
     with no manual -o addopts override, then it completes and reports a pass/fail
     summary within the 540s foreground budget -- this test MUST fail against current
     main, where it exceeds 540s and never reports
   evidence:
-  - tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+  - tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
 - text: given tests/test_ticket_leases.py, when run the same way, then it completes
     and reports a summary rather than requiring a hand-picked subset
   evidence:

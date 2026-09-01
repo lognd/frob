@@ -15,16 +15,16 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_full_success_reports_absorption_not_commit_failed
-- tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff
-- tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
+- tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_full_success_reports_absorption_not_commit_failed
+- tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff
+- tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
 designated_repro_test: null
 acceptance:
 - text: given a worktree whose earlier land already carried this ticket's files and
     ledger state, when this ticket lands, then land exits success reporting absorption
     and naming the absorbing commit
   evidence:
-  - tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_full_success_reports_absorption_not_commit_failed
+  - tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_full_success_reports_absorption_not_commit_failed
 threat: null
 component: null
 ---

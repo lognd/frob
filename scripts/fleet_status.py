@@ -847,7 +847,7 @@ def ticket_frontmatter_on_main(ticket_id: str) -> dict | None:
     so a completed-and-archived blocker was indistinguishable from a
     missing one, and `_open_blocker_ids` resolved that ambiguity as
     'still blocking'. `frob.tickets.load_queue` (the real ledger resolver,
-    pinned by `tests/test_ticket_land.py::TestArchiveV2::
+    pinned by `tests/ticket_land_suite/test_archive.py::TestArchiveV2::
     test_archived_v2_ticket_still_resolves_as_blocker`) already merges
     both locations -- this mirrors that exact two-location resolution
     order in plain form rather than `import frob` (this script's own 'no

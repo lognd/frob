@@ -20,8 +20,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestLandCompleteness::test_land_brings_tracked_edit_untracked_new_file_and_deletion
-- tests/test_ticket_land.py::TestLandCompleteness::test_incomplete_land_fails_loudly_and_commits_nothing
+- tests/ticket_land_suite/test_land_core.py::TestLandCompleteness::test_land_brings_tracked_edit_untracked_new_file_and_deletion
+- tests/ticket_land_suite/test_land_core.py::TestLandCompleteness::test_incomplete_land_fails_loudly_and_commits_nothing
 designated_repro_test: null
 threat: null
 component: null

@@ -22,7 +22,7 @@ scope_changes:
   actor: logan
   at: '2026-07-26'
 evidence:
-- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_render_that_would_drop_an_id_is_refused
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceOnlyTicket::test_render_that_would_drop_an_id_is_refused
 designated_repro_test: null
 threat: null
 component: null

@@ -60,7 +60,7 @@ Evidence:
 
 Full targeted run: `pytest tests/test_gates_fmt_directives.py` -- 45
 collected, 0 failed (41 pre-existing + 4 new/modified). Also verified
-`tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_real_fmt001_fixer_rewrap_does_not_trip_the_guard`
+`tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion::test_real_fmt001_fixer_rewrap_does_not_trip_the_guard`
 (the land-path whole-tree `format_paths` call, exercising a real .py
 rewrap through the same function) still passes -- 1 collected, 0 failed.
 

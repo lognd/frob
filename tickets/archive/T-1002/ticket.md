@@ -25,17 +25,17 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_ticket_land.py::TestUnionZoneMerge::test_keyed_lines_union_composes
-- tests/test_ticket_land.py::TestUnionZoneMerge::test_keyed_lines_union_refuses
-- tests/test_ticket_land.py::TestUnionZoneMerge::test_resolve_stages
-- tests/test_ticket_land.py::TestUnionZoneMerge::test_append_only_union_concatenates
+- tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_keyed_lines_union_composes
+- tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_keyed_lines_union_refuses
+- tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_resolve_stages
+- tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_append_only_union_concatenates
 designated_repro_test: null
 acceptance:
 - text: given two worktrees each appending a distinct severity line and rule id, when
     both land sequentially, then the second land succeeds without manual conflict
     resolution and both entries are present
   evidence:
-  - tests/test_ticket_land.py::TestUnionZoneMerge::test_resolve_stages
+  - tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_resolve_stages
 threat: null
 component: null
 ---

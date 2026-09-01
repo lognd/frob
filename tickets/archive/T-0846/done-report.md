@@ -87,7 +87,7 @@ an honest reason, on top of the `tests/test_ticket_land.py` widening from
 the original pass.
 
 New adversarial test:
-`tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity`
+`tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity`
 -- captured claim: 2 errors, identities {RULE_A@src/other.py,
 RULE_B@src/other.py}; fresh post-merge: 1 error total (a net DECREASE, so
 the count-only `>` fallback alone would pass this land) but the one
@@ -103,7 +103,7 @@ Verification: `uv run pytest tests/test_ticket_land.py -k
 ClaimDivergence -q` (9 passed), `uv run pytest
 tests/test_ticket_done_report_claims.py -q` (10 passed, including the two
 new error_findings round-trip tests),
-`tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd`
+`tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd`
 (the real-CLI-closures end-to-end test, still passing with the new
 `_check_gate_findings_fn` closure wired in). `uv run ruff check`/`ruff
 format` clean on every touched file. `uv run ty check` clean on every
@@ -190,8 +190,8 @@ stage groups after a `frob ticket sweep T-0846` refresh.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_lower_gate_error_count_than_claim_still_lands` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_lower_gate_error_count_than_claim_still_lands` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel::test_error_findings_round_trips_through_a_done_report_body` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel::test_measured_empty_error_findings_differs_from_none` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_parses_multiple_findings_from_errors_section` (pytest node id, verified passing when recorded)

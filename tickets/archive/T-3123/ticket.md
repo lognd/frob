@@ -21,26 +21,26 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_a_leaves_frob_worktree_set_like_apply_agent_env_does
-- tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_b_does_not_see_a_leaked_frob_worktree
-- tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_apply_agent_env_leak_is_contained_to_its_own_test
-- tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_must_stay_quiet_after_apply_agent_env_leak
+- tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_a_leaves_frob_worktree_set_like_apply_agent_env_does
+- tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_b_does_not_see_a_leaked_frob_worktree
+- tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_apply_agent_env_leak_is_contained_to_its_own_test
+- tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_must_stay_quiet_after_apply_agent_env_leak
 designated_repro_test: null
 acceptance:
 - text: Given tests/test_ticket_land.py run as a whole file, when it completes, then
     zero tests fail with TicketError.WorktreeLeaseViolation
   evidence:
-  - tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_a_leaves_frob_worktree_set_like_apply_agent_env_does
-  - tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_b_does_not_see_a_leaked_frob_worktree
-  - tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_apply_agent_env_leak_is_contained_to_its_own_test
-  - tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_must_stay_quiet_after_apply_agent_env_leak
+  - tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_a_leaves_frob_worktree_set_like_apply_agent_env_does
+  - tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_b_does_not_see_a_leaked_frob_worktree
+  - tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_apply_agent_env_leak_is_contained_to_its_own_test
+  - tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_must_stay_quiet_after_apply_agent_env_leak
 - text: Given a test that deliberately leaves FROB_WORKTREE set, when the next test
     in the same worker runs, then it is unaffected by the leaked value
   evidence:
-  - tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_a_leaves_frob_worktree_set_like_apply_agent_env_does
-  - tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_b_does_not_see_a_leaked_frob_worktree
-  - tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_apply_agent_env_leak_is_contained_to_its_own_test
-  - tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation::test_must_stay_quiet_after_apply_agent_env_leak
+  - tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_a_leaves_frob_worktree_set_like_apply_agent_env_does
+  - tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_b_does_not_see_a_leaked_frob_worktree
+  - tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_apply_agent_env_leak_is_contained_to_its_own_test
+  - tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_must_stay_quiet_after_apply_agent_env_leak
 threat: null
 component: null
 anchor: false

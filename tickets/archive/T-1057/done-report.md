@@ -43,7 +43,7 @@ change) by parsing real argparse args through `AppConfig.from_external`,
 matching this file's existing `TestLandPushCliWiring` pattern.
 
 Verification: reverted the fix locally and confirmed
-tests/test_ticket_land.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace,
+tests/ticket_land_suite/test_land_core.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace,
 ::TestMergeConflictOutsideLedger::test_real_conflict_outside_tickets_md_aborts,
 and ::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
 fail identically on the pre-fix baseline (stray `.frob/derived.lock`
@@ -61,8 +61,8 @@ AFFECT001 doc-drift fix above.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_relative_worktree_arg_resolves_to_absolute` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandWorktreeResolvedAtArgParse::test_absolute_worktree_arg_unchanged` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_push.py::TestLandWorktreeResolvedAtArgParse::test_relative_worktree_arg_resolves_to_absolute` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_push.py::TestLandWorktreeResolvedAtArgParse::test_absolute_worktree_arg_unchanged` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

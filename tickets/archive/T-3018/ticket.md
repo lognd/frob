@@ -79,8 +79,8 @@ evidence:
 - tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend::test_unknown_pid_open_process_fails_reports_false
 - tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend::test_never_requests_kill_capable_access_rights
 - tests/unit/test_process_pid_liveness.py::TestPidAliveWindowsBackend::test_tristate_never_returns_ambiguous_on_windows_backend
-- tests/test_ticket_land.py::TestProbeLandLockPidLivenessDelegatesToSharedModule::test_windows_backend_alive_pid_is_true
-- tests/test_ticket_land.py::TestProbeLandLockPidLivenessDelegatesToSharedModule::test_windows_backend_never_ambiguous
+- tests/ticket_land_suite/test_land_lock.py::TestProbeLandLockPidLivenessDelegatesToSharedModule::test_windows_backend_alive_pid_is_true
+- tests/ticket_land_suite/test_land_lock.py::TestProbeLandLockPidLivenessDelegatesToSharedModule::test_windows_backend_never_ambiguous
 designated_repro_test: null
 threat: null
 component: null

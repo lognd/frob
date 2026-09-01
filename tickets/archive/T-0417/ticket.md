@@ -43,10 +43,10 @@ evidence:
 - tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_rejects_when_evidence_reverified_false
 - tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_allows_when_evidence_reverified_true
 - tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_permissive_when_evidence_reverified_none
-- tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_no_non_cmd_evidence_returns_none
-- tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_collection_failure_returns_false
-- tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_still_passing_returns_true
-- tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_no_longer_passing_returns_false
+- tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose::test_no_non_cmd_evidence_returns_none
+- tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose::test_collection_failure_returns_false
+- tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose::test_still_passing_returns_true
+- tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose::test_no_longer_passing_returns_false
 designated_repro_test: null
 threat: null
 component: null

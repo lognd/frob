@@ -22,8 +22,8 @@ evidence:
 - tests/test_gates_suppress.py::TestSuppress001Gate::test_ty_suppressed_mypy_unsuppressed_fires
 - tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew::test_concurrent_new_ticket_survives_a_racing_archive
 - tests/test_tickets_ledger_concurrency.py::TestRenumberOneRaceWithConcurrentNew::test_concurrent_new_ticket_survives_a_racing_renumber_one
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_two_unmeasured_gate_claims_never_vacuously_match
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_two_unmeasured_gate_claims_never_vacuously_match
 - tests/test_registry_exhaustiveness.py::TestArchChecksReg008BurnDown::test_no_reg008_findings_for_arch_checks_yaml
 - tests/test_registry_exhaustiveness.py::TestSystemDesignReg008BurnDown::test_no_reg008_findings_for_system_design_yaml
 - tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
@@ -35,7 +35,7 @@ component: null
 T-1596 fixed one real xdist polluter (the FROB_PARSE_ARTIFACT_CACHE env leak) and honestly reported a residual set it could not reproduce. T-1596 is now done, so that residual set is tracked nowhere. This ticket is its home.
 
 Confirmed intermittent, 2026-08-06, two consecutive full runs on the SAME commit:
-- run A: SUITE-RESULT exitstatus=1 collected=8564 failed=2 -- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds FAILED
+- run A: SUITE-RESULT exitstatus=1 collected=8564 failed=2 -- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds FAILED
 - run B: SUITE-RESULT exitstatus=0 collected=8564 failed=0 -- the same test passed
 - in isolation: passes
 

@@ -16,9 +16,9 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_strata_waive_clause_draft_id_reference
-- tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_frob_waive_comment_draft_id_reference
-- tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_leaves_unrelated_draft_id_reference_untouched
+- tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_strata_waive_clause_draft_id_reference
+- tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_frob_waive_comment_draft_id_reference
+- tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_leaves_unrelated_draft_id_reference_untouched
 designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree whose design/frob.strata or source frob:waive comments cite
@@ -27,9 +27,9 @@ acceptance:
     exemption); GIVEN an UNRELATED draft id in ledger prose THEN it survives the rewrite
     untouched (negative test)
   evidence:
-  - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_strata_waive_clause_draft_id_reference
-  - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_frob_waive_comment_draft_id_reference
-  - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_leaves_unrelated_draft_id_reference_untouched
+  - tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_strata_waive_clause_draft_id_reference
+  - tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_frob_waive_comment_draft_id_reference
+  - tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_leaves_unrelated_draft_id_reference_untouched
 threat: null
 component: null
 ---

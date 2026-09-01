@@ -290,11 +290,11 @@ scope_changes:
   actor: logan
   at: '2026-08-03'
 evidence:
-- tests/test_ticket_land.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically
-- tests/test_ticket_land.py::TestLandPlan::test_merge_conflict_aborts_and_refuses
-- tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
-- tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge
-- tests/test_ticket_land.py::TestLandPlan::test_cli_dispatches_to_land_plan_and_reports
+- tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically
+- tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_merge_conflict_aborts_and_refuses
+- tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
+- tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_dry_run_unwinds_the_merge
+- tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_cli_dispatches_to_land_plan_and_reports
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN a planner worktree containing only docs plus ledger changes (no closeable
@@ -304,14 +304,14 @@ acceptance:
     rewritten), verify TICK gate clean, and commit -- one command, one commit for
     the finalization, no hand-assigned ids'
   evidence:
-  - tests/test_ticket_land.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically
-  - tests/test_ticket_land.py::TestLandPlan::test_dry_run_unwinds_the_merge
-  - tests/test_ticket_land.py::TestLandPlan::test_cli_dispatches_to_land_plan_and_reports
+  - tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_merges_and_finalizes_every_draft_atomically
+  - tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_dry_run_unwinds_the_merge
+  - tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_cli_dispatches_to_land_plan_and_reports
 - text: GIVEN any failure mid-chain THEN the operation unwinds completely (no half-merged
     ledger, no partially-renumbered drafts) and names the manual remedy
   evidence:
-  - tests/test_ticket_land.py::TestLandPlan::test_merge_conflict_aborts_and_refuses
-  - tests/test_ticket_land.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
+  - tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_merge_conflict_aborts_and_refuses
+  - tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_tick_gate_dirty_unwinds_finalize_but_keeps_the_durable_merge
 threat: null
 component: null
 ---

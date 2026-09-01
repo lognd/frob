@@ -57,13 +57,13 @@ frob check --land-parity: clean, 0 unscoped errors.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestTouchedSymrefsForIntent::test_overlapping_hunk_matches_the_symbol` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestTouchedSymrefsForIntent::test_non_overlapping_hunk_matches_nothing` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestTouchedSymrefsForIntent::test_different_file_matches_nothing` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit::test_dry_run_is_a_noop` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit::test_no_resolvable_symbols_records_nothing` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit::test_diff_failure_is_logged_not_raised` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestTouchedSymrefsForIntent::test_overlapping_hunk_matches_the_symbol` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestTouchedSymrefsForIntent::test_non_overlapping_hunk_matches_nothing` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestTouchedSymrefsForIntent::test_different_file_matches_nothing` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_dry_run_is_a_noop` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_no_resolvable_symbols_records_nothing` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_diff_failure_is_logged_not_raised` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 7 passed (from 7 evidence id(s))

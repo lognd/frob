@@ -33,7 +33,7 @@ TestChangelogSkeletonEntry/TestReleaseGateCoherence,
 tests/unit/test_ticket_runner_land_release.py::
 TestApplyReleaseBumpForLand/TestRootReleaseManifestReadsRootHead,
 tests/unit/test_app_runners_batch5.py::TestReleaseSyncRunner,
-tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest --
+tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest --
 the real-callback T-0992-style regression through
 `ticket_runner._land_bump_version_fn()`, proving the guard never fires
 for the fixed callback). All 24 pass locally.
@@ -85,7 +85,7 @@ not a regression from this change).
 - `tests/unit/test_app_runners_batch5.py::TestReleaseSyncRunner::test_sync_already_in_agreement_is_quiet_but_still_locks` (pytest node id, verified passing when recorded)
 - `tests/unit/test_app_runners_batch5.py::TestReleaseSyncRunner::test_sync_uv_lock_failure_exits_1` (pytest node id, verified passing when recorded)
 - `tests/unit/test_app_runners_batch5.py::TestReleaseSyncRunner::test_sync_bad_pyproject_version_line_exits_1` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 24 passed (from 24 evidence id(s))

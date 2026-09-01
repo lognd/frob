@@ -16,10 +16,10 @@ Conclusion: the corruption class as originally filed (parse-time markerless-bloc
 
 Changed:
 - src/frob/tickets/_land.py::_splice_only_ticket -- added `_check_ledger_id_integrity` call before returning the spliced ledger text, matching `splice_ledger`'s existing guard.
-- tests/test_ticket_land.py::TestSpliceOnlyTicket.test_render_that_would_drop_an_id_is_refused -- new regression test (mirrors TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused) that monkeypatches `_render_ledger` to simulate a future rendering regression and asserts `_splice_only_ticket` now refuses (`LedgerIntegrityViolation`) instead of silently committing truncated text. Verified this test FAILS against the pre-fix code (confirmed by temporarily reverting the guard call and re-running: `1 failed, 3 passed`) and PASSES with the fix (`4 passed`).
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceOnlyTicket.test_render_that_would_drop_an_id_is_refused -- new regression test (mirrors TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused) that monkeypatches `_render_ledger` to simulate a future rendering regression and asserts `_splice_only_ticket` now refuses (`LedgerIntegrityViolation`) instead of silently committing truncated text. Verified this test FAILS against the pre-fix code (confirmed by temporarily reverting the guard call and re-running: `1 failed, 3 passed`) and PASSES with the fix (`4 passed`).
 
 Evidence:
-- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_render_that_would_drop_an_id_is_refused (new test, passing: `uv run pytest tests/test_ticket_land.py::TestSpliceOnlyTicket -v` -> 4 passed)
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceOnlyTicket::test_render_that_would_drop_an_id_is_refused (new test, passing: `uv run pytest tests/ticket_land_suite/test_ledger_splice.py::TestSpliceOnlyTicket -v` -> 4 passed)
 - Full tests/test_ticket_land.py run: 114 passed, 1 pre-existing failure (`TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds`, a nested-worktree native-build collection artifact, confirmed to fail identically against unmodified `git show HEAD` copies of both changed files -- unrelated to this ticket's change, not touched further per scope).
 
 Filed: none -- no new out-of-scope ticket needed; the one gap found was directly in scope and fixed.

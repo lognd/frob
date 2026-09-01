@@ -53,8 +53,8 @@ cannot tell" instead of treating "before work" the same as "during work"),
 so I would not fold it into the same fix pattern those two tickets share.
 
 Tests added/renamed:
-- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged (new)
-- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_lock_naming_a_genuinely_live_pid_still_refuses (new; renamed from the pre-existing fake-pid+real-flock test, unchanged behavior, new name/docstring only)
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged (new)
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout.test_orphaned_lock_naming_a_genuinely_live_pid_still_refuses (new; renamed from the pre-existing fake-pid+real-flock test, unchanged behavior, new name/docstring only)
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_dead_holder_pid_is_reported_dead_but_self_healing_and_healthy (renamed+rewritten from test_dead_holder_pid_is_reported_dead_and_unhealthy; T-1515's evidence rebound via `frob ticket evidence T-1515 --archived --replace`)
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess.test_ambiguous_holder_liveness_is_reported_unhealthy (new)
 
@@ -81,8 +81,8 @@ logic was needed.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_orphaned_lock_naming_a_genuinely_live_pid_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_orphaned_lock_naming_a_genuinely_live_pid_still_refuses` (pytest node id, verified passing when recorded)
 - `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_dead_holder_pid_is_reported_dead_but_self_healing_and_healthy` (pytest node id, verified passing when recorded)
 - `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_ambiguous_holder_liveness_is_reported_unhealthy` (pytest node id, verified passing when recorded)
 - `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_live_holder_pid_is_reported_alive_and_healthy` (pytest node id, verified passing when recorded)

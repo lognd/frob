@@ -63,9 +63,9 @@ its own follow-up.
 
 Evidence: (kind=bug, --designate-repro validated FAILED_AT_PARENT
 against parent commit 5ecc0ba64ce1616c1cef858b2a2c4156634d4c4c)
-- tests/test_ticket_land.py::TestLand::test_refuses_on_dirty_main (designated repro)
-- tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
-- tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
+- tests/ticket_land_suite/test_land_core.py::TestLand::test_refuses_on_dirty_main (designated repro)
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
 - tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue::test_dirty_without_a_marker_is_never_reclaimed (new, the direct acceptance test for this fix)
 - tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue::test_reclaims_when_no_live_land_holds_the_lock (must-still-pass: genuine dead-land residue still reclaimed, fixture updated to include the real marker)
 - tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue::test_does_not_touch_a_live_lands_own_staging
@@ -94,9 +94,9 @@ are in files this ticket's diff never touches (confirmed via
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLand::test_refuses_on_dirty_main` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLand::test_refuses_on_dirty_main` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses` (pytest node id, verified passing when recorded)
 - `tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue::test_dirty_without_a_marker_is_never_reclaimed` (pytest node id, verified passing when recorded)
 - `tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue::test_reclaims_when_no_live_land_holds_the_lock` (pytest node id, verified passing when recorded)
 - `tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue::test_does_not_touch_a_live_lands_own_staging` (pytest node id, verified passing when recorded)

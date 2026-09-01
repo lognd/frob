@@ -54,12 +54,12 @@ targeted fix.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestFinalizeRepairMarker::test_no_marker_is_a_silent_no_op` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestFinalizeRepairMarker::test_repair_logs_loudly_when_worktree_still_shows_done_but_root_does_not` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestFinalizeRepairMarker::test_repair_is_silent_when_root_already_shows_the_ticket_done` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_during_finalize_close_leaves_ticket_recoverable_not_a_silent_lie` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSigkillMidStaging::test_normal_land_reaches_done_exactly_once_no_extra_transition` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_during_post_squash_reverification_leaves_ticket_recoverable` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestFinalizeRepairMarker::test_no_marker_is_a_silent_no_op` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestFinalizeRepairMarker::test_repair_logs_loudly_when_worktree_still_shows_done_but_root_does_not` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestFinalizeRepairMarker::test_repair_is_silent_when_root_already_shows_the_ticket_done` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_during_finalize_close_leaves_ticket_recoverable_not_a_silent_lie` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_normal_land_reaches_done_exactly_once_no_extra_transition` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_during_post_squash_reverification_leaves_ticket_recoverable` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 6 passed (from 6 evidence id(s))

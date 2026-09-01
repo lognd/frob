@@ -143,10 +143,10 @@ def _skipped_unmeasured_top_level(
 
 # frob:ticket T-0754
 # frob:ticket T-0832
-# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds kind="integration"  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 # frob:ticket T-0846
-# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_lower_gate_error_count_than_claim_still_lands kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_lower_gate_error_count_than_claim_still_lands kind="integration"  # noqa: E501
 # frob:ticket T-1907
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestReverifyDoneReportClaimsDisclosesUnknownGateState.test_no_captured_claims_section_logs_unknown_not_clean  # noqa: E501
 def _reverify_done_report_claims_post_merge(
@@ -283,9 +283,9 @@ def _reverify_done_report_claims_post_merge(
 
 # frob:ticket T-0976
 # frob:ticket T-1000
-# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_matching_claims_land_succeeds kind="integration"  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_divergent_test_count_refuses_land kind="integration"  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_strictly_improved_test_count_auto_accepts_and_rewrites_recap kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_matching_claims_land_succeeds kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_divergent_test_count_refuses_land kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_strictly_improved_test_count_auto_accepts_and_rewrites_recap kind="integration"  # noqa: E501
 # frob:waive DUP001 reason="T-1186 split-induced false positive: the DUP001 template \
 # similarity heuristic matches this claim-reverification shape against \
 # frob.app.ticket_runner._close_cmd._reverify_evidence_for_close purely on \
@@ -364,7 +364,7 @@ def _reverify_test_count_claim(
 
 
 # frob:ticket T-1000
-# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_strictly_improved_test_count_auto_accepts_and_rewrites_recap kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_strictly_improved_test_count_auto_accepts_and_rewrites_recap kind="integration"  # noqa: E501
 def _rewrite_claims_section(
     worktree: Path,
     ticket: Ticket,

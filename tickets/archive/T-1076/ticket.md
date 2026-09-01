@@ -136,7 +136,7 @@ evidence:
 - tests/unit/test_main_entry.py::TestMainSigint::test_normal_dispatch_is_unaffected
 - tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest
 - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_remediation_hint_names_no_nonexistent_flag
-- tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring::test_flag_parses_to_true
+- tests/ticket_land_suite/test_claim_close.py::TestSkipMutationEvidenceCliWiring::test_flag_parses_to_true
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null

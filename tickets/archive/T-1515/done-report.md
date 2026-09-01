@@ -44,7 +44,7 @@ frob:doc-anchored from LiveLandProcess, scan_live_land_processes, and
 LandLockTimeout.
 
 Tests added:
-- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout --
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout --
   holder metadata is written and parses on acquire; the lock is released
   (fresh non-blocking acquisition succeeds) after the context exits; a
   foreign holder that never releases causes LandLockTimeout with the
@@ -85,9 +85,9 @@ Same disposition as T-1514 in this same worktree/session.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_holder_metadata_written_on_acquire` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_lock_released_after_context_exits` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_timeout_raises_when_a_foreign_holder_never_releases` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_holder_metadata_written_on_acquire` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_lock_released_after_context_exits` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_timeout_raises_when_a_foreign_holder_never_releases` (pytest node id, verified passing when recorded)
 - `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_no_lock_file_reports_nothing` (pytest node id, verified passing when recorded)
 - `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_live_holder_pid_is_reported_alive_and_healthy` (pytest node id, verified passing when recorded)
 - `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_dead_holder_pid_is_reported_dead_and_unhealthy` (pytest node id, verified passing when recorded)

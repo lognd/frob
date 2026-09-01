@@ -23,7 +23,7 @@ targeted pytest runs (tests/unit/test_main_entry.py full pass,
 tests/test_gates.py::TestCoverageGate::
 test_cov003_remediation_hint_names_no_nonexistent_flag,
 tests/test_docptr_gate.py full pass, tests/test_tickets_acceptance.py
-full pass, tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring
+full pass, tests/ticket_land_suite/test_claim_close.py::TestSkipMutationEvidenceCliWiring
 full pass, tests/integration/test_interfaces.py::TestInterfaces::
 test_main_cli_dispatches) and a repo-wide `pytest --collect-only`
 (clean, no collection errors).
@@ -114,7 +114,7 @@ than silently absorbed into this file's own claim of done).
 - `tests/unit/test_main_entry.py::TestMainSigint::test_normal_dispatch_is_unaffected` (pytest node id, verified passing when recorded)
 - `tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestCoverageGate::test_cov003_remediation_hint_names_no_nonexistent_flag` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring::test_flag_parses_to_true` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestSkipMutationEvidenceCliWiring::test_flag_parses_to_true` (pytest node id, verified passing when recorded)
 - `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
 
 ### Captured claims

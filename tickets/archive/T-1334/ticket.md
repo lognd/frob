@@ -76,11 +76,11 @@ scope_changes:
   actor: logan
   at: '2026-07-31'
 evidence:
-- tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
-- tests/test_ticket_land.py::TestWarnIfNativeStale::test_real_land_logs_stale_native_warning
-- tests/test_ticket_land.py::TestTick005LandRegressions::test_no_regression_when_terminal_ticket_stays_terminal
-- tests/test_ticket_land.py::TestSyncGateRulesCallback::test_sync_gate_rules_none_is_noop
-- tests/test_ticket_land.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty
+- tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+- tests/ticket_land_suite/test_land_core.py::TestWarnIfNativeStale::test_real_land_logs_stale_native_warning
+- tests/ticket_land_suite/test_verify_reset.py::TestTick005LandRegressions::test_no_regression_when_terminal_ticket_stays_terminal
+- tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback::test_sync_gate_rules_none_is_noop
+- tests/ticket_land_suite/test_land_core.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty
 designated_repro_test: null
 threat: null
 component: null

@@ -103,7 +103,7 @@ block).
 - `tests/test_release.py::TestChangelogFragments::test_read_fails_closed_on_a_malformed_fragment` (pytest node id, verified passing when recorded)
 - `tests/test_release.py::TestChangelogFragments::test_assemble_writes_every_fragment_as_a_bullet` (pytest node id, verified passing when recorded)
 - `tests/test_release.py::TestChangelogFragments::test_assemble_is_idempotent_and_picks_up_new_fragments` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one` (pytest node id, verified passing when recorded)
 - `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_commit_refused_changelog_fragment` (pytest node id, verified passing when recorded)
 
 ### Captured claims

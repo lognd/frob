@@ -100,7 +100,7 @@ sweep-stage-unavailable rapid-profile fallback). No ticket ever needed to
 generalized the seal step for an unrelated reason (CAS publish) and the
 rebuild's position after it came along for free.
 
-Verified, not inferred: tests/test_ticket_land.py::TestRebuildNatives (all
+Verified, not inferred: tests/ticket_land_suite/test_release.py::TestRebuildNatives (all
 4 tests, including test_rebuild_runs_after_the_landing_commit_is_durable,
 T-3111's own must-fire regression) pass on CURRENT main and in this
 ticket's own fresh worktree, exercising land()'s real default path (which

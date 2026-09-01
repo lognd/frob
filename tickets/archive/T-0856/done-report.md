@@ -86,7 +86,7 @@ traces to a src/frob/tickets/_live_tracker.py or
 tests/test_tickets_live_tracker.py path (T-0854's own files), not
 anything T-0856 touched.
 
-Also noted: tests/test_ticket_land.py::TestClaimDivergencePostMerge::
+Also noted: tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::
 test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds failed
 once when run as part of the ticket's full designated verify command
 (alongside 5 other test files) but passed reliably every time it was run

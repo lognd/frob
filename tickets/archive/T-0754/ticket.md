@@ -36,15 +36,15 @@ evidence:
 - tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims::test_claims_captured_from_real_callables
 - tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims::test_divergent_real_count_is_recorded_not_the_typed_narrative
 - tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims::test_gate_state_only_no_test_capture_leaves_claims_out
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_test_count_refuses_land
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_no_claims_section_skips_reverification
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_test_count_refuses_land
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_no_claims_section_skips_reverification
 - tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel::test_free_prose_elsewhere_never_masquerades_as_claims
 - tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel::test_only_lines_inside_the_claims_heading_count
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_warning_or_waived_count_alone_still_lands
-- tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_warning_or_waived_count_alone_still_lands
+- tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds
 designated_repro_test: null
 acceptance:
 - text: GIVEN a done-report whose typed test count differs from the actual evidence
@@ -57,15 +57,15 @@ acceptance:
   - tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims::test_claims_captured_from_real_callables
   - tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims::test_divergent_real_count_is_recorded_not_the_typed_narrative
   - tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims::test_gate_state_only_no_test_capture_leaves_claims_out
-  - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds
-  - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_test_count_refuses_land
-  - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
-  - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_no_claims_section_skips_reverification
+  - tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds
+  - tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_test_count_refuses_land
+  - tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
+  - tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_no_claims_section_skips_reverification
   - tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel::test_free_prose_elsewhere_never_masquerades_as_claims
   - tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel::test_only_lines_inside_the_claims_heading_count
-  - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
-  - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_warning_or_waived_count_alone_still_lands
-  - tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds
+  - tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
+  - tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_warning_or_waived_count_alone_still_lands
+  - tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds
 threat: null
 component: null
 ---

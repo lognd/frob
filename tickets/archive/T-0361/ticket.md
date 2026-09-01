@@ -25,7 +25,7 @@ evidence:
 - tests/gates_suite/test_coverage.py::test_gates_run_gates_integration
 - tests/test_graph.py::TestLoadGraph::test_cache_stale_after_edit
 - tests/test_graph.py::test_graph_build_lock_drift_integration
-- tests/test_ticket_land.py::TestPreworkSweepRefresh::test_land_refreshes_stale_sweep_after_unrelated_main_change
+- tests/ticket_land_suite/test_land_core.py::TestPreworkSweepRefresh::test_land_refreshes_stale_sweep_after_unrelated_main_change
 - tests/unit/test_arch.py::test_arch_end_to_end_analyze_then_render
 - tests/unit/test_dup.py::test_dup_end_to_end_scan_then_render
 designated_repro_test: null

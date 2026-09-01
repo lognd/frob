@@ -46,8 +46,8 @@ code.
 Changed: none (tests only)
 
 Added:
-  tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal.test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
-  tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution (new class, 3 tests)
+  tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal.test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
+  tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution (new class, 3 tests)
 
 Evidence: 4 new tests, all passing -- see evidence list below, bound to
 both acceptance criteria (the CLI's `--accepts` binds an index to the
@@ -94,10 +94,10 @@ attribution bug found to fix, no new residue.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

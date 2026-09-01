@@ -36,9 +36,9 @@ private implementation they describe is unchanged, only a new public
 wrapper was added alongside it).
 
 Evidence: `pytest tests/unit/verify tests/unit/test_rapid_sweep.py
-tests/test_ticket_land.py::TestUnscopedErrorFindingsPublicSeam
-tests/test_ticket_land.py::TestUnscopedErrorFindingsExcludesNoTicketNoise
-tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode -p no:xdist`
+tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam
+tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsExcludesNoTicketNoise
+tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullMode -p no:xdist`
 -- 352 passed, 0 failed (includes the 3 new delegation tests proving each
 public wrapper calls through to its private implementation with the same
 arguments/return value). Also ran
@@ -79,7 +79,7 @@ Filed: none -- no out-of-scope work found.
 ### Evidence
 - `tests/unit/test_rapid_sweep.py::TestDetachedSweepEnvPublicSeam::test_delegates_to_the_private_implementation` (pytest node id, verified passing when recorded)
 - `tests/unit/test_rapid_sweep.py::TestFileRegressionTicketPublicSeam::test_delegates_to_the_private_implementation` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUnscopedErrorFindingsPublicSeam::test_delegates_with_the_same_arguments` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam::test_delegates_with_the_same_arguments` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

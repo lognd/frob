@@ -45,8 +45,8 @@ against the FINAL committed code (post ARCH001 split) with a second,
 independent load run -- identical outcome.
 
 Evidence:
-- tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode::test_full_mode_omits_budget_flag_and_sets_allow_full_check_env
-- tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode::test_full_mode_default_is_false_preserves_prior_budgeted_behavior
+- tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullMode::test_full_mode_omits_budget_flag_and_sets_allow_full_check_env
+- tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullMode::test_full_mode_default_is_false_preserves_prior_budgeted_behavior
 - tests/unit/verify/test_worker.py (39 pre-existing tests, unmodified, all pass -- confirms no regression to run_coalesced_verification's own contract)
 - tests/unit/verify/test_drain.py (pre-existing tests, unmodified, all pass)
 - Manual demonstration script (not part of ticket evidence -- mutates
@@ -75,8 +75,8 @@ line and this ticket's scope does not cover that function).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode::test_full_mode_omits_budget_flag_and_sets_allow_full_check_env` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode::test_full_mode_default_is_false_preserves_prior_budgeted_behavior` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullMode::test_full_mode_omits_budget_flag_and_sets_allow_full_check_env` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsFullMode::test_full_mode_default_is_false_preserves_prior_budgeted_behavior` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

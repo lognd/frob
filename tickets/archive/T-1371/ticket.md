@@ -39,7 +39,7 @@ evidence:
 - tests/test_graph_lock.py::TestCacheLockRetry::test_raises_cache_locked_once_budget_exhausted
 - tests/test_pii_structural_gate.py::TestKeywordSweep::test_hash_inside_string_literal_is_not_treated_as_comment
 - tests/test_vet.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration
-- tests/test_ticket_land.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides
+- tests/ticket_land_suite/test_land_core.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides
 - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
 - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
 - tests/gates_suite/test_wire.py::TestWireGate::test_new_kwonly_param_never_passed_is_flagged
@@ -56,7 +56,7 @@ acceptance:
   - tests/test_graph_lock.py::TestCacheLockRetry::test_raises_cache_locked_once_budget_exhausted
   - tests/test_pii_structural_gate.py::TestKeywordSweep::test_hash_inside_string_literal_is_not_treated_as_comment
   - tests/test_vet.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration
-  - tests/test_ticket_land.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides
+  - tests/ticket_land_suite/test_land_core.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides
   - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_missing_from_config_external_is_flagged
   - tests/gates_suite/test_wire.py::TestWireGate::test_new_cli_dest_present_in_config_external_is_not_flagged
   - tests/gates_suite/test_wire.py::TestWireGate::test_new_kwonly_param_never_passed_is_flagged

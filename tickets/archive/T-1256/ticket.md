@@ -45,10 +45,10 @@ scope_changes:
   actor: logan
   at: '2026-07-29'
 evidence:
-- tests/test_ticket_land.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite
-- tests/test_ticket_land.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
-- tests/test_ticket_land.py::TestArchiveV2::test_archived_v2_ticket_still_resolves_as_blocker
-- tests/test_ticket_land.py::TestArchiveV2::test_first_ever_archive_uses_real_git_mv_not_rename_fallback
+- tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite
+- tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
+- tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archived_v2_ticket_still_resolves_as_blocker
+- tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_first_ever_archive_uses_real_git_mv_not_rename_fallback
 designated_repro_test: null
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md section 4.3) needs archive to
@@ -61,9 +61,9 @@ acceptance:
 
     store-backend ticket.'
   evidence:
-  - tests/test_ticket_land.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite
-  - tests/test_ticket_land.py::TestArchiveV2::test_first_ever_archive_uses_real_git_mv_not_rename_fallback
-  - tests/test_ticket_land.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
+  - tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite
+  - tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_first_ever_archive_uses_real_git_mv_not_rename_fallback
+  - tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
 - text: 'GIVEN a v2-mode ticket reaching state done or dropped
 
     WHEN `frob ticket archive` runs
@@ -76,7 +76,7 @@ acceptance:
 
     the moved files).'
   evidence:
-  - tests/test_ticket_land.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite
+  - tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archive_moves_directory_via_git_mv_no_content_rewrite
 - text: 'GIVEN a v2-mode repo where one worktree''s archive tree predates another
 
     branch''s newer archive sweep (the T-0959 shape)
@@ -93,7 +93,7 @@ acceptance:
 
     asserting no block is lost.'
   evidence:
-  - tests/test_ticket_land.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
+  - tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archive_v2_regression_two_sided_divergence_no_clobber
 - text: 'GIVEN `blocked_by`/`parent` references into an archived v2 ticket from an
 
     active ticket
@@ -106,7 +106,7 @@ acceptance:
 
     today''s `load_all` reading both tickets.md and tickets-archive.md).'
   evidence:
-  - tests/test_ticket_land.py::TestArchiveV2::test_archived_v2_ticket_still_resolves_as_blocker
+  - tests/ticket_land_suite/test_archive.py::TestArchiveV2::test_archived_v2_ticket_still_resolves_as_blocker
 threat: null
 component: null
 ---

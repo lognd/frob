@@ -17,11 +17,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestLand::test_refuses_without_evidence_or_done_report
-- tests/test_ticket_land.py::TestLedgerBothSidesAppend::test_both_sides_append_merges_cleanly
-- tests/test_ticket_land.py::TestArchiveResurrection::test_archived_id_never_resurrected
-- tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive
-- tests/test_ticket_land.py::TestMergeMainIntoWorktreeRicherState::test_landing_tickets_in_progress_report_survives_the_merge_stage
+- tests/ticket_land_suite/test_land_core.py::TestLand::test_refuses_without_evidence_or_done_report
+- tests/ticket_land_suite/test_ledger_splice.py::TestLedgerBothSidesAppend::test_both_sides_append_merges_cleanly
+- tests/ticket_land_suite/test_archive.py::TestArchiveResurrection::test_archived_id_never_resurrected
+- tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline::test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive
+- tests/ticket_land_suite/test_land_core.py::TestMergeMainIntoWorktreeRicherState::test_landing_tickets_in_progress_report_survives_the_merge_stage
 designated_repro_test: null
 threat: null
 component: null

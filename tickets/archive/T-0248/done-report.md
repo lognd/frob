@@ -37,7 +37,7 @@ grammar-ahead-of-native fixture per the ticket's requested regression,
 fresh-native no-op, unbuilt-native no-op, no-matching-source-dir no-op,
 NATIVE_SOURCE_DIRS convention) and
 `::TestCheckNativeStalenessOrExit` (2 cases: exits 1 + prints when stale,
-returns None when not); `tests/test_ticket_land.py::TestWarnIfNativeStale`
+returns None when not); `tests/ticket_land_suite/test_land_core.py::TestWarnIfNativeStale`
 (2 cases: real `land()` run logs the WARNING when
 `stale_native_warning` is monkeypatched stale, and logs nothing on an
 unrelated non-native change).

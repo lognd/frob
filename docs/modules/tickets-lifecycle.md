@@ -1772,7 +1772,7 @@ gitignored (the worktree branch legitimately tracks its OWN
 `.frob/tickets.lock`, T-1006), the land's later `git merge --squash` from
 that worktree branch then refuses with git's own "untracked working tree
 files would be overwritten by merge" error -- a real, reproduced
-regression (`tests/test_ticket_land.py::TestWipCommit`/
+regression (`tests/ticket_land_suite/test_wip.py::TestWipCommit`/
 `TestWipCommitNormalizationOnlyDirty` caught it), not a hypothetical one.
 The narrow residual race the unlocked read leaves (a `new_ticket` landing
 on main in the tiny window between this read and the eventual
@@ -1805,7 +1805,7 @@ promotion already reaches every citation, in every ticket's body, not
 just the landing ticket's own -- the exact "an agent files a follow-up
 from a worktree, lands its work, and nobody touches the ledger by hand
 for the citation to be correct on main" acceptance T-1622 was filed to
-guarantee. `tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::
+guarantee. `tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::
 test_land_rewrites_a_sibling_drafts_citation_in_the_primary_done_report`
 proves the cross-ticket shape explicitly (a DIFFERENT ticket's Done
 report citing a sibling's draft id, not the landing ticket citing

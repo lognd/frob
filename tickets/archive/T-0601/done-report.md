@@ -75,7 +75,7 @@ Ran the chunked `frob check --ticket T-0601` loop (lint, static, gates-fast, gat
 - `tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir::test_shared_across_linked_worktrees` (pytest node id, verified passing when recorded)
 - `tests/test_tickets.py::TestEmptyCollectionOmission::test_dict_without_empty_collections_returned_unchanged` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_confirmatory_test_flagged` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_store.py::TestLockPath::test_lock_path_under_frob_dir` (pytest node id, verified passing when recorded)
 - `tests/test_worktree_guard.py::TestAgentEnvExports::test_resolves_worktree_root` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_compliance.py::TestRegulationCaughtByIntegrity::test_caught_by_naming_present_control_discharges` (pytest node id, verified passing when recorded)

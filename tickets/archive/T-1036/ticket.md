@@ -16,14 +16,14 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+- tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
 designated_repro_test: null
 acceptance:
 - text: GIVEN the ledger changes on disk between a ticket verb's read and write THEN
     the verb refuses and retries from fresh state instead of writing a stale full-file
     image
   evidence:
-  - tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+  - tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
 threat: null
 component: null
 ---

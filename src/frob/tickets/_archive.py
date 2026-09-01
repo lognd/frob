@@ -320,9 +320,9 @@ def _refuse_archive_if_leased(
 # frob:ticket T-1256
 # frob:ticket T-1750
 # frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
-# frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archive_v2_regression_two_sided_divergence_no_clobber  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestArchiveV2.test_archived_v2_ticket_still_resolves_as_blocker  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveV2.test_archive_moves_directory_via_git_mv_no_content_rewrite  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveV2.test_archive_v2_regression_two_sided_divergence_no_clobber  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveV2.test_archived_v2_ticket_still_resolves_as_blocker  # noqa: E501
 # frob:waive AFFECT001 reason="T-1750 only extracts the existing git-mv-per-ticket \
 # loop into a private helper (_archive_v2_move_tickets, ARCH001 line-budget fix) -- \
 # design/ledger-v2.md#43-archive-as-git-mv describes the git-mv-per-ticket design \

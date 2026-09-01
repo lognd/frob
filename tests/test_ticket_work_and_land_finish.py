@@ -1865,7 +1865,7 @@ class TestPreCommitUnscopedSweepFn:
     but the function itself never mutates git state (no commit, no
     reset) -- unwinding on a `False` verdict is `land()`'s own job via
     `_verified_reset_root`, tested at the `land()` level in
-    tests/test_ticket_land.py::TestPreCommitUnscopedSweep instead."""
+    tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep instead."""
 
     # frob:ticket T-1514
     # frob:tests \

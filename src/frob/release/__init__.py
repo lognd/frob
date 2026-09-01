@@ -465,7 +465,7 @@ def changelog_skeleton_entry(root: Path, version: str, note: str | None = None) 
 
 # frob:doc docs/modules/release.md#public-api
 # frob:ticket T-1078
-# frob:tests tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity.test_manifest_version_written_same_step_as_pyproject  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_release.py::TestReleaseBumpQuartetAtomicity.test_manifest_version_written_same_step_as_pyproject  # noqa: E501
 def set_manifest_version(root: Path, version: str) -> Result[str, ReleaseError]:
     """Rewrite ONLY the `version` field of the tracked `.frob-release.json`
     manifest in place, preserving its recorded `api` map unchanged (T-1078:

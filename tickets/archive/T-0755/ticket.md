@@ -121,28 +121,28 @@ evidence:
 - tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_confirmatory_finding_is_error_for_security_kind
 - tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_confirmatory_finding_is_error_for_bug_kind
 - tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_no_findings_no_violations
-- tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_security_kind_error_finding_blocks
-- tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_feature_kind_warn_finding_does_not_block
-- tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_no_findings_is_ok
+- tests/ticket_land_suite/test_claim_close.py::TestMutationEvidencePrecheck::test_security_kind_error_finding_blocks
+- tests/ticket_land_suite/test_claim_close.py::TestMutationEvidencePrecheck::test_feature_kind_warn_finding_does_not_block
+- tests/ticket_land_suite/test_claim_close.py::TestMutationEvidencePrecheck::test_no_findings_is_ok
 - tests/test_mutate.py::test_generate_mutants_line_ranges_filters_to_changed_lines
 - tests/test_mutate.py::test_generate_mutants_line_ranges_no_match_is_empty
 - tests/test_mutate.py::test_run_mutations_line_ranges_scopes_to_changed_lines
 - tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_large_file_unmutable_changed_lines_is_skipped_not_flagged
-- tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_skip_flag_bypasses_error_finding_but_still_logs
-- tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring::test_flag_parses_to_true
-- tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring::test_flag_omitted_defaults_false
+- tests/ticket_land_suite/test_claim_close.py::TestMutationEvidencePrecheck::test_skip_flag_bypasses_error_finding_but_still_logs
+- tests/ticket_land_suite/test_claim_close.py::TestSkipMutationEvidenceCliWiring::test_flag_parses_to_true
+- tests/ticket_land_suite/test_claim_close.py::TestSkipMutationEvidenceCliWiring::test_flag_omitted_defaults_false
 - tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_self_check_t0755_own_diff_zero_error_findings
 - tests/test_mutate.py::test_run_mutations_sets_mutation_run_sentinel_in_child_env
-- tests/test_ticket_land.py::TestCloseSkipMutationEvidenceCliWiring::test_flag_parses_to_true
-- tests/test_ticket_land.py::TestCloseSkipMutationEvidenceCliWiring::test_flag_omitted_defaults_false
-- tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket::test_error_severity_finding_returns_false
-- tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket::test_warn_only_severity_returns_true
-- tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket::test_no_findings_returns_none
-- tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket::test_unresolvable_branch_returns_none
-- tests/test_ticket_land.py::TestCloseFailureHintMutationEvidence::test_confirmatory_only_hint_names_skip_flag_remedy
-- tests/test_ticket_land.py::TestCloseFailureHintMutationEvidence::test_other_error_does_not_name_skip_flag_remedy
-- tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass::test_skip_flag_bypasses_error_verdict
-- tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass::test_no_skip_flag_refuses_on_error_verdict
+- tests/ticket_land_suite/test_claim_close.py::TestCloseSkipMutationEvidenceCliWiring::test_flag_parses_to_true
+- tests/ticket_land_suite/test_claim_close.py::TestCloseSkipMutationEvidenceCliWiring::test_flag_omitted_defaults_false
+- tests/ticket_land_suite/test_claim_close.py::TestCloseMutationEvidenceForTicket::test_error_severity_finding_returns_false
+- tests/ticket_land_suite/test_claim_close.py::TestCloseMutationEvidenceForTicket::test_warn_only_severity_returns_true
+- tests/ticket_land_suite/test_claim_close.py::TestCloseMutationEvidenceForTicket::test_no_findings_returns_none
+- tests/ticket_land_suite/test_claim_close.py::TestCloseMutationEvidenceForTicket::test_unresolvable_branch_returns_none
+- tests/ticket_land_suite/test_claim_close.py::TestCloseFailureHintMutationEvidence::test_confirmatory_only_hint_names_skip_flag_remedy
+- tests/ticket_land_suite/test_claim_close.py::TestCloseFailureHintMutationEvidence::test_other_error_does_not_name_skip_flag_remedy
+- tests/ticket_land_suite/test_claim_close.py::TestCloseSkipMutationEvidenceBypass::test_skip_flag_bypasses_error_verdict
+- tests/ticket_land_suite/test_claim_close.py::TestCloseSkipMutationEvidenceBypass::test_no_skip_flag_refuses_on_error_verdict
 designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket whose recorded evidence tests all pass against a mutant of
@@ -152,7 +152,7 @@ acceptance:
   evidence:
   - tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_confirmatory_test_flagged
   - tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_adversarial_test_not_flagged
-  - tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_security_kind_error_finding_blocks
+  - tests/ticket_land_suite/test_claim_close.py::TestMutationEvidencePrecheck::test_security_kind_error_finding_blocks
 threat: null
 component: null
 ---

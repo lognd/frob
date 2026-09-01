@@ -33,7 +33,7 @@ a genuine net-new capability, not a bug in existing code -- left as a
 note per the coordinator's explicit ask rather than a silent omission.
 
 Evidence:
-- tests/test_ticket_land.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file (designated repro, FAILED_AT_PARENT verified against commit 972e60fd2 -- the repro-test-only commit, before the fix commit f65ef242d)
+- tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file (designated repro, FAILED_AT_PARENT verified against commit 972e60fd2 -- the repro-test-only commit, before the fix commit f65ef242d)
 
 Pre-existing failures (NOT caused by this change, confirmed by reverting
 this ticket's diff and re-running against unmodified main 78d33cbd8):
@@ -62,7 +62,7 @@ identical failure set, confirmed via a revert/re-run/reapply cycle.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

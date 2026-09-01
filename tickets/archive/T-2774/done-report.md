@@ -7,18 +7,18 @@ Changed:
   budget from FROB_LAND_DEADLINE_S before acquiring _land_lock)
 - docs/modules/tickets-landing.md (new section: "Declared land deadline
   bounds the lock wait, not a flat constant (T-2774)")
-- tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDeadline
   (5 new tests, both positive-control directions)
 
 Evidence:
-- tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_no_declaration_keeps_the_flat_timeout_unchanged
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_no_declaration_keeps_the_flat_timeout_unchanged
   (BUG002 repro designated: FAILED_AT_PARENT against commit c1517f69f,
   the test-only commit before the fix)
-- tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_ample_deadline_derives_a_wait_budget_and_proceeds
-- tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_insufficient_deadline_refuses_immediately_with_no_lock_attempt
-- tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_short_wait_then_acquire_still_completes
-- tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_unparseable_deadline_falls_back_to_the_flat_timeout
-- Existing tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_ample_deadline_derives_a_wait_budget_and_proceeds
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_insufficient_deadline_refuses_immediately_with_no_lock_attempt
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_short_wait_then_acquire_still_completes
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_unparseable_deadline_falls_back_to_the_flat_timeout
+- Existing tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout
   (6 tests) re-verified green, no regression.
 
 Design notes:
@@ -80,11 +80,11 @@ class, or the new docs section). frob test --base main: PASS, exit=0.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_no_declaration_keeps_the_flat_timeout_unchanged` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_ample_deadline_derives_a_wait_budget_and_proceeds` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_insufficient_deadline_refuses_immediately_with_no_lock_attempt` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_short_wait_then_acquire_still_completes` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_unparseable_deadline_falls_back_to_the_flat_timeout` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_no_declaration_keeps_the_flat_timeout_unchanged` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_ample_deadline_derives_a_wait_budget_and_proceeds` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_insufficient_deadline_refuses_immediately_with_no_lock_attempt` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_short_wait_then_acquire_still_completes` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_unparseable_deadline_falls_back_to_the_flat_timeout` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

@@ -60,12 +60,12 @@ Filed: none -- no out-of-scope defect found while implementing this fix.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestForeignOwnedSiblingDraftSkipped::test_land_succeeds_and_skips_the_foreign_draft` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestForeignOwnedSiblingDraftSkipped::test_land_still_refuses_a_genuine_scope_conflict_on_its_own_ticket` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_no_leases_is_none` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_own_worktree_lease_is_not_foreign` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_foreign_live_lease_names_the_worktree` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_ttl_expired_foreign_lease_is_not_foreign` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_draft.py::TestForeignOwnedSiblingDraftSkipped::test_land_succeeds_and_skips_the_foreign_draft` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_draft.py::TestForeignOwnedSiblingDraftSkipped::test_land_still_refuses_a_genuine_scope_conflict_on_its_own_ticket` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_draft.py::TestForeignOwnedDraftWorktree::test_no_leases_is_none` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_draft.py::TestForeignOwnedDraftWorktree::test_own_worktree_lease_is_not_foreign` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_draft.py::TestForeignOwnedDraftWorktree::test_foreign_live_lease_names_the_worktree` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_draft.py::TestForeignOwnedDraftWorktree::test_ttl_expired_foreign_lease_is_not_foreign` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 6 passed (from 6 evidence id(s))

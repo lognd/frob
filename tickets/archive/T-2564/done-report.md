@@ -76,9 +76,9 @@ clean negative rather than a fix.
 
 ### Evidence
 
-- `tests/test_ticket_land.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content`
+- `tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content`
   (new, this ticket)
-- `tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry`
+- `tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry`
   (pre-existing T-0907 regression lock, re-run as evidence this ticket's
   finding rests on)
 
@@ -90,7 +90,7 @@ confirmed by measurement."
 
 ### Gates
 
-`uv run pytest tests/test_ticket_land.py::TestSigkillMidStaging -p no:cacheprovider -q`:
+`uv run pytest tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging -p no:cacheprovider -q`:
 2/2 pass (must run with `FROB_WORKTREE`/`FROB_AGENT` UNSET in the
 invoking shell -- these tests spawn `frob ticket new`/`land` against
 throwaway `tmp_path` repos, and the T-0880-fixed leak only covers
@@ -109,8 +109,8 @@ dispatching agent's own lease vars are still exported).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

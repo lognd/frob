@@ -26,9 +26,9 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_ticket_land.py::TestSyncGateRulesCallback::test_sync_gate_rules_none_is_noop
-- tests/test_ticket_land.py::TestSyncGateRulesCallback::test_sync_gate_rules_applies_and_stages
-- tests/test_ticket_land.py::TestSyncGateRulesCallback::test_sync_gate_rules_failure_unwinds
+- tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback::test_sync_gate_rules_none_is_noop
+- tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback::test_sync_gate_rules_applies_and_stages
+- tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback::test_sync_gate_rules_failure_unwinds
 - tests/test_docblocks_gate.py::TestCliCommandTableGenerator::test_generate_sorts_rows_across_sources
 - tests/test_docblocks_gate.py::TestCliCommandTableGenerator::test_generate_no_config_is_none
 - tests/test_docblocks_gate.py::TestCliCommandTableGenerator::test_sync_replaces_only_the_marked_block
@@ -42,7 +42,7 @@ acceptance:
     carries the new row with no manual sync; given a new CLI subcommand, docs sync
     regenerates both tables and DOC005 verifies freshness
   evidence:
-  - tests/test_ticket_land.py::TestSyncGateRulesCallback::test_sync_gate_rules_applies_and_stages
+  - tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback::test_sync_gate_rules_applies_and_stages
   - tests/test_docblocks_gate.py::TestCliCommandTableGenerator::test_doc005_freshness_passes_after_sync
 threat: null
 component: null

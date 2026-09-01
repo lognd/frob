@@ -87,8 +87,8 @@ not silently claiming they're covered.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestSiblingDoneReportPreserved::test_sibling_done_report_survives_landing_another_ticket` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSiblingDoneReportPreserved::test_sibling_requeue_on_main_still_wins_when_neither_side_has_a_done_report` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDraftFinalizeRewritesRegistryYamlRefs::test_registry_yaml_deferred_ref_rewritten_to_final_id` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSiblingDoneReportPreserved::test_sibling_done_report_survives_landing_another_ticket` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSiblingDoneReportPreserved::test_sibling_requeue_on_main_still_wins_when_neither_side_has_a_done_report` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_draft.py::TestDraftFinalizeRewritesRegistryYamlRefs::test_registry_yaml_deferred_ref_rewritten_to_final_id` (pytest node id, verified passing when recorded)
 - `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_raw_merge_of_worktree_agent_branch_is_refused` (pytest node id, verified passing when recorded)
 - `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_raw_merge_override_env_var_allows_it` (pytest node id, verified passing when recorded)

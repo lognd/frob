@@ -64,7 +64,7 @@ class VerifyStatus(Enum):
 
 # frob:ticket T-2569
 # frob:doc docs/modules/tickets-lifecycle.md#evidence-re-run-verdict-passedfailedunmeasured-t-2569  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_unmeasured_returns_false_with_distinct_message  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose.test_unmeasured_returns_false_with_distinct_message  # noqa: E501
 class VerifyOutcome(BaseModel):
     """`VerifyStatus` plus, for `FAILED`/`UNMEASURED`, a short human-
     readable reason -- threaded through by `_verify_ids_passing` and its
@@ -1034,7 +1034,7 @@ def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
 # frob:ticket T-0846
 # frob:ticket T-0850
 # frob:ticket T-0919
-# frob:tests tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree \
 # kind="unit"
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn.test_scoped_run_flaky_rule_excluded_from_error_count kind="unit"  # noqa: E501
@@ -1818,7 +1818,7 @@ def _exclude_scoped_run_flaky(
 
 # frob:ticket T-0846
 # frob:ticket T-0919
-# frob:tests tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn.test_scoped_run_flaky_rule_excluded_from_findings kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn.test_default_spawn_none_keeps_each_closure_independent kind="unit"  # noqa: E501
 def _check_gate_findings_fn(  # noqa: ANN201

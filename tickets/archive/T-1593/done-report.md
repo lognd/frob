@@ -39,8 +39,8 @@ tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_c
 tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_adversarial_test_not_flagged
 tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_no_test_evidence_is_ok_empty
 tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps
-tests/test_ticket_land.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace
-tests/test_ticket_land.py::TestLand::test_real_land_lands
+tests/ticket_land_suite/test_land_core.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace
+tests/ticket_land_suite/test_land_core.py::TestLand::test_real_land_lands
 
 Measured test runs (all foreground, all exit 0):
 - tests/test_ticket_land.py: 230 collected, 230 passed
@@ -52,7 +52,7 @@ Measured test runs (all foreground, all exit 0):
 - Combined re-run of all six files together: exit 0, no failures, 3 skips
   total (xdist parallel run)
 (one flaky, unrelated failure --
-tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds
+tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds
 -- was seen on a single earlier standalone run and did NOT reproduce on the
 immediate re-run of the same file, nor on the combined six-file run; not
 touched by this ticket's scope)
@@ -97,8 +97,8 @@ points relative to the `land()` call and the post-land sweep).
 - `tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_adversarial_test_not_flagged` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_no_test_evidence_is_ok_empty` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLand::test_real_land_lands` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLand::test_real_land_lands` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 10 passed (from 10 evidence id(s))

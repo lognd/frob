@@ -77,7 +77,7 @@ configurations, disclosed rather than left silently red:
   only in the full run. A second, still-undiscovered shared counter/
   cache beyond the artifact-cache env var already fixed is the likely
   cause, not confirmed.
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge: passed in
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge: passed in
   every repro attempt (isolation and combined); never reproduced the
   failure directly outside a full run's short summary.
 - Four NEWLY OBSERVED failures under a full run with -n 4 (different
@@ -85,7 +85,7 @@ configurations, disclosed rather than left silently red:
   clean in isolation and combined with each other:
   tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims::
   test_claims_captured_from_real_callables,
-  tests/test_ticket_land.py::TestLedgerV2LandMergeStory::
+  tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::
   test_same_ticket_conflict_surfaces_loudly_no_splice,
   tests/test_ticket_reverify.py::TestReverifyCli::
   test_surfaces_now_failing_evidence_loudly,

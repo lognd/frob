@@ -66,7 +66,7 @@ scope --add` refused it and no doc edge was bound rather than faking one.
 - `tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_root_never_goes_dirty_while_the_record_is_made` (pytest node id, verified passing when recorded)
 - `tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_probe_catches_the_in_root_write_positive_control` (pytest node id, verified passing when recorded)
 - `tests/unit/test_land_record_commit.py::TestRecordLandCommitOutOfTree::test_record_publishes_by_cas_and_refuses_a_moved_ref` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

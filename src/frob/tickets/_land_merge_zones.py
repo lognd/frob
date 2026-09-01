@@ -134,8 +134,8 @@ def _chunk_by_key(
     return chunks
 
 
-# frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_composes  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_refuses  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_keyed_lines_union_composes  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_keyed_lines_union_refuses  # noqa: E501
 def _union_keyed_chunks(
     ours_text: str, theirs_text: str, key_regex: re.Pattern[str]
 ) -> str | None:
@@ -210,7 +210,7 @@ def _resolve_conflict_blocks(raw_text: str, zone: _UnionZone) -> str | None:
     return "".join(out)
 
 
-# frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_resolve_stages  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge.test_resolve_stages  # noqa: E501
 def _resolve_union_zone_conflicts(
     cwd: Path, conflicted: set[str]
 ) -> Result[frozenset[str], LandError]:

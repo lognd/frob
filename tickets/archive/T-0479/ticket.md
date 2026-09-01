@@ -42,9 +42,9 @@ scope_changes:
   actor: logan
   at: '2026-07-21'
 evidence:
-- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_sibling_state_never_taken_from_worktree
-- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_landed_tickets_own_divergence_still_resolved
-- tests/test_ticket_land.py::TestOutOfScopeConflictAutoResolved::test_conflict_outside_scope_takes_mains_side_and_lands
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceOnlyTicket::test_sibling_state_never_taken_from_worktree
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceOnlyTicket::test_landed_tickets_own_divergence_still_resolved
+- tests/ticket_land_suite/test_land_core.py::TestOutOfScopeConflictAutoResolved::test_conflict_outside_scope_takes_mains_side_and_lands
 designated_repro_test: null
 threat: null
 component: null

@@ -36,14 +36,14 @@ Changed:
   src/frob/tickets/_land.py::_refuse_if_root_is_worktree (new)
   src/frob/tickets/_land.py::_land_precheck (calls the new check first)
   src/frob/tickets/_land.py::_close_finalized_ticket (idempotent DONE check)
-  tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail (new, 2 tests)
-  tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree (new, 2 tests)
+  tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail (new, 2 tests)
+  tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree (new, 2 tests)
 
 Evidence:
-  tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff
-  tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
-  tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
-  tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_still_refuses_when_worktree_has_diverged_commits
+  tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff
+  tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
+  tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
+  tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree::test_still_refuses_when_worktree_has_diverged_commits
   (bound to acceptance[0] via --accepts 0)
 
   `uv run --frozen pytest tests/test_ticket_land.py -q` -> 66 passed (62
@@ -67,7 +67,7 @@ tests.
 (no changed files detected)
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_still_refuses_when_worktree_has_diverged_commits` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree::test_still_refuses_when_worktree_has_diverged_commits` (pytest node id, verified passing when recorded)

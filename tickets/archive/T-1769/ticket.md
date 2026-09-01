@@ -18,7 +18,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestLandCompleteness::test_incomplete_land_fails_loudly_and_commits_nothing
+- tests/ticket_land_suite/test_land_core.py::TestLandCompleteness::test_incomplete_land_fails_loudly_and_commits_nothing
 designated_repro_test: null
 threat: null
 component: null
@@ -122,7 +122,7 @@ those three.
 (no changed files detected)
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandCompleteness::test_incomplete_land_fails_loudly_and_commits_nothing` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandCompleteness::test_incomplete_land_fails_loudly_and_commits_nothing` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

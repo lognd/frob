@@ -113,8 +113,8 @@ run.
 
 ### Evidence
 - `tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_spawn_env_survives_caller_frob_agent_flag` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

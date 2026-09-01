@@ -77,7 +77,7 @@ compose_squash_in_disposable_worktree/fold_worktree_into_commit directly
 -- the lock-wrapped code paths) plus tests/unit/test_land_stage_flip.py's
 TestPublishSquashApply (3 cases, publish/resync semantics unchanged).
 The T-1036 regression test itself
-(tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::
+(tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::
 test_concurrent_write_between_squash_and_splice_survives_land) is cited
 in a frob:tests directive on the fix but is NOT in the closing evidence
 list -- it cannot currently pass due to the T-2114 fork artifact above

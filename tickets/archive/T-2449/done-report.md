@@ -51,7 +51,7 @@ is not evidence the "no frob import" contract was meant to be relaxed.
 Implemented instead: `_classify_blockers`/`_classify_blockers_local`
 mirror `frob.tickets.load_queue`'s exact two-location resolution order
 (active ledger, then archive) in plain form, matching the SEMANTIC
-behavior `tests/test_ticket_land.py::TestArchiveV2::
+behavior `tests/ticket_land_suite/test_archive.py::TestArchiveV2::
 test_archived_v2_ticket_still_resolves_as_blocker` pins for the real
 resolver, without importing it.
 

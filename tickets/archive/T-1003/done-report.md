@@ -47,11 +47,11 @@ sibling absorption step 9.8.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandChainedCdRootResolution::test_root_equal_to_a_real_linked_worktree_resolves_and_lands` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandChainedCdRootResolution::test_root_equal_to_the_primary_checkout_itself_still_refuses` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUvLockSync::test_worktree_side_lock_flap_auto_restored_before_wip_commit` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandChainedCdRootResolution::test_root_equal_to_a_real_linked_worktree_resolves_and_lands` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandChainedCdRootResolution::test_root_equal_to_the_primary_checkout_itself_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestUvLockSync::test_worktree_side_lock_flap_auto_restored_before_wip_commit` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

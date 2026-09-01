@@ -122,7 +122,7 @@ evidence:
 - tests/test_release.py::TestChangelogFragments::test_read_fails_closed_on_a_malformed_fragment
 - tests/test_release.py::TestChangelogFragments::test_assemble_writes_every_fragment_as_a_bullet
 - tests/test_release.py::TestChangelogFragments::test_assemble_is_idempotent_and_picks_up_new_fragments
-- tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
+- tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
 - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_commit_refused_changelog_fragment
 designated_repro_test: null
 acceptance:
@@ -134,7 +134,7 @@ acceptance:
   - tests/test_release.py::TestChangelogFragments::test_read_fails_closed_on_a_malformed_fragment
   - tests/test_release.py::TestChangelogFragments::test_assemble_writes_every_fragment_as_a_bullet
   - tests/test_release.py::TestChangelogFragments::test_assemble_is_idempotent_and_picks_up_new_fragments
-  - tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
+  - tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
   - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_commit_refused_changelog_fragment
 - text: Given a release cut after several concurrent lands, when the CHANGELOG is
     produced, then it contains every landed ticket's entry in correct order and the
@@ -145,7 +145,7 @@ acceptance:
   - tests/test_release.py::TestChangelogFragments::test_read_fails_closed_on_a_malformed_fragment
   - tests/test_release.py::TestChangelogFragments::test_assemble_writes_every_fragment_as_a_bullet
   - tests/test_release.py::TestChangelogFragments::test_assemble_is_idempotent_and_picks_up_new_fragments
-  - tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
+  - tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
   - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_commit_refused_changelog_fragment
 - text: Given a worktree attempting to hand-edit a land-owned release artifact, when
     it commits, then the existing guard still refuses, proving the fix did not weaken
@@ -156,7 +156,7 @@ acceptance:
   - tests/test_release.py::TestChangelogFragments::test_read_fails_closed_on_a_malformed_fragment
   - tests/test_release.py::TestChangelogFragments::test_assemble_writes_every_fragment_as_a_bullet
   - tests/test_release.py::TestChangelogFragments::test_assemble_is_idempotent_and_picks_up_new_fragments
-  - tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
+  - tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
   - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_commit_refused_changelog_fragment
 threat: null
 component: release

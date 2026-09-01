@@ -32,12 +32,12 @@ scope_changes:
   actor: logan
   at: '2026-08-07'
 evidence:
-- tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits::test_worktree_only_edit_is_carried_forward
-- tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits::test_main_only_edit_is_left_alone
-- tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits::test_both_sides_edit_the_same_way_converges_silently
-- tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits::test_both_sides_edit_differently_refuses
-- tests/test_ticket_land.py::TestCarryForwardOrRefuseSiblingEdits::test_no_base_available_falls_back_to_done_report_heuristic
-- tests/test_ticket_land.py::TestLand::test_sibling_evidence_rebind_carried_forward_end_to_end
+- tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits::test_worktree_only_edit_is_carried_forward
+- tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits::test_main_only_edit_is_left_alone
+- tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits::test_both_sides_edit_the_same_way_converges_silently
+- tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits::test_both_sides_edit_differently_refuses
+- tests/ticket_land_suite/test_ledger_splice.py::TestCarryForwardOrRefuseSiblingEdits::test_no_base_available_falls_back_to_done_report_heuristic
+- tests/ticket_land_suite/test_land_core.py::TestLand::test_sibling_evidence_rebind_carried_forward_end_to_end
 designated_repro_test: null
 threat: null
 component: null

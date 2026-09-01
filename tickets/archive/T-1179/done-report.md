@@ -22,7 +22,7 @@ subsequent `git merge --squash` from the worktree branch then refuses with
 git's own "untracked working tree files would be overwritten by merge"
 error, which silently degrades the later ticket-scoped splice (root's
 tickets.md never receives the squash's changes, main=0 tickets instead of
-main=1) -- caught by tests/test_ticket_land.py::TestWipCommit and
+main=1) -- caught by tests/ticket_land_suite/test_wip.py::TestWipCommit and
 TestWipCommitNormalizationOnlyDirty going red. Reproduced and bisected via
 a standalone repro script before landing. The shipped version reads
 main_root's ledger WITHOUT holding its lock (same lock footprint as plain
@@ -72,7 +72,7 @@ staging everything and unstaging .frob as a separate `git reset` step, never
 naming an ignored path in a pathspec. Filed T-1184 to track this
 fix on its own record.
 
-tests/test_ticket_land.py::TestLandDeeperBranches::test_finalize_draft_failure
+tests/ticket_land_suite/test_land_core.py::TestLandDeeperBranches::test_finalize_draft_failure
 needed a one-line update: it now monkeypatches `finalize_draft_for_land`
 (the symbol land's own finalize step actually calls) instead of the now-
 bypassed `finalize_draft`.
@@ -92,7 +92,7 @@ new finalize_draft_for_land public symbol.
 - `tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling::test_id_ceiling_reads_current_main_not_stale_worktree_view` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_id_title_mismatch_is_refused_not_silently_overwritten` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_same_id_same_title_still_resolves_via_newer` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandDeeperBranches::test_finalize_draft_failure` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandDeeperBranches::test_finalize_draft_failure` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

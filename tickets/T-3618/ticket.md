@@ -58,8 +58,8 @@ scope_changes:
 evidence:
 - tests/gates/test_tdd_order.py::TestPerfShape::test_since_bounds_the_log_walk_to_a_revision_range
 - tests/gates/test_tdd_order.py::TestPerfShape::test_shared_file_is_walked_and_read_exactly_once_across_edges
-- tests/test_ticket_land.py::TestCheckTddOrder::test_passes_the_resolved_merge_base_as_since
-- tests/test_ticket_land.py::TestCheckTddOrder::test_falls_back_to_unbounded_when_merge_base_is_unresolvable
+- tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder::test_passes_the_resolved_merge_base_as_since
+- tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder::test_falls_back_to_unbounded_when_merge_base_is_unresolvable
 designated_repro_test: null
 threat: null
 component: null

@@ -28,8 +28,8 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_lock_timeout_stays_below_the_playbook_shell_wrapper_floor
-designated_repro_test: tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_lock_timeout_stays_below_the_playbook_shell_wrapper_floor
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_lock_timeout_stays_below_the_playbook_shell_wrapper_floor
+designated_repro_test: tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_lock_timeout_stays_below_the_playbook_shell_wrapper_floor
 threat: null
 component: null
 anchor: false

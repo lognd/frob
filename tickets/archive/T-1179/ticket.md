@@ -39,7 +39,7 @@ evidence:
 - tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling::test_id_ceiling_reads_current_main_not_stale_worktree_view
 - tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_id_title_mismatch_is_refused_not_silently_overwritten
 - tests/test_tickets_collision.py::TestSpliceOnlyTicketIdTitleMismatchRefusal::test_same_id_same_title_still_resolves_via_newer
-- tests/test_ticket_land.py::TestLandDeeperBranches::test_finalize_draft_failure
+- tests/ticket_land_suite/test_land_core.py::TestLandDeeperBranches::test_finalize_draft_failure
 designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree land whose draft renumbering runs WHEN main has allocated
@@ -49,7 +49,7 @@ acceptance:
     proven by a regression test reproducing the 2026-07-29 shape
   evidence:
   - tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling::test_id_ceiling_reads_current_main_not_stale_worktree_view
-  - tests/test_ticket_land.py::TestLandDeeperBranches::test_finalize_draft_failure
+  - tests/ticket_land_suite/test_land_core.py::TestLandDeeperBranches::test_finalize_draft_failure
 - text: GIVEN the splice THEN a landing block may never overwrite a different-titled
     existing block under the same id -- a detected id/title mismatch refuses the land
     loudly instead of silently replacing content

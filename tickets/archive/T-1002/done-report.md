@@ -51,10 +51,10 @@ this repo, e.g. tickets.md's splice).
 (no changed files detected)
 
 ### Evidence
-- `tests/test_ticket_land.py::TestUnionZoneMerge::test_keyed_lines_union_composes` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUnionZoneMerge::test_keyed_lines_union_refuses` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUnionZoneMerge::test_resolve_stages` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUnionZoneMerge::test_append_only_union_concatenates` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_keyed_lines_union_composes` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_keyed_lines_union_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_resolve_stages` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_append_only_union_concatenates` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

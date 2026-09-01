@@ -24,7 +24,7 @@ Confirmed via `frob ticket evidence --check-repro` that this test
 genuinely fails against the pre-fix value (600.0, commit 385349e9c) and
 passes after the fix.
 
-Verification: `tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout`
+Verification: `tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout`
 (6 tests) all pass. No other code references `_LAND_LOCK_TIMEOUT_S`
 (confirmed via `git grep`), so this is a self-contained, single-constant
 change with no other callers to update.
@@ -38,7 +38,7 @@ change with no other callers to update.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_lock_timeout_stays_below_the_playbook_shell_wrapper_floor` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_lock_timeout_stays_below_the_playbook_shell_wrapper_floor` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

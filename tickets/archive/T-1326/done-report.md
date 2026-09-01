@@ -36,7 +36,7 @@ _WAIVE_SINGLE_LINE_RE scope), on both the uncommitted and committed
 paths equally -- not a regression this ticket introduces, but not closed
 either; flagged as a named follow-up rather than silently left unnoted.
 
-Tests added (tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal):
+Tests added (tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal):
 committed out-of-scope undeclared deletion refuses before merge;
 committed in-scope deletion allowed; committed Done-report-declared
 deletion allowed; merge-base drift (main-side deletion) not counted
@@ -52,10 +52,10 @@ against the branch.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_in_scope_waive_deletion_is_allowed` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_declared_in_done_report_waive_deletion_is_allowed` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_merge_base_drift_deletion_on_main_side_not_counted` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_in_scope_waive_deletion_is_allowed` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_declared_in_done_report_waive_deletion_is_allowed` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_merge_base_drift_deletion_on_main_side_not_counted` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

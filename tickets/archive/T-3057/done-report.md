@@ -6,9 +6,9 @@ src/frob/tickets/_land.py::_tdd_order_scoped_edges
 src/frob/tickets/_land.py::_land_precheck_remaining_checks
 
 Evidence:
-tests/test_ticket_land.py::TestCheckTddOrder::test_logs_a_warning_for_an_implementation_first_pair_without_blocking
-tests/test_ticket_land.py::TestCheckTddOrder::test_stays_quiet_when_no_tests_edges_are_touched
-tests/test_ticket_land.py::TestCheckTddOrder::test_never_refuses_the_land
+tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder::test_logs_a_warning_for_an_implementation_first_pair_without_blocking
+tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder::test_stays_quiet_when_no_tests_edges_are_touched
+tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder::test_never_refuses_the_land
 
 Filed: none
 
@@ -25,9 +25,9 @@ never blocking).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestCheckTddOrder::test_logs_a_warning_for_an_implementation_first_pair_without_blocking` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCheckTddOrder::test_stays_quiet_when_no_tests_edges_are_touched` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCheckTddOrder::test_never_refuses_the_land` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder::test_logs_a_warning_for_an_implementation_first_pair_without_blocking` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder::test_stays_quiet_when_no_tests_edges_are_touched` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder::test_never_refuses_the_land` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

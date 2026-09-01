@@ -26,7 +26,7 @@ blind-checkout behavior only if either side fails to parse (never worse
 than before this ticket, only better when it succeeds).
 
 Verified with a new reproduction test
-(tests/test_ticket_land.py::TestCoverageLockConflictMerges::
+(tests/ticket_land_suite/test_land_core.py::TestCoverageLockConflictMerges::
 test_conflicting_lock_merges_to_the_higher_of_both_sides): seeds a base
 lock, has the worktree stamp a higher number for one module and main
 independently stamp a higher number for a DIFFERENT module, lands, and
@@ -58,7 +58,7 @@ correctly and does not need T-1270's `git checkout` workaround anymore.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestCoverageLockConflictMerges::test_conflicting_lock_merges_to_the_higher_of_both_sides` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

@@ -49,8 +49,8 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_ticket_land.py::TestLandFailedTicket::test_failed_ticket_with_a_failure_log_lands_cleanly
-- tests/test_ticket_land.py::TestLandFailedTicket::test_queued_ticket_with_no_failure_log_still_refuses
+- tests/ticket_land_suite/test_land_core.py::TestLandFailedTicket::test_failed_ticket_with_a_failure_log_lands_cleanly
+- tests/ticket_land_suite/test_land_core.py::TestLandFailedTicket::test_queued_ticket_with_no_failure_log_still_refuses
 designated_repro_test: null
 threat: null
 component: null
@@ -162,8 +162,8 @@ separate, larger change to `frob ticket fail`'s own write path and the
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandFailedTicket::test_failed_ticket_with_a_failure_log_lands_cleanly` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandFailedTicket::test_queued_ticket_with_no_failure_log_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandFailedTicket::test_failed_ticket_with_a_failure_log_lands_cleanly` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandFailedTicket::test_queued_ticket_with_no_failure_log_still_refuses` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

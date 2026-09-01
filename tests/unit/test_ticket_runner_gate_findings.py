@@ -11,7 +11,7 @@ monkeypatch the actual `subprocess.run` seam `guarded_subprocess_run` calls
 (`frob.process._guard.subprocess.run`), never a real `frob check` spawn --
 these are pure/unit tests for the parsing and kwarg-shape logic, not an
 end-to-end integration test (that already exists in
-`tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd`)."""
+`tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd`)."""
 
 from __future__ import annotations
 

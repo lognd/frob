@@ -26,8 +26,8 @@ evidence:
 - tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_adversarial_test_not_flagged
 - tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_no_test_evidence_is_ok_empty
 - tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps
-- tests/test_ticket_land.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace
-- tests/test_ticket_land.py::TestLand::test_real_land_lands
+- tests/ticket_land_suite/test_land_core.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace
+- tests/ticket_land_suite/test_land_core.py::TestLand::test_real_land_lands
 designated_repro_test: null
 threat: null
 component: null

@@ -71,9 +71,9 @@ still-real MISSING/STALE/count-claim checks, unchanged.
 (no changed files detected)
 
 ### Evidence
-- `tests/test_ticket_land.py::TestSyncGateRulesCallback::test_sync_gate_rules_none_is_noop` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSyncGateRulesCallback::test_sync_gate_rules_applies_and_stages` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSyncGateRulesCallback::test_sync_gate_rules_failure_unwinds` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback::test_sync_gate_rules_none_is_noop` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback::test_sync_gate_rules_applies_and_stages` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback::test_sync_gate_rules_failure_unwinds` (pytest node id, verified passing when recorded)
 - `tests/test_docblocks_gate.py::TestCliCommandTableGenerator::test_generate_sorts_rows_across_sources` (pytest node id, verified passing when recorded)
 - `tests/test_docblocks_gate.py::TestCliCommandTableGenerator::test_generate_no_config_is_none` (pytest node id, verified passing when recorded)
 - `tests/test_docblocks_gate.py::TestCliCommandTableGenerator::test_sync_replaces_only_the_marked_block` (pytest node id, verified passing when recorded)

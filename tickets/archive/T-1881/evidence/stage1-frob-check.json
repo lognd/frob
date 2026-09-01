@@ -9250,7 +9250,7 @@
           "col": null,
           "severity": "warning",
           "code": "COV006",
-          "message": "COV006: frob:tests tests/test_ticket_land.py::TestArchiveSpliceDiscipline.test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch -> src/frob/tickets/_land_ledger_merge.py::_merge_ledger_tickets has no call-graph reachability to the bound private symbol (frob.graph.callgraph, best-effort); confirm the test actually exercises it, or bind a symbol it calls"
+          "message": "COV006: frob:tests tests/ticket_land_suite/test_archive.py::TestArchiveSpliceDiscipline.test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch -> src/frob/tickets/_land_ledger_merge.py::_merge_ledger_tickets has no call-graph reachability to the bound private symbol (frob.graph.callgraph, best-effort); confirm the test actually exercises it, or bind a symbol it calls"
         },
         {
           "file": "tests/test_ticket_land.py",
@@ -9258,7 +9258,7 @@
           "col": null,
           "severity": "warning",
           "code": "COV006",
-          "message": "COV006: frob:tests tests/test_ticket_land.py::TestWipAddIgnoredPathFallback.test_gitignored_frob_falls_back_and_still_lands -> src/frob/tickets/_land_git_ops.py::_wip_add_excluding_frob has no call-graph reachability to the bound private symbol (frob.graph.callgraph, best-effort); confirm the test actually exercises it, or bind a symbol it calls"
+          "message": "COV006: frob:tests tests/ticket_land_suite/test_wip.py::TestWipAddIgnoredPathFallback.test_gitignored_frob_falls_back_and_still_lands -> src/frob/tickets/_land_git_ops.py::_wip_add_excluding_frob has no call-graph reachability to the bound private symbol (frob.graph.callgraph, best-effort); confirm the test actually exercises it, or bind a symbol it calls"
         },
         {
           "file": "tests/test_ticket_land.py",
@@ -9266,7 +9266,7 @@
           "col": null,
           "severity": "warning",
           "code": "COV006",
-          "message": "COV006: frob:tests tests/test_ticket_land.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides -> src/frob/tickets/_land_git_ops.py::_merge_coverage_lock_conflict has no call-graph reachability to the bound private symbol (frob.graph.callgraph, best-effort); confirm the test actually exercises it, or bind a symbol it calls"
+          "message": "COV006: frob:tests tests/ticket_land_suite/test_land_core.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides -> src/frob/tickets/_land_git_ops.py::_merge_coverage_lock_conflict has no call-graph reachability to the bound private symbol (frob.graph.callgraph, best-effort); confirm the test actually exercises it, or bind a symbol it calls"
         },
         {
           "file": "tests/test_ticket_land.py",
@@ -9274,7 +9274,7 @@
           "col": null,
           "severity": "warning",
           "code": "COV006",
-          "message": "COV006: frob:tests tests/test_ticket_land.py::TestLandCompleteness.test_land_brings_tracked_edit_untracked_new_file_and_deletion -> src/frob/tickets/_land_squash.py::_worktree_full_changeset has no call-graph reachability to the bound private symbol (frob.graph.callgraph, best-effort); confirm the test actually exercises it, or bind a symbol it calls"
+          "message": "COV006: frob:tests tests/ticket_land_suite/test_land_core.py::TestLandCompleteness.test_land_brings_tracked_edit_untracked_new_file_and_deletion -> src/frob/tickets/_land_squash.py::_worktree_full_changeset has no call-graph reachability to the bound private symbol (frob.graph.callgraph, best-effort); confirm the test actually exercises it, or bind a symbol it calls"
         },
         {
           "file": "tests/test_ticket_land.py",
@@ -9282,7 +9282,7 @@
           "col": null,
           "severity": "warning",
           "code": "COV006",
-          "message": "COV006: frob:tests tests/test_ticket_land.py::TestLandCompleteness.test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty -> src/frob/tickets/_land_squash.py::_worktree_full_changeset has no call-graph reachability to the bound private symbol (frob.graph.callgraph, best-effort); confirm the test actually exercises it, or bind a symbol it calls"
+          "message": "COV006: frob:tests tests/ticket_land_suite/test_land_core.py::TestLandCompleteness.test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty -> src/frob/tickets/_land_squash.py::_worktree_full_changeset has no call-graph reachability to the bound private symbol (frob.graph.callgraph, best-effort); confirm the test actually exercises it, or bind a symbol it calls"
         },
         {
           "file": "src/frob/__main__.py",

@@ -28,11 +28,11 @@ failing test still refuses" is exercised there, unchanged.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_test_count_refuses_land` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_strictly_improved_test_count_auto_accepts_and_rewrites_recap` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_lower_gate_error_count_than_claim_still_lands` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_test_count_refuses_land` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_strictly_improved_test_count_auto_accepts_and_rewrites_recap` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_lower_gate_error_count_than_claim_still_lands` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

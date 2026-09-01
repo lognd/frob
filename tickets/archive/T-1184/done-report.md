@@ -17,8 +17,8 @@ succeeds via the fallback path, and one direct unit test on
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_is_ignored_path_refusal_matches_gits_fixed_message` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_wip.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_wip.py::TestWipAddIgnoredPathFallback::test_is_ignored_path_refusal_matches_gits_fixed_message` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

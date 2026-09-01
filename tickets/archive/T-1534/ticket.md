@@ -38,7 +38,7 @@ scope_changes:
   actor: logan
   at: '2026-08-07'
 evidence:
-- tests/test_ticket_land.py::TestUvLockSync::test_bump_then_lock_synced_in_commit
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_bump_then_lock_synced_in_commit
 - tests/unit/test_ticket_store.py::TestSlugify::test_lowercases_and_hyphenates
 designated_repro_test: null
 threat: null
@@ -133,7 +133,7 @@ after land, per this repo's review-gated ticket workflow.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestUvLockSync::test_bump_then_lock_synced_in_commit` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestUvLockSync::test_bump_then_lock_synced_in_commit` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_store.py::TestSlugify::test_lowercases_and_hyphenates` (pytest node id, verified passing when recorded)
 
 ### Captured claims

@@ -35,7 +35,7 @@ Implemented:
   pre-commit pass could not see (e.g. a ledger-splice-only artifact).
 
 Tests added:
-- tests/test_ticket_land.py::TestPreCommitUnscopedSweep -- land()-level,
+- tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep -- land()-level,
   real git: true/None/no-callback verdicts land normally, a False
   verdict unwinds to the pre-land sha with an empty git status and
   commits nothing.
@@ -64,10 +64,10 @@ the new/changed test symbols (COV002).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_none_verdict_is_a_skip_lands_normally` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_false_verdict_unwinds_and_commits_nothing` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_no_callback_is_noop` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_none_verdict_is_a_skip_lands_normally` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_false_verdict_unwinds_and_commits_nothing` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_no_callback_is_noop` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_new_finding_fixed_by_tier_a_stages_and_returns_true` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_new_finding_unresolved_by_tier_a_returns_false` (pytest node id, verified passing when recorded)
 

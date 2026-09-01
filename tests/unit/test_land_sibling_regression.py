@@ -47,7 +47,7 @@ def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
 
 def _git_init(root: Path, *, branch: str = "main") -> None:
     """Init a fixture repo AND gitignore `.frob/` (mirrors
-    `tests/test_ticket_land.py::_git_init` -- see its own docstring for why
+    `tests/ticket_land_suite/conftest.py::_git_init` -- see its own docstring for why
     this matters for a blanket `git add -A` fixture)."""
     root.mkdir(parents=True, exist_ok=True)
     _run(["git", "init", "-q", "-b", branch], root)
@@ -69,7 +69,7 @@ def _spec(title: str, *, scope: tuple[str, ...] = ()) -> TicketSpec:
 
 def _seed_v2_ticket(root: Path, ticket_id: str, *, scope: tuple[str, ...] = ()):
     """Write a fresh QUEUED ticket directly into v2-mode storage (mirrors
-    `tests/test_ticket_land.py::_seed_v2_ticket`)."""
+    `tests/ticket_land_suite/conftest.py::_seed_v2_ticket`)."""
     ticket = _ticket_from_spec(ticket_id, _spec("Seed", scope=scope), ())
     path = v2_ticket_path(root, ticket_id)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -79,7 +79,7 @@ def _seed_v2_ticket(root: Path, ticket_id: str, *, scope: tuple[str, ...] = ()):
 
 def _make_closeable(root: Path, ticket_id: str) -> None:
     """Drive `ticket_id` to a state `transition(..., DONE)` will accept
-    (mirrors `tests/test_ticket_land.py::_make_closeable`)."""
+    (mirrors `tests/ticket_land_suite/conftest.py::_make_closeable`)."""
     assert transition(root, ticket_id, TicketState.PLANNED).is_ok
     assert transition(root, ticket_id, TicketState.IN_PROGRESS).is_ok
     loaded = load_all(root)
@@ -96,7 +96,7 @@ def _make_closeable(root: Path, ticket_id: str) -> None:
 @pytest.fixture
 def v2_repo(tmp_path: Path) -> Path:
     """A main checkout in v2-mode storage, seeded with one ticket and one
-    committed source file (mirrors `tests/test_ticket_land.py::v2_repo`)."""
+    committed source file (mirrors `tests/ticket_land_suite/conftest.py::v2_repo`)."""
     main_repo = tmp_path / "v2main"
     _git_init(main_repo)
     _seed_v2_ticket(main_repo, "T-3000", scope=("src/seed.py",))

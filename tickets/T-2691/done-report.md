@@ -30,7 +30,7 @@ something this ticket's own acceptance asks for; the marker file plus
 change -- both saga entry points this ticket's incident concerns
 (`_land_lock`'s wait loop and `land()`'s own wrapper) live in `_land.py`.
 
-Evidence: `pytest tests/test_ticket_land.py::TestLandStatus tests/unit/
+Evidence: `pytest tests/ticket_land_suite/test_land_lock.py::TestLandStatus tests/unit/
 test_coordinator_scripts.py::TestReadLandStatusMarker tests/unit/
 test_coordinator_scripts.py::TestLandStatusMarkerLine -p no:xdist` -- 8
 passed, 0 failed. Also re-ran the full `tests/test_ticket_land.py` suite
@@ -70,9 +70,9 @@ scope went untouched; the incident this ticket fixes lives entirely in
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandStatus::test_phase_transitions_are_pollable` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandStatus::test_waiting_phase_records_lock_holder` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandStatus::test_write_failure_is_best_effort_and_never_raises` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_phase_transitions_are_pollable` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_waiting_phase_records_lock_holder` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_write_failure_is_best_effort_and_never_raises` (pytest node id, verified passing when recorded)
 - `tests/unit/test_coordinator_scripts.py::TestReadLandStatusMarker::test_reads_a_written_marker` (pytest node id, verified passing when recorded)
 - `tests/unit/test_coordinator_scripts.py::TestReadLandStatusMarker::test_missing_marker_returns_none` (pytest node id, verified passing when recorded)
 - `tests/unit/test_coordinator_scripts.py::TestReadLandStatusMarker::test_unparseable_marker_returns_none` (pytest node id, verified passing when recorded)

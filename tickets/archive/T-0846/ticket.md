@@ -47,8 +47,8 @@ scope_changes:
   actor: logan
   at: '2026-07-23'
 evidence:
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_lower_gate_error_count_than_claim_still_lands
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_lower_gate_error_count_than_claim_still_lands
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity
 - tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel::test_error_findings_round_trips_through_a_done_report_body
 - tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel::test_measured_empty_error_findings_differs_from_none
 - tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_parses_multiple_findings_from_errors_section

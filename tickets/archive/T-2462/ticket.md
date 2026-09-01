@@ -66,7 +66,7 @@ scope_changes:
   actor: logan
   at: '2026-08-18'
 evidence:
-- tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
+- tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
 - tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_rewrites_version_and_prepends_changelog_entry
 - tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps
 - tests/unit/gates/test_rel001_deferred_bump.py::TestReleaseGatePlainCheckoutDeferredPosture::test_pending_bump_with_fragment_is_warn_not_error

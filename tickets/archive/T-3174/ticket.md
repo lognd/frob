@@ -35,7 +35,7 @@ body_changes:
   old_length: 3171
   new_length: 4042
 evidence:
-- tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+- tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
 designated_repro_test: null
 threat: null
 component: null
@@ -83,7 +83,7 @@ production fix is correct and this is a test-construction artifact, not
 a second production bug.
 
 REPRO: with T-3163's ledger_lock widening applied, run
-tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
 -- it still fails/xfails with the SAME symptom the widened lock was
 meant to close (T-0001's own record missing from load_all), but this
 time because the forked child skipped contention entirely, not because

@@ -45,9 +45,9 @@ are touched.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestCommitsTouchingPath::test_names_the_real_commit_that_touched_the_file` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCommitsTouchingPath::test_empty_when_the_path_was_never_touched` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestCommitsTouchingPath::test_names_the_real_commit_that_touched_the_file` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestCommitsTouchingPath::test_empty_when_the_path_was_never_touched` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_committed_out_of_scope_undeclared_waive_deletion_refuses_before_merge` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

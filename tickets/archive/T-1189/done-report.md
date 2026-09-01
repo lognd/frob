@@ -10,7 +10,7 @@ T-1188's verbatim-move precedent. _land_merge.py imports
 `_auto_resolve_out_of_scope_conflicts` use; every other moved symbol stays
 private to the new module.
 
-tests/test_ticket_land.py::TestUnionZoneMerge accessed several of these
+tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge accessed several of these
 functions via the `frob.tickets._land_merge` module attribute directly
 (the exact T-1186-flagged hazard) -- repointed to a new
 `_land_merge_zones_mod` import alias for the 4 call sites that moved.
@@ -31,10 +31,10 @@ follow-up land in this same ticket.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestUnionZoneMerge::test_keyed_lines_union_composes` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUnionZoneMerge::test_keyed_lines_union_refuses` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUnionZoneMerge::test_resolve_stages` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUnionZoneMerge::test_append_only_union_concatenates` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_keyed_lines_union_composes` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_keyed_lines_union_refuses` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_resolve_stages` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestUnionZoneMerge::test_append_only_union_concatenates` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

@@ -39,7 +39,7 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/test_ticket_land.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
+- tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
 designated_repro_test: null
 threat: null
 component: null

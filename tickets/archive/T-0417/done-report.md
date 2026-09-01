@@ -42,13 +42,13 @@ Changed:
 - src/frob/app/ticket_runner.py::_close
 - docs/modules/tickets.md (transition's public-api anchor, AFFECT001)
 - tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose (new)
-- tests/test_ticket_land.py::TestReverifyEvidenceForClose (new)
-- tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass (patched to
+- tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose (new)
+- tests/ticket_land_suite/test_claim_close.py::TestCloseSkipMutationEvidenceBypass (patched to
   stub the new re-verify closure, since it now runs unconditionally at close)
 
 Evidence: 7 ids recorded and passing (see `frob ticket show T-0417`):
 tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose (3 tests),
-tests/test_ticket_land.py::TestReverifyEvidenceForClose (4 tests).
+tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose (4 tests).
 
 Filed: none (N-01/N-03/N-04 confirmed already fixed by prior tickets; N-05
 left as pre-existing, documented debt per the audit, not newly discovered).
@@ -72,10 +72,10 @@ unrelated to this diff, and each passes individually.
 - `tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_rejects_when_evidence_reverified_false` (pytest node id, verified passing when recorded)
 - `tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_allows_when_evidence_reverified_true` (pytest node id, verified passing when recorded)
 - `tests/test_evidence_integrity.py::TestT0417ReverifyEvidenceOnClose::test_transition_permissive_when_evidence_reverified_none` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_no_non_cmd_evidence_returns_none` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_collection_failure_returns_false` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_still_passing_returns_true` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_no_longer_passing_returns_false` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose::test_no_non_cmd_evidence_returns_none` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose::test_collection_failure_returns_false` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose::test_still_passing_returns_true` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestReverifyEvidenceForClose::test_no_longer_passing_returns_false` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 7 passed (from 7 evidence id(s))

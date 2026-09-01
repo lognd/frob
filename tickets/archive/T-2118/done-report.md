@@ -5,10 +5,10 @@ Changed:
 - src/frob/tickets/_land.py::_log_dirty_main_refusal (extended: names the owning ticket when dirt belongs to another open ticket's scope)
 
 Evidence:
-- tests/test_ticket_land.py::TestDirtOwnerTickets::test_path_owned_by_another_open_ticket_names_it
-- tests/test_ticket_land.py::TestDirtOwnerTickets::test_path_owned_by_landing_ticket_itself_is_excluded
-- tests/test_ticket_land.py::TestDirtOwnerTickets::test_path_owned_by_no_open_ticket_is_excluded
-- tests/test_ticket_land.py::TestDirtOwnerTickets::test_dirty_main_refusal_names_the_owning_ticket (BUG002 designated repro; verified FAILED_AT_PARENT at 9bbab5c00022937990ffea3ed7c47c7b2d6259fe, PASSED after the fix, per `frob ticket evidence T-2118 --check-repro`)
+- tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_path_owned_by_another_open_ticket_names_it
+- tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_path_owned_by_landing_ticket_itself_is_excluded
+- tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_path_owned_by_no_open_ticket_is_excluded
+- tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_dirty_main_refusal_names_the_owning_ticket (BUG002 designated repro; verified FAILED_AT_PARENT at 9bbab5c00022937990ffea3ed7c47c7b2d6259fe, PASSED after the fix, per `frob ticket evidence T-2118 --check-repro`)
 
 Filed: none
 
@@ -23,10 +23,10 @@ Gates: `frob check --ticket T-2118` -- the actionable findings this ticket's own
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestDirtOwnerTickets::test_dirty_main_refusal_names_the_owning_ticket` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDirtOwnerTickets::test_path_owned_by_another_open_ticket_names_it` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDirtOwnerTickets::test_path_owned_by_landing_ticket_itself_is_excluded` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDirtOwnerTickets::test_path_owned_by_no_open_ticket_is_excluded` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_dirty_main_refusal_names_the_owning_ticket` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_path_owned_by_another_open_ticket_names_it` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_path_owned_by_landing_ticket_itself_is_excluded` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_path_owned_by_no_open_ticket_is_excluded` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

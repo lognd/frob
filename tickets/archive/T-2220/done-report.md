@@ -14,9 +14,9 @@ Changed:
 - docs/design/registry/capability-via-ratchet.lock.json (tickets_ledger::fs.write ratchet bumped 16 -> 17)
 
 Evidence:
-- tests/test_ticket_land.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit (--accepts 0, DESIGNATED REPRO -- FAILED_AT_PARENT confirmed against 60394a1b252d086068832dd24c299ad8ce6e9eb7, the test-only commit before the fix)
+- tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit (--accepts 0, DESIGNATED REPRO -- FAILED_AT_PARENT confirmed against 60394a1b252d086068832dd24c299ad8ce6e9eb7, the test-only commit before the fix)
 - tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit (--accepts 1, must-still-pass SHA control + ticket-id resolution)
-- tests/test_ticket_land.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id (--accepts 2, the --plan discriminator: asserts the finalize commit subject is NOT matchable by the old `land T-####` grep pattern, and that land_commit resolves anyway)
+- tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id (--accepts 2, the --plan discriminator: asserts the finalize commit subject is NOT matchable by the old `land T-####` grep pattern, and that land_commit resolves anyway)
 - tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_never_landed_ticket_id_refused_distinguishably_from_a_typo_sha (--accepts 3)
 - tests/unit/test_coordinator_scripts.py::TestLoadLandCommit (3 methods, unit coverage for the new resolver)
 - Full `tests/test_ticket_land.py` run (9925 lines, 279+ tests): only 4 failures, all independently confirmed PRE-EXISTING on main (test_refuses_on_dirty_main, TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice, TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses, TestUvLockSync::test_dirty_lock_with_other_change_still_refuses -- reproduced against a pristine `git worktree add --detach main` checkout before any of this ticket's edits)
@@ -70,9 +70,9 @@ squash-only sha.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit` (pytest node id, verified passing when recorded)
 - `tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id` (pytest node id, verified passing when recorded)
 - `tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_never_landed_ticket_id_refused_distinguishably_from_a_typo_sha` (pytest node id, verified passing when recorded)
 
 ### Captured claims

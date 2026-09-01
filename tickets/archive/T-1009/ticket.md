@@ -93,7 +93,7 @@ evidence:
 - tests/unit/test_app_runners_batch5.py::TestReleaseSyncRunner::test_sync_already_in_agreement_is_quiet_but_still_locks
 - tests/unit/test_app_runners_batch5.py::TestReleaseSyncRunner::test_sync_uv_lock_failure_exits_1
 - tests/unit/test_app_runners_batch5.py::TestReleaseSyncRunner::test_sync_bad_pyproject_version_line_exits_1
-- tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
+- tests/ticket_land_suite/test_release.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
 designated_repro_test: null
 acceptance:
 - text: given any one artifact hand-edited out of agreement, when frob check runs,

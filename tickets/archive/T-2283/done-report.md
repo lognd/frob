@@ -47,9 +47,9 @@ Full tests/test_ticket_land.py run (280 collected) after the fix:
 previously-passing test broken by the test-wrong fix.
 
 Changed:
-- tests/test_ticket_land.py::TestLedgerV2LandMergeStory.test_same_ticket_conflict_surfaces_loudly_no_splice
+- tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory.test_same_ticket_conflict_surfaces_loudly_no_splice
 
-Evidence: tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice (--accepts 0, designated repro, FAILED_AT_PARENT confirmed)
+Evidence: tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice (--accepts 0, designated repro, FAILED_AT_PARENT confirmed)
 
 Filed: T-2286 (bug: reclaim_orphaned_squash_residue silently discards genuine dirty-main content -- covers tests 1/3/4)
 
@@ -68,7 +68,7 @@ closing against an unmet acceptance criterion.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

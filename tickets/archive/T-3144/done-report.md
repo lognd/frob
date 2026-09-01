@@ -49,10 +49,10 @@ ruff check/format clean on the touched file.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestGitSubprocessFailures::test_squash_command_failure` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestGitSubprocessFailures::test_final_commit_failure` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestGitSubprocessFailures::test_squash_command_failure` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestGitSubprocessFailures::test_final_commit_failure` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

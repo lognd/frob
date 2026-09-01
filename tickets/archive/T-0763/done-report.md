@@ -44,4 +44,4 @@ and every test this ticket's own scope touches passes.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestUnboundAcceptancePreflightBeforeMerge::test_unbound_acceptance_refused_pre_merge_no_commits_created` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_dirt_ownership.py::TestUnboundAcceptancePreflightBeforeMerge::test_unbound_acceptance_refused_pre_merge_no_commits_created` (pytest node id, verified passing when recorded)

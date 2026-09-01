@@ -89,7 +89,7 @@ anchor: false
 anchor_reason: null
 land_commit: 31ecab73b86983e81ea6ad9611d39589e07e6771
 ---
-MEASURED 2026-08-27, while fixing T-3144's stale test-infra (tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land).
+MEASURED 2026-08-27, while fixing T-3144's stale test-infra (tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land).
 
 That test's own monkeypatch was stale (patched _land_squash_mod.run_argv,
 but T-3121's disposable-stage flip moved the actual `git merge --squash`
@@ -113,7 +113,7 @@ symptom: instead of the concurrent write being discarded, the just-landed
 ticket's own entry is discarded and the concurrent write survives alone.
 
 REPRO: fix the test's monkeypatch target as described above and run
-tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
 -- landed.danger_ok contains only the sibling id, result.danger_ok.final_id
 (the original ticket) raises KeyError.
 
@@ -133,4 +133,4 @@ requiring its own investigation and fix in src/frob/tickets/_land_squash.py
 and/or wherever new_ticket's ledger merge lives -- out of proportion for a
 test-file ticket to absorb.
 
-frob:waive BUG002 reason="the genuine designated repro (tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land, retargeted by T-3144's in-flight test-infra fix) DOES fail at the parent commit (110990225eae4796c4763f7f1e6ceb5cb4c3bb83) and reproduces the exact defect (confirmed directly, --runxfail, before any production change) -- but it cannot currently be bound as evidence because it ALSO fails against the fix, for an unrelated, newly-exposed test-construction artifact: its own T-2114 concurrent-writer simulation forks the sibling process, and once ledger_lock is genuinely held across most of the injected-hook window (required for the fix to be correct), the forked child inherits the parent's already-acquired flock fd plus _lock_local's thread-local reentrancy bookkeeping, so it spuriously skips real lock contention instead of blocking like a genuinely independent process would. Filed as T-3174 (blocked_by T-3144, same file's write lease -- cannot fix it here without colliding with T-3144's in-progress lease on tests/test_ticket_land.py). Verified the FIX itself is correct with a standalone script (multiprocessing.get_context('spawn'), immune to the fork artifact) reproducing the identical scenario against the fixed code: land() succeeds, resync succeeds cleanly, the sibling correctly blocks until land finishes, reads the freshly-published ledger, and both tickets survive -- PASS. This is the ledger/test-infra-blocked case BUG002's own remedy (3) describes, not a fix without a real repro."
+frob:waive BUG002 reason="the genuine designated repro (tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land, retargeted by T-3144's in-flight test-infra fix) DOES fail at the parent commit (110990225eae4796c4763f7f1e6ceb5cb4c3bb83) and reproduces the exact defect (confirmed directly, --runxfail, before any production change) -- but it cannot currently be bound as evidence because it ALSO fails against the fix, for an unrelated, newly-exposed test-construction artifact: its own T-2114 concurrent-writer simulation forks the sibling process, and once ledger_lock is genuinely held across most of the injected-hook window (required for the fix to be correct), the forked child inherits the parent's already-acquired flock fd plus _lock_local's thread-local reentrancy bookkeeping, so it spuriously skips real lock contention instead of blocking like a genuinely independent process would. Filed as T-3174 (blocked_by T-3144, same file's write lease -- cannot fix it here without colliding with T-3144's in-progress lease on tests/test_ticket_land.py). Verified the FIX itself is correct with a standalone script (multiprocessing.get_context('spawn'), immune to the fork artifact) reproducing the identical scenario against the fixed code: land() succeeds, resync succeeds cleanly, the sibling correctly blocks until land finishes, reads the freshly-published ledger, and both tickets survive -- PASS. This is the ledger/test-infra-blocked case BUG002's own remedy (3) describes, not a fix without a real repro."

@@ -23,7 +23,7 @@ scope_changes:
   actor: logan
   at: '2026-08-04'
 evidence:
-- tests/test_ticket_land.py::TestWaiveRewrapNotDeletion::test_real_fmt001_fixer_rewrap_does_not_trip_the_guard
+- tests/ticket_land_suite/test_waive_deletion.py::TestWaiveRewrapNotDeletion::test_real_fmt001_fixer_rewrap_does_not_trip_the_guard
 designated_repro_test: null
 threat: null
 component: null

@@ -18,8 +18,8 @@ test-count claims still verified; measurable divergences still refuse.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_two_unmeasured_gate_claims_never_vacuously_match` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_two_unmeasured_gate_claims_never_vacuously_match` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

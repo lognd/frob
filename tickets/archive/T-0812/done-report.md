@@ -12,6 +12,6 @@ Deviations from the ticket body: none. Both waive-site channels (.strata clauses
 (no changed files detected)
 
 ### Evidence
-- `tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_strata_waive_clause_draft_id_reference` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_frob_waive_comment_draft_id_reference` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_leaves_unrelated_draft_id_reference_untouched` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_strata_waive_clause_draft_id_reference` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_frob_waive_comment_draft_id_reference` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_draft.py::TestDraftReferenceRewriteOnLand::test_land_leaves_unrelated_draft_id_reference_untouched` (pytest node id, verified passing when recorded)

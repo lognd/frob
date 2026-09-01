@@ -6,7 +6,7 @@ Changed:
 - src/frob/tickets/_land._FROB_LAND_INLINE_WAIT_ENV (new opt-in env var, FROB_LAND_INLINE_WAIT_S)
 
 Evidence:
-- tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero (5 node ids bound)
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockInlineWaitDefaultsNearZero (5 node ids bound)
 - existing TestLandLockWaitBudgetFromDeclaredDeadline suite re-verified passing unchanged (T-2774 non-regression)
 
 Caller audit: `uv run frob explore xref land` shows the only production caller of
@@ -49,11 +49,11 @@ step's canonical formatting pass.
 (no changed files detected)
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero::test_ample_deadline_defaults_to_the_near_zero_ceiling_not_the_flat_500s` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero::test_opt_in_env_restores_a_longer_in_land_wait` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero::test_opt_in_env_is_still_capped_by_the_remaining_budget` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero::test_unparseable_inline_wait_env_falls_back_to_the_near_zero_default` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero::test_held_lock_released_quickly_leaves_almost_the_whole_deadline_for_work` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockInlineWaitDefaultsNearZero::test_ample_deadline_defaults_to_the_near_zero_ceiling_not_the_flat_500s` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockInlineWaitDefaultsNearZero::test_opt_in_env_restores_a_longer_in_land_wait` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockInlineWaitDefaultsNearZero::test_opt_in_env_is_still_capped_by_the_remaining_budget` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockInlineWaitDefaultsNearZero::test_unparseable_inline_wait_env_falls_back_to_the_near_zero_default` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_lock.py::TestLandLockInlineWaitDefaultsNearZero::test_held_lock_released_quickly_leaves_almost_the_whole_deadline_for_work` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

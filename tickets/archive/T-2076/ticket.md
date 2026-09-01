@@ -26,8 +26,8 @@ no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
 - tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_spawn_env_survives_caller_frob_agent_flag
-- tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds
-- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
+- tests/ticket_land_suite/test_claim_close.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds
+- tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
 designated_repro_test: tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn::test_spawn_env_survives_caller_frob_agent_flag
 threat: null
 component: null

@@ -850,9 +850,10 @@ def _apply_reported_bump(
 
 # frob:ticket T-1011
 # frob:tests \
-# tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop
-# frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_applies_and_stages  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_failure_unwinds  # noqa: E501
+# tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_\
+# none_is_noop
+# frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_applies_and_stages  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback.test_sync_gate_rules_failure_unwinds  # noqa: E501
 def _apply_gate_rule_sync(
     root: Path,
     final_id: str,

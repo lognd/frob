@@ -254,7 +254,7 @@ evidence:
 - tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir::test_shared_across_linked_worktrees
 - tests/test_tickets.py::TestEmptyCollectionOmission::test_dict_without_empty_collections_returned_unchanged
 - tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_confirmatory_test_flagged
-- tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused
+- tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused
 - tests/unit/test_ticket_store.py::TestLockPath::test_lock_path_under_frob_dir
 - tests/test_worktree_guard.py::TestAgentEnvExports::test_resolves_worktree_root
 - tests/unit/strata/test_compliance.py::TestRegulationCaughtByIntegrity::test_caught_by_naming_present_control_discharges

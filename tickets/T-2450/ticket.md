@@ -70,7 +70,7 @@ scope_changes:
 evidence:
 - tests/unit/test_rapid_sweep.py::TestDetachedSweepEnvPublicSeam::test_delegates_to_the_private_implementation
 - tests/unit/test_rapid_sweep.py::TestFileRegressionTicketPublicSeam::test_delegates_to_the_private_implementation
-- tests/test_ticket_land.py::TestUnscopedErrorFindingsPublicSeam::test_delegates_with_the_same_arguments
+- tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam::test_delegates_with_the_same_arguments
 designated_repro_test: null
 threat: null
 component: null

@@ -71,8 +71,8 @@ tree helper module.
 - `tests/unit/test_ticket_store.py::TestWriteTicket::test_content_loss_refuses_by_default` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_store.py::TestWriteTicket::test_non_strict_opt_out_warns_loudly_instead_of_refusing` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_store.py::TestWriteTicketUnchecked::test_skips_the_content_loss_guard_entirely` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference::test_report_side_still_wins_when_it_also_outranks_the_reportless_side` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestTick005LandRegressions::test_detects_terminal_ticket_regressed_to_non_terminal` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSpliceLedgerRicherStatePreference::test_report_side_still_wins_when_it_also_outranks_the_reportless_side` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestTick005LandRegressions::test_detects_terminal_ticket_regressed_to_non_terminal` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

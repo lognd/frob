@@ -20,7 +20,7 @@ text -- the second measured defect (a wording/column change used to
 silently flip the result to None/skip).
 
 Evidence:
-- tests/test_ticket_land.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land
+- tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land
   (--accepts 0, 1, 2 -- all three acceptance criteria)
   --check-repro: FAILED_AT_PARENT at 45b35c165 (repro-only commit) --
   confirmed real repro, not confirmatory-only.
@@ -55,7 +55,7 @@ this ticket, none waived).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_plan.py::TestLandPlan::test_pre_existing_tick004_does_not_block_ledger_only_plan_land` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

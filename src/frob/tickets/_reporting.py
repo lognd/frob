@@ -432,8 +432,8 @@ def _store_done_report(
 # frob:tests \
 # tests/unit/test_ticket_store.py::TestSetDoneReport.test_caller_never_touches_markdown
 # frob:tests tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims.test_claims_captured_from_real_callables  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
+# frob:tests tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity kind="integration"  # noqa: E501
 def set_done_report(
     root: Path,
     ticket_id: str,

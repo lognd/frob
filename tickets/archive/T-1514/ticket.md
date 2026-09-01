@@ -13,10 +13,10 @@ sprint: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally
-- tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_none_verdict_is_a_skip_lands_normally
-- tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_false_verdict_unwinds_and_commits_nothing
-- tests/test_ticket_land.py::TestPreCommitUnscopedSweep::test_no_callback_is_noop
+- tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_true_verdict_lands_normally
+- tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_none_verdict_is_a_skip_lands_normally
+- tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_false_verdict_unwinds_and_commits_nothing
+- tests/ticket_land_suite/test_dirt_ownership.py::TestPreCommitUnscopedSweep::test_no_callback_is_noop
 - tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_new_finding_fixed_by_tier_a_stages_and_returns_true
 - tests/test_ticket_work_and_land_finish.py::TestPreCommitUnscopedSweepFn::test_new_finding_unresolved_by_tier_a_returns_false
 designated_repro_test: null

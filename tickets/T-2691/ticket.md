@@ -52,9 +52,9 @@ scope_changes:
   actor: logan
   at: '2026-08-30'
 evidence:
-- tests/test_ticket_land.py::TestLandStatus::test_phase_transitions_are_pollable
-- tests/test_ticket_land.py::TestLandStatus::test_waiting_phase_records_lock_holder
-- tests/test_ticket_land.py::TestLandStatus::test_write_failure_is_best_effort_and_never_raises
+- tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_phase_transitions_are_pollable
+- tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_waiting_phase_records_lock_holder
+- tests/ticket_land_suite/test_land_lock.py::TestLandStatus::test_write_failure_is_best_effort_and_never_raises
 - tests/unit/test_coordinator_scripts.py::TestReadLandStatusMarker::test_reads_a_written_marker
 - tests/unit/test_coordinator_scripts.py::TestReadLandStatusMarker::test_missing_marker_returns_none
 - tests/unit/test_coordinator_scripts.py::TestReadLandStatusMarker::test_unparseable_marker_returns_none

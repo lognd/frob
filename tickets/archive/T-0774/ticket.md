@@ -17,16 +17,16 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestScopeUnboundPreflightBeforeMerge::test_scope_unbound_refused_pre_merge_no_commits_created
-- tests/test_ticket_land.py::TestScopeUnboundPreflightBeforeMerge::test_covers_scope_true_still_lands_normally
+- tests/ticket_land_suite/test_dirt_ownership.py::TestScopeUnboundPreflightBeforeMerge::test_scope_unbound_refused_pre_merge_no_commits_created
+- tests/ticket_land_suite/test_dirt_ownership.py::TestScopeUnboundPreflightBeforeMerge::test_covers_scope_true_still_lands_normally
 designated_repro_test: null
 acceptance:
 - text: GIVEN a ticket whose evidence does not cover its scope WHEN frob ticket land
     runs THEN it refuses before creating any merge/finalize commit, naming the uncovered
     scope, with git log unchanged
   evidence:
-  - tests/test_ticket_land.py::TestScopeUnboundPreflightBeforeMerge::test_scope_unbound_refused_pre_merge_no_commits_created
-  - tests/test_ticket_land.py::TestScopeUnboundPreflightBeforeMerge::test_covers_scope_true_still_lands_normally
+  - tests/ticket_land_suite/test_dirt_ownership.py::TestScopeUnboundPreflightBeforeMerge::test_scope_unbound_refused_pre_merge_no_commits_created
+  - tests/ticket_land_suite/test_dirt_ownership.py::TestScopeUnboundPreflightBeforeMerge::test_covers_scope_true_still_lands_normally
 threat: null
 component: null
 ---

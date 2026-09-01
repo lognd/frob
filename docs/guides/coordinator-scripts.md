@@ -532,7 +532,7 @@ were simply missing -- both read as "cannot resolve", and the caller
 (`_classify_blockers`) resolved that ambiguity as "still open". T-1696
 sat blocked for 12 days this way, while `TICKET ROT` simultaneously
 listed it under `NEEDS DISPATCH`. `frob.tickets.load_queue` (pinned by
-`tests/test_ticket_land.py::TestArchiveV2::
+`tests/ticket_land_suite/test_archive.py::TestArchiveV2::
 test_archived_v2_ticket_still_resolves_as_blocker`) already merges both
 locations for the real ledger -- this mirrors that exact two-location
 order in plain form rather than `import frob`, because this script's

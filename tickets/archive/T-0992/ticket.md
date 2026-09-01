@@ -23,16 +23,16 @@ scope_changes:
   actor: logan
   at: '2026-07-27'
 evidence:
-- tests/test_ticket_land.py::TestReleaseBump::test_stale_worktree_version_bump_yields_main_plus_one
-- tests/test_ticket_land.py::TestReleaseBump::test_downgrade_bump_is_refused
+- tests/ticket_land_suite/test_release.py::TestReleaseBump::test_stale_worktree_version_bump_yields_main_plus_one
+- tests/ticket_land_suite/test_release.py::TestReleaseBump::test_downgrade_bump_is_refused
 designated_repro_test: null
 acceptance:
 - text: given a worktree whose pyproject carries an older version than main, when
     its ticket lands with a REL001 bump, then the resulting version is strictly greater
     than main's pre-land version
   evidence:
-  - tests/test_ticket_land.py::TestReleaseBump::test_stale_worktree_version_bump_yields_main_plus_one
-  - tests/test_ticket_land.py::TestReleaseBump::test_downgrade_bump_is_refused
+  - tests/ticket_land_suite/test_release.py::TestReleaseBump::test_stale_worktree_version_bump_yields_main_plus_one
+  - tests/ticket_land_suite/test_release.py::TestReleaseBump::test_downgrade_bump_is_refused
 threat: null
 component: null
 ---

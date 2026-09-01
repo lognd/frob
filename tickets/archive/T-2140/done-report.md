@@ -52,7 +52,7 @@ Priority set to medium (test-only, no production hazard).
 
 ### Evidence
 
-- `tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land`
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land`
   -- bound to both acceptance indices.
 - Designated repro via `--designate-repro-force`: the tool's own
   parent-commit repro-run spawn has a fixed 60s cap, shorter than this
@@ -117,7 +117,7 @@ missed pre-land.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

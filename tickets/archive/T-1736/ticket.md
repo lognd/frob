@@ -97,13 +97,13 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/test_ticket_land.py::TestTouchedSymrefsForIntent::test_overlapping_hunk_matches_the_symbol
-- tests/test_ticket_land.py::TestTouchedSymrefsForIntent::test_non_overlapping_hunk_matches_nothing
-- tests/test_ticket_land.py::TestTouchedSymrefsForIntent::test_different_file_matches_nothing
-- tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit::test_dry_run_is_a_noop
-- tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry
-- tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit::test_no_resolvable_symbols_records_nothing
-- tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit::test_diff_failure_is_logged_not_raised
+- tests/ticket_land_suite/test_verify_intent.py::TestTouchedSymrefsForIntent::test_overlapping_hunk_matches_the_symbol
+- tests/ticket_land_suite/test_verify_intent.py::TestTouchedSymrefsForIntent::test_non_overlapping_hunk_matches_nothing
+- tests/ticket_land_suite/test_verify_intent.py::TestTouchedSymrefsForIntent::test_different_file_matches_nothing
+- tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_dry_run_is_a_noop
+- tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_real_land_records_an_intent_entry
+- tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_no_resolvable_symbols_records_nothing
+- tests/ticket_land_suite/test_verify_intent.py::TestRecordVerifyIntentForLandedCommit::test_diff_failure_is_logged_not_raised
 designated_repro_test: null
 threat: null
 component: null

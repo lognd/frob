@@ -16,27 +16,27 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
-- tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path
-- tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses
-- tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path
+- tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
+- tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path
+- tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses
+- tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path
 designated_repro_test: null
 acceptance:
 - text: GIVEN a branch that merged main after main legitimately deleted a waiver WHEN
     land runs THEN no refusal occurs (locked by test)
   evidence:
-  - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
-  - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path
-  - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses
-  - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path
+  - tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
+  - tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path
+  - tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses
+  - tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path
 - text: GIVEN a waiver deleted inside a file renamed in the same branch THEN the guard
     attributes the deletion to a path that scope-ownership evaluates correctly (test
     proves which)
   evidence:
-  - tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
-  - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path
-  - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses
-  - tests/test_ticket_land.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path
+  - tests/ticket_land_suite/test_waive_deletion.py::TestCommittedWaiveDeletionRefusal::test_branch_merges_main_after_main_deletes_a_waiver_still_allowed
+  - tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_attributes_to_old_path
+  - tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution::test_committed_waiver_deleted_inside_a_rename_out_of_scope_still_refuses
+  - tests/ticket_land_suite/test_ledger_splice.py::TestRenameAwareWaiveDeletionAttribution::test_uncommitted_waiver_deleted_inside_a_rename_attributes_to_old_path
 threat: null
 component: null
 ---

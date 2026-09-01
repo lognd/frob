@@ -16,7 +16,7 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done
+- tests/ticket_land_suite/test_land_core.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done
 designated_repro_test: null
 acceptance:
 - text: GIVEN a worktree ticket in planned state with evidence bound and a Done report
@@ -25,7 +25,7 @@ acceptance:
     ticket start remedy -- never a post-merge InvalidTransition; a regression test
     covers the planned-state land
   evidence:
-  - tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done
+  - tests/ticket_land_suite/test_land_core.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done
 threat: null
 component: null
 ---

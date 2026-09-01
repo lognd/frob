@@ -23,8 +23,8 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 evidence:
-- tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
-- tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
+- tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
+- tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
 designated_repro_test: null
 acceptance:
 - text: 'Ledger v2 design (docs/design/ledger-v2.md section 5) needs `frob ticket
@@ -47,7 +47,7 @@ acceptance:
 
     monofile-splice logic can be safely removed).'
   evidence:
-  - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
+  - tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
 - text: 'Do NOT delete `_land_merge.py`/`_land_merge_zones.py` in the same diff
 
     as adding v2 land support -- land a v2-aware land path FIRST, gated
@@ -58,7 +58,7 @@ acceptance:
 
     (design section 7.4), not this ticket''s.'
   evidence:
-  - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
+  - tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
 - text: 'GIVEN two branches each editing a DIFFERENT ticket''s `tickets/T-####/`
 
     directory
@@ -69,7 +69,7 @@ acceptance:
 
     verified by an end-to-end land test with two disjoint-scope v2 tickets.'
   evidence:
-  - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
+  - tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
 - text: 'GIVEN two branches BOTH editing the SAME ticket''s `ticket.md`
 
     WHEN both attempt to land
@@ -80,14 +80,14 @@ acceptance:
 
     land refuses loudly rather than silently picking a side.'
   evidence:
-  - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
+  - tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
 - text: 'GIVEN `.gitattributes` currently registers `tickets.md merge=frob-ledger`
 
     WHEN v2-only mode is reached (post-migration, this ticket''s own scope)
 
     THEN that line is removed and no replacement driver is registered.'
   evidence:
-  - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
+  - tests/ticket_land_suite/test_ledger_splice.py::TestLedgerV2LandMergeStory::test_disjoint_v2_tickets_land_with_no_custom_merge
 threat: null
 component: null
 ---

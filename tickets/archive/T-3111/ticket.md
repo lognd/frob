@@ -22,10 +22,10 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_ticket_land.py::TestRebuildNatives::test_rebuild_runs_after_the_landing_commit_is_durable
-- tests/test_ticket_land.py::TestRebuildNatives::test_invoked_when_native_source_touched
-- tests/test_ticket_land.py::TestRebuildNatives::test_skipped_when_no_native_source_touched
-- tests/test_ticket_land.py::TestRebuildNatives::test_rebuild_failure_does_not_block_land
+- tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_rebuild_runs_after_the_landing_commit_is_durable
+- tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_invoked_when_native_source_touched
+- tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_skipped_when_no_native_source_touched
+- tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_rebuild_failure_does_not_block_land
 designated_repro_test: null
 threat: null
 component: null

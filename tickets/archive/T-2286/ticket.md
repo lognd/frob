@@ -38,13 +38,13 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/test_ticket_land.py::TestLand::test_refuses_on_dirty_main
-- tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
-- tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
+- tests/ticket_land_suite/test_land_core.py::TestLand::test_refuses_on_dirty_main
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
+- tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
 - tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue::test_dirty_without_a_marker_is_never_reclaimed
 - tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue::test_reclaims_when_no_live_land_holds_the_lock
 - tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue::test_does_not_touch_a_live_lands_own_staging
-designated_repro_test: tests/test_ticket_land.py::TestLand::test_refuses_on_dirty_main
+designated_repro_test: tests/ticket_land_suite/test_land_core.py::TestLand::test_refuses_on_dirty_main
 threat: null
 component: null
 anchor: false
@@ -54,9 +54,9 @@ land_commit: eb88878c2ae1f95e05169aeb49cd75dfbbc4f6fd
 Found while working T-2283 (2026-08-17): three of T-2283's four target
 tests fail because of a genuine defect, not a stale test:
 
-    tests/test_ticket_land.py::TestLand::test_refuses_on_dirty_main
-    tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
-    tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
+    tests/ticket_land_suite/test_land_core.py::TestLand::test_refuses_on_dirty_main
+    tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
+    tests/ticket_land_suite/test_release.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
 
 Root cause: T-2170 wired reclaim_orphaned_squash_residue
 (src/frob/tickets/_land_git_ops.py) into land()

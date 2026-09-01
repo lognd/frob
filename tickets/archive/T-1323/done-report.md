@@ -50,9 +50,9 @@ Changed:
   own pre-land absorption step would do.
 
 Evidence:
-- tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge [accepts 0]
-- tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_in_scope_waive_deletion_is_allowed [accepts 0]
-- tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_declared_in_done_report_waive_deletion_is_allowed [accepts 0]
+- tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge [accepts 0]
+- tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_in_scope_waive_deletion_is_allowed [accepts 0]
+- tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_declared_in_done_report_waive_deletion_is_allowed [accepts 0]
 - tests/test_gates.py::TestWaive004DegradedRunGuard::test_native001_degraded_run_deletes_nothing [accepts 1, 2]
 - tests/test_gates.py::TestWaive004DegradedRunGuard::test_skipped_stage_degraded_run_deletes_nothing [accepts 1]
 - tests/test_gates.py::TestWaive004DegradedRunGuard::test_mass_invalidation_of_one_rule_deletes_nothing [accepts 1, 2]
@@ -92,9 +92,9 @@ every touched file individually.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_in_scope_waive_deletion_is_allowed` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestUncommittedWaiveDeletionRefusal::test_declared_in_done_report_waive_deletion_is_allowed` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_out_of_scope_undeclared_waive_deletion_refuses_before_merge` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_in_scope_waive_deletion_is_allowed` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_waive_deletion.py::TestUncommittedWaiveDeletionRefusal::test_declared_in_done_report_waive_deletion_is_allowed` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestWaive004DegradedRunGuard::test_native001_degraded_run_deletes_nothing` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestWaive004DegradedRunGuard::test_skipped_stage_degraded_run_deletes_nothing` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestWaive004DegradedRunGuard::test_mass_invalidation_of_one_rule_deletes_nothing` (pytest node id, verified passing when recorded)

@@ -22,9 +22,9 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_ticket_land.py::TestCheckTddOrder::test_logs_a_warning_for_an_implementation_first_pair_without_blocking
-- tests/test_ticket_land.py::TestCheckTddOrder::test_stays_quiet_when_no_tests_edges_are_touched
-- tests/test_ticket_land.py::TestCheckTddOrder::test_never_refuses_the_land
+- tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder::test_logs_a_warning_for_an_implementation_first_pair_without_blocking
+- tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder::test_stays_quiet_when_no_tests_edges_are_touched
+- tests/ticket_land_suite/test_claim_close.py::TestCheckTddOrder::test_never_refuses_the_land
 designated_repro_test: null
 threat: null
 component: null

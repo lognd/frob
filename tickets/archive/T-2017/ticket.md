@@ -70,7 +70,7 @@ The old node id was bound as evidence on T-0907 (`state: done`). Result on
 main right now:
 
     [gate:COV] tickets/T-0907:0  COV003  COV003: T-0907 evidence
-    'tests/test_ticket_land.py::TestLandRepairMarker::test_repair_refuses_
+    'tests/ticket_land_suite/test_verify_reset.py::TestLandRepairMarker::test_repair_refuses_
     loudly_when_current_tip_has_drifted_from_the_marker' does not resolve
     to a collected test
 

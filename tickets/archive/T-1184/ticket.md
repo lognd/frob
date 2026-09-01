@@ -29,8 +29,8 @@ scope_changes:
   actor: logan
   at: '2026-07-29'
 evidence:
-- tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands
-- tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_is_ignored_path_refusal_matches_gits_fixed_message
+- tests/ticket_land_suite/test_wip.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands
+- tests/ticket_land_suite/test_wip.py::TestWipAddIgnoredPathFallback::test_is_ignored_path_refusal_matches_gits_fixed_message
 designated_repro_test: null
 threat: null
 component: null

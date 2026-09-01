@@ -65,7 +65,7 @@ a tmp_path fixture repo; a resource-contention/timing flake under a
 full-suite `-n auto` load is the honest, unproven best guess, not a
 diagnosed root cause -- I did not fabricate one. Notably, while probing
 this cluster I incidentally observed a SEPARATE, unrelated test
-(tests/test_ticket_land.py::TestClaimDivergencePostMerge::
+(tests/ticket_land_suite/test_claim_close.py::TestClaimDivergencePostMerge::
 test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds) fail
 once under a combined multi-file run and then pass cleanly both
 standalone and on a repeat of the same combined run -- same shape
@@ -119,8 +119,8 @@ Coordinator should run `frob check --ticket T-1448` and
 - `tests/unit/test_ticket_close_gate_claims_t1410.py::TestCloseRefusesT1276ShapeEndToEnd::test_close_succeeds_once_the_glob_is_actually_clean` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_close_own_obligations_t1387.py::TestCloseRefusesOwnObligationsEndToEnd::test_close_refuses_when_own_diff_leaves_cov001_outstanding` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_close_own_obligations_t1387.py::TestCloseRefusesOwnObligationsEndToEnd::test_close_succeeds_once_the_diff_is_actually_clean` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass::test_skip_flag_bypasses_error_verdict` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass::test_no_skip_flag_refuses_on_error_verdict` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestCloseSkipMutationEvidenceBypass::test_skip_flag_bypasses_error_verdict` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestCloseSkipMutationEvidenceBypass::test_no_skip_flag_refuses_on_error_verdict` (pytest node id, verified passing when recorded)
 - `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_probe_still_matches_source` (pytest node id, verified passing when recorded)
 - `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_row_anchor_file_exists_and_mentions_guide` (pytest node id, verified passing when recorded)
 - `tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_anchor_fragment_resolves_to_guide_h1` (pytest node id, verified passing when recorded)

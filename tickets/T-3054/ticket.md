@@ -54,10 +54,10 @@ scope_changes:
   actor: logan
   at: '2026-08-29'
 evidence:
-- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_insufficient_deadline_skips_regardless_of_profile
-- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_ample_deadline_still_runs_the_spawn
-- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_no_declared_deadline_is_unchanged
-- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_unparseable_deadline_is_unchanged
+- tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_insufficient_deadline_skips_regardless_of_profile
+- tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_ample_deadline_still_runs_the_spawn
+- tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_no_declared_deadline_is_unchanged
+- tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderDeclaredDeadline::test_unparseable_deadline_is_unchanged
 designated_repro_test: null
 threat: null
 component: null

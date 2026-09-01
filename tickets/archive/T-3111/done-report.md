@@ -51,10 +51,10 @@ to after the CAS publish.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestRebuildNatives::test_rebuild_runs_after_the_landing_commit_is_durable` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRebuildNatives::test_invoked_when_native_source_touched` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRebuildNatives::test_skipped_when_no_native_source_touched` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestRebuildNatives::test_rebuild_failure_does_not_block_land` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_rebuild_runs_after_the_landing_commit_is_durable` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_invoked_when_native_source_touched` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_skipped_when_no_native_source_touched` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_release.py::TestRebuildNatives::test_rebuild_failure_does_not_block_land` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

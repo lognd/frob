@@ -55,8 +55,8 @@ scope_changes:
   actor: logan
   at: '2026-08-06'
 evidence:
-- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged
-- tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout::test_orphaned_lock_naming_a_genuinely_live_pid_still_refuses
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_orphaned_lock_from_a_confirmed_dead_pid_is_reclaimed_and_logged
+- tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_orphaned_lock_naming_a_genuinely_live_pid_still_refuses
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_dead_holder_pid_is_reported_dead_but_self_healing_and_healthy
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_ambiguous_holder_liveness_is_reported_unhealthy
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_live_holder_pid_is_reported_alive_and_healthy

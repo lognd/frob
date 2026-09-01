@@ -15,11 +15,11 @@ a real T-0731-shaped hook installed in the fixture repo.
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_through_changelog_guard_hook_succeeds` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_internal_git_env_restores_prior_value` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_argv_and_stderr` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_spawn_error` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestLandInternalEnvThroughHook::test_land_through_changelog_guard_hook_succeeds` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestLandInternalEnvThroughHook::test_land_internal_git_env_restores_prior_value` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_argv_and_stderr` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_spawn_error` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_claim_close.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

@@ -22,19 +22,19 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
-designated_repro_test: tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+- tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+designated_repro_test: tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
 acceptance:
 - text: given test_concurrent_write_between_squash_and_splice_survives_land run alone
     with -o addopts=, when executed, then it completes well within pytest's 120s per-test
     ceiling instead of deadlocking past it
   evidence:
-  - tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+  - tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
 - text: given the same test run under the repo default parallel invocation inside
     its heavy_subprocess xdist_group, when executed, then it does not crash its owning
     xdist worker
   evidence:
-  - tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+  - tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
 threat: null
 component: null
 anchor: false
@@ -44,7 +44,7 @@ land_commit: null
 Found while working T-2099 (per-file xdist grouping for real-git-heavy
 test files).
 
-`tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land`
+`tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land`
 genuinely deadlocks. Reproduced in FULL ISOLATION -- no xdist, no other
 tests, `-o addopts="" pytest ... ::test_concurrent_write_...` alone --
 still exceeds a 200s wrapper with no result. This is not an artifact of

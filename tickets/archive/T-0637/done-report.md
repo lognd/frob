@@ -39,7 +39,7 @@ Fix, two parts, both in `src/frob/tickets/_land.py`:
    uses, so no new commit-plumbing was needed.
 
 Reproduced the exact field shape in
-`tests/test_ticket_land.py::TestStandaloneSiblingDraftSurvivesLand`: a
+`tests/ticket_land_suite/test_draft.py::TestStandaloneSiblingDraftSurvivesLand`: a
 worktree files a primary ticket (closeable, landed) AND a completely
 separate standalone sibling ticket (QUEUED, never touched again) via
 `frob ticket new` in the same worktree/commit, mirroring the T-0575/

@@ -45,7 +45,7 @@ import pytest
 
 #: A path no real `FROB_WORKTREE` lease will ever resolve to -- compared
 #: against explicitly rather than "unset", matching
-#: `tests/test_ticket_land.py::TestWorktreeLeaseEnvIsolation`'s own
+#: `tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation`'s own
 #: precedent (T-3123): a dispatched agent's real shell legitimately
 #: carries a real lease, so asserting plain absence would itself be
 #: wrong under ordinary dispatch, independent of any leak.

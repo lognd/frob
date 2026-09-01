@@ -79,11 +79,11 @@ the split (unchanged pass/fail set -- both runs green, no new failures).
 churn/T-1036, native-staleness warning, TICK005 regression sweep,
 gate-rule-sync callback, and the T-0761 completeness-refusal path) are
 bound as explicit evidence:
-- tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
-- tests/test_ticket_land.py::TestWarnIfNativeStale::test_real_land_logs_stale_native_warning
-- tests/test_ticket_land.py::TestTick005LandRegressions::test_no_regression_when_terminal_ticket_stays_terminal
-- tests/test_ticket_land.py::TestSyncGateRulesCallback::test_sync_gate_rules_none_is_noop
-- tests/test_ticket_land.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty
+- tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land
+- tests/ticket_land_suite/test_land_core.py::TestWarnIfNativeStale::test_real_land_logs_stale_native_warning
+- tests/ticket_land_suite/test_verify_reset.py::TestTick005LandRegressions::test_no_regression_when_terminal_ticket_stays_terminal
+- tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback::test_sync_gate_rules_none_is_noop
+- tests/ticket_land_suite/test_land_core.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty
 No ticket has an acceptance-criteria list (`frob ticket show T-1334` shows
 none), so evidence is recorded as the ticket's flat evidence list rather
 than bound via --accepts.
@@ -123,11 +123,11 @@ by this ticket -- confirmed via `git status --porcelain`).
 ```
 
 ### Evidence
-- `tests/test_ticket_land.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestWarnIfNativeStale::test_real_land_logs_stale_native_warning` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestTick005LandRegressions::test_no_regression_when_terminal_ticket_stays_terminal` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestSyncGateRulesCallback::test_sync_gate_rules_none_is_noop` (pytest node id, verified passing when recorded)
-- `tests/test_ticket_land.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_ledger_splice.py::TestSquashSpliceLedgerChurn::test_concurrent_write_between_squash_and_splice_survives_land` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestWarnIfNativeStale::test_real_land_logs_stale_native_warning` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_verify_reset.py::TestTick005LandRegressions::test_no_regression_when_terminal_ticket_stays_terminal` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_push.py::TestSyncGateRulesCallback::test_sync_gate_rules_none_is_noop` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_core.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

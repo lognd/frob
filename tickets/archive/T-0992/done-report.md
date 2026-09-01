@@ -14,10 +14,10 @@ Changed:
   plain string-inequality fallback for malformed test-fixture versions
 - docs/modules/tickets.md#frob-ticket-land step 9.6 -- documents the T-0992
   assertion (AFFECT001-required edge from `_apply_release_bump`)
-- tests/test_ticket_land.py::TestReleaseBump.test_stale_worktree_version_bump_yields_main_plus_one
+- tests/ticket_land_suite/test_release.py::TestReleaseBump.test_stale_worktree_version_bump_yields_main_plus_one
   (new) -- acceptance criterion: stale worktree-carried pyproject + main
   ahead -> land yields main+1
-- tests/test_ticket_land.py::TestReleaseBump.test_downgrade_bump_is_refused
+- tests/ticket_land_suite/test_release.py::TestReleaseBump.test_downgrade_bump_is_refused
   (new) -- a bump_version callback computing <= main's current version is
   refused, squash unwound, main's pyproject.toml left untouched
 
@@ -34,8 +34,8 @@ working tree), and refuse -- unwinding the squash -- unless the callback's
 result is strictly greater.
 
 Evidence:
-- tests/test_ticket_land.py::TestReleaseBump::test_stale_worktree_version_bump_yields_main_plus_one
-- tests/test_ticket_land.py::TestReleaseBump::test_downgrade_bump_is_refused
+- tests/ticket_land_suite/test_release.py::TestReleaseBump::test_stale_worktree_version_bump_yields_main_plus_one
+- tests/ticket_land_suite/test_release.py::TestReleaseBump::test_downgrade_bump_is_refused
 - Full `TestReleaseBump` + `TestUvLockSync` suites re-run green (11 passed);
   full `tests/test_ticket_land.py` re-run shows the same 5 pre-existing
   failures with and without this change applied (confirmed by diffing
