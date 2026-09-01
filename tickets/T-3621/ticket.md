@@ -21,6 +21,18 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'declare no-behavior-change: triage found none of the 3 failures reproduce
+    on current main'
+  actor: logan
+  at: '2026-08-31'
+  old_length: 1241
+  new_length: 1494
+evidence:
+- tests/system/test_cli_check.py::TestCheckPolyglot::test_pinned_check_type_reports_skipped_line
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal
+- tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope::test_two_processes_never_commit_to_the_same_cache_concurrently
 designated_repro_test: null
 threat: null
 component: null
@@ -51,3 +63,5 @@ then fix or report false-premise/flaky with evidence):
    this test at all; T-3607 changed _recreate's locking, which may fix
    OR conflict with this test's contract. Run it 3x against current
    main before touching anything.
+
+frob:no-behavior-change reason="triage-only ticket: reproduced each of the 3 named ubuntu failures against current main and none failed (test 3 fixed upstream by T-3607, tests 1/2 did not reproduce as flakes/order-dependence); no code change was made"
