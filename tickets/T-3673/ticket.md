@@ -2,7 +2,7 @@
 id: T-3673
 title: 'win32 round 17: elimination controls (e/f) + mitigation validation (a2) +
   suite guard'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -20,10 +20,17 @@ scope:
 - tests/conftest.py
 - src/frob/process/_guard.py
 - docs/modules/process.md
+- tests/unit/test_conftest_console_ctrl_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_conftest_console_ctrl_guard.py
+  reason: unit tests for the FROB_TEST_IGNORE_CONSOLE_CTRL gating logic added to tests/conftest.py
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
