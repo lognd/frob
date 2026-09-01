@@ -71,7 +71,7 @@ body_changes:
   new_length: 3857
 evidence:
 - tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_refuses_when_filed_ticket_does_not_resolve
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_commit_failure_skips_auto_dispose_and_returns_none
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_commit_failure_skips_auto_dispose_and_returns_none
 designated_repro_test: null
 threat: null
 component: null

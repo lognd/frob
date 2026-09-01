@@ -23,11 +23,11 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_absolute_under_root_is_relativized
-- tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_already_relative_is_unchanged
-- tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged
-- tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_under_root_is_relativized
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_already_relative_is_unchanged
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end
+designated_repro_test: tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end
 threat: null
 component: null
 anchor: false

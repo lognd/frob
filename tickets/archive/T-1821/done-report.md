@@ -35,8 +35,8 @@ to fix.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_the_real_ticket_from_a_staged_rapid_debt_line` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_unattributed_when_the_true_author_cannot_be_determined` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_names_the_real_ticket_from_a_staged_rapid_debt_line` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_unattributed_when_the_true_author_cannot_be_determined` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

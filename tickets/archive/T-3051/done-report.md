@@ -23,7 +23,7 @@ Both fixture directions:
   NEW ticket is filed (never mistakes the unrelated ticket for the
   owner).
 
-Evidence: tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping, tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_unrelated_duplicate_finding_in_a_different_file_still_refuses -- both PASS (pytest -q, 2/2 collected/passed); the existing 10 TestFileRegressionTicket tests also re-run clean (12/12).
+Evidence: tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping, tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_unrelated_duplicate_finding_in_a_different_file_still_refuses -- both PASS (pytest -q, 2/2 collected/passed); the existing 10 TestFileRegressionTicket tests also re-run clean (12/12).
 
 Filed: none -- the H4 fix is a one-function change scoped exactly to
 _dispose_to_existing_duplicate_or_none; no out-of-scope work found.
@@ -46,8 +46,8 @@ carry pre-existing waivers this change did not touch).
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_unrelated_duplicate_finding_in_a_different_file_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_unrelated_duplicate_finding_in_a_different_file_still_refuses` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

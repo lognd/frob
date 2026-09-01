@@ -77,8 +77,8 @@ Filed: none -- no out-of-scope work found.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestDetachedSweepEnvPublicSeam::test_delegates_to_the_private_implementation` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicketPublicSeam::test_delegates_to_the_private_implementation` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnvPublicSeam::test_delegates_to_the_private_implementation` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicketPublicSeam::test_delegates_to_the_private_implementation` (pytest node id, verified passing when recorded)
 - `tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam::test_delegates_with_the_same_arguments` (pytest node id, verified passing when recorded)
 
 ### Captured claims

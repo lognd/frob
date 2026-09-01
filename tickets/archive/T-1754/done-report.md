@@ -61,9 +61,9 @@ same pattern as every prior ticket in this session -- reconciled by
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestAttributeNewFindings::test_attributed_and_unattributed_round_trip` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_all_attributed_to_open_tickets_files_nothing` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestAttributeNewFindings::test_attributed_and_unattributed_round_trip` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_all_attributed_to_open_tickets_files_nothing` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

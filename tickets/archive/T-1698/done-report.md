@@ -55,10 +55,10 @@ own regression coverage.
 (no changed files detected)
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_leaves_the_repo_clean` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_stages_only_the_debt_file` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_a_real_dirty_file` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_truncation_declares_itself` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_leaves_the_repo_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_stages_only_the_debt_file` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_names_a_real_dirty_file` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_truncation_declares_itself` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

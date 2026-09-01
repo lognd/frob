@@ -31,7 +31,7 @@ body_changes:
   old_length: 1324
   new_length: 1551
 evidence:
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_commit_failure_skips_auto_dispose_and_returns_none
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_commit_failure_skips_auto_dispose_and_returns_none
 designated_repro_test: null
 threat: null
 component: null

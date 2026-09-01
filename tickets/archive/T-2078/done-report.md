@@ -41,7 +41,7 @@ that test-only sha and ACCEPTED (FAILED_AT_PARENT, a real repro, not
 confirmatory-only).
 
 Acceptance criteria, all bound and verified BY CONTENT:
-  [0] tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
+  [0] tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
       -- a DROPPED sweep ticket whose identities resolve is not
       re-selected by `revalidate_dispatchable_sweep_tickets`, and
       `caplog.text` contains neither "illegal transition" nor
@@ -100,7 +100,7 @@ needed for this ticket's own diff.
 ### Evidence
 - `tests/test_tickets.py::TestDropTicket::test_terminal_ticket_transition_refused_before_any_write` (pytest node id, verified passing when recorded)
 - `tests/test_tickets.py::TestDropTicket::test_dropped_ticket_transition_refused_before_any_write` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

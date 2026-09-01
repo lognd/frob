@@ -35,10 +35,10 @@ scope_changes:
   actor: logan
   at: '2026-08-07'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_commits_the_ledger_write
-- tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_commit_failure_logs_at_error_and_does_not_raise
-- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_the_detached_sweep_as_likely_author
-- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_mixed_dirt_does_not_claim_the_sweep
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_commits_the_ledger_write
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_commit_failure_logs_at_error_and_does_not_raise
+- tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_names_the_detached_sweep_as_likely_author
+- tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_mixed_dirt_does_not_claim_the_sweep
 designated_repro_test: null
 threat: null
 component: null
@@ -210,10 +210,10 @@ reconciled by `frob ticket land`'s own internal merge.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_commits_the_ledger_write` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_commit_failure_logs_at_error_and_does_not_raise` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_the_detached_sweep_as_likely_author` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_mixed_dirt_does_not_claim_the_sweep` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_commits_the_ledger_write` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_commit_failure_logs_at_error_and_does_not_raise` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_names_the_detached_sweep_as_likely_author` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_mixed_dirt_does_not_claim_the_sweep` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

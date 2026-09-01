@@ -32,9 +32,9 @@ silently reads as CLEAN in this function. No behavior defect found;
 nothing filed.
 
 Evidence:
-- tests/unit/test_rapid_sweep.py::TestRegressionCountLine::test_true_count_known (accepts 0)
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before (accepts 0)
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline (accepts 0)
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRegressionCountLine::test_true_count_known (accepts 0)
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before (accepts 0)
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline (accepts 0)
 - Full touched-set suite: `pytest tests/unit/test_rapid_sweep.py -q` -> 87 passed, 0 failed (measured twice, post-merge-with-main included)
 
 Filed: none (both structural checks above turned up no separate defect
@@ -67,9 +67,9 @@ at fd733e484):
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestRegressionCountLine::test_true_count_known` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestRegressionCountLine::test_true_count_known` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

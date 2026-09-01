@@ -57,9 +57,9 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestTrueFindingCount::test_counts_every_diagnostic_matching_an_identity
-- tests/unit/test_rapid_sweep.py::TestTrueFindingCount::test_unparsable_json_is_none_not_zero
-- tests/unit/test_rapid_sweep.py::TestTrueFindingCount::test_spawn_refused_is_none_not_zero
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestTrueFindingCount::test_counts_every_diagnostic_matching_an_identity
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestTrueFindingCount::test_unparsable_json_is_none_not_zero
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestTrueFindingCount::test_spawn_refused_is_none_not_zero
 designated_repro_test: null
 threat: null
 component: null

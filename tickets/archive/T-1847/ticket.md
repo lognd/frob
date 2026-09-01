@@ -28,9 +28,9 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_drops_cold_worktree_native_noise
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_keeps_finding_when_native_still_broken
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_never_drops_an_attributed_finding
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_drops_cold_worktree_native_noise
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_keeps_finding_when_native_still_broken
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_never_drops_an_attributed_finding
 designated_repro_test: null
 threat: null
 component: null

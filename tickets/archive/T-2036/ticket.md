@@ -23,8 +23,8 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_rapid_sweep.py::TestAbsoluteVsRelativePathIdentityMismatch::test_format_drift_between_sweeps_does_not_falsely_resolve_a_live_ticket
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestAbsoluteVsRelativePathIdentityMismatch::test_format_drift_between_sweeps_does_not_falsely_resolve_a_live_ticket
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestAbsoluteVsRelativePathIdentityMismatch::test_format_drift_between_sweeps_does_not_falsely_resolve_a_live_ticket
+designated_repro_test: tests/unit/rapid_sweep_suite/test_dispose.py::TestAbsoluteVsRelativePathIdentityMismatch::test_format_drift_between_sweeps_does_not_falsely_resolve_a_live_ticket
 threat: null
 component: null
 anchor: false

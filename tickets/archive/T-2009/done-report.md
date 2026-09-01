@@ -83,15 +83,15 @@ change.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestRollingBaseline::test_read_baseline_commit_absent_is_none` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRollingBaseline::test_read_baseline_commit_round_trips` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestLandIdsBetween::test_single_land_in_range` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestLandIdsBetween::test_multiple_lands_in_range_oldest_first` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestLandIdsBetween::test_non_land_commits_are_ignored` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestLandIdsBetween::test_non_repo_returns_empty_list` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestResolveActualHead::test_non_repo_falls_back_to_the_given_commit` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestResolveActualHead::test_real_repo_resolves_the_true_head` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDeferredSweepMultiLandAttribution::test_two_lands_in_the_window_are_both_named_not_just_the_spawning_one` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline::test_read_baseline_commit_absent_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline::test_read_baseline_commit_round_trips` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween::test_single_land_in_range` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween::test_multiple_lands_in_range_oldest_first` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween::test_non_land_commits_are_ignored` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween::test_non_repo_returns_empty_list` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestResolveActualHead::test_non_repo_falls_back_to_the_given_commit` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestResolveActualHead::test_real_repo_resolves_the_true_head` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestDeferredSweepMultiLandAttribution::test_two_lands_in_the_window_are_both_named_not_just_the_spawning_one` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 9 passed (from 9 evidence id(s))

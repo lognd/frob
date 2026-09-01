@@ -31,11 +31,11 @@ existing new_findings computation.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestDeferredSweepClosesResolvedRegressions::test_resolved_finding_is_dropped_by_the_next_sweep` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDeferredSweepClosesResolvedRegressions::test_still_reproducing_finding_is_left_untouched` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_drops_a_fully_resolved_sweep_ticket` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_leaves_a_partially_resolved_ticket_untouched` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_in_progress_sweep_ticket_is_never_touched` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestDeferredSweepClosesResolvedRegressions::test_resolved_finding_is_dropped_by_the_next_sweep` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestDeferredSweepClosesResolvedRegressions::test_still_reproducing_finding_is_left_untouched` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_drops_a_fully_resolved_sweep_ticket` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_leaves_a_partially_resolved_ticket_untouched` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_in_progress_sweep_ticket_is_never_touched` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

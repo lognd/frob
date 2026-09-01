@@ -4,7 +4,7 @@ Changed:
 src/frob/tickets/_evidence.py::record_rapid_debt
 tests/unit/test_rapid_debt.py
 tests/unit/test_rapid_sweep.py::_seed_repo
-tests/unit/test_rapid_sweep.py::TestCommitRapidDebt
+tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt
 tests/unit/test_gitattributes_merge.py (TestRapidDebtUnionMerge -> TestForceOverridesUnionMerge)
 tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization
 .gitattributes (removed rapid-debt.jsonl merge=union / eol=lf pins)
@@ -16,7 +16,7 @@ changelog.d/T-2997.md
 Evidence:
 tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_lives_under_dot_frob_not_the_tracked_root
 tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_creates_dot_frob_when_missing
-tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_leaves_the_repo_clean
+tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_leaves_the_repo_clean
 tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge::test_two_branches_appending_different_records_both_survive
 tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_rapid_debt_no_longer_carries_an_explicit_pin
 
@@ -46,7 +46,7 @@ Test evidence: `pytest tests/unit/test_rapid_debt.py tests/unit/test_rapid_sweep
 ### Evidence
 - `tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_lives_under_dot_frob_not_the_tracked_root` (pytest node id, verified passing when recorded)
 - `tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_creates_dot_frob_when_missing` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_leaves_the_repo_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_leaves_the_repo_clean` (pytest node id, verified passing when recorded)
 - `tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge::test_two_branches_appending_different_records_both_survive` (pytest node id, verified passing when recorded)
 - `tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_rapid_debt_no_longer_carries_an_explicit_pin` (pytest node id, verified passing when recorded)
 

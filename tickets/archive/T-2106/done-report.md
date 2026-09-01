@@ -97,7 +97,7 @@ T-1382 lease (see above), so it was never added.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_uncached_recheck_uses_the_doable_budget_not_the_sweep_budget` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_uncached_recheck_uses_the_doable_budget_not_the_sweep_budget` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

@@ -45,13 +45,13 @@ land, out of the verification budget available this session).
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_commit_failure_restores_root_to_clean_not_left_dirty` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_retry_after_commit_failure_does_not_duplicate_the_reason` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitOrDiscardLedgerWrite::test_returns_true_on_first_success` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitOrDiscardLedgerWrite::test_retries_then_succeeds` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitOrDiscardLedgerWrite::test_exhausted_retries_calls_discard_exactly_once_and_returns_false` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDiscardUncommittedTicketDrop::test_v2_store_restores_the_ticket_file_to_head` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDiscardUncommittedTicketDrop::test_v1_store_logs_and_leaves_root_alone` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_commit_failure_restores_root_to_clean_not_left_dirty` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_retry_after_commit_failure_does_not_duplicate_the_reason` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitOrDiscardLedgerWrite::test_returns_true_on_first_success` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitOrDiscardLedgerWrite::test_retries_then_succeeds` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitOrDiscardLedgerWrite::test_exhausted_retries_calls_discard_exactly_once_and_returns_false` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestDiscardUncommittedTicketDrop::test_v2_store_restores_the_ticket_file_to_head` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestDiscardUncommittedTicketDrop::test_v1_store_logs_and_leaves_root_alone` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 7 passed (from 7 evidence id(s))

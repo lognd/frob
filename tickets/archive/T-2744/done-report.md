@@ -77,7 +77,7 @@ Positive controls (both directions), all new/passing:
 
 Evidence:
 - tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_refuses_when_filed_ticket_does_not_resolve
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_commit_failure_skips_auto_dispose_and_returns_none
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_commit_failure_skips_auto_dispose_and_returns_none
 - Full suite for both touched files: 180 collected, 0 failed
   (tests/unit/verify/test_quarantine.py + tests/unit/test_rapid_sweep.py)
 
@@ -105,7 +105,7 @@ after this change's own scoped check runs.
 
 ### Evidence
 - `tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_refuses_when_filed_ticket_does_not_resolve` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_commit_failure_skips_auto_dispose_and_returns_none` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_commit_failure_skips_auto_dispose_and_returns_none` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

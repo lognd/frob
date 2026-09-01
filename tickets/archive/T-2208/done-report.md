@@ -45,12 +45,12 @@ now-automatic disposal that follows it.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_no_quarantine_raised_is_a_silent_no_op` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_clear_failure_is_logged_not_raised` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_keeps_finding_when_native_still_broken` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_no_quarantine_raised_is_a_silent_no_op` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_clear_failure_is_logged_not_raised` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_keeps_finding_when_native_still_broken` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 6 passed (from 6 evidence id(s))

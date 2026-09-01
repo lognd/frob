@@ -37,15 +37,15 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestRollingBaseline::test_read_baseline_commit_absent_is_none
-- tests/unit/test_rapid_sweep.py::TestRollingBaseline::test_read_baseline_commit_round_trips
-- tests/unit/test_rapid_sweep.py::TestLandIdsBetween::test_single_land_in_range
-- tests/unit/test_rapid_sweep.py::TestLandIdsBetween::test_multiple_lands_in_range_oldest_first
-- tests/unit/test_rapid_sweep.py::TestLandIdsBetween::test_non_land_commits_are_ignored
-- tests/unit/test_rapid_sweep.py::TestLandIdsBetween::test_non_repo_returns_empty_list
-- tests/unit/test_rapid_sweep.py::TestResolveActualHead::test_non_repo_falls_back_to_the_given_commit
-- tests/unit/test_rapid_sweep.py::TestResolveActualHead::test_real_repo_resolves_the_true_head
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepMultiLandAttribution::test_two_lands_in_the_window_are_both_named_not_just_the_spawning_one
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline::test_read_baseline_commit_absent_is_none
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline::test_read_baseline_commit_round_trips
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween::test_single_land_in_range
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween::test_multiple_lands_in_range_oldest_first
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween::test_non_land_commits_are_ignored
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestLandIdsBetween::test_non_repo_returns_empty_list
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestResolveActualHead::test_non_repo_falls_back_to_the_given_commit
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestResolveActualHead::test_real_repo_resolves_the_true_head
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestDeferredSweepMultiLandAttribution::test_two_lands_in_the_window_are_both_named_not_just_the_spawning_one
 designated_repro_test: null
 threat: null
 component: null

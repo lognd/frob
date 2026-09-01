@@ -28,17 +28,17 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestRegressionCountLine::test_true_count_known
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRegressionCountLine::test_true_count_known
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline
 designated_repro_test: null
 acceptance:
 - text: ARCH001 absent for src/frob/app/ticket_runner/_rapid_sweep.py in frob check
     --only archgate
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestRegressionCountLine::test_true_count_known
-  - tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before
-  - tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline
+  - tests/unit/rapid_sweep_suite/test_attribution.py::TestRegressionCountLine::test_true_count_known
+  - tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before
+  - tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline
 threat: null
 component: null
 anchor: false

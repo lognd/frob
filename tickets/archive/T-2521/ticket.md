@@ -136,9 +136,9 @@ scope_changes:
 evidence:
 - tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_failed_silent_tool_result_yields_none_not_a_partial_set
 - tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_failed_but_loud_tool_result_does_not_block_measurement
-- tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_absolute_recorded_identity_matches_relative_vanished_entry
-- tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_drops_a_fully_resolved_sweep_ticket
-- tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing::test_failed_silent_tool_result_is_unmeasurable_not_zero
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_absolute_recorded_identity_matches_relative_vanished_entry
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_drops_a_fully_resolved_sweep_ticket
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestIdentitiesStillReproducing::test_failed_silent_tool_result_is_unmeasurable_not_zero
 designated_repro_test: null
 threat: null
 component: null

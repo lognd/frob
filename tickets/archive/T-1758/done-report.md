@@ -85,7 +85,7 @@ adds no new capability, and needed no gate waivers.
 - `tests/test_ticket_leases.py::TestNewTicketProgrammaticAutoCommit::test_programmatic_call_auto_commits` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_leases.py::TestNewTicketProgrammaticAutoCommit::test_no_commit_leaves_ledger_dirty_and_warns` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_leases.py::TestNewTicketProgrammaticAutoCommit::test_new_verb_still_produces_one_commit_including_evidence` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_commits_the_ledger_write` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_commits_the_ledger_write` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

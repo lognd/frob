@@ -61,10 +61,10 @@ unaffected (they do not commit, so the hook never runs for them).
 
 ### Evidence
 
-- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_survives_the_scaffolded_root_write_guard
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_survives_the_scaffolded_root_write_guard
   (designated repro, FAILED_AT_PARENT confirmed against e3f1dfc27, the
   test-only commit)
-- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_guard_still_refuses_a_genuinely_foreign_file
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt.test_guard_still_refuses_a_genuinely_foreign_file
   (positive control, other direction -- see below)
 
 ### Both-directions and ticket-required controls (all measured)
@@ -112,8 +112,8 @@ playbook section 0/6g.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_survives_the_scaffolded_root_write_guard` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_guard_still_refuses_a_genuinely_foreign_file` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_survives_the_scaffolded_root_write_guard` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_guard_still_refuses_a_genuinely_foreign_file` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

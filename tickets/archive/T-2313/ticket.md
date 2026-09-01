@@ -23,10 +23,10 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_rapid_sweep.py::TestNormalizeIdentities::test_drops_genuinely_empty_identity_pair
-- tests/unit/test_rapid_sweep.py::TestNormalizeIdentities::test_leaves_well_formed_pairs_untouched
-- tests/unit/test_rapid_sweep.py::TestNormalizeIdentities::test_partial_identity_one_field_empty_is_kept
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestNormalizeIdentities::test_drops_genuinely_empty_identity_pair
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities::test_drops_genuinely_empty_identity_pair
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities::test_leaves_well_formed_pairs_untouched
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities::test_partial_identity_one_field_empty_is_kept
+designated_repro_test: tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities::test_drops_genuinely_empty_identity_pair
 threat: null
 component: null
 anchor: false

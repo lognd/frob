@@ -70,14 +70,14 @@ merge-base with main, no real work) and retried successfully.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey::test_unchanged_files_same_key_across_a_head_move` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey::test_editing_a_named_file_changes_the_key` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey::test_editing_an_unrelated_file_does_not_change_the_key` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey::test_uncommitted_edit_to_a_named_file_changes_the_key` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey::test_missing_file_has_a_stable_sentinel_digest` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_second_call_same_tree_reuses_cache_no_second_spawn` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_cache_hits_across_a_head_move_when_candidate_files_are_unchanged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_uncommitted_edit_to_candidate_file_still_forces_a_respawn` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey::test_unchanged_files_same_key_across_a_head_move` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey::test_editing_a_named_file_changes_the_key` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey::test_editing_an_unrelated_file_does_not_change_the_key` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey::test_uncommitted_edit_to_a_named_file_changes_the_key` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestIdentityScopedStateKey::test_missing_file_has_a_stable_sentinel_digest` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_second_call_same_tree_reuses_cache_no_second_spawn` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_cache_hits_across_a_head_move_when_candidate_files_are_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_uncommitted_edit_to_candidate_file_still_forces_a_respawn` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 8 passed (from 8 evidence id(s))

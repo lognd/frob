@@ -50,7 +50,7 @@ independently investigated in the time available this session.
 (no changed files detected)
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestAbsoluteVsRelativePathIdentityMismatch::test_format_drift_between_sweeps_does_not_falsely_resolve_a_live_ticket` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestAbsoluteVsRelativePathIdentityMismatch::test_format_drift_between_sweeps_does_not_falsely_resolve_a_live_ticket` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

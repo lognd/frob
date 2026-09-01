@@ -33,7 +33,7 @@ Did NOT touch src/frob/app/ticket_runner/_land_cmd.py's now-stale "run
 declared scope (src/frob/app/ticket_runner/_rapid_sweep.py only). Filed
 as a follow-up rather than silently widening scope.
 
-Evidence: tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
+Evidence: tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
   FAILED_AT_PARENT confirmed at 64c4a62af (repro-only commit); PASSED
   after the fix commit 1804bdceb.
   Also added: test_logs_one_line_per_verdict (proves every one of the
@@ -67,7 +67,7 @@ Gates: frob check --ticket T-2261 -- gate:SCOPE/gate:PREWORK clean;
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

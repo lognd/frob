@@ -12,7 +12,7 @@ Seam verification: confirmed on inspection -- the worktree-sweep family (~440 li
 
 Refactor hazards checked: no mock.patch call site targets a moved symbol by its old _leases.py-qualified path (git grep, zero hits) -- the one CLI test that DOES patch `frob.app.worktree_runner.sweep_worktrees` still resolves correctly because worktree_runner.py's own `from frob.tickets._leases import sweep_worktrees` import is unaffected by the split (re-export). Every plain (non-patch) import of a moved private symbol (_WorktreeSweepError, _WorktreeVerdict) was retargeted to the new module. Re-measured UNSCOPED `frob check` (no --ticket): only the expected PRE001/SCOPE001 "no --ticket passed" notices on the touched files, zero new defects.
 
-Evidence: tests/test_ticket_leases.py::TestSweepWorktrees::test_clean_no_lease_removed, tests/test_ticket_leases.py::TestRemoveWorktree::test_removes_a_clean_unleased_worktree, tests/test_ticket_leases.py::TestWorktreeSweepCli::test_sweep_cli_prints_verdicts_and_summary, tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force, tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_lease_written_in_one_worktree_seen_in_another
+Evidence: tests/test_ticket_leases.py::TestSweepWorktrees::test_clean_no_lease_removed, tests/test_ticket_leases.py::TestRemoveWorktree::test_removes_a_clean_unleased_worktree, tests/test_ticket_leases.py::TestWorktreeSweepCli::test_sweep_cli_prints_verdicts_and_summary, tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force, tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_lease_written_in_one_worktree_seen_in_another
 
 Filed: none
 
@@ -28,7 +28,7 @@ Gates: `frob check --ticket T-2833` -- every finding this split itself introduce
 - `tests/test_ticket_leases.py::TestSweepWorktrees::test_clean_no_lease_removed` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_leases.py::TestRemoveWorktree::test_removes_a_clean_unleased_worktree` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_leases.py::TestWorktreeSweepCli::test_sweep_cli_prints_verdicts_and_summary` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_lease_written_in_one_worktree_seen_in_another` (pytest node id, verified passing when recorded)
 
 ### Captured claims

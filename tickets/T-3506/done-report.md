@@ -20,7 +20,7 @@ Extracted the fcntl/msvcrt dual-path lock derived_state_lock already used into a
 - `tests/ticket_land_suite/test_land_lock.py::TestLandLockPlatformBackends::test_windows_backend_round_trips` (pytest node id, verified passing when recorded)
 - `tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends::test_windows_backend_round_trips` (pytest node id, verified passing when recorded)
 - `tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends::test_windows_backend_round_trips` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestBaselineLock::test_windows_backend_serializes_two_concurrent_holders` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_windows_backend_serializes_two_concurrent_holders` (pytest node id, verified passing when recorded)
 - `tests/unit/test_land_queue.py::TestFileLock::test_no_lock_primitive_refuses_loudly` (pytest node id, verified passing when recorded)
 - `tests/unit/test_mutation_sweep_queue.py::TestSweepLockPlatformBackend::test_no_lock_primitive_refuses_loudly` (pytest node id, verified passing when recorded)
 

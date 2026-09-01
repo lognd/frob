@@ -37,9 +37,9 @@ compose.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestNormalizeIdentityFile::test_absolute_under_root_becomes_relative` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestNormalizeIdentityFile::test_already_relative_is_unchanged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestNormalizeIdentityFile::test_absolute_outside_root_falls_back_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentityFile::test_absolute_under_root_becomes_relative` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentityFile::test_already_relative_is_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentityFile::test_absolute_outside_root_falls_back_unchanged` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

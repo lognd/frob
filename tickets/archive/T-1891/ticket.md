@@ -54,7 +54,7 @@ evidence:
 - tests/test_ticket_leases.py::TestNewDropFailAutoCommit::test_new_without_no_commit_never_warns_dirty
 - tests/test_ticket_leases.py::TestNewDropFailAutoCommit::test_new_with_no_commit_still_warns_dirty
 - tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_no_commit_flag_with_warn_if_dirty_false_stays_silent
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before
 designated_repro_test: null
 threat: null
 component: null

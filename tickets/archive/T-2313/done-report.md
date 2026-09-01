@@ -47,9 +47,9 @@ ticket's scope).
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestNormalizeIdentities::test_drops_genuinely_empty_identity_pair` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestNormalizeIdentities::test_leaves_well_formed_pairs_untouched` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestNormalizeIdentities::test_partial_identity_one_field_empty_is_kept` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities::test_drops_genuinely_empty_identity_pair` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities::test_leaves_well_formed_pairs_untouched` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestNormalizeIdentities::test_partial_identity_one_field_empty_is_kept` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

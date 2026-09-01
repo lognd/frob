@@ -69,10 +69,10 @@ cannot help a write addressed to the wrong tree in the first place).
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn::test_spawn_pins_frob_root_env_not_bare_os_environ` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDetachedSweepEnv::test_pins_frob_root_to_the_correct_root` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDetachedSweepEnv::test_strips_worktree_lease_env` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_a_done_ticket_body_is_byte_for_byte_untouched` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepSpawn::test_spawn_pins_frob_root_env_not_bare_os_environ` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnv::test_pins_frob_root_to_the_correct_root` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnv::test_strips_worktree_lease_env` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_a_done_ticket_body_is_byte_for_byte_untouched` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

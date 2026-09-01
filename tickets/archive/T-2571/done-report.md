@@ -8,10 +8,10 @@ Changed:
 - docs/modules/tickets-verify-sweep.md (new subsection)
 
 Evidence:
-- tests/unit/test_rapid_sweep.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first (designated repro, FAILED_AT_PARENT confirmed against the test-only commit)
-- tests/unit/test_rapid_sweep.py::TestBaselineWriteSurvived::test_mismatched_commit_did_not_survive
-- tests/unit/test_rapid_sweep.py::TestFilesDeletedBetween::test_deleted_file_is_reported
-- tests/unit/test_rapid_sweep.py::TestFilterPhantomDeletedFindings::test_live_file_finding_is_kept
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first (designated repro, FAILED_AT_PARENT confirmed against the test-only commit)
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineWriteSurvived::test_mismatched_commit_did_not_survive
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestFilesDeletedBetween::test_deleted_file_is_reported
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestFilterPhantomDeletedFindings::test_live_file_finding_is_kept
 
 Method: measured the two defect classes named in the ticket body directly.
 Class 1 (phantom TICK003/TICK004 findings against tickets.md, a file the
@@ -77,10 +77,10 @@ been present since before this session's first frob invocation).
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestBaselineWriteSurvived::test_mismatched_commit_did_not_survive` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFilesDeletedBetween::test_deleted_file_is_reported` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFilterPhantomDeletedFindings::test_live_file_finding_is_kept` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineWriteSurvived::test_mismatched_commit_did_not_survive` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestFilesDeletedBetween::test_deleted_file_is_reported` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestFilterPhantomDeletedFindings::test_live_file_finding_is_kept` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

@@ -33,10 +33,10 @@ scope_changes:
   actor: logan
   at: '2026-08-06'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_leaves_the_repo_clean
-- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_stages_only_the_debt_file
-- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_a_real_dirty_file
-- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_truncation_declares_itself
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_leaves_the_repo_clean
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_stages_only_the_debt_file
+- tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_names_a_real_dirty_file
+- tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_truncation_declares_itself
 designated_repro_test: null
 threat: null
 component: null

@@ -80,8 +80,8 @@ scope_changes:
   actor: logan
   at: '2026-08-07'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_the_real_ticket_from_a_staged_rapid_debt_line
-- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_unattributed_when_the_true_author_cannot_be_determined
+- tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_names_the_real_ticket_from_a_staged_rapid_debt_line
+- tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_unattributed_when_the_true_author_cannot_be_determined
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_ticket_id_is_reported_when_present
 - tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_ticket_id_is_none_for_a_pre_t1795_lock_file
 designated_repro_test: null
@@ -192,8 +192,8 @@ tests (2 new) pass.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_the_real_ticket_from_a_staged_rapid_debt_line` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_unattributed_when_the_true_author_cannot_be_determined` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_names_the_real_ticket_from_a_staged_rapid_debt_line` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_unattributed_when_the_true_author_cannot_be_determined` (pytest node id, verified passing when recorded)
 - `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_ticket_id_is_reported_when_present` (pytest node id, verified passing when recorded)
 - `tests/system/test_cli_doctor.py::TestDoctorLiveLandProcess::test_ticket_id_is_none_for_a_pre_t1795_lock_file` (pytest node id, verified passing when recorded)
 

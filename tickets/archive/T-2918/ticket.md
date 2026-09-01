@@ -58,10 +58,10 @@ scope_changes:
   actor: logan
   at: '2026-08-25'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestBaselineLock::test_no_lock_primitive_refuses_loudly
-- tests/unit/test_rapid_sweep.py::TestBaselineLock::test_windows_backend_serializes_two_concurrent_holders
-- tests/unit/test_rapid_sweep.py::TestBaselineLock::test_serializes_two_concurrent_holders
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestBaselineLock::test_no_lock_primitive_refuses_loudly
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_no_lock_primitive_refuses_loudly
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_windows_backend_serializes_two_concurrent_holders
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_serializes_two_concurrent_holders
+designated_repro_test: tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_no_lock_primitive_refuses_loudly
 threat: null
 component: null
 anchor: false

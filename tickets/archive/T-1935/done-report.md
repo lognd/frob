@@ -68,9 +68,9 @@ after this change).
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestTrueFindingCount::test_counts_every_diagnostic_matching_an_identity` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestTrueFindingCount::test_unparsable_json_is_none_not_zero` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestTrueFindingCount::test_spawn_refused_is_none_not_zero` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestTrueFindingCount::test_counts_every_diagnostic_matching_an_identity` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestTrueFindingCount::test_unparsable_json_is_none_not_zero` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestTrueFindingCount::test_spawn_refused_is_none_not_zero` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

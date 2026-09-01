@@ -52,8 +52,8 @@ narrowing `_refuse_if_undisposed`'s return type to a plain
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_non_duplicate_filing_failure_still_leaves_quarantine_raised` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_non_duplicate_filing_failure_still_leaves_quarantine_raised` (pytest node id, verified passing when recorded)
 - `tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_path_shape_mismatch_is_diagnosed_not_a_bare_refusal` (pytest node id, verified passing when recorded)
 
 ### Captured claims

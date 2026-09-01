@@ -53,14 +53,14 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_empty_queue_logs_and_skips_the_raise
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_raise_failure_is_logged_not_raised
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_empty_queue_logs_and_skips_the_raise
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_raise_failure_is_logged_not_raised
 designated_repro_test: null
 evidence_changes:
-- old_node: tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_raised_even_when_every_pair_already_has_an_open_ticket
-  new_node: tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise
+- old_node: tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_raised_even_when_every_pair_already_has_an_open_ticket
+  new_node: tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise
   reason: T-2604 rewrote this test (open-ticket attribution now clears the quarantine
     raise instead of always raising); the replacement covers the same underlying raise_quarantine
     call site T-1791 wired

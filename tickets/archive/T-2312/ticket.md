@@ -55,21 +55,21 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_non_duplicate_filing_failure_still_leaves_quarantine_raised
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_non_duplicate_filing_failure_still_leaves_quarantine_raised
 - tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_path_shape_mismatch_is_diagnosed_not_a_bare_refusal
 - tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings::test_notice_names_undisposed_count_and_dispose_command
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping
+designated_repro_test: tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping
 acceptance:
 - text: given findings whose equivalent ticket already exists, when the auto-filer
     declines to duplicate, then it disposes them to that existing ticket and quarantine
     clears
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping
+  - tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping
 - text: given findings with no owning ticket at all, when the sweep runs, then quarantine
     still raises and still blocks (guard not weakened)
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_non_duplicate_filing_failure_still_leaves_quarantine_raised
+  - tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_non_duplicate_filing_failure_still_leaves_quarantine_raised
 - text: given quarantine is raised, when an operator reads fleet status or a land
     refusal, then the raised state and undisposed count are stated without needing
     frob verify status

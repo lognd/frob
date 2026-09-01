@@ -23,8 +23,8 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_names_the_real_ticket_from_a_staged_rapid_debt_line
-- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_unattributed_when_the_true_author_cannot_be_determined
+- tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_names_the_real_ticket_from_a_staged_rapid_debt_line
+- tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_unattributed_when_the_true_author_cannot_be_determined
 designated_repro_test: null
 threat: null
 component: null

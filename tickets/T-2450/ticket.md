@@ -68,8 +68,8 @@ scope_changes:
   actor: logan
   at: '2026-08-30'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestDetachedSweepEnvPublicSeam::test_delegates_to_the_private_implementation
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicketPublicSeam::test_delegates_to_the_private_implementation
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnvPublicSeam::test_delegates_to_the_private_implementation
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicketPublicSeam::test_delegates_to_the_private_implementation
 - tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam::test_delegates_with_the_same_arguments
 designated_repro_test: null
 threat: null

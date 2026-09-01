@@ -201,7 +201,7 @@ evidence:
 - tests/unit/test_land_lock_liveness.py::TestLandLockSurvivesSigkilledHolder::test_land_lock_reclaims_promptly_after_sigkill
 - tests/unit/test_process_lock.py::TestDerivedStateLockPlatformBackends::test_windows_backend_round_trips
 - tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends::test_windows_backend_round_trips
-- tests/unit/test_rapid_sweep.py::TestBaselineLock::test_windows_backend_serializes_two_concurrent_holders
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_windows_backend_serializes_two_concurrent_holders
 - tests/unit/test_stackdump.py::TestStackdumpHandler::test_sigusr1_writes_all_thread_stacks_when_enabled
 - tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends::test_windows_backend_round_trips
 - tests/unit/verify/test_worker.py::TestEnsureReducedPriority::test_applies_nice_and_ionice_exactly_once

@@ -30,21 +30,21 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepBaselineCasRace::test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline
-- tests/unit/test_rapid_sweep.py::TestBaselineLock::test_no_lock_primitive_refuses_loudly
-- tests/unit/test_rapid_sweep.py::TestBaselineLock::test_serializes_two_concurrent_holders
-- tests/unit/test_rapid_sweep.py::TestIsAncestor::test_true_when_older_is_ancestor
-- tests/unit/test_rapid_sweep.py::TestIsAncestor::test_equal_commits_are_ancestors
-- tests/unit/test_rapid_sweep.py::TestIsAncestor::test_false_when_not_an_ancestor
-- tests/unit/test_rapid_sweep.py::TestIsAncestor::test_none_on_git_failure
-- tests/unit/test_rapid_sweep.py::TestWriteBaselineCas::test_writes_when_no_prior_baseline
-- tests/unit/test_rapid_sweep.py::TestWriteBaselineCas::test_writes_when_prior_is_an_ancestor
-- tests/unit/test_rapid_sweep.py::TestWriteBaselineCas::test_skips_when_prior_is_not_an_ancestor
-- tests/unit/test_rapid_sweep.py::TestWriteBaselineCas::test_writes_when_ancestry_is_unresolvable
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestDeferredSweepBaselineCasRace::test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestDeferredSweepBaselineCasRace::test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_no_lock_primitive_refuses_loudly
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_serializes_two_concurrent_holders
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor::test_true_when_older_is_ancestor
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor::test_equal_commits_are_ancestors
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor::test_false_when_not_an_ancestor
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor::test_none_on_git_failure
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas::test_writes_when_no_prior_baseline
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas::test_writes_when_prior_is_an_ancestor
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas::test_skips_when_prior_is_not_an_ancestor
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas::test_writes_when_ancestry_is_unresolvable
+designated_repro_test: tests/unit/rapid_sweep_suite/test_baseline.py::TestDeferredSweepBaselineCasRace::test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline
 evidence_changes:
-- old_node: tests/unit/test_rapid_sweep.py::TestBaselineLock::test_no_fcntl_degrades_to_unlocked
-  new_node: tests/unit/test_rapid_sweep.py::TestBaselineLock::test_no_lock_primitive_refuses_loudly
+- old_node: tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_no_fcntl_degrades_to_unlocked
+  new_node: tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_no_lock_primitive_refuses_loudly
   reason: 'T-2918: fcntl-absent path no longer silently proceeds unlocked -- it raises
     BaselineLockUnavailable; test_no_fcntl_degrades_to_unlocked no longer describes
     real behavior and was replaced by test_no_lock_primitive_refuses_loudly'

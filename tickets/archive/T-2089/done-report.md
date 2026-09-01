@@ -22,19 +22,19 @@ spawn failure) degrades to the prior uncached behavior, never to a
 false HIT -- an unmeasured candidate is never reported as clean.
 
 Evidence:
-- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_second_call_same_tree_reuses_cache_no_second_spawn
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_second_call_same_tree_reuses_cache_no_second_spawn
   (the repro: proves exactly ONE spawn across two calls against an
   unchanged tree; genuinely FAILED_AT_PARENT at the test-only commit
   473344c14, confirmed via `frob ticket evidence --check-repro`)
-- tests/unit/test_rapid_sweep.py::TestTreeStateKey.test_non_repo_is_none
-- tests/unit/test_rapid_sweep.py::TestTreeStateKey.test_real_repo_returns_a_key
-- tests/unit/test_rapid_sweep.py::TestTreeStateKey.test_dirty_tree_changes_the_key
-- tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_absent_cache_is_none
-- tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_corrupt_cache_is_none
-- tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_write_then_read_round_trips
-- tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_mismatched_tree_key_is_none
-- tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_mismatched_pairs_is_none
-- tests/unit/test_rapid_sweep.py::TestRevalidationCache.test_expired_ttl_is_none
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestTreeStateKey.test_non_repo_is_none
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestTreeStateKey.test_real_repo_returns_a_key
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestTreeStateKey.test_dirty_tree_changes_the_key
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_absent_cache_is_none
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_corrupt_cache_is_none
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_write_then_read_round_trips
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_mismatched_tree_key_is_none
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_mismatched_pairs_is_none
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache.test_expired_ttl_is_none
 
 Gates: `frob check --ticket T-2089 --only test --only archgate --only
 coverage --only sys` clean (FROB_NO_GATE_CACHE=1 re-measure of
@@ -66,16 +66,16 @@ Filed: T-2100 (the pre-existing flaky-test-pair finding above)
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_second_call_same_tree_reuses_cache_no_second_spawn` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestTreeStateKey::test_non_repo_is_none` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestTreeStateKey::test_real_repo_returns_a_key` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestTreeStateKey::test_dirty_tree_changes_the_key` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidationCache::test_absent_cache_is_none` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidationCache::test_corrupt_cache_is_none` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidationCache::test_write_then_read_round_trips` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidationCache::test_mismatched_tree_key_is_none` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidationCache::test_mismatched_pairs_is_none` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidationCache::test_expired_ttl_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_second_call_same_tree_reuses_cache_no_second_spawn` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestTreeStateKey::test_non_repo_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestTreeStateKey::test_real_repo_returns_a_key` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestTreeStateKey::test_dirty_tree_changes_the_key` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache::test_absent_cache_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache::test_corrupt_cache_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache::test_write_then_read_round_trips` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache::test_mismatched_tree_key_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache::test_mismatched_pairs_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestRevalidationCache::test_expired_ttl_is_none` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 10 passed (from 10 evidence id(s))

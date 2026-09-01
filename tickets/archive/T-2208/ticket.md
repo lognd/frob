@@ -24,13 +24,13 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers
-- tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed
-- tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_no_quarantine_raised_is_a_silent_no_op
-- tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_clear_failure_is_logged_not_raised
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_keeps_finding_when_native_still_broken
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_no_quarantine_raised_is_a_silent_no_op
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_clear_failure_is_logged_not_raised
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_keeps_finding_when_native_still_broken
+designated_repro_test: tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers
 acceptance:
 - text: 'Measured: _file_regression_ticket (src/frob/app/ticket_runner/_rapid_sweep.py:1259)
     files a regression ticket for a quarantine finding, and clear_quarantine is called
@@ -41,12 +41,12 @@ acceptance:
     was OFF fleet-wide until I did, forcing every land onto ~208s synchronous verification.
     This test MUST fail against current main.'
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers
-  - tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed
-  - tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_no_quarantine_raised_is_a_silent_no_op
-  - tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_clear_failure_is_logged_not_raised
-  - tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings
-  - tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_keeps_finding_when_native_still_broken
+  - tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers
+  - tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed
+  - tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_no_quarantine_raised_is_a_silent_no_op
+  - tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_clear_failure_is_logged_not_raised
+  - tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings
+  - tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_keeps_finding_when_native_still_broken
 - text: When the sweep files a regression ticket for a finding, dispose that finding
     with --file-ticket semantics in the same operation, and log it the way a manual
     disposal is logged so the audit trail is identical. Do NOT auto-dispose findings
@@ -54,12 +54,12 @@ acceptance:
     ticket is exactly what quarantine exists to surface, and blanket auto-clearing
     reopens the hole T-1693 closed.
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers
-  - tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed
-  - tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_no_quarantine_raised_is_a_silent_no_op
-  - tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_clear_failure_is_logged_not_raised
-  - tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings
-  - tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_keeps_finding_when_native_still_broken
+  - tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers
+  - tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed
+  - tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_no_quarantine_raised_is_a_silent_no_op
+  - tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_clear_failure_is_logged_not_raised
+  - tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings
+  - tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_keeps_finding_when_native_still_broken
 - text: 'SCOPE-PLAUSIBILITY FALSE POSITIVE, recorded deliberately. Filing this ticket
     tripped T-2177''s own warning (''none of the declared scope files contain any
     identifier or string-literal token matching this title/body''). I verified the
@@ -69,7 +69,7 @@ acceptance:
     limitation T-2192''s author measured and disclosed as not closable by token matching.
     Useful corroboration from a real filing, not a new defect.'
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers
+  - tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_disposes_findings_the_ticket_covers
 threat: null
 component: null
 anchor: false

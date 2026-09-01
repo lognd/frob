@@ -51,9 +51,9 @@ file missing its status header.
 (no changed files detected)
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_unmeasurable_check_leaves_the_baseline_untouched` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn::test_exec_disabled_records_debt_and_refuses` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_unmeasurable_check_leaves_the_baseline_untouched` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepSpawn::test_exec_disabled_records_debt_and_refuses` (pytest node id, verified passing when recorded)
 - `tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_records_a_commit_field_even_outside_a_git_repo` (pytest node id, verified passing when recorded)
 - `tests/unit/test_profile.py::TestRatchetOverride::test_explicit_true_overrides` (pytest node id, verified passing when recorded)
 

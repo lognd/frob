@@ -17,7 +17,7 @@ re-acked with a reason stating exactly what was re-verified and what was
 added.
 
 Evidence:
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket: 16/16 pass
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket: 16/16 pass
   under -p no:xdist
 - `frob check --only drift`: DRIFT001 on
   src/frob/app/ticket_runner/_rapid_sweep.py is gone (zero hits on that
@@ -30,7 +30,7 @@ Evidence:
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_commit_failure_skips_auto_dispose_and_returns_none` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_commit_failure_skips_auto_dispose_and_returns_none` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))

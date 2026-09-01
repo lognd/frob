@@ -29,8 +29,8 @@ body_changes:
   old_length: 3318
   new_length: 4342
 evidence:
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_concurrent_sweeps_file_only_one_ticket
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_reappearing_finding_after_closed_ticket_files_a_new_one
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_concurrent_sweeps_file_only_one_ticket
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_reappearing_finding_after_closed_ticket_files_a_new_one
 designated_repro_test: null
 threat: null
 component: null

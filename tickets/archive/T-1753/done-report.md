@@ -72,8 +72,8 @@ docs/modules/tickets.md note above.
 ### Evidence
 - `tests/unit/verify/test_attribution.py::TestAttributeBatch::test_caller_break_attributes_to_the_caller_commit` (pytest node id, verified passing when recorded)
 - `tests/unit/verify/test_attribution.py::TestAttributeBatch::test_missing_line_falls_back_to_whole_file_candidates` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestAttributeNewFindings::test_attributed_and_unattributed_round_trip` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_attributed_to_open_ticket_is_not_refiled` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestAttributeNewFindings::test_attributed_and_unattributed_round_trip` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_attributed_to_open_ticket_is_not_refiled` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

@@ -48,11 +48,11 @@ scope_changes:
   actor: logan
   at: '2026-08-28'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestReverifyUnfiledPairsAtFileTime::test_still_live_pair_is_kept
-- tests/unit/test_rapid_sweep.py::TestReverifyUnfiledPairsAtFileTime::test_vanished_pair_is_dropped_and_recorded_as_debt
-- tests/unit/test_rapid_sweep.py::TestReverifyUnfiledPairsAtFileTime::test_unmeasurable_files_everything_as_before
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_still_reproducing_finding_files_a_ticket
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_vanished_finding_files_no_ticket
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestReverifyUnfiledPairsAtFileTime::test_still_live_pair_is_kept
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestReverifyUnfiledPairsAtFileTime::test_vanished_pair_is_dropped_and_recorded_as_debt
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestReverifyUnfiledPairsAtFileTime::test_unmeasurable_files_everything_as_before
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_still_reproducing_finding_files_a_ticket
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_vanished_finding_files_no_ticket
 designated_repro_test: null
 threat: null
 component: null

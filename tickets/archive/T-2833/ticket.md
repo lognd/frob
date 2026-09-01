@@ -56,7 +56,7 @@ evidence:
 - tests/test_ticket_leases.py::TestSweepWorktrees::test_clean_no_lease_removed
 - tests/test_ticket_leases.py::TestRemoveWorktree::test_removes_a_clean_unleased_worktree
 - tests/test_ticket_leases.py::TestWorktreeSweepCli::test_sweep_cli_prints_verdicts_and_summary
-- tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
+- tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
 - tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_lease_written_in_one_worktree_seen_in_another
 designated_repro_test: null
 threat: null

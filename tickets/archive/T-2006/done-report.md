@@ -120,12 +120,12 @@ brief.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing::test_only_reproducing_identities_returned` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing::test_unmeasurable_is_none` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_no_sweep_tickets_is_zero_cost` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_fully_resolved_candidate_is_dropped` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_still_reproducing_candidate_is_left_untouched` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_unmeasurable_recheck_drops_nothing` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestIdentitiesStillReproducing::test_only_reproducing_identities_returned` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestIdentitiesStillReproducing::test_unmeasurable_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_no_sweep_tickets_is_zero_cost` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_fully_resolved_candidate_is_dropped` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_still_reproducing_candidate_is_left_untouched` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_unmeasurable_recheck_drops_nothing` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 6 passed (from 6 evidence id(s))

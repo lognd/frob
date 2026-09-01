@@ -47,7 +47,7 @@ fix, for all three new tests plus the untouched pre-existing programmatic-caller
 - `tests/test_ticket_leases.py::TestNewDropFailAutoCommit::test_new_without_no_commit_never_warns_dirty` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_leases.py::TestNewDropFailAutoCommit::test_new_with_no_commit_still_warns_dirty` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_no_commit_flag_with_warn_if_dirty_false_stays_silent` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_no_attribution_files_everything_as_before` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

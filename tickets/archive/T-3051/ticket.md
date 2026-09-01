@@ -39,8 +39,8 @@ scope_changes:
   actor: logan
   at: '2026-08-26'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_unrelated_duplicate_finding_in_a_different_file_still_refuses
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_duplicate_finding_disposes_to_declaring_ticket_instead_of_dropping
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_unrelated_duplicate_finding_in_a_different_file_still_refuses
 designated_repro_test: null
 threat: null
 component: null

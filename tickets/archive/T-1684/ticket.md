@@ -177,9 +177,9 @@ scope_changes:
   actor: logan
   at: '2026-08-06'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_unmeasurable_check_leaves_the_baseline_untouched
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn::test_exec_disabled_records_debt_and_refuses
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_new_findings_file_a_ticket_and_rebaseline
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_unmeasurable_check_leaves_the_baseline_untouched
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepSpawn::test_exec_disabled_records_debt_and_refuses
 - tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_records_a_commit_field_even_outside_a_git_repo
 - tests/unit/test_profile.py::TestRatchetOverride::test_explicit_true_overrides
 designated_repro_test: null

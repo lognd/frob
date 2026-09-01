@@ -9,8 +9,8 @@ Root cause: _validate_new_ticket_spec's duplicate refusal (_refuse_exact_duplica
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_concurrent_sweeps_file_only_one_ticket` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_reappearing_finding_after_closed_ticket_files_a_new_one` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_concurrent_sweeps_file_only_one_ticket` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_reappearing_finding_after_closed_ticket_files_a_new_one` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

@@ -1558,7 +1558,6 @@ def frob_self_scan_snapshot(
 
 PY_SAMPLE = b"""\
 import os
-from pathlib import Path
 
 def helper(x: int) -> str:
     return str(x) + "hello"
@@ -1982,3 +1981,92 @@ version = "1.0.195"
 name = "tokio"
 version = "1.35.1"
 """
+
+
+def _init_git_repo(root: Path) -> None:
+    """A minimal real git repo for T-2009's `_land_ids_between`/`_resolve_
+    actual_head` tests -- these shell out to real `git log`/`rev-parse`,
+    unlike most of this module's tests which use a plain `tmp_path`."""
+    import subprocess
+
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(
+        ["git", "-C", str(root), "config", "user.email", "test@example.com"],
+        check=True,
+    )
+    subprocess.run(["git", "-C", str(root), "config", "user.name", "Test"], check=True)
+
+
+def _git_commit(root: Path, message: str) -> str:
+    """One empty, real commit with `message`; returns its full sha."""
+    import subprocess
+
+    subprocess.run(
+        ["git", "-C", str(root), "commit", "--allow-empty", "-q", "-m", message],
+        check=True,
+    )
+    return subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _git(repo: Path, *args: str) -> str:
+    """Run git in `repo` and return stdout (test helper, T-1698)."""
+    import subprocess
+
+    return subprocess.run(
+        ["git", "-C", str(repo), *args],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+
+
+def _seed_ticket(tmp_path: Path, *, state=None) -> str:
+    """A minimal ticket for T-1690's attribution-filing tests. `state`
+    (a `TicketState`), when given, transitions the ticket there -- `DONE`
+    is reached the cheap way (via `drop_ticket`, landing on `DROPPED`,
+    which is in `_ticket_is_open`'s CLOSED set alongside `DONE`) rather
+    than satisfying `done`'s own evidence/Done-report requirements, which
+    this test has no need to exercise."""
+    from frob.tickets import Origin, TicketKind, new_ticket
+    from frob.tickets._models import TicketSpec, TicketState
+
+    spec = TicketSpec(title="seed", kind=TicketKind.BUG, origin=Origin.AGENT)
+    created = new_ticket(tmp_path, spec)
+    assert created.is_ok
+    ticket_id = created.danger_ok.id
+    if state is TicketState.DONE:
+        from frob.tickets import drop_ticket
+
+        dropped = drop_ticket(tmp_path, ticket_id, reason="seed")
+        assert dropped.is_ok
+    return ticket_id
+
+
+
+
+def _seed_repo(tmp_path: Path) -> Path:
+    """A real one-commit git repo -- `_commit_rapid_debt`'s whole contract
+    is about git state, so a fake would prove nothing. A plain helper
+    called explicitly, not a pytest fixture: fixture wiring is by NAME
+    INJECTION, which WIRE001's reachability scan cannot see. Relocated
+    to tests/conftest.py for T-3595's rapid_sweep_suite split -- callers
+    now span multiple modules under tests/unit/rapid_sweep_suite/, which
+    T-1558's gate fix recognizes as wired."""
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "config", "user.email", "test@example.com")
+    _git(tmp_path, "config", "user.name", "test")
+    (tmp_path / "seed.txt").write_text("seed\n", encoding="utf-8")
+    # T-2997: record_rapid_debt now writes under .frob/, exactly like a
+    # real checkout -- gitignore it here too, or an untracked .frob/
+    # falsely reads as repo dirt in this fixture's "leaves the repo
+    # clean" assertions, a gap no real checkout (which always gitignores
+    # .frob/) actually has.
+    (tmp_path / ".gitignore").write_text(".frob/\n", encoding="utf-8")
+    _git(tmp_path, "add", "seed.txt", ".gitignore")
+    _git(tmp_path, "commit", "-qm", "seed")
+    return tmp_path

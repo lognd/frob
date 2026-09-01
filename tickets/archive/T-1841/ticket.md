@@ -23,12 +23,12 @@ scope_changes:
   actor: logan
   at: '2026-08-08'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_commits_the_ledger_write
-- tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_commit_failure_logs_at_error_and_does_not_raise
-- tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_retries_then_succeeds_on_a_transient_land_in_progress
-- tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_exhausted_retries_discard_the_v2_ticket_dir_rather_than_leave_it_dirty
-- tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_exhausted_retries_leave_a_v1_store_dirty_rather_than_guess
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_retries_then_succeeds_on_a_transient_land_in_progress
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_commits_the_ledger_write
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_commit_failure_logs_at_error_and_does_not_raise
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_retries_then_succeeds_on_a_transient_land_in_progress
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_exhausted_retries_discard_the_v2_ticket_dir_rather_than_leave_it_dirty
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_exhausted_retries_leave_a_v1_store_dirty_rather_than_guess
+designated_repro_test: tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_retries_then_succeeds_on_a_transient_land_in_progress
 threat: null
 component: null
 ---

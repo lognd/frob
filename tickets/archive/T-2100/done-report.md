@@ -27,8 +27,8 @@ Evidence:
   mtime_ns -- deterministic, not dependent on real clock granularity)
 - tests/test_tickets.py::TestV2IndexCache::test_identical_mtime_and_size_still_hits_cache
   (negative control: an unchanged file must still serve from cache)
-- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
-- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_fully_resolved_candidate_is_dropped
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_fully_resolved_candidate_is_dropped
   (the originally-flaky pair -- measured ~1/20 failing before the fix,
   40/40 clean after, run back-to-back in the same pytest process both
   orders)

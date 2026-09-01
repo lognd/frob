@@ -37,28 +37,28 @@ scope_changes:
   actor: logan
   at: '2026-08-17'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
-- tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand::test_logs_one_line_per_verdict
-- tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesIsOffTheLandCriticalPath::test_spawn_deferred_post_land_sweep_never_calls_it_directly
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
+- tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
+- tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_logs_one_line_per_verdict
+- tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesIsOffTheLandCriticalPath::test_spawn_deferred_post_land_sweep_never_calls_it_directly
+designated_repro_test: tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
 acceptance:
 - text: 'Stale worktrees are reclaimed without an operator remembering a command (fails
     today: zero non-advisory call sites); state where it hooked in and why'
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
+  - tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
 - text: 'MUST-STILL-PASS: live, dirty, unlanded, leased, and under-age worktrees are
     each still KEPT -- fixtures for all five'
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
+  - tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
 - text: Every removal is logged with its per-worktree verdict
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand::test_logs_one_line_per_verdict
+  - tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_logs_one_line_per_verdict
 - text: The land critical path is not lengthened; measure a land before and after
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesIsOffTheLandCriticalPath::test_spawn_deferred_post_land_sweep_never_calls_it_directly
+  - tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesIsOffTheLandCriticalPath::test_spawn_deferred_post_land_sweep_never_calls_it_directly
 - text: --force is never used by the automatic path
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
+  - tests/unit/rapid_sweep_suite/test_worktrees.py::TestSweepStaleWorktreesAfterLand::test_never_uses_force
 threat: null
 component: null
 anchor: false

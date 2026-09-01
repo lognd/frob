@@ -109,9 +109,9 @@ just guarded against at this one consumer.
 ### Evidence
 - `tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_failed_silent_tool_result_yields_none_not_a_partial_set` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_failed_but_loud_tool_result_does_not_block_measurement` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_absolute_recorded_identity_matches_relative_vanished_entry` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_drops_a_fully_resolved_sweep_ticket` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing::test_failed_silent_tool_result_is_unmeasurable_not_zero` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_absolute_recorded_identity_matches_relative_vanished_entry` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_drops_a_fully_resolved_sweep_ticket` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_attribution.py::TestIdentitiesStillReproducing::test_failed_silent_tool_result_is_unmeasurable_not_zero` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

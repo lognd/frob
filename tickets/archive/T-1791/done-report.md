@@ -55,10 +55,10 @@ frob check --land-parity: clean, 0 unscoped errors.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_empty_queue_logs_and_skips_the_raise` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_raised_even_when_every_pair_already_has_an_open_ticket` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_raise_failure_is_logged_not_raised` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_raises_with_attributed_and_unattributed_findings` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_empty_queue_logs_and_skips_the_raise` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_raised_even_when_every_pair_already_has_an_open_ticket` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_raise_failure_is_logged_not_raised` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

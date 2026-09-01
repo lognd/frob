@@ -87,11 +87,11 @@ broad) separately.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_commits_the_ledger_write` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_commit_failure_logs_at_error_and_does_not_raise` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_retries_then_succeeds_on_a_transient_land_in_progress` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_exhausted_retries_discard_the_v2_ticket_dir_rather_than_leave_it_dirty` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket::test_exhausted_retries_leave_a_v1_store_dirty_rather_than_guess` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_commits_the_ledger_write` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_commit_failure_logs_at_error_and_does_not_raise` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_retries_then_succeeds_on_a_transient_land_in_progress` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_exhausted_retries_discard_the_v2_ticket_dir_rather_than_leave_it_dirty` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRegressionTicket::test_exhausted_retries_leave_a_v1_store_dirty_rather_than_guess` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

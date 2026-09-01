@@ -31,11 +31,11 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepClosesResolvedRegressions::test_resolved_finding_is_dropped_by_the_next_sweep
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepClosesResolvedRegressions::test_still_reproducing_finding_is_left_untouched
-- tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_drops_a_fully_resolved_sweep_ticket
-- tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_leaves_a_partially_resolved_ticket_untouched
-- tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_in_progress_sweep_ticket_is_never_touched
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestDeferredSweepClosesResolvedRegressions::test_resolved_finding_is_dropped_by_the_next_sweep
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestDeferredSweepClosesResolvedRegressions::test_still_reproducing_finding_is_left_untouched
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_drops_a_fully_resolved_sweep_ticket
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_leaves_a_partially_resolved_ticket_untouched
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_in_progress_sweep_ticket_is_never_touched
 designated_repro_test: null
 threat: null
 component: null

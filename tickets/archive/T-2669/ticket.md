@@ -29,9 +29,9 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_survives_the_scaffolded_root_write_guard
-- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_guard_still_refuses_a_genuinely_foreign_file
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_survives_the_scaffolded_root_write_guard
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_survives_the_scaffolded_root_write_guard
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_guard_still_refuses_a_genuinely_foreign_file
+designated_repro_test: tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_survives_the_scaffolded_root_write_guard
 threat: null
 component: null
 anchor: false

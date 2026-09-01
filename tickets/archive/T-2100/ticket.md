@@ -33,8 +33,8 @@ scope_changes:
 evidence:
 - tests/test_tickets.py::TestV2IndexCache::test_same_mtime_different_size_is_not_a_hit
 - tests/test_tickets.py::TestV2IndexCache::test_identical_mtime_and_size_still_hits_cache
-- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
-- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_fully_resolved_candidate_is_dropped
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_fully_resolved_candidate_is_dropped
 designated_repro_test: tests/test_tickets.py::TestV2IndexCache::test_same_mtime_different_size_is_not_a_hit
 threat: null
 component: null
@@ -44,7 +44,7 @@ land_commit: 75016512d679fdd96342c127459104d1f009727e
 ---
 ## Measured (found while verifying T-2089)
 
-Two tests in `tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets`
+Two tests in `tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets`
 -- `test_fully_resolved_candidate_is_dropped` and
 `test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition` --
 each pass reliably in isolation but intermittently fail when run together
@@ -58,8 +58,8 @@ cache change introduced.
 Repro:
 
     for i in 1 2 3 4 5; do
-      uv run pytest -o addopts="" tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_fully_resolved_candidate_is_dropped \
-        tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition -q
+      uv run pytest -o addopts="" tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_fully_resolved_candidate_is_dropped \
+        tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition -q
     done
 
 One observed failure: `test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition`

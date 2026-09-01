@@ -64,9 +64,9 @@ fix).
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestBaselineLock::test_no_lock_primitive_refuses_loudly` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestBaselineLock::test_windows_backend_serializes_two_concurrent_holders` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestBaselineLock::test_serializes_two_concurrent_holders` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_no_lock_primitive_refuses_loudly` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_windows_backend_serializes_two_concurrent_holders` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_serializes_two_concurrent_holders` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))

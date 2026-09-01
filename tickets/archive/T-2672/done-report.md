@@ -41,10 +41,10 @@ Changed:
   src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket
 
 Evidence:
-  tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_unattributed_finding_does_not_name_the_spawning_land_as_cause
+  tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_unattributed_finding_does_not_name_the_spawning_land_as_cause
     (designated repro, --check-repro FAILED_AT_PARENT at b80bc0bc0
     -- the test-only commit before the fix)
-  tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_causally_implicated_land_still_names_itself_as_the_cause
+  tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_causally_implicated_land_still_names_itself_as_the_cause
     (positive control: a genuinely reaching land is still named plainly,
     "unattributed" absent from its title)
 
@@ -115,8 +115,8 @@ files this ticket never touched.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_unattributed_finding_does_not_name_the_spawning_land_as_cause` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_causally_implicated_land_still_names_itself_as_the_cause` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_unattributed_finding_does_not_name_the_spawning_land_as_cause` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_causally_implicated_land_still_names_itself_as_the_cause` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

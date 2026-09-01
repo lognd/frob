@@ -79,10 +79,10 @@ allowed to become a second failure layered on the one it explains.
   with the real stderr text now survives it.
 
 Evidence:
-- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_commit_failure_persists_a_diagnostic_log (designated repro, FAILED_AT_PARENT at 59a82c57d)
-- tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure::test_writes_proc_result_diagnostics
-- tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure::test_writes_spawn_error_diagnostics
-- tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure::test_swallows_its_own_write_failure
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_commit_failure_persists_a_diagnostic_log (designated repro, FAILED_AT_PARENT at 59a82c57d)
+- tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure::test_writes_proc_result_diagnostics
+- tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure::test_writes_spawn_error_diagnostics
+- tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure::test_swallows_its_own_write_failure
 
 Filed: none (no out-of-scope work found)
 
@@ -106,10 +106,10 @@ entirely outside this ticket's scope.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure::test_writes_proc_result_diagnostics` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure::test_writes_spawn_error_diagnostics` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure::test_swallows_its_own_write_failure` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_commit_failure_persists_a_diagnostic_log` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure::test_writes_proc_result_diagnostics` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure::test_writes_spawn_error_diagnostics` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure::test_swallows_its_own_write_failure` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_commit_failure_persists_a_diagnostic_log` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

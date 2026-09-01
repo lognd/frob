@@ -77,7 +77,7 @@ scope_changes:
 evidence:
 - tests/test_tickets.py::TestDropTicket::test_terminal_ticket_transition_refused_before_any_write
 - tests/test_tickets.py::TestDropTicket::test_dropped_ticket_transition_refused_before_any_write
-- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
 designated_repro_test: tests/test_tickets.py::TestDropTicket::test_terminal_ticket_transition_refused_before_any_write
 acceptance:
 - text: given a ticket already in a terminal state (dropped or done) whose regression
@@ -87,21 +87,21 @@ acceptance:
   evidence:
   - tests/test_tickets.py::TestDropTicket::test_terminal_ticket_transition_refused_before_any_write
   - tests/test_tickets.py::TestDropTicket::test_dropped_ticket_transition_refused_before_any_write
-  - tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
+  - tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
 - text: given an auto-drop whose transition fails for any reason, when the pass returns,
     then no modification remains in the working tree -- git status --porcelain is
     byte-identical to before the invocation
   evidence:
   - tests/test_tickets.py::TestDropTicket::test_terminal_ticket_transition_refused_before_any_write
   - tests/test_tickets.py::TestDropTicket::test_dropped_ticket_transition_refused_before_any_write
-  - tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
+  - tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
 - text: given a done ticket carrying a Done report section, when any auto-drop path
     touches it, then the Done report content is preserved -- verified by content,
     not by exit code
   evidence:
   - tests/test_tickets.py::TestDropTicket::test_terminal_ticket_transition_refused_before_any_write
   - tests/test_tickets.py::TestDropTicket::test_dropped_ticket_transition_refused_before_any_write
-  - tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
+  - tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_terminal_ticket_is_not_selected_and_logs_no_invalid_transition
 threat: null
 component: ticket_runner
 labels:

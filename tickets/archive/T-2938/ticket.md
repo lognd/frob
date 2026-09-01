@@ -49,11 +49,11 @@ scope_changes:
   actor: logan
   at: '2026-08-26'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand::test_matching_claim_raises_nothing
-- tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand::test_divergent_claim_raises_quarantine_attributed_to_landing_ticket
-- tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand::test_stale_baseline_refuses_to_attribute
-- tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand::test_no_captured_claims_section_is_a_noop
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestClaimDivergencePostLand::test_matching_claim_raises_nothing
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestClaimDivergencePostLand::test_divergent_claim_raises_quarantine_attributed_to_landing_ticket
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestClaimDivergencePostLand::test_stale_baseline_refuses_to_attribute
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestClaimDivergencePostLand::test_no_captured_claims_section_is_a_noop
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
 - tests/ticket_land_suite/test_claim_close.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn
 designated_repro_test: null
 threat: null

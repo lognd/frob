@@ -97,12 +97,12 @@ scope_changes:
   actor: logan
   at: '2026-08-28'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestPorcelainStatusError::test_readable_status_is_none
-- tests/unit/test_rapid_sweep.py::TestPorcelainStatusError::test_spawn_failure_names_the_git_error
-- tests/unit/test_rapid_sweep.py::TestPorcelainStatusError::test_nonzero_exit_names_stderr
-- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_empty_paths_renders_as_none_not_unavailable
-- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_status_unreadable_names_the_git_error_not_uncommitted_work
-- tests/unit/test_rapid_sweep.py::TestDescribeRootDirt::test_readable_clean_status_is_not_status_unreadable
+- tests/unit/rapid_sweep_suite/test_commit.py::TestPorcelainStatusError::test_readable_status_is_none
+- tests/unit/rapid_sweep_suite/test_commit.py::TestPorcelainStatusError::test_spawn_failure_names_the_git_error
+- tests/unit/rapid_sweep_suite/test_commit.py::TestPorcelainStatusError::test_nonzero_exit_names_stderr
+- tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_empty_paths_renders_as_none_not_unavailable
+- tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_status_unreadable_names_the_git_error_not_uncommitted_work
+- tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt::test_readable_clean_status_is_not_status_unreadable
 - tests/ticket_land_suite/test_dirt_ownership.py::TestDirtOwnerTickets::test_status_unreadable_refusal_never_claims_uncommitted_work
 designated_repro_test: null
 threat: null

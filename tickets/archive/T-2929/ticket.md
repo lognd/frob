@@ -51,9 +51,9 @@ scope_changes:
   actor: logan
   at: '2026-08-25'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_fresh_baseline_files_normally_no_new_noise
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_fresh_baseline_files_normally_no_new_noise
+designated_repro_test: tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
 threat: null
 component: null
 anchor: false

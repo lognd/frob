@@ -654,13 +654,11 @@ _DIRTY_PATHS_SHOWN = 10
 # frob:ticket T-1698
 # frob:ticket T-3216
 # frob:tests \
-# tests/unit/test_rapid_sweep.py::TestPorcelainStatusError.test_readable_status_is_none
+# tests/unit/rapid_sweep_suite/test_commit.py::TestPorcelainStatusError.test_readable_status_is_none  # noqa: E501
 # frob:tests \
-# tests/unit/test_rapid_sweep.py::TestPorcelainStatusError.test_spawn_failure_names_the\
-# _git_error
+# tests/unit/rapid_sweep_suite/test_commit.py::TestPorcelainStatusError.test_spawn_failure_names_the_git_error  # noqa: E501
 # frob:tests \
-# tests/unit/test_rapid_sweep.py::TestPorcelainStatusError.test_nonzero_exit_names_stde\
-# rr
+# tests/unit/rapid_sweep_suite/test_commit.py::TestPorcelainStatusError.test_nonzero_exit_names_stderr  # noqa: E501
 def _porcelain_status_error(root: Path) -> str | None:
     """T-3216: `None` iff `git status --porcelain` in `root` actually ran
     and returned zero -- the single source of truth a `DirtyMain` refusal
@@ -768,12 +766,11 @@ def _porcelain_dirty_paths_staged(root: Path) -> tuple[str, ...]:
     return tuple(staged)
 
 
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_paths
+# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_the_paths  # noqa: E501
 # frob:tests \
-# tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_truncation_declares_itself
+# tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_truncation_declares_itself  # noqa: E501
 # frob:tests \
-# tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_empty_paths_renders_as_none\
-# _not_unavailable
+# tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_empty_paths_renders_as_none_not_unavailable  # noqa: E501
 # frob:ticket T-1698
 # frob:ticket T-3216
 def _render_dirty_paths(paths: tuple[str, ...]) -> str:
@@ -2359,13 +2356,13 @@ def _likely_sweep_authored(paths: tuple[str, ...]) -> bool:
 # this section already documents; frob ack already recorded on this exact digest, \
 # waived here too since AFFECT001 (unlike DRIFT001) does not honor ack"
 # frob:tests \
-# tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_a_real_dirty_file
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_empty_paths_renders_as_none_not_unavailable  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_status_unreadable_names_the_git_error_not_uncommitted_work  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_readable_clean_status_is_not_status_unreadable  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_detached_sweep_as_likely_author  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_the_real_ticket_from_a_staged_rapid_debt_line  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unattributed_when_the_true_author_cannot_be_determined  # noqa: E501
+# tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_a_real_dirty_file  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_empty_paths_renders_as_none_not_unavailable  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_status_unreadable_names_the_git_error_not_uncommitted_work  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_readable_clean_status_is_not_status_unreadable  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_the_detached_sweep_as_likely_author  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_names_the_real_ticket_from_a_staged_rapid_debt_line  # noqa: E501
+# frob:tests tests/unit/rapid_sweep_suite/test_commit.py::TestDescribeRootDirt.test_unattributed_when_the_true_author_cannot_be_determined  # noqa: E501
 # frob:ticket T-1698
 # frob:ticket T-1755
 # frob:ticket T-1821

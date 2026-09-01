@@ -97,9 +97,9 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_unattributed_finding_does_not_name_the_spawning_land_as_cause
-- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_causally_implicated_land_still_names_itself_as_the_cause
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_unattributed_finding_does_not_name_the_spawning_land_as_cause
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_unattributed_finding_does_not_name_the_spawning_land_as_cause
+- tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_causally_implicated_land_still_names_itself_as_the_cause
+designated_repro_test: tests/unit/rapid_sweep_suite/test_filing.py::TestFileRegressionTicket::test_unattributed_finding_does_not_name_the_spawning_land_as_cause
 threat: null
 component: null
 anchor: false

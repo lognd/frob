@@ -30,12 +30,12 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_closed_ticket_attribution_still_raises
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_unattributed_still_raises_alongside_open_ticket_finding
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_never_drops_an_attributed_finding
-- tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_closed_ticket_attribution_still_raises
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_unattributed_still_raises_alongside_open_ticket_finding
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_never_drops_an_attributed_finding
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed
+designated_repro_test: tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise
 threat: null
 component: null
 anchor: false

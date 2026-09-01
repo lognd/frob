@@ -24,11 +24,11 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/unit/test_rapid_sweep.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first
-- tests/unit/test_rapid_sweep.py::TestBaselineWriteSurvived::test_mismatched_commit_did_not_survive
-- tests/unit/test_rapid_sweep.py::TestFilesDeletedBetween::test_deleted_file_is_reported
-- tests/unit/test_rapid_sweep.py::TestFilterPhantomDeletedFindings::test_live_file_finding_is_kept
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineWriteSurvived::test_mismatched_commit_did_not_survive
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestFilesDeletedBetween::test_deleted_file_is_reported
+- tests/unit/rapid_sweep_suite/test_baseline.py::TestFilterPhantomDeletedFindings::test_live_file_finding_is_kept
+designated_repro_test: tests/unit/rapid_sweep_suite/test_baseline.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first
 acceptance:
 - text: Given the rolling baseline .frob/rapid-sweep-baseline.json is written on sweep
     N with a fresh finding set F, when sweep N+1 runs against an unrelated single-file
@@ -36,16 +36,16 @@ acceptance:
     N+1's new_findings diff (or, if it does, the log states explicitly why the prior
     write did not survive).
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestBaselineWriteSurvived::test_mismatched_commit_did_not_survive
+  - tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineWriteSurvived::test_mismatched_commit_did_not_survive
 - text: Given a (rule, file) identity whose file does not exist in the tree being
     checked (e.g. a deleted monofile, or a ticket id that lives at tickets/archive/<id>
     rather than tickets/<id>), when the sweep computes its fresh finding set, then
     that identity is either not produced at all or is flagged distinctly as referencing
     a non-current path, never silently filed as an ordinary new regression.
   evidence:
-  - tests/unit/test_rapid_sweep.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first
-  - tests/unit/test_rapid_sweep.py::TestFilesDeletedBetween::test_deleted_file_is_reported
-  - tests/unit/test_rapid_sweep.py::TestFilterPhantomDeletedFindings::test_live_file_finding_is_kept
+  - tests/unit/rapid_sweep_suite/test_baseline.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first
+  - tests/unit/rapid_sweep_suite/test_baseline.py::TestFilesDeletedBetween::test_deleted_file_is_reported
+  - tests/unit/rapid_sweep_suite/test_baseline.py::TestFilterPhantomDeletedFindings::test_live_file_finding_is_kept
 threat: null
 component: null
 anchor: false

@@ -28,11 +28,11 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn::test_spawn_pins_frob_root_env_not_bare_os_environ
-- tests/unit/test_rapid_sweep.py::TestDetachedSweepEnv::test_pins_frob_root_to_the_correct_root
-- tests/unit/test_rapid_sweep.py::TestDetachedSweepEnv::test_strips_worktree_lease_env
-- tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_a_done_ticket_body_is_byte_for_byte_untouched
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn::test_spawn_pins_frob_root_env_not_bare_os_environ
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepSpawn::test_spawn_pins_frob_root_env_not_bare_os_environ
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnv::test_pins_frob_root_to_the_correct_root
+- tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnv::test_strips_worktree_lease_env
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestCloseResolvedSweepTickets::test_a_done_ticket_body_is_byte_for_byte_untouched
+designated_repro_test: tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepSpawn::test_spawn_pins_frob_root_env_not_bare_os_environ
 threat: null
 component: null
 anchor: false

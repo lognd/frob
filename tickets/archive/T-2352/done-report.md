@@ -39,10 +39,10 @@ Changed:
 - src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket (scope= construction now relativizes)
 
 Evidence:
-- tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_absolute_under_root_is_relativized
-- tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_already_relative_is_unchanged
-- tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged
-- tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end (designated repro, FAILED_AT_PARENT @ a9f9888c0)
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_under_root_is_relativized
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_already_relative_is_unchanged
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end (designated repro, FAILED_AT_PARENT @ a9f9888c0)
 
 Filed: none -- this closes T-2342's own deferred producer half; no new
 follow-up needed.
@@ -56,10 +56,10 @@ follow-up needed.
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_absolute_under_root_is_relativized` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_already_relative_is_unchanged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_under_root_is_relativized` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_already_relative_is_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))

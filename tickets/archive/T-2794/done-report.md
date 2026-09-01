@@ -51,7 +51,7 @@ and via test-suite pass), no semantic changes anywhere in the batch.
 - `tests/unit/test_fleet_runner.py::TestFleetRunner::test_run_status_table` (pytest node id, verified passing when recorded)
 - `tests/unit/test_fmt_wiring_reachability_t2761.py::TestFmtRunnerReachability::test_check_mode_reports_no_change_for_rust_file_under_its_own_width` (pytest node id, verified passing when recorded)
 - `tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_missing_tool_exits_with_error` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRollingBaseline::test_absent_baseline_reads_as_none_not_empty` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestRollingBaseline::test_absent_baseline_reads_as_none_not_empty` (pytest node id, verified passing when recorded)
 - `tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_detects_known_phrase` (pytest node id, verified passing when recorded)
 
 ### Captured claims

@@ -8,11 +8,11 @@ Changed:
   tests/unit/test_rapid_sweep.py (2 new tests, both proof directions)
 
 Evidence:
-  tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
+  tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
     (DESIGNATED REPRO: FAILED_AT_PARENT verified at commit 8999970fd -- the test was committed
     alone, without the fix, confirmed to fail there, then the fix was committed on top and the
     test passes)
-  tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_fresh_baseline_files_normally_no_new_noise
+  tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_fresh_baseline_files_normally_no_new_noise
   full file: 158/158 pass
 
 Part (a): drain result, with real numbers.
@@ -89,8 +89,8 @@ Gates: frob check --ticket T-2929 -- all findings in the touched-set are pre-exi
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_fresh_baseline_files_normally_no_new_noise` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepRun::test_fresh_baseline_files_normally_no_new_noise` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))

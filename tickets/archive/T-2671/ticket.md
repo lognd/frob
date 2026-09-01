@@ -37,11 +37,11 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure::test_writes_proc_result_diagnostics
-- tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure::test_writes_spawn_error_diagnostics
-- tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure::test_swallows_its_own_write_failure
-- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_commit_failure_persists_a_diagnostic_log
-designated_repro_test: tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_commit_failure_persists_a_diagnostic_log
+- tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure::test_writes_proc_result_diagnostics
+- tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure::test_writes_spawn_error_diagnostics
+- tests/unit/rapid_sweep_suite/test_commit.py::TestPersistCommitStepFailure::test_swallows_its_own_write_failure
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_commit_failure_persists_a_diagnostic_log
+designated_repro_test: tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_commit_failure_persists_a_diagnostic_log
 threat: null
 component: null
 anchor: false

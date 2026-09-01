@@ -42,11 +42,11 @@ Changed:
 - src/frob/app/ticket_runner/_rapid_sweep.py::_raise_quarantine_for_red_batch
 
 Evidence:
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise (designated repro, FAILED_AT_PARENT verified against ee851389c)
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_closed_ticket_attribution_still_raises
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_unattributed_still_raises_alongside_open_ticket_finding
-- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_never_drops_an_attributed_finding
-- tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise (designated repro, FAILED_AT_PARENT verified against ee851389c)
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_closed_ticket_attribution_still_raises
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_unattributed_still_raises_alongside_open_ticket_finding
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_never_drops_an_attributed_finding
+- tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed
 
 Full tests/unit/test_rapid_sweep.py: 147 passed, 0 failed (measured, no FROB_WORKTREE lease env set -- with it set, unrelated tests that create their own tmp_path git-less repos spuriously fail on a worktree-lease guard; a pre-existing environmental artifact of this test file, not caused by this change).
 
@@ -63,11 +63,11 @@ Gates: `frob check --budget 480 --ticket T-2604` and a full unscoped `--only gat
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_closed_ticket_attribution_still_raises` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_unattributed_still_raises_alongside_open_ticket_finding` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_never_drops_an_attributed_finding` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_closed_ticket_attribution_still_raises` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_unattributed_still_raises_alongside_open_ticket_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_filing.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_never_drops_an_attributed_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_dispose.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))

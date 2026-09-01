@@ -70,17 +70,17 @@ preceding T-2593, already recorded there).
 ```
 
 ### Evidence
-- `tests/unit/test_rapid_sweep.py::TestDeferredSweepBaselineCasRace::test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestBaselineLock::test_no_fcntl_degrades_to_unlocked` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestBaselineLock::test_serializes_two_concurrent_holders` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestIsAncestor::test_true_when_older_is_ancestor` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestIsAncestor::test_equal_commits_are_ancestors` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestIsAncestor::test_false_when_not_an_ancestor` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestIsAncestor::test_none_on_git_failure` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestWriteBaselineCas::test_writes_when_no_prior_baseline` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestWriteBaselineCas::test_writes_when_prior_is_an_ancestor` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestWriteBaselineCas::test_skips_when_prior_is_not_an_ancestor` (pytest node id, verified passing when recorded)
-- `tests/unit/test_rapid_sweep.py::TestWriteBaselineCas::test_writes_when_ancestry_is_unresolvable` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestDeferredSweepBaselineCasRace::test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_no_fcntl_degrades_to_unlocked` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestBaselineLock::test_serializes_two_concurrent_holders` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor::test_true_when_older_is_ancestor` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor::test_equal_commits_are_ancestors` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor::test_false_when_not_an_ancestor` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestIsAncestor::test_none_on_git_failure` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas::test_writes_when_no_prior_baseline` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas::test_writes_when_prior_is_an_ancestor` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas::test_skips_when_prior_is_not_an_ancestor` (pytest node id, verified passing when recorded)
+- `tests/unit/rapid_sweep_suite/test_baseline.py::TestWriteBaselineCas::test_writes_when_ancestry_is_unresolvable` (pytest node id, verified passing when recorded)
 
 ### Captured claims
 - tests: 11 passed (from 11 evidence id(s))

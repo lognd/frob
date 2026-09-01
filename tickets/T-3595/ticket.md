@@ -2,7 +2,7 @@
 id: T-3595
 title: Split tests/unit/test_rapid_sweep.py (5055 lines) into a per-gate-family package,
   reusing T-3586's recipe
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-08-31'

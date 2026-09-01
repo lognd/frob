@@ -34,12 +34,12 @@ scope_changes:
   actor: logan
   at: '2026-08-10'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing::test_only_reproducing_identities_returned
-- tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing::test_unmeasurable_is_none
-- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_no_sweep_tickets_is_zero_cost
-- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_fully_resolved_candidate_is_dropped
-- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_still_reproducing_candidate_is_left_untouched
-- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_unmeasurable_recheck_drops_nothing
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestIdentitiesStillReproducing::test_only_reproducing_identities_returned
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestIdentitiesStillReproducing::test_unmeasurable_is_none
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_no_sweep_tickets_is_zero_cost
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_fully_resolved_candidate_is_dropped
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_still_reproducing_candidate_is_left_untouched
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_unmeasurable_recheck_drops_nothing
 designated_repro_test: null
 threat: null
 component: null

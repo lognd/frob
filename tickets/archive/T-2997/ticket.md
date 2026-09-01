@@ -124,7 +124,7 @@ body_changes:
 evidence:
 - tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_lives_under_dot_frob_not_the_tracked_root
 - tests/unit/test_rapid_debt.py::TestRecordRapidDebt::test_creates_dot_frob_when_missing
-- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_leaves_the_repo_clean
+- tests/unit/rapid_sweep_suite/test_commit.py::TestCommitRapidDebt::test_leaves_the_repo_clean
 - tests/unit/test_gitattributes_merge.py::TestForceOverridesUnionMerge::test_two_branches_appending_different_records_both_survive
 - tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_rapid_debt_no_longer_carries_an_explicit_pin
 designated_repro_test: null

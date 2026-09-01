@@ -63,7 +63,7 @@ scope_changes:
   actor: logan
   at: '2026-08-11'
 evidence:
-- tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets::test_uncached_recheck_uses_the_doable_budget_not_the_sweep_budget
+- tests/unit/rapid_sweep_suite/test_attribution.py::TestRevalidateDispatchableSweepTickets::test_uncached_recheck_uses_the_doable_budget_not_the_sweep_budget
 designated_repro_test: null
 threat: null
 component: null
