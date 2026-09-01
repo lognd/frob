@@ -2,7 +2,7 @@
 id: T-3591
 title: Split tests/test_ticket_land.py (12596 lines) into a per-gate-family package,
   reusing T-3586's recipe
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-08-31'
@@ -19,6 +19,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/test_ticket_land.py
 - tests/ticket_land_suite/**
+- tests/unit/test_land_finalize_anchor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,12 @@ scope_changes:
   glob: tests/ticket_land_suite/**
   reason: conftest.py leased by T-3608; use ticket-owned shared module for cross-family
     helpers per recipe fallback
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/test_land_finalize_anchor.py
+  reason: split removed _run/_git_init/_commit_all from tests/test_ticket_land.py;
+    this file's cross-import must repoint to the new conftest.py home
   actor: logan
   at: '2026-09-01'
 designated_repro_test: null
