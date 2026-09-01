@@ -20,6 +20,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 remedy: this is a directive-comment-only fix'
+  actor: logan
+  at: '2026-09-01'
+  old_length: 894
+  new_length: 1017
+evidence:
+- tests/test_tickets_leases.py::TestLeaseShapeValidation::test_read_all_leases_admits_a_windows_style_worktree_path
+- tests/test_tickets_leases.py::TestLeaseShapeValidation::test_read_all_leases_still_drops_a_dash_prefixed_windows_style_worktree
+- tests/test_tickets_leases.py::TestLeaseShapeValidation::test_worktree_operand_check_admits_windows_paths_directly
 designated_repro_test: null
 threat: null
 component: null
@@ -45,3 +56,5 @@ _derived_lock.py). Deferred to a follow-up ticket once the lease frees.
 Evidence: gate measurement, `timeout 540 uv run frob check --only doc`
 and `--only drift` go to zero for these findings (excluding the deferred
 process.md ones).
+
+frob:no-behavior-change reason="comment-only fix: dotted separator in frob:tests directives, no runtime behavior touched"
