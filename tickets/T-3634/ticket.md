@@ -1,7 +1,7 @@
 ---
 id: T-3634
 title: 'Cache atomicity round 3: disk I/O error retry on stale WAL connection'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
