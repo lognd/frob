@@ -40,6 +40,13 @@ scope_changes:
     1:1 to their new tests/gates_suite/test_compliance.py home
   actor: logan
   at: '2026-09-01'
+body_changes:
+- mode: append
+  reason: BUG002 needs a no-behavior-change declaration for this metadata-only fix
+  actor: logan
+  at: '2026-09-01'
+  old_length: 1703
+  new_length: 1982
 evidence:
 - tests/gates_suite/test_coverage.py::TestCoverageGate::test_cov003_rejects_empty_directory_level_evidence
 - tests/gates_suite/test_run.py::TestOptInGates::test_dup_gate_off_by_default
@@ -71,3 +78,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - PII012  tests/gates_suite/test_compliance.py  -> attributed to T-3586 (commit 096c8916806e, already closed/dropped -- filed below) via tests/gates_suite/test_compliance.py::TestComplianceGate
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:no-behavior-change reason="pure metadata relocation: invariant evidence anchors and the PII012 non-PII allowlist point at the SAME logically-unchanged test bodies, only their file path changed because T-3586 moved them; no gate logic or test behavior differs before/after"
