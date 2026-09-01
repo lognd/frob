@@ -173,9 +173,26 @@ def _module_level_bound_names(tree: ast.Module) -> set[str]:
     return names
 
 
+def _dest_file_bound_names(dest_file: Path) -> set[str]:
+    """T-3650: every name already bound at `dest_file`'s module top level
+    RIGHT NOW -- empty if `dest_file` does not exist yet. Reuses
+    `_module_level_bound_names`'s own def/class/assignment/import walk
+    (including its `try`/`if` one-level-deep unwrap) against `dest_
+    file`'s CURRENT text, so a name a PRIOR split/move already landed
+    there (as a plain def, or as a repoint import left behind by gap 2's
+    `bare_name_repoint_ops`) is recognized as already-resident before
+    `needed_import_ops_for_symbols` ever considers importing it back."""
+    if not dest_file.exists():
+        return set()
+    dest_lines = dest_file.read_text(encoding="utf-8").splitlines()
+    dest_tree = ast.parse("\n".join(dest_lines), filename=str(dest_file))
+    return _module_level_bound_names(dest_tree)
+
+
 # frob:doc docs/commands/refactor.md#split-verb-t-1201
 # frob:ticket T-3122
 # frob:ticket T-3596
+# frob:ticket T-3650
 # frob:tests \
 # tests/test_refactor.py::TestRunSplit.test_split_carries_forward_imports_moved_body_needs  # noqa: E501
 # frob:tests \
@@ -221,13 +238,39 @@ def needed_import_ops_for_symbols(
     holding every needed import's exact source text plus any synthetic
     re-import line, in the source module's own declaration order,
     deduplicated -- empty if none of the moved symbols reference any of
-    `source_file`'s top-level imports or other module globals."""
+    `source_file`'s top-level imports or other module globals.
+
+    T-3650: `moving_names` only knows about THIS chunk's own batch --
+    it says nothing about a name a PRIOR split/move already landed as a
+    bare module-level def/class/assignment in `dest_file` (the T-3628
+    repro: `_run_git` moved into `test_fleet_worktrees.py` in one `move`
+    call, leaving a `from test_fleet_worktrees import _run_git` repoint
+    import behind in `source_file` per gap 2's `bare_name_repoint_ops`;
+    a LATER `split` call then finds that repoint import in `source_
+    file`'s own `import_map` and would carry it straight back INTO
+    `dest_file` -- a self-import). Reads `dest_file`'s CURRENT module-
+    level bound names (empty set if it does not exist yet -- the common
+    first-symbol-into-a-new-module case) and excludes them from both the
+    import-statement and synthetic-reimport carry-forward paths, exactly
+    as `moving_names` already excludes this chunk's own in-flight
+    batch -- resolving within-plan references (`moving_names`) and
+    already-resident destination names BEFORE ever considering an
+    import."""
     source_lines = source_file.read_text(encoding="utf-8").splitlines()
     tree = ast.parse("\n".join(source_lines), filename=str(source_file))
     import_map = _top_level_import_map(tree, source_lines)
     needed_names = _names_needed_by_spans(tree, spans)
+    dest_already_bound = _dest_file_bound_names(dest_file)
+    carryable_names = needed_names - dest_already_bound - moving_names
+    if dest_already_bound & needed_names:
+        _log.info(
+            "refactor.split: skipping carry-forward for name(s) %s already "
+            "defined at %s (T-3650 self-import guard)",
+            sorted(dest_already_bound & needed_names),
+            dest_file,
+        )
     needed_texts = (
-        _import_texts_for_names(import_map, needed_names) if import_map else []
+        _import_texts_for_names(import_map, carryable_names) if import_map else []
     )
 
     synthetic_line = ""
@@ -235,15 +278,11 @@ def needed_import_ops_for_symbols(
         module_bound = _module_level_bound_names(tree)
         synthetic_names = sorted(
             name
-            for name in needed_names
-            if name not in import_map
-            and name in module_bound
-            and name not in moving_names
+            for name in carryable_names
+            if name not in import_map and name in module_bound
         )
         if synthetic_names:
-            synthetic_line = (
-                f"from {source_module} import {', '.join(synthetic_names)}"
-            )
+            synthetic_line = f"from {source_module} import {', '.join(synthetic_names)}"
             _log.info(
                 "refactor.split: carrying forward module-level free "
                 "variable(s) %s into %s via synthetic re-import from %s",
@@ -290,9 +329,7 @@ def _names_referenced_outside_moved_spans(
     for node in tree.body:
         node_start = node.lineno
         node_end = node.end_lineno if node.end_lineno is not None else node_start
-        if any(
-            node_start >= start and node_end <= end for start, end in moved_spans
-        ):
+        if any(node_start >= start and node_end <= end for start, end in moved_spans):
             continue
         referenced |= _names_referenced(node)
     return referenced

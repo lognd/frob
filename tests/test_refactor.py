@@ -3313,8 +3313,12 @@ class TestGapRegressions:
         assert "def uses_helper():" in mod_text
 
         import_result = subprocess.run(
-            ["python", "-c", "import sys; sys.path.insert(0, 'src'); import pkg.mod; "
-             "assert pkg.mod.uses_helper() == 2"],
+            [
+                "python",
+                "-c",
+                "import sys; sys.path.insert(0, 'src'); import pkg.mod; "
+                "assert pkg.mod.uses_helper() == 2",
+            ],
             cwd=root,
             capture_output=True,
             text=True,
@@ -3418,6 +3422,139 @@ class TestGapRegressions:
                 "from pkg.derived_lock import derived_state_lock\n"
                 "with derived_state_lock('r'):\n"
                 "    pass\n",
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        assert import_result.returncode == 0, import_result.stderr
+
+    # frob:ticket T-3650
+    def test_gap5_split_after_move_no_self_import_when_dest_already_defines_helper(
+        self, tmp_path
+    ):
+        # frob:tests \
+        # tests/test_refactor.py::TestGapRegressions.test_gap5_split_after_move_no_self\
+        # _import_when_dest_already_defines_helper
+        """T-3628/T-3650 repro shape: `_run_git` is `move`d out of
+        `mod.py` into `helpers.py` first (leaving a gap-2 bare-name
+        repoint import -- `from pkg.helpers import _run_git` -- behind in
+        `mod.py` for `TestSuite`'s own still-in-`mod.py` reference). A
+        LATER `split` of `TestSuite` (which references `_run_git` as a
+        bare name via that repoint import) into the SAME `helpers.py`
+        must recognize `_run_git` is already resident there and skip the
+        carry-forward entirely -- not re-emit `from pkg.helpers import
+        _run_git` INTO `helpers.py` itself (a self-import `verify_no_
+        self_import` would refuse)."""
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def _run_git(*args):\n    return args\n\n\n"
+            "class TestSuite:\n"
+            "    def test_it(self):\n"
+            "        assert _run_git('status') == ('status',)\n",
+        )
+        _commit_all(root, "initial")
+
+        move_result = run_refactor(
+            root,
+            RefactorKind.MOVE,
+            SymbolRef(module="pkg.mod", qualname="_run_git"),
+            SymbolRef(module="pkg.helpers", qualname="_run_git"),
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert move_result.is_ok
+        assert move_result.danger_ok.success is True, move_result.danger_ok
+        mod_text = (root / "src/pkg/mod.py").read_text(encoding="utf-8")
+        assert "from pkg.helpers import _run_git" in mod_text
+
+        split_result = run_split(
+            root,
+            source_module="pkg.mod",
+            symbols=["TestSuite"],
+            destination_module="pkg.helpers",
+            chunk_size=1,
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert split_result.is_ok
+        report = split_result.danger_ok
+        assert report.success is True, report.chunks
+
+        dest_text = (root / "src/pkg/helpers.py").read_text(encoding="utf-8")
+        assert "from pkg.helpers import _run_git" not in dest_text
+        assert "class TestSuite:" in dest_text
+
+        import_result = subprocess.run(
+            [
+                "python",
+                "-c",
+                "import sys; sys.path.insert(0, 'src'); "
+                "from pkg.helpers import TestSuite\n"
+                "TestSuite().test_it()\n",
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        assert import_result.returncode == 0, import_result.stderr
+
+    # frob:ticket T-3650
+    def test_gap5_split_seed_repo_referencing_git_helper_no_self_import(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestGapRegressions.test_gap5_split_seed_repo_referenc\
+        # ing_git_helper_no_self_import
+        """T-3595 repro shape: `_git` relocated to `conftest.py` first
+        (`move`), then `_seed_repo` (which references `_git` as a bare
+        name, still in the original module) `split` into the SAME
+        `conftest.py` must not self-import `_git` back into `conftest.
+        py`."""
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "src/pkg/mod.py",
+            "def _git(*args):\n    return args\n\n\n"
+            "def _seed_repo(root):\n    return _git('init', root)\n",
+        )
+        _commit_all(root, "initial")
+
+        move_result = run_refactor(
+            root,
+            RefactorKind.MOVE,
+            SymbolRef(module="pkg.mod", qualname="_git"),
+            SymbolRef(module="pkg.conftest", qualname="_git"),
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert move_result.is_ok
+        assert move_result.danger_ok.success is True, move_result.danger_ok
+
+        split_result = run_split(
+            root,
+            source_module="pkg.mod",
+            symbols=["_seed_repo"],
+            destination_module="pkg.conftest",
+            chunk_size=1,
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert split_result.is_ok
+        report = split_result.danger_ok
+        assert report.success is True, report.chunks
+
+        dest_text = (root / "src/pkg/conftest.py").read_text(encoding="utf-8")
+        assert "from pkg.conftest import _git" not in dest_text
+        assert "def _seed_repo(" in dest_text
+
+        import_result = subprocess.run(
+            [
+                "python",
+                "-c",
+                "import sys; sys.path.insert(0, 'src'); "
+                "from pkg.conftest import _seed_repo\n"
+                "assert _seed_repo('r') == ('init', 'r')\n",
             ],
             cwd=root,
             capture_output=True,

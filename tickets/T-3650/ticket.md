@@ -2,7 +2,7 @@
 id: T-3650
 title: 'refactor split/move: self-import verify failure once destination already defines
   a bare-name helper the moved symbol references'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -27,6 +27,9 @@ scope_changes:
   reason: regression tests for the fix live in the shared test_refactor.py suite
   actor: logan
   at: '2026-09-01'
+evidence:
+- tests/test_refactor.py::TestGapRegressions::test_gap5_split_after_move_no_self_import_when_dest_already_defines_helper
+- tests/test_refactor.py::TestGapRegressions::test_gap5_split_seed_repo_referencing_git_helper_no_self_import
 designated_repro_test: null
 threat: null
 component: null
