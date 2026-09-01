@@ -17,6 +17,8 @@ scope:
 - .claude/hooks/root-write-guard.py
 - tests/test_hook_root_write_guard.py
 - docs/guides/claude-hooks.md
+- .claude/hooks/sync-claude-config.py
+- .claude/hooks/_root_write_guard_lib.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +46,20 @@ scope_changes:
   glob: docs/guides/claude-hooks.md
   reason: likely need to repoint frob:describes anchors after splitting root-write-guard.py,
     same pattern as T-3627
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: .claude/hooks/sync-claude-config.py
+  reason: the split requires a new importable helper module (_root_write_guard_lib.py)
+    that must be added to sync-claude-configs MANAGED list so it materializes to ~/.claude/hooks
+    alongside the entry point it is imported by
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: .claude/hooks/_root_write_guard_lib.py
+  reason: the split requires a new importable helper module (_root_write_guard_lib.py)
+    that must be added to sync-claude-configs MANAGED list so it materializes to ~/.claude/hooks
+    alongside the entry point it is imported by
   actor: logan
   at: '2026-09-01'
 designated_repro_test: null
