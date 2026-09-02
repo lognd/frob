@@ -585,6 +585,20 @@ class TestTimingDebug:
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
         # frob:tests src/frob/check/__init__.py::_timing_mark kind="unit"
+        # T-3693: _TIMING_PROCESS_START is captured once, at frob.check's
+        # MODULE IMPORT time -- in a short-lived diag process that is
+        # indistinguishable from "process start" (see its own docstring),
+        # but inside a long-lived pytest SUITE process the module import
+        # happens once at collection and this test can run minutes (or,
+        # measured, 900-1500+ seconds on a loaded CI runner) later. An
+        # un-anchored elapsed<60s bound is not flaky, it is GUARANTEED to
+        # fail once the suite has run long enough (confirmed: 908.288s on
+        # ubuntu, 1534.019s on macOS, CI run 33625622797). Monkeypatched
+        # to a known-recent value here, matching the sibling test
+        # test_mark_elapsed_grows_with_process_start_offset's own
+        # pre-existing pattern, so the bound is meaningful regardless of
+        # how long this test process has already been alive.
+        monkeypatch.setattr(check_mod, "_TIMING_PROCESS_START", time.monotonic())
         monkeypatch.setenv(check_mod._FROB_CHECK_TIMING_DEBUG_ENV, "1")
         check_mod._timing_mark("some-point")
         out = capsys.readouterr().out
