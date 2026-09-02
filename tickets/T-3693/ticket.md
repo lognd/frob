@@ -1,7 +1,7 @@
 ---
 id: T-3693
 title: fix TestTimingDebug flaky elapsed<60s assertion (blocks CI floor)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
