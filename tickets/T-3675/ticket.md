@@ -1,7 +1,7 @@
 ---
 id: T-3675
 title: 'win32 round 18: teardown hard-exit escape hatch + pipeline sender bisect'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -19,10 +19,25 @@ scope:
 - .github/workflows/ci.yml
 - tests/test_ci_workflow_matrix.py
 - docs/modules/process.md
+- tests/unit/test_conftest_hard_exit_guard.py
+- tests/unit/test_check_stop_before.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_conftest_hard_exit_guard.py
+  reason: unit tests for FROB_TEST_HARD_EXIT (Part 1) and FROB_CHECK_STOP_BEFORE (Part
+    2) gating logic
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/test_check_stop_before.py
+  reason: unit tests for FROB_TEST_HARD_EXIT (Part 1) and FROB_CHECK_STOP_BEFORE (Part
+    2) gating logic
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
