@@ -93,7 +93,6 @@ def _elapsed_seconds(since: datetime, at: datetime) -> float:
     return (at - since).total_seconds()
 
 
-# frob:doc docs/strata/reliability.md#population-projected-capacity-t-1927
 def _resolve_population_scale(
     model: KernelModel, population: float | None
 ) -> Result[tuple[float, float | None], StrataError]:
@@ -102,8 +101,9 @@ def _resolve_population_scale(
     is given but the model declares no baseline `users` population to
     scale against -- split out of `project_capacity` itself to keep that
     function under ARCH001's complexity threshold (T-2016 added the
-    since/at half alongside it)."""
-    # frob:doc docs/strata/reliability.md#population-projected-capacity-t-1927
+    since/at half alongside it). Private helper; the doc anchor lives on
+    the public caller `project_capacity` (see docs/strata/reliability.md
+    #population-projected-capacity-t-1927)."""
     baseline = _baseline_population(model)
     if population is None:
         return Ok((1.0, baseline))
@@ -117,7 +117,6 @@ def _resolve_population_scale(
     return Ok((population / baseline, baseline))
 
 
-# frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
 def _resolve_elapsed_seconds(
     since: datetime | None, at: datetime | None
 ) -> Result[float | None, StrataError]:
@@ -125,8 +124,9 @@ def _resolve_elapsed_seconds(
     neither is given (ungrown, byte-for-byte pre-T-2016 behavior),
     elapsed seconds when both are given, or `Err(StrataError.
     UnknownReference)` when only one is given -- an ambiguous request is
-    refused, never silently defaulted."""
-    # frob:doc docs/strata/kernel.md#growth-rate-declarations-t-2016
+    refused, never silently defaulted. Private helper; the doc anchor
+    lives on the public caller `project_capacity` (see docs/strata/
+    kernel.md#growth-rate-declarations-t-2016)."""
     if (since is None) != (at is None):
         _log.error(
             "capacity: --since and --at must be given together (since=%s, at=%s)",

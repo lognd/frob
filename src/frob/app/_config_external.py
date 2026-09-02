@@ -676,6 +676,9 @@ def _apply_float_fields(args: argparse.Namespace, d: dict) -> None:
             d[field] = val
 
 
+# frob:waive OPAQUE001 reason="T-1038/T-1659 precedent: same closed, \
+# statically-declared _DATETIME_FIELDS tuple as _apply_float_fields/ \
+# _apply_string_fields above -- not attacker/externally-controlled input."
 def _apply_datetime_fields(args: argparse.Namespace, d: dict) -> None:
     """Copy every present `_DATETIME_FIELDS` value from `args` into `d`, in
     place -- same shape as `_apply_float_fields` above, its own group

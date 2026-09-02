@@ -17,10 +17,12 @@ from frob.strata import (
     Capacity,
     Claim,
     Flow,
+    Growth,
     KernelModel,
     Metric,
     Node,
     Quantity,
+    StrataError,
     Verdict,
     build_facts,
     evaluate_claims,
@@ -357,3 +359,27 @@ def test_propagated_demand_matches_oracle_on_dags(graph) -> None:
     got, _witness = strata_core.propagated_demand(edges, target)
     want = _oracle_demand(nodes, edges, target)
     assert math.isclose(got, want, rel_tol=1e-9, abs_tol=1e-9)
+
+
+class TestGrowthPeriodSeconds:
+    # frob:tests \
+    # tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds.test_resolves_known_t\
+    # ime_unit kind="unit"
+    def test_resolves_known_time_unit(self) -> None:
+        """A recognized time-dimension period unit (e.g. `"w"`) resolves to
+        its length in seconds, `Ok`."""
+        growth = Growth(pct=10.0, period="w")
+        result = growth.period_seconds()
+        assert result.is_ok
+        assert result.danger_ok == 7 * 24 * 3600
+
+    # frob:tests \
+    # tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds.test_unknown_unit_is_\
+    # err kind="unit"
+    def test_unknown_unit_is_err(self) -> None:
+        """An unrecognized period unit fails closed with
+        `StrataError.UnknownUnit`, never silently defaulting."""
+        growth = Growth(pct=10.0, period="not-a-unit")
+        result = growth.period_seconds()
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownUnit

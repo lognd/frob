@@ -170,6 +170,12 @@ class Growth(BaseModel):
     pct: float
     period: str  # one of _UNITS's time-dimension keys, e.g. "w"/"mo"/"y"
 
+    # frob:tests \
+    # tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds.test_resolves_known_t\
+    # ime_unit kind="unit"
+    # frob:tests \
+    # tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds.test_unknown_unit_is_\
+    # err kind="unit"
     def period_seconds(self) -> Result[float, StrataError]:
         """The period unit's length in seconds, or `Err(UnknownUnit)` for
         an unresolvable period (fails closed, same posture as

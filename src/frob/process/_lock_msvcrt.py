@@ -3,6 +3,10 @@ import time
 
 import frob.process._lock as _lock_mod
 
+# frob:waive REF002 reason="fresh Windows-only lock backend split out of _lock.py \
+# (T-3577); _lock.py is its one and only, intentional anchor point -- no second \
+# consumer is expected or desired for a platform-specific backend module"
+
 
 # frob:ticket T-3577
 # frob:tests tests/unit/test_process_lock.py::TestPortableFlock.test_windows_blocking_reentry_raises_instead_of_hanging_forever  # noqa: E501
