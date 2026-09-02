@@ -28,6 +28,7 @@ scope:
 - tests/test_telemetry.py
 - docs/modules/graph.md
 - docs/guides/agentic-time-profiling.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -103,6 +104,12 @@ scope_changes:
     in graph.md, agentic-time-profiling.md, test_graph.py, test_telemetry.py, and
     removes the resolved frob:debt CYCLE001 marker from src/frob/__init__.py per the
     ticket''s own acceptance criteria'
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-3411: telemetry env.read capability via-list needs the new src/frob/app/telemetry/_state.py
+    leaf module added alongside __init__.py/_footguns.py'
   actor: logan
   at: '2026-09-02'
 body_changes:
