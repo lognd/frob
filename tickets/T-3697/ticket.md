@@ -19,6 +19,7 @@ scope:
 - tests/test_hook_frob_directive_guard.py
 - docs/guides/claude-hooks.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,12 @@ scope_changes:
   glob: design/frob.strata
   reason: SELFAUDIT001 requires declaring the new test file's subprocess exec capability
     in the testsuite node
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SYS111 ratchet ceiling must be bumped alongside the new test file's exec
+    via-list entry
   actor: logan
   at: '2026-09-02'
 designated_repro_test: null
