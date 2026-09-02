@@ -43,7 +43,6 @@ from tests.ticket_land_suite.conftest import (
 pytestmark = pytest.mark.heavy_subprocess
 
 
-
 # frob:ticket T-1194
 class TestSpliceLedger:
     """`splice_ledger` -- the id-level merge tickets.md conflicts always go
@@ -115,8 +114,6 @@ class TestSpliceLedger:
 
         spliced = splice_ledger(ours_text, malformed_theirs)
         assert spliced.is_err
-
-
 
 
 # frob:ticket T-1194
@@ -241,7 +238,6 @@ class TestSpliceOnlyTicket:
         parsed = _parse_ledger(spliced.danger_ok)
         assert parsed.is_ok
         assert parsed.danger_ok[tid].state == TicketState.DONE
-
 
 
 # frob:ticket T-1721
@@ -704,7 +700,6 @@ class TestSpliceLedgerRicherStatePreference:
         assert parsed[tid].state == TicketState.DONE
 
 
-
 # frob:ticket T-0764
 class TestSpliceLedgerPrefersEvidenceRichSideOnRankTie:
     """T-0764: the T-0753 field incident -- an in-flight worktree ticket
@@ -816,7 +811,6 @@ class TestSpliceLedgerPrefersEvidenceRichSideOnRankTie:
         assert parsed[tid].state == TicketState.IN_PROGRESS
         assert "tests/test_widget.py::test_x" in parsed[tid].evidence
         assert parsed[tid].acceptance[0].evidence == ("tests/test_widget.py::test_x",)
-
 
 
 # frob:ticket T-1194
@@ -1025,8 +1019,6 @@ class TestLedgerV2LandMergeStory:
         )
 
 
-
-
 # frob:ticket T-1036
 class TestSquashSpliceLedgerChurn:
     """T-1036 regression: a concurrent single-ticket write against `root`
@@ -1134,7 +1126,6 @@ class TestSquashSpliceLedgerChurn:
         assert landed.is_ok
         assert sibling_id in landed.danger_ok
         assert landed.danger_ok[result.danger_ok.final_id].state == TicketState.DONE
-
 
 
 # frob:ticket T-1002

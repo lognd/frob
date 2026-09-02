@@ -1456,9 +1456,7 @@ class TestErrorFindingIdentityOffFileAnchors:
         assert baseline is not None
         assert after_land is not None
         new_identities = after_land - baseline
-        assert new_identities == frozenset(
-            {("SELFAUDIT001", "src/frob/nodeid.py")}
-        ), (
+        assert new_identities == frozenset({("SELFAUDIT001", "src/frob/nodeid.py")}), (
             "the land's real new SELFAUDIT001 finding must survive the "
             "frozenset diff against the unrelated pre-existing one, not "
             "collapse onto the shared 'design' anchor and vanish"

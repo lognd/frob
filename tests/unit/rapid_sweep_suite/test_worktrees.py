@@ -117,8 +117,6 @@ class TestSweepStaleWorktreesAfterLand:
         assert "worktree sweep failed" in caplog.text
 
 
-
-
 class TestSweepStaleWorktreesIsOffTheLandCriticalPath:
     """T-2261 acceptance [3]: the worktree sweep must not lengthen the
     land's own critical path."""

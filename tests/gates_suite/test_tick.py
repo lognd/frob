@@ -373,6 +373,8 @@ class TestTick006PhantomFiling:
         tick006 = [v for v in violations if v.rule == "TICK006"]
         assert len(tick006) == 1
         assert "T-draft-07669f4e" in tick006[0].message
+
+
 # frob:ticket T-1129
 class TestTick011DisclosedCutWithoutTicket:
     """TICK011 (T-1129, active-window-narrowed T-1402): a Done report's
@@ -661,6 +663,8 @@ class TestTick011DisclosedCutWithoutTicket:
         tick011 = [v for v in violations if v.rule == "TICK011"]
         assert len(tick011) == 1
         assert "T-0001" in tick011[0].message
+
+
 # frob:ticket T-0820
 class TestTick007UndispatchedStale:
     """TICK007 (T-0820): the `frob check` half of T-0752's undispatched-
@@ -804,6 +808,8 @@ class TestTick007UndispatchedStale:
         for v in tick007:
             assert v.severity == Severity.WARN
             assert v.rule == "TICK007"
+
+
 # frob:ticket T-0842
 class TestTick008UnknownLedgerFields:
     """TICK008 (T-0842): the T-0838 typo-hazard follow-up -- a ticket

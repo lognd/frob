@@ -499,5 +499,3 @@ def install_sigterm_reaper() -> None:
         _log.debug("process: install_sigterm_reaper: not the main thread, skipping")
         return
     _sigterm_reaper_installed = True
-
-

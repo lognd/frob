@@ -42,7 +42,6 @@ from tests.ticket_land_suite.conftest import (
 pytestmark = pytest.mark.heavy_subprocess
 
 
-
 # frob:ticket T-1721
 class TestLand:
     """`frob.tickets.land` against real fixture repos."""
@@ -233,7 +232,6 @@ class TestLand:
         assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
 
 
-
 # frob:ticket T-2220
 class TestRecordLandCommit:
     """T-2220: a landed ticket's landing commit is resolvable after the
@@ -422,7 +420,6 @@ class TestPlannedStateAutoAdvanceOnLand:
         assert landed.danger_ok[report.final_id].state == TicketState.DONE
 
 
-
 class TestWarnIfNativeStale:
     """T-0248: `land` warns loudly (without blocking) when the just-landed
     tree's native source outpaces its own built extension -- the T-0166
@@ -574,8 +571,6 @@ class TestLandNotFound:
         result = land(repo, "T-9999", wt, dry_run=True)
         assert result.is_err
         assert result.danger_err == LandError.NotFound
-
-
 
 
 class TestGitSubprocessFailures:
@@ -765,7 +760,6 @@ class TestGitSubprocessFailures:
         assert result.danger_err == LandError.CommitFailed
 
 
-
 class TestLandDeeperBranches:
     """Additional `land`-body branches unreachable via ordinary happy/error
     fixture paths: the post-merge commit and finalize/close git-failure
@@ -887,8 +881,6 @@ class TestLandDeeperBranches:
         assert result.danger_err == LandError.GitFailed
 
 
-
-
 class TestPreworkSweepRefresh:
     """T-0236: an unrelated main landing that touches a ticket's scope globs
     moves its recorded pre-work sweep's scope digest out from under it --
@@ -962,7 +954,6 @@ class TestPreworkSweepRefresh:
         # are).
         result = land(repo, tid, wt, dry_run=False)
         assert result.is_ok, result.err
-
 
 
 # frob:ticket T-2550
@@ -1586,7 +1577,6 @@ class TestLandFailedTicket:
         assert result.danger_err == LandError.NotCloseable
 
 
-
 # frob:ticket T-0795
 class TestLandRefusesWhenRootIsWorktree:
     """T-0795: `land()` invoked with `--worktree` resolving to the SAME
@@ -1658,7 +1648,6 @@ class TestLandRefusesWhenRootIsWorktree:
         log = _run(["git", "log", "--oneline"], repo).stdout
         assert "land " not in log
         assert _status_ignoring_frob(repo) == ""
-
 
 
 # frob:ticket T-1003

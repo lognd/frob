@@ -840,9 +840,7 @@ def unscoped_error_findings(
     `_rapid_sweep.detached_sweep_env`'s own docstring for the T-2407/
     SYS003 debt this closes; every in-module caller keeps using
     `_unscoped_error_findings` directly, unchanged."""
-    return _unscoped_error_findings(
-        root, ticket_id, budget=budget, env=env, full=full
-    )
+    return _unscoped_error_findings(root, ticket_id, budget=budget, env=env, full=full)
 
 
 # frob:doc docs/modules/tickets-landing.md#post-land-unscoped-error-sweep-t-1456

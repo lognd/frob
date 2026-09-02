@@ -15,7 +15,6 @@ from tests.unit.arch_suite.conftest import (
 pytestmark = pytest.mark.skipif(not HAS_ARCH, reason="frob.arch not available")
 
 
-
 class TestOverrideRaisesNotImplemented:
     """ARCH104: `check_override_raises_not_implemented`
     (docs/modules/arch.md#lsp-checks)."""

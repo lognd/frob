@@ -83,6 +83,8 @@ class TestMutationEvidencePackageReexports:
             "_MUST_STILL_PASS_RE",
         ):
             assert not hasattr(gates_pkg, private_name)
+
+
 class TestDriftGate:
     def test_drift001_stale_ack_has_remedy(self, tmp_path: Path) -> None:
         _write(tmp_path, "src/a.py", _WIDGET_PY)
@@ -119,6 +121,8 @@ class TestDriftGate:
         snap = _snapshot(tmp_path)
         violations = drift_gate(snap, LockFile())
         assert violations == ()
+
+
 class TestDoclinkGate:
     def test_orphan_doc_is_error_and_linked_docs_pass(self, tmp_path):
         # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
@@ -293,6 +297,8 @@ class TestDoclinkGate:
         violations = doclink_gate(root, snap)
         assert set(_rules(violations)) == {"DOC008"}
         assert any("escapes above the repo root" in v.message for v in violations)
+
+
 class TestDocstatusGate:
     def test_missing_status_header_fires_doc009(self, tmp_path):
         # frob:tests src/frob/gates/_docstatus.py::docstatus_gate kind="unit"
@@ -408,6 +414,8 @@ class TestDocstatusGate:
         violations = docstatus_gate(root)
         assert set(_rules(violations)) == {"DOC011"}
         assert any("T-9999" in v.message for v in violations)
+
+
 class TestDocmakeGate:
     def test_bogus_make_target_fires_doc010(self, tmp_path):
         # frob:tests src/frob/gates/_docstatus.py::docmake_gate kind="unit"
@@ -542,7 +550,6 @@ class TestDocmakeGate:
         snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
         violations = docmake_gate(root, snap)
         assert violations == (), violations
-
 
 
 class TestDocseverityGate:

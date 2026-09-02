@@ -531,12 +531,8 @@ def _describe_teardown_blockers() -> str:
     the reader assumed was harmless is itself useful signal if it shows
     up here; the label calls out non-daemon ones explicitly because
     THOSE are what `threading._shutdown`'s own join actually waits on."""
-    threads = [
-        f"{t.name!r}(daemon={t.daemon})" for t in threading.enumerate()
-    ]
-    children = [
-        f"{p.name!r}(pid={p.pid})" for p in multiprocessing.active_children()
-    ]
+    threads = [f"{t.name!r}(daemon={t.daemon})" for t in threading.enumerate()]
+    children = [f"{p.name!r}(pid={p.pid})" for p in multiprocessing.active_children()]
     return (
         f"FROB-TEST-HARD-EXIT: threads=[{', '.join(threads)}] "
         f"children=[{', '.join(children)}]"
@@ -2235,8 +2231,6 @@ def _seed_ticket(tmp_path: Path, *, state=None) -> str:
         dropped = drop_ticket(tmp_path, ticket_id, reason="seed")
         assert dropped.is_ok
     return ticket_id
-
-
 
 
 def _seed_repo(tmp_path: Path) -> Path:

@@ -69,7 +69,6 @@ class TestRollingBaseline:
         assert _read_baseline_commit(tmp_path) == "abc123"
 
 
-
 class TestLandIdsBetween:
     """T-2009: the mechanical fix for misattribution -- tell how many
     lands (and which) actually landed in a commit range, instead of
@@ -170,6 +169,7 @@ class TestFilesDeletedBetween:
         assert _files_deleted_between(tmp_path, "abc", "abc") == frozenset()
         assert _files_deleted_between(tmp_path, "abc", "def") == frozenset()
 
+
 class TestFilterPhantomDeletedFindings:
     def test_deleted_file_finding_is_excluded(self) -> None:
         # frob:tests tests/unit/rapid_sweep_suite/test_baseline.py::TestFilterPhantomDeletedFindings.test_deleted_file_finding_is_excluded  # noqa: E501
@@ -204,7 +204,6 @@ class TestBaselineWriteSurvived:
         # right after this sweep's own write, before this check runs.
         _write_baseline(tmp_path, frozenset({("OTHER", "z.py")}), "clobbered-by-x")
         assert _baseline_write_survived(tmp_path, "abc123") is False
-
 
 
 # frob:ticket T-2595
@@ -263,7 +262,6 @@ class TestDeferredSweepBaselineCasRace:
         # there, purely by finishing second).
         assert _read_baseline_commit(tmp_path) == commit_newer
         assert _read_baseline(tmp_path) == frozenset({("COV003", "fresh.py")})
-
 
 
 # frob:ticket T-2595
@@ -473,8 +471,6 @@ class TestWriteBaselineCas:
         fresh = frozenset({("NEW", "b.py")})
         assert _write_baseline_cas(tmp_path, fresh, "beefdead" * 5) is True
         assert _read_baseline(tmp_path) == fresh
-
-
 
 
 # frob:ticket T-2571

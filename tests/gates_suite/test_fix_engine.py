@@ -1543,7 +1543,6 @@ class TestFixEngineTierA:
         assert counts != {}
 
 
-
 # frob:ticket T-1348
 # frob:ticket T-1548
 class TestAutofixManifest:
@@ -1730,7 +1729,6 @@ class TestTierAAutofixCrashSafety:
         assert target.read_text(encoding="utf-8") == original
 
 
-
 # frob:ticket T-1548
 # frob:ticket T-1261
 # frob:ticket T-1341
@@ -1774,7 +1772,9 @@ class TestFixEngineTierABatch2:
 
     # frob:ticket T-3662
     # frob:tests src/frob/gates/_fmt_directives.py::_relpath_for_change kind="unit"
-    def test_fmt001_file_is_posix_shaped_for_a_nested_path(self, tmp_path: Path) -> None:
+    def test_fmt001_file_is_posix_shaped_for_a_nested_path(
+        self, tmp_path: Path
+    ) -> None:
         """T-3662 (win32 gates_suite campaign, T-3659): a NESTED FMT001
         target's `applied[0].file` must always be POSIX-shaped
         (`"src/nested/m.py"`, never a native separator) -- the single-

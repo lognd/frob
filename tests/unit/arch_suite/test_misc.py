@@ -21,7 +21,6 @@ from tests.unit.arch_suite.conftest import (
 pytestmark = pytest.mark.skipif(not HAS_ARCH, reason="frob.arch not available")
 
 
-
 class TestModuleDependencyCycles:
     """`check_module_dependency_cycles`
     (docs/modules/arch.md#module-dependency-cycles)."""

@@ -41,7 +41,6 @@ from tests.ticket_land_suite.conftest import (
 pytestmark = pytest.mark.heavy_subprocess
 
 
-
 # frob:ticket T-1256
 # frob:ticket T-2986
 class TestArchiveV2:
@@ -151,7 +150,6 @@ class TestArchiveV2:
         att_dir.mkdir(parents=True)
         (att_dir / "01-x.txt").write_bytes(payload)
         sha256 = hashlib.sha256(payload).hexdigest()
-
 
         ticket = load_queue(root).danger_ok.tickets["T-0042"]
         attachment = Attachment(
@@ -383,8 +381,6 @@ class TestArchiveV2:
         )
         assert "T-1000" in merged.danger_ok, "main's own ticket was lost"
         assert v2_ticket_dir(root, "T-draft-deadbeef").exists()
-
-
 
 
 # frob:ticket T-0959
@@ -637,7 +633,6 @@ class TestArchiveSpliceDiscipline:
             "(T-1154 wrong-side-merge regression)"
         )
         assert wt_archive_before != post_land_archive
-
 
 
 # frob:ticket T-1194

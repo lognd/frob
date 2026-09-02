@@ -90,7 +90,9 @@ class TestSyncVenvForWork:
         def _fake_run(
             args: list[str], **kwargs: object
         ) -> Result[_FakeCompletedProcess, object]:
-            return Ok(_FakeCompletedProcess(args=list(args), returncode=1, stderr="boom"))
+            return Ok(
+                _FakeCompletedProcess(args=list(args), returncode=1, stderr="boom")
+            )
 
         monkeypatch.setattr(_lifecycle, "guarded_subprocess_run", _fake_run)
 

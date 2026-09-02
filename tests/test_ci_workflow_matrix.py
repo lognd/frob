@@ -412,9 +412,9 @@ class TestWindowsDirectPythonDiagVariant:
             "variant (c) must scan the SAME diag fixture as variant (a), "
             "not the real repo"
         )
-        assert (
-            'Join-Path $env:RUNNER_TEMP "frob_check_diag.py"' in run_text
-        ), "variant (c) must reuse variant (a)'s own diag script, not a fork of it"
+        assert 'Join-Path $env:RUNNER_TEMP "frob_check_diag.py"' in run_text, (
+            "variant (c) must reuse variant (a)'s own diag script, not a fork of it"
+        )
 
 
 # frob:ticket T-3670
@@ -579,9 +579,9 @@ class TestWindowsMitigationDiagVariant:
     def test_mitigation_diag_step_reuses_variant_a_script_and_fixture(self) -> None:
         run_text = _windows_mitigation_diag_step()["run"]
         assert "-WorkingDirectory $fixture" in run_text
-        assert (
-            'Join-Path $env:RUNNER_TEMP "frob_check_diag.py"' in run_text
-        ), "variant (a2) must reuse variant (a)'s own diag script"
+        assert 'Join-Path $env:RUNNER_TEMP "frob_check_diag.py"' in run_text, (
+            "variant (a2) must reuse variant (a)'s own diag script"
+        )
 
     # frob:tests .github/workflows/ci.yml
     def test_mitigation_diag_step_fails_the_step_on_exit_130(self) -> None:

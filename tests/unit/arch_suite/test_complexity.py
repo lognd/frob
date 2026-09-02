@@ -15,7 +15,6 @@ from tests.unit.arch_suite.conftest import (
 pytestmark = pytest.mark.skipif(not HAS_ARCH, reason="frob.arch not available")
 
 
-
 class TestGodClass:
     def test_big_class_triggers_god_class(self):
         # Use a single-file path as root -- analyze_project walks the root dir

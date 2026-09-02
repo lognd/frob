@@ -189,6 +189,7 @@ def v2_repo(tmp_path: Path) -> Path:
     _commit_all(main_repo, "init v2")
     return main_repo
 
+
 # frob:ticket T-1393
 # frob:ticket T-1534
 # T-1534: this frob:waive WIRE001 was removed here -- T-1510 (landed after the
@@ -269,6 +270,8 @@ def repo(tmp_path: Path) -> Path:
     (main_repo / "src" / "feature.py").write_text("# landed feature\n")
     _commit_all(main_repo, "init")
     return main_repo
+
+
 def _t2114_concurrent_new_ticket(repo: Path, result_path: Path) -> None:
     """Multiprocessing target (module-level so the `spawn` context, T-3174,
     can pickle/import it -- mirrors `_t0907_child_land`'s own pattern
@@ -317,116 +320,6 @@ def _t2114_concurrent_new_ticket(repo: Path, result_path: Path) -> None:
         )
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # T-0828: the T-0731 `pre-commit` hook shape (`_FORBID_LAND_OWNED_FILES_
 # SCRIPT` in `frob.scaffold.project`) refuses any commit that stages
 # CHANGELOG.md unless `FROB_LAND_INTERNAL` is set in the child's env.
@@ -463,44 +356,6 @@ def _install_changelog_guard_hook(repo: Path) -> None:
     hook_path = hooks_dir / "pre-commit"
     hook_path.write_text(_CHANGELOG_GUARD_HOOK)
     hook_path.chmod(0o755)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def _t0907_child_land(
@@ -602,24 +457,6 @@ def _t2679b_child_land(
     )
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # frob:ticket T-0757
 _RANKS = (0, 1, 2, 2, 3, 3)  # queued, planned, in-progress, blocked, dropped, done
 _STATE_BY_RANK: dict[int, tuple[TicketState, ...]] = {
@@ -653,14 +490,6 @@ def _synthetic_ticket(
     )
 
 
-
-
-
-
-
-
-
-
 # frob:ticket T-1269
 # frob:waive WIRE001 reason="test-only fixture helper used by TestLandPlan's own five \
 # test methods below, in this same file -- no production caller to wire it to by \
@@ -675,4 +504,3 @@ def _make_design_worktree(
     worktree = tmp_path / "design-wt"
     _run(["git", "worktree", "add", str(worktree), "-b", branch, "main"], main_repo)
     return worktree
-

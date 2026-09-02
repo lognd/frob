@@ -647,6 +647,8 @@ class TestScopePrework:
 
         violations = prework_gate(ticket, snap, Some(sweep))
         assert violations == ()
+
+
 # frob:ticket T-0998
 class TestScope002ClosureGate:
     """`frob.gates._scope002_violations` (SCOPE002, T-0998): scope-
@@ -748,6 +750,8 @@ class TestScope002ClosureGate:
             f"violation, not {len(matching)}: {[v.message for v in matching]}"
         )
         assert "5" in matching[0].message
+
+
 # frob:ticket T-0584
 class TestPreworkSweepBounds:
     """T-0240: the sweep's xref half used to call `xref(symbol, root)` --
@@ -840,6 +844,8 @@ class TestPreworkSweepBounds:
         assert sweep.partial is False
         assert sweep.pending_patterns == ()
         assert set(sweep.xref_hits) == {"a_widget", "b_widget"}
+
+
 class TestActiveTicket:
     def test_explicit_flag_wins(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_waive_lease.py::active_ticket
@@ -866,6 +872,8 @@ class TestActiveTicket:
         _git_init(tmp_path)
         result = active_ticket(tmp_path, None)
         assert result.is_nothing
+
+
 # T-0265: a `frob:tests` directive whose target is written with pytest's
 # `Class::method` collect-only separator, on a test that ALSO names itself
 # (self-referential) -- the mismatched separator means the string differs

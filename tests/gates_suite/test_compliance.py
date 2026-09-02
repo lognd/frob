@@ -404,6 +404,8 @@ class TestPiiStructuralCrossLanguage:
         violations = pii_structural_gate(tmp_path)
         hits = [v for v in _by_rule(violations, "PARSE001") if "broken.py" in v.file]
         assert hits == []
+
+
 # frob:ticket T-0788
 class TestComplianceGate:
     """COMPLIANCE005 (T-0788): `compliance_gate` is the `frob check`
@@ -594,6 +596,8 @@ class TestComplianceGate:
         violations = compliance_gate(tmp_path)
         assert any(v.rule == "COMPLIANCE006" for v in violations)
         assert "COMPLIANCE006" in _UNWAIVABLE_RULES
+
+
 # frob:ticket T-0688
 # frob:ticket T-2543
 class TestExhaustiveHandlingGate:
@@ -888,6 +892,8 @@ class TestExhaustiveHandlingGate:
         violations = exhaustive_handling_gate(tmp_path)
         assert not _by_rule(violations, "EXHAUST001")
         assert not _by_rule(violations, "EXHAUST002")
+
+
 # frob:ticket T-0690
 class TestFfiBoundaryGate:
     """T-0690: frob.gates._ffi_boundary.ffi_boundary_gate -- FFI001 cross-
@@ -1014,6 +1020,8 @@ class TestFfiBoundaryGate:
         )
         violations = ffi_boundary_gate(tmp_path, tmp_path)
         assert not _by_rule(violations, "FFI002")
+
+
 class TestErrorsAsValuesAdvisory:
     """T-0688: frob.arch._exceptions.check_errors_as_values -- a PUBLIC
     function/method whose recoverable may-raise set (computed via

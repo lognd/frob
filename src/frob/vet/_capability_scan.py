@@ -1248,9 +1248,7 @@ def _kotlin_operator_invoke_call_lines(raw: bytes) -> list[int]:
     # finditer() call itself out of the nested loops.
     call_starts_by_val: dict[bytes, list[int]] = {}
     for val_name in {name for name, _ in constructions}:
-        call_re = re.compile(
-            rb"(?<![A-Za-z0-9_.])" + re.escape(val_name) + rb"\s*\("
-        )
+        call_re = re.compile(rb"(?<![A-Za-z0-9_.])" + re.escape(val_name) + rb"\s*\(")
         call_starts_by_val[val_name] = [call.start() for call in call_re.finditer(raw)]
     lines: list[int] = []
     for val_name, construction_end in constructions:

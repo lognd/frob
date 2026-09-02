@@ -34,7 +34,6 @@ from tests.ticket_land_suite.conftest import (
 pytestmark = pytest.mark.heavy_subprocess
 
 
-
 # frob:ticket T-1269
 # frob:ticket T-2198
 class TestLandPlan:
@@ -426,7 +425,6 @@ class TestLandPlanUnwindNeverDiscardsForeignCommits:
         assert (repo / "docs" / "new.md").exists()
 
 
-
 # frob:ticket T-1522
 # frob:ticket T-2220
 class TestLandPlanQueueDrainCommitsDurable:
@@ -479,8 +477,6 @@ class TestLandPlanQueueDrainCommitsDurable:
         monkeypatch.undo()
         retry = land_plan(repo, worktree)
         assert retry.is_ok, retry.err
-
-
 
 
 # frob:ticket T-1349

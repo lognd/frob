@@ -12,6 +12,7 @@ from frob.tickets._models import (
 
 pytestmark = pytest.mark.heavy_subprocess
 
+
 # frob:ticket T-1515
 # frob:ticket T-1634
 class TestLandLockHolderMetadataAndTimeout:
@@ -294,7 +295,6 @@ class TestLandStatus:
         _write_land_status(tmp_path, "T-2691", "running")  # must not raise
 
 
-
 # frob:ticket T-2934
 class TestLandLockPlatformBackends:
     """T-2934/T-3506: `_land_lock`'s msvcrt (Windows) backend and its
@@ -431,8 +431,6 @@ class TestProbeLandLockPidLivenessDelegatesToSharedModule:
         assert _probe_land_lock_pid_liveness(999999) is False
 
 
-
-
 # frob:ticket T-2774
 class TestLandLockWaitBudgetFromDeclaredDeadline:
     """T-2774: `_resolve_land_lock_wait_budget_s` bounds the land.lock
@@ -562,7 +560,6 @@ class TestLandLockWaitBudgetFromDeclaredDeadline:
         result = _resolve_land_lock_wait_budget_s(tmp_path)
         assert result.is_ok, result.err
         assert result.danger_ok == _LAND_LOCK_TIMEOUT_S
-
 
 
 class TestLandLockInlineWaitDefaultsNearZero:

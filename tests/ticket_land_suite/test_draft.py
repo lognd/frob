@@ -27,7 +27,6 @@ from tests.ticket_land_suite.conftest import (
 pytestmark = pytest.mark.heavy_subprocess
 
 
-
 class TestDraftFinalizeRewritesCodeAndLeavesWorktreeClean:
     """Reviewer bug 1: `finalize_draft` rewrites tickets.md AND every code
     file carrying a `frob:ticket <draft-id>` directive, uncommitted, in the
@@ -132,7 +131,6 @@ class TestDraftFinalizeRewritesRegistryYamlRefs:
         assert f'"deferred:{final_id}"' in landed_yaml
 
 
-
 class TestDraftIdFinalization:
     """Incident class 3: a ticket filed off the default branch got a
     provisional T-draft-<hex> id; landing must finalize it to a real
@@ -234,7 +232,6 @@ class TestStandaloneSiblingDraftSurvivesLand:
         assert landed_map[report.final_id].state == TicketState.DONE
 
 
-
 # frob:ticket T-2425
 class TestForeignOwnedSiblingDraftSkipped:
     """T-2425: a sibling draft ACTIVELY leased by a DIFFERENT, live
@@ -327,8 +324,6 @@ class TestForeignOwnedSiblingDraftSkipped:
         result = land(repo, primary_id, wt, dry_run=False)
         assert result.is_err
         assert result.danger_err == LandError.GitFailed
-
-
 
 
 # frob:ticket T-2425

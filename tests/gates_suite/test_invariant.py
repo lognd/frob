@@ -154,6 +154,8 @@ class TestInvariantGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = invariant_gate((inv,), snap, tests, frozenset({"POL-thing"}))
         assert not any(v.rule == "INV001" for v in violations)
+
+
 class TestInv003Gate:
     # frob:tests src/frob/gates/_inv.py::inv003_gate
     def test_exclusivity_claim_without_marker_warns(self, tmp_path: Path) -> None:
@@ -281,6 +283,8 @@ class TestInv003Gate:
         )
         violations = inv003_gate(tmp_path, ())
         assert len(violations) == 1
+
+
 class TestInv004Gate:
     # frob:tests src/frob/gates/_inv.py::inv004_gate
     def test_section_with_normative_language_and_no_invariant_is_advisory(
@@ -393,6 +397,8 @@ class TestInv004Gate:
             tmp_path, "docs/modules/x.md", "# X\n\n## Always current\n\nSee below.\n"
         )
         assert inv004_gate(tmp_path) == ()
+
+
 class TestPlace001Gate:
     """T-0504: PLACE001 replaces the dropped T-0470 "distance from the
     class's own span start" prototype (proven noisy against this repo's
@@ -488,6 +494,8 @@ class TestPlace001Gate:
         tests = CollectedTests(node_ids=frozenset())
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert _first_rule(violations, "PLACE001") is None
+
+
 class TestExcludeHazardGate:
     # frob:tests src/frob/gates/_exclude_hazard.py::exclude_hazard_gate
     def test_entry_shadowing_tracked_dir_fires(self, tmp_path: Path) -> None:
@@ -527,7 +535,6 @@ class TestExcludeHazardGate:
     def test_non_git_root_is_silent(self, tmp_path: Path) -> None:
         _write(tmp_path, "src/pkg/a.py", "x = 1\n")
         assert exclude_hazard_gate(tmp_path) == ()
-
 
 
 class TestRootAssetDirGate:

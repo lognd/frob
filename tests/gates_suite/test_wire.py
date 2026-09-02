@@ -422,6 +422,8 @@ class TestDeadSymbolGate:
             v.file for v in violations if v.rule == "DEAD001" and "_target" in v.message
         }
         assert flagged_paths == {"src/b.py"}
+
+
 # frob:ticket T-1428
 # frob:ticket T-1502
 # frob:ticket T-1746
@@ -1413,6 +1415,8 @@ class TestWireGate:
             v.rule == "WIRE003" and "totallynotarealsubcommand" in v.message
             for v in violations
         )
+
+
 # frob:ticket T-2928
 class TestWire001DiffScopingMissesPreExistingDeadSymbols:
     """T-2928: measured on a real controlled deletion (T-2900/T-2905, two
@@ -1508,6 +1512,8 @@ class TestWire001DiffScopingMissesPreExistingDeadSymbols:
         assert v is not None
         assert "_dead_helper" in v.message
         assert v.severity == Severity.ERROR
+
+
 class TestWire001RuleIdViolationsUnion:
     """T-2454: `_wire001_rule_id_violations` (WIRE001 case 2, T-1421's
     BUG002 shape) is the diff-scoped check that actually serialized this

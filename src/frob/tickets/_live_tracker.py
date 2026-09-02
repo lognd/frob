@@ -110,9 +110,16 @@ _REGISTRY_LIVE_KINDS = ("deferred", "tracked_by")
 _LEFT = r"(^|[^A-Za-z0-9_.-])"
 _RIGHT = r"([^A-Za-z0-9_]|$)"
 _WAIVER_TICKET_PATTERN = (
-    _LEFT + r'ticket="?{id}"?' + _RIGHT
-    + r"|" + _LEFT + r'ticket[ \t]+"{id}"'
-    + r"|" + _LEFT + r'follow_up="?{id}"?' + _RIGHT
+    _LEFT
+    + r'ticket="?{id}"?'
+    + _RIGHT
+    + r"|"
+    + _LEFT
+    + r'ticket[ \t]+"{id}"'
+    + r"|"
+    + _LEFT
+    + r'follow_up="?{id}"?'
+    + _RIGHT
 )
 
 # frob:ticket T-1633
@@ -145,10 +152,7 @@ def _registry_pattern(ticket_id: str) -> str:
     unmatched by macOS's `git grep -E` backend, AND not valid Python `re`
     bracket-class syntax either)."""
     kinds = "|".join(_REGISTRY_LIVE_KINDS)
-    return (
-        rf'disposition:[ \t]*["\']?({kinds}):{re.escape(ticket_id)}'
-        + _RIGHT
-    )
+    return rf'disposition:[ \t]*["\']?({kinds}):{re.escape(ticket_id)}' + _RIGHT
 
 
 # frob:ticket T-1559

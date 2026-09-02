@@ -120,9 +120,7 @@ def _snapshot_ignoring_git_maintenance(repo: Path) -> list[Path]:
     a diff confined to this one git-internal lock path is proof the race
     fired, not proof `clean()` mutated anything."""
     return sorted(
-        p.relative_to(repo)
-        for p in repo.rglob("*")
-        if p.name != "maintenance.lock"
+        p.relative_to(repo) for p in repo.rglob("*") if p.name != "maintenance.lock"
     )
 
 

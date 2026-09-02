@@ -95,7 +95,9 @@ class TestQuery:
 
     # frob:ticket T-3508
     # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_win32_refuses_before_touching_af_unix  # noqa: E501
-    def test_win32_refuses_before_touching_af_unix(self, root: Path, monkeypatch) -> None:
+    def test_win32_refuses_before_touching_af_unix(
+        self, root: Path, monkeypatch
+    ) -> None:
         """T-2961's win32 guard runs before `ensure_daemon`/`send_request`
         ever touch `socket.AF_UNIX`. Exercised structurally on POSIX (this
         repo's own CI runner) by monkeypatching `sys.platform`, mirroring

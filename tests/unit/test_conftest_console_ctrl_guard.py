@@ -138,9 +138,7 @@ class TestInstallAndUninstallTestConsoleCtrlIgnoreGuard:
 
         module._install_test_console_ctrl_ignore_guard()
         assert len(module._test_console_ctrl_handler_holder) == 1
-        assert fake_ctypes.kernel32.calls == [
-            (fake_ctypes.kernel32.calls[0][0], True)
-        ]
+        assert fake_ctypes.kernel32.calls == [(fake_ctypes.kernel32.calls[0][0], True)]
 
         module._uninstall_test_console_ctrl_ignore_guard()
         assert module._test_console_ctrl_handler_holder == []
@@ -160,9 +158,7 @@ class TestInstallAndUninstallTestConsoleCtrlIgnoreGuard:
         monkeypatch.setattr(module, "ctypes", fake_ctypes)
 
         module._install_test_console_ctrl_ignore_guard()
-        handler = cast(
-            "Callable[[int], bool]", fake_ctypes.kernel32.calls[0][0]
-        )
+        handler = cast("Callable[[int], bool]", fake_ctypes.kernel32.calls[0][0])
         assert handler(0) is True  # CTRL_C_EVENT
         assert handler(1) is True  # CTRL_BREAK_EVENT
         assert handler(2) is False  # CTRL_CLOSE_EVENT -- must fall through

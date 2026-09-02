@@ -59,7 +59,6 @@ class TestLoadLayeringConfig:
         assert config.allow["app"] == ["lang"]
 
 
-
 class TestLayeringViolations:
     """`check_layering_violations`
     (docs/modules/arch.md#dip-layering-contract)."""

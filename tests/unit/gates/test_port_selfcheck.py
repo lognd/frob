@@ -235,9 +235,7 @@ class TestPort001:
         assert hits[0].file == "src/frob/gates/_offender.py"
         assert hits[0].severity.value == "warn"
 
-    def test_bare_pkg_name_assignment_stays_quiet_t3435(
-        self, tmp_path: Path
-    ) -> None:
+    def test_bare_pkg_name_assignment_stays_quiet_t3435(self, tmp_path: Path) -> None:
         """MUST-STAY-QUIET (T-3435): a bare `_PKG = "frob"` assignment
         (the package NAME alone, not a `"src/<pkg>"` path-shaped value)
         is the declared-identity case `_identity_literal_hit`'s own

@@ -356,8 +356,7 @@ def test_ci_template_frob_check_gate_fails_loudly_not_silently(
         assert ci_paths, f"{project_type}: no rendered ci.yml"
         text = ci_paths[0].read_text()
         assert "::notice::" not in text, (
-            f"{project_type}: frob-missing case must not silently skip via "
-            "::notice::"
+            f"{project_type}: frob-missing case must not silently skip via ::notice::"
         )
         assert "::error::" in text, (
             f"{project_type}: frob-missing case must emit a loud ::error::"
@@ -390,7 +389,8 @@ def test_scaffolded_docs_make_targets_exist_in_makefile(tmp_path: Path) -> None:
     makefile_targets = {
         line.split(":", 1)[0].strip()
         for line in makefile_paths[0].read_text().splitlines()
-        if line and not line.startswith((" ", "\t", "#", "."))
+        if line
+        and not line.startswith((" ", "\t", "#", "."))
         and ":" in line
         and line.split(":", 1)[0].strip().isidentifier()
     }

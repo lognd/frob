@@ -10,6 +10,7 @@ from frob.gitio import GitError, ProcResult
 
 pytestmark = pytest.mark.heavy_subprocess
 
+
 # frob:ticket T-2450
 class TestUnscopedErrorFindingsPublicSeam:
     """T-2450: `unscoped_error_findings` is a thin public wrapper around
@@ -42,8 +43,6 @@ class TestUnscopedErrorFindingsPublicSeam:
 
         assert result == frozenset()
         assert seen["args"] == (tmp_path, "T-0001", None, None, True)
-
-
 
 
 class TestUnscopedErrorFindingsExcludesNoTicketNoise:
@@ -139,7 +138,6 @@ class TestUnscopedErrorFindingsExcludesNoTicketNoise:
         assert result == frozenset()
 
 
-
 class TestUnscopedErrorFindingsFullMode:
     """T-3001: `full=True` drops `--budget` entirely and sets
     `FROB_ALLOW_FULL_CHECK=1` -- the fix for the vicious cycle where a
@@ -216,7 +214,6 @@ class TestUnscopedErrorFindingsFullMode:
         _unscoped_error_findings(tmp_path, "T-0001")
 
         assert "--budget" in captured["argv"]
-
 
 
 class TestUnscopedErrorFindingsRecordsBudgetDeferral:
@@ -310,7 +307,6 @@ class TestUnscopedErrorFindingsRecordsBudgetDeferral:
 
         assert result == frozenset()
         assert "T-9998" not in _land_cmd._LAST_BUDGET_DEFERRALS
-
 
 
 class TestPrintLandProofSurfacesBudgetDeferred:
@@ -481,7 +477,6 @@ class TestTouchedSymrefsForIntent:
         )
         touched = _land_mod._touched_symrefs_for_intent(diff, snapshot)
         assert touched == set()
-
 
 
 # frob:ticket T-1736

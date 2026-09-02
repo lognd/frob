@@ -90,6 +90,4 @@ def _walk_cuda(root: Node) -> tuple[RawSymbol, ...]:
     """Every CUDA symbol -- delegates entirely to `_walk_c_family` (module
     docstring's dialect-flag decision), layering only the kernel-qualifier
     publicness override CUDA needs on top of C++'s own extraction."""
-    return _walk_c_family(
-        root, COMMENT_TYPES, visibility_override=_cuda_visibility
-    )
+    return _walk_c_family(root, COMMENT_TYPES, visibility_override=_cuda_visibility)

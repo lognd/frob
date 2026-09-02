@@ -430,6 +430,8 @@ class TestSysGate:
         sys004 = _by_rule(violations, "SYS004")
         assert len(sys004) == 1
         assert sys004[0].file == "design/m.strata"
+
+
 class TestSelfAuditGate:
     """T-0756 SELFAUDIT001: sys_gate's production entrypoint folds frob's
     own self-conformance (SYS100-102)/resource-contention (SYS2xx)/
@@ -845,6 +847,8 @@ class TestSelfAuditGate:
         )
         violations = _compliance_selfaudit_violations(tmp_path, design_ids, "design")
         assert violations == []
+
+
 # frob:ticket T-3324
 class TestSelfauditFindingsTouching:
     """`frob.gates._sys.selfaudit_findings_touching` (T-3324): the diff-
@@ -944,6 +948,8 @@ class TestSelfauditFindingsTouching:
             tmp_path, frozenset({"src/frob/widget/_io.py"})
         )
         assert findings == ()
+
+
 class TestSys111FindingsTouching:
     """`frob.gates._sys.sys111_findings_touching` (T-3575): SYS111
     (capability-ratchet growth) findings, attributed to the `.strata`
@@ -1020,9 +1026,7 @@ class TestSys111FindingsTouching:
         from frob.gates._sys import sys111_findings_touching
 
         self._mock_ratchet_trip(monkeypatch, tmp_path)
-        findings = sys111_findings_touching(
-            tmp_path, frozenset({"design/m.strata"})
-        )
+        findings = sys111_findings_touching(tmp_path, frozenset({"design/m.strata"}))
         assert len(findings) == 1
         assert "SYS111" in findings[0].message
         assert "widget" in findings[0].message
@@ -1038,6 +1042,8 @@ class TestSys111FindingsTouching:
             tmp_path, frozenset({"design/unrelated.strata"})
         )
         assert findings == ()
+
+
 class TestDocptrFindingsTouching:
     """`frob.gates._sys.docptr_findings_touching` (T-3575): DOC004/DOC006
     (dangling doc anchor / unresolved file-path pointer) findings,
@@ -1057,9 +1063,7 @@ class TestDocptrFindingsTouching:
         assert any(v.file == "docs/broken.md" for v in findings)
 
     # frob:tests src/frob/gates/_sys.py::docptr_findings_touching kind="unit"
-    def test_finding_naming_a_touched_target_is_returned(
-        self, tmp_path: Path
-    ) -> None:
+    def test_finding_naming_a_touched_target_is_returned(self, tmp_path: Path) -> None:
         from frob.gates._sys import docptr_findings_touching
 
         _git_init(tmp_path)
@@ -1081,12 +1085,8 @@ class TestDocptrFindingsTouching:
         _git_init(tmp_path)
         _write(tmp_path, "docs/broken.md", "See `src/frob/gone_forever.py` here.\n")
         subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
-        findings = docptr_findings_touching(
-            tmp_path, frozenset({"docs/unrelated.md"})
-        )
+        findings = docptr_findings_touching(tmp_path, frozenset({"docs/unrelated.md"}))
         assert findings == ()
-
-
 
 
 class TestArchGateThresholds:
@@ -1492,7 +1492,6 @@ class TestRuleFixability:
         second = sync_gate_rule_fixability(registry, frozenset({"DOC007"}))
         assert second.is_ok
         assert second.danger_ok == ()
-
 
 
 # frob:ticket T-0459

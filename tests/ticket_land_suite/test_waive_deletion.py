@@ -25,7 +25,6 @@ from tests.ticket_land_suite.conftest import (
 pytestmark = pytest.mark.heavy_subprocess
 
 
-
 # frob:ticket T-1323
 class TestUncommittedWaiveDeletionRefusal:
     """T-1323 incident guard: the 2026-07-29 land that wip-snapshotted an

@@ -392,7 +392,7 @@ class TestCapabilityScan:
         cu = tmp_path / "launcher.cu"
         cu.write_text(
             "#include <cstdlib>\n"
-            "extern \"C\" void run(const char *cmd) {\n"
+            'extern "C" void run(const char *cmd) {\n'
             "    system(cmd);\n"
             "}\n"
         )

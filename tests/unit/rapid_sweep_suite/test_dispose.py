@@ -172,8 +172,6 @@ class TestAutoDisposeFiledFindings:
         assert filed is not None
 
 
-
-
 # frob:ticket T-1983
 class TestCloseResolvedSweepTickets:
     """T-1983: a sweep-filed regression ticket whose findings stop
@@ -446,7 +444,6 @@ class TestNormalizeIdentityFile:
         assert _normalize_identity_file(tmp_path, str(other)) == other.as_posix()
 
 
-
 # frob:ticket T-2313
 class TestNormalizeIdentities:
     """T-2313: `_normalize_identities` must drop a genuinely
@@ -490,7 +487,6 @@ class TestNormalizeIdentities:
         result = _normalize_identities(tmp_path, frozenset({("E501", "")}))
         assert len(result) == 1
         assert next(iter(result))[0] == "E501"
-
 
 
 # frob:ticket T-2036
@@ -538,7 +534,6 @@ class TestAbsoluteVsRelativePathIdentityMismatch:
         assert queue.is_ok
         # THE FIX: still QUEUED, never falsely auto-dropped.
         assert queue.danger_ok.tickets[filed].state == TicketState.QUEUED
-
 
 
 # frob:ticket T-1983
@@ -603,7 +598,6 @@ class TestDeferredSweepClosesResolvedRegressions:
         queue = load_queue(tmp_path)
         assert queue.is_ok
         assert queue.danger_ok.tickets[filed].state == TicketState.QUEUED
-
 
 
 class TestDeferredSweepMultiLandAttribution:

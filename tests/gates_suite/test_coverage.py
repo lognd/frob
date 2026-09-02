@@ -2070,6 +2070,8 @@ class TestCoverageGate:
         assert result.is_ok
         report = result.danger_ok
         assert _first_rule(report.violations, "WAIVE002") is not None
+
+
 # frob:ticket T-1398
 # frob:ticket T-1435
 class TestCoverageLoad:
@@ -3138,6 +3140,8 @@ class TestCoverageLoad:
             source_sha="y", module_line={"a.py": 10.0, "b.py": 50.0}
         )
         assert coverage_lock_diff(lock, live_drifted) == ("a.py",)
+
+
 # frob:ticket T-0545
 # frob:ticket T-1180
 # frob:ticket T-1363
@@ -3203,6 +3207,8 @@ class TestParseLineElFallbacks:
         from frob.gates._coverage import _parse_line_el
 
         assert _parse_line_el(self._el(number="1", hits="lots")) is None
+
+
 # frob:ticket T-1376
 class TestConditionCoverageIsActuallyParsed:
     """T-1376: `branch_pct` must come from the REAL percentage, not
@@ -3264,6 +3270,8 @@ class TestConditionCoverageIsActuallyParsed:
             **{"condition-coverage": "33% (1/3)"},
         )
         assert _parse_line_el(el) == (5, (2, 33))
+
+
 # frob:ticket T-1824
 class TestSuspectDeflatedSymbols:
     """`frob.gates._coverage._suspect_deflated_symbols`: the per-symbol

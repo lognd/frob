@@ -25,7 +25,6 @@ from tests.ticket_land_suite.conftest import (
 pytestmark = pytest.mark.heavy_subprocess
 
 
-
 # frob:ticket T-0338
 class TestReleaseBump:
     """T-0338: `land`'s optional `bump_version` callback -- the REL001
@@ -224,7 +223,6 @@ class TestReleaseBump:
         assert (repo / "pyproject.toml").read_text().count('version = "0.183.0"') == 1
 
 
-
 # frob:ticket T-1078
 # frob:ticket T-2220
 class TestReleaseBumpQuartetAtomicity:
@@ -337,8 +335,6 @@ class TestReleaseBumpQuartetAtomicity:
         assert "frob release sync" in caplog.text
         assert "0.210.0" in caplog.text
         assert "0.211.0" in caplog.text
-
-
 
 
 # frob:ticket T-1349
@@ -615,7 +611,6 @@ class TestRealCallbackStaleWorktreeManifest:
         fragment_path = repo / "changelog.d" / "T-0001.md"
         assert fragment_path.is_file()
         assert "bump: minor" in fragment_path.read_text()
-
 
 
 # frob:ticket T-0793

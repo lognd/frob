@@ -28,7 +28,6 @@ from tests.ticket_land_suite.conftest import (
 pytestmark = pytest.mark.heavy_subprocess
 
 
-
 # frob:ticket T-1699
 class TestDirtOwnedByNoOpenTicket:
     """T-1699: `_dirt_owned_by_no_open_ticket` -- tells root dirt that
@@ -81,7 +80,6 @@ class TestDirtOwnedByNoOpenTicket:
         assert transition(repo, tid, TicketState.DONE).is_ok
 
         assert _dirt_owned_by_no_open_ticket(repo, ("src/finished.py",)) is True
-
 
 
 # frob:ticket T-2118
@@ -227,7 +225,6 @@ class TestDirtOwnerTickets:
         assert "belonging to NO open ticket" not in caplog.text
 
 
-
 # frob:ticket T-1740
 class TestDescribeRootDirtNamesStagedState:
     """T-1740: `DirtyMain`'s message used to say only "uncommitted
@@ -261,7 +258,6 @@ class TestDescribeRootDirtNamesStagedState:
 
         staged_only = _land_git_ops_mod._porcelain_dirty_paths_staged(repo)
         assert staged_only == ("staged.txt",)
-
 
 
 # frob:ticket T-1514
@@ -350,7 +346,6 @@ class TestPreCommitUnscopedSweep:
 
         result = land(repo, tid, wt, dry_run=False)
         assert result.is_ok, result.err
-
 
 
 class TestUnboundAcceptancePreflightBeforeMerge:

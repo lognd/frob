@@ -60,7 +60,6 @@ class TestIterDiagnostics:
         assert list(check_summary.iter_diagnostics({})) == []
 
 
-
 class TestSummarise:
     """`check_summary.summarise`."""
 
@@ -94,7 +93,6 @@ class TestSummarise:
         assert errors[0][2:4] == ("a.py", 3)
 
 
-
 class TestFindTest006:
     """`check_summary.find_test006` (T-2763)."""
 
@@ -121,7 +119,6 @@ class TestFindTest006:
             results=[{"tool": "ruff", "diagnostics": [_diag("error", code="E1")]}]
         )
         assert check_summary.find_test006(report) == []
-
 
 
 class TestCheckSummaryMain:
@@ -178,8 +175,6 @@ class TestCheckSummaryMain:
         check_summary.main()
         out = capsys.readouterr().out
         assert "COVERAGE STALE/MISSING" not in out
-
-
 
 
 # frob:ticket T-2677

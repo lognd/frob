@@ -258,7 +258,6 @@ class TestCommitRapidDebt:
         assert payload["stderr"]  # the hook's refusal text, not empty
 
 
-
 class TestPersistCommitStepFailure:
     """T-2671: `_persist_commit_step_failure` is the retained-diagnostic
     primitive `_commit_rapid_debt` calls on every git-step failure -- the
@@ -337,7 +336,6 @@ class TestPersistCommitStepFailure:
         assert path is None
 
 
-
 # frob:ticket T-3216
 class TestPorcelainStatusError:
     """T-3216: `_porcelain_status_error` -- the single source of truth
@@ -390,7 +388,6 @@ class TestPorcelainStatusError:
         error = _porcelain_status_error(tmp_path)
         assert error is not None
         assert "index.lock" in error
-
 
 
 class TestDescribeRootDirt:
@@ -529,7 +526,6 @@ class TestDescribeRootDirt:
         _git(repo, "add", "tickets.md")
         rendered = describe_root_dirt(repo)
         assert "unattributed" in rendered
-
 
 
 # frob:ticket T-2744
@@ -694,7 +690,6 @@ class TestCommitRegressionTicket:
         assert "DIRTY" in errors[0]
 
 
-
 # frob:ticket T-2034
 class TestCommitOrDiscardLedgerWrite:
     """T-2034: the shared retry-then-discard shape every sweep
@@ -787,7 +782,6 @@ class TestCommitOrDiscardLedgerWrite:
         assert discarded == ["T-1234"]
 
 
-
 # frob:ticket T-2034
 class TestDiscardUncommittedTicketDrop:
     """T-2034: the auto-drop write path's discard action must
@@ -835,7 +829,6 @@ class TestDiscardUncommittedTicketDrop:
         assert len(errors) == 1
         assert "v1" in errors[0]
         assert "DIRTY" in errors[0]
-
 
 
 class TestTicketIsOpen:

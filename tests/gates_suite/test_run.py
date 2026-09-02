@@ -163,6 +163,8 @@ class TestRunGates:
         pre001 = _first_rule(report.violations, "PRE001")
         assert pre001 is not None
         assert "failed to load" in pre001.message
+
+
 # frob:ticket T-1148
 class TestNativeAvailabilityGate:
     """T-1148: a declared `[[native]]` that fails to import must short-
@@ -206,6 +208,8 @@ class TestNativeAvailabilityGate:
         assert result.is_ok
         report = result.danger_ok
         assert not any(v.rule == "NATIVE001" for v in report.violations)
+
+
 class TestRunJobsTimingAttribution:
     """T-0232: `_run_jobs` must attribute each job its OWN cost, not a
     number smeared across every job sharing the thread pool."""
@@ -254,6 +258,8 @@ class TestRunJobsTimingAttribution:
                 f"heavy job's {timing['heavy']:.3f}s -- attribution is "
                 "shared/wrong again"
             )
+
+
 # frob:ticket T-0947
 class TestProcessPoolGates:
     """T-0415: CPU-bound gates (archgate, sys, clones, perf, pii_structural,
@@ -570,8 +576,6 @@ class TestSeverityOverrides:
         assert after[0].severity == Severity.ERROR, (
             "PASS case: repo frob.toml now gates SEC110 at ERROR"
         )
-
-
 
 
 # frob:ticket T-0399

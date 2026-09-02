@@ -82,7 +82,9 @@ class TestCplace001:
             "    return 1\n"
         )
         windows_path = PureWindowsPath("src/frob/x.py")
-        assert str(windows_path) == "src\\frob\\x.py"  # sanity: genuinely backslash-shaped
+        assert (
+            str(windows_path) == "src\\frob\\x.py"
+        )  # sanity: genuinely backslash-shaped
         violations = scan_cplace001_waive_reason_length(windows_path, text)
         assert _rule_ids(violations) == ["CPLACE001"]
         assert violations[0].file == "src/frob/x.py"

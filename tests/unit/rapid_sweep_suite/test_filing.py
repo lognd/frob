@@ -84,8 +84,6 @@ class TestRelativizeRegressionScopeFile:
         assert list(ticket.scope) == [str(Path("src") / "frob" / "x.py")]
 
 
-
-
 # frob:ticket T-1791
 # frob:ticket T-1847
 class TestRaiseQuarantineForRedBatch:
@@ -507,7 +505,6 @@ class TestFileRegressionTicketPublicSeam:
             tmp_path, "T-9001", "deadbeef", frozenset({("RULE1", "a.py")})
         )
         assert filed is not None
-
 
 
 # frob:ticket T-1791

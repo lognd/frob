@@ -44,7 +44,6 @@ from tests.ticket_land_suite.conftest import (
 pytestmark = pytest.mark.heavy_subprocess
 
 
-
 class TestClaimDivergencePostMerge:
     """T-0754: `land`'s `passed`/`check_gates` callables re-verify a
     ticket's `### Captured claims` Done-report section against the
@@ -644,7 +643,6 @@ class TestSkipInlineClaimsReverifyUnderRapid:
         assert calls == [1]
 
 
-
 # frob:ticket T-3054
 class TestSkipInlineClaimsReverifyUnderDeclaredDeadline:
     """T-3054: `_land_should_skip_inline_claims_reverify` also skips the
@@ -820,7 +818,6 @@ class TestDoneReportThenLandRealClosuresEndToEnd:
         assert result.is_ok, result.err
 
 
-
 class TestLandInternalEnvThroughHook:
     """T-0828: every land-internal git commit spawn (worktree wip
     snapshot, main-into-worktree merge, finalize/close, main-side
@@ -874,8 +871,6 @@ class TestLandInternalEnvThroughHook:
             )  # frob:waive SEC110 reason="synthetic test-only var this test itself sets"
         finally:
             os.environ.pop("FROB_LAND_INTERNAL", None)
-
-
 
 
 # frob:ticket T-2865
@@ -939,8 +934,6 @@ class TestGitFailureMessageCarriesStderr:
         assert any("simulated failure" in r.message for r in caplog.records)
 
 
-
-
 # frob:ticket T-0755
 class TestMutationEvidencePrecheck:
     """T-0755: `_check_mutation_evidence` blocks a security/bug-kind
@@ -951,7 +944,6 @@ class TestMutationEvidencePrecheck:
 
     def _ticket(self, kind: TicketKind) -> Any:
         from datetime import date as _date
-
 
         return Ticket(
             id="T-0900",
@@ -1060,8 +1052,6 @@ class TestMutationEvidencePrecheck:
         assert result.is_ok
 
 
-
-
 # frob:ticket T-3057
 class TestCheckTddOrder:
     """T-3057: `_check_tdd_order` wires TDD001 into the pre-land path,
@@ -1071,7 +1061,6 @@ class TestCheckTddOrder:
 
     def _ticket(self) -> Any:
         from datetime import date as _date
-
 
         return Ticket(
             id="T-0900",
@@ -1306,8 +1295,6 @@ class TestCheckTddOrder:
         assert any("merge-base" in r.message for r in caplog.records)
 
 
-
-
 # frob:ticket T-0854
 class TestLiveTrackerCitationPrecheck:
     """T-0854: `_check_live_tracker_citations` blocks land when a registry
@@ -1457,8 +1444,6 @@ class TestCloseSkipMutationEvidenceCliWiring:
         assert cfg.ticket_close_skip_mutation_evidence is False
 
 
-
-
 # frob:ticket T-0844
 class TestCloseMutationEvidenceForTicket:
     """T-0844 rework (reviewer REJECT): unit tests over
@@ -1469,7 +1454,6 @@ class TestCloseMutationEvidenceForTicket:
 
     def _ticket(self, kind: TicketKind = TicketKind.SECURITY) -> Any:
         from datetime import date as _date
-
 
         return Ticket(
             id="T-0900",
@@ -1577,8 +1561,6 @@ class TestCloseMutationEvidenceForTicket:
         assert result is None
 
 
-
-
 # frob:ticket T-0417
 class TestReverifyEvidenceForClose:
     """N-02 (docs/audits/tickets-testing-round2.md): unit tests over
@@ -1588,7 +1570,6 @@ class TestReverifyEvidenceForClose:
 
     def _ticket(self) -> Any:
         from datetime import date as _date
-
 
         return Ticket(
             id="T-0900",
@@ -1757,8 +1738,6 @@ class TestCloseFailureHintMutationEvidence:
             "T-0900", TicketState.IN_PROGRESS, TicketError.MissingEvidence
         )
         assert "--skip-mutation-evidence" not in hint
-
-
 
 
 # frob:ticket T-0844

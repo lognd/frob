@@ -644,8 +644,7 @@ class TestScopeCliRepeatedReasonRefused:
                     "--add",
                     "scripts/fleet_status.py",
                     "--reason",
-                    "the disagreeing leak verdict and WORKTREES listing "
-                    "both live here",
+                    "the disagreeing leak verdict and WORKTREES listing both live here",
                     "--add",
                     "tests/unit/test_fleet_status*.py",
                     "--reason",

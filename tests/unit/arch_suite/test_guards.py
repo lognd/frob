@@ -11,8 +11,6 @@ from tests.unit.arch_suite.conftest import HAS_ARCH
 pytestmark = pytest.mark.skipif(not HAS_ARCH, reason="frob.arch not available")
 
 
-
-
 # frob:ticket T-2539
 class TestCaughtTypeNames:
     """`frob.arch._normalized.caught_type_names` (T-2539): a multi-type
@@ -105,7 +103,6 @@ class TestCaughtTypeNames:
         )
 
         assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset()
-
 
 
 # frob:ticket T-2539

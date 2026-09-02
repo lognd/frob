@@ -23,7 +23,6 @@ from tests.ticket_land_suite.conftest import (
 pytestmark = pytest.mark.heavy_subprocess
 
 
-
 class TestLandPushCliWiring:
     """T-0631: `frob ticket land --push` must actually parse and reach
     `AppConfig`, and default to `False` when omitted -- the same untested-
@@ -141,8 +140,6 @@ class TestLandWorktreeResolvedAtArgParse:
         assert cfg.ticket_worktree == tmp_path.resolve()
 
 
-
-
 # frob:ticket T-0631
 class TestPushAfterLand:
     """`_push_after_land` -- pushes root's current branch after a real
@@ -234,7 +231,6 @@ class TestPushAfterLand:
         assert exc_info.value.code == 1
 
 
-
 # frob:ticket T-1011
 class TestSyncGateRulesCallback:
     """T-1011(a): `land()`'s optional `sync_gate_rules` callback (invoked
@@ -281,7 +277,6 @@ class TestSyncGateRulesCallback:
         assert result.danger_err == _land_mod.LandError.GitFailed
         # the (no-op) unwind reset still leaves HEAD at pre_land_tip.
         assert _land_git_ops_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
-
 
 
 class TestSyncGateRulesForLandDiffTarget:
@@ -346,7 +341,6 @@ class TestSyncGateRulesForLandDiffTarget:
         result = _sync_gate_rules_for_land(repo, pre_land_tip)
         assert result.is_ok
         assert result.danger_ok is None
-
 
 
 # frob:ticket T-1194

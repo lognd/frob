@@ -317,7 +317,13 @@ class TestDeriveLandCommitByGrep:
         (root / "src" / "feature.py").write_text("# unrelated feature\n")
         _run(["git", "add", "-A"], root)
         _run(
-            ["git", "commit", "-q", "-m", "fix(tickets): land T-30000 A different ticket"],
+            [
+                "git",
+                "commit",
+                "-q",
+                "-m",
+                "fix(tickets): land T-30000 A different ticket",
+            ],
             root,
         )
 

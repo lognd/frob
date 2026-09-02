@@ -355,7 +355,6 @@ class TestPythonAdapter:
         assert comp_call.comprehension_id == comp_branch.comprehension_id
 
 
-
 class TestTypeScriptAdapter:
     """T-0611: `frob.arch._typescript.TypeScriptAdapter` is the second
     `LanguageAdapter` implementation (after T-0610's `PythonAdapter`),

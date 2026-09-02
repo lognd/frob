@@ -170,6 +170,7 @@ REASON = (
     "silently revert fixes landed since divergence)."
 )
 
+
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
 def _handle_bash(command: str, cwd: str) -> None:

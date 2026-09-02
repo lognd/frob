@@ -245,7 +245,9 @@ class TestSys003ZeroOnFrobsOwnRepo:
     covers the unrelated SELFAUDIT/SYS100/SYS101/SYS111 self-audit
     families; this test isolates the one family T-2407 actually owns."""
 
-    def test_sys003_zero_against_live_repo_design(self, frob_self_scan_artifacts) -> None:
+    def test_sys003_zero_against_live_repo_design(
+        self, frob_self_scan_artifacts
+    ) -> None:
         """T-3495: shares the `frob_self_scan_artifacts` session fixture
         (`tests/conftest.py`) that `tests/system/test_frob_self_model.py`'s
         `TestFrobSelfModel` class also reads -- both files' consumers pin

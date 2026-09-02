@@ -1962,6 +1962,8 @@ class TestTestGate:
         )  # the test was deleted/not collected
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert any(v.rule == "TEST002" for v in violations)
+
+
 class TestConventionUnitBinding:
     def test_test001_satisfied_by_convention_name(self, tmp_path):
         """T-0018: a public function is unit-covered by a conventionally
@@ -2129,6 +2131,8 @@ class TestConventionUnitBinding:
         assert not any(
             v.rule == "TEST009" and v.file == "design/m.strata" for v in violations
         )
+
+
 class TestTest010KindValidation:
     """T-0237: a `frob:tests` directive's `kind=` attribute is not
     gate-verified -- `frob.graph.dsl` already refuses to turn an invalid
@@ -2204,6 +2208,8 @@ class TestTest010KindValidation:
         v = _first_rule(violations, "DRIFT002")
         assert v is not None
         assert "src/frob/pkg/a.py::gone" in v.message
+
+
 # frob:ticket T-0552
 # frob:ticket T-0730
 class TestTest013NativeUnverified:
@@ -2258,6 +2264,8 @@ class TestTest013NativeUnverified:
         tests = CollectedTests(node_ids=frozenset({"tests/test_a.py::test_helper"}))
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert "TEST013" not in _rules(violations)
+
+
 # frob:ticket T-0730
 class TestNativeTestCollectors:
     """T-0730: `_load_tests` now consumes `collect_ts_tests` (vitest) and

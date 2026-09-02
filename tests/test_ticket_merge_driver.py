@@ -639,18 +639,12 @@ class TestMergeDriverContentShapeDispatch:
         base = tmp_path / "base.json"
         ours = tmp_path / "ours.json"
         theirs = tmp_path / "theirs.json"
-        base.write_text(
-            json.dumps({"source_sha": "base", "module_line": {"a": 50.0}})
-        )
+        base.write_text(json.dumps({"source_sha": "base", "module_line": {"a": 50.0}}))
         ours.write_text(
-            json.dumps(
-                {"source_sha": "ours", "module_line": {"a": 60.0, "b": 40.0}}
-            )
+            json.dumps({"source_sha": "ours", "module_line": {"a": 60.0, "b": 40.0}})
         )
         theirs.write_text(
-            json.dumps(
-                {"source_sha": "theirs", "module_line": {"a": 55.0, "b": 70.0}}
-            )
+            json.dumps({"source_sha": "theirs", "module_line": {"a": 55.0, "b": 70.0}})
         )
 
         _merge_driver(root, _cfg(base, ours, theirs, path=root))
@@ -742,9 +736,7 @@ class TestMergeDriverV2TicketFileViaRealGit:
         tid = spec_created.danger_ok.id
         ticket_dir = main_repo / "tickets" / tid
         ticket_dir.mkdir(parents=True, exist_ok=True)
-        (ticket_dir / "ticket.md").write_text(
-            _serialize_ticket(spec_created.danger_ok)
-        )
+        (ticket_dir / "ticket.md").write_text(_serialize_ticket(spec_created.danger_ok))
         # T-0323/T-1758's `new_ticket` writes the v1 monofile by default;
         # this fixture only needs a v2-shaped file on disk to register the
         # NEW attribute against, so its own monofile write is harmless

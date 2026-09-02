@@ -91,6 +91,8 @@ class TestFmt001Gate:
         diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=(2, 2)),))
         violations = fmt_gate(tmp_path, diff)
         assert not any(v.rule == "FMT001" for v in violations)
+
+
 class TestDupPipelineClosureConsumers:
     """T-0814: `frob.dup._pipeline`'s raw `CallGraph.calls` consumers share
     the same non-symref-entry assumption as the `frob.gates` COV006
@@ -131,6 +133,8 @@ class TestDupPipelineClosureConsumers:
         )
         result = _callee_name_map(graph, "src/a.py::caller")
         assert result == {"_real_helper": "src/a.py::_real_helper"}
+
+
 class TestDsl001:
     """T-0404 finding 5: a malformed `frob:` directive not already claimed
     by WAIVE001/TEST010/DEBT001 must still be surfaced, not silently
@@ -190,6 +194,8 @@ class TestDsl001:
         from frob.gates import _dsl001_violations  # noqa: PLC0415
 
         assert _dsl001_violations(snap) == ()
+
+
 # frob:ticket T-1272
 class TestWaivePresets:
     """T-1176: `frob:waive RULE preset="<name>"` resolves its reason from
@@ -204,7 +210,10 @@ class TestWaivePresets:
         from frob.graph._waive_presets import WAIVE_PRESETS
 
         doc_path = (
-            Path(__file__).resolve().parent.parent.parent / "docs" / "modules" / "gates.md"
+            Path(__file__).resolve().parent.parent.parent
+            / "docs"
+            / "modules"
+            / "gates.md"
         )
         text = doc_path.read_text()
         start = text.index("### Waiver presets")
@@ -294,6 +303,8 @@ class TestWaivePresets:
             "frob:waive" in md.reason and "does-not-exist" in md.reason
             for md in snap.malformed
         )
+
+
 class TestParseFailureGate:
     """T-0558: a swallowed frob.lang parse/IO failure must be an ERROR
     violation (PARSE001), not just a log line.
@@ -416,8 +427,6 @@ class TestParseFailureGate:
         violations = parse_failure_gate(snap)
         reset_parse_cache()
         assert not any(v.rule == "PARSE002" for v in violations)
-
-
 
 
 # frob:ticket T-1323
@@ -914,7 +923,9 @@ class TestWaive004ExaminedSitesGuard:
 
         root = tmp_path / "repo"
         (root / "src" / "nested").mkdir(parents=True)
-        (root / "src" / "top.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        (root / "src" / "top.py").write_text(
+            "def f():\n    return 1\n", encoding="utf-8"
+        )
         (root / "src" / "nested" / "inner.py").write_text(
             "def g():\n    return 2\n", encoding="utf-8"
         )

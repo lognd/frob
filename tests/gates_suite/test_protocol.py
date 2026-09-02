@@ -104,6 +104,8 @@ class TestProtocolSummaryGate:
         snap = _snapshot(root)
         violations = protocol_summary_gate(root, snap)
         assert isinstance(violations, tuple)
+
+
 # frob:ticket T-0746
 # frob:ticket T-0841
 class TestProtocolVerificationGate:
@@ -402,6 +404,8 @@ class TestProtocolVerificationGate:
         assert discharge is not None
         assert discharge.severity == Severity.WARN
         assert "typescript-using" in discharge.message
+
+
 # frob:ticket T-0840
 class TestProtocolOrderingGate:
     """T-0840: PROTO004, the per-call-site ordering check that narrows
@@ -518,6 +522,8 @@ class TestProtocolOrderingGate:
         assert discharge is not None
         assert discharge.severity == Severity.WARN
         assert "python-with" in discharge.message
+
+
 # frob:ticket T-0746
 class TestProtocolLanguageExcuseDischarge:
     """T-0746: the per-language discharge predicates
@@ -655,6 +661,8 @@ class TestProtocolLanguageExcuseDischarge:
         result = gc_finalizer_discharge("Net")
         assert not result.discharged
         assert result.mechanism == "gc-finalizer"
+
+
 # frob:ticket T-0747
 class TestCleanupObligationGate:
     """T-0747: PROTO005, cleanup obligations -- release-postdominates-

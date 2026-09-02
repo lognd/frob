@@ -19,7 +19,6 @@ from tests.ticket_land_suite.conftest import (
 pytestmark = pytest.mark.heavy_subprocess
 
 
-
 class TestWipCommit:
     """`_wip_commit` -- uncommitted worktree changes at land time must be
     snapshotted before the merge that follows, both in dry-run (staged then
@@ -71,7 +70,6 @@ class TestWipCommit:
 
         landed_content = (repo / "src" / "wip_real.py").read_text()
         assert landed_content == "# uncommitted change to snapshot\n"
-
 
 
 # frob:ticket T-1184
@@ -181,7 +179,6 @@ class TestWipCommitNormalizationOnlyDirty:
 
         wt_log = _run(["git", "log", "--oneline"], wt).stdout
         assert "wip: pre-land snapshot" not in wt_log
-
 
 
 # frob:ticket T-3123

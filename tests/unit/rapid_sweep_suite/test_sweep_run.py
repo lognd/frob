@@ -207,7 +207,6 @@ class TestDeferredSweepRun:
         assert _read_baseline(tmp_path) == fresh
 
 
-
 # frob:ticket T-2938
 class TestClaimDivergencePostLand:
     """T-2938: `_check_claim_divergence_post_land` -- the deferred-queue
@@ -389,7 +388,6 @@ class TestClaimDivergencePostLand:
         assert raised == []
 
 
-
 class TestDeferredSweepSpawn:
     """The spawn records debt BEFORE spawning and never blocks."""
 
@@ -458,7 +456,6 @@ class TestDeferredSweepSpawn:
         assert "FROB_AGENT" not in env
 
 
-
 # frob:ticket T-2450
 class TestDetachedSweepEnvPublicSeam:
     """T-2450: `detached_sweep_env` is a thin public wrapper around
@@ -478,7 +475,6 @@ class TestDetachedSweepEnvPublicSeam:
 
         monkeypatch.setenv("FROB_WORKTREE", "/some/worktree")
         assert detached_sweep_env(tmp_path) == _detached_sweep_env(tmp_path)
-
 
 
 # frob:ticket T-2030

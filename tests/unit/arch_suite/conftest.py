@@ -87,6 +87,7 @@ def _real_method(name: str, line: int):
         returns=[NormalizedReturn(line=line + 1, value_text="result")],
     )
 
+
 def _transition(src: str, proto: str, frm: str, to: str) -> Edge:
     """Test helper: a `TRANSITION` edge shaped like `dsl.parse_directives`'s
     output, without needing real source files to drive the DSL parser."""
@@ -130,4 +131,3 @@ def _escapes(src: str, resource: str) -> Edge:
     """Test helper: an `ESCAPES` edge shaped like `dsl.parse_directives`'s
     output for `frob:escapes <resource>`."""
     return Edge(src=src, kind=EdgeKind.ESCAPES, target=resource, origin=f"{src}:1")
-

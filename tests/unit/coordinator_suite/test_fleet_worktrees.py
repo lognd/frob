@@ -1415,6 +1415,7 @@ class TestWorktreeStartedTicketIds:
             "T-2763",
         ]
 
+
 # frob:ticket T-2755
 class TestWorktreeContentClassificationLiveGit:
     """T-2617: `worktree_content_classification` run UNMOCKED against a
@@ -1693,6 +1694,7 @@ class TestWorktreeContentClassificationLiveGit:
         )
         assert verdict == "STRANDED"
         assert any("scratch_only" in s for s in samples)
+
 
 # frob:ticket T-2665
 class TestInProgressTicketScopeLeasesLiveGit:

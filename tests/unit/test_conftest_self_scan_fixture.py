@@ -100,7 +100,8 @@ class TestFrobSelfScanArtifactsSharing:
             build_result=None,
             violations=(
                 _fake_violation(
-                    "SELFAUDIT001", "undeclared fs.read in src/frob/release/_fragments.py"
+                    "SELFAUDIT001",
+                    "undeclared fs.read in src/frob/release/_fragments.py",
                 ),
             ),
         )

@@ -448,6 +448,8 @@ class TestDebtGate:
 
         assert _rel001_is_linked_worktree(main_root) is False
         assert _rel001_is_linked_worktree(worktree_root) is True
+
+
 # frob:ticket T-2581
 class TestReleaseOpenMilestoneViolations:
     """`_release_open_milestone_violations(root, release_version)`
@@ -549,6 +551,8 @@ class TestReleaseOpenMilestoneViolations:
             "not a valid ticket ledger at all: [[[", encoding="utf-8"
         )
         assert _release_open_milestone_violations(tmp_path, "1.0.0") == ()
+
+
 class TestDeprecatedGate:
     """T-0576: frob:deprecated -- frob:debt generalized to a public API's
     own sunset. Malformed directive (DEPR001), non-open ticket (DEPR002),

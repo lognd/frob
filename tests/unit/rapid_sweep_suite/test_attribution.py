@@ -75,7 +75,6 @@ class TestAttributeNewFindings:
         assert result[("RULE2", "nowhere.py")].status == "unattributed"
 
 
-
 # frob:ticket T-1935
 class TestTrueFindingCount:
     """`_true_finding_count_for_identities` re-measures the TRUE
@@ -258,7 +257,6 @@ class TestTrueFindingCount:
         )
 
 
-
 # frob:ticket T-2006
 class TestIdentitiesStillReproducing:
     """T-2006: `_identities_still_reproducing` -- which of a candidate
@@ -356,8 +354,6 @@ class TestIdentitiesStillReproducing:
             tmp_path, frozenset({("E501", "src/frob/x.py")})
         )
         assert result is None
-
-
 
 
 # frob:ticket T-2006
@@ -843,6 +839,7 @@ class TestRevalidateDispatchableSweepTickets:
         # mask the agent's own uncommitted fix.
         assert len(spawn_calls) == 2
 
+
 # frob:ticket T-2077
 class TestRegressionCountLine:
     """T-2058 (ARCH001 split of `_file_regression_ticket`): the T-1935
@@ -861,7 +858,6 @@ class TestRegressionCountLine:
         line = _regression_count_line([("RULE1", "a.py")], None)
         assert "could not be independently re-measured" in line
         assert "5 actual finding" not in line
-
 
 
 # frob:ticket T-2077
@@ -902,7 +898,6 @@ class TestBuildRegressionBody:
         assert "T-2009: 2 lands (T-9000, T-9001)" in body
         assert "Attribution (T-1690" in body
         assert "- RULE1 a.py: unattributed" in body
-
 
 
 # frob:ticket T-3222

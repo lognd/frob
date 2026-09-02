@@ -11,8 +11,6 @@ from tests.unit.arch_suite.conftest import HAS_ARCH, analyze_project
 pytestmark = pytest.mark.skipif(not HAS_ARCH, reason="frob.arch not available")
 
 
-
-
 class TestForkPoolHazards:
     """`frob.arch._concurrency` -- pool-inside-pool, fork-after-threads,
     pipe-wait-deadlock, self-join-deadlock (docs/modules/arch.md#fork-pool-

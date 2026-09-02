@@ -1135,9 +1135,7 @@ class TestZig:
         pf = parse_file(_FIXTURES / "sample.zig").danger_ok
         after = _symbol(pf, "afterPlainComment")
         assert after.doc_text == ""
-        assert any(
-            "plain comment, not a doc comment" in c.text for c in pf.comments
-        )
+        assert any("plain comment, not a doc comment" in c.text for c in pf.comments)
 
     # frob:ticket T-1603
     def test_comptime_block_is_not_walked_for_symbols(self) -> None:

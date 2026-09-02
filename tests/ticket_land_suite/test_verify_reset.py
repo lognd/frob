@@ -43,7 +43,6 @@ from tests.ticket_land_suite.conftest import (
 pytestmark = pytest.mark.heavy_subprocess
 
 
-
 # frob:ticket T-0907
 class TestVerifiedResetRoot:
     """T-0907: `_verified_reset_root` replaces every bare `git reset --hard`
@@ -245,8 +244,6 @@ class TestDriftRefusalRestoresModifiedTrackedContent:
         assert _status_ignoring_frob(repo) == ""
 
 
-
-
 # frob:ticket T-1740
 class TestCommitSquashApplyUnwindsOnCommitFailure:
     """T-1740's audit found this the ONE real gap: every other failure
@@ -287,7 +284,6 @@ class TestCommitSquashApplyUnwindsOnCommitFailure:
         # tip, clean, nothing left for a bystander's next commit to sweep.
         assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == pre
         assert _status_ignoring_frob(repo) == ""
-
 
 
 # frob:ticket T-1940
@@ -466,7 +462,6 @@ class TestLandRepairMarker:
         assert not marker.exists()
 
 
-
 # frob:ticket T-2679
 class TestFinalizeRepairMarker:
     """T-2679: `_repair_stale_finalize_markers` reconciles a crashed
@@ -585,8 +580,6 @@ class TestPostLandVerifyPendingMarker:
         # DIFFERENT, currently-landing ticket must never be blocked by a
         # PRIOR, unrelated ticket's leftover marker.
         assert not marker_path.exists()
-
-
 
 
 # frob:ticket T-0907
@@ -951,7 +944,6 @@ class TestSigkillMidStaging:
         assert _status_ignoring_frob(repo) == ""
 
 
-
 class TestTick005LandRegressions:
     """T-0631: `_tick005_land_regressions` -- the TICK005-backed regression
     sweep run directly around a land's own squash-splice (mirrors
@@ -1040,7 +1032,6 @@ class TestTick005LandRegressions:
             )
             == ()
         )
-
 
 
 class TestLandRefusesOnTerminalStateRegression:
