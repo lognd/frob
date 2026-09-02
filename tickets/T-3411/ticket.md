@@ -29,6 +29,7 @@ scope:
 - docs/modules/graph.md
 - docs/guides/agentic-time-profiling.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -110,6 +111,12 @@ scope_changes:
   glob: design/frob.strata
   reason: 'T-3411: telemetry env.read capability via-list needs the new src/frob/app/telemetry/_state.py
     leaf module added alongside __init__.py/_footguns.py'
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'T-3411: raise cli::env.read via-list ratchet ceiling by 1 for the new _state.py
+    site'
   actor: logan
   at: '2026-09-02'
 body_changes:
