@@ -1,0 +1,82 @@
+## Done report
+
+Collapsed both remaining CYCLE001 SCCs via owner-decided leaf-module
+extraction (option a for both, per T-3411).
+
+frob.graph <-> frob.graph.lock: moved `resolve` into a new leaf module
+frob.graph._resolve, and `GraphError` into the existing leaf frob.graph._models
+(both re-exported from frob.graph.__init__ for the public surface). Removed
+T-0362's bottom-of-file import-ordering workaround; lock.py now imports
+resolve from frob.graph._resolve directly. Reworded the ARCH102/LARGE001
+cohesion waiver at the top of frob/graph/__init__.py since it no longer
+claims resolve lives with edges_from/edges_to.
+
+frob.app.telemetry <-> _footguns <-> _usage: moved is_disabled,
+_telemetry_path, _home_config_state_hash, _external_path_arg_hash (plus
+their private helpers and the TELEMETRY_REL constant _telemetry_path
+needs) into a new leaf module frob.app.telemetry._state, imported by
+__init__.py, _footguns.py, and _usage.py. Removed T-2694's bottom-of-file
+import-ordering workaround.
+
+Evidence: `frob check --only cycle` reports zero CYCLE001 findings
+(frob-cycle tool summary: "no cycles") -- both SCCs gone. Import smoke
+test (`import frob.graph, frob.graph.lock, frob.app.telemetry,
+frob.app.telemetry._footguns, frob.app.telemetry._usage`) succeeds.
+tests/test_graph.py::TestResolve (8 tests), tests/test_telemetry.py (37
+tests), and the full tests/test_graph.py (146 tests) all pass.
+`frob test --base main` (touched-set): exit=0, 20 python test outcomes
+recorded green.
+
+Symbol moves invalidated doc/test/via-list edges, all repointed in this
+diff: docs/modules/graph.md and docs/guides/agentic-time-profiling.md
+frob:describes anchors now point at the new module paths; test_graph.py
+and test_telemetry.py frob:tests directives repointed the same way (plus
+frob:ticket T-3411 added to the two changed telemetry tests and a
+frob:ticket/frob:tests pair added to the moved GraphError); design/frob.strata's
+cli::env.read via-list gained src/frob/app/telemetry/_state.py, which
+pushed the site count from 12 to 13 and required a reasoned bump to
+docs/design/registry/capability-via-ratchet.lock.json's cli::env.read
+accepted_count (SELFAUDIT001/SYS111). Ticket scope was widened via
+`frob ticket scope --add` to cover every file this closure touched
+(new leaf modules, moved-symbol docs, repointed tests, the ratchet lock,
+and src/frob/__init__.py for the frob:debt marker removal) rather than
+filing separate tickets, since all of it is directly required by this
+ticket's own acceptance criteria.
+
+Removed the frob:debt CYCLE001 marker at src/frob/__init__.py and
+updated its surrounding docstring to record both SCCs as resolved,
+clearing REL001.
+
+Filed: none -- no out-of-scope work discovered.
+
+Gates: `frob check --ticket T-3411` clean of every finding this diff
+caused (SCOPE001, LANDPARITY001, ruff F401/F811/I001, COV001, COV002,
+SELFAUDIT001 all resolved). The 8 errors still reported are pre-existing
+and touch none of this ticket's files: gate:COV COV003 (T-3604 stale
+pytest-collect cache entry), gate:DEPR DEPR006 and gate:WAIVE WAIVE011
+(deprecated-baseline/ratchet lock producers abandoned repo-wide, long
+predating this change), gate:PERF PERF003/PERF004 in
+src/frob/refactor/_scan.py and _scan_carry.py (explicitly out of this
+ticket's scope per the dispatch brief), gate:TICK TICK004 (T-3053
+priority rot, unrelated), and claude-config-drift CLAUDE001 (unrelated
+~/.claude hook sync).
+
+### Changed
+```
+ tickets/T-3411/done-report.md |  76 ++++++++++++++++++++++++++++++
+ tickets/T-3411/ticket.md      | 106 +++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 180 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_graph.py::TestResolve::test_exact_match` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestResolve::test_exact_qualname_wins_over_suffix_match` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestResolve::test_ambiguous_suffix_match` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestResolve::test_suffix_unique_match` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_append_event_respects_no_telemetry_env` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_no_telemetry_env_false_like_values_stay_enabled` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 7 error(s), 4307 warning(s), 909 waived
+- error-findings: CLAUDE001@.claude/hooks/sync-claude-config.py, COV003@tests/test_ci_workflow_matrix.py, DEPR006@frob-deprecated-baseline.lock.json, PERF003@src/frob/refactor/_scan.py, PERF004@src/frob/refactor/_scan_carry.py, TICK004@tickets.md, WAIVE011@frob-ratchet.lock.json

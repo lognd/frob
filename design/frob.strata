@@ -186,7 +186,7 @@ node cli : trusted {
     // argv (bypassing the parser tree entirely) -- a real, new
     // env.read + env.write site on the entrypoint file itself, not
     // just the app/** package underneath it.
-    may "env.read" via "src/frob/app/_daemon_proxy.py", "src/frob/app/check_runner.py", "src/frob/app/stats_runner.py", "src/frob/app/telemetry/__init__.py", "src/frob/app/telemetry/_footguns.py", "src/frob/app/ticket_runner/__init__.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_verify.py", "src/frob/app/ticket_runner/_new.py", "src/frob/app/ticket_runner/_rapid_sweep.py", "src/frob/app/verify_runner.py", "src/frob/__main__.py";
+    may "env.read" via "src/frob/app/_daemon_proxy.py", "src/frob/app/check_runner.py", "src/frob/app/stats_runner.py", "src/frob/app/telemetry/__init__.py", "src/frob/app/telemetry/_footguns.py", "src/frob/app/telemetry/_state.py", "src/frob/app/ticket_runner/__init__.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_verify.py", "src/frob/app/ticket_runner/_new.py", "src/frob/app/ticket_runner/_rapid_sweep.py", "src/frob/app/verify_runner.py", "src/frob/__main__.py";
     may "env.write" via "src/frob/__main__.py";
     attr flag=frob_check_exec_kill_switch;
     // T-0724: SYS203 (shared store write) fires because cli/core/fleet/

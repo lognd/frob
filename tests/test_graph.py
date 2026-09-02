@@ -1061,7 +1061,7 @@ class TestResolve:
         return build_graph(tmp_path, cache).danger_ok
 
     def test_exact_match(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/graph/__init__.py::resolve
+        # frob:tests src/frob/graph/_resolve.py::resolve
         snap = self._snapshot(tmp_path)
         result = resolve(snap, "src/a.py::Widget.render")
         assert result.is_ok
@@ -1073,7 +1073,7 @@ class TestResolve:
         assert result.is_ok
 
     def test_exact_qualname_wins_over_suffix_match(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/graph/__init__.py::resolve
+        # frob:tests src/frob/graph/_resolve.py::resolve
         # G10 (T-0402): a bare top-level `render` exactly matches one
         # qualname (`render` in b.py) AND loosely `.endswith`-matches
         # another (`Widget.render` in a.py). Exact qualname matches must be
@@ -1085,7 +1085,7 @@ class TestResolve:
         assert result.danger_ok.id.qualname == "render"
 
     def test_ambiguous_suffix_match(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/graph/__init__.py::resolve
+        # frob:tests src/frob/graph/_resolve.py::resolve
         # Genuine ambiguity: two DIFFERENT symbols both suffix-match a bare
         # `render`, and neither is an exact qualname hit (no top-level
         # `render` here) -- this must still be `AmbiguousSymbol`,

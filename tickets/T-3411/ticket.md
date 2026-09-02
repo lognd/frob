@@ -2,7 +2,7 @@
 id: T-3411
 title: 'Owner decision needed: collapse the last 2 CYCLE001 SCCs (frob.graph<->.lock,
   frob.app.telemetry)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-29'

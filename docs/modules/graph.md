@@ -34,7 +34,7 @@ POSIX separators. A bare `path` refers to the whole file.
 <!-- frob:describes src/frob/lang/__init__.py::supported_languages -->
 <!-- frob:describes src/frob/graph/__init__.py::build_graph -->
 <!-- frob:describes src/frob/graph/__init__.py::load_graph -->
-<!-- frob:describes src/frob/graph/__init__.py::resolve -->
+<!-- frob:describes src/frob/graph/_resolve.py::resolve -->
 <!-- frob:describes src/frob/graph/__init__.py::edges_from -->
 <!-- frob:describes src/frob/graph/__init__.py::edges_to -->
 <!-- frob:describes src/frob/graph/lock.py::load_lock -->
@@ -1270,7 +1270,7 @@ class ParsedFile(BaseModel):    # frob.lang output
 
 ## Error types
 
-<!-- frob:describes src/frob/graph/__init__.py::GraphError -->
+<!-- frob:describes src/frob/graph/_models.py::GraphError -->
 <!-- frob:describes src/frob/graph/lock.py::LockError -->
 
 - `GraphError` -- failure values graph read paths (`load_graph`,

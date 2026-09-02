@@ -17,8 +17,8 @@ from pydantic import BaseModel
 
 from frob.logging import get_logger
 
-from . import _telemetry_path
 from ._footguns import _FAST_EXIT_MS, _REPEATED_FAILURE_STREAK
+from ._state import _telemetry_path
 
 _log = get_logger(__name__)
 

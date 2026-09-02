@@ -235,9 +235,9 @@ def record_rule_firing_counts(root, report) -> None
 
 ## Public API
 
-<!-- frob:describes src/frob/app/telemetry/__init__.py::TELEMETRY_REL -->
+<!-- frob:describes src/frob/app/telemetry/_state.py::TELEMETRY_REL -->
 <!-- frob:describes src/frob/app/telemetry/__init__.py::T -->
-<!-- frob:describes src/frob/app/telemetry/__init__.py::is_disabled -->
+<!-- frob:describes src/frob/app/telemetry/_state.py::is_disabled -->
 <!-- frob:describes src/frob/app/telemetry/__init__.py::iso_now -->
 <!-- frob:describes src/frob/app/telemetry/__init__.py::redact_command -->
 <!-- frob:describes src/frob/app/telemetry/__init__.py::append_event -->

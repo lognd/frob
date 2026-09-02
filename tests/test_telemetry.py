@@ -35,7 +35,8 @@ def test_append_event_writes_one_json_line(tmp_path: Path):
 
 
 def test_append_event_respects_no_telemetry_env(tmp_path: Path, monkeypatch):
-    # frob:tests src/frob/app/telemetry/__init__.py::is_disabled
+    # frob:tests src/frob/app/telemetry/_state.py::is_disabled
+    # frob:ticket T-3411
     monkeypatch.setenv("FROB_NO_TELEMETRY", "1")
     assert is_disabled()
     append_event(tmp_path, {"a": 1})
@@ -43,7 +44,8 @@ def test_append_event_respects_no_telemetry_env(tmp_path: Path, monkeypatch):
 
 
 def test_no_telemetry_env_false_like_values_stay_enabled(tmp_path: Path, monkeypatch):
-    # frob:tests src/frob/app/telemetry/__init__.py::is_disabled
+    # frob:tests src/frob/app/telemetry/_state.py::is_disabled
+    # frob:ticket T-3411
     monkeypatch.setenv("FROB_NO_TELEMETRY", "0")
     assert not is_disabled()
     monkeypatch.delenv("FROB_NO_TELEMETRY", raising=False)

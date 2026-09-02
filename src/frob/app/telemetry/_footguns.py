@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 from frob.logging import get_logger
 
-from . import (
+from ._state import (
     _external_path_arg_hash,
     _home_config_state_hash,
     _telemetry_path,

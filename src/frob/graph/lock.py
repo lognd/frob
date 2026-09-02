@@ -21,7 +21,6 @@ from typani import Err, ErrorSet, Ok
 from typani.result import Result
 from typani.unit import Unit
 
-from frob.graph import resolve
 from frob.graph._models import (
     AckAuditEntry,
     DanglingEdge,
@@ -33,6 +32,7 @@ from frob.graph._models import (
     LockFile,
     StaleItem,
 )
+from frob.graph._resolve import resolve
 from frob.lang import SymbolKind
 from frob.logging import get_logger
 

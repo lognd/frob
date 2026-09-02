@@ -18,15 +18,18 @@ local table, so every grammar `frob.lang` gains (including `.strata`)
 reaches the graph automatically.
 """
 # frob:waive ARCH102 reason="19 of 22 exports form one connected build-graph pipeline \
-# cluster (load_graph's own ingest/parse/cache-prune chain); the remaining 3 \
-# (edges_from, edges_to, resolve) are small read-only query accessors over the exact \
+# cluster (load_graph's own ingest/parse/cache-prune chain); the remaining 2 \
+# (edges_from, edges_to) are small read-only query accessors over the exact \
 # GraphSnapshot the pipeline produces, coupled to it by the shared data model rather \
 # than by direct calls -- splitting query accessors away from the builder of the \
 # structure they query would separate one cohesive graph API into pieces with no \
-# independent reason to exist apart"
+# independent reason to exist apart. `resolve` moved to the frob.graph._resolve leaf \
+# module (T-3411, to collapse the frob.graph<->frob.graph.lock import cycle) and is \
+# re-exported here for its public surface, so it no longer counts against this \
+# waiver's boundary."
 # frob:waive LARGE001 reason="T-1651-grade: same cohesion the ARCH102 waiver above \
 # already establishes -- one build-graph pipeline (ingest/parse/cache-prune) plus its \
-# three query accessors, coupled by the shared GraphSnapshot model. Splitting the \
+# two query accessors, coupled by the shared GraphSnapshot model. Splitting the \
 # pipeline stages apart would sever load_graph's own incremental-cache-vs-reparse \
 # decision from the parse/ingest steps it decides between."
 
@@ -38,7 +41,7 @@ import sqlite3
 from collections.abc import Sequence
 from pathlib import Path
 
-from typani import Err, ErrorSet, Ok
+from typani import Err, Ok
 from typani.result import Result
 
 import frob.excludes as _excludes
@@ -52,6 +55,7 @@ from frob.graph._models import (
     DriftReport,
     Edge,
     EdgeKind,
+    GraphError,
     GraphSnapshot,
     LockEntry,
     LockFile,
@@ -61,6 +65,7 @@ from frob.graph._models import (
     SymbolId,
     SymbolRecord,
 )
+from frob.graph._resolve import resolve
 from frob.graph.affects import (
     AffectedSet,
     ScopeClosureGap,
@@ -86,6 +91,7 @@ from frob.graph.dsl import (
     parse_directives,
     slugify,
 )
+from frob.graph.lock import LockError, acknowledge, load_lock, write_lock
 from frob.graph.summary import (
     FunctionSummary,
     SCCTimeout,
@@ -97,17 +103,6 @@ from frob.logging import get_logger
 from frob.process._lock import derived_state_write_lock
 
 _log = get_logger(__name__)
-
-
-# frob:doc docs/modules/graph.md#error-types
-class GraphError(ErrorSet):
-    """Failure values graph read paths can return -- never a bare exception."""
-
-    CacheCorrupt = "Cache file unreadable; delete .frob/cache.db to rebuild"
-    CacheStale = "Cache does not match working tree; run build_graph"
-    CacheLocked = "Cache lock held by another process; retry the command"
-    UnknownSymbol = "Symbol reference does not resolve"
-    AmbiguousSymbol = "Reference matches more than one symbol"
 
 
 BuildError = GraphError | LangError
@@ -806,54 +801,6 @@ def _load_graph_from_connection(conn, cache: Path) -> Result[GraphSnapshot, Grap
 
 
 # frob:doc docs/modules/graph.md#public-api
-# frob:ticket T-0402
-# frob:tests tests/test_graph.py::TestResolve.test_exact_qualname_wins_over_suffix_match
-# frob:tests tests/test_graph.py::TestResolve.test_ambiguous_suffix_match
-def resolve(snapshot: GraphSnapshot, ref: str) -> Result[SymbolRecord, GraphError]:
-    """Resolve `ref`: exact `path::qualname`, else a unique qualname match,
-    else a unique `.suffix` match.
-
-    G10 (T-0402): exact-qualname and loose-suffix candidates used to be
-    merged into one pool before counting, so a top-level `foo` and any
-    `X.foo` collided into `AmbiguousSymbol` even though the bare `qualname
-    == ref` hit was unambiguous on its own, and a `.suffix` hit could win
-    over an exact qualname match that existed elsewhere in the pool. Exact
-    qualname matches are now checked -- and count towards ambiguity --
-    strictly before suffix matches are even considered.
-    """
-    exact = snapshot.symbols.get(ref)
-    if exact is not None:
-        return Ok(exact)
-
-    qualname_matches = [
-        record for record in snapshot.symbols.values() if record.id.qualname == ref
-    ]
-    if len(qualname_matches) == 1:
-        return Ok(qualname_matches[0])
-    if len(qualname_matches) > 1:
-        _log.warning(
-            "resolve(%r): ambiguous, %d qualname matches", ref, len(qualname_matches)
-        )
-        return Err(GraphError.AmbiguousSymbol)
-
-    suffix = f".{ref}"
-    suffix_matches = [
-        record
-        for record in snapshot.symbols.values()
-        if record.id.qualname.endswith(suffix)
-    ]
-    if len(suffix_matches) == 1:
-        return Ok(suffix_matches[0])
-    if len(suffix_matches) > 1:
-        _log.warning(
-            "resolve(%r): ambiguous, %d suffix matches", ref, len(suffix_matches)
-        )
-        return Err(GraphError.AmbiguousSymbol)
-    _log.debug("resolve(%r): no match", ref)
-    return Err(GraphError.UnknownSymbol)
-
-
-# frob:doc docs/modules/graph.md#public-api
 def edges_from(snapshot: GraphSnapshot, ref: str) -> tuple[Edge, ...]:
     """All edges whose `src` is exactly `ref`."""
     return tuple(edge for edge in snapshot.edges if edge.src == ref)
@@ -863,12 +810,6 @@ def edges_from(snapshot: GraphSnapshot, ref: str) -> tuple[Edge, ...]:
 def edges_to(snapshot: GraphSnapshot, target: str) -> tuple[Edge, ...]:
     """All edges whose `target` is exactly `target`."""
     return tuple(edge for edge in snapshot.edges if edge.target == target)
-
-
-# frob.graph.lock imports `resolve` back from this package, so it must be
-# imported only after `resolve` is defined above -- importing it at the top
-# with the rest deadlocks on a partially-initialized module (T-0362).
-from frob.graph.lock import LockError, acknowledge, load_lock, write_lock  # noqa: E402
 
 __all__ = [
     "AffectedSet",

@@ -41,36 +41,14 @@ from __future__ import annotations
 # statements or a redirected re-export, matching this ticket's own
 # established pattern for the shape).
 #
-# TWO SCCs remain, per the repo owner's explicit standing instruction
-# ("if that decision is not obvious, stop and tell me rather than
-# guessing; I would rather own that call than have it made implicitly")
-# -- both are a GENUINE mutual dependency an earlier, deliberate design
-# choice already worked around via import ORDERING rather than avoided,
-# and collapsing them means overriding that prior choice, not a
-# mechanical import-line rewrite:
-#   - `frob.graph` <-> `frob.graph.lock` (2 nodes): `lock.py` needs
-#     `resolve()`, which `frob.graph.__init__` defines directly and keeps
-#     WITH its build-graph pipeline under an existing ARCH102/LARGE001
-#     cohesion waiver (T-0362 already documents the load-order
-#     workaround this requires).
-#   - `frob.app.telemetry` <-> `frob.app.telemetry._footguns` <->
-#     `frob.app.telemetry._usage` (3 nodes): both submodules need
-#     `is_disabled`/`_telemetry_path` (plus `_footguns` needs
-#     `_home_config_state_hash`/`_external_path_arg_hash`), all defined
-#     in `__init__.py` itself; T-2694 already documents the deliberate
-#     bottom-of-file import ordering this requires.
-#
-# This is TRACKED DEBT, not a permanent exception: both remaining SCCs
-# are real (if small), not a release blocker on their own merits (2-3
-# nodes each, not 160), and will be fixed once the owner picks a
-# direction for each.
-# frob:debt CYCLE001 reason="two small (2-3 node) SCCs remain after T-3350's fix: \
-# frob.graph<->frob.graph.lock (resolve() needed by both, currently kept together \
-# under an ARCH102/LARGE001 cohesion waiver) and \
-# frob.app.telemetry<->._footguns<->._usage \
-# (is_disabled/_telemetry_path/_home_config_state_hash needed by both submodules, \
-# currently kept in __init__.py per T-2694's ordering workaround); each needs an owner \
-# pick on which side to extract/invert, not a mechanical fix" ticket="T-3411"
+# The two remaining small SCCs (`frob.graph` <-> `frob.graph.lock`, and
+# `frob.app.telemetry` <-> `_footguns` <-> `_usage`) are also gone
+# (T-3411, owner-decided leaf-module extraction): `resolve`/`GraphError`
+# moved to `frob.graph._resolve`/`frob.graph._models`, and
+# `is_disabled`/`_telemetry_path`/`_home_config_state_hash`/
+# `_external_path_arg_hash` moved to `frob.app.telemetry._state` --
+# both packages' bottom-of-file import ordering workarounds (T-0362,
+# T-2694) are removed along with them. Zero CYCLE001 findings remain.
 from frob.ci_report import (
     FailureCluster,
     JobReport,
