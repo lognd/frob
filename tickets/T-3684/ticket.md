@@ -30,6 +30,16 @@ scope_changes:
     edge on this file section
   actor: logan
   at: '2026-09-01'
+body_changes:
+- mode: append
+  reason: BUG002 refused the designated repro test as PASSED_AT_PARENT, which is expected
+    for a statistical flake -- waiving per the gate's own documented escape hatch
+  actor: logan
+  at: '2026-09-01'
+  old_length: 4973
+  new_length: 5501
+evidence:
+- tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew::test_concurrent_new_ticket_survives_a_racing_archive
 designated_repro_test: null
 threat: null
 component: null
@@ -133,3 +143,5 @@ Do NOT add a whole-tree lock around `load_all` -- that would reintroduce
 the whole-tree contention T-1750's `archive_v2` design deliberately
 avoided; the fix belongs at the read-tolerance layer, not the locking
 layer.
+
+frob:waive BUG002 reason="the designated reproduction test is a genuine timing-window race (archive_v2 glob-then-read vs a concurrent per-ticket move) that passes at the parent commit MOST of the time -- it is nondeterministic by construction, not a hard failure, so a single before/after diff run cannot demonstrate the defect the way BUG002 expects; real evidence is a 150-run loop-under-load comparison (2/150 failures before the fix, 0/150 after), recorded in this ticket's Done report and this drive's session transcript"
