@@ -18,10 +18,18 @@ scope:
 - src/frob/refactor/_scan_carry.py
 - src/frob/app/telemetry/_state.py
 - src/frob/graph/__init__.py
+- tests/test_refactor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_refactor.py
+  reason: T-3690's own perf-regression tests belong to _scan.py/_scan_carry.py's existing
+    test file (fallback mission scope explicitly allows 'and their test files')
+  actor: logan
+  at: '2026-09-02'
 body_changes:
 - mode: set
   reason: add description and plan for clearing ubuntu self-gate floor items
