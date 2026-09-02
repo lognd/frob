@@ -2,7 +2,7 @@
 id: T-3685
 title: 'CI macOS flake: ticket close sys.exit(1) in archive-force test under load,
   unreproduced on Linux'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
