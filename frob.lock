@@ -2789,6 +2789,42 @@
       "old_digest": null,
       "reason": "T-3627 split: UNKNOWN/UBIQUITOUS_TIER moved verbatim (value and docstring content unchanged) from _mayraise.py into the new _mayraise_tables.py; docs/modules/arch.md#may-raise-resolver's description of both still holds -- content re-verified against the new file",
       "ref": "src/frob/arch/_mayraise_tables.py::UBIQUITOUS_TIER"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-01",
+      "facet": "body",
+      "new_digest": "00a6f27a72ed0ae98b20de7776e7c87a6ee5071280b4fe3c7b13c2c048b79e37",
+      "old_digest": null,
+      "reason": "T-3681: test whether other _derived_lock.py symbols ack cleanly to isolate the bug",
+      "ref": "src/frob/process/_derived_lock.py::derived_state_lock"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-01",
+      "facet": "sig",
+      "new_digest": "00d14cd626641cb9c8da9c671be7e34ee5ac0af415e3262f0e55c030d701f834",
+      "old_digest": null,
+      "reason": "T-3681: test whether other _derived_lock.py symbols ack cleanly to isolate the bug",
+      "ref": "src/frob/process/_derived_lock.py::derived_state_lock"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-01",
+      "facet": "body",
+      "new_digest": "cd5b1bb1844d6b456d9bed3f694acfbe8e7b2926450bb29607ecb34b4ec59435",
+      "old_digest": "c01321041b8d5ca8f89276df41f16466634e6dd3b3ebe644d8de5ca6f441e5e1",
+      "reason": "T-3681: re-verified body against docs/modules/process.md's same-process nested-hold prose; digest moved from T-3628's file split (_lock.py -> _derived_lock.py), no behavior change. Root-caused UnknownRef: the symbol had lock entries but no frob:tests/frob:doc/frob:ticket edge after the move, so it was never a real edge endpoint; added a frob:tests anchor to its covering test",
+      "ref": "src/frob/process/_derived_lock.py::_process_already_holds"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-01",
+      "facet": "sig",
+      "new_digest": "ee8d5f981171bf783a8760a534a5da2235478f1a9a9dea9a3bbacfc1aab5c8cb",
+      "old_digest": "ee8d5f981171bf783a8760a534a5da2235478f1a9a9dea9a3bbacfc1aab5c8cb",
+      "reason": "T-3681: re-verified body against docs/modules/process.md's same-process nested-hold prose; digest moved from T-3628's file split (_lock.py -> _derived_lock.py), no behavior change. Root-caused UnknownRef: the symbol had lock entries but no frob:tests/frob:doc/frob:ticket edge after the move, so it was never a real edge endpoint; added a frob:tests anchor to its covering test",
+      "ref": "src/frob/process/_derived_lock.py::_process_already_holds"
     }
   ],
   "entries": [
@@ -3573,7 +3609,7 @@
       "ref": "src/frob/policy/__init__.py::policy_gate"
     },
     {
-      "digest": "c01321041b8d5ca8f89276df41f16466634e6dd3b3ebe644d8de5ca6f441e5e1",
+      "digest": "cd5b1bb1844d6b456d9bed3f694acfbe8e7b2926450bb29607ecb34b4ec59435",
       "facet": "body",
       "ref": "src/frob/process/_derived_lock.py::_process_already_holds"
     },
@@ -3581,6 +3617,16 @@
       "digest": "ee8d5f981171bf783a8760a534a5da2235478f1a9a9dea9a3bbacfc1aab5c8cb",
       "facet": "sig",
       "ref": "src/frob/process/_derived_lock.py::_process_already_holds"
+    },
+    {
+      "digest": "00a6f27a72ed0ae98b20de7776e7c87a6ee5071280b4fe3c7b13c2c048b79e37",
+      "facet": "body",
+      "ref": "src/frob/process/_derived_lock.py::derived_state_lock"
+    },
+    {
+      "digest": "00d14cd626641cb9c8da9c671be7e34ee5ac0af415e3262f0e55c030d701f834",
+      "facet": "sig",
+      "ref": "src/frob/process/_derived_lock.py::derived_state_lock"
     },
     {
       "digest": "1221ab65c3234d73b6b279eb3057c052c87c4db66624bd2550a6d71093c9129f",

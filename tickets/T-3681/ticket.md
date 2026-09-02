@@ -2,7 +2,7 @@
 id: T-3681
 title: 'self-gate floor: docs/modules/process.md DRIFT002 x3 + DRIFT001 ack (deferred
   from T-3674)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'

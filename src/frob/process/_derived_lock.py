@@ -80,6 +80,7 @@ def _worker_inherits_hold(root: Path) -> bool:
     return _canonical_registry_key(root) in held_keys
 
 
+# frob:tests TestDerivedStateWriteLock.test_standalone_rebuild_takes_exclusive
 def _process_already_holds(root: Path) -> bool:
     """Whether ANY thread in THIS process currently holds `derived_state_lock`
     for `root`, in any mode (shared or exclusive).

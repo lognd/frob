@@ -43,12 +43,12 @@ case a tool by name.
 <!-- frob:describes src/frob/process/_guard.py::exec_enabled -->
 <!-- frob:describes src/frob/process/_guard.py::net_enabled -->
 <!-- frob:describes src/frob/process/_guard.py::guarded_subprocess_run -->
-<!-- frob:describes src/frob/process/_lock.py::_derived_lock_path -->
-<!-- frob:describes src/frob/process/_lock.py::derived_state_lock -->
+<!-- frob:describes src/frob/process/_derived_lock.py::_derived_lock_path -->
+<!-- frob:describes src/frob/process/_derived_lock.py::derived_state_lock -->
 <!-- frob:describes src/frob/process/_lock.py::portable_flock_acquire -->
 <!-- frob:describes src/frob/process/_lock.py::portable_flock_release -->
 <!-- frob:describes src/frob/process/_lock.py::lock_backend_available -->
-<!-- frob:describes src/frob/process/_lock.py::DerivedStateLockUnavailable -->
+<!-- frob:describes src/frob/process/_derived_lock.py::DerivedStateLockUnavailable -->
 
 ```python
 # frob/process/parsers/common.py -- the shared result shapes every parser below produces
