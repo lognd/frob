@@ -462,8 +462,8 @@ class TestLeaseShapeValidation:
 
     # frob:ticket T-3661
     # frob:tests \
-    # tests/test_tickets_leases.py::TestLeaseShapeValidation::test_read_all_leases_admi\
-    # ts_a_windows_style_worktree_path kind="unit"
+    # tests/test_tickets_leases.py::TestLeaseShapeValidation.test_read_all_leases_admit\
+    # s_a_windows_style_worktree_path kind="unit"
     def test_read_all_leases_admits_a_windows_style_worktree_path(
         self, repo: Path
     ) -> None:
@@ -498,8 +498,8 @@ class TestLeaseShapeValidation:
 
     # frob:ticket T-3661
     # frob:tests \
-    # tests/test_tickets_leases.py::TestLeaseShapeValidation::test_read_all_leases_stil\
-    # l_drops_a_dash_prefixed_windows_style_worktree kind="unit"
+    # tests/test_tickets_leases.py::TestLeaseShapeValidation.test_read_all_leases_still\
+    # _drops_a_dash_prefixed_windows_style_worktree kind="unit"
     def test_read_all_leases_still_drops_a_dash_prefixed_windows_style_worktree(
         self, repo: Path
     ) -> None:
@@ -513,8 +513,8 @@ class TestLeaseShapeValidation:
 
     # frob:ticket T-3661
     # frob:tests \
-    # tests/test_tickets_leases.py::TestLeaseShapeValidation::test_worktree_operand_che\
-    # ck_admits_windows_paths_directly kind="unit"
+    # tests/test_tickets_leases.py::TestLeaseShapeValidation.test_worktree_operand_chec\
+    # k_admits_windows_paths_directly kind="unit"
     def test_worktree_operand_check_admits_windows_paths_directly(self) -> None:
         """`_looks_like_a_safe_worktree_path_operand` (T-3661) directly:
         admits a Windows drive-letter/backslash path, still rejects a
