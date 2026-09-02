@@ -18,10 +18,18 @@ scope:
 - src/frob/tickets/_store.py
 - src/frob/tickets/_models.py
 - tests/test_tickets_ledger_concurrency.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: T-3684 adds TicketError.TicketVanishedDuringScan, an affects()-closure doc
+    edge on this file section
+  actor: logan
+  at: '2026-09-01'
 designated_repro_test: null
 threat: null
 component: null
