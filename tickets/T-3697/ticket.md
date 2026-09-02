@@ -18,6 +18,7 @@ scope:
 - .claude/settings.json
 - tests/test_hook_frob_directive_guard.py
 - docs/guides/claude-hooks.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,12 @@ scope_changes:
 - op: add
   glob: docs/guides/claude-hooks.md
   reason: COV001 needs a frob:doc anchor for the new hook's main()
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001 requires declaring the new test file's subprocess exec capability
+    in the testsuite node
   actor: logan
   at: '2026-09-02'
 designated_repro_test: null
