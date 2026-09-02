@@ -1,7 +1,7 @@
 ---
 id: T-3678
 title: 'self-gate floor (d): COV007/REF002/OPAQUE001/TEST001 singletons'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
