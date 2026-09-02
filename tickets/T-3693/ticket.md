@@ -19,6 +19,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: add BUG002 waiver
+  actor: logan
+  at: '2026-09-02'
+  old_length: 940
+  new_length: 1361
+evidence:
+- tests/unit/test_check_admission.py::TestTimingDebug::test_mark_prints_breadcrumb_when_enabled
 designated_repro_test: null
 threat: null
 component: null
@@ -43,3 +52,7 @@ test_mark_elapsed_grows_with_process_start_offset's own existing pattern
 (which already does this correctly and was unaffected).
 
 References: T-3689, T-3692.
+
+
+
+frob:waive BUG002 reason="the defect is wall-clock-process-age-dependent (elapsed since frob.check module import exceeding 60s), not reproducible by a single fast repro-check invocation at the parent commit -- reproduced instead by directly aging _TIMING_PROCESS_START and observing the print (see Done report); a repro test that sleeps 60+s to trigger it for real is not a reasonable addition to this unit test file"
