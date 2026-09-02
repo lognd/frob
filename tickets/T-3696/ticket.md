@@ -50,6 +50,13 @@ scope_changes:
     in this lock file's own history uses
   actor: logan
   at: '2026-09-02'
+evidence:
+- tests/unit/gates/test_win32_kill_signal.py::TestPlatform002::test_zero_signal_kill_is_flagged
+- tests/unit/gates/test_win32_kill_signal.py::TestPlatform002::test_real_signal_kill_is_not_flagged
+- tests/unit/gates/test_win32_kill_signal.py::TestPlatform002::test_sanctioned_module_is_allowlisted
+- tests/unit/gates/test_win32_kill_signal.py::TestPlatform002::test_bare_imported_kill_is_flagged
+- tests/unit/gates/test_win32_kill_signal.py::TestPlatform002::test_unparseable_file_is_parse001_not_silent
+- tests/unit/gates/test_win32_kill_signal.py::TestPlatform002::test_frob_itself_is_clean
 designated_repro_test: null
 acceptance:
 - text: 'Given the new PLATFORM002 AST detector wired into frob check''s gate registry,
@@ -57,7 +64,13 @@ acceptance:
     reports a PLATFORM002 violation (before: no such rule exists / after: PLATFORM002
     FAILS on the fixture then PASSES once the call is removed or waived) -- production-invocation
     proof per the T-0756 new-gate-rule acceptance policy'
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_win32_kill_signal.py::TestPlatform002::test_zero_signal_kill_is_flagged
+  - tests/unit/gates/test_win32_kill_signal.py::TestPlatform002::test_real_signal_kill_is_not_flagged
+  - tests/unit/gates/test_win32_kill_signal.py::TestPlatform002::test_sanctioned_module_is_allowlisted
+  - tests/unit/gates/test_win32_kill_signal.py::TestPlatform002::test_bare_imported_kill_is_flagged
+  - tests/unit/gates/test_win32_kill_signal.py::TestPlatform002::test_unparseable_file_is_parse001_not_silent
+  - tests/unit/gates/test_win32_kill_signal.py::TestPlatform002::test_frob_itself_is_clean
 threat: null
 component: null
 anchor: false
