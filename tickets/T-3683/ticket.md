@@ -1,7 +1,7 @@
 ---
 id: T-3683
 title: 'win32 round 19: pre-lock stop points + mid-run watchdog'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -16,24 +16,21 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/conftest.py
 - src/frob/check/__init__.py
+- src/frob/process/_derived_lock.py
 - src/frob/process/_guard.py
 - .github/workflows/ci.yml
 - tests/test_ci_workflow_matrix.py
+- docs/modules/process.md
+- tests/unit/test_conftest_midrun_watchdog.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
-- op: remove
-  glob: src/frob/process/_derived_lock.py
-  reason: T-3681 holds a live lease on this file; narrow now and re-add only if the
-    round-19 bisect actually names this file, once T-3681 has landed
-  actor: logan
-  at: '2026-09-01'
-- op: remove
-  glob: docs/modules/process.md
-  reason: T-3681 holds a live lease here too; narrow now, append round-19 documentation
-    once T-3681 lands
+- op: add
+  glob: tests/unit/test_conftest_midrun_watchdog.py
+  reason: unit tests for FROB_TEST_MIDRUN_WATCHDOG_SECONDS gating/predicate logic
+    added in Part B
   actor: logan
   at: '2026-09-01'
 designated_repro_test: null
