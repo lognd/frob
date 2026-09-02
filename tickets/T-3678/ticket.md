@@ -24,6 +24,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 remedy: comment/waiver/test-only fix'
+  actor: logan
+  at: '2026-09-01'
+  old_length: 1537
+  new_length: 1675
+evidence:
+- tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds::test_resolves_known_time_unit
+- tests/unit/strata/test_capacity.py::TestGrowthPeriodSeconds::test_unknown_unit_is_err
 designated_repro_test: null
 threat: null
 component: null
@@ -60,3 +70,6 @@ series per fleet discipline; not touched here.
 Evidence: `timeout 540 uv run frob check --only coverage` for the
 _capacity.py COV007 findings; targeted checks for REF002/OPAQUE001/
 TEST001 (gate families: refs, opaque, test).
+
+
+frob:no-behavior-change reason="doc-anchor dedup, waiver comments, and a new test for pre-existing behavior -- no runtime logic changed"
