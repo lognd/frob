@@ -21,6 +21,11 @@ scope:
 - tests/test_refactor.py
 - src/frob/refactor/_scan_repoint.py
 - src/frob/refactor/_verify_import.py
+- design/frob.strata
+- src/frob/refactor/_scan_carry.py
+- src/frob/refactor/_verify_exec.py
+- tests/unit/test_arch_srp.py
+- tickets/T-draft-0abed004/ticket.md
 findings:
 - - LARGE001
   - src/frob/refactor/_scan.py
@@ -57,6 +62,51 @@ scope_changes:
   reason: 'SCOPE002: doc/test coverage closure for the split target packages, plus
     under-captured private-helper call edges into the new sibling modules this LARGE001
     split created'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: design/frob.strata
+  reason: 'SCOPE001: LARGE001 split necessarily creates new sibling files (_scan_carry.py/_scan_repoint.py
+    already added, _verify_exec.py missing) and edits design/frob.strata''s capability
+    via-lists for them; tests/unit/test_arch_srp.py is the pre-existing SCOPE002 cascade
+    already left as-is twice earlier in this series; tickets/T-draft-0abed004/ticket.md
+    is this ticket''s own newly-filed dogfooding-discovered defect'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: src/frob/refactor/_scan_carry.py
+  reason: 'SCOPE001: LARGE001 split necessarily creates new sibling files (_scan_carry.py/_scan_repoint.py
+    already added, _verify_exec.py missing) and edits design/frob.strata''s capability
+    via-lists for them; tests/unit/test_arch_srp.py is the pre-existing SCOPE002 cascade
+    already left as-is twice earlier in this series; tickets/T-draft-0abed004/ticket.md
+    is this ticket''s own newly-filed dogfooding-discovered defect'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: src/frob/refactor/_verify_exec.py
+  reason: 'SCOPE001: LARGE001 split necessarily creates new sibling files (_scan_carry.py/_scan_repoint.py
+    already added, _verify_exec.py missing) and edits design/frob.strata''s capability
+    via-lists for them; tests/unit/test_arch_srp.py is the pre-existing SCOPE002 cascade
+    already left as-is twice earlier in this series; tickets/T-draft-0abed004/ticket.md
+    is this ticket''s own newly-filed dogfooding-discovered defect'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/unit/test_arch_srp.py
+  reason: 'SCOPE001: LARGE001 split necessarily creates new sibling files (_scan_carry.py/_scan_repoint.py
+    already added, _verify_exec.py missing) and edits design/frob.strata''s capability
+    via-lists for them; tests/unit/test_arch_srp.py is the pre-existing SCOPE002 cascade
+    already left as-is twice earlier in this series; tickets/T-draft-0abed004/ticket.md
+    is this ticket''s own newly-filed dogfooding-discovered defect'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tickets/T-draft-0abed004/ticket.md
+  reason: 'SCOPE001: LARGE001 split necessarily creates new sibling files (_scan_carry.py/_scan_repoint.py
+    already added, _verify_exec.py missing) and edits design/frob.strata''s capability
+    via-lists for them; tests/unit/test_arch_srp.py is the pre-existing SCOPE002 cascade
+    already left as-is twice earlier in this series; tickets/T-draft-0abed004/ticket.md
+    is this ticket''s own newly-filed dogfooding-discovered defect'
   actor: logan
   at: '2026-09-01'
 evidence:
