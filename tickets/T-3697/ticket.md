@@ -15,13 +15,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/frob-directive-guard.py
-- .claude/hooks/frob-suggest.py
 - .claude/settings.json
 - tests/test_hook_frob_directive_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: .claude/hooks/frob-suggest.py
+  reason: avoid overlap with T-3229/T-3284; going with standalone new hook, not extending
+    frob-suggest.py
+  actor: logan
+  at: '2026-09-02'
 designated_repro_test: null
 threat: null
 component: null
