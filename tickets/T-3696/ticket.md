@@ -1,7 +1,7 @@
 ---
 id: T-3696
 title: 'add PLATFORM002: flag os.kill(pid, 0) outside the sanctioned liveness probe'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
