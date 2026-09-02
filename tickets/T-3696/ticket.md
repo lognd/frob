@@ -20,6 +20,7 @@ scope:
 - docs/modules/gates.md
 - tests/unit/gates/test_win32_kill_signal.py
 - src/frob/gates/_fix_engine_shared.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,14 @@ scope_changes:
   reason: PLATFORM002 legitimately flags an existing os.kill(pid, 0) call site in
     this file (T-3698, out of scope to fix here); need to add a frob:waive PLATFORM002
     directive there so repo-wide frob check stays clean until T-3698 lands
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001 flags new fs.read/fs.write/exec capability sites in the new
+    detector module and its test fixture (subprocess git calls, tmp_path writes) that
+    must be declared in the gates/testsuite node manifests, same as every other new
+    gate module's precedent
   actor: logan
   at: '2026-09-02'
 designated_repro_test: null
