@@ -2,7 +2,7 @@
 id: T-3411
 title: 'Owner decision needed: collapse the last 2 CYCLE001 SCCs (frob.graph<->.lock,
   frob.app.telemetry)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-29'
@@ -20,10 +20,91 @@ scope:
 - src/frob/app/telemetry/__init__.py
 - src/frob/app/telemetry/_footguns.py
 - src/frob/app/telemetry/_usage.py
+- src/frob/__init__.py
+- src/frob/graph/_models.py
+- src/frob/graph/_resolve.py
+- src/frob/app/telemetry/_state.py
+- tests/test_graph.py
+- tests/test_telemetry.py
+- docs/modules/graph.md
+- docs/guides/agentic-time-profiling.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/__init__.py
+  reason: 'T-3411: leaf-module extraction creates new files (_models.py already in
+    scope, _resolve.py, _state.py) and moves GraphError, plus repoints doc/test citations
+    in graph.md, agentic-time-profiling.md, test_graph.py, test_telemetry.py, and
+    removes the resolved frob:debt CYCLE001 marker from src/frob/__init__.py per the
+    ticket''s own acceptance criteria'
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: src/frob/graph/_models.py
+  reason: 'T-3411: leaf-module extraction creates new files (_models.py already in
+    scope, _resolve.py, _state.py) and moves GraphError, plus repoints doc/test citations
+    in graph.md, agentic-time-profiling.md, test_graph.py, test_telemetry.py, and
+    removes the resolved frob:debt CYCLE001 marker from src/frob/__init__.py per the
+    ticket''s own acceptance criteria'
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: src/frob/graph/_resolve.py
+  reason: 'T-3411: leaf-module extraction creates new files (_models.py already in
+    scope, _resolve.py, _state.py) and moves GraphError, plus repoints doc/test citations
+    in graph.md, agentic-time-profiling.md, test_graph.py, test_telemetry.py, and
+    removes the resolved frob:debt CYCLE001 marker from src/frob/__init__.py per the
+    ticket''s own acceptance criteria'
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: src/frob/app/telemetry/_state.py
+  reason: 'T-3411: leaf-module extraction creates new files (_models.py already in
+    scope, _resolve.py, _state.py) and moves GraphError, plus repoints doc/test citations
+    in graph.md, agentic-time-profiling.md, test_graph.py, test_telemetry.py, and
+    removes the resolved frob:debt CYCLE001 marker from src/frob/__init__.py per the
+    ticket''s own acceptance criteria'
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: tests/test_graph.py
+  reason: 'T-3411: leaf-module extraction creates new files (_models.py already in
+    scope, _resolve.py, _state.py) and moves GraphError, plus repoints doc/test citations
+    in graph.md, agentic-time-profiling.md, test_graph.py, test_telemetry.py, and
+    removes the resolved frob:debt CYCLE001 marker from src/frob/__init__.py per the
+    ticket''s own acceptance criteria'
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: tests/test_telemetry.py
+  reason: 'T-3411: leaf-module extraction creates new files (_models.py already in
+    scope, _resolve.py, _state.py) and moves GraphError, plus repoints doc/test citations
+    in graph.md, agentic-time-profiling.md, test_graph.py, test_telemetry.py, and
+    removes the resolved frob:debt CYCLE001 marker from src/frob/__init__.py per the
+    ticket''s own acceptance criteria'
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'T-3411: leaf-module extraction creates new files (_models.py already in
+    scope, _resolve.py, _state.py) and moves GraphError, plus repoints doc/test citations
+    in graph.md, agentic-time-profiling.md, test_graph.py, test_telemetry.py, and
+    removes the resolved frob:debt CYCLE001 marker from src/frob/__init__.py per the
+    ticket''s own acceptance criteria'
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: docs/guides/agentic-time-profiling.md
+  reason: 'T-3411: leaf-module extraction creates new files (_models.py already in
+    scope, _resolve.py, _state.py) and moves GraphError, plus repoints doc/test citations
+    in graph.md, agentic-time-profiling.md, test_graph.py, test_telemetry.py, and
+    removes the resolved frob:debt CYCLE001 marker from src/frob/__init__.py per the
+    ticket''s own acceptance criteria'
+  actor: logan
+  at: '2026-09-02'
 body_changes:
 - mode: set
   reason: 'DOC006 in CI run 33298117154: the backticked proposed module path frob.app.telemetry._state
