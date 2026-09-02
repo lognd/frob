@@ -1,7 +1,7 @@
 ---
 id: T-3698
 title: os.kill(pid, 0) win32 footgun still live in gates/_fix_engine_shared.py::_pid_alive
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -15,10 +15,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_fix_engine_shared.py
+- tests/gates_suite/test_fix_engine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/gates_suite/test_fix_engine.py
+  reason: adding regression test for the _pid_alive delegation fix
+  actor: logan
+  at: '2026-09-02'
 designated_repro_test: null
 acceptance:
 - text: 'Given frob.gates._fix_engine_shared._pid_alive, when a win32-shaped test
