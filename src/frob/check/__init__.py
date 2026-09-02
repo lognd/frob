@@ -102,6 +102,86 @@ _CHECK_STOP_POINTS = (
     "submit",
 )
 
+#: T-3689: env-gated timing-breadcrumb knob, OFF by default everywhere,
+#: sibling to `FROB_CHECK_STOP_BEFORE_ENV` -- where that knob EXITS the
+#: pipeline at a named point, this one keeps running but PRINTS an
+#: elapsed-seconds-since-process-start breadcrumb at every one of the
+#: same `_CHECK_STOP_POINTS` (via `_stop_before_result`'s own call
+#: sites, unconditionally reached regardless of whether the point
+#: matches `FROB_CHECK_STOP_BEFORE`) plus 3 extra sub-phase points
+#: inside `_early_precheck_failure` (T-3256/T-2764/T-3526's own 3
+#: prechecks) that the 7 pipeline-wide stop points cannot see inside
+#: of. Exists because T-3686 fixed the win32 self-interrupt (pid_alive
+#: no longer broadcasts CTRL_C_EVENT) and UNMASKED a second win32
+#: problem the stop-before knob cannot localize on its own: `frob
+#: check` now runs to completion on win32 but a zero-tool-spawn diag
+#: (FROB_DISABLE_EXEC=1) took 122.7s instead of the expected low
+#: single digits (CI run 33615554440). `FROB_CHECK_STOP_BEFORE` only
+#: proves a bracket is clean or dirty by EXITING there -- it cannot
+#: say how long a run that completes anyway took to cross each point.
+#: This flag turns the same 7 points (plus the 3 precheck sub-phases)
+#: into elapsed-time breadcrumbs instead, so the NEXT windows CI run's
+#: `FROB-CHECK-TIMING:` lines localize where the 122s actually goes
+#: without needing a new bisect round per candidate point.
+#:
+#: T-3689: PRIVATE (leading underscore), unlike its public `FROB_CHECK_
+#: STOP_BEFORE_ENV` sibling -- `docs/commands/check.md` (the natural
+#: `frob:doc` home for a public sibling knob) sits outside this
+#: ticket's own declared scope, so this stays undocumented-but-private
+#: rather than public-but-undocumented; documenting it there (and
+#: making it public) is deferred to a follow-up ticket that touches
+#: `docs/commands/check.md`.
+_FROB_CHECK_TIMING_DEBUG_ENV = "FROB_CHECK_TIMING_DEBUG"
+
+#: T-3689: process-start reference `_timing_mark` measures elapsed time
+#: against -- captured once, at import time, which for a `frob check`
+#: CLI invocation (a fresh, single-shot `python`/`uv run` process) is
+#: indistinguishable in practice from "process start" (the gap is
+#: import-resolution time for `frob.check` itself and its transitive
+#: imports, microseconds to low milliseconds, not seconds) -- exactly
+#: the same "one-shot process, import time ~= process start" premise
+#: `frob.check._memo`'s own per-run counters already rely on. A
+#: per-call `time.monotonic()` capture at `_run_check_with_skips`'s own
+#: first line would be marginally more precise but would need
+#: threading a `start` value through every `_stop_before_result` call
+#: site for a precision gain this diagnostic (localizing tens of
+#: seconds, not milliseconds) does not need.
+_TIMING_PROCESS_START = time.monotonic()
+
+
+# frob:ticket T-3689
+# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_disabled_by_default  # noqa: E501
+# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_enabled_when_set_non_empty  # noqa: E501
+def _timing_debug_enabled() -> bool:
+    """True exactly when `FROB_CHECK_TIMING_DEBUG` (`FROB_CHECK_TIMING_
+    DEBUG_ENV`) is set to a non-empty value -- checked fresh on every
+    call, same posture as `_check_stop_before`."""
+    return bool(os.environ.get(_FROB_CHECK_TIMING_DEBUG_ENV, ""))
+
+
+# frob:ticket T-3689
+# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_mark_is_silent_when_disabled  # noqa: E501
+# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_mark_prints_breadcrumb_when_enabled  # noqa: E501
+# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_mark_elapsed_grows_with_process_start_offset  # noqa: E501
+def _timing_mark(label: str) -> None:
+    """Print a `FROB-CHECK-TIMING:` breadcrumb naming `label` and the
+    elapsed seconds since `_TIMING_PROCESS_START`, when `_timing_debug_
+    enabled()` -- a no-op everywhere else, same MUST-STAY-QUIET posture
+    as every other diagnostic-only knob in this module. `label` is
+    freeform (unlike `_check_stop_before`'s `_CHECK_STOP_POINTS`-
+    constrained `point`): callers include every `_CHECK_STOP_POINTS`
+    name (via `_stop_before_result`) plus finer-grained sub-phase labels
+    (`_early_precheck_failure`'s 3 prechecks) the pipeline-wide stop
+    points cannot see inside of."""
+    if not _timing_debug_enabled():
+        return
+    elapsed = time.monotonic() - _TIMING_PROCESS_START
+    # frob:waive RENDER001 reason="T-3689: diagnostic-only debug knob a CI diag step \
+    # greps this exact line out of stdout for, mirroring _stop_before_ result's own \
+    # identical RENDER001 waiver -- off by default everywhere except one workflow \
+    # step's own env: block." permanent="true"
+    print(f"FROB-CHECK-TIMING: {label} at {elapsed:.3f}s", flush=True)
+
 
 # frob:ticket T-3675
 def _check_stop_before(point: str) -> bool:
@@ -128,7 +208,15 @@ def _stop_before_result(
     `list[ToolResult]` instead) purely to keep each call site a 2-line
     `if`, not for reuse beyond that -- ARCH001 (T-2214) flags
     `_run_check_with_skips` past its long-AND-complex threshold with the
-    4 stop-point checks inlined."""
+    4 stop-point checks inlined.
+
+    T-3689: also fires `_timing_mark(point)` unconditionally, before the
+    `_check_stop_before` check -- so a `FROB_CHECK_TIMING_DEBUG` run
+    gets an elapsed-time breadcrumb at every one of `_CHECK_STOP_
+    POINTS` on a run that does NOT stop early (the normal case once a
+    run completes instead of being killed), not only on a `FROB_CHECK_
+    STOP_BEFORE` bisect run that exits at exactly one of them."""
+    _timing_mark(point)
     if not _check_stop_before(point):
         return None
     # frob:waive RENDER001 reason="T-3675: FROB_CHECK_STOP_BEFORE is a diagnostic-only \
@@ -157,14 +245,29 @@ def _early_precheck_failure(root: Path) -> "CheckResult | None":
     `_run_check_with_skips` purely to keep it under ARCH001's long-AND-
     complex threshold (T-2214) -- each of the 3 checks keeps its own
     docstring as the source of truth, this function only sequences
-    them."""
+    them.
+
+    T-3689: each of the 3 prechecks gets its own `_timing_mark` pair
+    (before/after), invisible to the 7 pipeline-wide `_CHECK_STOP_
+    POINTS` -- `_native_staleness_result` is the prime suspect for the
+    win32 122.7s zero-tool-spawn slowdown (CI run 33615554440): it can
+    attempt a real native rebuild (`build_natives`) even under
+    `FROB_DISABLE_EXEC=1`, and that rebuild attempt's own non-subprocess
+    work (staleness hashing, `frob.natives._build`'s pre-spawn setup) is
+    unmeasured by any existing stop point."""
+    _timing_mark("precheck-integrity-start")
     integrity_failure = _derived_state_integrity_result(root)
+    _timing_mark("precheck-integrity-done")
     if integrity_failure is not None:
         return CheckResult(path=str(root), results=[integrity_failure])
+    _timing_mark("precheck-staleness-start")
     staleness_failure = _native_staleness_result(root)
+    _timing_mark("precheck-staleness-done")
     if staleness_failure is not None:
         return CheckResult(path=str(root), results=[staleness_failure])
+    _timing_mark("precheck-autofix-start")
     autofix_failure = _abandoned_autofix_result(root)
+    _timing_mark("precheck-autofix-done")
     if autofix_failure is not None:
         return CheckResult(path=str(root), results=[autofix_failure])
     return None
@@ -500,11 +603,24 @@ def _admission_budget(root: Path) -> Iterator[int]:
     reduction once, at WARNING, naming the exact numbers an operator needs
     (admitted/real, concurrent check count, available memory, per-worker
     budget, the override env var) -- MUST-STAY-QUIET when nothing was
-    reduced (the idle-box case, T-3256's own must-stay-quiet fixture)."""
+    reduced (the idle-box case, T-3256's own must-stay-quiet fixture).
+
+    T-3689: brackets `_register_admission`/`_compute_admitted_workers`
+    (which calls `_live_concurrent_checks` -> `_pid_alive` per marker,
+    a prime win32 suspect now that T-3686 made `_pid_alive` safe -- a
+    stale marker left by an EARLIER CI diag step in the same job that
+    self-interrupted before its own `finally: marker.unlink()` ran is
+    plausible in exactly this CI's own multi-step-same-checkout shape)
+    with `_timing_mark` pairs so a slow registry scan on win32 shows up
+    even on a run that completes instead of hanging outright."""
+    _timing_mark("admission-register-start")
     marker = _register_admission(root)
+    _timing_mark("admission-register-done")
     real_cpu_count_fn = os.cpu_count
     try:
+        _timing_mark("admission-compute-start")
         admitted, real_cpu, mem_mb, concurrent = _compute_admitted_workers(root)
+        _timing_mark("admission-compute-done")
         if admitted < real_cpu:
             if mem_mb is not None:
                 _log.warning(
@@ -1276,6 +1392,11 @@ def _python_tasks(
 # `frob.logging`, so this adds no new edge.
 
 
+# frob:waive ARCH001 reason="T-3689: the 2 added _timing_mark('submit')/ ('collected') \
+# diagnostic-only breadcrumb calls pushed this 2 lines past ARCH001's threshold; \
+# splitting a single ThreadPoolExecutor submit/collect body across 2 functions for 2 \
+# lines of env-gated diagnostic instrumentation would obscure the one control-flow \
+# block more than it clarifies"
 def _run_tasks_concurrently(
     tasks: list[_NamedTask],
     *,
@@ -1301,7 +1422,13 @@ def _run_tasks_concurrently(
     worker thread starts. This is the LAST of the 4 `FROB_CHECK_STOP_
     BEFORE` points and shared by every caller (Python/C++/Rust/TS
     check), not only the Python pipeline -- harmless everywhere the env
-    var is unset, same as the other 3 points."""
+    var is unset, same as the other 3 points.
+
+    T-3689: also brackets the `ThreadPoolExecutor` stage with
+    `_timing_mark("submit")`/`_timing_mark("collected")` (this call
+    site predates `_stop_before_result`, so it cannot share its
+    built-in mark)."""
+    _timing_mark("submit")
     total = len(tasks)
     done = 0
     by_future: dict[concurrent.futures.Future, str] = {}
@@ -1335,6 +1462,7 @@ def _run_tasks_concurrently(
                 results.extend(val)
             else:
                 results.append(val)
+    _timing_mark("collected")
     return results
 
 

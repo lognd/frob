@@ -607,6 +607,12 @@ jobs:
             "# import-time code path can spawn anything first.",
             "os.environ['FROB_DISABLE_EXEC'] = '1'",
             "os.environ['FROB_WIN32_SPAWN_DEBUG'] = '1'",
+            # T-3689: elapsed-time breadcrumbs at every FROB_CHECK_STOP_BEFORE
+            # point (plus the 3 early-precheck sub-phases and the admission-
+            # budget registry sub-phases) on a run that completes instead of
+            # exiting early -- localizes the 122.7s win32 slowdown T-3686
+            # unmasked (CI run 33615554440) without a new bisect round.
+            "os.environ['FROB_CHECK_TIMING_DEBUG'] = '1'",
             "",
             "def _t3657_log_signal(signum, frame):",
             "    try:",
@@ -1477,13 +1483,28 @@ jobs:
       # otherwise be masking-and-hanging on) -- once that lands, this
       # watchdog should simply stop firing in practice, but stays
       # armed so a future wedge is never silent again.
+      #
+      # T-3689: threshold lowered 300s -> 180s. T-3686 fixed the self-
+      # interrupt, which UNMASKED a second win32 problem this watchdog
+      # was blind to: run 33615554440 measured a single zero-tool-spawn
+      # `frob check` completing (not hanging) in 122.7s on win32, and
+      # the Windows Test step still exceeded its 1500s budget with the
+      # watchdog never firing -- individual test call-phases were each
+      # slow-but-progressing (each logreport landing under the old 300s
+      # gap), never wedged for a single >=300s stretch, so cumulative
+      # slowness across many tests summed past budget with no single
+      # stall this watchdog's no-progress-in-N-seconds design could see.
+      # 180s narrows that blind spot (any ONE test call-phase now taking
+      # more than ~1.5x a single measured 122.7s check is caught) without
+      # dropping below a single slow-but-healthy check's own measured
+      # duration.
       - name: Test (windows, timed with hang guard)
         if: matrix.os == 'windows-latest'
         env:
           PYTHONFAULTHANDLER: "1"
           FROB_TEST_IGNORE_CONSOLE_CTRL: "1"
           FROB_TEST_HARD_EXIT: "1"
-          FROB_TEST_MIDRUN_WATCHDOG_SECONDS: "300"
+          FROB_TEST_MIDRUN_WATCHDOG_SECONDS: "180"
         run: |
           $budget = 1500  # 25m, same budget/rationale as ubuntu's step above
           $stdout = Join-Path $env:RUNNER_TEMP "pytest-stdout.log"

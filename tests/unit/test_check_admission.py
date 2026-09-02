@@ -11,6 +11,7 @@ fixture and monkeypatched module functions.
 from __future__ import annotations
 
 import os
+import time
 from pathlib import Path
 
 import pytest
@@ -549,3 +550,63 @@ class TestAdmissionRegistryAnchor:
         # elsewhere in the repo sees only the genuinely live one.
         assert check_mod._live_concurrent_checks(primary) == 1
         assert not (shared_dir / "999999999.json").exists()
+
+
+class TestTimingDebug:
+    """T-3689: `FROB_CHECK_TIMING_DEBUG`'s env-gate and its `_timing_mark`
+    breadcrumb -- the sibling instrumentation to `FROB_CHECK_STOP_BEFORE`
+    that localizes the win32 122.7s post-T-3686 slowdown (CI run
+    33615554440) by measuring elapsed time at each pipeline phase on a
+    run that completes instead of exiting early."""
+
+    def test_disabled_by_default(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::_timing_debug_enabled kind="unit"
+        monkeypatch.delenv(check_mod._FROB_CHECK_TIMING_DEBUG_ENV, raising=False)
+        assert check_mod._timing_debug_enabled() is False
+
+    def test_enabled_when_set_non_empty(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::_timing_debug_enabled kind="unit"
+        monkeypatch.setenv(check_mod._FROB_CHECK_TIMING_DEBUG_ENV, "1")
+        assert check_mod._timing_debug_enabled() is True
+
+    def test_mark_is_silent_when_disabled(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::_timing_mark kind="unit"
+        monkeypatch.delenv(check_mod._FROB_CHECK_TIMING_DEBUG_ENV, raising=False)
+        check_mod._timing_mark("some-point")
+        assert "FROB-CHECK-TIMING" not in capsys.readouterr().out
+
+    def test_mark_prints_breadcrumb_when_enabled(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::_timing_mark kind="unit"
+        monkeypatch.setenv(check_mod._FROB_CHECK_TIMING_DEBUG_ENV, "1")
+        check_mod._timing_mark("some-point")
+        out = capsys.readouterr().out
+        assert "FROB-CHECK-TIMING: some-point at " in out
+        assert out.rstrip().endswith("s")
+        # Elapsed is measured against _TIMING_PROCESS_START via subtraction
+        # (`time.monotonic() - _TIMING_PROCESS_START`); a small, bounded,
+        # non-negative value -- a swapped `+` would instead print a raw
+        # `time.monotonic()`-scale (epoch-relative) number in the billions.
+        elapsed_text = out.rstrip().removesuffix("s").rsplit(" at ", 1)[1]
+        elapsed = float(elapsed_text)
+        assert 0.0 <= elapsed < 60.0
+
+    def test_mark_elapsed_grows_with_process_start_offset(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::_timing_mark kind="unit"
+        monkeypatch.setenv(check_mod._FROB_CHECK_TIMING_DEBUG_ENV, "1")
+        monkeypatch.setattr(
+            check_mod, "_TIMING_PROCESS_START", time.monotonic() - 5.0
+        )
+        check_mod._timing_mark("some-point")
+        out = capsys.readouterr().out
+        elapsed_text = out.rstrip().removesuffix("s").rsplit(" at ", 1)[1]
+        assert float(elapsed_text) >= 5.0
