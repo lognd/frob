@@ -16,10 +16,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/frob-timeout-guard.py
 - tests/test_hook_frob_timeout_guard.py
+- docs/guides/claude-hooks.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: close doc scope-closure gap flagged at ticket creation
+  actor: logan
+  at: '2026-09-02'
 designated_repro_test: null
 threat: null
 component: null
