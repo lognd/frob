@@ -1,7 +1,7 @@
 ---
 id: T-3676
 title: 'self-gate floor (b): SEC110 waivers in test_wip.py FROB_WORKTREE reads'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'

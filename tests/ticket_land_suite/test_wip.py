@@ -233,7 +233,13 @@ class TestWorktreeLeaseEnvIsolation:
         `monkeypatch`, exactly like `apply_agent_env` does) -- without
         T-3123's autouse fixture this would leave `FROB_WORKTREE` set for
         whichever test runs next in this worker."""
+        # frob:waive SEC110 reason="FROB_WORKTREE is a local worktree path, not a \
+        # secret -- this test deliberately reads it directly to prove T-3123's \
+        # leak-isolation fixture works"
         os.environ["FROB_WORKTREE"] = self._LEAK_SENTINEL
+        # frob:waive SEC110 reason="FROB_WORKTREE is a local worktree path, not a \
+        # secret -- this test deliberately reads it directly to prove T-3123's \
+        # leak-isolation fixture works"
         assert os.environ.get("FROB_WORKTREE") == self._LEAK_SENTINEL
 
     def test_b_does_not_see_a_leaked_frob_worktree(self) -> None:
@@ -246,6 +252,9 @@ class TestWorktreeLeaseEnvIsolation:
         DIFFERENT `tmp_path` repo right after this would otherwise refuse
         with `TicketError.WorktreeLeaseViolation` -- the exact T-3123
         failure shape."""
+        # frob:waive SEC110 reason="FROB_WORKTREE is a local worktree path, not a \
+        # secret -- this test deliberately reads it directly to prove T-3123's \
+        # leak-isolation fixture works"
         assert os.environ.get("FROB_WORKTREE") != self._LEAK_SENTINEL
 
     def test_apply_agent_env_leak_is_contained_to_its_own_test(
@@ -261,6 +270,9 @@ class TestWorktreeLeaseEnvIsolation:
         _git_init(tmp_path)
         result = apply_agent_env(tmp_path)
         assert result.is_ok
+        # frob:waive SEC110 reason="FROB_WORKTREE is a local worktree path, not a \
+        # secret -- this test deliberately reads it directly to prove T-3123's \
+        # leak-isolation fixture works"
         assert os.environ.get("FROB_WORKTREE") == str(tmp_path.resolve())
         # Recorded on the class (not an instance attribute) so the next
         # test -- a fresh instance, same worker process -- can compare
@@ -283,4 +295,7 @@ class TestWorktreeLeaseEnvIsolation:
                 "test_apply_agent_env_leak_is_contained_to_its_own_test did "
                 "not run first in this process -- nothing to check standalone"
             )
+        # frob:waive SEC110 reason="FROB_WORKTREE is a local worktree path, not a \
+        # secret -- this test deliberately reads it directly to prove T-3123's \
+        # leak-isolation fixture works"
         assert os.environ.get("FROB_WORKTREE") != leaked
