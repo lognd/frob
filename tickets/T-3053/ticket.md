@@ -7,8 +7,6 @@ kind: feature
 origin: human
 created: '2026-08-26'
 priority: critical
-blocked_by:
-- T-3088
 parent: null
 tier: ticket
 sprint: null
@@ -27,3 +25,5 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+## Unblock log
+- 2026-09-02: unblocked by T-3088 -- T-3688: stale block edge -- T-3088 (decomposition child) is done/archived; clearing to resolve TICK004 rot on T-3053
