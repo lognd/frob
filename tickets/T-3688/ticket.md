@@ -2,7 +2,7 @@
 id: T-3688
 title: 'clear self-gate residue: ruff-format drift, stale T-3604 evidence, stale T-3053
   block edge'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
