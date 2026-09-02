@@ -1,7 +1,7 @@
 ---
 id: T-3692
 title: 'win32 round 22: post-submit 122s + watchdog var bug + mac flake'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'

@@ -1,0 +1,70 @@
+## Done report
+
+PART A (122s teardown localization -- HYPOTHESIS/instrumentation, unconfirmed):
+CI run 33625622797's breadcrumbs proved the win32 122s delay is entirely
+POST-'submit' (entry->submit ~1s in every variant; zero-tool-spawn's
+total was 123.1s). Extended timing instrumentation past 'submit':
+- "report" mark right after _collect_results returns / before CheckResult
+  construction.
+- _timed_scope() wraps all 3 ExitStack-entered scopes (console-ctrl,
+  admission budget, derived-state lock) with enter/exit marks, previously
+  only ENTRY was timed (T-3689).
+- An unconditional atexit.register(_timing_atexit) prints "atexit" right
+  as interpreter shutdown begins, before the stdlib's non-daemon-thread
+  join step -- working hypothesis: frob.gates._open_process_pool's
+  ProcessPoolExecutor (spawn-fallback on win32, cold-importing frob.gates
+  per worker), NOT touched here (out of scope). Coordinator flagged T-3698
+  (AP's ticket, a second os.kill(pid,0) footgun in
+  frob.gates._fix_engine_shared._pid_alive) as a plausible contributor to
+  slow/hung gate execution on win32; this round's teardown marks plus
+  that fix together may be what clears the 122s.
+- Verified all new marks fire in correct order via a real Linux frob
+  check run, with and without FROB_DISABLE_EXEC=1.
+
+PART B (ci.yml watchdog "$budget" bug -- HARDENING, root cause unconfirmed):
+No definitive static bug found in the pre-existing "$budget" pwsh
+interpolation. Hardened every interpolation site to ${budget} curly-brace
+form (matching macOS's own style) and added an explicit env-var echo at
+step start. Also added an ARM-time confirmation line
+(tests/conftest.py::pytest_configure prints "FROB-TEST-MIDRUN-WATCHDOG:
+armed threshold=Xs (env ...)" right after starting the watchdog thread),
+verified locally with FROB_TEST_MIDRUN_WATCHDOG_SECONDS=5 -- the next CI
+run's log unambiguously answers "did the env var reach pytest_configure"
+independent of whether the watchdog later fires.
+
+PART C (mac test fixes):
+1. test_mark_prints_breadcrumb_when_enabled: landed standalone as T-3693
+   before this ticket, per coordinator priority reorder.
+2. test_daemon_proxy_lease_t1276.py::TestDaemonLease::
+   test_round_trip_acquire_call_release_close: triaged, determined NOT
+   fallout from T-3689/T-3692/T-3693 (zero overlap in touched
+   modules/files) -- filed T-3699, out of this ticket's scope to fix.
+
+Evidence: tests/unit/test_check_admission.py::TestTimingDebug (37/37)
+plus tests/unit/test_conftest_stackdump.py (67/67 combined) re-run
+clean; BUG002 waived (win32-only symptom, unreproducible on this WSL
+host).
+
+Filed: T-3699 (macOS daemon-proxy-lease flake, out of scope here).
+
+Gates: frob check --ticket T-3692 --only gates clean for this diff (no
+new AFFECT/SCOPE001/unwaived-ARCH findings; DRIFT/LANG/REF errors present
+are pre-existing repo-wide noise, zero overlap in this diff's files).
+Landing now per coordinator's explicit STOP-local-iteration directive --
+the next CI run is the real verification.
+
+### Changed
+```
+ tickets/T-3692/done-report.md | 101 ++++++++++++++++++++++++++++++++++++++++++
+ tickets/T-3692/ticket.md      |  18 +++++++-
+ 2 files changed, 117 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_check_admission.py::TestTimingDebug::test_disabled_by_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_admission.py::TestTimingDebug::test_mark_prints_breadcrumb_when_enabled` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 5 error(s), 4294 warning(s), 913 waived
+- error-findings: CLAUDE001@.claude/hooks/sync-claude-config.py, DEPR006@frob-deprecated-baseline.lock.json, TICK006@tickets.md, TICK011@tickets.md, WAIVE011@frob-ratchet.lock.json

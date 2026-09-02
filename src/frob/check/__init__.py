@@ -22,6 +22,7 @@ re-exported here for the same reason (T-0599).
 
 from __future__ import annotations
 
+import atexit
 import concurrent.futures
 import contextlib
 import json
@@ -181,6 +182,69 @@ def _timing_mark(label: str) -> None:
     # identical RENDER001 waiver -- off by default everywhere except one workflow \
     # step's own env: block." permanent="true"
     print(f"FROB-CHECK-TIMING: {label} at {elapsed:.3f}s", flush=True)
+
+
+# frob:ticket T-3692
+def _timing_atexit() -> None:
+    """`atexit`-registered callback (T-3692) firing `_timing_mark("atexit")`
+    -- a no-op unless `_timing_debug_enabled()`, same as every other call
+    in this module. Registered unconditionally at import time (below);
+    `_timing_mark` itself does the actual env check, so this stays a
+    cheap, always-safe registration rather than a conditional one gated
+    on the env var's state AT IMPORT TIME (which could differ from its
+    state when the interpreter actually starts shutting down, however
+    unlikely in practice for a one-shot CLI process).
+
+    Exists to localize T-3689/T-3692's win32 122s finding further: CI run
+    33625622797's breadcrumbs proved the delay is entirely POST-'submit'
+    (gate execution / collect / report / teardown, not pipeline setup).
+    Python's own interpreter-shutdown sequence runs registered `atexit`
+    callbacks, THEN joins any still-running non-daemon threads (the
+    `threading` module's own shutdown, itself wired via an early `atexit.
+    register` call, so a LATE-registered callback like this one -- see
+    module import order -- fires BEFORE that join in atexit's LIFO order,
+    while an EARLIER-registered one would fire after). A win32 run whose
+    `FROB-CHECK-TIMING: atexit` mark lands close to `_run_check_with_
+    skips`'s own return (captured by this module's `lock-exit`/
+    `admission-exit`/`console-scope-exit` marks, see `_timed_scope`)
+    but whose PROCESS EXIT still takes much longer confirms the delay
+    is in a non-daemon thread join or another interpreter-shutdown step
+    THIS module cannot instrument (e.g. `multiprocessing.util`'s own
+    `_exit_function`, registered by a module this ticket's scope does
+    not cover) rather than in this module's own teardown code."""
+    _timing_mark("atexit")
+
+
+atexit.register(_timing_atexit)
+
+
+# frob:ticket T-3692
+@contextlib.contextmanager
+def _timed_scope(
+    cm: "contextlib.AbstractContextManager[object]", label: str
+) -> Iterator[None]:
+    """Wrap context manager `cm` with `_timing_mark` calls immediately
+    before entering and immediately after exiting, both no-ops unless
+    `_timing_debug_enabled()` (T-3692). Used to bracket the 3 pipeline-
+    wide scopes `_run_check_with_skips` enters via its `ExitStack`
+    (`win32_console_ctrl_ignore_scope`/`_admission_budget`/`derived_
+    state_lock`) with teardown-timing marks -- the existing `_stop_
+    before_result`-driven marks (T-3689) only cover ENTRY into each
+    scope; nothing previously measured how long each scope's own
+    `__exit__` takes once `_run_check_with_skips` starts unwinding its
+    `ExitStack` at return. A plain `ExitStack.callback` cannot be made
+    to fire strictly after ONE specific resource's own `__exit__`
+    without reordering relative to its siblings (LIFO unwind makes a
+    callback registered adjacent to `enter_context` fire either before
+    every subsequent resource's exit or after all of them, never
+    bracketing just its own) -- wrapping the context manager itself
+    keeps the mark's before/after semantics correctly nested inside
+    the SAME `with cm:` the wrapped resource already uses, regardless
+    of how many siblings surround it in the outer `ExitStack`."""
+    _timing_mark(f"{label}-enter")
+    with cm:
+        yield
+    _timing_mark(f"{label}-exit")
 
 
 # frob:ticket T-3675
@@ -1647,7 +1711,9 @@ def _run_check_with_skips(
         # `FROB_WIN32_IGNORE_CONSOLE_CTRL=1` set, which these bisect
         # variants do not set. Entered first so it covers every stage
         # dispatched below.
-        stack.enter_context(win32_console_ctrl_ignore_scope())
+        stack.enter_context(
+            _timed_scope(win32_console_ctrl_ignore_scope(), "console-scope-teardown")
+        )
         # T-3683: stop point "console-scope".
         stop_result = _stop_before_result(
             root, "console-scope", "console-ctrl scope entered, before admission budget"
@@ -1655,7 +1721,7 @@ def _run_check_with_skips(
         if stop_result is not None:
             return stop_result
 
-        stack.enter_context(_admission_budget(root))
+        stack.enter_context(_timed_scope(_admission_budget(root), "admission-teardown"))
         # T-3683: stop point "admission".
         stop_result = _stop_before_result(
             root, "admission", "admission budget acquired, before derived-state lock"
@@ -1670,7 +1736,11 @@ def _run_check_with_skips(
         # read of the same artifacts (the cross-process TOCTOU window
         # T-0603 disclosed as its own residual). See `derived_state_lock`'s
         # docstring for the shared/exclusive contract.
-        stack.enter_context(derived_state_lock(root, exclusive=False))
+        stack.enter_context(
+            _timed_scope(
+                derived_state_lock(root, exclusive=False), "lock-teardown"
+            )
+        )
         # T-3675: stop point "lock" -- see _stop_before_result's docstring.
         stop_result = _stop_before_result(
             root, "lock", "all pipeline-wide scopes/locks acquired, no stage has run"
@@ -1723,9 +1793,23 @@ def _run_check_with_skips(
             )
             if stop_result is not None:
                 return stop_result
+            collected_results = _collect_results(tasks, on_task_done=on_task_done)
+            # T-3692: "report" -- CheckResult construction itself is
+            # trivial (a dataclass-style assembly, no I/O), so this mark
+            # brackets the gap between gate execution finishing (the
+            # existing "collected" mark, T-3689, printed inside
+            # `_run_tasks_concurrently` right after its own
+            # `ThreadPoolExecutor` block exits) and this function's own
+            # `return` triggering the `ExitStack` teardown the
+            # `*-teardown-exit` marks (`_timed_scope`) cover -- a real
+            # gap here (rather than "collected" and "report" landing
+            # within milliseconds of each other) would point at
+            # something between task collection and CheckResult
+            # assembly this diagnostic has not yet named.
+            _timing_mark("report")
             return CheckResult(
                 path=str(root),
-                results=_collect_results(tasks, on_task_done=on_task_done),
+                results=collected_results,
             )
 
 

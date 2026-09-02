@@ -386,6 +386,26 @@ def pytest_configure(config: pytest.Config) -> None:
             daemon=True,
         )
         _midrun_watchdog_thread.start()
+        # T-3692: an ARM-time confirmation, printed unconditionally (not
+        # diagnostic-gated -- this line is as cheap as the FIRE-time
+        # SUITE-RESULT line it mirrors) -- CI run 33625622797's windows
+        # Test step showed the 180s watchdog (T-3689) never firing with
+        # no way to tell whether it was ever armed at all (env var not
+        # reaching this process) versus armed-but-blind-to-the-observed
+        # stall shape. This line answers "was FROB_TEST_MIDRUN_WATCHDOG_
+        # SECONDS even seen by pytest_configure" directly from the next
+        # run's own stdout, independent of whether the watchdog ever
+        # needs to fire.
+        reporter = config.pluginmanager.get_plugin("terminalreporter")
+        arm_line = (
+            f"FROB-TEST-MIDRUN-WATCHDOG: armed threshold={midrun_threshold:g}s "
+            f"(env {FROB_TEST_MIDRUN_WATCHDOG_SECONDS_ENV}="
+            f"{os.environ.get(FROB_TEST_MIDRUN_WATCHDOG_SECONDS_ENV)!r})"
+        )
+        if reporter is not None:
+            reporter.write_line(arm_line)
+        else:  # pragma: no cover - defensive only, terminalreporter always registered
+            print(arm_line)
 
 
 def pytest_unconfigure(config: pytest.Config) -> None:

@@ -1506,14 +1506,26 @@ jobs:
           FROB_TEST_HARD_EXIT: "1"
           FROB_TEST_MIDRUN_WATCHDOG_SECONDS: "180"
         run: |
-          $budget = 1500  # 25m, same budget/rationale as ubuntu's step above
+          # T-3692: two diagnostic additions, both env-var-expansion-proof
+          # (curly-brace ${...} form throughout, matching macOS's own
+          # step above -- run 33625622797's error line printed the bare
+          # "$budget" form literally unexpanded, so this round hardens
+          # every interpolation site to the unambiguous form rather than
+          # trusting bare "$name" before a space). (1) echoes the env var
+          # pytest_configure is supposed to see, so the next run answers
+          # "did FROB_TEST_MIDRUN_WATCHDOG_SECONDS even reach the uv/
+          # pytest child process" directly, independent of whether the
+          # watchdog fires; conftest.py's own new FROB-TEST-MIDRUN-
+          # WATCHDOG: armed line (T-3692) answers the python-side half.
+          Write-Host "T-3692: FROB_TEST_MIDRUN_WATCHDOG_SECONDS=$($env:FROB_TEST_MIDRUN_WATCHDOG_SECONDS)"
+          ${budget} = 1500  # 25m, same budget/rationale as ubuntu's step above
           $stdout = Join-Path $env:RUNNER_TEMP "pytest-stdout.log"
           $stderr = Join-Path $env:RUNNER_TEMP "pytest-stderr.log"
           $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-p","no:xdist","-v","--full-trace" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
-            Wait-Process -Id $p.Id -Timeout $budget -ErrorAction Stop
+            Wait-Process -Id $p.Id -Timeout ${budget} -ErrorAction Stop
           } catch {
-            Write-Host "::error::Windows Test step exceeded $budget s with no completion (T-3250) -- terminating. NOTE (PLATFORM001 declared boundary): Windows has no portable equivalent of SIGABRT-triggered faulthandler dump from an external process, so this teardown-window path gets a timed failure without a stack dump; per-test hangs are still covered by pytest-timeout's --timeout=120/--timeout-method=thread."
+            Write-Host "::error::Windows Test step exceeded ${budget}s with no completion (T-3250) -- terminating. NOTE (PLATFORM001 declared boundary): Windows has no portable equivalent of SIGABRT-triggered faulthandler dump from an external process, so this teardown-window path gets a timed failure without a stack dump; per-test hangs are still covered by pytest-timeout's --timeout=120/--timeout-method=thread."
             Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
             Get-Content $stdout -ErrorAction SilentlyContinue
             Get-Content $stderr -ErrorAction SilentlyContinue
