@@ -1,7 +1,7 @@
 ---
 id: T-3705
 title: wire win32_kill_signal into a stage group
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -20,7 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
+designated_repro_test: tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
 threat: null
 component: null
 anchor: false
