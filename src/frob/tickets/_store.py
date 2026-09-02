@@ -680,8 +680,33 @@ def _parse_ticket_text(text: str, where: str) -> Result[Ticket, TicketError]:
 # individually frob:describes this private helper by name (T-0529) -- a deliberate \
 # architecture doc, not accidental drift onto a private helper"
 def _parse_ticket_file(path: Path) -> Result[Ticket, TicketError]:
-    """Split a legacy ticket file into frontmatter + body and validate it."""
-    text = path.read_text(encoding="utf-8")
+    """Split a legacy ticket file into frontmatter + body and validate it.
+
+    T-3684: `path.read_text()` is wrapped against `FileNotFoundError` --
+    every caller of this function reaches `path` via an earlier glob
+    (`load_all`'s `_v2_glob`/`_dir_glob`, `_land.py`'s orphan-heal scan,
+    `_store_migrate.py`'s migration walk), and `archive_v2` moves a
+    ticket's whole directory (`git mv tickets/T-#### tickets/archive/
+    T-####`) under only that ticket's own `ticket_lock` (T-1750), never a
+    whole-tree lock -- so a glob taken just before such a move can still
+    hand this function a path that is gone by the time it opens it. That
+    is a legitimate "vanished mid-scan" outcome, never a malformed-file
+    one, so it returns the distinct `TicketVanishedDuringScan` instead of
+    letting the raw `FileNotFoundError` propagate uncaught (the T-3684
+    incident: an unguarded raise here crashed a plain `threading.Thread`
+    with no exception propagation to the joining thread, surfacing as a
+    silent `None` result at the call site instead of a diagnosable
+    error)."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        _log.debug(
+            "tickets: %s vanished mid-scan (concurrent move/delete) -- "
+            "treating as absent from this snapshot rather than a parse "
+            "failure",
+            path,
+        )
+        return Err(TicketError.TicketVanishedDuringScan)
     return _parse_ticket_text(text, str(path))
 
 
@@ -1465,6 +1490,8 @@ def _write_index_cache(
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
 # frob:doc docs/design/ledger-v2.md#6-greppability
+# frob:ticket T-3684
+# frob:tests tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_archive  # noqa: E501
 def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
     """Every ticket in the repo as an id -> Ticket map, backend-agnostic.
 
@@ -1491,6 +1518,16 @@ def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
     for path in paths:
         parsed = _parse_ticket_file(path)
         if parsed.is_err:
+            # frob:ticket T-3684
+            # A path this glob already captured can vanish before its own
+            # read (a concurrent `archive_v2` `git mv` under only that
+            # ticket's `ticket_lock`, T-1750 -- no whole-tree lock here to
+            # serialize against) -- that is legitimately "not in this
+            # snapshot," not a load failure, so it is skipped rather than
+            # aborting the whole call the way a genuine parse error still
+            # does.
+            if parsed.danger_err == TicketError.TicketVanishedDuringScan:
+                continue
             _log.error("tickets: load aborted, %s is malformed", path)
             return Err(parsed.danger_err)
         ticket = parsed.danger_ok
@@ -1671,6 +1708,13 @@ def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]:
         for path in _v2_archive_glob(root):
             parsed = _parse_ticket_file(path)
             if parsed.is_err:
+                # frob:ticket T-3684
+                # Same glob-then-read TOCTOU as load_all's v2 branch -- a
+                # concurrent `restore` (git mv back to the active tree)
+                # can vanish an archived path between this glob and its
+                # read; skip it, do not abort.
+                if parsed.danger_err == TicketError.TicketVanishedDuringScan:
+                    continue
                 _log.error("tickets: load_archive aborted, %s is malformed", path)
                 return Err(parsed.danger_err)
             # T-1587: same merge the active tree gets -- an archived

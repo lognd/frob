@@ -2,7 +2,7 @@
 id: T-3684
 title: 'load_all races a concurrent per-ticket move/delete: unguarded FileNotFoundError
   crashes new_ticket/archive callers'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'

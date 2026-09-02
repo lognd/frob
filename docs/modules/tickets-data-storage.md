@@ -917,6 +917,14 @@ class TicketError(ErrorSet):
     UnknownEvidence     = "Evidence id does not resolve to a collected test"
     EvidenceKindNotAllowed = "cmd evidence is only allowed for docs-kind tickets"
     EvidenceCmdFailed   = "evidence command failed to launch or exited nonzero"
+    # T-3684: `_parse_ticket_file` returns this instead of letting a bare
+    # FileNotFoundError propagate when a glob-then-read caller's `path`
+    # (load_all/load_archive) vanishes mid-scan (a concurrent archive_v2
+    # `git mv`, under only that ticket's own ticket_lock -- no whole-tree
+    # lock to serialize against). load_all/load_archive skip it and keep
+    # scanning rather than aborting the whole call, unlike every other
+    # parse error.
+    TicketVanishedDuringScan = "ticket.md disappeared mid-scan (concurrent move)"
     LabelChangeEmpty    = "label change requires at least one --add or --remove label"
     # T-1179: land-time ticket-scoped splice id/title-mismatch refusal --
     # see "Provisional ids" above for the incident this defense-in-depth

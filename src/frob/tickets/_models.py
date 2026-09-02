@@ -2365,6 +2365,12 @@ class TicketError(ErrorSet):
         "milestone must be a valid semver string (e.g. 1.10.0) or omitted"
     )
     WriteFailed = "Atomic ticket write failed"
+    # frob:ticket T-3684
+    TicketVanishedDuringScan = (
+        "ticket.md disappeared mid-scan (a concurrent archive/move raced this "
+        "read) -- distinct from MalformedFrontmatter so a glob-then-parse loop "
+        "can skip just this entry instead of aborting the whole load"
+    )
     UnknownEvidence = "Evidence id does not resolve to a collected test"
     # T-0215: non-pytest evidence channel for docs-kind tickets
     EvidenceKindNotAllowed = "cmd evidence is only allowed for docs-kind tickets"
