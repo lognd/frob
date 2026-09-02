@@ -1,7 +1,7 @@
 ---
 id: T-3690
 title: 'clear ubuntu self-gate floor: PERF003/PERF004 + ruff-format drift'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
