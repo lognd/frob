@@ -2,7 +2,7 @@
 id: T-3668
 title: 'post-land sweep regression from T-3628: 3 new (rule, file) identit(ies), 9
   finding(s) (DRIFT001, DRIFT002, REF002)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-01'
@@ -53,3 +53,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - REF002  src/frob/process/_lock_msvcrt.py  -> attributed to T-3628 (commit 617fd2040104, already closed/dropped -- filed below) via src/frob/process/_lock_msvcrt.py::_msvcrt_acquire_blocking
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-09-02: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (DRIFT001 src/frob/process/_derived_lock.py, DRIFT002 docs/modules/process.md, REF002 src/frob/process/_lock_msvcrt.py) is absent from a direct re-check of exactly the 764 named (rule, file) identit(ies) (not a full sweep) that completed with no failed/silent tool stage at doable's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
