@@ -156,19 +156,19 @@
       "ticket": "T-3029"
     },
     "refactor::env.read": {
-      "accepted_count": 1,
-      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
-      "ticket": "T-3029"
+      "accepted_count": 2,
+      "reason": "T-3642: LARGE001 split of _verify.py relocated verify_module_import (env.read via os.environ.copy) into a new sibling file _verify_import.py -- the same pre-existing site, now counted under its new file path, not a new grant.",
+      "ticket": "T-3642"
     },
     "refactor::exec": {
-      "accepted_count": 1,
-      "reason": "T-3388: SELFAUDIT001 found refactor::exec (may \"exec\" via \"src/frob/refactor/_verify.py\" in design/frob.strata, T-3311) had no ratchet lock entry -- pre-existing drift, unrelated to T-3386s testsuite-node fix. Adding the missing entry at the current measured site count (1 file: _verify.py), not granting new capability.",
-      "ticket": "T-3388"
+      "accepted_count": 3,
+      "reason": "T-3642: LARGE001 split of _scan.py/_verify.py relocated pre-existing guarded_subprocess_run call sites (verify_module_import into _verify_import.py, verify_pytest_collect/verify_check_delta into _verify_exec.py) across new sibling files -- the same 1 pre-existing site now counted across 2-3 file paths, not a new grant.",
+      "ticket": "T-3642"
     },
     "refactor::fs.read": {
-      "accepted_count": 11,
-      "reason": "T-3029: SYS100/SYS102/SYS107 self-conformance sweep found this many already-existing, genuinely-observed capability sites with no design/frob.strata declaration (measured with frob.vet._capability_scan against the real file, not assumed) -- bumping the ceiling to the newly-declared, now-accurate site count, not a fresh grant of new capability.",
-      "ticket": "T-3029"
+      "accepted_count": 14,
+      "reason": "T-3642: LARGE001 split of _scan.py/_verify.py relocated pre-existing file-read sites into new sibling files _scan_carry.py/_scan_repoint.py/_verify_import.py -- the same pre-existing sites, now counted under their new file paths, not a new grant.",
+      "ticket": "T-3642"
     },
     "refactor::fs.write": {
       "accepted_count": 1,

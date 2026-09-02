@@ -1199,7 +1199,7 @@ class TestVerify:
         -- must be caught by a REAL interpreter import, which
         `verify_import_resolution` structurally cannot do (PARSE IS NOT
         IMPORT)."""
-        from frob.refactor._verify import verify_module_import
+        from frob.refactor._verify_import import verify_module_import
 
         root = _repo(tmp_path)
         bad = _write(
@@ -1223,7 +1223,7 @@ class TestVerify:
     def test_module_import_passes_clean_module(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestVerify.test_module_import_passes_clean_module
-        from frob.refactor._verify import verify_module_import
+        from frob.refactor._verify_import import verify_module_import
 
         root = _repo(tmp_path)
         good = _write(root, "src/pkg/good.py", "def f():\n    return 1\n")
@@ -1234,7 +1234,7 @@ class TestVerify:
     def test_pytest_collect_reports_failure(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestVerify.test_pytest_collect_reports_failure
-        from frob.refactor._verify import verify_pytest_collect
+        from frob.refactor._verify_exec import verify_pytest_collect
 
         _write(tmp_path, "test_broken.py", "def test_x(:\n    pass\n")
         outcome = verify_pytest_collect(tmp_path, targets=[tmp_path / "test_broken.py"])
@@ -1253,7 +1253,7 @@ class TestVerify:
         (USAGE_ERROR: "not found: <path>"), a false refusal unrelated to
         whether any real test collects cleanly. Mirrors
         `_parse_touched_python_files`'s own `.py` filter (T-1885)."""
-        from frob.refactor._verify import verify_pytest_collect
+        from frob.refactor._verify_exec import verify_pytest_collect
 
         good = _write(tmp_path, "test_ok.py", "def test_x():\n    assert True\n")
         prose = _write(tmp_path, "docs/design/notes.md", "just some prose\n")
@@ -1270,7 +1270,7 @@ class TestVerify:
         """T-3136: if every touched file is non-Python, there is nothing
         to collect -- this must pass-with-note, matching
         `verify_import_resolution`'s own empty-`trees` shape, not refuse."""
-        from frob.refactor._verify import verify_pytest_collect
+        from frob.refactor._verify_exec import verify_pytest_collect
 
         prose = _write(tmp_path, "docs/design/notes.md", "just some prose\n")
         outcome = verify_pytest_collect(tmp_path, targets=[prose])
@@ -1280,7 +1280,7 @@ class TestVerify:
     def test_check_delta_reports_command_failure(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestVerify.test_check_delta_reports_command_failure
-        from frob.refactor._verify import verify_check_delta
+        from frob.refactor._verify_exec import verify_check_delta
 
         # An empty, non-frob directory: `frob check --delta` run there
         # fails (not a frob repo) -- proves the outcome carries a
@@ -1294,7 +1294,7 @@ class TestVerify:
         # tests/test_refactor.py::TestVerify.test_check_delta_uses_current_interpreter
         import sys
 
-        import frob.refactor._verify as verify_mod
+        import frob.refactor._verify_exec as verify_mod
 
         captured = {}
 

@@ -60,7 +60,7 @@ T-3122: `build_move_ops` relocates a moved symbol's own source TEXT only
 text needs to run (a moved class body naming e.g. `StrEnum`/`BaseModel`
 as a base class), so a naive split produces a `DEST_MODULE` that PARSES
 fine but raises `NameError` at real import time. Each chunk's own plan
-now calls `needed_import_ops_for_symbols` (`_scan.py`) once per chunk:
+now calls `needed_import_ops_for_symbols` (`_scan_carry.py`) once per chunk:
 it collects every `Name` referenced anywhere in the chunk's moved
 symbols' own subtrees (base classes, decorators, annotations, nested
 bodies), matches that against `SOURCE_MODULE`'s top-level import
@@ -516,7 +516,7 @@ being left untouched as if `B` were a genuinely unrelated name (still the
 correct outcome, T-3105, for a co-imported name NOT in `also_moving`).
 
 <a id="bare-name-caller-side-repoint"></a>
-<!-- frob:describes src/frob/refactor/_scan.py::bare_name_repoint_ops -->
+<!-- frob:describes src/frob/refactor/_scan_repoint.py::bare_name_repoint_ops -->
 **`bare_name_repoint_ops`** (T-3596, gap 2): a symbol referenced only as
 a BARE name (no `from <old module> import <symbol>` statement to
 rewrite, because the reference lived in the SAME file the symbol used to
@@ -527,7 +527,7 @@ bare reference to a moved name and, if found, returns one append
 `RewriteOp` adding `from <dest_module> import ...` back into that file.
 
 <a id="module-level-bindings"></a>
-<!-- frob:describes src/frob/refactor/_scan.py::needed_import_ops_for_symbols -->
+<!-- frob:describes src/frob/refactor/_scan_carry.py::needed_import_ops_for_symbols -->
 **`_module_level_bound_names`** (T-3596, gap 3, private helper of
 `needed_import_ops_for_symbols`): every name bound at a module's top
 level by ANY statement kind, not just `import`/`from ... import` --
@@ -565,7 +565,7 @@ helper `_parse_touched_python_files` so this function stays under the
 long-function architecture threshold; behavior is unchanged.
 
 <a id="verify_module_import"></a>
-<!-- frob:describes src/frob/refactor/_verify.py::verify_module_import -->
+<!-- frob:describes src/frob/refactor/_verify_import.py::verify_module_import -->
 **`verify_module_import`**: Verify post-condition (T-3119, ALWAYS runs,
 never gated by a `--skip-*` flag) -- a REAL interpreter `import
 <module>` for every touched `.py` file's own dotted module, each in its
@@ -574,7 +574,7 @@ structurally cannot (PARSE IS NOT IMPORT). See "Transaction model" above
 for the full rationale and the T-3122 defect this closes.
 
 <a id="verify_pytest_collect"></a>
-<!-- frob:describes src/frob/refactor/_verify.py::verify_pytest_collect -->
+<!-- frob:describes src/frob/refactor/_verify_exec.py::verify_pytest_collect -->
 **`verify_pytest_collect`**: Verify post-condition 2 -- `pytest
 --collect-only` succeeds with no new collection error. Non-`.py`
 touched files are filtered out before reaching pytest's argv (T-3136)
@@ -586,7 +586,7 @@ importable through that interpreter is a loud `PytestSpawnError`, not an
 opaque collection failure several layers removed from the real cause.
 
 <a id="verify_check_delta"></a>
-<!-- frob:describes src/frob/refactor/_verify.py::verify_check_delta -->
+<!-- frob:describes src/frob/refactor/_verify_exec.py::verify_check_delta -->
 **`verify_check_delta`**: Verify post-condition 3 -- `frob check --delta`
 is diff-clean.
 

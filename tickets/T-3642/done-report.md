@@ -1,0 +1,124 @@
+## Done report
+
+Changed: src/frob/refactor/_scan.py (split down to 430 lines),
+src/frob/refactor/_scan_carry.py (new, 423 lines -- carry-forward/
+stale-import cluster), src/frob/refactor/_scan_repoint.py (new, 205
+lines -- bare-name-repoint/import-usage cluster), src/frob/refactor/
+_verify.py (split down to 410 lines), src/frob/refactor/_verify_import.py
+(new, 269 lines -- module-import-resolution cluster), src/frob/refactor/
+_verify_exec.py (new, 168 lines -- pytest-collect/check-delta cluster),
+design/frob.strata (fs.read/env.read/exec via-lists extended for the
+4 new files), docs/commands/refactor.md (frob:describes directives
+repointed at 5 relocated symbols' new files), tests/test_refactor.py
+(one monkeypatch target fix)
+
+T-3642 is the post-land sweep's LARGE001 finding for the two files
+T-3596 grew past the 500-line threshold: src/frob/refactor/_scan.py
+(1034 lines) and src/frob/refactor/_verify.py (821 lines).
+
+Dogfooded `frob refactor split` (this series' own T-3656/T-3653/T-3645
+fixes, landed earlier) instead of a hand pass:
+- _scan.py -> _scan_carry.py (needed_import_ops_for_symbols,
+  stale_dest_import_ops, and their exclusive private helpers) +
+  _scan_repoint.py (bare_name_repoint_ops and its exclusive private
+  helpers, plus the unresolved-import-usage helpers scan_references
+  itself still calls).
+- _verify.py -> _verify_import.py (verify_module_import and its
+  exclusive private helpers) + _verify_exec.py (verify_pytest_collect/
+  verify_check_delta and their exclusive private helpers).
+
+Dogfooding found a genuine NEW gap in this series' own T-3645 fix,
+filed as a draft ticket rather than fixed here (out of this ticket's
+own LARGE001 scope): splitting >5 symbols with default chunk_size=5
+into a destination that needs the SAME already-populated top-of-file
+import block refused with OverlappingRewrites when two symbols in one
+CHUNK each independently needed a DIFFERENT import merged into that
+identical block-span. Worked around with --chunk-size 1 for both
+splits; see the filed draft ticket's body for the repro and suggested
+fix.
+
+Hand-cleanup after each split (per this series' own T-3645 ticket's
+documented T-3593 precedent -- "consolidated scattered per-symbol
+imports into one top block per file with a script, then ruff check
+--fix"): consolidated each new file's own scattered mid-body import
+statements (the split tool's per-symbol carry-forward still leaves
+these when chunk-size is forced to 1) into one top block; fixed a
+genuine circular import the split tool's own re-export shim
+introduced (_scan_carry.py/_scan_repoint.py/_verify_import.py/
+_verify_exec.py each importing `_log` back from the module they were
+split OUT of, which imports them for re-export -- gave each new
+module its own `get_logger(__name__)` instead); fixed
+tests/test_refactor.py::TestVerify::test_check_delta_uses_current_interpreter,
+whose monkeypatch target module moved (v1's mechanical rewrite
+correctly disclosed this as `unresolved` rather than silently leaving
+it broken, since it's an attribute-style module reference the tool's
+own docs say it does not follow).
+
+Capability via-lists: declared all 4 new files in design/frob.strata's
+fs.read/env.read/exec via-lists (the only capabilities either
+performs) -- no new capability grants, just the existing _scan.py/
+_verify.py sites' own redistribution across files.
+
+Scope: SCOPE001 correctly caught this ticket's original two-file
+scope not covering the new sibling files or design/frob.strata --
+widened to include them plus docs/commands/refactor.md and
+tests/test_refactor.py (both pulled in by frob:doc/frob:tests
+coverage closure) plus this ticket's own newly-filed draft ticket
+file. DRIFT002 correctly caught 5 stale frob:describes directives in
+docs/commands/refactor.md pointing at the pre-split file for symbols
+that moved -- fixed by repointing each at its new file (see the
+separate docs commit). tests/unit/test_arch_srp.py remains a
+pre-existing SCOPE002 coverage-graph cascade (same class T-3656/T-3653
+already left as-is in this series -- chasing it widens into
+src/frob/arch, src/frob/gates, src/frob/repo_meta, unrelated to this
+diff's own symbols).
+
+Evidence: tests/test_refactor.py::TestRunSplit::
+test_split_moves_symbols_and_leaves_reexport_shim,
+tests/test_refactor.py::TestVerify::test_check_delta_uses_current_interpreter
+(both pre-existing, now passing against the split layout). Full
+tests/test_refactor.py suite green (146 passed) after every commit in
+this ticket.
+
+Filed: T-3677 -- "refactor split: multi-symbol chunk each
+needing a distinct carry-forward import into the same pre-existing
+dest block overlaps" (the T-3645-adjacent gap dogfooding surfaced,
+described above).
+
+Gates: `frob check --ticket T-3642 --only scope` clean of every error
+this diff caused (SCOPE001/DRIFT002 both resolved by the widened scope
+and doc-anchor repoint commits above); remaining errors in that run
+(src/frob/process/_derived_lock.py DRIFT001/002, tests/
+test_tickets_leases.py DRIFT002, WAIVE011 ratchet staleness,
+claude-config-drift) are pre-existing and unrelated to this diff.
+`uv run ruff check src tests` clean. `frob test`/`frob test . --base
+main` timed out at the 540s foreground cap on this host repeatedly
+(fleet contention, matching this series' earlier tickets) --
+substituted the full `tests/test_refactor.py` suite run after each
+commit, per this series' own verification-budget instruction.
+
+### Changed
+```
+ design/frob.strata                  |   6 +-
+ docs/commands/refactor.md           |  12 +-
+ src/frob/refactor/_scan.py          | 622 +-----------------------------------
+ src/frob/refactor/_scan_carry.py    | 423 ++++++++++++++++++++++++
+ src/frob/refactor/_scan_repoint.py  | 205 ++++++++++++
+ src/frob/refactor/_verify.py        | 439 +------------------------
+ src/frob/refactor/_verify_exec.py   | 168 ++++++++++
+ src/frob/refactor/_verify_import.py | 269 ++++++++++++++++
+ tests/test_refactor.py              |  14 +-
+ tests/unit/test_arch_srp.py         |   2 +-
+ tickets/T-3642/ticket.md            |  92 +++++-
+ tickets/T-3677/ticket.md  |  30 ++
+ 12 files changed, 1224 insertions(+), 1058 deletions(-)
+```
+
+### Evidence
+- `tests/test_refactor.py::TestRunSplit::test_split_moves_symbols_and_leaves_reexport_shim` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestVerify::test_check_delta_uses_current_interpreter` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 19 error(s), 4283 warning(s), 895 waived
+- error-findings: CLAUDE001@.claude/hooks/sync-claude-config.py, COV003@tests/test_ci_workflow_matrix.py, COV007@src/frob/strata/_capacity.py, DEPR006@frob-deprecated-baseline.lock.json, DOC006@tickets/T-3673/ticket.md, DOC007@tests/test_tickets_leases.py, DRIFT001@src/frob/process/_derived_lock.py, DRIFT002@docs/modules/process.md, DRIFT002@tests/test_tickets_leases.py, OPAQUE001@src/frob/app/_config_external.py, PERF003@src/frob/refactor/_scan.py, PERF004@src/frob/refactor/_scan_carry.py, PRE001@tickets/T-3642, REF002@src/frob/process/_lock_msvcrt.py, REL001@src/frob/__init__.py, SEC110@tests/ticket_land_suite/test_wip.py, SELFAUDIT001@docs/design/registry/capability-via-ratchet.lock.json, TEST001@src/frob/strata/_models.py, WAIVE011@frob-ratchet.lock.json

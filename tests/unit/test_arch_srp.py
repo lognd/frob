@@ -610,7 +610,7 @@ class TestArch103WaiverStaysEffective:
     (bound-to-exact-symbol resolution) without depending on a live
     function's shape staying put across future refactors."""
 
-    # frob:tests src/frob/refactor/_verify.py::_import_check_env
+    # frob:tests src/frob/refactor/_verify_import.py::_import_check_env
     def test_import_check_env_arch103_no_longer_fires_raw(self, tmp_path: Path) -> None:
         """T-3598 discharge lock: `_import_check_env`'s real, on-disk
         source no longer trips ARCH103 at all (T-3587 moved its
