@@ -29,6 +29,14 @@ scope_changes:
     the exact site the CI traceback points at'
   actor: logan
   at: '2026-09-02'
+body_changes:
+- mode: append
+  reason: 'T-3685: add BUG002 waiver -- the macOS flake is unreproducible, this close
+    is a diagnostic-hardening fix not a targeted defect repro'
+  actor: logan
+  at: '2026-09-02'
+  old_length: 4512
+  new_length: 5292
 evidence:
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
 - tests/test_tickets.py::TestDropCli::test_cli_drops_with_reason
@@ -123,3 +131,5 @@ yet established. Whoever picks this up should widen scope once (a) or (b)
 above is confirmed -- likely into `src/frob/tickets/_leases.py`
 (`commit_ticket_ledger_change`) and/or `src/frob/tickets/_evidence.py`
 (`transition`).
+
+frob:waive BUG002 reason="the underlying macOS flake is unreproducible (this ticket's own 120-iteration repro attempt found nothing, and this fix's investigation found nothing further) -- there is no test that can be made to fail at the parent commit and pass at the fix, because there is no known reliable trigger. The fix itself is a diagnostic-only hardening (log the actual LeaseError before each sys.exit(1) in _close_cmd.py's close/fail/drop/reopen commit paths, matching the logging every OTHER commit_ticket_ledger_change caller already has) so the NEXT occurrence, on any platform, reports a real error instead of a bare SystemExit(1). Same posture as frob ticket land --skip-mutation-evidence's escape hatch for a nondeterministic crash the suite cannot manufacture."
