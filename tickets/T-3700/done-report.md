@@ -1,0 +1,57 @@
+## Done report
+
+Escape windows closed (Part 1):
+1. _check_fingerprint_with_recovery recovered exactly once, then ran a final
+   UNGUARDED _check_fingerprint. Under heavy parallel CI load a sibling
+   os.replace racing that final read re-raised 'disk I/O error' / 'no such
+   table: meta', and the _with_lock_retry wrapping the connect() step never
+   catches those shapes (only the transient-lock shape). Recovery is now a
+   bounded reopen+retry loop (reopen-at-canonical before every attempt, up to
+   _STALE_CONN_MAX_RETRIES); the branch was extracted into
+   _recover_fingerprint_connection to stay under ARCH001.
+2. get_root/get_file_meta/_get_file_hash issued their read as a raw
+   conn.execute OUTSIDE _run_with_stale_reconnect. On a connection a sibling's
+   os.replace stranded on the pre-rebuild inode, a bare read surfaces the raw
+   shape (hot rollback journal resolved by path against the replaced-in inode).
+   All three now route through the stale-reconnect helper, like every other
+   read path. load_all uses a raw _read_root to avoid nesting a second layer.
+The regression test now reads meta through the API (get_root) rather than a
+bare execute (undefendable on a stranded fd), runs more churn, and asserts real
+round trips happened.
+
+Part 2 (reruns): SKIPPED. The repo has no pytest-rerunfailures / flaky-marker
+mechanism installed; adding a test dependency fleet-wide plus conftest
+coordination is out of proportion, and Part 1 removes the escape at its source.
+
+Evidence: tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_two_processes_connecting_concurrently_never_see_no_such_table_meta
+
+Local under-load: 20/20 target-test runs green across two batches of 10 while a
+background parallel suite ran; sibling loop logged OK:1836 with zero raw-error
+escapes. frob test --base main: python exit=0, 7 outcomes recorded.
+
+Filed: T-3703 (WIRE001 call_pattern misses module-alias dotted calls
+for FUNCTION records; get_root's real caller graph/__init__.py:754 uses
+_cache.get_root(conn), which the FUNCTION call_pattern's negative lookbehind
+excludes).
+
+Gates: in-scope errors resolved. WIRE001 on get_root waived (frob:waive with
+follow_up=T-3703; xref confirms the real caller). Remaining frob
+check errors are pre-existing/repo-wide and outside this ticket's scope: DEPR006,
+WAIVE011, TICK011 (T-3689), CLAUDE001 x2 (managed hook drift).
+
+### Changed
+```
+ src/frob/graph/cache.py            | 173 +++++++++++++++++++++++++++----------
+ tests/unit/test_graph_cache.py     |  77 ++++++++++++++---
+ tickets/T-3700/ticket.md           |  31 ++++++-
+ tickets/T-3703/ticket.md |  29 +++++++
+ 4 files changed, 254 insertions(+), 56 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_two_processes_connecting_concurrently_never_see_no_such_table_meta` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 4 error(s), 4314 warning(s), 915 waived
+- error-findings: CLAUDE001@.claude/hooks/sync-claude-config.py, DEPR006@frob-deprecated-baseline.lock.json, TICK011@tickets.md, WAIVE011@frob-ratchet.lock.json

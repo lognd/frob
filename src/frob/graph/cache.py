@@ -1155,13 +1155,18 @@ def _run_with_stale_reconnect(conn: sqlite3.Connection, op, *, what: str):  # no
 # frob:ticket T-3634
 # frob:raises Error
 # frob:ticket T-3669
+# frob:ticket T-3700
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_two_\
+# processes_connecting_concurrently_never_see_no_such_table_meta
 def _check_fingerprint_with_recovery(
     conn: sqlite3.Connection, path: Path
 ) -> sqlite3.Connection:
-    """Run `_check_fingerprint`, recovering once if it hits "no such table:
-    meta" or a T-3634 stale/corrupt-connection shape, instead of letting
-    that `OperationalError` escape `connect()` uncaught (T-3623
-    direction 2; T-3634 round 3 widens the match).
+    """Run `_check_fingerprint`, reopening-and-retrying (bounded) whenever it
+    hits "no such table: meta" or a T-3634 stale/corrupt-connection shape,
+    instead of letting that `OperationalError` escape `connect()` uncaught
+    (T-3623 direction 2; T-3634 round 3 widens the match; T-3700 makes the
+    recovery a bounded loop rather than one-shot).
 
     `_check_fingerprint` is the last of `connect()`'s three DB touches
     (`_read_schema_version`, `_apply_schema_with_recovery`, this) -- both
@@ -1178,40 +1183,70 @@ def _check_fingerprint_with_recovery(
     connection still has the old inode's WAL mapped) rather than "no such
     table" -- recovered the same way, by reopening at the canonical path,
     which by construction already holds the winner's fresh complete db.
-    One retry is enough: both `_recreate_and_reapply` and a fresh
-    `_open(path)` always leave the connection holding a schema-complete
-    db afterward, so a second failure is a real, different problem that
-    should propagate -- the final `_check_fingerprint` retry (and the
-    best-effort `conn.close()` on the stale-connection branch) can still
-    raise a `sqlite3.Error` in that case, declared via `frob:raises`
-    rather than caught, so it reaches `connect()`'s own caller.
+
+    T-3700 (round 7): the pre-T-3700 code recovered exactly ONCE and then
+    ran a FINAL, UNGUARDED `_check_fingerprint`. Under heavy parallel CI
+    load (run 33633092156, ubuntu) a sibling's `os.replace` racing that
+    final unguarded read re-raised `disk I/O error` / `no such table:
+    meta` straight out of `connect()` -- and the `_with_lock_retry`
+    wrapping this step never catches those shapes (they are not the
+    transient-lock shape it matches). Making recovery a bounded reopen+
+    retry loop (each pass reopens at the canonical inode first, exactly
+    where a sibling's atomic `os.replace` publishes its schema-complete
+    winner, then re-reads) closes that window: only after
+    `_STALE_CONN_MAX_RETRIES` consecutive losses -- a real, persistent
+    problem, not a load-timing race -- does the last exception propagate,
+    still declared via `frob:raises`.
     """
     # T-3669: the fingerprint read is the exact statement the darwin
     # thrash loop kept answering from a replaced-away inode (`fingerprint
     # None` ~20 times running, run 33529632605). Reopen the handle at the
     # canonical path FIRST, so the value read -- and the invalidation
     # write that follows a mismatch -- both land on the live file.
-    conn = _reopen_if_replaced(conn, path)
-    try:
-        _check_fingerprint(conn, path)
-    except sqlite3.OperationalError as exc:
-        if _is_missing_meta_table(exc):
-            conn = _recreate_and_reapply(conn, path, exc)
-        elif _is_stale_or_corrupt_connection(exc) or _is_readonly_handle_error(exc):
-            reopen_path = _conn_path(conn) or path
-            _log.warning(
-                "cache.connect: %s hit a stale connection (%s), reopening at %s",
-                path,
-                exc,
-                reopen_path,
-            )
-            _close_conn(conn)
-            conn = _open(reopen_path)
-        else:
-            raise
+    attempt = 0
+    while True:
         conn = _reopen_if_replaced(conn, path)
-        _check_fingerprint(conn, path)
-    return conn
+        try:
+            _check_fingerprint(conn, path)
+            return conn
+        except sqlite3.OperationalError as exc:
+            conn = _recover_fingerprint_connection(conn, path, exc, attempt)
+            attempt += 1
+
+
+# frob:ticket T-3700
+def _recover_fingerprint_connection(
+    conn: sqlite3.Connection, path: Path, exc: sqlite3.OperationalError, attempt: int
+) -> sqlite3.Connection:
+    """Recover one `_check_fingerprint` failure into a fresh connection
+    ready for another read, or re-raise `exc` (T-3700, split out of
+    `_check_fingerprint_with_recovery` to keep that function under ARCH001's
+    line threshold).
+
+    Re-raises on the last allowed `attempt` (the honest ceiling -- a
+    genuine, non-racing fault), on a "no such table: meta" this rebuilds
+    via `_recreate_and_reapply`, and on a stale/corrupt or readonly-handle
+    shape reopens at the canonical inode (where a sibling's atomic
+    `os.replace` publishes its schema-complete winner); anything else
+    propagates unchanged."""
+    if attempt >= _STALE_CONN_MAX_RETRIES:
+        raise exc
+    if _is_missing_meta_table(exc):
+        return _recreate_and_reapply(conn, path, exc)
+    if _is_stale_or_corrupt_connection(exc) or _is_readonly_handle_error(exc):
+        reopen_path = _conn_path(conn) or path
+        _log.warning(
+            "cache.connect: %s hit a stale connection (%s), reopening "
+            "at %s (attempt %d/%d)",
+            path,
+            exc,
+            reopen_path,
+            attempt + 1,
+            _STALE_CONN_MAX_RETRIES,
+        )
+        _close_conn(conn)
+        return _open(reopen_path)
+    raise exc
 
 
 def _poll_and_reread(
@@ -1482,28 +1517,63 @@ def set_root(conn: sqlite3.Connection, root: str) -> None:
     )
 
 
-# frob:doc docs/modules/graph.md#cache
-def get_root(conn: sqlite3.Connection) -> str | None:
-    """The stored repo root, if any snapshot has ever been saved."""
+# frob:ticket T-3700
+def _read_root(conn: sqlite3.Connection) -> str | None:
+    """The stored repo root via one raw `meta` SELECT, no reconnect wrapper
+    -- for `load_all`, which already runs its whole body inside a single
+    `_run_with_stale_reconnect` (T-3700, so `get_root`'s own wrapper does
+    not nest a second reconnect layer per snapshot load)."""
     cur = conn.execute("SELECT value FROM meta WHERE key = 'root'")
     row = cur.fetchone()
     return row[0] if row is not None else None
 
 
+# frob:doc docs/modules/graph.md#cache
+# frob:ticket T-3700
+# frob:waive WIRE001 reason="wired via _cache.get_root(conn) at graph/__init__.py:754 (frob explore xref confirms); WIRE FUNCTION call_pattern's negative lookbehind excludes module-alias dotted calls -- new-in-diff only because T-3700 rewrapped the body" follow_up="T-3703"  # noqa: E501
+# frob:tests \
+# tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_two_\
+# processes_connecting_concurrently_never_see_no_such_table_meta
+def get_root(conn: sqlite3.Connection) -> str | None:
+    """The stored repo root, if any snapshot has ever been saved.
+
+    T-3700: routed through `_run_with_stale_reconnect` like every other
+    read here -- this `meta` read is one of the queries a caller issues
+    right after `connect()`, and on a connection a sibling's concurrent
+    `os.replace` stranded on the pre-rebuild inode a bare read surfaces
+    `disk I/O error` / `no such table: meta` (a hot rollback journal
+    resolved by path against the replaced-in inode) straight to the
+    caller. Reopening at the canonical inode before the read, exactly as
+    the other read paths do, absorbs that race; the read is idempotent
+    under retry."""
+    return _run_with_stale_reconnect(conn, _read_root, what="get_root")
+
+
 # frob:ticket T-0600
+# frob:ticket T-3700
 # frob:tests tests/test_graph.py::TestCacheModule.test_store_and_load_file_data_roundtrip  # noqa: E501
 def _get_file_hash(conn: sqlite3.Connection, file_path: str) -> str | None:
     """The cached content hash for `file_path`, or `None` if never stored.
 
     Private (T-0600): a low-level cache accessor with no consumer outside
     this module's own test coverage -- `frob.graph.__init__`'s incremental
-    rebuild path reads staleness via `get_file_meta`, never this directly."""
-    cur = conn.execute("SELECT content_hash FROM files WHERE path = ?", (file_path,))
-    row = cur.fetchone()
-    return row[0] if row is not None else None
+    rebuild path reads staleness via `get_file_meta`, never this directly.
+
+    T-3700: routed through `_run_with_stale_reconnect` like the other post-
+    connect reads, so a sibling's concurrent rebuild stranding the handle
+    mid-read reopens at the canonical inode rather than surfacing a raw
+    `disk I/O error` / `no such table`."""
+
+    def _op(c: sqlite3.Connection) -> str | None:
+        cur = c.execute("SELECT content_hash FROM files WHERE path = ?", (file_path,))
+        row = cur.fetchone()
+        return row[0] if row is not None else None
+
+    return _run_with_stale_reconnect(conn, _op, what=f"_get_file_hash({file_path})")
 
 
 # frob:ticket T-0245
+# frob:ticket T-3700
 # frob:doc docs/modules/graph.md#cache
 def get_file_meta(
     conn: sqlite3.Connection, file_path: str
@@ -1513,12 +1583,23 @@ def get_file_meta(
     The stat pair lets callers skip a full content read when the file's
     on-disk (mtime_ns, size) has not moved since the last build (T-0245) --
     a single `os.stat` syscall instead of open+read+close per file.
+
+    T-3700: routed through `_run_with_stale_reconnect` -- this is one of
+    the per-file reads `frob.graph.__init__`'s incremental rebuild issues
+    right after `connect()`, so a sibling's concurrent rebuild stranding
+    the handle reopens at the canonical inode instead of surfacing a raw
+    `disk I/O error` / `no such table`; the read is idempotent under retry.
     """
-    cur = conn.execute(
-        "SELECT content_hash, mtime_ns, size FROM files WHERE path = ?", (file_path,)
-    )
-    row = cur.fetchone()
-    return (row[0], row[1], row[2]) if row is not None else None
+
+    def _op(c: sqlite3.Connection) -> tuple[str, int, int] | None:
+        cur = c.execute(
+            "SELECT content_hash, mtime_ns, size FROM files WHERE path = ?",
+            (file_path,),
+        )
+        row = cur.fetchone()
+        return (row[0], row[1], row[2]) if row is not None else None
+
+    return _run_with_stale_reconnect(conn, _op, what=f"get_file_meta({file_path})")
 
 
 # frob:ticket T-0245
@@ -1790,6 +1871,7 @@ def load_parsed_artifact(
 
 # frob:doc docs/modules/graph.md#cache
 # frob:ticket T-1214
+# frob:ticket T-3700
 # frob:waive AFFECT001 reason="T-1214 only batches load_all's internal query \
 # shape (3 whole-table SELECTs instead of 3-per-file); its documented contract \
 # in docs/modules/graph.md#cache -- reassembles the full GraphSnapshot from \
@@ -1816,7 +1898,10 @@ def load_all(
     retry since it only reads."""
 
     def _op(c: sqlite3.Connection) -> GraphSnapshot:
-        root = get_root(c) or ""
+        # T-3700: `_read_root`, not `get_root` -- this whole body already
+        # runs inside `_run_with_stale_reconnect`, so calling the wrapped
+        # `get_root` here would nest a second reconnect layer needlessly.
+        root = _read_root(c) or ""
         file_hashes = {
             path: content_hash
             for path, content_hash in c.execute("SELECT path, content_hash FROM files")

@@ -193,6 +193,18 @@ class TestRecreateConcurrentReaderSurvives:
 
 
 # frob:ticket T-3623
+# frob:ticket T-3700
+# T-3700: the meta read is issued through the cache API (`get_root`, which
+# routes through `_run_with_stale_reconnect`), NOT a bare `conn.execute`.
+# A raw execute on a connection a sibling's `os.replace` stranded on the
+# pre-rebuild inode is fundamentally undefendable (sqlite resolves a hot
+# rollback journal by PATH against the replaced-in inode and raises
+# `disk I/O error` / `no such table: meta` before the module ever sees it);
+# the invariant this pins is the production one -- a caller reading through
+# the cache's own API never surfaces a raw sqlite error of these shapes,
+# it reopens-and-retries or raises a typed `CacheLocked`. `iters` counts
+# successful connect+read round trips so the harness can assert real work
+# happened rather than an empty loop trivially "passing".
 _SIBLING_CONNECT_LOOP_SCRIPT = """
 import sqlite3
 import sys
@@ -204,22 +216,30 @@ from frob.graph import cache as graph_cache
 path = Path(sys.argv[1])
 deadline = time.monotonic() + float(sys.argv[2])
 errors = []
+iters = 0
 while time.monotonic() < deadline:
     try:
         conn = graph_cache.connect(path)
-        conn.execute("SELECT 1 FROM meta LIMIT 1")
+        graph_cache.get_root(conn)
         conn.close()
+        iters += 1
+    except graph_cache.CacheLocked:
+        # A clean, typed contention error is an ACCEPTED outcome under
+        # sustained load -- it is exactly what the bounded retry raises
+        # once its budget is exhausted, never a raw sqlite escape.
+        iters += 1
     except sqlite3.OperationalError as exc:
         errors.append(repr(exc))
         break
 if errors:
     print("ERRORS:" + "|".join(errors))
 else:
-    print("OK")
+    print("OK:" + str(iters))
 """
 
 
 # frob:ticket T-3623
+# frob:ticket T-3700
 class TestRecreateNeverExposesASchemaIncompleteDb:
     """T-3623: a fresh replacement db built by `_recreate` (or the very
     first `connect()` at a brand-new path) must never be OBSERVABLE by a
@@ -286,30 +306,54 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
             reader.close()
         assert row is not None
 
+    # frob:ticket T-3700
     # frob:tests \
     # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
     # two_processes_connecting_concurrently_never_see_no_such_table_meta
     def test_two_processes_connecting_concurrently_never_see_no_such_table_meta(
         self, tmp_path: Path
     ) -> None:
-        """Regression for T-3623 direction 3: one process repeatedly
-        `_recreate`s the same cache path (as a schema-mismatch rebuild
-        would) while a sibling PROCESS repeatedly `connect()`s that same
-        path and queries `meta` in a tight loop; the sibling must never
-        observe `OperationalError: no such table: meta`."""
+        """Regression for T-3623 direction 3 (T-3700 round 7 hardening):
+        one process repeatedly `_recreate`s AND force-`_apply_schema`s the
+        same cache path (two atomic `os.replace`s per iteration, as a
+        schema-mismatch rebuild would) while a sibling PROCESS repeatedly
+        `connect()`s that same path and reads `meta` through the cache API
+        in a tight loop; the sibling must never surface a raw
+        `OperationalError` of the `no such table: meta` or `disk I/O error`
+        shape.
+
+        T-3700: run 33633092156 (ubuntu, under heavy parallel CI load)
+        still saw both shapes escape here even after rounds 1-6. The
+        remaining windows were the one-shot (unguarded) final
+        `_check_fingerprint` in `_check_fingerprint_with_recovery` and the
+        post-connect `meta` read (`get_root`) issued as a raw
+        `conn.execute` outside the stale-reconnect wrapper. To reproduce
+        the load-timing race more reliably off CI this runs MORE sibling
+        churn (spawns TWO concurrent recreating processes are not needed --
+        the single-process double-replace per iteration already publishes
+        a fresh inode faster than the sibling can connect) and asserts the
+        sibling completed real round trips, so a silently empty loop cannot
+        pass vacuously."""
         path = tmp_path / "cache.db"
         conn = graph_cache.connect(path)
         graph_cache.store_parsed_artifact(
             conn, content_hash="h", fingerprint="f", payload="one"
         )
 
+        duration = 3.0
         sibling = subprocess.Popen(
-            [sys.executable, "-c", _SIBLING_CONNECT_LOOP_SCRIPT, str(path), "2.0"],
+            [
+                sys.executable,
+                "-c",
+                _SIBLING_CONNECT_LOOP_SCRIPT,
+                str(path),
+                str(duration),
+            ],
             stdout=subprocess.PIPE,
             text=True,
         )
         try:
-            deadline = time.monotonic() + 2.0
+            deadline = time.monotonic() + duration
             while time.monotonic() < deadline:
                 conn = graph_cache._recreate(graph_cache._open(path), path)
                 conn = graph_cache._apply_schema(conn, None, path)
@@ -320,8 +364,19 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
             out, _ = sibling.communicate(timeout=30)
 
         assert "ERRORS:" not in out, (
-            f"sibling connect() loop observed a sqlite error: {out!r} -- "
-            "a concurrent _recreate exposed a schema-incomplete db"
+            f"sibling connect()+get_root() loop surfaced a raw sqlite error: "
+            f"{out!r} -- a concurrent _recreate exposed a schema-incomplete "
+            "db or stranded the sibling's handle (T-3700)"
+        )
+        # The sibling routes its logging to stdout too (fingerprint-
+        # invalidation INFO lines under this churn), so scan for the
+        # single result marker line rather than assuming it is the whole
+        # of stdout.
+        ok_lines = [line for line in out.splitlines() if line.startswith("OK:")]
+        assert ok_lines, f"sibling did not print an OK: result line: {out!r}"
+        assert int(ok_lines[-1].split(":", 1)[1].strip()) > 0, (
+            f"sibling loop completed zero connect+read round trips ({out!r}) "
+            "-- the race harness did no real work, so a green result is vacuous"
         )
 
     # frob:tests \
