@@ -2,7 +2,7 @@
 id: T-3687
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-3686):
   1 new (rule, file) identit(ies), 1 finding(s) (TICK004)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-02'
@@ -43,3 +43,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TICK004  tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-09-02: the TICK004 finding this sweep filed was genuine (T-3053's stale blocked_by=T-3088 edge + critical-priority rot) and is now fixed by T-3688: T-3088's edge cleared and T-3053 reprioritized to high. Not stale residue -- absorbed into T-3688's fix. (absorbed by T-3688)

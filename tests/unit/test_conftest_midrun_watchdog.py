@@ -34,9 +34,7 @@ class TestMidrunWatchdogThresholdS:
     # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestMidrunWatchdogThresholdS.test_none_when_unset  # noqa: E501
     def test_none_when_unset(self, monkeypatch: pytest.MonkeyPatch) -> None:
         module = _load_conftest()
-        monkeypatch.delenv(
-            module.FROB_TEST_MIDRUN_WATCHDOG_SECONDS_ENV, raising=False
-        )
+        monkeypatch.delenv(module.FROB_TEST_MIDRUN_WATCHDOG_SECONDS_ENV, raising=False)
         assert module._midrun_watchdog_threshold_s() is None
 
     # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestMidrunWatchdogThresholdS.test_none_when_zero  # noqa: E501
@@ -113,7 +111,9 @@ class TestRunMidrunWatchdog:
         # since we call the target function directly (not via a real
         # thread), the loop runs synchronously and returns after firing
         # once.
-        module._run_midrun_watchdog(config=None, stop_event=stop_event, threshold_s=0.01)
+        module._run_midrun_watchdog(
+            config=None, stop_event=stop_event, threshold_s=0.01
+        )
         assert len(calls) == 1
 
     # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestRunMidrunWatchdog.test_never_fires_once_stop_event_is_set  # noqa: E501
@@ -131,7 +131,9 @@ class TestRunMidrunWatchdog:
         )
         stop_event = threading.Event()
         stop_event.set()
-        module._run_midrun_watchdog(config=None, stop_event=stop_event, threshold_s=0.01)
+        module._run_midrun_watchdog(
+            config=None, stop_event=stop_event, threshold_s=0.01
+        )
         assert calls == []
 
 

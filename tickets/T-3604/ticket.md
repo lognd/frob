@@ -31,10 +31,17 @@ scope_changes:
   at: '2026-08-31'
 evidence:
 - tests/test_ci_workflow_matrix.py::TestWindowsDiagStepFixtureIsAClassifiableProject::test_fixture_gets_a_pyproject_toml
-- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_step_has_continue_on_error
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_step_has_no_continue_on_error
 - tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_is_untouched_and_still_windows_only
 - tests/test_ci_workflow_matrix.py::TestWindowsDiagStepRunsUnbudgeted::test_diag_invocation_has_no_budget_flag
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_step_has_continue_on_error
+  new_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_step_has_no_continue_on_error
+  reason: 'T-3688: test renamed (semantics flipped to require NO continue-on-error);
+    rebind stale COV003 evidence citation'
+  actor: logan
+  at: '2026-09-02'
 threat: null
 component: null
 anchor: false

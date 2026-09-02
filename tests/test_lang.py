@@ -676,6 +676,7 @@ class TestParseTsRustCppC:
 
 
 # frob:ticket T-1604
+# frob:ticket T-3688
 class TestBash:
     """Bash walker (`frob.lang._walk_bash`) -- publicness convention
     (leading underscore = private, since bash has no visibility keyword),
@@ -683,8 +684,12 @@ class TestBash:
 
     # frob:ticket T-1604
     # frob:ticket T-2900
+    # frob:ticket T-3688
     def test_parse_bash_produces_a_tree(self) -> None:
-        # frob:tests src/frob/lang/_walk_bash.py::_walk_bash kind="unit"
+        # T-3688: this test calls tree-sitter's get_parser directly (see
+        # T-2900 below) and never reaches frob.lang._walk_bash -- no
+        # reachability directive belongs here; test_walks_top_level_function
+        # right below is the test that actually exercises _walk_bash.
         # T-2900: `_parse_bash` was a test-only wrapper around
         # `get_parser(_GRAMMAR_NAME)` with no production caller of its own
         # (frob.lang.__init__'s `_parse` dispatch loads every grammar

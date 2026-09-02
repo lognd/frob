@@ -2,7 +2,7 @@
 id: T-3688
 title: 'clear self-gate residue: ruff-format drift, stale T-3604 evidence, stale T-3053
   block edge'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -30,6 +30,17 @@ scope_changes:
     on TestBash.test_parse_bash_produces_a_tree'
   actor: logan
   at: '2026-09-02'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): test-only/directive/ticket-metadata cleanup:
+    reformatting, a stale frob:tests directive removal, and ticket evidence/priority/block-edge
+    fixes -- no production code path changed'
+  actor: logan
+  at: '2026-09-02'
+  old_length: 1116
+  new_length: 1328
+evidence:
+- tests/test_lang.py::TestBash::test_walks_top_level_function
 designated_repro_test: null
 threat: null
 component: null
@@ -57,3 +68,5 @@ Self-gate cleanup (AL implementer series), current measured state:
    the stale block edge with frob ticket unblock --by T-3088.
    This is the same finding T-3687 (post-land sweep residue) flagged;
    close T-3687 once this lands, citing this ticket.
+
+frob:no-behavior-change reason="test-only/directive/ticket-metadata cleanup: reformatting, a stale frob:tests directive removal, and ticket evidence/priority/block-edge fixes -- no production code path changed"
