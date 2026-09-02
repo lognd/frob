@@ -1,7 +1,7 @@
 ---
 id: T-3697
 title: add frob-directive separator guard (Class::method mistake)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-02'
@@ -17,6 +17,7 @@ scope:
 - .claude/hooks/frob-directive-guard.py
 - .claude/settings.json
 - tests/test_hook_frob_directive_guard.py
+- docs/guides/claude-hooks.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,11 @@ scope_changes:
   glob: .claude/hooks/frob-suggest.py
   reason: avoid overlap with T-3229/T-3284; going with standalone new hook, not extending
     frob-suggest.py
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: COV001 needs a frob:doc anchor for the new hook's main()
   actor: logan
   at: '2026-09-02'
 designated_repro_test: null
