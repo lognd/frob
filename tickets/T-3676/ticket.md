@@ -19,6 +19,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 remedy: this is a directive-comment-only fix'
+  actor: logan
+  at: '2026-09-01'
+  old_length: 837
+  new_length: 945
+evidence:
+- tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_a_leaves_frob_worktree_set_like_apply_agent_env_does
+- tests/ticket_land_suite/test_wip.py::TestWorktreeLeaseEnvIsolation::test_b_does_not_see_a_leaked_frob_worktree
 designated_repro_test: null
 threat: null
 component: null
@@ -43,3 +53,6 @@ credential material).
 
 Evidence: `timeout 540 uv run frob check --only secrets` (or whatever
 --only name maps to the SEC family) shows 0 SEC110 for this file.
+
+
+frob:no-behavior-change reason="comment-only fix: adds frob:waive directives, no runtime behavior touched"
