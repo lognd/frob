@@ -128,6 +128,20 @@ body_changes:
   at: '2026-08-30'
   old_length: 3823
   new_length: 3840
+- mode: append
+  reason: 'T-3411: mark as no-behavior-change refactor (pure leaf-module extraction,
+    BUG002 confirmatory-evidence exemption)'
+  actor: logan
+  at: '2026-09-02'
+  old_length: 3839
+  new_length: 4337
+evidence:
+- tests/test_graph.py::TestResolve::test_exact_match
+- tests/test_graph.py::TestResolve::test_exact_qualname_wins_over_suffix_match
+- tests/test_graph.py::TestResolve::test_ambiguous_suffix_match
+- tests/test_graph.py::TestResolve::test_suffix_unique_match
+- tests/test_telemetry.py::test_append_event_respects_no_telemetry_env
+- tests/test_telemetry.py::test_no_telemetry_env_false_like_values_stay_enabled
 designated_repro_test: null
 threat: null
 component: null
@@ -200,3 +214,5 @@ Either way, once a direction is picked for both, remove the
 this ticket's id via `ticket=`) -- T-3350's own investigation already
 narrowed it down to exactly these two SCCs, so no further re-measurement
 should be needed before landing whichever fix is chosen.
+
+frob:no-behavior-change reason="T-3411 is a pure module-boundary refactor (leaf-module extraction to collapse two import cycles) -- resolve/GraphError and is_disabled/_telemetry_path/_home_config_state_hash/_external_path_arg_hash are MOVED verbatim to new leaf modules and re-exported, with zero logic changes; there is no behavioral defect to reproduce, only an import-graph structure to fix, so BUG002's confirmatory-only-evidence concern does not apply the way it would to an actual bugfix."
