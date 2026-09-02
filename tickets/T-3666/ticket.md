@@ -1,7 +1,7 @@
 ---
 id: T-3666
 title: 'win32: conftest _write fixture converts LF to CRLF'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-01'
