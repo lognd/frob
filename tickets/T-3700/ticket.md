@@ -1,0 +1,29 @@
+---
+id: T-3700
+title: 'cache: close sibling connect/read raw-error escape round 7'
+state: queued
+kind: bug
+origin: human
+created: '2026-09-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/graph/cache.py tests/unit/test_graph_cache.py tests/unit/test_graph_build_lock.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Round 7 of the cache two-process saga (after T-3607, T-3623, T-3632, T-3634, T-3644, T-3654, T-3669). Run 33633092156 ubuntu: test_two_processes_connecting_concurrently_never_see_no_such_table_meta still surfaces disk I/O error and no such table meta from the sibling connect+read loop under heavy CI load. Two escape windows: (1) _check_fingerprint_with_recovery second _check_fingerprint is unguarded one-shot, and _with_lock_retry does not catch stale/corrupt shapes, so a replace racing it escapes connect(); (2) the meta read right after connect (get_root/get_file_meta/_get_file_hash) is raw conn.execute not routed through _run_with_stale_reconnect. Fix: bounded reopen+retry loop in fingerprint recovery; route post-connect meta reads through the stale-reconnect helper; strengthen the two-process regression test.
