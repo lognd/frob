@@ -21,6 +21,7 @@ scope:
 - tests/unit/gates/test_win32_kill_signal.py
 - src/frob/gates/_fix_engine_shared.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,14 @@ scope_changes:
     detector module and its test fixture (subprocess git calls, tmp_path writes) that
     must be declared in the gates/testsuite node manifests, same as every other new
     gate module's precedent
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: T-3696's new gate/test capability declarations push gates::fs.read, testsuite::exec,
+    and testsuite::fs.write each one site past their committed SYS111 ratchet ceilings
+    -- bump each by exactly the new count, same shape every other ratchet-bump ticket
+    in this lock file's own history uses
   actor: logan
   at: '2026-09-02'
 designated_repro_test: null
