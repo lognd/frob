@@ -37,6 +37,9 @@ body_changes:
   at: '2026-09-02'
   old_length: 0
   new_length: 1353
+evidence:
+- tests/test_refactor.py::TestScanReferences::test_self_import_skip_str_compare_is_not_per_node
+- tests/test_refactor.py::TestGapRegressions::test_stale_dest_import_ops_sorts_each_stale_set_once
 designated_repro_test: null
 threat: null
 component: null
