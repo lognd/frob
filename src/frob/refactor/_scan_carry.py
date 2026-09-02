@@ -355,10 +355,30 @@ def _carry_forward_ops_for_texts(
     ]
 
 
+# T-3690 (PERF004): `stale_dest_import_ops` used to call `sorted()` twice
+# over the SAME per-node list (once for the log line, once for the
+# `RewriteOp.reason`) -- sort once here and let both call sites share it.
+# frob:waive PERF004 reason="stale is this node's own distinct per-import-statement \
+# name set (1-2 entries), not a shared re-sort -- same posture as every other \
+# per-key-distinct-set PERF004 waiver in this codebase"
+def _sorted_stale_names(stale: list[ast.alias]) -> list[str]:
+    """The deterministic, deduplicated-sort name list for one stale-import
+    node's `moving_names` overlap -- shared by `stale_dest_import_ops`'s
+    log line and its `RewriteOp.reason` so they sort the same data once,
+    not twice."""
+    return sorted(a.asname or a.name for a in stale)
+
+
 # frob:doc docs/commands/refactor.md#split-verb-t-1201
 # frob:ticket T-3653
+# frob:ticket T-3690
 # frob:tests \
 # tests/test_refactor.py::TestGapRegressions.test_gap5_stale_dest_import_becomes_circular_when_its_own_symbol_later_moves_in  # noqa: E501
+# frob:tests \
+# tests/test_refactor.py::TestGapRegressions.test_stale_dest_import_ops_sorts_each_stale_set_once  # noqa: E501
+# frob:waive AFFECT001 reason="T-3690 only dedups an internal sorted() call (log line \
+# + RewriteOp.reason now share one sort) -- no observable public-API or output change, \
+# so docs/commands/refactor.md needs no update"
 def stale_dest_import_ops(
     dest_file: Path, moving_names: frozenset[str]
 ) -> list[RewriteOp]:
@@ -403,10 +423,11 @@ def stale_dest_import_ops(
             ) + f"from {module_text} import {names_text}"
         else:
             new_stmt = ""
+        sorted_stale = _sorted_stale_names(stale)
         _log.info(
             "refactor.split: stripping stale carry-forward name(s) %s from "
             "%s's own existing import at line %d (T-3653 self-import guard)",
-            sorted(a.asname or a.name for a in stale),
+            sorted_stale,
             dest_file,
             node.lineno,
         )
@@ -417,7 +438,7 @@ def stale_dest_import_ops(
                 end_line=end,
                 old_text=f"<import at line {node.lineno}>",
                 new_text=new_stmt,
-                reason=f"strip stale carry-forward import of {sorted(a.asname or a.name for a in stale)} now defined locally",  # noqa: E501
+                reason=f"strip stale carry-forward import of {sorted_stale} now defined locally",  # noqa: E501
             )
         )
     return ops

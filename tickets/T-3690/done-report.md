@@ -1,0 +1,49 @@
+## Done report
+
+Cleared the ubuntu self-gate floor's last 4 items. PERF003
+(src/frob/refactor/_scan.py::scan_references) was a genuine O(n*m)
+self-import-skip comparison re-run once per matching ast.walk node
+instead of once per file -- hoisted into a bool computed once before the
+inner loop. PERF004 (src/frob/refactor/_scan_carry.py::
+stale_dest_import_ops) called sorted() twice over the identical per-node
+list -- deduplicated into a small extracted helper
+(_sorted_stale_names), which also kept the function under ARCH001's line
+budget; the one remaining sorted() call is a reasoned frob:waive PERF004
+(genuine per-node distinct-set sort, same posture as every other such
+waiver in this codebase). ruff-format drift on
+src/frob/app/telemetry/_state.py and src/frob/graph/__init__.py fixed via
+`frob format` (whitespace only).
+
+Both PERF fixes are covered by new perf-regression tests
+(TestScanReferences.test_self_import_skip_str_compare_is_not_per_node,
+TestGapRegressions.test_stale_dest_import_ops_sorts_each_stale_set_once)
+that assert the call-shape via a counting monkeypatch of str()/sorted()
+in the target module's namespace, not wall-clock. Both were verified as
+real repros via --check-repro against the pre-fix commit. Full
+tests/test_refactor.py suite: 148 passed.
+
+No out-of-scope work discovered; nothing filed. Remaining FAILs in the
+unscoped full check report (ruff-format on
+tests/unit/test_check_admission.py, gate:DEPR DEPR006, gate:TICK
+TICK003/004/011, gate:WAIVE WAIVE011) are pre-existing fleet-wide
+housekeeping items with zero overlap with this ticket's scope.
+
+### Changed
+```
+ src/frob/app/telemetry/_state.py |  1 -
+ src/frob/graph/__init__.py       |  1 +
+ src/frob/refactor/_scan.py       | 11 ++++-
+ src/frob/refactor/_scan_carry.py | 25 ++++++++++-
+ tests/test_refactor.py           | 89 ++++++++++++++++++++++++++++++++++++++++
+ tickets/T-3690/ticket.md         | 11 +++++
+ 6 files changed, 134 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/test_refactor.py::TestScanReferences::test_self_import_skip_str_compare_is_not_per_node` (pytest node id, verified passing when recorded)
+- `tests/test_refactor.py::TestGapRegressions::test_stale_dest_import_ops_sorts_each_stale_set_once` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 4 error(s), 4300 warning(s), 913 waived
+- error-findings: CLAUDE001@.claude/hooks/sync-claude-config.py, DEPR006@frob-deprecated-baseline.lock.json, TICK011@tickets.md, WAIVE011@frob-ratchet.lock.json

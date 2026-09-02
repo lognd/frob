@@ -811,6 +811,7 @@ def edges_to(snapshot: GraphSnapshot, target: str) -> tuple[Edge, ...]:
     """All edges whose `target` is exactly `target`."""
     return tuple(edge for edge in snapshot.edges if edge.target == target)
 
+
 __all__ = [
     "AffectedSet",
     "BuildError",

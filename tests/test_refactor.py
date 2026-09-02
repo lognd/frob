@@ -142,6 +142,52 @@ class TestScanReferences:
         assert aliases == []
         assert unresolved == []
 
+    # frob:ticket T-3690
+    def test_self_import_skip_str_compare_is_not_per_node(self, tmp_path, monkeypatch):
+        # frob:tests \
+        # tests/test_refactor.py::TestScanReferences.test_self_import_skip_str_compare_\
+        # is_not_per_node
+        # T-3690 (PERF003): `str(file_path) == dest_file_path` used to
+        # rerun once per matching `ast.walk` node inside the self-import
+        # skip branch (T-3653) instead of once per file -- assert the
+        # str() call count seen by `_scan`'s own module namespace does
+        # not grow with the number of matching import nodes.
+        import frob.refactor._scan as scan_mod
+
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "def greet():\n    return 'hi'\n")
+        resolved = resolve_symbol(
+            root, SymbolRef(module="pkg.mod", qualname="greet")
+        ).danger_ok
+        # destination = the caller file's OWN module -- every matching
+        # import node hits the self-import skip branch this fix hoists.
+        dest = SymbolRef(module="pkg.caller", qualname="greet")
+
+        def _caller_source(n: int) -> str:
+            return "\n".join(
+                f"def use_{i}():\n    from pkg.mod import greet\n    return greet()\n"
+                for i in range(n)
+            )
+
+        counts: dict[int, int] = {}
+        for n in (1, 5):
+            _write(root, "src/pkg/caller.py", _caller_source(n))
+            calls = [0]
+            real_str = str
+
+            def counting_str(*a, _real=real_str, _calls=calls, **kw):
+                _calls[0] += 1
+                return _real(*a, **kw)
+
+            monkeypatch.setattr(scan_mod, "str", counting_str, raising=False)
+            ops, aliases, unresolved = scan_references(root, resolved, dest)
+            monkeypatch.undo()
+            counts[n] = calls[0]
+            assert ops == []
+            assert unresolved == []
+
+        assert counts[1] == counts[5]
+
     def test_auto_alias_on_call_site_name_collision(self, tmp_path):
         # frob:tests \
         # tests/test_refactor.py::TestScanReferences.test_auto_alias_on_call_site_name_\
@@ -3323,6 +3369,7 @@ class TestVerifyStructural:
 
 
 # frob:ticket T-3596
+# frob:ticket T-3690
 class TestGapRegressions:
     """T-3596: one regression test per documented gap, each reproducing
     the exact failure shape the ticket body's repro commands described."""
@@ -3730,3 +3777,54 @@ class TestGapRegressions:
             text=True,
         )
         assert import_result.returncode == 0, import_result.stderr
+
+    # frob:ticket T-3690
+    def test_stale_dest_import_ops_sorts_each_stale_set_once(
+        self, tmp_path, monkeypatch
+    ):
+        # frob:tests \
+        # tests/test_refactor.py::TestGapRegressions.test_stale_dest_import_ops_sorts_e\
+        # ach_stale_set_once
+        # T-3690 (PERF004): `stale_dest_import_ops` used to call
+        # `sorted()` twice over the SAME per-node `stale` list (once for
+        # the log line, once for the `RewriteOp.reason` string) -- assert
+        # `sorted()` is called exactly once per stale-carrying import
+        # node, not twice.
+        from frob.refactor._scan_carry import stale_dest_import_ops
+
+        root = _repo(tmp_path)
+        dest = _write(
+            root,
+            "src/pkg/helpers.py",
+            # `_a as aliased_a` exercises the `a.asname or a.name` branch
+            # `_sorted_stale_names` sorts by -- an `and` mutant there would
+            # sort by `a.name` ("_a") instead of `a.asname` ("aliased_a"),
+            # which the assertion below on `ops[0].reason` catches.
+            "from pkg.mod import _a as aliased_a, keep_a\n"
+            "from pkg.mod import _b, keep_b\n"
+            "from pkg.mod import _c, keep_c\n"
+            "\n\ndef _a():\n    pass\n\n\ndef _b():\n    pass\n\n\ndef _c():\n    pass\n",
+        )
+        moving_names = frozenset({"aliased_a", "_b", "_c"})
+
+        import frob.refactor._scan_carry as scan_carry_mod
+
+        calls = [0]
+        real_sorted = sorted
+
+        def counting_sorted(*a, _real=real_sorted, _calls=calls, **kw):
+            _calls[0] += 1
+            return _real(*a, **kw)
+
+        monkeypatch.setattr(scan_carry_mod, "sorted", counting_sorted, raising=False)
+        ops = stale_dest_import_ops(dest, moving_names)
+
+        assert len(ops) == 3
+        # One stale-carrying import node per _a/_b/_c -- one sorted()
+        # call each, not two.
+        assert calls[0] == 3
+        # `a.asname or a.name`: sorts/reports by the alias, not the
+        # original bound name -- kills an `and`-swapped mutant of the
+        # `or`, which would report "_a" instead of "aliased_a" here.
+        assert "aliased_a" in ops[0].reason
+        assert "'_a'" not in ops[0].reason

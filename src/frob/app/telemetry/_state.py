@@ -324,4 +324,3 @@ def _external_path_arg_hash(root: Path, args_head: str) -> str:
         "\n".join(sorted(entries)).encode("utf-8", errors="replace")
     )
     return digest.hexdigest()[:12]
-
