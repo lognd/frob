@@ -1,7 +1,7 @@
 ---
 id: T-3692
 title: 'win32 round 22: post-submit 122s + watchdog var bug + mac flake'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -23,6 +23,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: waive BUG002/DIAG
+  actor: logan
+  at: '2026-09-02'
+  old_length: 2768
+  new_length: 3185
+evidence:
+- tests/unit/test_check_admission.py::TestTimingDebug::test_disabled_by_default
+- tests/unit/test_check_admission.py::TestTimingDebug::test_mark_prints_breadcrumb_when_enabled
 designated_repro_test: null
 threat: null
 component: null
@@ -76,3 +86,7 @@ unrelated flake; fix only if ours (that file is likely out of this
 ticket's own scope).
 
 References: T-3689, T-3686, T-3683, T-3256.
+
+
+
+frob:waive BUG002 reason="win32-only symptom (122s post-submit teardown slowdown) unreproducible on this WSL/Linux host by construction -- this land ships diagnostic timing marks (report/teardown/atexit) plus a hypothesis-fix (ci.yml env/var-expansion hardening) for the NEXT windows CI run to confirm or refute, matching T-3689/T-3693 round precedent; no local repro test can exercise a win32-specific code path"
