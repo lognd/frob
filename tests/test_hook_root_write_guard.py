@@ -775,3 +775,148 @@ def test_bash_relative_redirect_into_checkout_is_still_refused(tmp_path):
         env={},
     )
     assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3694
+def test_bash_quoted_ticket_verb_argument_is_allowed(tmp_path):
+    """MUST-STAY-QUIET (T-3694): the live false-positive this drive's own
+    session hit -- `ps aux | grep "frob ticket land"` -- is allowed. The
+    quoted grep argument is prose describing a command, never a command
+    the shell itself runs; only `_strip_prose`d text feeds the
+    `frob ticket <verb>` matcher."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command='ps aux | grep "frob ticket land"',
+        env={},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3694
+def test_bash_ticket_verb_in_single_quoted_commit_message_is_allowed(tmp_path):
+    """MUST-STAY-QUIET (T-3694): the same shape via a single-quoted
+    argument (a commit message describing the verb, not running it)."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="git commit -m 'fixes the frob ticket land false positive'",
+        env={},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3694
+def test_bash_ticket_land_still_refused_alongside_quoted_prose(tmp_path):
+    """MUST-FIRE (T-3694): a REAL `frob ticket land` at command position is
+    still refused even when the same command ALSO carries an unrelated
+    quoted string -- proving the prose-stripping fix does not blind the
+    matcher to a genuine invocation sitting right next to quoted text."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command='echo "just a note" && timeout 540 uv run frob ticket land T-0001',
+        env={},
+    )
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3694
+def test_bash_set_prefixed_cd_into_worktree_is_allowed(tmp_path):
+    """MUST-STAY-QUIET (T-3694): the other live false-positive this drive's
+    session hit -- a leading `set -e;` (or similar) segment before the
+    `cd` -- previously defeated the single-regex `_leading_cd_target`
+    entirely, so the redirect target resolved against the PRE-cd cwd
+    (the primary checkout) instead of the effective one. The token-walk
+    `_effective_cwd_from_tokens` skips the harmless `set -e;` prefix and
+    still finds the `cd` into the worktree."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command=f"set -e; cd {worktree} && gh api repos/x/y > relative.log",
+        env={},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3694
+def test_bash_pushd_into_worktree_is_allowed(tmp_path):
+    """MUST-STAY-QUIET (T-3694): `pushd` (not just `cd`) into a real
+    worktree, followed by a relative redirect, is allowed -- the
+    token-walk cwd resolver treats `pushd` the same as `cd`."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command=f"pushd {worktree} && echo hi > relative.log",
+        env={},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3694
+def test_bash_set_prefixed_cd_into_primary_still_refused(tmp_path):
+    """MUST-FIRE (T-3694): the identical `set -e;`-prefixed `cd` shape,
+    landing in the PRIMARY checkout instead of a worktree, is still
+    refused -- the fix only widens WHICH cwd is computed, never whether a
+    genuine root write is still caught once it is."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command=f"set -e; cd {primary} && echo hi > relative.log",
+        env={},
+    )
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3694
+def test_bash_heredoc_body_containing_delimiter_substring_is_allowed(tmp_path):
+    """MUST-STAY-QUIET (T-3694): the third live false-positive this
+    drive's session hit -- a heredoc appending to a path OUTSIDE the
+    repo root entirely, whose BODY happens to contain the closing
+    delimiter word as a mid-line SUBSTRING (documentation prose like
+    "...EOF's own recovery recipe...") and separate lines with `>`/`>>`
+    example text. The old `^\\1\\b` terminator let that substring occurrence
+    end the blanked span early, leaving the rest of the body (with its
+    own `>` example text) for `_shell_tokens` to misparse as real
+    operator tokens targeting a RELATIVE path that resolved under the
+    primary checkout. The tightened `^\\1[ \\t]*$` terminator (real
+    heredoc grammar: the delimiter alone on its own line) only ends the
+    span at the TRUE closing delimiter."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    outside_target = tmp_path / "outside-the-repo.md"
+    command = (
+        f"cat >> {outside_target} << 'EOF'\n"
+        'note: this fixes the "EOF\'s own recovery" wording bug\n'
+        "example: git diff HEAD -- <paths> > /tmp/rescue.patch\n"
+        "example: echo x > root_file.txt\n"
+        "EOF\n"
+    )
+    result = _run_bash_hook(cwd=primary, command=command, env={})
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-3694
+def test_bash_heredoc_appending_into_checkout_still_refused_with_delimiter_substring(
+    tmp_path,
+):
+    """MUST-FIRE (T-3694): the identical delimiter-substring-in-body shape,
+    but the real `>>` operator right before the heredoc targets a path
+    INSIDE the checkout -- still refused. Proves the tightened terminator
+    did not also stop detecting a genuine write that happens to precede a
+    body containing the delimiter word as a substring."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    command = (
+        "cat >> notes.txt << 'EOF'\n"
+        'note: this fixes the "EOF\'s own recovery" wording bug\n'
+        "EOF\n"
+    )
+    result = _run_bash_hook(cwd=primary, command=command, env={})
+    assert _denial_reason(result) is not None

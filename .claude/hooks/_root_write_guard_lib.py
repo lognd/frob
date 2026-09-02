@@ -90,10 +90,15 @@ _TICKET_VERB_RE = re.compile(
 
 # frob:ticket T-2481
 #: T-2481: a leading `cd <dir>` segment (chained with `&&`/`;`), captured so
-#: an effective cwd can be computed without a real shell parser.
+#: an effective cwd can be computed without a real shell parser. Kept as the
+#: fallback path `_effective_cwd` uses when `_shell_tokens` cannot tokenize
+#: the command at all (T-3694 added the token-walk primary path below,
+#: `_effective_cwd_from_tokens`, which also handles `pushd` and a leading
+#: `set -e;`/similar prefix segment).
 _LEADING_CD_RE = re.compile(r"^\s*cd\s+(\"[^\"]+\"|'[^']+'|\S+)\s*(?:&&|;)")
 
 # frob:ticket T-3421
+# frob:ticket T-3694
 #: T-3421: heredoc BODY text is data the shell never executes -- blanked
 #: to a space before tokenizing so an unquoted `>`/`>>` inside a heredoc
 #: body (e.g. a Python heredoc printing example shell syntax) can never
@@ -101,7 +106,47 @@ _LEADING_CD_RE = re.compile(r"^\s*cd\s+(\"[^\"]+\"|'[^']+'|\S+)\s*(?:&&|;)")
 #: heredoc alternative in `_shellscan._QUOTED`, applied here because this
 #: module's own tokenizer (unlike `_shellscan.strip_quoted`) must keep
 #: quote characters' CONTENT intact, not blank it -- see `_shell_tokens`.
-_HEREDOC_BODY_RE = re.compile(r"<<-?\s*'?(\w+)'?.*?^\1\b", re.S | re.M)
+#: T-3694: the closing-delimiter anchor is `^\1[ \t]*$` (the delimiter
+#: ALONE on its own line, real heredoc grammar), not the looser `^\1\b`
+#: this replaced -- the loose form let a body line that merely CONTAINS
+#: the delimiter word as a substring (e.g. documentation prose reading
+#: "...EOF's own recovery recipe...") satisfy `\b` and truncate the
+#: blanked span early, leaving the REST of the body (which can itself
+#: carry `>`/`>>`-looking example text) untouched for `_shell_tokens` to
+#: misparse as real operator tokens.
+_HEREDOC_BODY_RE = re.compile(r"<<-?\s*'?(\w+)'?.*?^[ \t]*\1[ \t]*$", re.S | re.M)
+
+# frob:ticket T-3694
+#: T-3694: quoted spans only (heredoc bodies handled by `_HEREDOC_BODY_RE`
+#: above) -- blanked before the `frob ticket <verb>` matcher runs, so
+#: quoted prose (a commit message, a `grep "frob ticket land"` argument,
+#: an echo string) is never mistaken for a command the shell actually
+#: runs. Mirrors `_shellscan.strip_quoted`'s "quoted text is prose, not
+#: program" rule; duplicated rather than imported because this module
+#: cannot import `_shellscan` across the two hooks' separately
+#: materialized copies (see `_SEGMENT_CONNECTORS`'s comment on the same
+#: constraint for `POS`) -- and because, unlike `_shellscan.strip_quoted`,
+#: only this ONE call site (verb detection) wants text blanked; every
+#: other resolver in this file keeps quote CONTENT intact on purpose (the
+#: `_shellscan` module docstring's own "asymmetry" note: stripping is for
+#: deciding whether a command runs, never for reading what its arguments
+#: are).
+_QUOTED_SPAN_RE = re.compile(
+    r"'[^']*'" r'|"(?:[^"\\]|\\.)*"',
+)
+
+
+# frob:ticket T-3694
+def _strip_prose(command: str) -> str:
+    """`command` with quoted spans and heredoc bodies blanked to a space --
+    the text the `frob ticket <verb>` matcher (`_TICKET_VERB_RE`) is run
+    against, so a command NAME appearing only inside quoted prose or a
+    heredoc body is never mistaken for a real invocation. Never used to
+    resolve a redirect TARGET (those keep quote content intact -- see
+    `_shell_tokens`)."""
+    without_heredocs = _HEREDOC_BODY_RE.sub(" ", command)
+    return _QUOTED_SPAN_RE.sub(" ", without_heredocs)
+
 
 #: T-3421: real filesystem-write redirect operators, as TOKENS (never raw
 #: text) -- the next token is the candidate write target.
@@ -398,12 +443,62 @@ def _unambiguous_target(raw_target: str) -> str | None:
     return target
 
 
+#: T-3694: `cd`/`pushd` are cwd-changing; `set`/`export`/`umask` are common
+#: no-op-for-cwd prefixes (`set -e;`, `export FOO=bar;`) that must not stop
+#: the walk before a LATER `cd` in the same leading chain.
+_CD_LIKE_HEADS = frozenset({"cd", "pushd"})
+_CD_CHAIN_SKIP_HEADS = frozenset({"set", "export", "umask"})
+
+
+# frob:ticket T-3694
+def _effective_cwd_from_tokens(tokens: list[str], payload_cwd: str) -> str | None:
+    """The cwd in effect once every LEADING `cd`/`pushd` segment in
+    `tokens` has run, each resolved relative to the cwd accumulated so
+    far -- generalizes the single-`cd`-prefix case to a chain (`cd a &&
+    cd b && ...`) and to `pushd`, skipping over harmless leading
+    `set`/`export`/`umask` segments (T-3694: the exact false-positive
+    shape measured this drive was `set -e; cd <dir> && ...`, which the
+    single-regex `_leading_cd_target` never matched at all). Stops at the
+    first segment that is none of these -- the real command the effective
+    cwd is FOR. Returns `None` (ambiguous) when any encountered `cd`/
+    `pushd` target is not a resolvable target per `_unambiguous_target`,
+    same fail-open posture as the rest of this module."""
+    cwd = payload_cwd
+    for segment in _segments(tokens):
+        if not segment:
+            continue
+        head = segment[0]
+        if head in _CD_LIKE_HEADS:
+            args = [arg for arg in segment[1:] if not arg.startswith("-")]
+            if not args:
+                break
+            target = _unambiguous_target(args[-1])
+            if target is None:
+                return None
+            cwd = _resolve_relative(target, cwd)
+            continue
+        if head in _CD_CHAIN_SKIP_HEADS:
+            continue
+        break
+    return cwd
+
+
 # frob:ticket T-2481
+# frob:ticket T-3694
 def _effective_cwd(command: str, payload_cwd: str) -> str | None:
-    """The directory a Bash command's write actually lands in: the leading
-    `cd <dir>` target if the command starts with one, else `payload_cwd`
-    unchanged. Returns `None` (ambiguous) when a leading `cd` target is not
-    a resolvable target per `_unambiguous_target`."""
+    """The directory a Bash command's write actually lands in, after
+    applying every LEADING `cd`/`pushd` segment (optionally preceded by
+    harmless `set`/`export`/`umask` segments) -- `_effective_cwd_from_
+    tokens`, T-3694's generalization of the original single-`cd`-prefix
+    case. Falls back to the original single-regex `_leading_cd_target`
+    path when `_shell_tokens` cannot tokenize `command` at all (unbalanced
+    quoting) -- ambiguous either way, so both paths return `payload_cwd`
+    unchanged for a command with no leading `cd`. Returns `None`
+    (ambiguous) when a leading `cd`/`pushd` target is not a resolvable
+    target per `_unambiguous_target`."""
+    tokens = _shell_tokens(command)
+    if tokens is not None:
+        return _effective_cwd_from_tokens(tokens, payload_cwd)
     cd_target = _leading_cd_target(command)
     if cd_target is None:
         return payload_cwd
@@ -465,8 +560,13 @@ def _is_legitimate_land(
     just-wrong path string. Ambiguous flag values (`$`, backtick, glob --
     `_unambiguous_target`) are rejected, same posture as every other target
     resolution in this file: when in doubt about the fact, do not grant the
-    exemption."""
-    match = _TICKET_VERB_RE.search(command)
+    exemption. T-3694: matched against `_strip_prose(command)`, not the
+    raw string -- the verb name itself must not come from quoted prose or
+    a heredoc body; the `--worktree` flag VALUE is still read from the
+    raw `command` right below, per the module's stripping asymmetry rule
+    (stripping decides whether a command runs, never what its arguments
+    are)."""
+    match = _TICKET_VERB_RE.search(_strip_prose(command))
     if not match or match.group(1) != "land":
         return False
     raw = _land_worktree_flag_target(command)
@@ -496,10 +596,15 @@ def _bash_ticket_verb_targets_root(
     `Write`/`Edit`) most `frob ticket` verbs are actually run through.
     `land` alone keeps the narrow structural check (`_is_legitimate_land`)
     because it is the one verb in this set that legitimately writes
-    non-ledger content in the root by design (the merge itself)."""
+    non-ledger content in the root by design (the merge itself).
+    T-3694: the verb itself is matched against `_strip_prose(command)`,
+    so a `frob ticket land` appearing only inside a quoted string or a
+    heredoc body (e.g. `grep "frob ticket land"`, or a ticket body
+    describing this very check) is never mistaken for a real
+    invocation."""
     if "--path" in command:
         return False
-    match = _TICKET_VERB_RE.search(command)
+    match = _TICKET_VERB_RE.search(_strip_prose(command))
     if not match:
         return False
     if match.group(1) != "land":

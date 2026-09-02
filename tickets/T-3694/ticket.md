@@ -1,7 +1,7 @@
 ---
 id: T-3694
 title: 'root-write-guard: strip quoted text before ticket-verb match'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -34,6 +34,15 @@ scope_changes:
   reason: close doc/test scope-closure gaps flagged at ticket creation
   actor: logan
   at: '2026-09-02'
+evidence:
+- tests/test_hook_root_write_guard.py::test_bash_quoted_ticket_verb_argument_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_in_single_quoted_commit_message_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_ticket_land_still_refused_alongside_quoted_prose
+- tests/test_hook_root_write_guard.py::test_bash_set_prefixed_cd_into_worktree_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_pushd_into_worktree_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_set_prefixed_cd_into_primary_still_refused
+- tests/test_hook_root_write_guard.py::test_bash_heredoc_body_containing_delimiter_substring_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_heredoc_appending_into_checkout_still_refused_with_delimiter_substring
 designated_repro_test: null
 threat: null
 component: null
