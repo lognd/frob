@@ -1,7 +1,7 @@
 ---
 id: T-3680
 title: 'self-gate floor (e): repo-wide ruff-format sweep'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-01'
