@@ -46,6 +46,8 @@ scope_changes:
     as one element by ticket new --scope)
   actor: logan
   at: '2026-09-02'
+evidence:
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_two_processes_connecting_concurrently_never_see_no_such_table_meta
 designated_repro_test: null
 threat: null
 component: null
