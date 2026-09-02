@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from frob.gates import (
     Severity,
 )
@@ -129,6 +131,55 @@ class TestProtocolVerificationGate:
         assert v.severity == Severity.ERROR
         assert "src/a.py::enter" in v.message
         assert "Net" in v.message and "active" in v.message
+
+    # frob:ticket T-3667
+    # frob:tests src/frob/gates/_protocol_summary.py::_package_edges kind="unit"
+    def test_finds_the_violation_even_when_cwd_relativization_diverges(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3667 (win32 gates_suite campaign, T-3659): reproduces, on ANY
+        platform, the general shape of the bug that made `protocol_
+        summary_gate` silently find ZERO violations on win32 for every
+        one of this file's 10 fixtures. `_package_edges` used to rebuild
+        `ParsedFile.path`'s own string via a SEPARATE `str(root /
+        rel_path)` computation and `.replace()` it out of each edge's
+        `src`/`origin` -- but `ParsedFile.path` is actually built by
+        `frob.lang._display_path`, which prefers a path RELATIVE TO
+        `Path.cwd()` when possible, and ALWAYS normalizes via
+        `.as_posix()`. Whenever that computed string differs even
+        slightly from a separately-recomputed `str(root / rel_path)`
+        (win32's native `\\` vs `_display_path`'s hardcoded `/` is one
+        way; `Path.cwd()` landing under `tmp_path` -- forced here via
+        monkeypatch -- so `_display_path` takes its relative-to-cwd
+        branch entirely, producing a SHORT relative string instead of
+        the long absolute one `str(root / rel_path)` still computes --
+        is another, POSIX-reproducible way), the old `.replace()` call
+        silently no-ops and every `Edge.src`/`origin` is left as the
+        WRONG (still-`_display_path`-shaped) string, which never equals
+        the POSIX-relative `entrypoints` `_tagged_symbols_by_package`
+        computes -- so PROTO002/003/004's `edge.src == symref` lookups
+        find nothing, for every fixture, on every language. The fix
+        (`abs_path = result.danger_ok.path`, i.e. reusing `ParsedFile.
+        path`'s OWN string rather than recomputing a second one that can
+        drift from it) makes this `.replace()` match unconditionally,
+        regardless of `Path.cwd()` or platform."""
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def enter() -> None:\n"
+            '    # frob:requires proto="Net" state="active"\n'
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        monkeypatch.setattr(Path, "cwd", staticmethod(lambda: tmp_path.parent))
+
+        violations = protocol_summary_gate(tmp_path, snap)
+
+        v = next((v for v in violations if v.rule == "PROTO002"), None)
+        assert v is not None
+        assert "src/a.py::enter" in v.message
 
     def test_state_established_by_a_reachable_transition_is_not_flagged(
         self, tmp_path: Path

@@ -1,7 +1,7 @@
 ---
 id: T-3667
 title: 'win32: protocol_summary_gate finds zero violations (symref mismatch, unconfirmed)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -23,6 +23,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/gates_suite/test_protocol.py::TestProtocolVerificationGate::test_finds_the_violation_even_when_cwd_relativization_diverges
 designated_repro_test: null
 threat: null
 component: null

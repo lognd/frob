@@ -315,7 +315,25 @@ def _package_edges(root: Path, files: tuple[str, ...]) -> tuple[Edge, ...]:
             )
             continue
         file_edges, _malformed = parse_directives(result.danger_ok)
-        abs_path = str(root / rel_path)
+        # T-3667: `result.danger_ok.path` (`ParsedFile.path`, itself
+        # `frob.lang._display_path(root / rel_path)` -- ALWAYS `.as_
+        # posix()`, see that function's own docstring), not `str(root /
+        # rel_path)`. `parse_directives` builds every `Edge.src`/`origin`
+        # from `ParsedFile.path` verbatim, so `abs_path` must be BYTE-
+        # IDENTICAL to whatever string is actually embedded there for
+        # this `.replace()` to ever match. `str(root / rel_path)` on
+        # win32 renders native `\` separators while `ParsedFile.path`
+        # is always POSIX -- a mismatch that made this `.replace()` a
+        # silent no-op, leaving `e.src`/`origin` as the ABSOLUTE `_
+        # display_path` string instead of the intended `rel_path` --
+        # invisible on POSIX, where `str()` and `.as_posix()` coincide,
+        # which is why PROTO002/003/004 (whose requires/transition
+        # lookups key directly off `edge.src == symref` against the
+        # relative `entrypoints` this module's OWN `PurePosixPath`-based
+        # `_tagged_symbols_by_package` produces) silently found zero
+        # matches on win32 -- see T-3659's win32 campaign, T-3667's own
+        # ticket body for the full diagnostic trail.
+        abs_path = result.danger_ok.path
         for e in file_edges:
             edges.append(
                 e.model_copy(
