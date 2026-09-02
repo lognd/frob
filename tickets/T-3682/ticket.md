@@ -1,7 +1,7 @@
 ---
 id: T-3682
 title: 'self-gate floor: format src/frob/check/__init__.py (deferred from T-3680)'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-01'
