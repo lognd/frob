@@ -111,9 +111,9 @@
       "ticket": "T-2743"
     },
     "gates::fs.read": {
-      "accepted_count": 55,
-      "reason": "T-3465: declaring the SELFAUDIT001/SYS100 undeclared capability sites found live on main (src/frob/gates/_land_parity.py, src/frob/gates/_policy_weakening_gate.py, tests/unit/strata/test_strata_core_gil.py, tests/unit/test_land_parity_gate.py, tests/unit/test_sync_claude_config_stale_guard_t3408.py, tests/unit/verify/test_worker.py) grows this pair's via-list count as a direct consequence -- these are genuinely-observed, already-existing capability sites this ticket is declaring honestly (frob.vet._capability_scan measured them), not a fresh capability grant; bumping the ceiling to the current measured count.",
-      "ticket": "T-3465"
+      "accepted_count": 56,
+      "reason": "T-3696: adds src/frob/gates/_win32_kill_signal.py's own real, new fs.read via-list site (the new PLATFORM002 detector reads the same tracked src/frob/**/*.py source text WALK001/PORT001 already read) -- bumping the ceiling to the current measured count.",
+      "ticket": "T-3696"
     },
     "gates::fs.write": {
       "accepted_count": 40,
@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 289,
-      "reason": "T-3595: tests/unit/test_rapid_sweep.py split into tests/unit/rapid_sweep_suite/ moved exec-observing test code across the 7 new family modules plus tests/conftest.py (shared git/seed helpers relocated there); via-list entries relocated 1:1 in the same diff, dropping the now-dead tests/unit/test_rapid_sweep.py entry. Measured live via-list count.",
-      "ticket": "T-3595"
+      "accepted_count": 290,
+      "reason": "T-3696: adds tests/unit/gates/test_win32_kill_signal.py's own real, new exec via-list site (subprocess.run(['git', ...]) fixture-repo helper, the same shape every sibling gate test module already declares) -- bumping the ceiling to the current measured count.",
+      "ticket": "T-3696"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -251,9 +251,9 @@
       "ticket": "T-3595"
     },
     "testsuite::fs.write": {
-      "accepted_count": 500,
-      "reason": "T-3595: same split, fs.write via-list relocation across tests/conftest.py and the 7 new tests/unit/rapid_sweep_suite/*.py files -- measured live via-list count.",
-      "ticket": "T-3595"
+      "accepted_count": 501,
+      "reason": "T-3696: adds tests/unit/gates/test_win32_kill_signal.py's own real, new fs.write via-list site (Path.write_text fixture-file setup, the same shape every sibling gate test module already declares) -- bumping the ceiling to the current measured count.",
+      "ticket": "T-3696"
     },
     "testsuite::net.connect": {
       "accepted_count": 3,

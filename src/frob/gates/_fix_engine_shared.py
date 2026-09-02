@@ -29,6 +29,11 @@ _log = logging.getLogger(__name__)
 
 
 # frob:ticket T-3526
+# frob:waive PLATFORM002 reason="T-3698: this os.kill(pid, 0) is the SAME win32 \
+# Ctrl+C-broadcast footgun T-3686 fixed in frob.check._pid_alive, still live here -- \
+# disclosed and tracked, not silently ignored; fixing it (delegate to \
+# frob.process._pid_liveness.pid_alive, the same fix T-3686 applied) is out of \
+# T-3696's detector-only scope and is its own ticket"
 def _pid_alive(pid: int) -> bool:
     """Whether `pid` is a live process, best-effort -- a local copy of
     `frob.check._pid_alive` (T-3256's own registry-reaping heuristic):

@@ -770,6 +770,11 @@ _KNOWN_GATE_RULES = frozenset(
         # silently proceeds instead of declaring a real fallback or
         # refusing loudly (frob.gates._walk_lint).
         "PLATFORM001",
+        # T-3696: os.kill(<pid>, 0) liveness-probe idiom outside the one
+        # sanctioned frob.process._pid_liveness implementation -- win32
+        # maps signal 0 to a real Ctrl+C broadcast (frob.gates.
+        # _win32_kill_signal).
+        "PLATFORM002",
         # T-2344: a gate rule constructed from raw text without a symref/
         # AST binding is itself a finding (frob.gates._lexical_selfcheck).
         "LEXCHECK001",

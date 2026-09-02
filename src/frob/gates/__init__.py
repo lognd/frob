@@ -264,6 +264,7 @@ from frob.gates._waive_comments import (
 )
 from frob.gates._waive_lease import active_ticket, ticket_lease_pin
 from frob.gates._walk_lint import walk_lint_gate
+from frob.gates._win32_kill_signal import win32_kill_signal_gate
 from frob.gates._wire import wire_gate
 from frob.gates.decisions import DecisionError
 from frob.gates.invariants import Invariant, InvariantError, load_invariants
@@ -6143,6 +6144,10 @@ _ALL_GATES = frozenset(
         "registry",
         "docblocks",
         "walk_lint",
+        # T-3696: PLATFORM002 (frob.gates._win32_kill_signal.
+        # win32_kill_signal_gate), same repo-wide os.kill(<pid>, 0)
+        # AST-scan shape as walk_lint immediately above.
+        "win32_kill_signal",
         "excludehazard",
         # T-3014: NARR001 (frob.gates._narrative_blocks.narrative_blocks_gate),
         # wired in immediately after excludehazard -- same repo-wide,
@@ -6621,6 +6626,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "registry",
     "docblocks",
     "walk_lint",
+    # T-3696: PLATFORM002, same position as its own _ALL_GATES entry above.
+    "win32_kill_signal",
     "excludehazard",
     # T-3014: NARR001, same position as the _ALL_GATES entry above.
     "narrative_blocks",
@@ -6784,6 +6791,7 @@ _CACHEABLE_PROCESS_GATES: frozenset[str] = frozenset(
         "ffi_boundary",
         "pii_structural",
         "walk_lint",
+        "win32_kill_signal",
         "cve_fingerprint_scan",
         "render_lint",
         "lexcheck",
@@ -7244,6 +7252,11 @@ def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
         # WALK001 result as an unscoped run since a raw traversal call
         # anywhere in src/frob/ is a repo-wide concern, not a subdir one.
         "walk_lint": _ProcessJob(walk_lint_gate, (st.repo_root,)),
+        # T-3696: PLATFORM002 -- whole-repo tracked-file scan, always
+        # against repo_root -- same reasoning as walk_lint above: a
+        # win32-unsafe os.kill(pid, 0) liveness probe anywhere in
+        # src/frob/ is a repo-wide concern, not a subdir-scoped one.
+        "win32_kill_signal": _ProcessJob(win32_kill_signal_gate, (st.repo_root,)),
         # T-0439: whole-repo tracked-file scan, always against repo_root --
         # same reasoning as secrets/walk_lint above: a CVE-fingerprint
         # needle anywhere in the tree is a repo-wide concern, not a
@@ -8813,6 +8826,7 @@ __all__ = [
     "waive006_gate",
     "waive007_gate",
     "walk_lint_gate",
+    "win32_kill_signal_gate",
     "write_coverage_lock",
 ]
 
