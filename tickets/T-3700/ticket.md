@@ -1,7 +1,7 @@
 ---
 id: T-3700
 title: 'cache: close sibling connect/read raw-error escape round 7'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
