@@ -29,6 +29,9 @@ scope_changes:
     the exact site the CI traceback points at'
   actor: logan
   at: '2026-09-02'
+evidence:
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
+- tests/test_tickets.py::TestDropCli::test_cli_drops_with_reason
 designated_repro_test: null
 threat: null
 component: null
