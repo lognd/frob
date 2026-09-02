@@ -1,7 +1,7 @@
 ---
 id: T-3689
 title: win32 check slow/hangs after T-3686 self-interrupt fix
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
