@@ -1,7 +1,7 @@
 ---
 id: T-3694
 title: 'root-write-guard: strip quoted text before ticket-verb match'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
