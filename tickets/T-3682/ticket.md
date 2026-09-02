@@ -1,7 +1,7 @@
 ---
 id: T-3682
 title: 'self-gate floor: format src/frob/check/__init__.py (deferred from T-3680)'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-01'
@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_true_only_for_the_matching_point
 designated_repro_test: null
 threat: null
 component: null

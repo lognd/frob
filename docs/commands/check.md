@@ -115,6 +115,21 @@ def available_stages() -> list[str]
     # `frob check --only list` prints.
 ```
 
+## CI diagnostics: pipeline stop points
+
+<!-- frob:describes src/frob/check/__init__.py::FROB_CHECK_STOP_BEFORE_ENV -->
+`FROB_CHECK_STOP_BEFORE` (T-3675) is a CI-diagnostic-only env var: set it
+to one of `"lock"`/`"detect"`/`"tasks"`/`"submit"` and `_run_check_with_
+skips`/`_run_tasks_concurrently` exit the pipeline cleanly (a trivial
+successful `CheckResult`, with a `FROB-CHECK-STOP-BEFORE:` breadcrumb
+naming the point) immediately before that named stage -- bracketing the
+round-16/17 `executor.submit -> t.start()` interrupt stack frame one
+stage at a time. Same posture as `FROB_DISABLE_EXEC`/
+`FROB_DISABLE_POOL_PRELOAD`/`FROB_WIN32_SPAWN_DEBUG` in
+`src/frob/process/_guard.py`: a real, live knob, wired into no default
+code path -- only a CI diag step opts in, one point per step, to name
+which stage a signal sender lives before/after.
+
 ## Python mode
 
 Before any stage runs, two synchronous fail-closed prechecks run once (not

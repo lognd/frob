@@ -82,6 +82,7 @@ _log = get_logger(__name__)
 #: a no-op stub, but wired into NO default code path -- only a CI diag
 #: step opts in, one point per step, to name which stage the T-3648-
 #: SIGNAL sender lives before/after.
+# frob:doc docs/commands/check.md#ci-diagnostics-pipeline-stop-points
 FROB_CHECK_STOP_BEFORE_ENV = "FROB_CHECK_STOP_BEFORE"
 
 #: The 7 stop points `FROB_CHECK_STOP_BEFORE` recognizes, in pipeline
@@ -102,6 +103,7 @@ _CHECK_STOP_POINTS = (
 )
 
 
+# frob:ticket T-3675
 def _check_stop_before(point: str) -> bool:
     """True exactly when `FROB_CHECK_STOP_BEFORE` is set to `point`
     (T-3675) -- checked fresh at each of the 4 call sites, same posture
@@ -109,9 +111,9 @@ def _check_stop_before(point: str) -> bool:
     pattern in `src/frob/process/_guard.py`. `point` must be one of
     `_CHECK_STOP_POINTS`; a caller passing anything else is a
     programmer error in this module, not a user-facing one."""
-    assert (
-        point in _CHECK_STOP_POINTS
-    ), f"unknown FROB_CHECK_STOP_BEFORE point {point!r}"
+    assert point in _CHECK_STOP_POINTS, (
+        f"unknown FROB_CHECK_STOP_BEFORE point {point!r}"
+    )
     return os.environ.get(FROB_CHECK_STOP_BEFORE_ENV, "") == point
 
 
