@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 290,
-      "reason": "T-3696: adds tests/unit/gates/test_win32_kill_signal.py's own real, new exec via-list site (subprocess.run(['git', ...]) fixture-repo helper, the same shape every sibling gate test module already declares) -- bumping the ceiling to the current measured count.",
-      "ticket": "T-3696"
+      "accepted_count": 291,
+      "reason": "T-3697: adds tests/test_hook_frob_directive_guard.py's own real, new exec via-list site (subprocess.run against the new frob-directive-guard.py hook, the same standalone-hook subprocess-contract shape tests/test_hook_root_write_guard.py and tests/test_hook_frob_timeout_guard.py already declare) -- bumping the ceiling to the current measured count.",
+      "ticket": "T-3697"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,

@@ -1,7 +1,7 @@
 ---
 id: T-3697
 title: add frob-directive separator guard (Class::method mistake)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-02'
@@ -48,6 +48,17 @@ scope_changes:
     via-list entry
   actor: logan
   at: '2026-09-02'
+evidence:
+- tests/test_hook_frob_directive_guard.py::test_write_double_colon_in_symbol_is_blocked
+- tests/test_hook_frob_directive_guard.py::test_write_correct_dotted_form_is_allowed
+- tests/test_hook_frob_directive_guard.py::test_write_with_no_directive_is_allowed
+- tests/test_hook_frob_directive_guard.py::test_edit_new_string_double_colon_is_blocked
+- tests/test_hook_frob_directive_guard.py::test_edit_old_string_double_colon_is_not_blocked
+- tests/test_hook_frob_directive_guard.py::test_bash_heredoc_writing_double_colon_directive_is_blocked
+- tests/test_hook_frob_directive_guard.py::test_bash_unrelated_command_is_allowed
+- tests/test_hook_frob_directive_guard.py::test_file_boundary_double_colon_alone_is_not_the_violation
+- tests/test_hook_frob_directive_guard.py::test_multiple_violations_all_named_in_denial
+- tests/test_hook_frob_directive_guard.py::test_unrecognized_tool_name_is_allowed
 designated_repro_test: null
 threat: null
 component: null

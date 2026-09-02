@@ -98,6 +98,40 @@ bypassed the very next stall by a non-frob command
 again. The coordinator's own shell has no `FROB_AGENT` set and is
 unaffected -- it may still background a long measurement.
 
+T-3695: `_HELP_OR_DRY_RUN_RE` exempts a `--help`/`-h`/`--version`/
+`--dry-run` flag from the guard even when the command otherwise matches
+`PATTERN` -- a help/version/dry-run invocation is read-only and fast, so
+it cannot exhibit the stall the guard exists to catch. Checked on the
+same quote-stripped text `PATTERN` itself scans, so a flag appearing
+only inside quoted prose does not falsely exempt a real invocation.
+
+## `frob-directive-guard.py`
+
+A PreToolUse `Write`/`Edit`/`NotebookEdit`/`Bash` hook that blocks a
+`frob:tests` directive written with pytest's `Class::method` collect-only
+separator instead of this graph's own `<file>::<dotted qualname>`
+convention (T-3697). The mistake -- writing `tests/test_hook_frob_
+directive_guard.py` `::TestClass::test_method` (two `::`) instead of
+`::TestClass.test_method` (one `::`, then a dotted qualname) -- broke
+four different agents' lands this drive, each time surfacing only
+post-land as a DOC007/DRIFT002 gate failure; this hook catches it at
+write time instead.
+
+`_DOUBLE_SEP_TESTS_TARGET_RE` mirrors `src/frob/gates/_docptr.py::_DOUBLE_
+SEP_TESTS_TARGET_RE` (DOC007) exactly: a second `::` anywhere in a
+`frob:tests` TARGET is the recognized-wrong shape, regardless of whether
+it happens to still resolve -- the FILE::SYMBOL boundary (the first `::`)
+is always valid; only a double-colon inside the symbol half is wrong.
+`_corrected_target` replaces every `::` after the first with `.`.
+`main` scans `Write`'s `content`, `Edit`'s `new_string` (never `old_
+string` -- the OLD text is not what is being introduced), `NotebookEdit`'s
+`new_source`, and `Bash`'s `command` (a heredoc writing a source file is
+how an agent's own ticket-body or source edit reaches disk in this
+harness's tool surface), and BLOCKS -- not merely nudges -- on any
+violation, naming the corrected form in the denial: DOC007's own
+docstring records zero legitimate live occurrences of this shape, so
+there is no "maybe you meant it" case worth preserving.
+
 ## `pending-background-guard.py`
 
 A Stop hook (T-2282) that refuses to end a turn stranding an unresolved

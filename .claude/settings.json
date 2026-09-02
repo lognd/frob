@@ -38,6 +38,17 @@
         ]
       },
       {
+        "matcher": "Write|Edit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/frob-directive-guard.py",
+            "timeout": 10,
+            "statusMessage": "frob-directive-guard"
+          }
+        ]
+      },
+      {
         "matcher": ".*",
         "hooks": [
           {
