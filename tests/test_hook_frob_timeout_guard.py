@@ -224,3 +224,70 @@ def test_run_in_background_false_not_blocked_for_agent():
         "python3 scripts/fleet_status.py", run_in_background=False, env=env
     )
     assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
+# frob:ticket T-3695
+def test_ticket_new_help_is_not_blocked():
+    """MUST-STAY-QUIET (T-3695): `uv run frob ticket new --help` is a
+    read-only, fast call -- it cannot stall the way a real `ticket new`
+    can, so it needs no large-timeout wrapper even though it otherwise
+    matches `PATTERN`."""
+    result = _run_hook("uv run frob ticket new --help")
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
+# frob:ticket T-3695
+def test_check_help_is_not_blocked():
+    """MUST-STAY-QUIET (T-3695): `frob check --help` is exempt the same
+    way."""
+    result = _run_hook("uv run frob check --help")
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
+# frob:ticket T-3695
+def test_ticket_land_short_h_flag_is_not_blocked():
+    """MUST-STAY-QUIET (T-3695): the short `-h` form is exempt too."""
+    result = _run_hook("uv run frob ticket land T-2248 -h")
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
+# frob:ticket T-3695
+def test_check_version_flag_is_not_blocked():
+    """MUST-STAY-QUIET (T-3695): `--version` is exempt too."""
+    result = _run_hook("uv run frob check --version")
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
+# frob:ticket T-3695
+def test_ticket_work_dry_run_flag_is_not_blocked():
+    """MUST-STAY-QUIET (T-3695): `--dry-run` is exempt too."""
+    result = _run_hook("uv run frob ticket work T-2248 --dry-run")
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
+# frob:ticket T-3695
+def test_ticket_land_without_help_flag_still_blocks_under_min_timeout():
+    """MUST-STILL-PASS control (T-3695): a real `ticket land` (no
+    `--help`/`-h`/`--version`/`--dry-run` flag) still requires the large
+    timeout -- the exemption did not widen to cover ordinary invocations."""
+    result = _run_hook("uv run frob ticket land T-2248")
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/frob-timeout-guard.py::main kind="integration"
+# frob:ticket T-3695
+def test_quoted_help_flag_does_not_exempt_a_real_invocation():
+    """MUST-STILL-PASS control (T-3695): `--help` appearing only inside a
+    QUOTED string (prose describing the flag, not passing it) does not
+    exempt a real, unflagged `ticket land` right next to it -- the
+    exemption is checked on the same quote-stripped text `PATTERN`
+    itself uses."""
+    command = 'echo "pass --help to see options" && uv run frob ticket land T-2248'
+    result = _run_hook(command)
+    assert _denial_reason(result) is not None

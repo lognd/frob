@@ -53,6 +53,15 @@ PATTERN = re.compile(
     re.M,
 )
 
+# frob:ticket T-3695
+#: T-3695: `--help`/`-h`/`--version`/`--dry-run` anywhere in the command
+#: (word-boundary so `-h` never matches inside a longer flag/word) makes
+#: the invocation read-only and fast, regardless of which guarded verb it
+#: names -- `uv run frob ticket new --help` cannot stall the way a real
+#: `ticket new` can, so it should never need the large-timeout wrapper.
+# frob:doc docs/guides/claude-hooks.md#frob-timeout-guardpy
+_HELP_OR_DRY_RUN_RE = re.compile(r"(?:^|\s)(?:--help|-h|--version|--dry-run)\b")
+
 # frob:doc docs/guides/claude-hooks.md#frob-timeout-guardpy
 REASON = (
     "BLOCKED by project hook (frob-timeout-guard): this frob command can "
@@ -116,7 +125,17 @@ def main() -> None:
     # Quoted text is prose, not program: this guard blocked a command
     # purely because `uv run frob test` appeared inside a quoted string
     # it was carrying. Same class its own docstring warns about.
-    if PATTERN.search(strip_quoted(command)) and timeout_ms < MIN_TIMEOUT_MS:
+    scanned = strip_quoted(command)
+    # frob:ticket T-3695
+    # T-3695: a `--help`/`-h`/`--version`/`--dry-run` flag makes the
+    # invocation read-only and fast -- exempt it even when the command
+    # also matches PATTERN (e.g. `uv run frob ticket new --help`).
+    # Checked on the SAME quote-stripped text as PATTERN, so a flag that
+    # only appears inside quoted prose does not falsely exempt a real
+    # invocation.
+    if _HELP_OR_DRY_RUN_RE.search(scanned):
+        return
+    if PATTERN.search(scanned) and timeout_ms < MIN_TIMEOUT_MS:
         print(
             json.dumps(
                 {

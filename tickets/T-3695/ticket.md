@@ -1,7 +1,7 @@
 ---
 id: T-3695
 title: 'frob-timeout-guard: exempt --help/-h/--version/--dry-run'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -27,6 +27,14 @@ scope_changes:
   reason: close doc scope-closure gap flagged at ticket creation
   actor: logan
   at: '2026-09-02'
+evidence:
+- tests/test_hook_frob_timeout_guard.py::test_ticket_new_help_is_not_blocked
+- tests/test_hook_frob_timeout_guard.py::test_check_help_is_not_blocked
+- tests/test_hook_frob_timeout_guard.py::test_ticket_land_short_h_flag_is_not_blocked
+- tests/test_hook_frob_timeout_guard.py::test_check_version_flag_is_not_blocked
+- tests/test_hook_frob_timeout_guard.py::test_ticket_work_dry_run_flag_is_not_blocked
+- tests/test_hook_frob_timeout_guard.py::test_ticket_land_without_help_flag_still_blocks_under_min_timeout
+- tests/test_hook_frob_timeout_guard.py::test_quoted_help_flag_does_not_exempt_a_real_invocation
 designated_repro_test: null
 threat: null
 component: null
