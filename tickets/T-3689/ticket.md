@@ -23,6 +23,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: T-3689 Done report
+  actor: logan
+  at: '2026-09-02'
+  old_length: 82
+  new_length: 93
 designated_repro_test: null
 threat: null
 component: null
@@ -31,3 +38,5 @@ anchor_reason: null
 land_commit: null
 ---
 Follow-up to T-3686. See conversation for detail. References T-3686 T-3683 T-3256.
+
+test line
