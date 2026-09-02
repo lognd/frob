@@ -17,10 +17,23 @@ scope:
 - .claude/hooks/root-write-guard.py
 - .claude/hooks/_root_write_guard_lib.py
 - .claude/hooks/tests/**
+- tests/test_hook_root_write_guard.py
+- docs/guides/claude-hooks.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_hook_root_write_guard.py
+  reason: close doc/test scope-closure gaps flagged at ticket creation
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: close doc/test scope-closure gaps flagged at ticket creation
+  actor: logan
+  at: '2026-09-02'
 designated_repro_test: null
 threat: null
 component: null
