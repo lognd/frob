@@ -252,6 +252,22 @@ def _windows_mitigation_diag_step() -> dict:
     )
 
 
+def _windows_stop_before_diag_step(point: str) -> dict:
+    """T-3675 round 18 Part 2: one of the 4 `FROB_CHECK_STOP_BEFORE=
+    <point>` diag sub-variants -- `point` is one of "lock"/"detect"/
+    "tasks"/"submit" (`frob.check._CHECK_STOP_POINTS`), each the SAME
+    diag script/fixture as variant (a) with only that one env var
+    changed."""
+    workflow = _load_ci_workflow()
+    steps = workflow["jobs"]["build"]["steps"]
+    return next(
+        step
+        for step in steps
+        if "Diagnose frob check hang on windows" in step.get("name", "")
+        and f"stop-before {point} variant" in step.get("name", "")
+    )
+
+
 class TestWindowsZeroSpawnDiagVariant:
     """T-3657 round 15: the SIGINT sender is not one of the 4 guarded
     tool children (T-3651's round-14 hypothesis is falsified -- see this
@@ -576,6 +592,39 @@ class TestWindowsMitigationDiagVariant:
         assert "did NOT stop the SIGINT" in run_text
 
 
+# frob:ticket T-3675
+class TestWindowsStopBeforeDiagVariants:
+    """T-3675 round 18 Part 2: the 4 FROB_CHECK_STOP_BEFORE sub-variants
+    bisecting run_check's own pre-thread-start pipeline."""
+
+    _POINTS = ("lock", "detect", "tasks", "submit")
+
+    # frob:tests tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants.test_all_four_points_have_their_own_step  # noqa: E501
+    def test_all_four_points_have_their_own_step(self) -> None:
+        for point in self._POINTS:
+            step = _windows_stop_before_diag_step(point)
+            assert step.get("if") == "matrix.os == 'windows-latest'"
+
+    # frob:tests tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants.test_all_four_have_a_bounded_timeout  # noqa: E501
+    def test_all_four_have_a_bounded_timeout(self) -> None:
+        for point in self._POINTS:
+            step = _windows_stop_before_diag_step(point)
+            assert step.get("timeout-minutes") == 5
+
+    # frob:tests tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants.test_each_step_sets_its_own_matching_point  # noqa: E501
+    def test_each_step_sets_its_own_matching_point(self) -> None:
+        for point in self._POINTS:
+            step = _windows_stop_before_diag_step(point)
+            assert step.get("env", {}).get("FROB_CHECK_STOP_BEFORE") == point
+
+    # frob:tests tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants.test_each_step_reuses_variant_a_script_and_fixture  # noqa: E501
+    def test_each_step_reuses_variant_a_script_and_fixture(self) -> None:
+        for point in self._POINTS:
+            run_text = _windows_stop_before_diag_step(point)["run"]
+            assert "-WorkingDirectory $fixture" in run_text
+            assert 'Join-Path $env:RUNNER_TEMP "frob_check_diag.py"' in run_text
+
+
 class TestWindowsDiagStepFixtureIsAClassifiableProject:
     """T-3604 (T-3589 round 7): run 33439890956 measured `frob check`
     COMPLETING in 547ms on the diag fixture and still aborting the
@@ -788,7 +837,6 @@ class TestWindowsDiagStepDoesNotGateTheJob:
             assert marker in run_text, f"expected a breadcrumb containing {marker!r}"
 
     # frob:tests .github/workflows/ci.yml
-    # frob:tests .github/workflows/ci.yml
     def test_test_step_sets_frob_test_ignore_console_ctrl(self) -> None:
         """T-3673 round 17: the windows Test step is the ONE place in
         this repo that sets FROB_TEST_IGNORE_CONSOLE_CTRL=1, activating
@@ -800,6 +848,19 @@ class TestWindowsDiagStepDoesNotGateTheJob:
             step for step in steps if step.get("name", "").startswith("Test (windows")
         )
         assert test_step.get("env", {}).get("FROB_TEST_IGNORE_CONSOLE_CTRL") == "1"
+
+    # frob:tests .github/workflows/ci.yml
+    def test_test_step_sets_frob_test_hard_exit(self) -> None:
+        """T-3675 round 18 Part 1: the windows Test step is the ONE
+        place in this repo that sets FROB_TEST_HARD_EXIT=1, activating
+        tests/conftest.py's session-teardown hard-exit escape hatch --
+        see docs/modules/process.md's "Round 18" paragraph."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        test_step = next(
+            step for step in steps if step.get("name", "").startswith("Test (windows")
+        )
+        assert test_step.get("env", {}).get("FROB_TEST_HARD_EXIT") == "1"
 
     def test_test_step_is_untouched_and_still_windows_only(self) -> None:
         """Neither T-3604 nor T-3609 may touch the Test step itself --

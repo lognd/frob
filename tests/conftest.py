@@ -1,5 +1,6 @@
 import ctypes
 import json
+import multiprocessing
 import os
 import shutil
 import subprocess
@@ -485,6 +486,87 @@ def _uninstall_test_console_ctrl_ignore_guard() -> None:
     handler = _test_console_ctrl_handler_holder.pop()
     kernel32 = getattr(ctypes, "windll").kernel32  # noqa: B009
     kernel32.SetConsoleCtrlHandler(handler, False)
+
+
+FROB_TEST_HARD_EXIT_ENV = "FROB_TEST_HARD_EXIT"
+"""T-3675 (win32 round 18): env-gated, OFF by default everywhere except
+the CI workflow's windows Test step -- when truthy, `pytest_sessionfinish`
+hard-exits the controller process via `os._exit` right after this file's
+own `SUITE-RESULT:` line and exit-status handling finish, instead of
+letting pytest's normal `wrap_session` teardown run. T-3673's round-17
+evidence (run 33556847222) is why this exists: with the suite's console-
+ctrl-ignore guard armed, the injected SIGINT this whole ticket family has
+chased stopped killing the windows Test step -- and the step instead HUNG
+past its own 1500s budget with orphan pytest/python processes still
+alive. Read together, the two findings say the injected SIGINT was
+MASKING a real teardown wedge (a non-daemon thread or unreaped child
+blocking interpreter/session shutdown) the whole time; the interrupt
+breaking that stuck join was an ACCIDENT of how it used to die, not
+evidence teardown itself was ever clean. `os._exit` is the same escape
+hatch `_announce_stall_and_abort` (T-3608) already uses in this file for
+an unrelated but structurally identical problem (a wedge with no
+reachable graceful exit) -- reused here, not reinvented, and printed
+with the exact same flush-before-`os._exit` ordering so the SUITE-RESULT
+line this hook already wrote is never lost to an unflushed buffer."""
+
+
+def _hard_exit_requested() -> bool:
+    """True exactly when `FROB_TEST_HARD_EXIT` is set to a truthy value --
+    no platform restriction (unlike the win32-only guards above): a
+    teardown wedge from a non-daemon thread or unreaped child is not a
+    win32-specific hazard, only round 17's win32 CI evidence is what
+    surfaced it."""
+    value = os.environ.get(FROB_TEST_HARD_EXIT_ENV, "")
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _describe_teardown_blockers() -> str:
+    """T-3675: one line inventorying every live non-daemon thread
+    (`threading.enumerate()`, name + daemon flag) and known child
+    process (`multiprocessing.active_children()`, name + pid) at the
+    moment `pytest_sessionfinish` is about to hard-exit -- so a run that
+    takes this path documents WHAT was still alive and blocking normal
+    interpreter/session teardown, not merely that something was. Every
+    thread is listed (not only non-daemon ones) since a daemon thread
+    the reader assumed was harmless is itself useful signal if it shows
+    up here; the label calls out non-daemon ones explicitly because
+    THOSE are what `threading._shutdown`'s own join actually waits on."""
+    threads = [
+        f"{t.name!r}(daemon={t.daemon})" for t in threading.enumerate()
+    ]
+    children = [
+        f"{p.name!r}(pid={p.pid})" for p in multiprocessing.active_children()
+    ]
+    return (
+        f"FROB-TEST-HARD-EXIT: threads=[{', '.join(threads)}] "
+        f"children=[{', '.join(children)}]"
+    )
+
+
+def _maybe_hard_exit_after_session_finish(
+    session: pytest.Session, exitstatus: int
+) -> None:
+    """T-3675: the tail `pytest_sessionfinish` calls once its own
+    `SUITE-RESULT:`/failing-id reporting is done and `session.exitstatus`
+    (possibly mutated by the worker-crash branch above) reflects the
+    real outcome. A no-op unless `_hard_exit_requested()` -- see
+    `FROB_TEST_HARD_EXIT_ENV`'s docstring for the full rationale. Prints
+    `_describe_teardown_blockers()`'s inventory line, flushes both
+    streams (same ordering as T-3608's `_announce_stall_and_abort` --
+    `os._exit` skips Python's normal buffered-stream flush, so this is
+    the only reason either line survives to the captured log), then
+    `os._exit`s with the session's real exit status instead of letting
+    pytest's own `wrap_session` teardown (and whatever wedges inside it)
+    ever run."""
+    if not _hard_exit_requested():
+        return
+    print(_describe_teardown_blockers(), flush=True)
+    real_exitstatus = session.exitstatus
+    if not isinstance(real_exitstatus, int):
+        real_exitstatus = exitstatus
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(real_exitstatus)
 
 
 _last_internal_error: str | None = None
@@ -1216,6 +1298,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
                 session.exitstatus = 1
     else:  # pragma: no cover - defensive only, terminalreporter always registered
         print(line)
+    _maybe_hard_exit_after_session_finish(session, exitstatus)
 
 
 # frob:ticket T-1586
@@ -1769,10 +1852,22 @@ def _snapshot(root: Path):
     return build_graph(root, cache).danger_ok
 
 
+# frob:ticket T-3666
 def _write(root: Path, rel: str, text: str) -> Path:
+    """T-3666: `newline=""` writes every `\n` in `text` verbatim, with
+    NO platform translation -- the default `newline=None` text-mode
+    write silently rewrites `\n` to `os.linesep` on write, which is
+    `\r\n` on win32. Callers here pass literal `\n`-only strings
+    expecting the file to contain EXACTLY those bytes (e.g. a dirty-
+    snapshot fixture asserted against byte-for-byte by
+    `tests/gates_suite/test_fix_engine.py`'s Tier-A tests) -- on win32,
+    without this, `_write` silently injected a CRLF the product code
+    under test never asked for, and the fixture (not the product code)
+    was what introduced the mismatch. A no-op change on POSIX, where
+    `os.linesep` is already `\n`."""
     path = root / rel
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text)
+    path.write_text(text, newline="")
     return path
 
 

@@ -1,7 +1,7 @@
 ---
 id: T-3675
 title: 'win32 round 18: teardown hard-exit escape hatch + pipeline sender bisect'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
@@ -38,6 +38,31 @@ scope_changes:
     2) gating logic
   actor: logan
   at: '2026-09-01'
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_four_points_have_their_own_step
+- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_four_have_a_bounded_timeout
+- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_each_step_sets_its_own_matching_point
+- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_each_step_reuses_variant_a_script_and_fixture
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_sets_frob_test_hard_exit
+- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_false_when_env_unset
+- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_true_only_for_the_matching_point
+- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_unrecognized_value_matches_nothing
+- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_all_four_points_are_distinct_and_ordered
+- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_rejects_an_unknown_point_argument
+- tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore::test_lock_point_returns_empty_result_before_any_stage
+- tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore::test_tasks_point_returns_empty_result_before_submit
+- tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore::test_no_stop_requested_runs_normally
+- tests/unit/test_conftest_hard_exit_guard.py::TestHardExitRequested::test_false_when_env_unset
+- tests/unit/test_conftest_hard_exit_guard.py::TestHardExitRequested::test_false_on_falsy_value
+- tests/unit/test_conftest_hard_exit_guard.py::TestHardExitRequested::test_true_on_truthy_value
+- tests/unit/test_conftest_hard_exit_guard.py::TestHardExitRequested::test_no_platform_restriction
+- tests/unit/test_conftest_hard_exit_guard.py::TestDescribeTeardownBlockers::test_line_has_the_expected_marker_and_sections
+- tests/unit/test_conftest_hard_exit_guard.py::TestDescribeTeardownBlockers::test_includes_the_current_thread_with_its_daemon_flag
+- tests/unit/test_conftest_hard_exit_guard.py::TestDescribeTeardownBlockers::test_lists_an_extra_non_daemon_thread_by_name
+- tests/unit/test_conftest_hard_exit_guard.py::TestDescribeTeardownBlockers::test_empty_children_list_when_none_active
+- tests/unit/test_conftest_hard_exit_guard.py::TestMaybeHardExitAfterSessionFinish::test_no_op_when_not_requested
+- tests/unit/test_conftest_hard_exit_guard.py::TestMaybeHardExitAfterSessionFinish::test_hard_exits_with_the_sessions_real_exitstatus
+- tests/unit/test_conftest_hard_exit_guard.py::TestMaybeHardExitAfterSessionFinish::test_falls_back_to_the_hook_exitstatus_when_session_exitstatus_is_not_an_int
 designated_repro_test: null
 threat: null
 component: null

@@ -409,6 +409,90 @@ ci.yml`'s windows `Test (windows, timed with hang guard)` step's own
 interactive `pytest` run could have their own Ctrl-C silently
 swallowed.
 
+Round 18 (T-3675): run 33556847222 resolved the sender-identity
+question the round-17 controls set up to answer. (e) (trivial python,
+never imports frob) and (f) (import-only) both came back CLEAN (exit
+0, no `T-3648-SIGNAL`); every check-pipeline variant (a)-(d) stayed
+DIRTY. Two controls clean while every pipeline variant is dirty proves
+the sender is INSIDE `run_check`'s own pipeline, strictly after
+`import frob` returns and strictly before the interruptible lock wait
+this whole saga has chased -- not the environment, not frob's import
+machinery. (a2) also came back clean of `T-3648-SIGNAL` with a genuine
+gate result (exit 1 at 9.0s): the `FROB_WIN32_IGNORE_CONSOLE_CTRL`
+mitigation validates end to end.
+
+Also from round 17: with the suite's own `FROB_TEST_IGNORE_CONSOLE_
+CTRL` guard armed, the windows Test step stopped dying by
+`KeyboardInterrupt` -- and instead HUNG past its 1500s step budget,
+terminated with orphan pytest/python processes still alive. Read
+together with the ~13k-tests-complete-then-interrupted-at-teardown
+pattern every prior run showed: the injected SIGINT was MASKING a real
+session-teardown wedge (a non-daemon thread or unreaped child blocking
+interpreter/session shutdown) THE WHOLE TIME -- the interrupt breaking
+that stuck join, however destructively, was an accident of how the
+step used to die, never evidence teardown itself was clean.
+
+Round 18 is two parts. Part 1: `tests/conftest.py` gains an env-gated
+(`FROB_TEST_HARD_EXIT=1`) escape hatch in `pytest_sessionfinish`
+(`_maybe_hard_exit_after_session_finish`) that, once this hook's own
+`SUITE-RESULT:` line and exit-status handling are done, prints one
+`FROB-TEST-HARD-EXIT:` line inventorying every live thread
+(`threading.enumerate()`, name + daemon flag) and known child process
+(`multiprocessing.active_children()`, name + pid) -- documenting WHAT
+was blocking teardown, not merely that something was -- then flushes
+both streams and `os._exit()`s with the session's real exit status,
+skipping pytest's own `wrap_session` teardown (and whatever wedges
+inside it) entirely. This is the SAME `os._exit` pattern T-3608's
+`_announce_stall_and_abort` already uses in this file for an unrelated
+but structurally identical problem (a wedge with no reachable graceful
+exit) -- reused, not reinvented. No platform restriction (unlike every
+other guard on this page): a teardown wedge is not a win32-specific
+hazard, only win32 CI is what surfaced it. `FROB_TEST_HARD_EXIT=1` is
+set in exactly one place in this repo, alongside `FROB_TEST_IGNORE_
+CONSOLE_CTRL` in the same windows Test step's `env:` block.
+
+Part 2: `src/frob/check/__init__.py` gains an env-gated
+`FROB_CHECK_STOP_BEFORE=<point>` debug knob (`_check_stop_before`,
+`_CHECK_STOP_POINTS`) bisecting the pipeline itself at 4 points, in
+order: `"lock"` (right after `win32_console_ctrl_ignore_scope`/
+`_admission_budget`/`derived_state_lock` are all acquired, before the
+integrity/staleness/autofix prechecks), `"detect"` (right after
+`_resolve_only`, before the memo scope opens), `"tasks"` (right after
+`_python_tasks(...)` builds the task list, before `_collect_results`/
+`_run_tasks_concurrently` ever runs), and `"submit"` (inside
+`_run_tasks_concurrently`, immediately before the `ThreadPoolExecutor`
+context manager opens -- the last point before any worker thread
+actually starts, shared by every `run_check*` variant since
+`_run_tasks_concurrently` is not Python-mode-specific). Setting the
+matching stop point exits the pipeline cleanly (an empty, successful
+result, with a `FROB-CHECK-STOP-BEFORE:` breadcrumb naming the point)
+instead of continuing past it. Same posture as `FROB_DISABLE_EXEC`/
+`FROB_DISABLE_POOL_PRELOAD`/`FROB_WIN32_SPAWN_DEBUG`: a real, live
+knob, never a no-op stub, but wired into NO default code path -- only
+4 new CI diag sub-variant steps (`.github/workflows/ci.yml`) opt in,
+one point per step, each the same diag script/fixture as variant (a).
+The EARLIEST stop point where `T-3648-SIGNAL` disappears brackets the
+sender to the code between that point and the previous (still-dirty)
+one.
+
+Candidates named by a grep of the pre-thread-start path for anything
+win32-signal-adjacent (T-3675, observational, not itself a fix): no
+`faulthandler` timer or `signal.set_wakeup_fd` call exists anywhere in
+`src/frob` outside the diag scripts' own preambles. Two candidates DO
+exist in the bracketed region: (1) `src/frob/lang/__init__.py::_run_
+parse_with_timeout` builds a fresh `ThreadPoolExecutor(max_workers=1)`
+and calls `future.result(timeout=budget)` for every tree-sitter/
+strata-core parse this pipeline's `detect`/`tasks` stages can trigger
+(via `build_graph`/`analyze_project`) -- the exact `executor.submit ->
+t.start()` shape round 16's own diag stack trace named, just a
+DIFFERENT executor than `_run_tasks_concurrently`'s; (2)
+`src/frob/process/_derived_lock.py`'s win32 backend uses `msvcrt.
+locking` for `derived_state_lock` (acquired at/before the "lock" stop
+point) -- the only win32-specific blocking syscall active that early
+in the pipeline. Neither is confirmed as the sender; both are exactly
+the kind of code the 4-point bisect above is built to implicate or
+clear.
+
 <!-- frob:invariant INV-019 -->
 
 ## Derived-state lock (T-0859)

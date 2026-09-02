@@ -70,6 +70,92 @@ from frob.process.parsers.common import Diagnostic, ToolResult
 
 _log = get_logger(__name__)
 
+#: T-3675 (win32 round 18, Part 2): env-gated debug knob, OFF by default
+#: everywhere -- when set to one of "lock"/"detect"/"tasks"/"submit",
+#: `_run_check_with_skips`/`_run_tasks_concurrently` exit the pipeline
+#: cleanly (a trivial successful `CheckResult`/empty results list, with
+#: a `FROB-CHECK-STOP-BEFORE:` breadcrumb naming the point) immediately
+#: before that named stage -- bracketing round-16/17's `executor.submit
+#: -> t.start()` interrupt stack frame one stage at a time. Same posture
+#: as `FROB_DISABLE_EXEC`/`FROB_DISABLE_POOL_PRELOAD`/`FROB_WIN32_
+#: SPAWN_DEBUG` in `src/frob/process/_guard.py`: a real, live knob, never
+#: a no-op stub, but wired into NO default code path -- only a CI diag
+#: step opts in, one point per step, to name which stage the T-3648-
+#: SIGNAL sender lives before/after.
+FROB_CHECK_STOP_BEFORE_ENV = "FROB_CHECK_STOP_BEFORE"
+
+#: The 4 stop points `FROB_CHECK_STOP_BEFORE` recognizes, in pipeline
+#: order -- see each call site's own comment in `_run_check_with_skips`/
+#: `_run_tasks_concurrently` for exactly what precedes/follows each one.
+_CHECK_STOP_POINTS = ("lock", "detect", "tasks", "submit")
+
+
+def _check_stop_before(point: str) -> bool:
+    """True exactly when `FROB_CHECK_STOP_BEFORE` is set to `point`
+    (T-3675) -- checked fresh at each of the 4 call sites, same posture
+    as `_win32_ignore_console_ctrl_requested`'s single-read-at-entry
+    pattern in `src/frob/process/_guard.py`. `point` must be one of
+    `_CHECK_STOP_POINTS`; a caller passing anything else is a
+    programmer error in this module, not a user-facing one."""
+    assert (
+        point in _CHECK_STOP_POINTS
+    ), f"unknown FROB_CHECK_STOP_BEFORE point {point!r}"
+    return os.environ.get(FROB_CHECK_STOP_BEFORE_ENV, "") == point
+
+
+def _stop_before_result(
+    root: Path, point: str, description: str
+) -> "CheckResult | None":
+    """`None` unless `_check_stop_before(point)` -- in which case prints
+    a `FROB-CHECK-STOP-BEFORE:` breadcrumb naming `point`/`description`
+    and returns a trivial successful `CheckResult` (T-3675). Factored
+    out of `_run_check_with_skips`'s 3 in-pipeline call sites (the 4th,
+    "submit", lives in `_run_tasks_concurrently`, which returns a bare
+    `list[ToolResult]` instead) purely to keep each call site a 2-line
+    `if`, not for reuse beyond that -- ARCH001 (T-2214) flags
+    `_run_check_with_skips` past its long-AND-complex threshold with the
+    4 stop-point checks inlined."""
+    if not _check_stop_before(point):
+        return None
+    # frob:waive RENDER001 reason="T-3675: FROB_CHECK_STOP_BEFORE is a diagnostic-only \
+    # debug knob a CI diag step greps this exact line out of stdout for -- routing it \
+    # through frob.render would add renderer-selection machinery to a print a CI \
+    # Get-Content call reads verbatim, for a knob that is off by default everywhere \
+    # except one workflow step's own env: block." permanent="true"
+    print(
+        f"FROB-CHECK-STOP-BEFORE: reached {point!r} ({description}) -- "
+        "exiting cleanly (FROB_CHECK_STOP_BEFORE)",
+        flush=True,
+    )
+    return CheckResult(path=str(root), results=[])
+
+
+def _early_precheck_failure(root: Path) -> "CheckResult | None":
+    """`None` unless one of the 3 synchronous, pre-dispatch prechecks
+    fails, in order: T-0603's `_derived_state_integrity_result` (must
+    run before any concurrent stage starts, not from inside one),
+    T-2764's `_native_staleness_result` (same posture, so a `--skip-
+    gates`/`--only` selection that never reaches the gates stage's own
+    self-heal cannot silently run against a stale native), and T-3526's
+    `_abandoned_autofix_result` (same posture again, so a `--fix` run
+    itself cannot start against a tree a PRIOR, abandoned `--fix`/
+    pre-land Tier-A pass left half-rewritten). Factored out of
+    `_run_check_with_skips` purely to keep it under ARCH001's long-AND-
+    complex threshold (T-2214) -- each of the 3 checks keeps its own
+    docstring as the source of truth, this function only sequences
+    them."""
+    integrity_failure = _derived_state_integrity_result(root)
+    if integrity_failure is not None:
+        return CheckResult(path=str(root), results=[integrity_failure])
+    staleness_failure = _native_staleness_result(root)
+    if staleness_failure is not None:
+        return CheckResult(path=str(root), results=[staleness_failure])
+    autofix_failure = _abandoned_autofix_result(root)
+    if autofix_failure is not None:
+        return CheckResult(path=str(root), results=[autofix_failure])
+    return None
+
+
 # The python-mode tool stages --only may name (gate names are accepted too
 # and resolved through frob.gates._ALL_GATES at call time).
 _TOOL_STAGES = frozenset(
@@ -1178,10 +1264,28 @@ def _run_tasks_concurrently(
     nondeterministic just because a progress line now watches completion
     live. The caller (`check_runner`'s TTY `Progress`) is a no-op off a
     TTY, so this callback is cheap and side-effect-free on every non-
-    interactive path."""
+    interactive path.
+
+    T-3675 round 18 Part 2: stop point "submit" -- checked right before
+    the `ThreadPoolExecutor` context manager opens, i.e. before any
+    worker thread starts. This is the LAST of the 4 `FROB_CHECK_STOP_
+    BEFORE` points and shared by every caller (Python/C++/Rust/TS
+    check), not only the Python pipeline -- harmless everywhere the env
+    var is unset, same as the other 3 points."""
     total = len(tasks)
     done = 0
     by_future: dict[concurrent.futures.Future, str] = {}
+    if _check_stop_before("submit"):
+        # frob:waive RENDER001 reason="T-3675: same posture as _stop_before_result's \
+        # own waiver -- a diagnostic-only breadcrumb a CI diag step greps out of \
+        # stdout verbatim, gated off by default everywhere." permanent="true"
+        print(
+            "FROB-CHECK-STOP-BEFORE: reached 'submit' (about to open "
+            "ThreadPoolExecutor, no worker thread started yet) -- "
+            "exiting cleanly (FROB_CHECK_STOP_BEFORE)",
+            flush=True,
+        )
+        return []
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = []
         for label, fn in tasks:
@@ -1326,6 +1430,15 @@ def run_check(
     )
 
 
+# frob:waive ARCH001 reason="T-3675 round 18 Part 2 pushed this over the \
+# long-AND-complex threshold by adding 3 short, uniform early-return stop-point checks \
+# (_stop_before_result) to an already early-return-heavy sequential pipeline \
+# dispatcher; the checks were already extracted to a shared helper and the \
+# pre-existing 3-precheck block extracted to _early_precheck_failure to shrink this as \
+# far as reasonably possible (123 -> 85 lines) without breaking the single, \
+# synchronous, in-order pipeline shape T-0603/T-2764/T-3526's own docstrings require. \
+# Further splitting would fragment one linear sequence across more functions for no \
+# readability gain." permanent="true"
 def _run_check_with_skips(
     root: Path,
     *,
@@ -1367,28 +1480,18 @@ def _run_check_with_skips(
         # docstring for the shared/exclusive contract.
         derived_state_lock(root, exclusive=False),
     ):
-        # T-0603: single, synchronous, pre-dispatch integrity check -- see
-        # `_derived_state_integrity_result`'s docstring for why this must
-        # run before any concurrent stage starts, not from inside one.
-        integrity_failure = _derived_state_integrity_result(root)
-        if integrity_failure is not None:
-            return CheckResult(path=str(root), results=[integrity_failure])
+        # T-3675: stop point "lock" -- see _stop_before_result's docstring.
+        stop_result = _stop_before_result(
+            root, "lock", "all pipeline-wide scopes/locks acquired, no stage has run"
+        )
+        if stop_result is not None:
+            return stop_result
 
-        # T-2764: same posture as the integrity precheck just above --
-        # run once, synchronously, before any stage (including a
-        # `--skip-gates`/`--only` selection that never reaches the gates
-        # stage's own self-heal) can silently run against a stale native.
-        staleness_failure = _native_staleness_result(root)
-        if staleness_failure is not None:
-            return CheckResult(path=str(root), results=[staleness_failure])
-
-        # T-3526: same posture -- run once, synchronously, before any
-        # stage (including a `--fix` run itself) can start against a
-        # tree a PRIOR, abandoned `--fix`/pre-land Tier-A pass left
-        # half-rewritten. See `_abandoned_autofix_result`'s docstring.
-        autofix_failure = _abandoned_autofix_result(root)
-        if autofix_failure is not None:
-            return CheckResult(path=str(root), results=[autofix_failure])
+        # T-0603/T-2764/T-3526: integrity/staleness/abandoned-autofix
+        # prechecks -- see _early_precheck_failure's docstring.
+        precheck_failure = _early_precheck_failure(root)
+        if precheck_failure is not None:
+            return precheck_failure
 
         # T-0414: fresh parse-cache instrumentation per invocation (see
         # `frob.lang.reset_parse_cache`'s docstring) -- correctness never
@@ -1397,6 +1500,13 @@ def _run_check_with_skips(
         gate_only, only, unknown = _resolve_only(only)
         if unknown:
             return _unknown_only_result(root, unknown)
+
+        # T-3675: stop point "detect" -- see _stop_before_result's docstring.
+        stop_result = _stop_before_result(
+            root, "detect", "--only resolved, no memo scope/task construction yet"
+        )
+        if stop_result is not None:
+            return stop_result
 
         # T-0423: memoize the heavy pure analyses (build_graph/analyze_
         # project) for exactly the lifetime of this run (`frob.check.
@@ -1416,6 +1526,12 @@ def _run_check_with_skips(
                 delta=delta,
                 no_cache=no_cache,
             )
+            # T-3675: stop point "tasks" -- see _stop_before_result's docstring.
+            stop_result = _stop_before_result(
+                root, "tasks", "task list built, nothing submitted to the executor yet"
+            )
+            if stop_result is not None:
+                return stop_result
             return CheckResult(
                 path=str(root),
                 results=_collect_results(tasks, on_task_done=on_task_done),

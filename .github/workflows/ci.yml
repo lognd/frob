@@ -1088,11 +1088,231 @@ jobs:
       # "Round 17" paragraph for the full rationale. The sender's
       # identity (environment vs. frob) stays tracked, unresolved, in
       # this ticket family regardless of this mitigation shipping.
+      - name: Diagnose frob check hang on windows -- stop-before lock variant (T-3675)
+        if: matrix.os == 'windows-latest'
+        timeout-minutes: 5
+        env:
+          FROB_CHECK_STOP_BEFORE: "lock"
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
+          # Reuses the SAME fixture and diag script as variant (a) --
+          # only FROB_CHECK_STOP_BEFORE=lock (set in this step's own
+          # env: block, present before uv even starts) changes. If the
+          # SIGNAL disappears at this point while it was still present
+          # at the previous (earlier-stopping) point, the sender lives
+          # in the code between the two: all pipeline-wide scopes/locks acquired, no stage run yet.
+          $diagOut = Join-Path $env:RUNNER_TEMP "diag_stopbefore_lock.out"
+          $diagErr = Join-Path $env:RUNNER_TEMP "diag_stopbefore_lock.err"
+          $diagPy = Join-Path $env:RUNNER_TEMP "frob_check_diag.py"
+          $started = Get-Date
+          $elapsed = [TimeSpan]::Zero
+          $exitCode = -1
+          Write-Host "T-3675 breadcrumb: about to invoke uv via Start-Process with FROB_CHECK_STOP_BEFORE=lock"
+          try {
+            $p = Start-Process -FilePath "uv" `
+              -ArgumentList "run", "--project", "$env:GITHUB_WORKSPACE", "python", "$diagPy" `
+              -WorkingDirectory $fixture `
+              -PassThru -RedirectStandardOutput $diagOut -RedirectStandardError $diagErr
+            try {
+              Wait-Process -Id $p.Id -Timeout 290 -ErrorAction Stop
+              $exitCode = $p.ExitCode
+            } catch {
+              Write-Host "T-3675 breadcrumb: Wait-Process timed out at 290s -- terminating"
+              Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            }
+          } catch {
+            Write-Host "T-3675: invoke threw: $_"
+          } finally {
+            $elapsed = (Get-Date) - $started
+            Write-Host "T-3675 breadcrumb: Start-Process invocation returned (elapsed: $($elapsed.TotalSeconds)s)"
+            Write-Host "--- diag_stopbefore_lock.out ---"
+            if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "--- diag_stopbefore_lock.err ---"
+            if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "stop-before lock diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          }
+          if ($elapsed.TotalSeconds -ge 235) {
+            Write-Host "::error::stop-before lock diag ran $($elapsed.TotalSeconds)s -- treating as a HANG (T-3675)."
+            exit 1
+          }
+          Write-Host "stop-before lock diag: no hang (returned in $($elapsed.TotalSeconds)s) -- exit code $exitCode. DIRTY (T-3648-SIGNAL present) means the sender is AFTER this point; CLEAN means the sender is at or before this point."
+          exit 0
+
+      - name: Diagnose frob check hang on windows -- stop-before detect variant (T-3675)
+        if: matrix.os == 'windows-latest'
+        timeout-minutes: 5
+        env:
+          FROB_CHECK_STOP_BEFORE: "detect"
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
+          # Reuses the SAME fixture and diag script as variant (a) --
+          # only FROB_CHECK_STOP_BEFORE=detect (set in this step's own
+          # env: block, present before uv even starts) changes. If the
+          # SIGNAL disappears at this point while it was still present
+          # at the previous (earlier-stopping) point, the sender lives
+          # in the code between the two: --only resolved, no memo scope/task construction yet.
+          $diagOut = Join-Path $env:RUNNER_TEMP "diag_stopbefore_detect.out"
+          $diagErr = Join-Path $env:RUNNER_TEMP "diag_stopbefore_detect.err"
+          $diagPy = Join-Path $env:RUNNER_TEMP "frob_check_diag.py"
+          $started = Get-Date
+          $elapsed = [TimeSpan]::Zero
+          $exitCode = -1
+          Write-Host "T-3675 breadcrumb: about to invoke uv via Start-Process with FROB_CHECK_STOP_BEFORE=detect"
+          try {
+            $p = Start-Process -FilePath "uv" `
+              -ArgumentList "run", "--project", "$env:GITHUB_WORKSPACE", "python", "$diagPy" `
+              -WorkingDirectory $fixture `
+              -PassThru -RedirectStandardOutput $diagOut -RedirectStandardError $diagErr
+            try {
+              Wait-Process -Id $p.Id -Timeout 290 -ErrorAction Stop
+              $exitCode = $p.ExitCode
+            } catch {
+              Write-Host "T-3675 breadcrumb: Wait-Process timed out at 290s -- terminating"
+              Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            }
+          } catch {
+            Write-Host "T-3675: invoke threw: $_"
+          } finally {
+            $elapsed = (Get-Date) - $started
+            Write-Host "T-3675 breadcrumb: Start-Process invocation returned (elapsed: $($elapsed.TotalSeconds)s)"
+            Write-Host "--- diag_stopbefore_detect.out ---"
+            if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "--- diag_stopbefore_detect.err ---"
+            if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "stop-before detect diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          }
+          if ($elapsed.TotalSeconds -ge 235) {
+            Write-Host "::error::stop-before detect diag ran $($elapsed.TotalSeconds)s -- treating as a HANG (T-3675)."
+            exit 1
+          }
+          Write-Host "stop-before detect diag: no hang (returned in $($elapsed.TotalSeconds)s) -- exit code $exitCode. DIRTY (T-3648-SIGNAL present) means the sender is AFTER this point; CLEAN means the sender is at or before this point."
+          exit 0
+
+      - name: Diagnose frob check hang on windows -- stop-before tasks variant (T-3675)
+        if: matrix.os == 'windows-latest'
+        timeout-minutes: 5
+        env:
+          FROB_CHECK_STOP_BEFORE: "tasks"
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
+          # Reuses the SAME fixture and diag script as variant (a) --
+          # only FROB_CHECK_STOP_BEFORE=tasks (set in this step's own
+          # env: block, present before uv even starts) changes. If the
+          # SIGNAL disappears at this point while it was still present
+          # at the previous (earlier-stopping) point, the sender lives
+          # in the code between the two: task list built, nothing submitted to the executor yet.
+          $diagOut = Join-Path $env:RUNNER_TEMP "diag_stopbefore_tasks.out"
+          $diagErr = Join-Path $env:RUNNER_TEMP "diag_stopbefore_tasks.err"
+          $diagPy = Join-Path $env:RUNNER_TEMP "frob_check_diag.py"
+          $started = Get-Date
+          $elapsed = [TimeSpan]::Zero
+          $exitCode = -1
+          Write-Host "T-3675 breadcrumb: about to invoke uv via Start-Process with FROB_CHECK_STOP_BEFORE=tasks"
+          try {
+            $p = Start-Process -FilePath "uv" `
+              -ArgumentList "run", "--project", "$env:GITHUB_WORKSPACE", "python", "$diagPy" `
+              -WorkingDirectory $fixture `
+              -PassThru -RedirectStandardOutput $diagOut -RedirectStandardError $diagErr
+            try {
+              Wait-Process -Id $p.Id -Timeout 290 -ErrorAction Stop
+              $exitCode = $p.ExitCode
+            } catch {
+              Write-Host "T-3675 breadcrumb: Wait-Process timed out at 290s -- terminating"
+              Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            }
+          } catch {
+            Write-Host "T-3675: invoke threw: $_"
+          } finally {
+            $elapsed = (Get-Date) - $started
+            Write-Host "T-3675 breadcrumb: Start-Process invocation returned (elapsed: $($elapsed.TotalSeconds)s)"
+            Write-Host "--- diag_stopbefore_tasks.out ---"
+            if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "--- diag_stopbefore_tasks.err ---"
+            if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "stop-before tasks diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          }
+          if ($elapsed.TotalSeconds -ge 235) {
+            Write-Host "::error::stop-before tasks diag ran $($elapsed.TotalSeconds)s -- treating as a HANG (T-3675)."
+            exit 1
+          }
+          Write-Host "stop-before tasks diag: no hang (returned in $($elapsed.TotalSeconds)s) -- exit code $exitCode. DIRTY (T-3648-SIGNAL present) means the sender is AFTER this point; CLEAN means the sender is at or before this point."
+          exit 0
+
+      - name: Diagnose frob check hang on windows -- stop-before submit variant (T-3675)
+        if: matrix.os == 'windows-latest'
+        timeout-minutes: 5
+        env:
+          FROB_CHECK_STOP_BEFORE: "submit"
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $fixture = Join-Path $env:RUNNER_TEMP "frob-diag-fixture"
+          # Reuses the SAME fixture and diag script as variant (a) --
+          # only FROB_CHECK_STOP_BEFORE=submit (set in this step's own
+          # env: block, present before uv even starts) changes. If the
+          # SIGNAL disappears at this point while it was still present
+          # at the previous (earlier-stopping) point, the sender lives
+          # in the code between the two: about to open ThreadPoolExecutor, no worker thread started yet.
+          $diagOut = Join-Path $env:RUNNER_TEMP "diag_stopbefore_submit.out"
+          $diagErr = Join-Path $env:RUNNER_TEMP "diag_stopbefore_submit.err"
+          $diagPy = Join-Path $env:RUNNER_TEMP "frob_check_diag.py"
+          $started = Get-Date
+          $elapsed = [TimeSpan]::Zero
+          $exitCode = -1
+          Write-Host "T-3675 breadcrumb: about to invoke uv via Start-Process with FROB_CHECK_STOP_BEFORE=submit"
+          try {
+            $p = Start-Process -FilePath "uv" `
+              -ArgumentList "run", "--project", "$env:GITHUB_WORKSPACE", "python", "$diagPy" `
+              -WorkingDirectory $fixture `
+              -PassThru -RedirectStandardOutput $diagOut -RedirectStandardError $diagErr
+            try {
+              Wait-Process -Id $p.Id -Timeout 290 -ErrorAction Stop
+              $exitCode = $p.ExitCode
+            } catch {
+              Write-Host "T-3675 breadcrumb: Wait-Process timed out at 290s -- terminating"
+              Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            }
+          } catch {
+            Write-Host "T-3675: invoke threw: $_"
+          } finally {
+            $elapsed = (Get-Date) - $started
+            Write-Host "T-3675 breadcrumb: Start-Process invocation returned (elapsed: $($elapsed.TotalSeconds)s)"
+            Write-Host "--- diag_stopbefore_submit.out ---"
+            if (Test-Path $diagOut) { Get-Content $diagOut | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "--- diag_stopbefore_submit.err ---"
+            if (Test-Path $diagErr) { Get-Content $diagErr | Write-Host } else { Write-Host "(missing)" }
+            Write-Host "stop-before submit diag exit code: $exitCode (elapsed: $($elapsed.TotalSeconds)s)"
+          }
+          if ($elapsed.TotalSeconds -ge 235) {
+            Write-Host "::error::stop-before submit diag ran $($elapsed.TotalSeconds)s -- treating as a HANG (T-3675)."
+            exit 1
+          }
+          Write-Host "stop-before submit diag: no hang (returned in $($elapsed.TotalSeconds)s) -- exit code $exitCode. DIRTY (T-3648-SIGNAL present) means the sender is AFTER this point; CLEAN means the sender is at or before this point."
+          exit 0
+
+      # T-3675 (round 18): FROB_TEST_HARD_EXIT=1 is set here, and ONLY
+      # here in this repo -- round 17's own evidence (run 33556847222)
+      # showed that with the FROB_TEST_IGNORE_CONSOLE_CTRL guard above
+      # armed, the injected SIGINT stopped killing this step and it
+      # HUNG past its 1500s budget instead, with orphan pytest/python
+      # processes still alive: the interrupt was MASKING a real
+      # session-teardown wedge (a non-daemon thread or unreaped child
+      # blocking interpreter shutdown) the whole time. This hard-exit
+      # (tests/conftest.py::_maybe_hard_exit_after_session_finish)
+      # documents what wedges teardown (one FROB-TEST-HARD-EXIT: line
+      # inventorying live threads/children) and os._exit()s with the
+      # session's real exit code right after that line, instead of
+      # letting pytest's own wrap_session teardown -- and whatever
+      # wedges inside it -- ever run. See docs/modules/process.md's
+      # "Round 18" paragraph for the full rationale.
       - name: Test (windows, timed with hang guard)
         if: matrix.os == 'windows-latest'
         env:
           PYTHONFAULTHANDLER: "1"
           FROB_TEST_IGNORE_CONSOLE_CTRL: "1"
+          FROB_TEST_HARD_EXIT: "1"
         run: |
           $budget = 1500  # 25m, same budget/rationale as ubuntu's step above
           $stdout = Join-Path $env:RUNNER_TEMP "pytest-stdout.log"
