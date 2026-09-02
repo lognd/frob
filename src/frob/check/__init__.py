@@ -270,21 +270,37 @@ def _available_memory_mb() -> int | None:
     return _shared_available_memory_mb()
 
 
+# frob:ticket T-3686
+# frob:tests tests/unit/test_check_admission.py::TestAdmissionRegistry.test_pid_alive_delegates_to_shared_process_liveness_probe kind="unit"  # noqa: E501
 def _pid_alive(pid: int) -> bool:
-    """Whether `pid` is a live process, best-effort (T-3256): `os.kill(pid,
-    0)` sends no signal, only probes existence. A permission error still
-    means the process exists (just not ours to signal); any other OSError
-    (e.g. an invalid pid) reads as dead rather than raising -- this is a
-    registry-reaping heuristic, never allowed to crash a check run."""
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    except OSError:
-        return False
-    return True
+    """Whether `pid` is a live process, best-effort (T-3256), delegating
+    to `frob.process._pid_liveness.pid_alive` (T-3018/T-3003/T-3191)
+    rather than a second, in-module `os.kill(pid, 0)` implementation.
+
+    T-3686: THIS delegation is itself the fix for the 19-round win32
+    injected-SIGINT T-3683 bisected to exactly this admission-budget
+    acquisition window (`_live_concurrent_checks` calling this probe
+    once per registry marker while reaping siblings). The PRE-FIX body
+    here called `os.kill(pid, 0)` unconditionally on every platform --
+    on win32, CPython's `os.kill` maps signal `0` to `signal.
+    CTRL_C_EVENT` (whose numeric value IS 0) and implements it via
+    `GenerateConsoleCtrlEvent`, which broadcasts a real Ctrl+C to every
+    process attached to the caller's console process group, including
+    the calling `frob check` process itself and any subprocess test
+    runners sharing its console. `frob.process._pid_liveness.pid_alive`
+    already solved this exact hazard for `frob.mutate._journal`/`frob.
+    tickets._land` (T-3018/T-3003): it never calls `os.kill` on win32,
+    instead opening the pid with `PROCESS_QUERY_LIMITED_INFORMATION`
+    (no signal/terminate capability) and reading `GetExitCodeProcess`.
+    Reusing it here removes the duplicate unsafe copy this ticket found,
+    rather than adding a second, parallel-but-different win32 backend
+    (DUP001) -- imported LOCALLY to keep this module's own top-level
+    import surface unchanged (`frob.process` has no import back into
+    `frob.check`, so no cycle risk, but a local import keeps this
+    diff minimal and easy to revert in isolation)."""
+    from frob.process._pid_liveness import pid_alive
+
+    return pid_alive(pid)
 
 
 # frob:ticket T-3287

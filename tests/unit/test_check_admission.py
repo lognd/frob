@@ -221,6 +221,39 @@ class TestAdmissionRegistry:
         # frob:tests src/frob/check/__init__.py::_pid_alive kind="unit"
         assert check_mod._pid_alive(999_999_999) is False
 
+    def test_pid_alive_delegates_to_shared_process_liveness_probe(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3686: `_pid_alive` MUST delegate to `frob.process._pid_
+        liveness.pid_alive` rather than calling `os.kill(pid, 0)`
+        in-module -- the in-module `os.kill(pid, 0)` call (unconditional
+        on every platform) was the win32 injected-SIGINT root cause
+        T-3683 bisected to exactly this admission-registry reaping path
+        (`_live_concurrent_checks` -> `_pid_alive`): CPython's win32
+        `os.kill` maps signal 0 to `CTRL_C_EVENT` and fires
+        `GenerateConsoleCtrlEvent`, broadcasting a real Ctrl+C to the
+        whole console process group. `frob.process._pid_liveness.
+        pid_alive` already solves this (T-3018/T-3003/T-3191); this test
+        pins the delegation itself, not the (separately tested) win32
+        backend."""
+        # frob:tests src/frob/check/__init__.py::_pid_alive kind="unit"
+        from frob.process import _pid_liveness
+
+        calls: list[int] = []
+        monkeypatch.setattr(
+            _pid_liveness, "pid_alive", lambda pid: calls.append(pid) or True
+        )
+
+        def _forbidden_kill(pid: int, sig: int) -> None:
+            raise AssertionError(
+                "check._pid_alive must not call os.kill directly -- it must"
+                " delegate to frob.process._pid_liveness.pid_alive"
+            )
+
+        monkeypatch.setattr(check_mod.os, "kill", _forbidden_kill)
+        assert check_mod._pid_alive(4242) is True
+        assert calls == [4242]
+
 
 class TestAdmissionBudgetContextManager:
     """`_admission_budget`: the end-to-end context manager -- patches and

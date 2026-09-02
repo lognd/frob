@@ -1,7 +1,7 @@
 ---
 id: T-3686
 title: fix win32 CTRL_C injection from os.kill(pid,0) in admission pid-liveness probe
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'
