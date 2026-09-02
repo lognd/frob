@@ -1,0 +1,57 @@
+## Done report
+
+Root-cause determination: could not pin an exact root cause on Linux (this
+ticket's own prior 120-iteration reproduction attempt already found
+nothing, and this session did not find a reproducible race either). What
+IS a confirmed, fixable bug: both sys.exit(1) sites near
+_close_cmd.py:1465 -- the `commit_ticket_ledger_change` Err branch shared
+by close/fail/drop/reopen -- exit with ZERO diagnostic logging, unlike
+every other caller of that function in the codebase (frob.app.
+ticket_runner.__init__, _attach_backfill.py, _lifecycle.py,
+_rapid_sweep.py all log committed.danger_err first). That is exactly why
+CI's captured traceback for T-3685 could only report "SystemExit: 1" with
+no way to tell which exit site fired or why.
+
+Fix approach: outcome (b) from the ticket's own plan -- since the failure
+is not reproducible here to root-cause further, harden the diagnostic
+surface instead of guessing at a fix. Added an _log.error(...) call before
+each of the 4 sys.exit(1) sites in this file (close/fail/drop/reopen),
+logging the ticket id and committed.danger_err (the LeaseError), matching
+the pattern already used at every sibling call site elsewhere in the repo.
+Next time this fires on any platform, CI will show the actual LeaseError
+(most likely CommitFailed, meaning the git add/commit subprocess itself
+failed under load) instead of a bare exit code -- turning the next
+occurrence into an actionable root-cause rather than another
+unreproducible flake report.
+
+Changed:
+- src/frob/app/ticket_runner/_close_cmd.py: log committed.danger_err
+  before sys.exit(1) in _close, _fail, _drop, _reopen.
+
+Evidence:
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
+- tests/test_tickets.py::TestDropCli::test_cli_drops_with_reason
+- also ran (not cited, broader regression check): tests/test_tickets.py
+  full file (206 passed) and tests/unit/test_ticket_close_bug002_t1427.py
+
+Filed: none
+
+Gates: frob check --ticket T-3685 (scoped) -- see land output; test suite
+green locally. CI-mac is the real verifier for whether this flake recurs;
+if it does, the next failure log will carry the actual LeaseError.
+
+### Changed
+```
+ src/frob/app/ticket_runner/_close_cmd.py | 29 +++++++++++++++++++++++++++++
+ tickets/T-3685/ticket.md                 |  3 +++
+ 2 files changed, 32 insertions(+)
+```
+
+### Evidence
+- `tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropCli::test_cli_drops_with_reason` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 6 error(s), 4268 warning(s), 908 waived
+- error-findings: CLAUDE001@.claude/hooks/sync-claude-config.py, DEPR006@frob-deprecated-baseline.lock.json, PERF003@src/frob/refactor/_scan.py, PERF004@src/frob/refactor/_scan_carry.py, PRE001@tickets/T-3685, WAIVE011@frob-ratchet.lock.json

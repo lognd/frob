@@ -1462,6 +1462,17 @@ def _close(root: Path, cfg: AppConfig) -> None:
         no_commit=cfg.ticket_no_commit,
     )
     if committed.is_err:
+        # T-3685: this used to exit bare, so a real failure here (e.g. a
+        # `git commit` timeout under CI load) surfaced only as an
+        # unexplained SystemExit(1) with zero diagnostic -- log the actual
+        # LeaseError before exiting, matching every OTHER
+        # commit_ticket_ledger_change caller's own posture (e.g.
+        # frob.app.ticket_runner.__init__'s dispatch-table commit).
+        _log.error(
+            "close: %s ledger auto-commit failed: %s",
+            cfg.ticket_id,
+            committed.danger_err,
+        )
         sys.exit(1)
 
     # frob:ticket T-2738
@@ -1933,6 +1944,12 @@ def _fail(root: Path, cfg: AppConfig) -> None:
         no_commit=cfg.ticket_no_commit,
     )
     if committed.is_err:
+        # T-3685: surface the actual LeaseError, not a bare SystemExit
+        _log.error(
+            "fail: %s ledger auto-commit failed: %s",
+            cfg.ticket_id,
+            committed.danger_err,
+        )
         sys.exit(1)
     _warn_if_fail_not_visible_on_primary(root, cfg.ticket_id)
 
@@ -1972,6 +1989,12 @@ def _drop(root: Path, cfg: AppConfig) -> None:
         no_commit=cfg.ticket_no_commit,
     )
     if committed.is_err:
+        # T-3685: surface the actual LeaseError, not a bare SystemExit
+        _log.error(
+            "drop: %s ledger auto-commit failed: %s",
+            cfg.ticket_id,
+            committed.danger_err,
+        )
         sys.exit(1)
 
 
@@ -2008,6 +2031,12 @@ def _reopen(root: Path, cfg: AppConfig) -> None:
         no_commit=cfg.ticket_no_commit,
     )
     if committed.is_err:
+        # T-3685: surface the actual LeaseError, not a bare SystemExit
+        _log.error(
+            "reopen: %s ledger auto-commit failed: %s",
+            cfg.ticket_id,
+            committed.danger_err,
+        )
         sys.exit(1)
 
 
