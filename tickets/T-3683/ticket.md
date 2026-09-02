@@ -16,11 +16,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/conftest.py
 - src/frob/check/__init__.py
-- src/frob/process/_derived_lock.py
 - src/frob/process/_guard.py
 - .github/workflows/ci.yml
 - tests/test_ci_workflow_matrix.py
-- docs/modules/process.md
 - tests/unit/test_conftest_midrun_watchdog.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -33,6 +31,46 @@ scope_changes:
     added in Part B
   actor: logan
   at: '2026-09-01'
+- op: remove
+  glob: src/frob/process/_derived_lock.py
+  reason: re-applying the earlier narrowing after a stale ticket.md merge brought
+    these back into scope; T-3681 still holds a live lease on both
+  actor: logan
+  at: '2026-09-01'
+- op: remove
+  glob: docs/modules/process.md
+  reason: re-applying the earlier narrowing after a stale ticket.md merge brought
+    these back into scope; T-3681 still holds a live lease on both
+  actor: logan
+  at: '2026-09-01'
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_seven_points_have_their_own_step
+- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_seven_have_a_bounded_timeout
+- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_each_step_sets_its_own_matching_point
+- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_each_step_reuses_variant_a_script_and_fixture
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_sets_frob_test_midrun_watchdog_seconds
+- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_false_when_env_unset
+- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_true_only_for_the_matching_point
+- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_unrecognized_value_matches_nothing
+- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_all_seven_points_are_distinct_and_ordered
+- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_rejects_an_unknown_point_argument
+- tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore::test_entry_point_returns_empty_result_before_any_context_manager
+- tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore::test_console_scope_point_returns_empty_result_before_admission_budget
+- tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore::test_admission_point_returns_empty_result_before_derived_state_lock
+- tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore::test_lock_point_returns_empty_result_before_any_stage
+- tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore::test_tasks_point_returns_empty_result_before_submit
+- tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore::test_no_stop_requested_runs_normally
+- tests/unit/test_conftest_midrun_watchdog.py::TestMidrunWatchdogThresholdS::test_none_when_unset
+- tests/unit/test_conftest_midrun_watchdog.py::TestMidrunWatchdogThresholdS::test_none_when_zero
+- tests/unit/test_conftest_midrun_watchdog.py::TestMidrunWatchdogThresholdS::test_none_when_negative
+- tests/unit/test_conftest_midrun_watchdog.py::TestMidrunWatchdogThresholdS::test_none_when_not_numeric
+- tests/unit/test_conftest_midrun_watchdog.py::TestMidrunWatchdogThresholdS::test_parses_a_positive_value
+- tests/unit/test_conftest_midrun_watchdog.py::TestMidrunStallDetected::test_false_before_threshold_elapsed
+- tests/unit/test_conftest_midrun_watchdog.py::TestMidrunStallDetected::test_true_at_exactly_the_threshold
+- tests/unit/test_conftest_midrun_watchdog.py::TestMidrunStallDetected::test_true_well_past_the_threshold
+- tests/unit/test_conftest_midrun_watchdog.py::TestRunMidrunWatchdog::test_fires_hard_exit_when_no_progress_and_never_stopped
+- tests/unit/test_conftest_midrun_watchdog.py::TestRunMidrunWatchdog::test_never_fires_once_stop_event_is_set
+- tests/unit/test_conftest_midrun_watchdog.py::TestAnnounceMidrunStallAndHardExit::test_hard_exits_with_status_1_and_prints_the_inventory_line
 designated_repro_test: null
 threat: null
 component: null
