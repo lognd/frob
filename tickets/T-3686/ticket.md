@@ -1,7 +1,7 @@
 ---
 id: T-3686
 title: fix win32 CTRL_C injection from os.kill(pid,0) in admission pid-liveness probe
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -20,7 +20,40 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_check_admission.py::TestAdmissionRegistry::test_pid_alive_delegates_to_shared_process_liveness_probe
+- tests/unit/test_check_admission.py::TestAdmissionRegistry::test_pid_alive_true_for_self
+- tests/unit/test_check_admission.py::TestAdmissionRegistry::test_pid_alive_false_for_implausible_pid
+- tests/unit/test_check_admission.py::TestAdmissionRegistry::test_registration_writes_a_marker_and_counts_self
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_check_admission.py::TestAdmissionRegistry::test_pid_alive_dispatches_to_win32_probe_on_win32
+  new_node: tests/unit/test_check_admission.py::TestAdmissionRegistry::test_pid_alive_delegates_to_shared_process_liveness_probe
+  reason: 'T-3686: delegated _pid_alive to frob.process._pid_liveness.pid_alive (existing,
+    already-tested, ty-clean win32-safe probe) instead of a second in-module win32
+    backend; old dispatch tests replaced by one delegation test'
+  actor: logan
+  at: '2026-09-02'
+- old_node: tests/unit/test_check_admission.py::TestAdmissionRegistry::test_pid_alive_dispatches_to_posix_probe_off_win32
+  new_node: tests/unit/test_check_admission.py::TestAdmissionRegistry::test_pid_alive_true_for_self
+  reason: 'obsolete: dispatch-to-posix test removed with the duplicated _pid_alive_posix/_pid_alive_win32
+    backends; test_pid_alive_true_for_self already covers the real-pid path against
+    the delegated probe'
+  actor: logan
+  at: '2026-09-02'
+- old_node: tests/unit/test_check_admission.py::TestAdmissionRegistry::test_pid_alive_win32_reads_alive_via_exit_code
+  new_node: tests/unit/test_check_admission.py::TestAdmissionRegistry::test_pid_alive_false_for_implausible_pid
+  reason: 'obsolete: win32 exit-code test removed with the in-module win32 backend;
+    covered upstream by frob.process._pid_liveness''s own TestPidAliveWindowsBackend
+    suite now'
+  actor: logan
+  at: '2026-09-02'
+- old_node: tests/unit/test_check_admission.py::TestAdmissionRegistry::test_pid_alive_win32_reads_dead_when_open_process_fails
+  new_node: tests/unit/test_check_admission.py::TestAdmissionRegistry::test_registration_writes_a_marker_and_counts_self
+  reason: 'obsolete: win32 OpenProcess-fails test removed with the in-module win32
+    backend; covered upstream by frob.process._pid_liveness''s own suite now'
+  actor: logan
+  at: '2026-09-02'
 threat: null
 component: null
 anchor: false
