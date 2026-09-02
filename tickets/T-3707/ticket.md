@@ -15,15 +15,32 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/gates/**
 - src/frob/check/**
 - src/frob/process/**
 - tests/conftest.py
 - .github/workflows/ci.yml
+- src/frob/gates/__init__.py
+- tests/gates_suite/test_run.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: narrow to the process-pool shutdown site and its existing test module
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: narrow to the process-pool shutdown site and its existing test module
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: tests/gates_suite/test_run.py
+  reason: narrow to the process-pool shutdown site and its existing test module
+  actor: logan
+  at: '2026-09-02'
 designated_repro_test: null
 threat: null
 component: null
