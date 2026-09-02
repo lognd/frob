@@ -18,10 +18,18 @@ scope:
 - tests/unit/test_conftest_midrun_watchdog.py
 - tickets/T-3604/ticket.md
 - tickets/T-3053/ticket.md
+- tests/test_lang.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_lang.py
+  reason: 'T-3688: fix the same-cluster COV006 finding -- stale frob:tests directive
+    on TestBash.test_parse_bash_produces_a_tree'
+  actor: logan
+  at: '2026-09-02'
 designated_repro_test: null
 threat: null
 component: null
