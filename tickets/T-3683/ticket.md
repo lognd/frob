@@ -19,7 +19,6 @@ scope:
 - src/frob/process/_guard.py
 - .github/workflows/ci.yml
 - tests/test_ci_workflow_matrix.py
-- docs/modules/process.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +28,12 @@ scope_changes:
   glob: src/frob/process/_derived_lock.py
   reason: T-3681 holds a live lease on this file; narrow now and re-add only if the
     round-19 bisect actually names this file, once T-3681 has landed
+  actor: logan
+  at: '2026-09-01'
+- op: remove
+  glob: docs/modules/process.md
+  reason: T-3681 holds a live lease here too; narrow now, append round-19 documentation
+    once T-3681 lands
   actor: logan
   at: '2026-09-01'
 designated_repro_test: null
