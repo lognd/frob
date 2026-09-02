@@ -84,10 +84,22 @@ _log = get_logger(__name__)
 #: SIGNAL sender lives before/after.
 FROB_CHECK_STOP_BEFORE_ENV = "FROB_CHECK_STOP_BEFORE"
 
-#: The 4 stop points `FROB_CHECK_STOP_BEFORE` recognizes, in pipeline
+#: The 7 stop points `FROB_CHECK_STOP_BEFORE` recognizes, in pipeline
 #: order -- see each call site's own comment in `_run_check_with_skips`/
 #: `_run_tasks_concurrently` for exactly what precedes/follows each one.
-_CHECK_STOP_POINTS = ("lock", "detect", "tasks", "submit")
+#: T-3683 round 19 added "entry"/"console-scope"/"admission" ahead of
+#: the original 4 (T-3675 round 18): round 18's bisect found every one
+#: of those 4 already dirty, bracketing the sender to setup strictly
+#: BEFORE "lock" -- these 3 narrow that bracket further.
+_CHECK_STOP_POINTS = (
+    "entry",
+    "console-scope",
+    "admission",
+    "lock",
+    "detect",
+    "tasks",
+    "submit",
+)
 
 
 def _check_stop_before(point: str) -> bool:
@@ -1453,24 +1465,58 @@ def _run_check_with_skips(
 ) -> CheckResult:
     """`run_check`'s task-selection and execution tail, once its many
     `skip_*` flags have been collapsed into `skips`. `on_task_done`
-    (T-2978) passes straight through to `_collect_results`."""
+    (T-2978) passes straight through to `_collect_results`.
+
+    T-3683 round 19: the 3 context managers below (console-ctrl scope,
+    admission budget, derived-state lock) used to be entered together
+    as one `with (...)` tuple -- round 18's bisect (run 33582058515)
+    found T-3648-SIGNAL already pending by the time ALL THREE were
+    entered (the "lock" stop point), with (e)/(f) controls clean, so
+    the sender brackets to pipeline setup strictly BEFORE this
+    function's own first line runs. Entering them one at a time via
+    `contextlib.ExitStack` (identical end state and lock order for a
+    normal run) makes 3 EARLIER stop points possible, narrowing
+    further within this module's own reach -- see each `_stop_before_
+    result` call's own point name/description below."""
+    # T-3683: stop point "entry" -- the earliest point this module can
+    # instrument; nothing below has run yet, not even console-ctrl-scope
+    # entry. A dirty result here means the sender is at or before this
+    # function's own call (App construction/config/dispatch), outside
+    # this file's reach.
+    stop_result = _stop_before_result(
+        root, "entry", "before any context manager is entered"
+    )
+    if stop_result is not None:
+        return stop_result
+
     # T-3256: register/size the cross-process, memory-aware admission
     # budget BEFORE the derived-state lock and every downstream stage --
     # see `_admission_budget`'s own docstring for the full mechanism and
     # why it lives here (the one seam every Python-mode check run passes
     # through, upstream of `frob.gates`'s `os.cpu_count()`-sized pool).
-    with (
+    with contextlib.ExitStack() as stack:
         # T-3657: env-gated, OFF by default -- see `win32_console_ctrl_
         # ignore_scope`'s and `FROB_WIN32_IGNORE_CONSOLE_CTRL_ENV`'s
         # docstrings. A no-op everywhere except a win32 process that has
-        # `FROB_WIN32_IGNORE_CONSOLE_CTRL=1` set, which no code path in
-        # this repo does yet -- that flip belongs to the CI workflow
-        # ONLY, and only once the round-15 diag matrix names an
-        # external/unfixable console-ctrl sender. Placed outermost so it
-        # covers the pipeline's full duration, including every stage
+        # `FROB_WIN32_IGNORE_CONSOLE_CTRL=1` set, which these bisect
+        # variants do not set. Entered first so it covers every stage
         # dispatched below.
-        win32_console_ctrl_ignore_scope(),
-        _admission_budget(root),
+        stack.enter_context(win32_console_ctrl_ignore_scope())
+        # T-3683: stop point "console-scope".
+        stop_result = _stop_before_result(
+            root, "console-scope", "console-ctrl scope entered, before admission budget"
+        )
+        if stop_result is not None:
+            return stop_result
+
+        stack.enter_context(_admission_budget(root))
+        # T-3683: stop point "admission".
+        stop_result = _stop_before_result(
+            root, "admission", "admission budget acquired, before derived-state lock"
+        )
+        if stop_result is not None:
+            return stop_result
+
         # T-0859: hold a SHARED `derived_state_lock` for the run's entire
         # duration -- precheck through the last stage's read -- so a
         # second frob process's EXCLUSIVE writer cannot rewrite `.frob`
@@ -1478,8 +1524,7 @@ def _run_check_with_skips(
         # read of the same artifacts (the cross-process TOCTOU window
         # T-0603 disclosed as its own residual). See `derived_state_lock`'s
         # docstring for the shared/exclusive contract.
-        derived_state_lock(root, exclusive=False),
-    ):
+        stack.enter_context(derived_state_lock(root, exclusive=False))
         # T-3675: stop point "lock" -- see _stop_before_result's docstring.
         stop_result = _stop_before_result(
             root, "lock", "all pipeline-wide scopes/locks acquired, no stage has run"

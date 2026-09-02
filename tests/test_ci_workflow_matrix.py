@@ -253,11 +253,12 @@ def _windows_mitigation_diag_step() -> dict:
 
 
 def _windows_stop_before_diag_step(point: str) -> dict:
-    """T-3675 round 18 Part 2: one of the 4 `FROB_CHECK_STOP_BEFORE=
-    <point>` diag sub-variants -- `point` is one of "lock"/"detect"/
-    "tasks"/"submit" (`frob.check._CHECK_STOP_POINTS`), each the SAME
-    diag script/fixture as variant (a) with only that one env var
-    changed."""
+    """T-3675 round 18 Part 2 / T-3683 round 19: one of the 7
+    `FROB_CHECK_STOP_BEFORE=<point>` diag sub-variants -- `point` is one
+    of `frob.check._CHECK_STOP_POINTS` ("entry"/"console-scope"/
+    "admission" added in round 19, ahead of round 18's original "lock"/
+    "detect"/"tasks"/"submit"), each the SAME diag script/fixture as
+    variant (a) with only that one env var changed."""
     workflow = _load_ci_workflow()
     steps = workflow["jobs"]["build"]["steps"]
     return next(
@@ -594,19 +595,28 @@ class TestWindowsMitigationDiagVariant:
 
 # frob:ticket T-3675
 class TestWindowsStopBeforeDiagVariants:
-    """T-3675 round 18 Part 2: the 4 FROB_CHECK_STOP_BEFORE sub-variants
-    bisecting run_check's own pre-thread-start pipeline."""
+    """T-3675 round 18 Part 2 / T-3683 round 19: the 7 FROB_CHECK_STOP_
+    BEFORE sub-variants bisecting run_check's own pre-lock-through-
+    submit pipeline."""
 
-    _POINTS = ("lock", "detect", "tasks", "submit")
+    _POINTS = (
+        "entry",
+        "console-scope",
+        "admission",
+        "lock",
+        "detect",
+        "tasks",
+        "submit",
+    )
 
-    # frob:tests tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants.test_all_four_points_have_their_own_step  # noqa: E501
-    def test_all_four_points_have_their_own_step(self) -> None:
+    # frob:tests tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants.test_all_seven_points_have_their_own_step  # noqa: E501
+    def test_all_seven_points_have_their_own_step(self) -> None:
         for point in self._POINTS:
             step = _windows_stop_before_diag_step(point)
             assert step.get("if") == "matrix.os == 'windows-latest'"
 
-    # frob:tests tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants.test_all_four_have_a_bounded_timeout  # noqa: E501
-    def test_all_four_have_a_bounded_timeout(self) -> None:
+    # frob:tests tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants.test_all_seven_have_a_bounded_timeout  # noqa: E501
+    def test_all_seven_have_a_bounded_timeout(self) -> None:
         for point in self._POINTS:
             step = _windows_stop_before_diag_step(point)
             assert step.get("timeout-minutes") == 5
@@ -861,6 +871,26 @@ class TestWindowsDiagStepDoesNotGateTheJob:
             step for step in steps if step.get("name", "").startswith("Test (windows")
         )
         assert test_step.get("env", {}).get("FROB_TEST_HARD_EXIT") == "1"
+
+    # frob:tests .github/workflows/ci.yml
+    def test_test_step_sets_frob_test_midrun_watchdog_seconds(self) -> None:
+        """T-3683 round 19 Part B: the windows Test step is the ONE
+        place in this repo that sets FROB_TEST_MIDRUN_WATCHDOG_SECONDS,
+        arming tests/conftest.py's mid-run watchdog -- see docs/modules/
+        process.md's "Round 19" paragraph."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        test_step = next(
+            step for step in steps if step.get("name", "").startswith("Test (windows")
+        )
+        raw = test_step.get("env", {}).get("FROB_TEST_MIDRUN_WATCHDOG_SECONDS")
+        assert raw is not None
+        assert float(raw) > 0
+        assert float(raw) < 1500, (
+            "the watchdog threshold must be comfortably INSIDE this "
+            "step's own 1500s budget, or it can never fire before the "
+            "external Wait-Process timeout does"
+        )
 
     def test_test_step_is_untouched_and_still_windows_only(self) -> None:
         """Neither T-3604 nor T-3609 may touch the Test step itself --

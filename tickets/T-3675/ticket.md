@@ -39,15 +39,15 @@ scope_changes:
   actor: logan
   at: '2026-09-01'
 evidence:
-- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_four_points_have_their_own_step
-- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_four_have_a_bounded_timeout
+- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_seven_points_have_their_own_step
+- tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_seven_have_a_bounded_timeout
 - tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_each_step_sets_its_own_matching_point
 - tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_each_step_reuses_variant_a_script_and_fixture
 - tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_sets_frob_test_hard_exit
 - tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_false_when_env_unset
 - tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_true_only_for_the_matching_point
 - tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_unrecognized_value_matches_nothing
-- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_all_four_points_are_distinct_and_ordered
+- tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_all_seven_points_are_distinct_and_ordered
 - tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_rejects_an_unknown_point_argument
 - tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore::test_lock_point_returns_empty_result_before_any_stage
 - tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore::test_tasks_point_returns_empty_result_before_submit
@@ -64,6 +64,26 @@ evidence:
 - tests/unit/test_conftest_hard_exit_guard.py::TestMaybeHardExitAfterSessionFinish::test_hard_exits_with_the_sessions_real_exitstatus
 - tests/unit/test_conftest_hard_exit_guard.py::TestMaybeHardExitAfterSessionFinish::test_falls_back_to_the_hook_exitstatus_when_session_exitstatus_is_not_an_int
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_all_four_points_are_distinct_and_ordered
+  new_node: tests/unit/test_check_stop_before.py::TestCheckStopBefore::test_all_seven_points_are_distinct_and_ordered
+  reason: T-3683 round 19 extended the 4-point stop-before matrix to 7 points and
+    renamed these tests accordingly; repointing T-3675's evidence to the replacement
+    test names in the same diff
+  actor: logan
+  at: '2026-09-01'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_four_points_have_their_own_step
+  new_node: tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_seven_points_have_their_own_step
+  reason: T-3683 round 19 renamed this test when the stop-before matrix grew from
+    4 to 7 points
+  actor: logan
+  at: '2026-09-01'
+- old_node: tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_four_have_a_bounded_timeout
+  new_node: tests/test_ci_workflow_matrix.py::TestWindowsStopBeforeDiagVariants::test_all_seven_have_a_bounded_timeout
+  reason: T-3683 round 19 renamed this test when the stop-before matrix grew from
+    4 to 7 points
+  actor: logan
+  at: '2026-09-01'
 threat: null
 component: null
 anchor: false

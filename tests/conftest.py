@@ -338,6 +338,8 @@ def pytest_configure(config: pytest.Config) -> None:
     global _last_internal_error, _worker_crash_hook_config
     global _last_progress_ts, _stall_watchdog_stop, _stall_watchdog_thread
     global _last_node_death_ts
+    global _midrun_watchdog_stop, _midrun_watchdog_thread
+    global _midrun_watchdog_started_ts
     _last_internal_error = None
     _install_stackdump_handler()
     _install_test_console_ctrl_ignore_guard()
@@ -365,6 +367,25 @@ def pytest_configure(config: pytest.Config) -> None:
             daemon=True,
         )
         _stall_watchdog_thread.start()
+    # T-3683: unlike the xdist-only stall watchdog above, this one needs
+    # neither xdist nor a recorded worker crash -- gated purely on
+    # FROB_TEST_MIDRUN_WATCHDOG_SECONDS, so it also covers the current
+    # `-p no:xdist` serial windows Test step (see FROB_TEST_MIDRUN_
+    # WATCHDOG_SECONDS_ENV's own docstring for the mid-run wedge this
+    # answers).
+    midrun_threshold = _midrun_watchdog_threshold_s()
+    if midrun_threshold is not None:
+        import time
+
+        _midrun_watchdog_started_ts = time.time()
+        _midrun_watchdog_stop = threading.Event()
+        _midrun_watchdog_thread = threading.Thread(
+            target=_run_midrun_watchdog,
+            args=(config, _midrun_watchdog_stop, midrun_threshold),
+            name="frob-midrun-watchdog",
+            daemon=True,
+        )
+        _midrun_watchdog_thread.start()
 
 
 def pytest_unconfigure(config: pytest.Config) -> None:
@@ -563,6 +584,140 @@ def _maybe_hard_exit_after_session_finish(
     sys.stdout.flush()
     sys.stderr.flush()
     os._exit(real_exitstatus)
+
+
+FROB_TEST_MIDRUN_WATCHDOG_SECONDS_ENV = "FROB_TEST_MIDRUN_WATCHDOG_SECONDS"
+"""T-3683 (win32 round 19): env-gated, unset/non-positive/non-numeric =
+disabled -- when set to a positive number of seconds, `pytest_configure`
+starts a background watchdog thread that hard-exits the process (same
+`os._exit` shape as `_maybe_hard_exit_after_session_finish` above and
+T-3608's `_announce_stall_and_abort`) if no test call-phase reports
+progress for that long. T-3675's own hard-exit only fires from `pytest_
+sessionfinish`, which a MID-RUN wedge never reaches at all: round 18's
+own CI evidence (run 33582058515) measured the windows Test step hitting
+its 1500s budget again with NO `FROB-TEST-HARD-EXIT:` line printed --
+the suite hangs before session finish, not at teardown, once T-3673's
+FROB_TEST_IGNORE_CONSOLE_CTRL guard is masking the in-pipeline SIGINT a
+subprocess `frob check` a test spawns would otherwise die from cleanly.
+Unlike T-3608's own stall watchdog (xdist-only, requires a recorded
+worker crash), this one needs neither: it is gated purely on elapsed
+wall-clock time since the last observed `pytest_runtest_logreport`, so
+it also covers the current `-p no:xdist` SERIAL windows Test step."""
+
+_midrun_watchdog_stop: "threading.Event | None" = None
+"""T-3683: signals the mid-run watchdog thread to stop -- set by `pytest_
+sessionfinish` on a normal end-of-run, same posture as T-3608's `_stall_
+watchdog_stop`."""
+
+_midrun_watchdog_thread: "threading.Thread | None" = None
+"""T-3683: the running mid-run watchdog thread, started by `pytest_
+configure` whenever `_midrun_watchdog_threshold_s()` is not `None`;
+`None` otherwise."""
+
+_midrun_watchdog_started_ts: float | None = None
+"""T-3683: wall-clock time the watchdog thread itself started -- used as
+the progress baseline until the FIRST `pytest_runtest_logreport` ever
+sets `_last_progress_ts`, so a wedge during collection or the very first
+test (before any progress has ever been recorded) is still caught."""
+
+
+def _midrun_watchdog_threshold_s() -> float | None:
+    """The configured `FROB_TEST_MIDRUN_WATCHDOG_SECONDS` threshold, or
+    `None` if unset/non-positive/not a valid float (T-3683) -- disabled
+    is the default in every case, exactly one CI workflow step opts in."""
+    raw = os.environ.get(FROB_TEST_MIDRUN_WATCHDOG_SECONDS_ENV, "")
+    if not raw:
+        return None
+    try:
+        value = float(raw)
+    except ValueError:
+        return None
+    return value if value > 0 else None
+
+
+# frob:waive WIRE001 reason="genuinely wired -- called only by _run_midrun_watchdog \
+# below, itself reached exclusively via threading.Thread(target=...), same class of \
+# gap this file's pre-existing T-3608 _stall_detected/_announce_stall_and_abort \
+# WIRE001 waivers already cover, not a direct in-repo call site" follow_up="T-3381"
+def _midrun_stall_detected(
+    now: float, last_progress_ts: float, threshold_s: float
+) -> bool:
+    """Pure predicate (T-3683): true once `threshold_s` seconds have
+    elapsed since `last_progress_ts` (either the watchdog's own start
+    time, if no test has ever reported progress yet, or the most recent
+    `pytest_runtest_logreport`). Deliberately requires NEITHER an xdist
+    worker crash NOR `pytest-xdist` at all -- unlike T-3608's `_stall_
+    detected`, which needs both -- since a mid-run subprocess wedge has
+    no crash marker to key off of."""
+    return (now - last_progress_ts) >= threshold_s
+
+
+# frob:waive WIRE001 reason="genuinely wired -- called only by _run_midrun_watchdog \
+# below, itself reached exclusively via threading.Thread(target=...), same class of \
+# gap this file's pre-existing T-3608 WIRE001 waivers already cover, not a direct \
+# in-repo call site" follow_up="T-3381"
+def _announce_midrun_stall_and_hard_exit(
+    config: pytest.Config, now: float, threshold_s: float
+) -> None:
+    """T-3683: the mid-run twin of T-3608's `_announce_stall_and_abort` --
+    prints a `SUITE-RESULT: MIDRUN-WATCHDOG-STALL` line plus T-3675's own
+    `_describe_teardown_blockers()` inventory line (reused, not
+    duplicated: the whole point is naming what is still alive when a
+    wedge with no xdist crash marker and no session-finish hook ever
+    reached is declared), flushes both streams, then `os._exit(1)`s --
+    the SAME hard-exit shape every other wedge-response in this file
+    uses, applied to a THIRD wedge class this file did not previously
+    have any answer for at all."""
+    lines = [
+        f"SUITE-RESULT: MIDRUN-WATCHDOG-STALL no test call-phase has "
+        f"reported progress for >={threshold_s:g}s (T-3683) -- aborting "
+        f"now instead of waiting for the external CI step budget to kill "
+        f"this job with zero diagnostic output",
+        _describe_teardown_blockers(),
+        "SUITE-RESULT: exitstatus=1 collected=0 (partial, midrun-stall) "
+        "failed=0 (partial, midrun-stall)",
+    ]
+    reporter = config.pluginmanager.get_plugin("terminalreporter")
+    for line in lines:
+        if reporter is not None:
+            reporter.write_line(line)
+        else:  # pragma: no cover - defensive only, terminalreporter always registered
+            print(line)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(1)
+
+
+# frob:waive WIRE001 reason="genuinely wired -- passed as threading.Thread(target=...) \
+# by pytest_configure below (a runtime indirection, not a direct in-repo call WIRE's \
+# static callgraph can trace), same class of gap this file's pre-existing T-3608 \
+# _run_stall_watchdog WIRE001 waiver already covers" follow_up="T-3381"
+def _run_midrun_watchdog(
+    config: pytest.Config, stop_event: "threading.Event", threshold_s: float
+) -> None:
+    """T-3683: the background thread body `pytest_configure` starts
+    whenever `_midrun_watchdog_threshold_s()` is not `None`. Wakes every
+    `min(30.0, threshold_s / 3)` seconds (a finer poll than T-3608's
+    fixed 5s default, scaled to the caller's own threshold so a short
+    test-only threshold still gets several checks before firing) and
+    checks `_midrun_stall_detected` against whichever of `_last_
+    progress_ts`/`_midrun_watchdog_started_ts` is the more recent
+    baseline; the first time it fires, calls `_announce_midrun_stall_
+    and_hard_exit` and returns (the process is gone by then). `stop_
+    event` is set by `pytest_sessionfinish` on a normal end-of-run."""
+    import time
+
+    poll_s = min(30.0, threshold_s / 3) if threshold_s > 0 else 30.0
+    while not stop_event.wait(poll_s):
+        now = time.time()
+        baseline = _last_progress_ts
+        if baseline is None:
+            baseline = _midrun_watchdog_started_ts
+        if baseline is None:
+            continue
+        if _midrun_stall_detected(now, baseline, threshold_s):
+            _announce_midrun_stall_and_hard_exit(config, now, threshold_s)
+            return
 
 
 _last_internal_error: str | None = None
@@ -1222,6 +1377,12 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     # already finished.
     if _stall_watchdog_stop is not None:
         _stall_watchdog_stop.set()
+    # T-3683: same posture for the mid-run watchdog -- reaching this hook
+    # at all proves the run did NOT wedge mid-run, so stop it before it
+    # can ever fire a spurious hard-exit against a session already ending
+    # normally.
+    if _midrun_watchdog_stop is not None:
+        _midrun_watchdog_stop.set()
     total = getattr(session, "testscollected", 0)
     failed = getattr(session, "testsfailed", 0)
     completed = exitstatus in _COMPLETED_EXIT_STATUSES

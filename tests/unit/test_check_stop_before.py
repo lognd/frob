@@ -1,13 +1,16 @@
-"""T-3675 (win32 round 18, Part 2): unit coverage for `frob.check`'s
-`FROB_CHECK_STOP_BEFORE` debug knob -- the pipeline sender bisect that
-brackets round-16/17's `executor.submit -> t.start()` interrupt stack
-frame one stage at a time. Env-gated, OFF by default everywhere; only a
-CI diag step (`.github/workflows/ci.yml`) sets it, one point per step.
+"""T-3675 (win32 round 18, Part 2) / T-3683 (round 19): unit coverage
+for `frob.check`'s `FROB_CHECK_STOP_BEFORE` debug knob -- the pipeline
+sender bisect that brackets round-16/17's `executor.submit ->
+t.start()` interrupt stack frame one stage at a time. Round 19 added 3
+EARLIER points ("entry"/"console-scope"/"admission") ahead of round
+18's original 4, since round 18's own bisect found all 4 of those
+already dirty. Env-gated, OFF by default everywhere; only a CI diag
+step (`.github/workflows/ci.yml`) sets it, one point per step.
 
-Only `_check_stop_before`'s own gating logic is unit-tested here (its 4
+Only `_check_stop_before`'s own gating logic is unit-tested here (its 7
 call sites are exercised end to end by the CI diag steps themselves,
 which real win32 CI is the only environment that can meaningfully run --
-see docs/modules/process.md's "Round 18" paragraph)."""
+see docs/modules/process.md's "Round 18"/"Round 19" paragraphs)."""
 
 from __future__ import annotations
 
@@ -43,6 +46,9 @@ class TestCheckStopBefore:
             for point in check_mod._CHECK_STOP_POINTS
         }
         assert results == {
+            "entry": False,
+            "console-scope": False,
+            "admission": False,
             "lock": False,
             "detect": False,
             "tasks": True,
@@ -60,14 +66,22 @@ class TestCheckStopBefore:
             assert check_mod._check_stop_before(point) is False
 
     # frob:tests \
-    # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_all_four_points_ar\
-    # e_distinct_and_ordered
-    def test_all_four_points_are_distinct_and_ordered(self) -> None:
-        """Sanity-pins the exact 4-point set/order this ticket's CI diag
-        sub-variants each name via FROB_CHECK_STOP_BEFORE=<point> -- a
-        renamed/reordered/added point here without updating the workflow
-        would silently desync the two."""
-        assert check_mod._CHECK_STOP_POINTS == ("lock", "detect", "tasks", "submit")
+    # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_all_seven_points_a\
+    # re_distinct_and_ordered
+    def test_all_seven_points_are_distinct_and_ordered(self) -> None:
+        """Sanity-pins the exact 7-point set/order this ticket family's
+        CI diag sub-variants each name via FROB_CHECK_STOP_BEFORE=<point>
+        -- a renamed/reordered/added point here without updating the
+        workflow would silently desync the two."""
+        assert check_mod._CHECK_STOP_POINTS == (
+            "entry",
+            "console-scope",
+            "admission",
+            "lock",
+            "detect",
+            "tasks",
+            "submit",
+        )
 
     # frob:tests \
     # tests/unit/test_check_stop_before.py::TestCheckStopBefore.test_rejects_an_unknown\
@@ -79,11 +93,50 @@ class TestCheckStopBefore:
 
 class TestRunCheckHonorsStopBefore:
     """End-to-end: `run_check` itself actually short-circuits at each of
-    the 4 named points instead of only `_check_stop_before` reporting
+    the 7 named points instead of only `_check_stop_before` reporting
     true in isolation -- exercised against a bare `tmp_path` (no git
     init, no pyproject.toml), the same fixture shape `TestRunCheck.
     test_all_stages_skipped_returns_empty_result_for_root` in
     `test_check.py` already proves `run_check` tolerates."""
+
+    # frob:tests \
+    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_entry_poi\
+    # nt_returns_empty_result_before_any_context_manager
+    def test_entry_point_returns_empty_result_before_any_context_manager(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3683: "entry" is the earliest point this module can
+        instrument -- before even the (default off) console-ctrl scope
+        enters."""
+        monkeypatch.setenv(check_mod.FROB_CHECK_STOP_BEFORE_ENV, "entry")
+        result = run_check(tmp_path)
+        assert isinstance(result, CheckResult)
+        assert result.path == str(tmp_path)
+        assert result.results == []
+
+    # frob:tests \
+    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_console_s\
+    # cope_point_returns_empty_result_before_admission_budget
+    def test_console_scope_point_returns_empty_result_before_admission_budget(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv(check_mod.FROB_CHECK_STOP_BEFORE_ENV, "console-scope")
+        result = run_check(tmp_path)
+        assert isinstance(result, CheckResult)
+        assert result.path == str(tmp_path)
+        assert result.results == []
+
+    # frob:tests \
+    # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_admission\
+    # _point_returns_empty_result_before_derived_state_lock
+    def test_admission_point_returns_empty_result_before_derived_state_lock(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv(check_mod.FROB_CHECK_STOP_BEFORE_ENV, "admission")
+        result = run_check(tmp_path)
+        assert isinstance(result, CheckResult)
+        assert result.path == str(tmp_path)
+        assert result.results == []
 
     # frob:tests \
     # tests/unit/test_check_stop_before.py::TestRunCheckHonorsStopBefore.test_lock_poin\

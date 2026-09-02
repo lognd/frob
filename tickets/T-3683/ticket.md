@@ -1,7 +1,7 @@
 ---
 id: T-3683
 title: 'win32 round 19: pre-lock stop points + mid-run watchdog'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-01'
