@@ -2,7 +2,7 @@
 id: T-3642
 title: 'post-land sweep regression from T-3596: 2 new (rule, file) identit(ies), 2
   finding(s) (LARGE001)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-01'
@@ -17,6 +17,10 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/refactor/_scan.py
 - src/frob/refactor/_verify.py
+- docs/commands/refactor.md
+- tests/test_refactor.py
+- src/frob/refactor/_scan_repoint.py
+- src/frob/refactor/_verify_import.py
 findings:
 - - LARGE001
   - src/frob/refactor/_scan.py
@@ -26,6 +30,38 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/commands/refactor.md
+  reason: 'SCOPE002: doc/test coverage closure for the split target packages, plus
+    under-captured private-helper call edges into the new sibling modules this LARGE001
+    split created'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: tests/test_refactor.py
+  reason: 'SCOPE002: doc/test coverage closure for the split target packages, plus
+    under-captured private-helper call edges into the new sibling modules this LARGE001
+    split created'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: src/frob/refactor/_scan_repoint.py
+  reason: 'SCOPE002: doc/test coverage closure for the split target packages, plus
+    under-captured private-helper call edges into the new sibling modules this LARGE001
+    split created'
+  actor: logan
+  at: '2026-09-01'
+- op: add
+  glob: src/frob/refactor/_verify_import.py
+  reason: 'SCOPE002: doc/test coverage closure for the split target packages, plus
+    under-captured private-helper call edges into the new sibling modules this LARGE001
+    split created'
+  actor: logan
+  at: '2026-09-01'
+evidence:
+- tests/test_refactor.py::TestRunSplit::test_split_moves_symbols_and_leaves_reexport_shim
+- tests/test_refactor.py::TestVerify::test_check_delta_uses_current_interpreter
 designated_repro_test: null
 threat: null
 component: null
@@ -44,7 +80,7 @@ New (rule, file) identit(ies) filed here:
 
 Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
 
-- LARGE001  src/frob/refactor/_scan.py  -> attributed to T-3596 (commit 4fb806e3d03e, already closed/dropped -- filed below) via src/frob/refactor/_scan.py::_bare_name_repoint_op
+- LARGE001  src/frob/refactor/_scan.py  -> attributed to T-3596 (commit 4fb806e3d03e, already closed/dropped -- filed below) via src/frob/refactor/_scan_repoint.py::_bare_name_repoint_op
 - LARGE001  src/frob/refactor/_verify.py  -> attributed to T-3596 (commit 4fb806e3d03e, already closed/dropped -- filed below) via src/frob/refactor/_verify.py::_BUILTIN_AND_DUNDER_NAMES
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
