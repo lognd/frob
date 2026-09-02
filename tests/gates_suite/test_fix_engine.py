@@ -2951,3 +2951,48 @@ class TestFixEngineTierC:
         root.mkdir(parents=True)
         snapshot = self._snap(root)
         assert apply_tier_c_fixits(root, snapshot, ()) == []
+
+
+# frob:ticket T-3698
+class TestPidAlive:
+    """`frob.gates._fix_engine_shared._pid_alive`: T-3698 replaced its
+    direct `os.kill(pid, 0)` call (the same win32 Ctrl+C-broadcast
+    footgun T-3686 fixed in `frob.check._pid_alive`) with delegation to
+    `frob.process._pid_liveness.pid_alive`."""
+
+    def test_pid_alive_delegates_to_shared_process_liveness_probe(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine_shared.py::_pid_alive kind="unit"
+        from frob.gates import _fix_engine_shared
+        from frob.process import _pid_liveness
+
+        calls: list[int] = []
+        monkeypatch.setattr(
+            _pid_liveness, "pid_alive", lambda pid: calls.append(pid) or True
+        )
+
+        def _forbidden_kill(pid: int, sig: int) -> None:
+            raise AssertionError(
+                "_fix_engine_shared._pid_alive must not call os.kill"
+                " directly -- it must delegate to"
+                " frob.process._pid_liveness.pid_alive"
+            )
+
+        monkeypatch.setattr(_fix_engine_shared.os, "kill", _forbidden_kill)
+        assert _fix_engine_shared._pid_alive(4242) is True
+        assert calls == [4242]
+
+    def test_pid_alive_true_for_self(self) -> None:
+        # frob:tests src/frob/gates/_fix_engine_shared.py::_pid_alive kind="unit"
+        import os
+
+        from frob.gates._fix_engine_shared import _pid_alive
+
+        assert _pid_alive(os.getpid()) is True
+
+    def test_pid_alive_false_for_implausible_pid(self) -> None:
+        # frob:tests src/frob/gates/_fix_engine_shared.py::_pid_alive kind="unit"
+        from frob.gates._fix_engine_shared import _pid_alive
+
+        assert _pid_alive(999_999_999) is False

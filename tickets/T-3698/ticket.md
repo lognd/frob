@@ -1,7 +1,7 @@
 ---
 id: T-3698
 title: os.kill(pid, 0) win32 footgun still live in gates/_fix_engine_shared.py::_pid_alive
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -26,6 +26,10 @@ scope_changes:
   reason: adding regression test for the _pid_alive delegation fix
   actor: logan
   at: '2026-09-02'
+evidence:
+- tests/gates_suite/test_fix_engine.py::TestPidAlive::test_pid_alive_delegates_to_shared_process_liveness_probe
+- tests/gates_suite/test_fix_engine.py::TestPidAlive::test_pid_alive_true_for_self
+- tests/gates_suite/test_fix_engine.py::TestPidAlive::test_pid_alive_false_for_implausible_pid
 designated_repro_test: null
 acceptance:
 - text: 'Given frob.gates._fix_engine_shared._pid_alive, when a win32-shaped test
@@ -33,7 +37,10 @@ acceptance:
     never calls os.kill and instead delegates to frob.process._pid_liveness.pid_alive
     (before: test calling os.kill / after: test proves no os.kill call and correct
     liveness result via the delegated probe)'
-  evidence: []
+  evidence:
+  - tests/gates_suite/test_fix_engine.py::TestPidAlive::test_pid_alive_delegates_to_shared_process_liveness_probe
+  - tests/gates_suite/test_fix_engine.py::TestPidAlive::test_pid_alive_true_for_self
+  - tests/gates_suite/test_fix_engine.py::TestPidAlive::test_pid_alive_false_for_implausible_pid
 threat: null
 component: null
 anchor: false

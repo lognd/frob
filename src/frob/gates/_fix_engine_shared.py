@@ -28,33 +28,34 @@ from frob.tickets._store import atomic_write
 _log = logging.getLogger(__name__)
 
 
-# frob:ticket T-3526
-# frob:waive PLATFORM002 reason="T-3698: this os.kill(pid, 0) is the SAME win32 \
-# Ctrl+C-broadcast footgun T-3686 fixed in frob.check._pid_alive, still live here -- \
-# disclosed and tracked, not silently ignored; fixing it (delegate to \
-# frob.process._pid_liveness.pid_alive, the same fix T-3686 applied) is out of \
-# T-3696's detector-only scope and is its own ticket"
+# frob:ticket T-3698
+# frob:tests tests/gates_suite/test_fix_engine.py::TestPidAlive.test_pid_alive_delegates_to_shared_process_liveness_probe  # noqa: E501
 def _pid_alive(pid: int) -> bool:
-    """Whether `pid` is a live process, best-effort -- a local copy of
-    `frob.check._pid_alive` (T-3256's own registry-reaping heuristic):
-    `os.kill(pid, 0)` sends no signal, only probes existence. A
-    permission error still means the process exists (just not ours to
-    signal); any other OSError (e.g. an invalid pid) reads as dead
-    rather than raising. Not imported from `frob.check` because that
-    package imports `frob.graph`, which imports `frob.check._memo`, and
-    `frob.gates` sits below both in this repo's own layering rule
-    (`docs/rework.md`) -- importing back up would cycle, the same
-    reasoning `_origin_site` in `_fix_engine.py` already documents for
-    its own local copy."""
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    except OSError:
-        return False
-    return True
+    """Whether `pid` is a live process, best-effort -- delegates to
+    `frob.process._pid_liveness.pid_alive` (T-3018/T-3003/T-3191) rather
+    than a second, in-module `os.kill(pid, 0)` implementation.
+
+    T-3698: this used to be a local copy of the pre-T-3686
+    `frob.check._pid_alive`, calling `os.kill(pid, 0)` directly on every
+    platform -- the SAME win32 Ctrl+C-broadcast footgun T-3686 fixed
+    there: on win32, CPython's `os.kill` maps signal `0` to `signal.
+    CTRL_C_EVENT` and implements it via `GenerateConsoleCtrlEvent`,
+    broadcasting a real Ctrl+C to every process in the caller's console
+    process group, including the running gate-execution process itself.
+    Not imported from `frob.check` because that package imports
+    `frob.graph`, which imports `frob.check._memo`, and `frob.gates`
+    sits below both in this repo's own layering rule (`docs/
+    rework.md`) -- importing back up would cycle. `frob.process`,
+    however, sits below `frob.gates` in that same rule (the same
+    module `frob.mutate._journal`/`frob.tickets._land` already delegate
+    to, and T-3686 pointed `frob.check._pid_alive` at too), so
+    delegating here removes the duplicate unsafe copy this ticket
+    found, rather than adding a second, parallel-but-different win32
+    backend (DUP001) -- imported LOCALLY to keep this module's own
+    top-level import surface unchanged."""
+    from frob.process._pid_liveness import pid_alive
+
+    return pid_alive(pid)
 
 
 # frob:ticket T-1348
