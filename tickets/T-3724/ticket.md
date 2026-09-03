@@ -1,7 +1,7 @@
 ---
 id: T-3724
 title: DOC006 scans free-text scope-change reason strings for pointer syntax
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-03'
