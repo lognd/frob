@@ -14,10 +14,19 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- .github/workflows/ci.yml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .github/workflows/ci.yml
+  reason: raise win32 FROB_TEST_TOTAL_BUDGET_SECONDS + Wait-Process budget; xdist
+    confirmed safe (run 33804740730 showed workers running, no saga, just slow)
+  actor: logan
+  at: '2026-09-03'
 designated_repro_test: null
 threat: null
 component: null
