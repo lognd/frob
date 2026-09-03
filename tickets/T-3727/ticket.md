@@ -1,7 +1,7 @@
 ---
 id: T-3727
 title: GATERULE001 fires on downstream repos own lint rule-ids not waivable (apollo)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -17,6 +17,7 @@ scope:
 - src/frob/gates/_rule_id_scan.py
 - tests/gates/test_rule_id_scan_branches.py
 - docs/modules/gates.md
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,11 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: include the GATERULE001 branch-coverage test file and its own doc for the
     is_frob_own_repo scoping fix
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: frob.lock
+  reason: frob ack writes acknowledgment digests into frob.lock
   actor: logan
   at: '2026-09-03'
 designated_repro_test: null
