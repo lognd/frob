@@ -723,3 +723,28 @@ class TestReconcileUnlandedBranchWork:
         assert _load_unlanded_summary_cache(repo) is None
         status = _run(["git", "status", "--porcelain"], repo).stdout
         assert ".frob" not in status
+
+    # frob:ticket T-3731
+    def test_reconcile_does_not_hang_with_many_branches(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3731: the CI-blocking hang -- `frob ticket reconcile --apply`
+        ran 36+ minutes (run 33721091819) because the unlanded-branch-work
+        scan (`_unlanded_branch_work`) iterated every local branch with no
+        cap, and this repo carries 1578 of them. A budget of `0` (forcing
+        an immediate cutoff, the same idea `wait_timeout_s=0` already uses
+        elsewhere in this test module to avoid burning real wall-clock
+        time) proves `reconcile` still returns a well-formed `Ok` report
+        instead of hanging, even when the scan is cut short before it
+        finishes."""
+        import frob.tickets._unlanded as unlanded_mod
+
+        monkeypatch.setattr(unlanded_mod, "_UNLANDED_SCAN_BUDGET_S", 0.0)
+        _write_finished_ticket_on_branch(repo, "runner-wiring", "T-1315")
+
+        result = reconcile(repo)
+
+        assert result.is_ok
+        # The budget fired before the scan reached this branch's finding
+        # -- proving the cutoff is real, not merely present and unused.
+        assert result.danger_ok.unlanded_branch_work == ()

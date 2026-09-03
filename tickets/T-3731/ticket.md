@@ -1,7 +1,7 @@
 ---
 id: T-3731
 title: reconcile hangs scanning all local branches (unbounded unlanded-work scan)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -22,7 +22,26 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget::test_budget_of_zero_scans_no_branches
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget::test_a_generous_budget_still_scans_everything
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget::test_the_default_budget_is_a_small_finite_number
+- tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork::test_reconcile_does_not_hang_with_many_branches
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget::test_unparseable_override_falls_back_to_default_not_unbounded
+  new_node: tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget::test_the_default_budget_is_a_small_finite_number
+  reason: 'T-3731: dropped env-var override; replaced with a module-level constant
+    tests monkeypatch directly, so the two env-var tests collapsed into one default-value
+    assertion'
+  actor: logan
+  at: '2026-09-03'
+- old_node: tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget::test_no_override_uses_the_finite_default
+  new_node: tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget::test_the_default_budget_is_a_small_finite_number
+  reason: 'T-3731: dedupe -- same collapsed env-var-removal rebind as the other stale
+    env-var test id'
+  actor: logan
+  at: '2026-09-03'
 threat: null
 component: null
 anchor: false

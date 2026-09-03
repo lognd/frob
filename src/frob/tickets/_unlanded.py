@@ -109,6 +109,40 @@ _TICKET_DIRECTIVE_RE = re.compile(r"frob:ticket\s+(T-[0-9A-Za-z][0-9A-Za-z-]*)")
 # file is the gap this signal exists to surface.
 _ACTIVE_STATE = "in-progress"
 
+# frob:ticket T-3731
+# Wall-clock budget (seconds) `_unlanded_branch_work` allows itself for its
+# whole per-branch scan loop before cutting the remaining branches -- the
+# MEASURED CI hang (run 33721091819, ubuntu+mac, 2026-09-03): `frob ticket
+# reconcile --apply` ran 36+ minutes and hit the 60-minute job timeout,
+# because this scan iterates EVERY local branch (`_local_branch_names`)
+# with no cap at all. This repo carries 1578 local branches today (T-2125's
+# own docstring already flagged 644 as a hotspot needing the git-grep
+# batching fix it made -- the branch COUNT itself, not just the per-branch
+# per-ticket multiplication T-2125 fixed, is the unbounded dimension left
+# standing). Per branch this loop still spawns a three-dot diff, a
+# ls-tree, a git-grep, and potentially one `git show` + `frob.lang.
+# parse_file` per changed non-`tickets/**` file (T-1948's directive-anchor
+# signal) -- with 1500+ branches that aggregate cost is minutes, exactly
+# matching the observed hang.
+#
+# A wall-clock budget (rather than a bare branch-count cap) bounds the
+# ACTUAL cost this loop can incur regardless of how expensive any single
+# branch's own scan turns out to be (a branch with many changed non-
+# ticket files pays far more per-branch cost than one with none) --
+# reconcile's own contract (`ReconcileReport.unlanded_branch_work`'s
+# docstring) already treats this class as best-effort/report-only, so
+# returning a partial scan under budget pressure degrades the same way
+# every other read in this module already does on a git failure: log
+# loudly, keep going with what was measured, never hang the caller.
+# Kept as a MODULE-LEVEL variable (not a bare local constant) so a test can
+# monkeypatch it directly (`monkeypatch.setattr(_unlanded,
+# "_UNLANDED_SCAN_BUDGET_S", 0.0)`) to force an immediate cutoff without
+# burning real wall-clock time -- deliberately NOT an env-var override:
+# reading `os.environ` here would need its own `env.read` capability grant
+# on `tickets_ledger` (`design/frob.strata`) for a knob only tests need,
+# which is unnecessary surface for production code to carry.
+_UNLANDED_SCAN_BUDGET_S = 20.0
+
 
 class _UnlandedWork(BaseModel):
     """One ticket that reads finished on a branch (`signal`) but is NOT
@@ -718,6 +752,10 @@ def _unlanded_findings_for_branch(
     return tuple(findings)
 
 
+# frob:ticket T-3731
+# frob:tests tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_budget_of_zero_scans_no_branches kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_a_generous_budget_still_scans_everything kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_reconcile_does_not_hang_with_many_branches kind="unit"  # noqa: E501
 def _unlanded_branch_work(root: Path) -> tuple[_UnlandedWork, ...]:
     """Every `_UnlandedWork` finding across EVERY local branch under `root`
     except `main` itself (T-1934 acceptance 1/2/3) -- the read-only,
@@ -741,12 +779,40 @@ def _unlanded_branch_work(root: Path) -> tuple[_UnlandedWork, ...]:
     touched by this change) -- no checkout, no test run, matching the
     ticket's own working prototype's original cost shape, just without the
     per-(branch, ticket) multiplication on the main-state resolution
-    specifically."""
+    specifically.
+
+    T-3731: the per-branch loop itself is now bounded by a wall-clock
+    budget (`_UNLANDED_SCAN_BUDGET_S`, seconds) -- T-2125's fix above
+    bounded the per-TICKET cost of this loop but left the BRANCH count
+    itself unbounded; with 1578 local branches (measured 2026-09-03) this
+    loop alone was the confirmed cause of `frob ticket reconcile --apply`
+    hanging 36+ minutes in CI (run 33721091819) until the job's own
+    60-minute timeout killed it. A budget cutoff returns a PARTIAL result
+    (logged loudly) rather than continuing an unbounded scan -- consistent
+    with this whole module's existing best-effort, log-and-degrade posture
+    on every other git failure."""
+    import time
+
     leases = read_all_leases(root)
     main_states = _all_ticket_states_on_main(root)
+    branches = _local_branch_names(root)
+    deadline = time.monotonic() + _UNLANDED_SCAN_BUDGET_S
     findings: list[_UnlandedWork] = []
-    for branch in _local_branch_names(root):
+    scanned = 0
+    for branch in branches:
+        if time.monotonic() >= deadline:
+            _log.warning(
+                "tickets: unlanded-work scan: %.1fs budget exhausted after "
+                "%d/%d local branches under %s (T-3731) -- returning a "
+                "partial result rather than continuing an unbounded scan",
+                _UNLANDED_SCAN_BUDGET_S,
+                scanned,
+                len(branches),
+                root,
+            )
+            break
         findings.extend(
             _unlanded_findings_for_branch(root, branch, leases, main_states)
         )
+        scanned += 1
     return tuple(findings)

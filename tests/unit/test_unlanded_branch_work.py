@@ -668,3 +668,80 @@ class TestBranchOwnChangedFilesConsolidation:
         _branch(repo, "just-cut")
         result = _branch_own_changed_files(repo, "just-cut")
         assert result == frozenset()
+
+
+# frob:ticket T-3731
+class TestUnlandedBranchWorkScanBudget:
+    """T-3731: `frob ticket reconcile --apply` hung 36+ minutes in CI (run
+    33721091819, ubuntu+mac) because `_unlanded_branch_work`'s per-branch
+    loop had no cap at all -- with this repo's own 1578 local branches it
+    ran long enough to hit the job's 60-minute timeout. These pin the
+    fix: a wall-clock budget (`_UNLANDED_SCAN_BUDGET_S`) that cuts the
+    scan short, returns a partial result, and logs loudly rather than
+    hanging the caller."""
+
+    # frob:tests \
+    # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_bu\
+    # dget_of_zero_scans_no_branches
+    def test_budget_of_zero_scans_no_branches(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """A budget of `0` expires before the loop's first iteration --
+        every branch is skipped, proving the cutoff actually bounds work
+        rather than merely bounding it after the fact."""
+        import frob.tickets._unlanded as unlanded_mod
+
+        monkeypatch.setattr(unlanded_mod, "_UNLANDED_SCAN_BUDGET_S", 0.0)
+        for b in range(5):
+            branch_name = f"agent-branch-{b}"
+            _branch(repo, branch_name)
+            tid = f"T-91{b}"
+            _write_ticket_md(repo, tid, state="in-progress")
+            _write_done_report(repo, tid)
+            _commit_all(repo, f"finish {tid} on {branch_name}")
+            _back_to_main(repo)
+
+        with caplog.at_level("WARNING"):
+            findings = _unlanded_branch_work(repo)
+
+        assert findings == ()
+        assert any("budget exhausted" in record.message for record in caplog.records), (
+            "expected a budget-exhausted warning when the cutoff fires"
+        )
+
+    # frob:tests \
+    # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_a_\
+    # generous_budget_still_scans_everything
+    def test_a_generous_budget_still_scans_everything(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A budget far larger than the fixture's real cost scans every
+        branch, unchanged from the pre-T-3731 behavior -- the cutoff must
+        never truncate a scan that was going to finish comfortably within
+        budget anyway."""
+        import frob.tickets._unlanded as unlanded_mod
+
+        monkeypatch.setattr(unlanded_mod, "_UNLANDED_SCAN_BUDGET_S", 300.0)
+        for b in range(3):
+            branch_name = f"agent-branch-{b}"
+            _branch(repo, branch_name)
+            tid = f"T-92{b}"
+            _write_ticket_md(repo, tid, state="in-progress")
+            _write_done_report(repo, tid)
+            _commit_all(repo, f"finish {tid} on {branch_name}")
+            _back_to_main(repo)
+
+        findings = _unlanded_branch_work(repo)
+        assert len(findings) == 3
+
+    # frob:tests \
+    # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWorkScanBudget.test_th\
+    # e_default_budget_is_a_small_finite_number
+    def test_the_default_budget_is_a_small_finite_number(self) -> None:
+        """The module's own out-of-the-box default is small and finite --
+        the scan is bounded without any caller having to configure
+        anything, closing the CI hang at the source rather than only when
+        a test (or a future caller) remembers to lower it."""
+        from frob.tickets._unlanded import _UNLANDED_SCAN_BUDGET_S
+
+        assert 0 < _UNLANDED_SCAN_BUDGET_S <= 60.0
