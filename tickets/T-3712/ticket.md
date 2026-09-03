@@ -1,7 +1,7 @@
 ---
 id: T-3712
 title: make T-2691 DOC006 regression test self-contained
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -19,6 +19,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_ticket_2691_doc006.py::TestTicket2691Doc006Regression::test_real_ticket_file_not_flagged
 designated_repro_test: null
 threat: null
 component: null
