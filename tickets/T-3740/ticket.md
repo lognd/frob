@@ -28,6 +28,15 @@ body_changes:
   at: '2026-09-03'
   old_length: 0
   new_length: 1890
+- mode: append
+  reason: 'waive BUG002 confirmatory-only evidence: this is a config value fix, not
+    a wired code defect'
+  actor: logan
+  at: '2026-09-03'
+  old_length: 1889
+  new_length: 2671
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_sets_frob_test_midrun_watchdog_seconds
 designated_repro_test: null
 threat: null
 component: null
@@ -70,3 +79,6 @@ win32 suite.
    budgets, preserving the invariant that the midrun threshold stays inside
    the step budget so it fires before the external Wait-Process timeout.
 5. Run the matrix test file and `frob check --ticket` clean, then land.
+
+
+frob:waive BUG002 reason="this ticket fixes a CI budget configuration value (a numeric constant in ci.yml), not a code defect with a wired caller path a test can exercise before/after; the bound evidence test asserts the workflow's own declared config values are self-consistent (midrun watchdog threshold stays inside the Wait-Process budget), which is true both before and after this change by construction -- there is no code path to make it FAIL at the parent commit and PASS at the fix without asserting a specific numeric constant equals its old value, which is not a meaningful regression test. The real verification for this ticket is the actual CI run completing under the new budget, which is observed in production CI, not reproducible in this repo's own test suite."
