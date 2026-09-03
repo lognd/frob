@@ -17,13 +17,21 @@ scope:
 - src/frob/check/**
 - src/frob/process/**
 - tests/conftest.py
-- .github/workflows/ci.yml
 - tests/unit/test_conftest_midrun_watchdog.py
 - tests/test_ci_workflow_matrix.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: .github/workflows/ci.yml
+  reason: T-3725 already holds an in-progress lease on ci.yml (doctor exit-1 fix);
+    this ticket's ci.yml diagnostics (budget var, TOTAL_BUDGET env) can be verified
+    via git-checked-out content without an active lease, and re-added if a ci.yml
+    edit is needed once T-3725 lands
+  actor: logan
+  at: '2026-09-03'
 designated_repro_test: null
 threat: null
 component: null
