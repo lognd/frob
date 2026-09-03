@@ -16,10 +16,25 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reconcile.py
 - src/frob/tickets/_unlanded.py
+- tests/test_ticket_reconcile.py
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_reconcile.py
+  reason: add doc target and evidence test file closure per scope-closure warnings
+    on ticket new
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: add doc target and evidence test file closure per scope-closure warnings
+    on ticket new
+  actor: logan
+  at: '2026-09-03'
 designated_repro_test: null
 threat: null
 component: null
