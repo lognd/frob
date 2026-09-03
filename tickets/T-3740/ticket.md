@@ -2,7 +2,7 @@
 id: T-3740
 title: 'raise win32 CI serial-suite budget: 1200s cap aborts a healthy, completing
   suite'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-03'
