@@ -5136,6 +5136,8 @@ _exclude_filtered_coverage = _coverage_exclude_filtered_coverage
 
 # frob:enforces CHK-GATE-TEST006
 # frob:enforces CHK-THEME-GITIGNORED-TRUST
+# frob:ticket T-3721
+# frob:tests tests/gates_suite/test_test_gate.py::TestTestGate.test_test006_remedy_points_at_frob_coverage_not_make  # noqa: E501
 def _test006_missing() -> tuple[Violation, ...]:
     """The TEST006 violation for a missing coverage stamp."""
     return (
@@ -5144,7 +5146,10 @@ def _test006_missing() -> tuple[Violation, ...]:
             severity=Severity.ERROR,
             file=".frob/coverage-stamp",
             line=0,
-            message="TEST006: no coverage stamp found; run: make coverage",
+            message=(
+                "TEST006: no coverage stamp found; run: "
+                "frob coverage --full --fail-on-degraded"
+            ),
         ),
     )
 

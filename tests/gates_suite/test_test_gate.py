@@ -1876,6 +1876,22 @@ class TestTestGate:
         violations = _test006(snap)
         assert any(v.rule == "TEST006" for v in violations)
 
+    def test_test006_remedy_points_at_frob_coverage_not_make(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test006_missing
+        # T-3721: the scaffold's Makefile ships no `coverage` target (its
+        # own comment says `frob coverage` is the interface), so TEST006's
+        # remedy text must never tell a user to run `make coverage` --
+        # it must name the frob-native verb the scaffold actually ships.
+        snap = _snapshot(tmp_path)
+        from frob.gates import _test006  # noqa: PLC0415
+
+        violations = _test006(snap)
+        (violation,) = (v for v in violations if v.rule == "TEST006")
+        assert "make coverage" not in violation.message
+        assert "frob coverage" in violation.message
+
     def test_test006_stale_stamp(self, tmp_path: Path) -> None:
         _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
         snap = _snapshot(tmp_path)

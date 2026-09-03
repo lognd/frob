@@ -1,7 +1,7 @@
 ---
 id: T-3721
 title: TEST006 remedy says make coverage but scaffold Makefile ships no coverage target
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -36,6 +36,8 @@ scope_changes:
   reason: evidence test file added by this ticket
   actor: logan
   at: '2026-09-03'
+evidence:
+- tests/gates_suite/test_test_gate.py::TestTestGate::test_test006_remedy_points_at_frob_coverage_not_make
 designated_repro_test: null
 threat: null
 component: null
