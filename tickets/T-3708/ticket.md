@@ -19,6 +19,7 @@ scope:
 - tests/test_lang.py
 - tests/vet_suite/test_scan_tree.py
 - src/frob/_daemon_timeout.py
+- docs/modules/lang.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,6 +41,12 @@ scope_changes:
   glob: src/frob/_daemon_timeout.py
   reason: own the new shared daemon-thread timeout util and the T-3708 regression
     tests added to both call sites' test files
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: docs/modules/lang.md
+  reason: AFFECT001 requires touching this ticket's affects()-closure doc when _run_parse_with_timeout
+    changes
   actor: logan
   at: '2026-09-02'
 designated_repro_test: null
