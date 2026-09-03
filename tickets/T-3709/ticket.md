@@ -16,12 +16,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/perf/**
 - pyproject.toml
-- tests/conftest.py
 - .github/workflows/ci.yml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/conftest.py
+  reason: T-3707 holds conftest.py lease; register pytest markers via pyproject.toml
+    ini_options instead
+  actor: logan
+  at: '2026-09-02'
 designated_repro_test: null
 threat: null
 component: null
