@@ -121,6 +121,28 @@ class TestCoverageStepUsesFrobNotMake:
         )
 
     # frob:tests .github/workflows/ci.yml
+    def test_stamp_baseline_is_bare_not_chunked_by_only(self) -> None:
+        """T-3740: the coverage-stamp step must run a single bare `frob
+        check --stamp-baseline` (no --only). A hand-maintained
+        `--stamp-baseline --only <group>` enumeration silently desyncs from
+        _stamp_baseline_gate_chunks(): once it stops covering every gate-id
+        the chunk accumulator never completes and .frob/baseline is never
+        written, yet every command still exits 0. A bare invocation runs
+        every chunk in one process and always stamps."""
+        text = (
+            Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+        ).read_text(encoding="utf-8")
+        assert "uv run frob check --stamp-baseline\n" in text, (
+            "the coverage-stamp step must invoke a single bare `uv run frob "
+            "check --stamp-baseline` (T-3740)"
+        )
+        assert "--stamp-baseline --only" not in text, (
+            "no step may chunk --stamp-baseline by --only -- that "
+            "enumeration desyncs from _stamp_baseline_gate_chunks() and "
+            "silently skips the actual baseline write (T-3740)"
+        )
+
+    # frob:tests .github/workflows/ci.yml
     def test_coverage_step_calls_frob_coverage_full(self) -> None:
         """The T-1366 coverage-stamp step's `run:` block must invoke the
         frob subcommand `make coverage` used to alias, not the make target

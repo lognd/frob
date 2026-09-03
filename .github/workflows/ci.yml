@@ -47,7 +47,7 @@ jobs:
     # this job-level ceiling -- 60 minutes keeps a >2x margin over the
     # 40-minute step budget without leaving a hang to run for hours
     # before anyone notices.
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -1506,13 +1506,19 @@ jobs:
           FROB_TEST_HARD_EXIT: "1"
           FROB_TEST_MIDRUN_WATCHDOG_SECONDS: "180"
           # T-3707 Part B: a suite that never stalls 180s at a stretch but
-          # sums past this step's own 1500s Wait-Process budget still gets
+          # sums past this step's own 3300s Wait-Process budget still gets
           # killed with zero diagnostic output (T-3692's finding) -- this
-          # wall-clock cap (comfortably under the 1500s step budget) hard-
+          # wall-clock cap (comfortably under the 3300s step budget) hard-
           # exits with the same thread/child inventory the stall watchdog
           # prints, so that class of silent timeout gets a real diagnostic
           # too.
-          FROB_TEST_TOTAL_BUDGET_SECONDS: "1200"
+          # T-3740: raised 1200 -> 3000. Once the win32 hang saga was fixed
+          # (T-3686/3708/3726/3730/3735/3738) the suite runs to completion
+          # for the first time, revealing the true single-threaded
+          # (-p no:xdist) runtime exceeds 1200s on the slow windows runner;
+          # nothing wedged (the 180s no-progress watchdog only armed, never
+          # fired). T-3741 tracks re-enabling xdist to bring this back down.
+          FROB_TEST_TOTAL_BUDGET_SECONDS: "3000"
         run: |
           # T-3692: two diagnostic additions, both env-var-expansion-proof
           # (curly-brace ${...} form throughout, matching macOS's own
@@ -1526,7 +1532,7 @@ jobs:
           # watchdog fires; conftest.py's own new FROB-TEST-MIDRUN-
           # WATCHDOG: armed line (T-3692) answers the python-side half.
           Write-Host "T-3692: FROB_TEST_MIDRUN_WATCHDOG_SECONDS=$($env:FROB_TEST_MIDRUN_WATCHDOG_SECONDS)"
-          ${budget} = 1500  # 25m, same budget/rationale as ubuntu's step above
+          ${budget} = 3300  # 55m: win32 runs the suite single-threaded (-p no:xdist), so it needs far more wall-clock than ubuntu's xdist run; the python-side FROB_TEST_TOTAL_BUDGET_SECONDS=3000 cap fires first with a diagnostic, this Wait-Process budget is the outer backstop (T-3740)
           $stdout = Join-Path $env:RUNNER_TEMP "pytest-stdout.log"
           $stderr = Join-Path $env:RUNNER_TEMP "pytest-stderr.log"
           $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-p","no:xdist","-v","--full-trace" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
@@ -1604,16 +1610,18 @@ jobs:
           uv run frob ticket reconcile --apply
           uv run frob doctor
           uv run frob coverage --full
-          uv run frob check --stamp-baseline --only gates-native
-          uv run frob check --stamp-baseline --only gates-security
-          uv run frob check --stamp-baseline --only test
-          uv run frob check --stamp-baseline --only drift --only coverage --only invariant \
-            --only policy --only doclink --only docanchor --only fuzz --only release \
-            --only decisions --only tickets --only refs --only registry --only compliance \
-            --only docblocks --only walk_lint --only excludehazard --only debt --only deprecated \
-            --only render_lint --only parse_failures --only lang_conformance \
-            --only lang_project_conformance --only scope --only prework --only fmt --only affect_drift \
-            --only ffi_boundary
+          # T-3740: a single bare `--stamp-baseline` (no --only) runs every
+          # gate chunk in one process and always (re)stamps .frob/baseline.
+          # The previous hand-maintained `--only <group>` enumeration
+          # duplicated _stamp_baseline_gate_chunks() and silently desynced:
+          # it covered only 40 of 68 expected gate-ids (missing
+          # win32_kill_signal, gates_schema, arch_schema, ... added since),
+          # so `covered < expected_union` stayed true forever, stamp_baseline
+          # was never called, every command exited 0, and .frob/baseline was
+          # never written -- caught only by the assertion below. Chunking
+          # exists solely for the agent foreground cap (T-0751), which does
+          # not apply to CI (this is the documented coordinator-only path).
+          uv run frob check --stamp-baseline
           uv run frob check --only test --json > /tmp/frob-test-recheck.json
           uv run python -c "
           import json, sys

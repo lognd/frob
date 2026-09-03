@@ -2,7 +2,7 @@
 id: T-3740
 title: 'raise win32 CI serial-suite budget: 1200s cap aborts a healthy, completing
   suite'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -37,6 +37,7 @@ body_changes:
   new_length: 2671
 evidence:
 - tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_sets_frob_test_midrun_watchdog_seconds
+- tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_stamp_baseline_is_bare_not_chunked_by_only
 designated_repro_test: null
 threat: null
 component: null
