@@ -24,11 +24,16 @@ from __future__ import annotations
 
 import atexit
 import concurrent.futures
+import concurrent.futures.thread
 import contextlib
 import json
 import logging
 import os
+import sys
+import threading
 import time
+import traceback
+import types
 from pathlib import Path
 from typing import Callable, Iterator
 
@@ -213,6 +218,84 @@ def _timing_atexit() -> None:
     `_exit_function`, registered by a module this ticket's scope does
     not cover) rather than in this module's own teardown code."""
     _timing_mark("atexit")
+    _timing_dump_thread_inventory()
+
+
+# frob:ticket T-3713
+# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_silent_when_disabled  # noqa: E501
+# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_lists_every_live_thread  # noqa: E501
+# frob:tests tests/unit/test_check_admission.py::TestTimingDebug.test_thread_inventory_dumps_stack_for_non_daemon_alive_thread  # noqa: E501
+def _timing_dump_thread_inventory() -> None:
+    """Round 24 of the win32 ~120s atexit-hang investigation (T-3686/
+    T-3707/T-3708): a no-op unless `_timing_debug_enabled()`, called from
+    `_timing_atexit` right after its own `FROB-CHECK-TIMING: atexit`
+    mark. T-3708 converted `frob.lang`'s and `frob.vet`'s timeout-abandon
+    `ThreadPoolExecutor` pattern to daemon threads, but CI run
+    33711053377 (T-3708 landed) still showed the full ~120s gap between
+    `submit` and `atexit` in the zero-tool-spawn (`FROB_DISABLE_EXEC`)
+    diag, proving a DIFFERENT non-daemon thread is still alive and being
+    joined by `concurrent.futures.thread`'s `atexit`-registered
+    `_python_exit` (which runs AFTER this callback, LIFO order -- see
+    `_timing_atexit`'s docstring) or by `threading`'s own shutdown join.
+    See T-3713's ticket body for the full design rationale.
+
+    Prints one `FROB-CHECK-ATEXIT-THREADS:` line naming every thread
+    `threading.enumerate()` still knows about (name/daemon/alive), then
+    (`_dump_one_thread_stack`) a call stack for each non-daemon thread
+    still alive -- exactly the kind that blocks interpreter shutdown --
+    and finally the size of `concurrent.futures.thread._threads_queues`,
+    the process-global registry `_python_exit` actually iterates, since
+    that (not `threading.enumerate()`) is the collection the hang lives
+    in if the cause is a `ThreadPoolExecutor` worker specifically.
+    """
+    if not _timing_debug_enabled():
+        return
+    current_thread = threading.current_thread()
+    frames = sys._current_frames()
+    _timing_atexit_print(
+        f"{threading.active_count()} thread(s) live, "
+        f"{len(concurrent.futures.thread._threads_queues)} ThreadPoolExecutor "
+        "worker(s) still registered for atexit join"
+    )
+    for t in threading.enumerate():
+        marker = " (current)" if t is current_thread else ""
+        _timing_atexit_print(
+            f"thread name={t.name!r} daemon={t.daemon} alive={t.is_alive()}{marker}"
+        )
+        if not t.daemon and t.is_alive() and t is not current_thread:
+            _timing_dump_one_thread_stack(t, frames)
+    for worker in list(concurrent.futures.thread._threads_queues):
+        _timing_atexit_print(
+            "registered ThreadPoolExecutor worker "
+            f"name={worker.name!r} daemon={worker.daemon} alive={worker.is_alive()}"
+        )
+
+
+# frob:ticket T-3713
+def _timing_atexit_print(line: str) -> None:
+    """`print` a `FROB-CHECK-ATEXIT-THREADS:`-prefixed `line`, flushed --
+    the one print call site `_timing_dump_thread_inventory`'s several
+    call sites share, so a single RENDER001 waiver covers all of them."""
+    # frob:waive RENDER001 reason="T-3713: see _timing_mark's own RENDER001 waiver -- \
+    # same off-by-default diagnostic knob, greppable verbatim." permanent="true"
+    print(f"FROB-CHECK-ATEXIT-THREADS: {line}", flush=True)
+
+
+# frob:ticket T-3713
+def _timing_dump_one_thread_stack(
+    t: threading.Thread, frames: dict[int, types.FrameType]
+) -> None:
+    """Print `t`'s current call stack (via `sys._current_frames()` +
+    `traceback.format_stack`), or a fallback line when no frame is
+    available -- factored out of `_timing_dump_thread_inventory` so that
+    function's own body stays a flat per-thread dispatch loop."""
+    stack = frames.get(t.ident) if t.ident is not None else None
+    if stack is None:
+        _timing_atexit_print(f"thread name={t.name!r} -- no frame (already exiting)")
+        return
+    _timing_atexit_print(
+        f"thread name={t.name!r} stack:\n" + "".join(traceback.format_stack(stack))
+    )
 
 
 atexit.register(_timing_atexit)

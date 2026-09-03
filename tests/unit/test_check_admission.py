@@ -552,12 +552,14 @@ class TestAdmissionRegistryAnchor:
         assert not (shared_dir / "999999999.json").exists()
 
 
+# frob:ticket T-3713
 class TestTimingDebug:
     """T-3689: `FROB_CHECK_TIMING_DEBUG`'s env-gate and its `_timing_mark`
     breadcrumb -- the sibling instrumentation to `FROB_CHECK_STOP_BEFORE`
     that localizes the win32 122.7s post-T-3686 slowdown (CI run
     33615554440) by measuring elapsed time at each pipeline phase on a
-    run that completes instead of exiting early."""
+    run that completes instead of exiting early. T-3713 (round 24) added
+    the `_timing_dump_thread_inventory` tests below."""
 
     def test_disabled_by_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests src/frob/check/__init__.py::_timing_debug_enabled kind="unit"
@@ -618,3 +620,60 @@ class TestTimingDebug:
         out = capsys.readouterr().out
         elapsed_text = out.rstrip().removesuffix("s").rsplit(" at ", 1)[1]
         assert float(elapsed_text) >= 5.0
+
+    def test_thread_inventory_silent_when_disabled(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::_timing_dump_thread_inventory kind="unit"  # noqa: E501
+        monkeypatch.delenv(check_mod._FROB_CHECK_TIMING_DEBUG_ENV, raising=False)
+        check_mod._timing_dump_thread_inventory()
+        assert "FROB-CHECK-ATEXIT-THREADS" not in capsys.readouterr().out
+
+    def test_thread_inventory_lists_every_live_thread(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::_timing_dump_thread_inventory kind="unit"  # noqa: E501
+        # T-3713 round 24: names the exact hanging thread on the next win32
+        # CI run by dumping threading.enumerate() at atexit -- this test
+        # asserts every live thread (at minimum the current/main thread)
+        # shows up in the dump, by name.
+        monkeypatch.setenv(check_mod._FROB_CHECK_TIMING_DEBUG_ENV, "1")
+        check_mod._timing_dump_thread_inventory()
+        out = capsys.readouterr().out
+        assert "FROB-CHECK-ATEXIT-THREADS:" in out
+        import threading
+
+        for t in threading.enumerate():
+            assert f"name={t.name!r}" in out
+
+    def test_thread_inventory_dumps_stack_for_non_daemon_alive_thread(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::_timing_dump_thread_inventory kind="unit"  # noqa: E501
+        # T-3713 round 24: a non-daemon, still-alive thread is exactly the
+        # kind that blocks `_python_exit`'s atexit join -- assert its
+        # stack is dumped (not just its name/daemon/alive flags).
+        import threading
+
+        started = threading.Event()
+        release = threading.Event()
+
+        def _blocked() -> None:
+            started.set()
+            release.wait(timeout=5.0)
+
+        worker = threading.Thread(
+            target=_blocked, name="t-3713-test-non-daemon", daemon=False
+        )
+        worker.start()
+        try:
+            started.wait(timeout=5.0)
+            monkeypatch.setenv(check_mod._FROB_CHECK_TIMING_DEBUG_ENV, "1")
+            check_mod._timing_dump_thread_inventory()
+            out = capsys.readouterr().out
+            assert "name='t-3713-test-non-daemon' daemon=False alive=True" in out
+            assert "name='t-3713-test-non-daemon' stack:" in out
+            assert "_blocked" in out
+        finally:
+            release.set()
+            worker.join(timeout=5.0)

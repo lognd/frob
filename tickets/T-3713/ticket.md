@@ -1,7 +1,7 @@
 ---
 id: T-3713
 title: Instrument atexit thread inventory for win32 120s check hang
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -27,6 +27,10 @@ scope_changes:
   reason: regression tests for the new atexit thread-inventory dump live here
   actor: logan
   at: '2026-09-03'
+evidence:
+- tests/unit/test_check_admission.py::TestTimingDebug::test_thread_inventory_silent_when_disabled
+- tests/unit/test_check_admission.py::TestTimingDebug::test_thread_inventory_lists_every_live_thread
+- tests/unit/test_check_admission.py::TestTimingDebug::test_thread_inventory_dumps_stack_for_non_daemon_alive_thread
 designated_repro_test: null
 threat: null
 component: null
