@@ -20,6 +20,7 @@ scope:
 - tests/vet_suite/test_scan_tree.py
 - src/frob/_daemon_timeout.py
 - docs/modules/lang.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +48,13 @@ scope_changes:
   glob: docs/modules/lang.md
   reason: AFFECT001 requires touching this ticket's affects()-closure doc when _run_parse_with_timeout
     changes
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: design/frob.strata
+  reason: SYS102/SYS003 require registering the new src/frob/_daemon_timeout.py module
+    on the core node's code= glob (already-flowed-from by graphlang/vet/testsuite,
+    zero new Flow declarations needed)
   actor: logan
   at: '2026-09-02'
 designated_repro_test: null
