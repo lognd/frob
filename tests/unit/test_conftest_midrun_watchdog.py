@@ -137,6 +137,144 @@ class TestRunMidrunWatchdog:
         assert calls == []
 
 
+class TestTotalBudgetThresholdS:
+    """`_total_budget_threshold_s` (T-3707) -- same parse/validate shape
+    as `_midrun_watchdog_threshold_s`, its sibling env var."""
+
+    # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestTotalBudgetThresholdS.test_none_when_unset  # noqa: E501
+    def test_none_when_unset(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        module = _load_conftest()
+        monkeypatch.delenv(module.FROB_TEST_TOTAL_BUDGET_SECONDS_ENV, raising=False)
+        assert module._total_budget_threshold_s() is None
+
+    # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestTotalBudgetThresholdS.test_none_when_zero  # noqa: E501
+    def test_none_when_zero(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        module = _load_conftest()
+        monkeypatch.setenv(module.FROB_TEST_TOTAL_BUDGET_SECONDS_ENV, "0")
+        assert module._total_budget_threshold_s() is None
+
+    # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestTotalBudgetThresholdS.test_none_when_not_numeric  # noqa: E501
+    def test_none_when_not_numeric(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        module = _load_conftest()
+        monkeypatch.setenv(module.FROB_TEST_TOTAL_BUDGET_SECONDS_ENV, "soon")
+        assert module._total_budget_threshold_s() is None
+
+    # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestTotalBudgetThresholdS.test_parses_a_positive_value  # noqa: E501
+    def test_parses_a_positive_value(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        module = _load_conftest()
+        monkeypatch.setenv(module.FROB_TEST_TOTAL_BUDGET_SECONDS_ENV, "1200")
+        assert module._total_budget_threshold_s() == 1200.0
+
+
+class TestTotalBudgetExceeded:
+    """`_total_budget_exceeded` (T-3707) -- pure elapsed-time predicate
+    with no progress signal, unlike `_midrun_stall_detected`."""
+
+    # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestTotalBudgetExceeded.test_false_before_budget_elapsed  # noqa: E501
+    def test_false_before_budget_elapsed(self) -> None:
+        module = _load_conftest()
+        assert module._total_budget_exceeded(100.0, 0.0, 200.0) is False
+
+    # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestTotalBudgetExceeded.test_true_at_exactly_the_budget  # noqa: E501
+    def test_true_at_exactly_the_budget(self) -> None:
+        module = _load_conftest()
+        assert module._total_budget_exceeded(200.0, 0.0, 200.0) is True
+
+    # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestTotalBudgetExceeded.test_true_well_past_the_budget  # noqa: E501
+    def test_true_well_past_the_budget(self) -> None:
+        module = _load_conftest()
+        assert module._total_budget_exceeded(10_000.0, 0.0, 200.0) is True
+
+
+class TestRunMidrunWatchdogTotalBudget:
+    """`_run_midrun_watchdog` with `total_budget_s` armed (T-3707) --
+    fires the TOTAL-BUDGET hard-exit even while the suite is still
+    making progress (no stall), and independent of whether a stall
+    threshold is armed at all."""
+
+    # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestRunMidrunWatchdogTotalBudget.test_fires_total_budget_exit_with_no_stall_threshold_armed  # noqa: E501
+    def test_fires_total_budget_exit_with_no_stall_threshold_armed(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import threading
+        import time
+
+        module = _load_conftest()
+        # Simulate continuous progress: _last_progress_ts is "now", so
+        # the stall predicate (if it were armed) would never trip -- only
+        # the total-budget trigger can fire here.
+        module._last_progress_ts = time.time()
+        module._midrun_watchdog_started_ts = 0.0
+        calls: list[tuple] = []
+        monkeypatch.setattr(
+            module,
+            "_announce_total_budget_exceeded_and_hard_exit",
+            lambda config, now, started_ts, budget_s: calls.append(
+                (config, now, started_ts, budget_s)
+            ),
+        )
+        stop_event = threading.Event()
+        module._run_midrun_watchdog(
+            config=None,
+            stop_event=stop_event,
+            threshold_s=None,
+            total_budget_s=0.01,
+        )
+        assert len(calls) == 1
+        assert calls[0][3] == 0.01
+
+    # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestRunMidrunWatchdogTotalBudget.test_never_fires_when_total_budget_not_armed  # noqa: E501
+    def test_never_fires_when_total_budget_not_armed(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import threading
+
+        module = _load_conftest()
+        calls: list[int] = []
+        monkeypatch.setattr(
+            module,
+            "_announce_total_budget_exceeded_and_hard_exit",
+            lambda config, now, started_ts, budget_s: calls.append(1),
+        )
+        stop_event = threading.Event()
+        stop_event.set()
+        module._run_midrun_watchdog(
+            config=None,
+            stop_event=stop_event,
+            threshold_s=None,
+            total_budget_s=None,
+        )
+        assert calls == []
+
+
+class TestAnnounceTotalBudgetExceededAndHardExit:
+    """`_announce_total_budget_exceeded_and_hard_exit` (T-3707) --
+    os._exit is monkeypatched to record its argument instead of really
+    exiting, same posture as its stall-watchdog sibling test."""
+
+    # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestAnnounceTotalBudgetExceededAndHardExit.test_hard_exits_with_status_1_and_prints_the_inventory_line  # noqa: E501
+    def test_hard_exits_with_status_1_and_prints_the_inventory_line(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        module = _load_conftest()
+        calls: list[int] = []
+        monkeypatch.setattr(module.os, "_exit", calls.append)
+
+        class _FakeConfig:
+            class pluginmanager:  # noqa: N801 -- mirrors pytest.Config's own shape
+                @staticmethod
+                def get_plugin(name: str) -> None:
+                    return None
+
+        module._announce_total_budget_exceeded_and_hard_exit(
+            _FakeConfig(), 1250.0, 0.0, 1200.0
+        )
+        assert calls == [1]
+        out = capsys.readouterr().out
+        assert "SUITE-RESULT: TOTAL-BUDGET-EXCEEDED" in out
+        assert "FROB-TEST-HARD-EXIT:" in out
+
+
 class TestAnnounceMidrunStallAndHardExit:
     """`_announce_midrun_stall_and_hard_exit` -- os._exit is
     monkeypatched to record its argument instead of really exiting."""

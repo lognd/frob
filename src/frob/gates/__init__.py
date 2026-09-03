@@ -8241,7 +8241,16 @@ def _run_combined_jobs(
             )
     finally:
         if ppool is not None:
-            ppool.shutdown(wait=True)
+            # T-3707 (win32 round 23): cancel_futures=True is belt-and-
+            # suspenders, not a fix for a measured leak -- CI breadcrumbs
+            # (T-3692) proved this shutdown already returns fast and no
+            # worker/manager thread survives it (see this ticket's own
+            # regression test, TestProcessPoolGates::test_run_gates_
+            # leaves_no_live_pool_threads_or_children_behind). Added
+            # anyway so an exception path that reaches here with futures
+            # still queued (not yet started) cannot leave them pending
+            # against a pool about to be torn down.
+            ppool.shutdown(wait=True, cancel_futures=True)
 
     _store_pending_process_cache(root, raw, process_cache_pending)
 

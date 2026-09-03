@@ -374,14 +374,26 @@ def pytest_configure(config: pytest.Config) -> None:
     # WATCHDOG_SECONDS_ENV's own docstring for the mid-run wedge this
     # answers).
     midrun_threshold = _midrun_watchdog_threshold_s()
-    if midrun_threshold is not None:
+    # T-3707 Part B: the same watchdog thread also carries the
+    # total-elapsed-wall-clock trigger -- see FROB_TEST_TOTAL_BUDGET_
+    # SECONDS_ENV's docstring for why this needs to be a SEPARATE knob
+    # from the stall threshold above rather than reusing it (a stall
+    # detector and a wall-clock cap answer different questions and a
+    # suite may want either, both, or neither armed independently).
+    total_budget_threshold = _total_budget_threshold_s()
+    if midrun_threshold is not None or total_budget_threshold is not None:
         import time
 
         _midrun_watchdog_started_ts = time.time()
         _midrun_watchdog_stop = threading.Event()
         _midrun_watchdog_thread = threading.Thread(
             target=_run_midrun_watchdog,
-            args=(config, _midrun_watchdog_stop, midrun_threshold),
+            args=(
+                config,
+                _midrun_watchdog_stop,
+                midrun_threshold,
+                total_budget_threshold,
+            ),
             name="frob-midrun-watchdog",
             daemon=True,
         )
@@ -398,9 +410,14 @@ def pytest_configure(config: pytest.Config) -> None:
         # needs to fire.
         reporter = config.pluginmanager.get_plugin("terminalreporter")
         arm_line = (
-            f"FROB-TEST-MIDRUN-WATCHDOG: armed threshold={midrun_threshold:g}s "
+            f"FROB-TEST-MIDRUN-WATCHDOG: armed threshold="
+            f"{midrun_threshold if midrun_threshold is not None else 'unset'!s}s "
             f"(env {FROB_TEST_MIDRUN_WATCHDOG_SECONDS_ENV}="
-            f"{os.environ.get(FROB_TEST_MIDRUN_WATCHDOG_SECONDS_ENV)!r})"
+            f"{os.environ.get(FROB_TEST_MIDRUN_WATCHDOG_SECONDS_ENV)!r}) "
+            f"total_budget="
+            f"{total_budget_threshold if total_budget_threshold is not None else 'unset'!s}s "
+            f"(env {FROB_TEST_TOTAL_BUDGET_SECONDS_ENV}="
+            f"{os.environ.get(FROB_TEST_TOTAL_BUDGET_SECONDS_ENV)!r})"
         )
         if reporter is not None:
             reporter.write_line(arm_line)
@@ -655,6 +672,97 @@ def _midrun_watchdog_threshold_s() -> float | None:
     return value if value > 0 else None
 
 
+FROB_TEST_TOTAL_BUDGET_SECONDS_ENV = "FROB_TEST_TOTAL_BUDGET_SECONDS"
+"""T-3707 (win32 round 23, Part B): env-gated, unset/non-positive/non-
+numeric = disabled -- when set to a positive number of seconds, the same
+watchdog thread `_midrun_watchdog_threshold_s` arms also hard-exits once
+that many seconds have elapsed since the SUITE started, regardless of
+whether individual tests are still reporting progress. T-3683's own
+mid-run watchdog answers "no test call-phase progress for N seconds" --
+a *stall* detector -- but AM's T-3692 finding was that a suite making
+slow-but-CONTINUOUS progress (never stalling long enough to trip the
+180s mid-run threshold) can still sum past the external CI step's own
+1500s budget and get killed with zero diagnostic output, the exact
+"silent 1500s step timeout" this repo's whole watchdog lineage
+(T-3608/T-3675/T-3683) exists to prevent. This is a plain wall-clock
+cap with no progress signal involved, so it catches that class too."""
+
+
+# frob:waive WIRE001 reason="genuinely wired -- called directly by pytest_configure \
+# above (total_budget_threshold = _total_budget_threshold_s()), same call shape as its \
+# pre-existing sibling _midrun_watchdog_threshold_s; WIRE001 flags it anyway purely \
+# because it is new in this diff, not because the callgraph misses the call" \
+# follow_up="T-3381"
+def _total_budget_threshold_s() -> float | None:
+    """The configured `FROB_TEST_TOTAL_BUDGET_SECONDS` threshold, or
+    `None` if unset/non-positive/not a valid float (T-3707) -- disabled
+    by default, same parse/validate shape as `_midrun_watchdog_
+    threshold_s` (its sibling env var)."""
+    raw = os.environ.get(FROB_TEST_TOTAL_BUDGET_SECONDS_ENV, "")
+    if not raw:
+        return None
+    try:
+        value = float(raw)
+    except ValueError:
+        return None
+    return value if value > 0 else None
+
+
+# frob:waive WIRE001 reason="genuinely wired -- called only by _run_midrun_watchdog \
+# below, itself reached exclusively via threading.Thread(target=...), same class of \
+# gap this file's pre-existing T-3608 WIRE001 waivers already cover, not a direct \
+# in-repo call site" follow_up="T-3381"
+def _total_budget_exceeded(
+    now: float, suite_started_ts: float, budget_s: float
+) -> bool:
+    """Pure predicate (T-3707): true once `budget_s` seconds have elapsed
+    since `suite_started_ts` (the watchdog thread's own start time, used
+    as the whole-suite wall-clock baseline) -- unlike `_midrun_stall_
+    detected`, this has no progress signal in it at all: a suite making
+    slow-but-continuous progress still trips this the moment total
+    elapsed time crosses `budget_s`, which is the entire point (T-3692's
+    finding that the mid-run stall watchdog alone cannot catch that
+    shape)."""
+    return (now - suite_started_ts) >= budget_s
+
+
+# frob:waive WIRE001 reason="genuinely wired -- called only by _run_midrun_watchdog \
+# below, itself reached exclusively via threading.Thread(target=...), same class of \
+# gap this file's pre-existing T-3608 WIRE001 waivers already cover, not a direct \
+# in-repo call site" follow_up="T-3381"
+def _announce_total_budget_exceeded_and_hard_exit(
+    config: pytest.Config, now: float, suite_started_ts: float, budget_s: float
+) -> None:
+    """T-3707: the total-wall-clock twin of `_announce_midrun_stall_and_
+    hard_exit` -- prints a `SUITE-RESULT: TOTAL-BUDGET-EXCEEDED` line
+    plus the same `_describe_teardown_blockers()` inventory, flushes both
+    streams, then `os._exit(1)`s. Fires purely on elapsed wall-clock
+    time since `suite_started_ts`, independent of whether any test is
+    still making progress -- see `FROB_TEST_TOTAL_BUDGET_SECONDS_ENV`'s
+    docstring for why this exists as a THIRD, distinct trigger alongside
+    the mid-run stall watchdog and the external CI step timeout."""
+    elapsed = now - suite_started_ts
+    lines = [
+        f"SUITE-RESULT: TOTAL-BUDGET-EXCEEDED suite has run for "
+        f"{elapsed:.1f}s, at/past the {budget_s:g}s FROB_TEST_TOTAL_"
+        f"BUDGET_SECONDS wall-clock cap (T-3707) -- aborting now instead "
+        f"of waiting for the external CI step budget to kill this job "
+        f"with zero diagnostic output",
+        _describe_teardown_blockers(),
+        "SUITE-RESULT: exitstatus=1 collected=0 (partial, total-budget) "
+        "failed=0 (partial, total-budget)",
+    ]
+    reporter = config.pluginmanager.get_plugin("terminalreporter")
+    for line in lines:
+        if reporter is not None:
+            reporter.write_line(line)
+        else:  # pragma: no cover - defensive only, terminalreporter always registered
+            print(line)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(1)
+
+
 # frob:waive WIRE001 reason="genuinely wired -- called only by _run_midrun_watchdog \
 # below, itself reached exclusively via threading.Thread(target=...), same class of \
 # gap this file's pre-existing T-3608 _stall_detected/_announce_stall_and_abort \
@@ -713,21 +821,41 @@ def _announce_midrun_stall_and_hard_exit(
 # static callgraph can trace), same class of gap this file's pre-existing T-3608 \
 # _run_stall_watchdog WIRE001 waiver already covers" follow_up="T-3381"
 def _run_midrun_watchdog(
-    config: pytest.Config, stop_event: "threading.Event", threshold_s: float
+    config: pytest.Config,
+    stop_event: "threading.Event",
+    threshold_s: float | None,
+    total_budget_s: float | None = None,
 ) -> None:
     """T-3683: the background thread body `pytest_configure` starts
-    whenever `_midrun_watchdog_threshold_s()` is not `None`. Wakes every
-    `min(30.0, threshold_s / 3)` seconds (a finer poll than T-3608's
-    fixed 5s default, scaled to the caller's own threshold so a short
-    test-only threshold still gets several checks before firing) and
-    checks `_midrun_stall_detected` against whichever of `_last_
-    progress_ts`/`_midrun_watchdog_started_ts` is the more recent
-    baseline; the first time it fires, calls `_announce_midrun_stall_
-    and_hard_exit` and returns (the process is gone by then). `stop_
-    event` is set by `pytest_sessionfinish` on a normal end-of-run."""
+    whenever `_midrun_watchdog_threshold_s()`/`_total_budget_threshold_
+    s()` is not `None`. Wakes every `min(30.0, threshold_s / 3)` seconds
+    (a finer poll than T-3608's fixed 5s default, scaled to the
+    stall-detection threshold when one is armed so a short test-only
+    threshold still gets several checks before firing; falls back to a
+    flat 30s poll -- `threshold_s is None` -- when only the T-3707 total
+    budget is armed, since that check has no "3 checks before firing"
+    shape to scale against) and checks TWO independent triggers every
+    wake, in this order:
+
+    1. `_total_budget_exceeded` (T-3707), when `total_budget_s` is not
+       `None` -- elapsed wall-clock time since the watchdog thread's own
+       start (`_midrun_watchdog_started_ts`), with NO progress signal
+       involved at all. Checked FIRST because it is the coarser, more
+       final trigger: a suite that is genuinely still making progress
+       trips this the instant total elapsed time crosses the cap,
+       exactly the "slow-but-continuous-progress" shape T-3692 found
+       the stall watchdog blind to.
+    2. `_midrun_stall_detected` (T-3683), when `threshold_s` is not
+       `None` -- unchanged from before this ticket, checked against
+       whichever of `_last_progress_ts`/`_midrun_watchdog_started_ts` is
+       the more recent baseline.
+
+    The first one to fire calls its own `_announce_*_and_hard_exit` and
+    returns (the process is gone by then). `stop_event` is set by
+    `pytest_sessionfinish` on a normal end-of-run."""
     import time
 
-    poll_s = min(30.0, threshold_s / 3) if threshold_s > 0 else 30.0
+    poll_s = min(30.0, threshold_s / 3) if threshold_s else 30.0
     while not stop_event.wait(poll_s):
         now = time.time()
         baseline = _last_progress_ts
@@ -735,7 +863,16 @@ def _run_midrun_watchdog(
             baseline = _midrun_watchdog_started_ts
         if baseline is None:
             continue
-        if _midrun_stall_detected(now, baseline, threshold_s):
+        if total_budget_s is not None and _total_budget_exceeded(
+            now, _midrun_watchdog_started_ts or baseline, total_budget_s
+        ):
+            _announce_total_budget_exceeded_and_hard_exit(
+                config, now, _midrun_watchdog_started_ts or baseline, total_budget_s
+            )
+            return
+        if threshold_s is not None and _midrun_stall_detected(
+            now, baseline, threshold_s
+        ):
             _announce_midrun_stall_and_hard_exit(config, now, threshold_s)
             return
 

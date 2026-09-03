@@ -1505,6 +1505,14 @@ jobs:
           FROB_TEST_IGNORE_CONSOLE_CTRL: "1"
           FROB_TEST_HARD_EXIT: "1"
           FROB_TEST_MIDRUN_WATCHDOG_SECONDS: "180"
+          # T-3707 Part B: a suite that never stalls 180s at a stretch but
+          # sums past this step's own 1500s Wait-Process budget still gets
+          # killed with zero diagnostic output (T-3692's finding) -- this
+          # wall-clock cap (comfortably under the 1500s step budget) hard-
+          # exits with the same thread/child inventory the stall watchdog
+          # prints, so that class of silent timeout gets a real diagnostic
+          # too.
+          FROB_TEST_TOTAL_BUDGET_SECONDS: "1200"
         run: |
           # T-3692: two diagnostic additions, both env-var-expansion-proof
           # (curly-brace ${...} form throughout, matching macOS's own

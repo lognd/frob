@@ -476,6 +476,53 @@ class TestProcessPoolGates:
         # `multiprocessing` genuinely offers here.
         assert expected_method in multiprocessing.get_all_start_methods()
 
+    # frob:ticket T-3707
+    # frob:tests src/frob/gates/__init__.py::run_gates
+    def test_run_gates_leaves_no_live_pool_threads_or_children_behind(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3707 (win32 round 23): regression proof that `run_gates`'s
+        `ProcessPoolExecutor` is fully torn down (worker processes
+        reaped, its internal manager thread joined) before `run_gates`
+        RETURNS -- narrowing evidence for the win32 CI ~120s post-check
+        interpreter-shutdown gap (T-3692), which this ticket's own
+        investigation traced to something OTHER than this pool (its
+        `finally: ppool.shutdown(wait=True)` already measured fast), but
+        this proves that conclusion stays true going forward: nothing
+        `run_gates` itself constructs can be the thing CPython's own
+        atexit machinery blocks on joining. Compares `threading.
+        enumerate()`/`multiprocessing.active_children()` snapshots
+        before and after a real process-pool-using `run_gates` call --
+        any THREAD or CHILD PROCESS present after that was not present
+        before is a leak this test fails on."""
+        import multiprocessing
+        import threading
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _git_init(tmp_path)
+        threads_before = set(threading.enumerate())
+        children_before = set(multiprocessing.active_children())
+
+        selected = frozenset({"sys", "archgate", "secrets"})
+        cfg = GateConfig(root=str(tmp_path), base="main", gates=selected)
+        result = run_gates(cfg)
+        assert result.is_ok
+
+        threads_after = set(threading.enumerate())
+        children_after = set(multiprocessing.active_children())
+        new_threads = threads_after - threads_before
+        new_children = children_after - children_before
+        assert not new_threads, (
+            f"run_gates left new live thread(s) behind: {new_threads!r} -- "
+            "one of these is exactly the shape that would block CPython's "
+            "own interpreter-shutdown join (T-3692's win32 ~120s gap)"
+        )
+        assert not new_children, (
+            f"run_gates left new live child process(es) behind: "
+            f"{new_children!r} -- a ProcessPoolExecutor worker that "
+            "outlived run_gates's own shutdown(wait=True) call"
+        )
+
     # frob:ticket T-3665
     # frob:tests src/frob/gates/__init__.py::_process_pool_start_method kind="unit"
     def test_process_pool_start_method_falls_back_to_spawn_without_forkserver(

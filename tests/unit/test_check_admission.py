@@ -559,16 +559,12 @@ class TestTimingDebug:
     33615554440) by measuring elapsed time at each pipeline phase on a
     run that completes instead of exiting early."""
 
-    def test_disabled_by_default(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_disabled_by_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests src/frob/check/__init__.py::_timing_debug_enabled kind="unit"
         monkeypatch.delenv(check_mod._FROB_CHECK_TIMING_DEBUG_ENV, raising=False)
         assert check_mod._timing_debug_enabled() is False
 
-    def test_enabled_when_set_non_empty(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_enabled_when_set_non_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests src/frob/check/__init__.py::_timing_debug_enabled kind="unit"
         monkeypatch.setenv(check_mod._FROB_CHECK_TIMING_DEBUG_ENV, "1")
         assert check_mod._timing_debug_enabled() is True
@@ -617,9 +613,7 @@ class TestTimingDebug:
     ) -> None:
         # frob:tests src/frob/check/__init__.py::_timing_mark kind="unit"
         monkeypatch.setenv(check_mod._FROB_CHECK_TIMING_DEBUG_ENV, "1")
-        monkeypatch.setattr(
-            check_mod, "_TIMING_PROCESS_START", time.monotonic() - 5.0
-        )
+        monkeypatch.setattr(check_mod, "_TIMING_PROCESS_START", time.monotonic() - 5.0)
         check_mod._timing_mark("some-point")
         out = capsys.readouterr().out
         elapsed_text = out.rstrip().removesuffix("s").rsplit(" at ", 1)[1]

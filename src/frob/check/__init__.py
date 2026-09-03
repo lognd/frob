@@ -1746,9 +1746,7 @@ def _run_check_with_skips(
         # T-0603 disclosed as its own residual). See `derived_state_lock`'s
         # docstring for the shared/exclusive contract.
         stack.enter_context(
-            _timed_scope(
-                derived_state_lock(root, exclusive=False), "lock-teardown"
-            )
+            _timed_scope(derived_state_lock(root, exclusive=False), "lock-teardown")
         )
         # T-3675: stop point "lock" -- see _stop_before_result's docstring.
         stop_result = _stop_before_result(

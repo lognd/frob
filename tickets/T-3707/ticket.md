@@ -2,7 +2,7 @@
 id: T-3707
 title: 'win32 round 23: explicit executor shutdown for check pipeline post-submit
   120s gap'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -139,4 +139,3 @@ Follow-up to T-3692. CI run 33680767948 FROB_CHECK_TIMING breadcrumbs: every pip
 
 
 frob:waive BUG002 reason="confirmatory-only by construction, same posture T-3692/T-3705 already established for this ticket family: the designated repro test (TestProcessPoolGates::test_run_gates_leaves_no_live_pool_threads_or_children_behind) proves a PROPERTY that was already true before this ticket (frob.gates's ProcessPoolExecutor already shuts down cleanly, per T-3692's own timing-breadcrumb evidence) -- there was no pool-teardown bug in this ticket's own scope to reproduce with a fail-then-pass test. The win32-only symptom this ticket investigates (the ~120s interpreter-shutdown gap) is unreproducible on this WSL/Linux host by construction; this land ships the narrowing evidence (gates pool ruled out), a belt-and-suspenders hardening (cancel_futures=True), a real regression test guarding that property going forward, and the T-3707 Part B watchdog total-budget addition for the NEXT windows CI run to confirm or refute -- matching T-3692/T-3705's own round precedent"
-
