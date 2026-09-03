@@ -115,7 +115,12 @@ scope_changes:
     tests
   actor: logan
   at: '2026-09-02'
-designated_repro_test: null
+evidence:
+- tests/gates_suite/test_run.py::TestProcessPoolGates::test_run_gates_leaves_no_live_pool_threads_or_children_behind
+- tests/unit/test_conftest_midrun_watchdog.py::TestTotalBudgetExceeded::test_true_at_exactly_the_budget
+- tests/unit/test_conftest_midrun_watchdog.py::TestRunMidrunWatchdogTotalBudget::test_fires_total_budget_exit_with_no_stall_threshold_armed
+- tests/unit/test_conftest_midrun_watchdog.py::TestAnnounceTotalBudgetExceededAndHardExit::test_hard_exits_with_status_1_and_prints_the_inventory_line
+designated_repro_test: tests/gates_suite/test_run.py::TestProcessPoolGates::test_run_gates_leaves_no_live_pool_threads_or_children_behind
 threat: null
 component: null
 anchor: false
