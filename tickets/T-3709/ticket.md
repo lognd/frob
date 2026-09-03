@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/perf/**
 - pyproject.toml
+- uv.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,12 @@ scope_changes:
   glob: .github/workflows/ci.yml
   reason: T-3707 holds ci.yml lease; rerunfailures markers work with no CLI flag needed,
     so ci.yml is not required
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: uv.lock
+  reason: uv sync regenerates uv.lock as a direct consequence of adding pytest-rerunfailures
+    to pyproject.toml
   actor: logan
   at: '2026-09-02'
 designated_repro_test: null
