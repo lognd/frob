@@ -17,7 +17,6 @@ scope:
 - src/frob/tickets/_reconcile.py
 - src/frob/tickets/_unlanded.py
 - tests/test_ticket_reconcile.py
-- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +32,12 @@ scope_changes:
   glob: docs/modules/tickets-lifecycle.md
   reason: add doc target and evidence test file closure per scope-closure warnings
     on ticket new
+  actor: logan
+  at: '2026-09-03'
+- op: remove
+  glob: docs/modules/tickets-lifecycle.md
+  reason: 'revert: doc file balloons scope via pre-existing anchors unrelated to this
+    fix; not touching docs'
   actor: logan
   at: '2026-09-03'
 designated_repro_test: null
