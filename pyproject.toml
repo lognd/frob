@@ -128,6 +128,10 @@ dev = [
     "mcp>=1.28.1",
     "pytest-xdist>=3",
     "pytest-timeout>=2",
+    # T-3709: bounded rerun for genuinely load-sensitive tests (CPU-relative
+    # perf ratios that stay noisy under xdist on a shared CI runner even
+    # after T-3655's tolerance widening) -- see the `flaky` marker below.
+    "pytest-rerunfailures>=14",
     "ruff>=0.8",
     "ty>=0.0.1a8",
     # T-1340: mypy is a diagnostic ORACLE only -- SUPPRESS001

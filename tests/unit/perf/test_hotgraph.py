@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import time
 
+import pytest
+
 from frob.arch._normalized import (
     NormalizedBranch,
     NormalizedFunction,
@@ -278,6 +280,13 @@ class TestStackSampler:
         for stack in stacks:
             assert len(stack.frames) <= 3
 
+    # frob:ticket T-3709
+    # reason: CPU-relative perf ratio over a fixed-size workload, noisy
+    # under CI CPU contention even at a 0.60 tolerance (T-3655, T-3709) --
+    # a bounded rerun gives the measurement a second chance on an
+    # uncontended window without masking a genuine regression (a real
+    # regression fails all reruns, not just the first).
+    @pytest.mark.flaky(reruns=2, reruns_delay=1)
     def test_overhead_under_five_percent(self, worker_id: str) -> None:
         """Measured overhead budget (T-0710's acceptance criterion): a
         sampled run of the fixture hot loop takes no more than 5 percent
@@ -321,7 +330,17 @@ class TestStackSampler:
         one test runs, so it would not have removed the contention this
         ticket reproduced; a blanket relaxed tolerance with no CPU-time
         fix was rejected because it would have masked genuine overhead
-        regressions even in the common (uncontended) case."""
+        regressions even in the common (uncontended) case.
+
+        T-3709: still flaked (run 33698082419, ubuntu) even at the 0.60
+        widened tolerance -- a CPU-relative ratio over a fixed-size
+        workload is fundamentally noisy under real CI CPU contention, no
+        matter how far the tolerance is stretched without abandoning the
+        budget's ability to catch a genuine regression. Bounded rerun
+        (reason: CPU-relative perf ratio, noisy under CI contention, not
+        a deterministic assertion) gives the measurement a second chance
+        to land on an uncontended window instead of chasing the tolerance
+        further."""
         iterations = 3_000_000
 
         def workload() -> None:

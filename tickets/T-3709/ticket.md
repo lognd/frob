@@ -1,7 +1,7 @@
 ---
 id: T-3709
 title: Bounded rerun for load-sensitive CPU-relative perf tests
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'
