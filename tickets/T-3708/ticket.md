@@ -57,6 +57,9 @@ scope_changes:
     zero new Flow declarations needed)
   actor: logan
   at: '2026-09-02'
+evidence:
+- tests/test_lang.py::TestSizeCapAndTimeout::test_timed_out_worker_is_daemon_not_registered
+- tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout::test_timed_out_worker_is_daemon_not_registered
 designated_repro_test: null
 threat: null
 component: null
