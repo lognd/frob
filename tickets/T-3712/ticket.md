@@ -1,7 +1,7 @@
 ---
 id: T-3712
 title: make T-2691 DOC006 regression test self-contained
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
