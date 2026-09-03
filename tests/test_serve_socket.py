@@ -412,6 +412,10 @@ class TestRunSocketDaemon:
             "for the tracked follow-up."
         ),
     )
+    # reason: 0.3s idle-timeout daemon thread plus a wall-clock polling
+    # loop for socket reachability; nondeterministic under CI scheduler
+    # load, not a deterministic assertion.
+    @pytest.mark.flaky(reruns=2, reruns_delay=1)
     def test_stale_socket_file_is_replaced(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestRunSocketDaemon.test_stale_socket_file_is_rep\

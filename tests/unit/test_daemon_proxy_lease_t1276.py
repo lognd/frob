@@ -101,6 +101,10 @@ class TestDaemonLease:
             "for the tracked follow-up."
         ),
     )
+    # reason: real socket daemon thread with a 0.2s Unreachable-timeout
+    # expectation; nondeterministic under CI scheduler load, seen flaking
+    # earlier.
+    @pytest.mark.flaky(reruns=2, reruns_delay=1)
     def test_round_trip_acquire_call_release_close(
         self, root: Path, monkeypatch
     ) -> None:

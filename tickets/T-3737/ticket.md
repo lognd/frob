@@ -1,7 +1,7 @@
 ---
 id: T-3737
 title: mark load-sensitive adversarial tests with bounded reruns (flaky marker)
-state: queued
+state: done
 kind: ux
 origin: human
 created: '2026-09-03'
@@ -67,6 +67,12 @@ scope_changes:
     config change needed
   actor: logan
   at: '2026-09-03'
+evidence:
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_two_processes_connecting_concurrently_never_see_no_such_table_meta
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
+- tests/test_serve_socket.py::TestRunSocketDaemon::test_stale_socket_file_is_replaced
+- tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew::test_concurrent_new_ticket_survives_a_racing_archive
+- tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_round_trip_acquire_call_release_close
 designated_repro_test: null
 threat: null
 component: null
