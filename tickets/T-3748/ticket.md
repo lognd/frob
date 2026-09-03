@@ -2,7 +2,7 @@
 id: T-3748
 title: 'reuse: run the suite once with --cov in the Test step and stamp coverage from
   that, instead of a second full-suite run'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-03'
@@ -22,6 +22,9 @@ scope:
 - tests/unit/test_coverage_runner.py
 - tests/test_ci_workflow_matrix.py
 - tests/unit/test_app_config_flag_coverage.py
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
+- docs/modules/cli.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -116,6 +119,30 @@ scope_changes:
     flag
   actor: logan
   at: '2026-09-03'
+- op: add
+  glob: design/frob.strata
+  reason: declare the new fs.read (cli) + fs.write (testsuite) capability sites and
+    document --fail-on-degraded
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: declare the new fs.read (cli) + fs.write (testsuite) capability sites and
+    document --fail-on-degraded
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: docs/modules/cli.md
+  reason: declare the new fs.read (cli) + fs.write (testsuite) capability sites and
+    document --fail-on-degraded
+  actor: logan
+  at: '2026-09-03'
+evidence:
+- tests/unit/test_coverage_runner.py::TestCoverageFailOnDegraded::test_red_suite_exits_nonzero
+- tests/unit/test_coverage_runner.py::TestCoverageFailOnDegraded::test_worker_crash_does_not_fail
+- tests/unit/test_coverage_runner.py::TestCoverageFailOnDegraded::test_green_suite_returns
+- tests/unit/test_coverage_runner.py::TestCoverageFailOnDegraded::test_missing_provenance_fails_closed
+- tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_suite_runs_under_coverage_once_not_twice
 designated_repro_test: null
 threat: null
 component: null
