@@ -16,10 +16,32 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/lang/__init__.py
 - src/frob/vet/_scan.py
+- tests/test_lang.py
+- tests/vet_suite/test_scan_tree.py
+- src/frob/_daemon_timeout.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_lang.py
+  reason: own the new shared daemon-thread timeout util and the T-3708 regression
+    tests added to both call sites' test files
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: tests/vet_suite/test_scan_tree.py
+  reason: own the new shared daemon-thread timeout util and the T-3708 regression
+    tests added to both call sites' test files
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: src/frob/_daemon_timeout.py
+  reason: own the new shared daemon-thread timeout util and the T-3708 regression
+    tests added to both call sites' test files
+  actor: logan
+  at: '2026-09-02'
 designated_repro_test: null
 threat: null
 component: null
