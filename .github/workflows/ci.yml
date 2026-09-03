@@ -1498,13 +1498,27 @@ jobs:
       # more than ~1.5x a single measured 122.7s check is caught) without
       # dropping below a single slow-but-healthy check's own measured
       # duration.
+      #
+      # T-3746: threshold raised 180s -> 1350s. Run 33769225680 showed 180s
+      # FALSE-tripping on a legitimately-slow single test:
+      # test_fleet_status_ticket_readiness_arch001 (and the self-scan-heavy
+      # family) each block in ONE `frob check` subprocess reporting no
+      # pytest call-phase progress for the subprocess's whole duration. On
+      # win32 the Test step runs `-p no:xdist` (single-threaded), so those
+      # heavy tests -- some carrying @pytest.mark.timeout(1200) -- run back
+      # to back with long no-progress stretches that are NOT hangs. The
+      # midrun watchdog must sit ABOVE the largest legitimate per-test
+      # timeout (1200s, kept comfortably under the matrix test's <1500 budget assertion) so it only fires on a test wedged beyond even its
+      # own pytest-timeout (a true unkillable win32 hang); cumulative
+      # slowness is now caught by FROB_TEST_TOTAL_BUDGET_SECONDS below, and
+      # per-test hangs by pytest-timeout's --timeout=120/per-test overrides.
       - name: Test (windows, timed with hang guard)
         if: matrix.os == 'windows-latest'
         env:
           PYTHONFAULTHANDLER: "1"
           FROB_TEST_IGNORE_CONSOLE_CTRL: "1"
           FROB_TEST_HARD_EXIT: "1"
-          FROB_TEST_MIDRUN_WATCHDOG_SECONDS: "180"
+          FROB_TEST_MIDRUN_WATCHDOG_SECONDS: "1350"
           # T-3707 Part B: a suite that never stalls 180s at a stretch but
           # sums past this step's own 3300s Wait-Process budget still gets
           # killed with zero diagnostic output (T-3692's finding) -- this
