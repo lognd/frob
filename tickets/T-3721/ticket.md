@@ -1,7 +1,7 @@
 ---
 id: T-3721
 title: TEST006 remedy says make coverage but scaffold Makefile ships no coverage target
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -15,6 +15,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
+- tests/gates_suite/test_test_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,11 @@ scope_changes:
 - op: add
   glob: src/frob/gates/__init__.py
   reason: the make-coverage remedy string lives in gates/__init__.py, not check/**
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: tests/gates_suite/test_test_gate.py
+  reason: evidence test file added by this ticket
   actor: logan
   at: '2026-09-03'
 designated_repro_test: null
