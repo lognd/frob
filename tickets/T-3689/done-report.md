@@ -34,6 +34,13 @@ progressing" shape (a total-elapsed budget, not just no-progress) is
 out of this round's scope and left as a follow-up once the true root
 cause of the 122s is confirmed.
 
+Followup: the true root cause was subsequently confirmed and fixed as
+T-3708 (abandoned ThreadPoolExecutor timeout workers blocking interpreter
+shutdown at atexit; landed 93a8485d, replaced with a daemon=True thread
+primitive) -- the "slow-but-progressing total-elapsed-budget" follow-up
+noted above is superseded by that root-cause fix; no separate ticket is
+needed for it.
+
 Evidence: tests/unit/test_check_admission.py::TestTimingDebug (5 new
 tests). frob test --base main: touched=16 python exit=0 74 test(s)
 recorded. Windows CI run 33615554440 is the pre-fix evidence this
@@ -41,7 +48,8 @@ round's instrumentation targets narrowing further; no new windows run
 available to cite yet -- next CI run's FROB-CHECK-TIMING lines are the
 confirming measurement.
 
-Filed: none.
+Filed: none. (Deferred pool-teardown investigation noted above was
+subsequently filed and resolved as T-3708 -- see Followup.)
 
 Gates: frob check --ticket T-3689 clean modulo pre-existing repo-wide
 failures unrelated to this diff (COV003 T-3604 evidence staleness,
@@ -50,11 +58,7 @@ backlog-age noise) -- gate:SCOPE, gate:AFFECT, gate:ARCH (waived),
 gate:FMT all clean for this diff.
 
 ### Changed
-```
- tickets/T-3689/done-report.md | 66 +++++++++++++++++++++++++++++++++++++++++++
- tickets/T-3689/ticket.md      | 17 ++++++++++-
- 2 files changed, 82 insertions(+), 1 deletion(-)
-```
+(no changed files detected)
 
 ### Evidence
 - `tests/unit/test_check_admission.py::TestTimingDebug::test_disabled_by_default` (pytest node id, verified passing when recorded)
@@ -65,5 +69,5 @@ gate:FMT all clean for this diff.
 
 ### Captured claims
 - tests: 5 passed (from 5 evidence id(s))
-- gates: 9 error(s), 4295 warning(s), 911 waived
-- error-findings: CLAUDE001@.claude/hooks/sync-claude-config.py, COV003@tests/test_ci_workflow_matrix.py, DEPR006@frob-deprecated-baseline.lock.json, PERF003@src/frob/refactor/_scan.py, PERF004@src/frob/refactor/_scan_carry.py, PRE001@tickets/T-3689, TICK004@tickets.md, TICK011@tickets.md, WAIVE011@frob-ratchet.lock.json
+- gates: 2 error(s), 4311 warning(s), 916 waived
+- error-findings: DEPR006@frob-deprecated-baseline.lock.json, TICK011@tickets.md
