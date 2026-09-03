@@ -534,14 +534,26 @@ _MD_DIRECT_EDGE_VERBS = frozenset({"describes", "enumerates", "until", "ticket",
 #   SAME verb, not a second directive).
 # - `claims`: `frob.gates._sys._CLAIMS_RE` (DOC003's exhaustiveness-proof
 #   marker, T-1989).
+# - `external-reader`: `frob.gates._root_asset_dirs._EXTERNAL_READER_RE`
+#   (ROOT001's own markdown-side anchor declaring that some process
+#   OUTSIDE this repo's code reads a root-level directory, T-3720).
+#   Deliberately its own dedicated regex there rather than routed through
+#   the full DSL edge machinery -- a repo-root directory audit is rare
+#   enough (a few times a year, per T-1611) that a dedicated DSL edge kind
+#   is not worth the maintenance surface. Before this fix, ROOT001's own
+#   prescribed remedy (add this exact directive) tripped DSL001 as an
+#   unhandled verb -- a gate remedy that another gate rejected, with no
+#   clean path through both.
 # - `_RESERVED_MARKER_VERBS` (used-by/secret-fake/raises): already
 #   recognized as owned-elsewhere for the code-comment path above; T-1989
 #   folds the same set in here since their own scanners (frob.gates._refs,
 #   frob.gates._secrets, frob.gates._exhaustive_handling) read raw text
 #   across every tracked file type, markdown included, not just source.
 # frob:ticket T-1989
+# frob:ticket T-3720
 _MD_HANDLED_VERBS = frozenset(
-    {"generated-start", "generated-end", "invariant", "claims"} | _RESERVED_MARKER_VERBS
+    {"generated-start", "generated-end", "invariant", "claims", "external-reader"}
+    | _RESERVED_MARKER_VERBS
 )
 
 

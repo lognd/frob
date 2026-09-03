@@ -1,7 +1,7 @@
 ---
 id: T-3720
 title: ROOT001 remedy prescribes frob:external-reader directive that DSL001 rejects
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -76,6 +76,8 @@ scope_changes:
     SCOPE002 over unrelated anchors
   actor: logan
   at: '2026-09-03'
+evidence:
+- tests/unit/graph/test_dsl_markdown_waive.py::TestUnhandledMarkdownWaiveDirective::test_external_reader_directive_produces_no_unhandled_finding
 designated_repro_test: null
 threat: null
 component: null

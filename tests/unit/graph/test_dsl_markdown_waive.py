@@ -99,6 +99,22 @@ class TestUnhandledMarkdownWaiveDirective:
         assert len(malformed) == 1
         assert "bogus-verb-xyz" in malformed[0].reason
 
+    # frob:ticket T-3720
+    def test_external_reader_directive_produces_no_unhandled_finding(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        # T-3720: ROOT001's own prescribed remedy is to add
+        # `<!-- frob:external-reader dir="name" reason="..." -->`
+        # (src/frob/gates/_root_asset_dirs.py's `_EXTERNAL_READER_RE`
+        # reads it directly, never through this module's edge machinery)
+        # -- following that remedy must never itself trip DSL001 as an
+        # unhandled verb.
+        text = (
+            '<!-- frob:external-reader dir="agents" '
+            'reason="harness reads this at runtime" -->\n'
+        )
+        _edges, malformed = markdown_anchors("doc.md", text)
+        assert malformed == ()
+
 
 # frob:ticket T-1989
 class TestMarkdownDirectiveMentionVsUse:
