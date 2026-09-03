@@ -16,7 +16,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/perf/**
 - pyproject.toml
-- .github/workflows/ci.yml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +25,12 @@ scope_changes:
   glob: tests/conftest.py
   reason: T-3707 holds conftest.py lease; register pytest markers via pyproject.toml
     ini_options instead
+  actor: logan
+  at: '2026-09-02'
+- op: remove
+  glob: .github/workflows/ci.yml
+  reason: T-3707 holds ci.yml lease; rerunfailures markers work with no CLI flag needed,
+    so ci.yml is not required
   actor: logan
   at: '2026-09-02'
 designated_repro_test: null
