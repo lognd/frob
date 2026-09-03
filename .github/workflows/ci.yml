@@ -1543,13 +1543,17 @@ jobs:
           # exits with the same thread/child inventory the stall watchdog
           # prints, so that class of silent timeout gets a real diagnostic
           # too.
-          # T-3740: raised 1200 -> 3000. Once the win32 hang saga was fixed
-          # (T-3686/3708/3726/3730/3735/3738) the suite runs to completion
-          # for the first time, revealing the true single-threaded
-          # (-p no:xdist) runtime exceeds 1200s on the slow windows runner;
-          # nothing wedged (the 180s no-progress watchdog only armed, never
-          # fired). T-3741 tracks re-enabling xdist to bring this back down.
-          FROB_TEST_TOTAL_BUDGET_SECONDS: "3000"
+          # T-3749: raised 3000 -> 4500. T-3741 re-enabled xdist here; run
+          # 33804740730 confirmed it is SAFE (execnet run_server/run_connection
+          # worker threads live, F./. progress reported, NO KeyboardInterrupt
+          # saga -- FROB_TEST_IGNORE_CONSOLE_CTRL holds) but the 13k-test suite
+          # on a 4-core windows runner still ran past the 3000s cap even
+          # parallel (windows subprocess spawn is ~2x macos, whose xdist suite
+          # is ~25min). 4500s (75m) gives the parallel run room to finish; the
+          # 180s->1350s midrun watchdog (T-3746) and pytest-timeout still catch
+          # a genuine per-test hang, so this is not a blind ceiling raise.
+          # (History: T-3740 raised 1200->3000 for the single-threaded run.)
+          FROB_TEST_TOTAL_BUDGET_SECONDS: "4500"
         run: |
           # T-3692: two diagnostic additions, both env-var-expansion-proof
           # (curly-brace ${...} form throughout, matching macOS's own
@@ -1563,7 +1567,7 @@ jobs:
           # watchdog fires; conftest.py's own new FROB-TEST-MIDRUN-
           # WATCHDOG: armed line (T-3692) answers the python-side half.
           Write-Host "T-3692: FROB_TEST_MIDRUN_WATCHDOG_SECONDS=$($env:FROB_TEST_MIDRUN_WATCHDOG_SECONDS)"
-          ${budget} = 3300  # 55m: win32 runs the suite single-threaded (-p no:xdist), so it needs far more wall-clock than ubuntu's xdist run; the python-side FROB_TEST_TOTAL_BUDGET_SECONDS=3000 cap fires first with a diagnostic, this Wait-Process budget is the outer backstop (T-3740)
+          ${budget} = 4800  # 80m: win32 runs the suite in parallel now (T-3741 xdist) but a 4-core windows runner is still ~2x macos, so the python-side FROB_TEST_TOTAL_BUDGET_SECONDS=4500 cap fires first with a diagnostic and this Wait-Process budget is the outer backstop (T-3749)
           $stdout = Join-Path $env:RUNNER_TEMP "pytest-stdout.log"
           $stderr = Join-Path $env:RUNNER_TEMP "pytest-stderr.log"
           # T-3741: xdist re-enabled. `-p no:xdist -v --full-trace` was a
