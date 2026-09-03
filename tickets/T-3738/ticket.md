@@ -1,7 +1,7 @@
 ---
 id: T-3738
 title: fix win32 hang in TestWireGate git subprocess calls
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -15,10 +15,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/gates_suite/test_wire.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: declare the env.read capability on tests/gates_suite/test_wire.py so the
+    win32-hang fix's os.environ read passes SELFAUDIT001 -- required for this ticket's
+    own diff to land
+  actor: logan
+  at: '2026-09-03'
 body_changes:
 - mode: append
   reason: 'BUG002 waiver: unreproducible win32-only hang, per T-3730/T-3735 precedent'
