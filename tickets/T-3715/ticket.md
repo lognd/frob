@@ -1,7 +1,7 @@
 ---
 id: T-3715
 title: vet hook exits blocking in advisory-only mode
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'

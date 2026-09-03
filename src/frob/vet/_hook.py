@@ -234,7 +234,27 @@ def _quarantine_verdict(
     # a None published_at, so this is always set here.
     assert lookup.published_at is not None  # noqa: S101
     age_days = (datetime.now(UTC) - lookup.published_at.astimezone(UTC)).days
-    return _age_based_verdict(ecosystem, name, lookup, age_days, cfg.quarantine_days)
+    return _age_based_verdict(ecosystem, name, lookup, age_days, cfg)
+
+
+def _allow_listed_verdict(
+    ecosystem: str, name: str, lookup: _RegistryResult, age_days: int, cfg: VetConfig
+) -> HookVerdict | None:
+    """T-3715: a `[vet.allow]` verdict for `name`, or None when `name` is not
+    listed (or is listed with a falsy value). This is the remedy the age-gate's
+    own block message prescribes ("add to [vet.allow] after review"); until
+    now `_age_based_verdict` never read `cfg.allow` back, so the prescribed
+    remedy did nothing (apollo FROBLEMS.md 2026-09-03, confirmed in source)."""
+    if not cfg.allow.get(name):
+        return None
+    msg = (
+        f"{name}@{lookup.resolved_version}: allowed by [vet.allow] "
+        f"(published {age_days} day(s) ago)"
+    )
+    _log.info("vet: hook: %s", msg)
+    return HookVerdict(
+        package=name, ecosystem=ecosystem, verdict="ok", message=msg, blocked=False
+    )
 
 
 def _age_based_verdict(
@@ -242,10 +262,32 @@ def _age_based_verdict(
     name: str,
     lookup: _RegistryResult,
     age_days: int,
-    quarantine_days: int,
+    cfg: VetConfig,
 ) -> HookVerdict:
-    """quarantine vs ok, once a real publish age is known."""
-    if age_days < quarantine_days:
+    """quarantine vs ok, once a real publish age is known. T-3715: a
+    `[vet.allow]` entry for `name` always wins (see `_allow_listed_verdict`),
+    and with no `[vet]` table at all (advisory posture, `cfg.present` False)
+    the age gate warns instead of blocking -- advisory-only must not exit
+    non-zero (apollo FROBLEMS.md 2026-09-03)."""
+    allowed = _allow_listed_verdict(ecosystem, name, lookup, age_days, cfg)
+    if allowed is not None:
+        return allowed
+
+    if age_days < cfg.quarantine_days:
+        if not cfg.present:
+            msg = (
+                f"{name}@{lookup.resolved_version}: published {age_days} day(s) "
+                "ago (advisory-only: no [vet] table in frob.toml, not blocking; "
+                "declare [vet] to enforce quarantine)"
+            )
+            _log.warning("vet: hook: %s", msg)
+            return HookVerdict(
+                package=name,
+                ecosystem=ecosystem,
+                verdict="advisory",
+                message=msg,
+                blocked=False,
+            )
         msg = (
             f"{name}@{lookup.resolved_version}: quarantined: published "
             f"{age_days} day(s) ago; add to [vet.allow] after review"

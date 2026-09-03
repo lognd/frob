@@ -185,7 +185,12 @@ class TestQuarantine:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/vet/_hook.py::check_package kind="unit"
+        # T-3715: a present [vet] table (declared posture) is required for
+        # the age gate to actually block -- see
+        # TestAdvisoryHookDoesNotBlock for the no-[vet]-table case.
         import frob.vet._hook as _hook_mod
+
+        (tmp_path / "frob.toml").write_text("[vet]\n")
 
         def fake_fetch(
             ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
@@ -257,6 +262,110 @@ class TestQuarantine:
         assert verdict.verdict == "typosquat"
         assert verdict.blocked is True
         assert "requests" in verdict.message
+
+
+class TestVetAllowNotAgeBlocked:
+    """T-3715: apollo FROBLEMS.md 2026-09-03, confirmed in source -- the age
+    gate's own block message says 'add to [vet.allow] after review', but
+    `_age_based_verdict` never read `cfg.allow` back. A package listed in
+    `[vet.allow]` must not be blocked by the age gate."""
+
+    def test_allow_listed_package_not_age_blocked(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/vet/_hook.py::check_package kind="unit"
+        import frob.vet._hook as _hook_mod
+
+        (tmp_path / "frob.toml").write_text(
+            '[vet]\n[vet.allow]\n"some-new-pkg" = true\n'
+        )
+
+        def fake_fetch(
+            ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
+        ):
+            return _RegistryResult(
+                ok=True,
+                published_at=datetime.now(UTC) - timedelta(days=2),
+                resolved_version=version,
+            )
+
+        monkeypatch.setattr(_hook_mod, "_fetch_publish_date", fake_fetch)
+        verdict = check_package("pypi", "some-new-pkg", "1.0.0", root=tmp_path)
+        assert verdict.verdict == "ok"
+        assert verdict.blocked is False
+        assert "vet.allow" in verdict.message
+
+    def test_allow_listed_with_reasons_not_age_blocked(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/vet/_hook.py::check_package kind="unit"
+        import frob.vet._hook as _hook_mod
+
+        (tmp_path / "frob.toml").write_text(
+            '[vet]\n[vet.allow]\n"some-new-pkg" = ["reviewed by ops"]\n'
+        )
+
+        def fake_fetch(
+            ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
+        ):
+            return _RegistryResult(
+                ok=True,
+                published_at=datetime.now(UTC) - timedelta(days=2),
+                resolved_version=version,
+            )
+
+        monkeypatch.setattr(_hook_mod, "_fetch_publish_date", fake_fetch)
+        verdict = check_package("pypi", "some-new-pkg", "1.0.0", root=tmp_path)
+        assert verdict.blocked is False
+
+
+class TestAdvisoryHookDoesNotBlock:
+    """T-3715: apollo FROBLEMS.md 2026-09-03 -- the hook printed
+    'advisory-only mode' (no [vet] table in frob.toml) but still blocked
+    and exited 2. Advisory mode must warn, never block."""
+
+    def test_no_vet_table_not_age_blocked(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/vet/_hook.py::check_package kind="unit"
+        import frob.vet._hook as _hook_mod
+
+        # no frob.toml at all -> _load_vet_config returns present=False
+        def fake_fetch(
+            ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
+        ):
+            return _RegistryResult(
+                ok=True,
+                published_at=datetime.now(UTC) - timedelta(days=2),
+                resolved_version=version,
+            )
+
+        monkeypatch.setattr(_hook_mod, "_fetch_publish_date", fake_fetch)
+        verdict = check_package("pypi", "some-new-pkg", "1.0.0", root=tmp_path)
+        assert verdict.verdict == "advisory"
+        assert verdict.blocked is False
+
+    def test_frob_toml_without_vet_section_not_age_blocked(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/vet/_hook.py::check_package kind="unit"
+        import frob.vet._hook as _hook_mod
+
+        (tmp_path / "frob.toml").write_text("[tool.other]\n")
+
+        def fake_fetch(
+            ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
+        ):
+            return _RegistryResult(
+                ok=True,
+                published_at=datetime.now(UTC) - timedelta(days=2),
+                resolved_version=version,
+            )
+
+        monkeypatch.setattr(_hook_mod, "_fetch_publish_date", fake_fetch)
+        verdict = check_package("pypi", "some-new-pkg", "1.0.0", root=tmp_path)
+        assert verdict.verdict == "advisory"
+        assert verdict.blocked is False
 
 
 class TestTyposquat:
