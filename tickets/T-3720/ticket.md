@@ -1,7 +1,7 @@
 ---
 id: T-3720
 title: ROOT001 remedy prescribes frob:external-reader directive that DSL001 rejects
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -16,9 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_root_asset_dirs.py
 - src/frob/graph/dsl.py
-- docs/modules/gates.md
-- docs/modules/graph.md
-- docs/guides/extending/comment-dsl-directives.md
+- tests/unit/graph/test_dsl_markdown_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -52,6 +50,30 @@ scope_changes:
 - op: add
   glob: docs/guides/extending/comment-dsl-directives.md
   reason: doc closure targets for touched public symbols
+  actor: logan
+  at: '2026-09-03'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: narrow to actually-touched files; whole-doc-file scope caused cascading
+    SCOPE002 over unrelated anchors
+  actor: logan
+  at: '2026-09-03'
+- op: remove
+  glob: docs/modules/graph.md
+  reason: narrow to actually-touched files; whole-doc-file scope caused cascading
+    SCOPE002 over unrelated anchors
+  actor: logan
+  at: '2026-09-03'
+- op: remove
+  glob: docs/guides/extending/comment-dsl-directives.md
+  reason: narrow to actually-touched files; whole-doc-file scope caused cascading
+    SCOPE002 over unrelated anchors
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: tests/unit/graph/test_dsl_markdown_waive.py
+  reason: narrow to actually-touched files; whole-doc-file scope caused cascading
+    SCOPE002 over unrelated anchors
   actor: logan
   at: '2026-09-03'
 designated_repro_test: null
