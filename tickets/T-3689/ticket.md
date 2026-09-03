@@ -46,3 +46,6 @@ land_commit: null
 Follow-up to T-3686. See conversation for detail. References T-3686 T-3683 T-3256.
 
 test line
+
+## Restore log
+- 2026-09-02: T-3689 self-gate: amend Done report to cite T-3708, the follow-up that resolved the deferred pool-teardown investigation this ticket's Done report disclosed without a citing ticket id (TICK011)
