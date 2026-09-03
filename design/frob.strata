@@ -805,7 +805,7 @@ node core : trusted {
         TestRunReport, ToolResult, Unknown, Version, XrefError, _abstract_guard_exit_bodies,
         _abstract_if_conditions, _callee_name_map, _characteristic_vector, _close_all, _collapse_duplicate_guard_chains, _cosine_similarity,
         _deckard_vector_ok, _find_block, _is_symref, _nicad_size_ratio_ok, _normalize_error_channel, _oreo_metric_ratio_ok,
-        _probe_smt_equivalence, _real_dataflow_graph, accent, add_value, agentic_report, apply_managed_blocks,
+        _probe_smt_equivalence, _real_dataflow_graph, _run_bounded, accent, add_value, agentic_report, apply_managed_blocks,
         authoritative_version, build_class_to_file, build_group_template, build_index_for_files, build_section_index, capture_python_outcomes,
         changelog_skeleton_entry, check, check_ratchet, clean, collect, collect_cpp_tests,
         collect_python_tests, collect_rust_tests, collect_ts_tests, commit_stats, common_dir_and_branch, core_available,
@@ -849,6 +849,7 @@ node core : trusted {
         "src/frob/gitlog/**" "src/frob/gitio.py" "src/frob/xref/**"
         "src/frob/excludes.py" "src/frob/yamlio.py" "src/frob/tomlio.py"
         "src/frob/repo_meta.py" "src/frob/derived_state.py" "src/frob/nodeid.py"
+        "src/frob/_daemon_timeout.py"
         "src/frob/ci_report.py" "src/frob/ci_validity.py"
         "src/frob/ghio.py" "src/frob/findings.py"
         "src/frob/outline/**" "src/frob/map/**" "src/frob/exports/**"

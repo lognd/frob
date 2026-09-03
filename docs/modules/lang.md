@@ -569,13 +569,22 @@ call:
    cap returns `Err(LangError.FileTooLarge)`.
 2. **Parse timeout** (`_run_parse_with_timeout`,
    `_PARSE_TIMEOUT_SECONDS = 10.0`): the tree-sitter/strata-core parse call
-   runs on a single-use daemon-pool thread; if it has not finished within
-   the budget, the wrapper returns `Err(LangError.ParseTimedOut)`
-   immediately rather than blocking the caller. Neither tree-sitter nor
-   strata-core expose a cancellation hook, so the worker thread itself is
-   abandoned (never joined or killed) -- the timeout bounds how long the
-   CALLER waits, not how long the runaway parse actually keeps running in
-   the background.
+   runs on its own `daemon=True` thread (`_run_bounded`, T-3708); if it has
+   not finished within the budget, the wrapper returns
+   `Err(LangError.ParseTimedOut)` immediately rather than blocking the
+   caller. Neither tree-sitter nor strata-core expose a cancellation hook,
+   so the worker thread itself is abandoned (never joined or killed) --
+   the timeout bounds how long the CALLER waits, not how long the runaway
+   parse actually keeps running in the background. T-3708: this used to be
+   a `ThreadPoolExecutor(max_workers=1)` abandoned via
+   `shutdown(wait=False)` on timeout, which does NOT actually free the
+   worker from the interpreter -- `concurrent.futures.thread` keeps a
+   process-global registry of every worker thread any
+   `ThreadPoolExecutor` has created and joins all of them, unconditionally,
+   at interpreter shutdown, so a genuinely-still-blocked abandoned worker
+   hung process exit (measured as a ~120s win32 CI teardown gap). A plain
+   daemon thread is never registered there, so an abandoned worker can no
+   longer block shutdown.
 
 Both guards log a WARNING naming the file and the exact limit hit -- never
 a silent skip (the T-0897 silent-drop class this exists to avoid). Both

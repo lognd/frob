@@ -1,7 +1,7 @@
 ---
 id: T-3708
 title: abandoned timeout worker threads block interpreter shutdown (win32 122s)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'

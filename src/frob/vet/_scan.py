@@ -15,6 +15,7 @@ from pathlib import Path
 from typani import Err, Ok
 from typani.result import Result
 
+from frob._daemon_timeout import _run_bounded
 from frob.excludes import iter_files
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
@@ -473,44 +474,39 @@ def _scan_dependencies_parallel(
     return violations, verdicts
 
 
-# frob:ticket T-0794
-def _open_single_worker_pool() -> ThreadPoolExecutor:
-    """Construct the single-worker `ThreadPoolExecutor` `_bounded_process_dependency`
-    submits `_process_dependency` to. Hoisted out of `_run_with_timeout`
-    (T-0794, same pattern as T-0767's `_open_process_pool`) so the function
-    that OWNS the pool's construction/shutdown is not also the function
-    `_scan_dependencies_parallel` dispatches as a worker task -- the T-0695
-    `self-join-deadlock` advisory is a same-function co-occurrence
-    heuristic (dispatched-as-task + calls `.shutdown`/`.join`/`.close` on a
-    pool it made) and unwaivable by design, so the safe shape must also be
-    the structurally clean one."""
-    return ThreadPoolExecutor(max_workers=1)
+# frob:ticket T-3708
+# CORRECTNESS NOTE (review round 1 of T-0794 caught the predecessor issue,
+# preserved and updated here): the original shape used a `with
+# ThreadPoolExecutor(...)` block, whose `__exit__` calls `shutdown(wait=
+# True)` unconditionally, including when the body returns early on a
+# timeout -- so a naive `with pool: ... except FutureTimeoutError: return
+# ...` blocks the caller for the FULL underlying task duration, not
+# `timeout`, defeating the entire point of this function. T-0794 fixed
+# that by constructing the pool WITHOUT a `with` and explicitly calling
+# `shutdown(wait=False)` on the timeout path. T-3708 found that fix
+# incomplete: `shutdown(wait=False)` does not actually free the abandoned
+# worker from the interpreter -- `concurrent.futures.thread` keeps a
+# process-global registry of every worker thread any `ThreadPoolExecutor`
+# has created and its own atexit handler unconditionally joins all of them
+# at interpreter shutdown, so a genuinely-still-blocked abandoned worker
+# hangs process exit (this was the win32 CI ~120s teardown gap). This
+# function now runs `_process_dependency` via
+# `frob._daemon_timeout.run_bounded`, a plain `daemon=True` thread that
+# `concurrent.futures.thread` never registers -- an abandoned worker keeps
+# running in the background for as long as `_process_dependency` takes
+# (Python cannot preempt a running thread; same disclosed trade-off as
+# `_scan_dependencies`' docstring) but can no longer block interpreter
+# shutdown.
 
 
-# frob:ticket T-0794
-# CORRECTNESS NOTE (review round 1 caught this, preserved verbatim from the
-# pre-T-0794 shape): a `with ThreadPoolExecutor(...)` block's `__exit__`
-# calls `shutdown(wait=True)` unconditionally, including when the body
-# returns early on a timeout -- so a naive `with pool: ... except
-# FutureTimeoutError: return ...` still blocks the caller for the FULL
-# underlying task duration, not `timeout`, defeating the entire point of
-# this function. The pool is therefore constructed WITHOUT a `with` and
-# explicitly `shutdown(wait=False)` on the timeout path so this function
-# returns within ~`timeout` wall-clock as promised. The consequence: the
-# abandoned worker thread is not joined and keeps running in the
-# background for as long as `_process_dependency` takes (Python cannot
-# preempt a running thread) -- for network calls this is typically
-# seconds; for a pathological scan it could be the original hang, just no
-# longer blocking the rest of the run. This is the same disclosed
-# trade-off as `_scan_dependencies`' docstring, made concrete here.
-
-
+# frob:tests tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout.test_slow_package_returns_within_timeout_not_task_duration  # noqa: E501
+# frob:tests tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
 # frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to \
-# _open_single_worker_pool/pool.submit/fut.result, cross-module and stdlib \
-# concurrent.futures calls the resolver cannot see through; the one deliberately \
-# special-cased outcome (FutureTimeoutError) is caught above, per the EXHAUST001 \
-# waiver's own rationale -- everything else is meant to propagate, not be resolved and \
-# re-declared here"
+# run_bounded/fn/frob._daemon_timeout internals, cross-module stdlib-adjacent \
+# threading calls the resolver cannot see through; the one deliberately special-cased \
+# outcome (FutureTimeoutError) is caught above, per the EXHAUST001 waiver's own \
+# rationale -- everything else is meant to propagate, not be resolved and re-declared \
+# here"
 def _bounded_process_dependency(
     dep: Dependency,
     root: Path,
@@ -521,20 +517,20 @@ def _bounded_process_dependency(
     fetch: bool,
     timeout: float,
 ) -> tuple[list[Violation], PackageVerdict]:
-    """Run `_process_dependency` on its own single-worker pool
-    (`_open_single_worker_pool`), bounded by `timeout` seconds. On expiry
-    returns `_timeout_verdict` (T-0208) rather than raising or silently
-    dropping the package. Hoisted out of `_run_with_timeout` (T-0794) so
-    pool construction/shutdown lives in a function distinct from the one
-    `_scan_dependencies_parallel` dispatches -- see
-    `_open_single_worker_pool`'s docstring for why. Do NOT inline this (or
-    `_open_single_worker_pool`) back into `_run_with_timeout`."""
-    pool = _open_single_worker_pool()
-    fut = pool.submit(
-        _process_dependency, dep, root, lockfile, cfg, cache_path, is_new, fetch
-    )
+    """Run `_process_dependency` on its own abandoned-on-timeout daemon
+    thread (`frob._daemon_timeout.run_bounded`, T-3708), bounded by
+    `timeout` seconds. On expiry returns `_timeout_verdict` (T-0208)
+    rather than raising or silently dropping the package. Hoisted out of
+    `_run_with_timeout` (T-0794) so the timeout-bounding logic lives in a
+    function distinct from the one `_scan_dependencies_parallel` dispatches
+    as a worker task."""
     try:
-        result = fut.result(timeout=timeout)
+        return _run_bounded(
+            lambda: _process_dependency(
+                dep, root, lockfile, cfg, cache_path, is_new, fetch
+            ),
+            timeout=timeout,
+        )
     except FutureTimeoutError:
         _log.warning(
             "vet: %s/%s@%s: exceeded %.1fs per-package timeout; "
@@ -544,11 +540,8 @@ def _bounded_process_dependency(
             dep.version,
             timeout,
         )
-        pool.shutdown(wait=False)
         violation, verdict = _timeout_verdict(dep, lockfile.name)
         return [violation], verdict
-    pool.shutdown(wait=False)
-    return result
 
 
 def _run_with_timeout(

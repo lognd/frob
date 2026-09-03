@@ -297,3 +297,66 @@ class TestScanTreeTimeout:
         assert any(v.rule == "VET-TIMEOUT" for v in report.violations)
         verdict = next(v for v in report.verdicts if v.name == "slow-pkg")
         assert "timeout" in verdict.signals
+
+    # frob:tests tests/vet_suite/test_scan_tree.py::TestScanTreeTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
+    def test_timed_out_worker_is_daemon_not_registered(self, tmp_path: Path) -> None:
+        """T-3708 regression: an abandoned-on-timeout `_process_dependency`
+        worker must not be able to block interpreter shutdown.
+
+        `concurrent.futures.thread` keeps a process-global registry
+        (`_threads_queues`) of every `ThreadPoolExecutor` worker thread and
+        its `atexit`-registered `_python_exit()` unconditionally joins
+        every thread still alive in that registry at interpreter shutdown
+        -- this is what hung win32 CI's `frob check` teardown for ~120s
+        (T-3707/T-3708) once `_bounded_process_dependency` abandoned a
+        still-blocked worker via `shutdown(wait=False)`. Prove the fix
+        directly: after a timeout, the abandoned worker thread is a daemon
+        thread NOT present in `concurrent.futures.thread`'s global join
+        registry, so `_python_exit()` cannot hang on it.
+        """
+        import concurrent.futures.thread as cf_thread
+        import threading
+        from concurrent.futures import TimeoutError as FutureTimeoutError
+
+        # `_bounded_process_dependency` delegates its timeout-bounding
+        # directly to `frob._daemon_timeout._run_bounded` (T-3708) -- that
+        # delegation is exercised end-to-end by
+        # `test_slow_package_returns_within_timeout_not_task_duration`
+        # above via `scan_tree`. This test targets the atexit-join hazard
+        # itself, which lives entirely in `_run_bounded`'s daemon-thread
+        # shape, so it drives `_run_bounded` the same way
+        # `_bounded_process_dependency` does rather than re-satisfying
+        # `_process_dependency`'s full argument contract.
+        from frob._daemon_timeout import _run_bounded
+
+        release = threading.Event()
+
+        def _hang_until_released() -> None:
+            release.wait(timeout=30)
+
+        before = set(threading.enumerate())
+        try:
+            _run_bounded(_hang_until_released, timeout=0.1)
+        except FutureTimeoutError:
+            pass
+
+        new_threads = set(threading.enumerate()) - before
+        bounded_workers = [t for t in new_threads if t.name.startswith("frob-bounded-")]
+        assert bounded_workers, "expected the abandoned worker thread to be visible"
+        worker = bounded_workers[0]
+
+        try:
+            # (a) it is a daemon thread -- never joined by the interpreter
+            # at exit, unlike a ThreadPoolExecutor worker.
+            assert worker.daemon is True
+
+            # (b) it was never registered with concurrent.futures.thread's
+            # process-global join registry -- the exact registry
+            # `_python_exit()` iterates at atexit. A ThreadPoolExecutor-
+            # backed worker would appear here; a plain daemon thread never
+            # does.
+            registered_threads = set(cf_thread._threads_queues.keys())
+            assert worker not in registered_threads
+        finally:
+            release.set()
+            worker.join(timeout=5)

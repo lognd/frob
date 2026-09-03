@@ -47,7 +47,6 @@ import os
 import sqlite3
 import threading
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from pathlib import Path
 from typing import TypeVar
@@ -57,6 +56,7 @@ from tree_sitter_language_pack import get_parser
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
+from frob._daemon_timeout import _run_bounded
 from frob.lang._common import export_tree as _export_tree
 from frob.lang._common import flatten_tree
 from frob.lang._extract import COMMENT_TYPES, extract
@@ -330,8 +330,10 @@ def _check_size_cap(path: Path, size: int) -> LangError | None:
     return LangError.FileTooLarge
 
 
+# frob:ticket T-3708
 # frob:doc docs/modules/lang.md#size-cap-and-parse-timeout-t-0893
 # frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_parse_timeout_returns_err_not_hang  # noqa: E501
+# frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
 # frob:waive COV007 reason="docs/modules/lang.md's Size cap and parse timeout section \
 # (T-0893) is a deliberate, per-function architecture doc of this module's internal \
 # DoS guards, same convention as the Primitives section's private tree-sitter helpers"
@@ -349,19 +351,17 @@ def _run_parse_with_timeout(
     `budget`-second wall-clock cap (T-0893).
 
     Neither tree-sitter nor strata-core expose a cancellation hook, so a
-    call that blows the budget is left running on its own single-use
-    daemon-pool thread (abandoned, never joined or killed -- the same
-    bounded-wait shape `frob.vet._scan._run_with_timeout` already uses for
-    subprocess calls, minus the ability to actually terminate the worker)
-    while this returns `Err(LangError.ParseTimedOut)` immediately so the
-    caller is never blocked past `budget`. Always logs at WARNING naming
-    the file and the exact limit hit -- see `_check_size_cap`'s docstring
-    for why a skip must never be silent.
+    call that blows the budget is left running on its own abandoned daemon
+    thread (`frob._daemon_timeout.run_bounded`, T-3708 -- never killed,
+    but also never joined at interpreter shutdown, unlike a
+    `ThreadPoolExecutor`-backed worker) while this returns
+    `Err(LangError.ParseTimedOut)` immediately so the caller is never
+    blocked past `budget`. Always logs at WARNING naming the file and the
+    exact limit hit -- see `_check_size_cap`'s docstring for why a skip
+    must never be silent.
     """
-    executor = ThreadPoolExecutor(max_workers=1)
-    future = executor.submit(fn)
     try:
-        return Ok(future.result(timeout=budget))
+        return Ok(_run_bounded(fn, timeout=budget))
     except FutureTimeoutError:
         _log.warning(
             "PARSE: %s did not finish parsing within the %.1fs budget "
@@ -371,8 +371,6 @@ def _run_parse_with_timeout(
             budget,
         )
         return Err(LangError.ParseTimedOut)
-    finally:
-        executor.shutdown(wait=False)
 
 
 # T-0414: process-lifetime, content-hash-keyed memo for `_parse` -- the

@@ -1385,6 +1385,63 @@ class TestSizeCapAndTimeout:
             "PARSE" in m and str(target) in m and "0.2" in m for m in messages
         ), messages
 
+    # frob:tests tests/test_lang.py::TestSizeCapAndTimeout.test_timed_out_worker_is_daemon_not_registered  # noqa: E501
+    def test_timed_out_worker_is_daemon_not_registered(self, tmp_path: Path) -> None:
+        """T-3708 regression: an abandoned-on-timeout worker must not be
+        able to block interpreter shutdown.
+
+        `concurrent.futures.thread` keeps a process-global registry
+        (`_threads_queues`) of every `ThreadPoolExecutor` worker thread and
+        its `atexit`-registered `_python_exit()` unconditionally joins
+        every thread still alive in that registry at interpreter shutdown
+        -- this hung win32 CI's `frob check` teardown for ~120s (T-3707/
+        T-3708) when `_run_parse_with_timeout` abandoned a still-blocked
+        worker. Prove the fix directly: after a timeout, the abandoned
+        worker thread must (a) still be alive (this test does not wait for
+        it) but (b) be a daemon thread NOT present in
+        `concurrent.futures.thread`'s global join registry, so
+        `_python_exit()` cannot hang on it.
+        """
+        import concurrent.futures.thread as cf_thread
+        import threading
+
+        from frob.lang import _run_parse_with_timeout
+
+        target = tmp_path / "slow2.py"
+        target.write_text("x = 1\n")
+
+        release = threading.Event()
+
+        def _hang_until_released() -> str:
+            release.wait(timeout=30)
+            return "never observed by the test"
+
+        before = set(threading.enumerate())
+        result = _run_parse_with_timeout(_hang_until_released, target, budget=0.1)
+        assert result.is_err
+
+        new_threads = set(threading.enumerate()) - before
+        bounded_workers = [t for t in new_threads if t.name.startswith("frob-bounded-")]
+        assert bounded_workers, "expected the abandoned worker thread to be visible"
+        worker = bounded_workers[0]
+
+        try:
+            # (a) it is a daemon thread -- never joined by the interpreter
+            # at exit, unlike a ThreadPoolExecutor worker.
+            assert worker.daemon is True
+
+            # (b) it was never registered with concurrent.futures.thread's
+            # process-global join registry -- the exact registry
+            # `_python_exit()` iterates at atexit. A ThreadPoolExecutor-
+            # backed worker would appear here; a plain daemon thread never
+            # does.
+            registered_threads = set(cf_thread._threads_queues.keys())
+            assert worker not in registered_threads
+        finally:
+            # release the worker so it does not linger past this test
+            release.set()
+            worker.join(timeout=5)
+
 
 def test_lang_pipeline_integration(tmp_path: Path) -> None:
     # frob:tests src/frob/lang kind="integration"
