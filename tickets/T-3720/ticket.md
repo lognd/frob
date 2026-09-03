@@ -14,11 +14,28 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/check/**
+- src/frob/gates/_root_asset_dirs.py
+- src/frob/graph/dsl.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/check/**
+  reason: defect is in the remedy-text generator + dsl verb registries, not check/**
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: src/frob/gates/_root_asset_dirs.py
+  reason: defect is in the remedy-text generator + dsl verb registries, not check/**
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: defect is in the remedy-text generator + dsl verb registries, not check/**
+  actor: logan
+  at: '2026-09-03'
 designated_repro_test: null
 threat: null
 component: null
