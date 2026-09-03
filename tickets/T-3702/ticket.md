@@ -1,7 +1,7 @@
 ---
 id: T-3702
 title: 'frob-timeout-guard: misplaced frob:doc on private _HELP_OR_DRY_RUN_RE'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
