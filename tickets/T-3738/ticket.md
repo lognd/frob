@@ -1,7 +1,7 @@
 ---
 id: T-3738
 title: fix win32 hang in TestWireGate git subprocess calls
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-03'
