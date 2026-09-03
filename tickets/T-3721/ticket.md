@@ -14,11 +14,22 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/check/**
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/check/**
+  reason: the make-coverage remedy string lives in gates/__init__.py, not check/**
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: the make-coverage remedy string lives in gates/__init__.py, not check/**
+  actor: logan
+  at: '2026-09-03'
 designated_repro_test: null
 threat: null
 component: null
