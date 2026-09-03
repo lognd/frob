@@ -1,7 +1,7 @@
 ---
 id: T-3711
 title: re-stamp frob-ratchet.lock.json (WAIVE011 producer-abandoned)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -27,3 +27,6 @@ anchor_reason: null
 land_commit: null
 ---
 WAIVE011 flags frob-ratchet.lock.json's INV006 pool as ABANDONED: 1593+ commits touched src/frob/**/*.py since the lock was last stamped 2026-07-23, past ABANDONED_CODE_COMMIT_THRESHOLD. Re-run frob pool snapshot INV006 to re-stamp against current main and clear the self-gate error. Found during the AY self-gate drive (2026-09-02).
+
+## Drop reason
+- 2026-09-02: duplicate of T-3279/T-3672 which already track the WAIVE011/DEPR006 lock re-stamp; working T-3279 instead
