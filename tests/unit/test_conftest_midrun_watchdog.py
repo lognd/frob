@@ -247,6 +247,91 @@ class TestRunMidrunWatchdogTotalBudget:
         assert calls == []
 
 
+class TestEmitHardExitLines:
+    """`_emit_hard_exit_lines` (T-3726) -- the shared tail every
+    `_announce_*_and_hard_exit` in `tests/conftest.py` now delegates to.
+    Root cause this guards: a local repro (short FROB_TEST_TOTAL_BUDGET_
+    SECONDS + a sleeping test, run for real under a real pytest
+    subprocess with fd-level capturing active) showed the SUITE-RESULT
+    line silently swallowed even though `reporter.write_line` raised no
+    exception and `sys.stdout.flush()` ran -- pytest's own
+    `CaptureManager` (method='fd') was still capturing the real stdout
+    fd, so the write landed in ITS tmpfile, not the terminal/redirect
+    target `os._exit` then never gave a chance to flush back out. These
+    tests assert the fix's mechanism directly: `capturemanager.
+    suspend_global_capture` is called before any line is written."""
+
+    # frob:tests tests/unit/test_conftest_midrun_watchdog.py::TestEmitHardExitLines.test_suspends_global_capture_before_writing_when_capman_present  # noqa: E501
+    def test_suspends_global_capture_before_writing_when_capman_present(self) -> None:
+        module = _load_conftest()
+        events: list[str] = []
+
+        class _FakeCapman:
+            def suspend_global_capture(self, in_: bool = False) -> None:
+                events.append("suspend")
+
+        class _FakeReporter:
+            def write_line(self, line: str) -> None:
+                events.append(f"write:{line}")
+
+        capman = _FakeCapman()
+        reporter = _FakeReporter()
+
+        class _FakeConfig:
+            class pluginmanager:  # noqa: N801 -- mirrors pytest.Config's own shape
+                @staticmethod
+                def get_plugin(name: str) -> object:
+                    return {"capturemanager": capman, "terminalreporter": reporter}[
+                        name
+                    ]
+
+        module._emit_hard_exit_lines(_FakeConfig(), ["hello", "world"])
+        assert events == ["suspend", "write:hello", "write:world"], (
+            "suspend_global_capture must run BEFORE any write, or the "
+            "write can still land in the captured tmpfile"
+        )
+
+    # frob:tests \
+    # tests/unit/test_conftest_midrun_watchdog.py::TestEmitHardExitLines.test_never_rai\
+    # ses_when_capman_absent
+    def test_never_raises_when_capman_absent(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        module = _load_conftest()
+
+        class _FakeConfig:
+            class pluginmanager:  # noqa: N801 -- mirrors pytest.Config's own shape
+                @staticmethod
+                def get_plugin(name: str) -> None:
+                    return None
+
+        module._emit_hard_exit_lines(_FakeConfig(), ["a line"])
+        assert "a line" in capsys.readouterr().out
+
+    # frob:tests \
+    # tests/unit/test_conftest_midrun_watchdog.py::TestEmitHardExitLines.test_a_suspend\
+    # _exception_never_blocks_the_write
+    def test_a_suspend_exception_never_blocks_the_write(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        module = _load_conftest()
+
+        class _RaisingCapman:
+            def suspend_global_capture(self, in_: bool = False) -> None:
+                raise RuntimeError("no active global capturing")
+
+        class _FakeConfig:
+            class pluginmanager:  # noqa: N801 -- mirrors pytest.Config's own shape
+                @staticmethod
+                def get_plugin(name: str) -> object | None:
+                    if name == "capturemanager":
+                        return _RaisingCapman()
+                    return None
+
+        module._emit_hard_exit_lines(_FakeConfig(), ["still printed"])
+        assert "still printed" in capsys.readouterr().out
+
+
 class TestAnnounceTotalBudgetExceededAndHardExit:
     """`_announce_total_budget_exceeded_and_hard_exit` (T-3707) --
     os._exit is monkeypatched to record its argument instead of really

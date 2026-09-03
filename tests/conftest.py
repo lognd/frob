@@ -726,6 +726,60 @@ def _total_budget_exceeded(
     return (now - suite_started_ts) >= budget_s
 
 
+# frob:waive WIRE001 reason="genuinely wired -- called by every \
+# _announce_*_and_hard_exit below (T-3608's _announce_stall_and_abort included), each \
+# reached only via a background threading.Thread(target=...), same class of gap this \
+# file's pre-existing T-3608 WIRE001 waivers already cover, not a direct in-repo call \
+# site" follow_up="T-3381"
+def _emit_hard_exit_lines(config: pytest.Config, lines: list[str]) -> None:
+    """T-3726: the shared tail every `_announce_*_and_hard_exit` in this
+    file calls immediately before its own `os._exit(1)` -- prints each of
+    `lines` through the terminal reporter (falling back to `print` if the
+    plugin is somehow absent) and flushes both streams, exactly as each
+    call site used to do inline, EXCEPT it now also suspends pytest's
+    own capture manager first when one is registered.
+
+    Root cause this fixes (T-3726, reproduced locally: a short
+    FROB_TEST_TOTAL_BUDGET_SECONDS + a sleeping test hard-exits with NO
+    SUITE-RESULT line ever reaching the redirected log, even though
+    `reporter.write_line` raised no exception and `sys.stdout.flush()`
+    ran before `os._exit`): pytest's default capture method is `fd`,
+    which duplicates the real stdout/stderr file descriptors for the
+    ENTIRE session (`CaptureManager._global_capturing`, method='fd') and
+    points fd 1/2 at its own tmpfile for as long as capturing is active.
+    Every one of this file's `_announce_*_and_hard_exit` functions runs
+    from a background watchdog thread with NO pytest hook wrapping it,
+    so `capman.suspend_global_capture` is never invoked on this path the
+    way it is for pytest's own hook-driven output -- a write issued here
+    (`reporter.write_line`, `print`, even a raw `sys.stdout.write`) lands
+    in the captured tmpfile instead of the real stdout/stderr fd, and
+    `sys.stdout.flush()` cannot rescue it: it flushes the SAME
+    already-captured fd, not the real one underneath it. `os._exit`
+    then skips the teardown step that would otherwise copy captured
+    output back out, so the line is lost outright -- exactly the "armed
+    but the fire line never shows up" symptom this ticket's brief named.
+    `capman.suspend_global_capture(in_=True)` restores the real fd
+    before the write so the line reaches the actual terminal/redirect
+    target; no matching resume is needed since the process exits right
+    after."""
+    capman = config.pluginmanager.get_plugin("capturemanager")
+    if capman is not None:
+        try:
+            capman.suspend_global_capture(in_=True)
+        except (
+            Exception
+        ):  # pragma: no cover - defensive only, must never block the exit
+            pass
+    reporter = config.pluginmanager.get_plugin("terminalreporter")
+    for line in lines:
+        if reporter is not None:
+            reporter.write_line(line)
+        else:  # pragma: no cover - defensive only, terminalreporter always registered
+            print(line)
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+
 # frob:waive WIRE001 reason="genuinely wired -- called only by _run_midrun_watchdog \
 # below, itself reached exclusively via threading.Thread(target=...), same class of \
 # gap this file's pre-existing T-3608 WIRE001 waivers already cover, not a direct \
@@ -752,14 +806,7 @@ def _announce_total_budget_exceeded_and_hard_exit(
         "SUITE-RESULT: exitstatus=1 collected=0 (partial, total-budget) "
         "failed=0 (partial, total-budget)",
     ]
-    reporter = config.pluginmanager.get_plugin("terminalreporter")
-    for line in lines:
-        if reporter is not None:
-            reporter.write_line(line)
-        else:  # pragma: no cover - defensive only, terminalreporter always registered
-            print(line)
-    sys.stdout.flush()
-    sys.stderr.flush()
+    _emit_hard_exit_lines(config, lines)
     os._exit(1)
 
 
@@ -805,14 +852,7 @@ def _announce_midrun_stall_and_hard_exit(
         "SUITE-RESULT: exitstatus=1 collected=0 (partial, midrun-stall) "
         "failed=0 (partial, midrun-stall)",
     ]
-    reporter = config.pluginmanager.get_plugin("terminalreporter")
-    for line in lines:
-        if reporter is not None:
-            reporter.write_line(line)
-        else:  # pragma: no cover - defensive only, terminalreporter always registered
-            print(line)
-    sys.stdout.flush()
-    sys.stderr.flush()
+    _emit_hard_exit_lines(config, lines)
     os._exit(1)
 
 
@@ -1093,18 +1133,13 @@ def _announce_stall_and_abort(config: pytest.Config, now: float) -> None:
         "SUITE-RESULT: exitstatus=1 collected=0 (partial, stall-abort) "
         "failed=0 (partial, stall-abort)"
     )
-    reporter = config.pluginmanager.get_plugin("terminalreporter")
-    for line in lines:
-        if reporter is not None:
-            reporter.write_line(line)
-        else:  # pragma: no cover - defensive only, terminalreporter always registered
-            print(line)
-    # T-3608: `os._exit` skips Python's normal buffered-stream flush -- an
-    # explicit flush here is the only reason the STALL-DETECTED report a
-    # caller greps for actually reaches the captured log instead of being
-    # lost in an unflushed buffer at the moment of the hard exit.
-    sys.stdout.flush()
-    sys.stderr.flush()
+    # T-3608/T-3726: `os._exit` skips Python's normal buffered-stream
+    # flush, AND (T-3726) a plain `sys.stdout.flush()` alone cannot
+    # rescue a write made while pytest's own fd-level capture manager is
+    # still active -- see `_emit_hard_exit_lines`'s docstring for the
+    # full root-cause writeup this shared helper fixes for every
+    # hard-exit site in this file, this one included.
+    _emit_hard_exit_lines(config, lines)
     os._exit(1)
 
 

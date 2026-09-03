@@ -1,7 +1,7 @@
 ---
 id: T-3726
 title: 'win32: total-budget watchdog never fires + budget-var recheck'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -32,6 +32,12 @@ scope_changes:
     edit is needed once T-3725 lands
   actor: logan
   at: '2026-09-03'
+evidence:
+- tests/unit/test_conftest_midrun_watchdog.py::TestEmitHardExitLines::test_suspends_global_capture_before_writing_when_capman_present
+- tests/unit/test_conftest_midrun_watchdog.py::TestEmitHardExitLines::test_never_raises_when_capman_absent
+- tests/unit/test_conftest_midrun_watchdog.py::TestEmitHardExitLines::test_a_suspend_exception_never_blocks_the_write
+- tests/unit/test_conftest_midrun_watchdog.py::TestAnnounceTotalBudgetExceededAndHardExit::test_hard_exits_with_status_1_and_prints_the_inventory_line
+- tests/unit/test_conftest_midrun_watchdog.py::TestAnnounceMidrunStallAndHardExit::test_hard_exits_with_status_1_and_prints_the_inventory_line
 designated_repro_test: null
 threat: null
 component: null
