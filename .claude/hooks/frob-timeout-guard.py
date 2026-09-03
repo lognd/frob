@@ -59,7 +59,6 @@ PATTERN = re.compile(
 #: the invocation read-only and fast, regardless of which guarded verb it
 #: names -- `uv run frob ticket new --help` cannot stall the way a real
 #: `ticket new` can, so it should never need the large-timeout wrapper.
-# frob:doc docs/guides/claude-hooks.md#frob-timeout-guardpy
 _HELP_OR_DRY_RUN_RE = re.compile(r"(?:^|\s)(?:--help|-h|--version|--dry-run)\b")
 
 # frob:doc docs/guides/claude-hooks.md#frob-timeout-guardpy
