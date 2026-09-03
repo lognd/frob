@@ -16,6 +16,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_root_asset_dirs.py
 - src/frob/graph/dsl.py
+- docs/modules/gates.md
+- docs/modules/graph.md
+- docs/guides/extending/comment-dsl-directives.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +37,21 @@ scope_changes:
 - op: add
   glob: src/frob/graph/dsl.py
   reason: defect is in the remedy-text generator + dsl verb registries, not check/**
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: docs/modules/gates.md
+  reason: doc closure targets for touched public symbols
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: docs/modules/graph.md
+  reason: doc closure targets for touched public symbols
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: docs/guides/extending/comment-dsl-directives.md
+  reason: doc closure targets for touched public symbols
   actor: logan
   at: '2026-09-03'
 designated_repro_test: null
