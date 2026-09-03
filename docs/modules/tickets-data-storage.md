@@ -1435,25 +1435,44 @@ live `/proc/<pid>/environ` fleet scan after the fact.
 is detected (`_bounded_xdist_workers` is non-`None`) -- it presupposes
 `pytest-xdist` is even installed, since a bound is meaningless to a
 plugin that is not loaded. It never checked the plugin's actual
-presence. That matters because frob's own `pyproject.toml` sets `-n
-auto` in `addopts` UNCONDITIONALLY, so in ANY environment lacking
-`pytest-xdist` -- frob's own venv missing the dependency, or a consumer
-repo that scaffolded frob's pytest config without also depending on
-`pytest-xdist` -- every pytest invocation exits 4 (a usage error: `-n`
-is not a recognised option) before a single test runs, fleet context or
-not, single developer or not. `frob.doctor.scan_external_tools` (T-3276)
-already reports this absence when `frob doctor` is asked, but nothing
+presence. That matters because, whenever the TARGET repo's own
+`pyproject.toml` `addopts` sets an xdist token (`-n`/`--numprocesses`/
+`--dist`/`--tx`), every pytest invocation in an environment lacking
+`pytest-xdist` exits 4 (a usage error: the token is not a recognised
+option) before a single test runs, fleet context or not, single
+developer or not. `frob.doctor.scan_external_tools` (T-3276) already
+reports this absence when `frob doctor` is asked, but nothing
 preflighted an actual pytest spawn against it, so the failure only ever
 surfaced as an opaque exit 4 with no diagnosis pointing at the plugin.
 
+<!-- frob:describes src/frob/tickets/_worktree_guard.py::_addopts_sets_xdist -->
+
+**T-3722: the addopts check reads the TARGET repo's own config, never
+assumes frob's.** The paragraph above previously read frob's OWN `-n
+auto` addopt as an unconditional fact of every repo this guard runs
+in -- true only for frob's own checkout. A consumer repo scaffolded from
+frob with a plain `addopts = "-q"` (no xdist token at all) saw
+`warn_if_xdist_plugin_missing` fire anyway, an ERROR about a failure mode
+that plain `-q` cannot even trigger. `_addopts_sets_xdist(root)` fixes
+this: it reads `root`'s own `pyproject.toml`
+`[tool.pytest.ini_options].addopts`, tokenizes it, and reports whether
+any xdist worker-count/distribution-mode token is present -- mirroring
+`frob.testing._coverage_refresh._neutralized_addopts`'s own
+read-and-tokenize pattern rather than inventing a second one. Any
+read/parse failure (no `pyproject.toml`, no `addopts` key, unparsable
+TOML) returns `False`: no evidence of an xdist addopt is not evidence of
+one, so the guard stays silent rather than fabricating a warning.
+
 <!-- frob:describes src/frob/tickets/_worktree_guard.py::warn_if_xdist_plugin_missing -->
 
-`warn_if_xdist_plugin_missing(root)` is the new, unconditional preflight:
-`_xdist_plugin_present()` probes `importlib.metadata.version("pytest-
-xdist")` (the same distribution name `frob.doctor`'s own `_EXTERNAL_
-TOOLS` entry uses, T-3276) and, when absent, logs an ERROR naming the
-tool, the failure mode (exit 4, not a red suite), and the install
-command. `warn_if_xdist_bound_missing` now calls this unconditionally as
+`warn_if_xdist_plugin_missing(root)` is the preflight: it returns silently
+unless `_addopts_sets_xdist(root)` (T-3722) finds an xdist token in the
+target repo's own addopts, then `_xdist_plugin_present()` probes
+`importlib.metadata.version("pytest-xdist")` (the same distribution name
+`frob.doctor`'s own `_EXTERNAL_TOOLS` entry uses, T-3276) and, when
+absent, logs an ERROR naming the tool, the failure mode (exit 4, not a
+red suite), and the install command. `warn_if_xdist_bound_missing` now
+calls this unconditionally as
 its first statement, before its own fleet-context bound check -- since
 it is already the single function wired into every pytest-spawning call
 site in this codebase (T-3094's own delivery-gap fix: `frob.app.

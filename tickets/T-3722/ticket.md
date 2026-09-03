@@ -1,7 +1,7 @@
 ---
 id: T-3722
 title: frob test --all prints stale/wrong xdist addopts warning
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -44,6 +44,11 @@ scope_changes:
     functions
   actor: logan
   at: '2026-09-03'
+evidence:
+- tests/test_worktree_guard.py::TestAddoptsSetsXdist::test_true_when_dash_n_present
+- tests/test_worktree_guard.py::TestAddoptsSetsXdist::test_false_when_addopts_has_no_xdist_token
+- tests/test_worktree_guard.py::TestAddoptsSetsXdist::test_false_when_pyproject_unreadable
+- tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing::test_must_stay_quiet_when_addopts_has_no_xdist_token
 designated_repro_test: null
 threat: null
 component: null

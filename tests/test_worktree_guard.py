@@ -299,6 +299,7 @@ class TestApplyAgentEnv:
 
 
 # frob:ticket T-3316
+# frob:ticket T-3722
 class TestWarnIfXdistBoundMissing:
     """T-3094: the loud half. A pytest spawned where a fleet-context bound
     SHOULD be in effect but is not silently falls back to xdist's plain
@@ -351,6 +352,7 @@ class TestWarnIfXdistBoundMissing:
         assert [r for r in caplog.records if r.levelname == "ERROR"] == []
 
     # frob:ticket T-3316
+    # frob:ticket T-3722
     def test_also_warns_on_plugin_absence_even_without_fleet_context(
         self,
         tmp_path: Path,
@@ -362,9 +364,13 @@ class TestWarnIfXdistBoundMissing:
 
         monkeypatch.delenv(PYTEST_XDIST_AUTO_NUM_WORKERS_ENV, raising=False)
         _init_repo(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.pytest.ini_options]\naddopts = "-n auto"\n'
+        )
         # No leases written -> no fleet context, the condition that keeps
         # the BOUND check silent (test_must_stay_quiet_no_fleet_context_no_log
-        # above). The PLUGIN check must still fire: it is unconditional.
+        # above). The PLUGIN check must still fire when the repo's own
+        # addopts sets an xdist token (T-3722's `_addopts_sets_xdist`).
         monkeypatch.setattr(guard_mod, "_xdist_plugin_present", lambda: False)
         with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
             warn_if_xdist_bound_missing(tmp_path)
@@ -375,14 +381,58 @@ class TestWarnIfXdistBoundMissing:
         )
 
 
-# frob:ticket T-3316
+# frob:ticket T-3722
+def _write_addopts(root: Path, addopts: str) -> None:
+    """T-3722 test fixture helper: write `root/pyproject.toml` with the
+    given `[tool.pytest.ini_options].addopts` value -- `_init_repo` writes
+    no `pyproject.toml` at all, so any test exercising `_addopts_sets_
+    xdist`'s real target-repo-config read needs one."""
+    (root / "pyproject.toml").write_text(
+        f'[tool.pytest.ini_options]\naddopts = "{addopts}"\n'
+    )
+
+
+# frob:ticket T-3722
+class TestAddoptsSetsXdist:
+    """T-3722: `_addopts_sets_xdist` reads the TARGET repo's own real
+    `pyproject.toml` addopts rather than assuming frob's own `-n auto` --
+    the fix for a consumer repo's `frob test --all` printing the xdist
+    warning despite an addopts of plain `-q`, no xdist token anywhere."""
+
+    # frob:ticket T-3722
+    def test_true_when_dash_n_present(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestAddoptsSetsXdist.test_true_when_dash_n_present  # noqa: E501
+        from frob.tickets._worktree_guard import _addopts_sets_xdist
+
+        _write_addopts(tmp_path, "-n auto --dist=loadgroup")
+        assert _addopts_sets_xdist(tmp_path) is True
+
+    # frob:ticket T-3722
+    def test_false_when_addopts_has_no_xdist_token(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestAddoptsSetsXdist.test_false_when_addopts_has_no_xdist_token  # noqa: E501
+        from frob.tickets._worktree_guard import _addopts_sets_xdist
+
+        _write_addopts(tmp_path, "-q")
+        assert _addopts_sets_xdist(tmp_path) is False
+
+    # frob:ticket T-3722
+    def test_false_when_pyproject_unreadable(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestAddoptsSetsXdist.test_false_when_pyproject_unreadable  # noqa: E501
+        from frob.tickets._worktree_guard import _addopts_sets_xdist
+
+        assert _addopts_sets_xdist(tmp_path) is False
+
+
+# frob:ticket T-3722
 class TestWarnIfXdistPluginMissing:
     """T-3316: the plugin-ABSENCE half, distinct from `TestWarnIfXdistBoundMissing`
-    above (an unset BOUND). frob's own `-n auto` addopt makes any pytest
-    spawn fail with a usage error the moment the plugin is not importable,
-    regardless of fleet context."""
+    above (an unset BOUND). Fires only when the TARGET repo's own addopts
+    actually sets an xdist token (T-3722's `_addopts_sets_xdist`) -- a
+    pytest spawn against such an addopts fails with a usage error the
+    moment the plugin is not importable, regardless of fleet context."""
 
     # frob:ticket T-3316
+    # frob:ticket T-3722
     def test_must_fire_when_plugin_not_importable(
         self,
         tmp_path: Path,
@@ -393,6 +443,7 @@ class TestWarnIfXdistPluginMissing:
         import frob.tickets._worktree_guard as guard_mod
 
         _init_repo(tmp_path)
+        _write_addopts(tmp_path, "-n auto")
         monkeypatch.setattr(guard_mod, "_xdist_plugin_present", lambda: False)
         with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
             warn_if_xdist_plugin_missing(tmp_path)
@@ -403,6 +454,7 @@ class TestWarnIfXdistPluginMissing:
         )
 
     # frob:ticket T-3316
+    # frob:ticket T-3722
     def test_must_stay_quiet_when_plugin_importable(
         self,
         tmp_path: Path,
@@ -413,7 +465,28 @@ class TestWarnIfXdistPluginMissing:
         import frob.tickets._worktree_guard as guard_mod
 
         _init_repo(tmp_path)
+        _write_addopts(tmp_path, "-n auto")
         monkeypatch.setattr(guard_mod, "_xdist_plugin_present", lambda: True)
+        with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
+            warn_if_xdist_plugin_missing(tmp_path)
+        assert [r for r in caplog.records if r.levelname == "ERROR"] == []
+
+    # frob:ticket T-3722
+    def test_must_stay_quiet_when_addopts_has_no_xdist_token(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestWarnIfXdistPluginMissing.test_must_stay_quiet_when_addopts_has_no_xdist_token  # noqa: E501
+        # T-3722 acceptance: a consumer repo whose addopts is plain `-q`
+        # (no `-n auto` anywhere) must never see this warning, even with
+        # pytest-xdist absent -- there is no xdist token to fail on.
+        import frob.tickets._worktree_guard as guard_mod
+
+        _init_repo(tmp_path)
+        _write_addopts(tmp_path, "-q")
+        monkeypatch.setattr(guard_mod, "_xdist_plugin_present", lambda: False)
         with caplog.at_level("ERROR", logger="frob.tickets._worktree_guard"):
             warn_if_xdist_plugin_missing(tmp_path)
         assert [r for r in caplog.records if r.levelname == "ERROR"] == []
