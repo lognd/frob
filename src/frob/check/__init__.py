@@ -1153,6 +1153,15 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "compliance",
             "docblocks",
             "walk_lint",
+            # T-3696: PLATFORM002 (frob.gates._win32_kill_signal.
+            # win32_kill_signal_gate) was registered in frob.gates.
+            # _ALL_GATES (thread-pool, same repo-wide os.kill(<pid>, 0)
+            # AST-scan shape as walk_lint immediately above, per
+            # frob.gates.__init__'s own job-table ordering comment) but
+            # never added to a _STAGE_GROUPS member -- the identical
+            # registered-but-unreachable omission shape as ffi_boundary/
+            # suppress/milestone etc. above.
+            "win32_kill_signal",
             "excludehazard",
             "debt",
             # frob:ticket T-0797

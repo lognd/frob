@@ -1,7 +1,7 @@
 ---
 id: T-3705
 title: wire win32_kill_signal into a stage group
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'
