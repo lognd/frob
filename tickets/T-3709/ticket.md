@@ -1,0 +1,32 @@
+---
+id: T-3709
+title: Bounded rerun for load-sensitive CPU-relative perf tests
+state: queued
+kind: bug
+origin: human
+created: '2026-09-02'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- tests/unit/perf/**
+- pyproject.toml
+- tests/conftest.py
+- .github/workflows/ci.yml
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+CI flaky whack-a-mole: tests/unit/perf/test_hotgraph.py::TestStackSampler::test_overhead_under_five_percent flaked in run 33698082419 (ubuntu). T-3655 already widened tolerance once; CPU-relative perf ratio is fundamentally noisy under xdist on shared CI runners, serial xdist_group doesn't fully fix it (T-0760/T-3655). Add pytest-rerunfailures and apply bounded @pytest.mark.flaky(reruns=2, reruns_delay=1) ONLY to genuinely load-sensitive tests (CPU-relative perf ratios) in tests/unit/perf/, with reason comments. Do not touch cache/graph_build_lock tests (owned by sibling AU).
