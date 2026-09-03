@@ -15,6 +15,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_docptr.py
+- tests/test_docptr_gate.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +30,18 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_docptr.py
   reason: narrow scope to the single file the DOC006 reason-field exemption fix touches
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: include the DOC006 gate test file and its own doc for the reason-field exemption
+    test + doc update
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: docs/modules/gates.md
+  reason: include the DOC006 gate test file and its own doc for the reason-field exemption
+    test + doc update
   actor: logan
   at: '2026-09-03'
 designated_repro_test: null
