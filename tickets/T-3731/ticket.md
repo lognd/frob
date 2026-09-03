@@ -1,7 +1,7 @@
 ---
 id: T-3731
 title: reconcile hangs scanning all local branches (unbounded unlanded-work scan)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-03'
