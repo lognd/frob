@@ -16,10 +16,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .github/workflows/ci.yml
+- tests/test_ci_workflow_matrix.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .github/workflows/ci.yml
+  reason: remove -p no:xdist from the win32 Test step to re-enable parallel xdist;
+    update any matrix assertion
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: tests/test_ci_workflow_matrix.py
+  reason: remove -p no:xdist from the win32 Test step to re-enable parallel xdist;
+    update any matrix assertion
+  actor: logan
+  at: '2026-09-03'
 body_changes:
 - mode: set
   reason: add description and plan for xdist re-enable follow-up
