@@ -216,9 +216,9 @@
       "ticket": "T-3591"
     },
     "testsuite::env.read": {
-      "accepted_count": 21,
-      "reason": "T-3618: T-3586's tests/test_gates.py split relocated content into tests/gates_suite/*.py -- adds the real, new tests/gates_suite/test_run.py env.read site; measured live via-list count.",
-      "ticket": "T-3618"
+      "accepted_count": 22,
+      "reason": "T-3738: TestWireGate's win32-hang fix adds a _git_env() helper reading os.environ to force GIT_TERMINAL_PROMPT=0 on every raw git subprocess call -- adds the real, new tests/gates_suite/test_wire.py env.read site; measured live via-list count.",
+      "ticket": "T-3738"
     },
     "testsuite::env.write": {
       "accepted_count": 6,

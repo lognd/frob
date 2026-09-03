@@ -1,3 +1,4 @@
+import os
 import subprocess
 from pathlib import Path
 
@@ -13,6 +14,19 @@ from tests.conftest import (
     _ticket,
     _write,
 )
+
+
+def _git_env() -> dict[str, str]:
+    """A fresh copy of the process environment with GIT_TERMINAL_PROMPT
+    forced off. T-3730/T-3735 precedent (win32 hang guard): every raw git
+    subprocess call in this file gets a bound timeout and this env -- an
+    inherited global commit.gpgsign=true/credential-helper prompt, or any
+    other interactive stall, must never be able to hang the suite forever.
+    Read lazily (per call, not at import time) so the module import itself
+    carries no env.read effect."""
+    env = dict(os.environ)
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
 
 
 class TestDeadSymbolGate:
@@ -843,14 +857,34 @@ class TestWireGate:
             "def test_own_obligations_clean() -> None:\n"
             "    assert own_obligations_clean()\n",
         )
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(
-            ["git", "commit", "-q", "-m", "feat: add own_obligations_clean"],
+            ["git", "add", "-A"],
             cwd=tmp_path,
             check=True,
+            timeout=30,
+            env=_git_env(),
         )
         subprocess.run(
-            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+            [
+                "git",
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "-q",
+                "-m",
+                "feat: add own_obligations_clean",
+            ],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
+        )
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
         )
         # The "split": delete src/a.py, add the identical symbol under
         # src/pkg/_a.py instead.
@@ -898,14 +932,34 @@ class TestWireGate:
             "def test_own_obligations_clean() -> None:\n"
             "    assert own_obligations_clean()\n",
         )
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(
-            ["git", "commit", "-q", "-m", "feat: add own_obligations_clean"],
+            ["git", "add", "-A"],
             cwd=tmp_path,
             check=True,
+            timeout=30,
+            env=_git_env(),
         )
         subprocess.run(
-            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+            [
+                "git",
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "-q",
+                "-m",
+                "feat: add own_obligations_clean",
+            ],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
+        )
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
         )
         (tmp_path / "src" / "a.py").unlink()
         _write(
@@ -947,14 +1001,34 @@ class TestWireGate:
             "def caller() -> bool:\n"
             "    return own_obligations_clean()\n",
         )
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(
-            ["git", "commit", "-q", "-m", "feat: add own_obligations_clean"],
+            ["git", "add", "-A"],
             cwd=tmp_path,
             check=True,
+            timeout=30,
+            env=_git_env(),
         )
         subprocess.run(
-            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+            [
+                "git",
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "-q",
+                "-m",
+                "feat: add own_obligations_clean",
+            ],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
+        )
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
         )
         _write(
             tmp_path,
@@ -991,14 +1065,34 @@ class TestWireGate:
             "def caller() -> bool:\n"
             "    return own_obligations_clean()\n",
         )
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(
-            ["git", "commit", "-q", "-m", "feat: add own_obligations_clean"],
+            ["git", "add", "-A"],
             cwd=tmp_path,
             check=True,
+            timeout=30,
+            env=_git_env(),
         )
         subprocess.run(
-            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+            [
+                "git",
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "-q",
+                "-m",
+                "feat: add own_obligations_clean",
+            ],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
+        )
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
         )
         _write(
             tmp_path,
@@ -1278,9 +1372,19 @@ class TestWireGate:
             '    r"frob +(ticket +(land|totallymadeupverb)|check|test)\\b"\n'
             ")\n",
         )
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(
-            ["git", "commit", "-q", "-m", "add hook"], cwd=tmp_path, check=True
+            ["git", "add", "-A"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
+        )
+        subprocess.run(
+            ["git", "-c", "commit.gpgsign=false", "commit", "-q", "-m", "add hook"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
         )
         violations = _wire003_stale_verb_references(tmp_path)
         assert any(
@@ -1306,9 +1410,19 @@ class TestWireGate:
             ".claude/hooks/frob-suggest.py",
             'MSG = "Use `uv run frob totallynotarealverb` instead."\n',
         )
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(
-            ["git", "commit", "-q", "-m", "add hook"], cwd=tmp_path, check=True
+            ["git", "add", "-A"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
+        )
+        subprocess.run(
+            ["git", "-c", "commit.gpgsign=false", "commit", "-q", "-m", "add hook"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
         )
         violations = _wire003_stale_verb_references(tmp_path)
         assert any(
@@ -1327,9 +1441,19 @@ class TestWireGate:
             "docs/modules/example.md",
             "Run `frob ticket land T-0001` then `frob check`.\n",
         )
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(
-            ["git", "commit", "-q", "-m", "add doc"], cwd=tmp_path, check=True
+            ["git", "add", "-A"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
+        )
+        subprocess.run(
+            ["git", "-c", "commit.gpgsign=false", "commit", "-q", "-m", "add doc"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
         )
         violations = _wire003_stale_verb_references(tmp_path)
         assert violations == []
@@ -1349,9 +1473,19 @@ class TestWireGate:
             "docs/modules/example.md",
             "See `frob.tickets._land` and `frob-suggest.py` for detail.\n",
         )
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(
-            ["git", "commit", "-q", "-m", "add doc"], cwd=tmp_path, check=True
+            ["git", "add", "-A"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
+        )
+        subprocess.run(
+            ["git", "-c", "commit.gpgsign=false", "commit", "-q", "-m", "add doc"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
         )
         violations = _wire003_stale_verb_references(tmp_path)
         assert violations == []
@@ -1375,9 +1509,19 @@ class TestWireGate:
             'MSG = "Use `frob refactor rename` or `frob refactor move-module` '
             'instead of a hand edit."\n',
         )
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(
-            ["git", "commit", "-q", "-m", "add hook"], cwd=tmp_path, check=True
+            ["git", "add", "-A"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
+        )
+        subprocess.run(
+            ["git", "-c", "commit.gpgsign=false", "commit", "-q", "-m", "add hook"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
         )
         violations = _wire003_stale_verb_references(tmp_path)
         assert not any(v.rule == "WIRE003" for v in violations)
@@ -1406,9 +1550,19 @@ class TestWireGate:
             ".claude/hooks/frob-suggest.py",
             'MSG = "Use `frob refactor totallynotarealsubcommand` instead."\n',
         )
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
         subprocess.run(
-            ["git", "commit", "-q", "-m", "add hook"], cwd=tmp_path, check=True
+            ["git", "add", "-A"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
+        )
+        subprocess.run(
+            ["git", "-c", "commit.gpgsign=false", "commit", "-q", "-m", "add hook"],
+            cwd=tmp_path,
+            check=True,
+            timeout=30,
+            env=_git_env(),
         )
         violations = _wire003_stale_verb_references(tmp_path)
         assert any(
