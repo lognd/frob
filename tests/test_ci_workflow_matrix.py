@@ -164,17 +164,45 @@ class TestCoverageStepUsesFrobNotMake:
 
     # frob:tests .github/workflows/ci.yml
     def test_coverage_step_calls_frob_coverage_full(self) -> None:
-        """The T-1366 coverage-stamp step's `run:` block must invoke the
-        frob subcommand `make coverage` used to alias, not the make target
-        itself."""
-        workflow = _load_ci_workflow()
-        steps = workflow["jobs"]["build"]["steps"]
-        coverage_step = next(
-            step for step in steps if "coverage stamp" in step.get("name", "")
+        """T-3077 (T-1382 epic): the whole-suite coverage run must go through
+        the frob-native `uv run frob coverage --full`, never a `make coverage`
+        target (windows-latest ships no `make`). T-3748 moved that invocation
+        from the coverage-stamp step into the ubuntu Test step, but the
+        make-free contract this test locks is unchanged: the workflow drives
+        coverage through frob, not make."""
+        text = (
+            Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+        ).read_text(encoding="utf-8")
+        assert "uv run frob coverage --full" in text, (
+            "the workflow must run whole-suite coverage via `uv run frob "
+            "coverage --full` (T-3077); T-3748 keeps it in the ubuntu Test step"
         )
-        assert "uv run frob coverage --full" in coverage_step["run"], (
-            "the T-1366 coverage-stamp step must call `uv run frob "
-            "coverage --full` directly (T-3077)"
+
+    # frob:tests .github/workflows/ci.yml
+    def test_suite_runs_under_coverage_once_not_twice(self) -> None:
+        """T-3748 (over T-3077): the suite runs under coverage exactly ONCE.
+        The ubuntu Test step is that single combined pass/fail + coverage run
+        (`frob coverage --full --fail-on-degraded`, the frob-native path, not
+        `make coverage`), and the T-1366 coverage-stamp step must NOT re-run
+        `frob coverage --full` -- that was the duplicate second full-suite
+        run T-3748 removed."""
+        text = (
+            Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+        ).read_text(encoding="utf-8")
+        assert "uv run frob coverage --full --fail-on-degraded" in text, (
+            "the ubuntu Test step must run the suite once under coverage as "
+            "its combined pass/fail + coverage gate via `frob coverage --full "
+            "--fail-on-degraded` (T-3748)"
+        )
+        # The coverage-stamp step's own slice must no longer re-run the suite.
+        idx = text.find("coverage stamp + delta baseline must be freshly")
+        assert idx != -1, "the T-1366 coverage-stamp step was removed/renamed"
+        next_step_idx = text.find("\n      - name:", idx + 1)
+        step_text = text[idx : next_step_idx if next_step_idx != -1 else idx + 4000]
+        assert "uv run frob coverage --full" not in step_text, (
+            "the coverage-stamp step must not re-run `frob coverage --full` -- "
+            "the ubuntu Test step already produced coverage.xml + the stamp "
+            "(T-3748); a second run is the duplication this ticket removed"
         )
 
 

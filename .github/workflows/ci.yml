@@ -47,7 +47,7 @@ jobs:
     # this job-level ceiling -- 60 minutes keeps a >2x margin over the
     # 40-minute step budget without leaving a hang to run for hours
     # before anyone notices.
-    timeout-minutes: 90
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -142,18 +142,35 @@ jobs:
       # shutdown, a window no per-test timeout structurally reaches. The
       # step-level guards below are what cover that window; per-test hangs
       # remain covered by the pyproject.toml settings as before.
+      # T-3748: ubuntu runs the suite ONCE, under coverage, as its combined
+      # pass/fail + coverage gate -- `frob coverage --full --fail-on-degraded`
+      # runs the whole suite through frob's native coverage orchestration
+      # (xdist worker-crash recovery, wall-clock/no-progress watchdogs, the
+      # coverage.xml + .frob/coverage-stamp writers) AND exits non-zero on a
+      # genuinely red suite (pytest exit != 0 that is NOT a worker-crash). The
+      # coverage step below no longer re-runs the suite. Trade-off: frob's
+      # coverage orchestration captures the pytest output to its own log
+      # rather than streaming it here, so per-test failure NAMES are not in
+      # this job's log on a red ubuntu run -- the --fail-on-degraded exit +
+      # "suite ran RED" line flag it; reproduce locally for the failing set.
+      # FROB_COVERAGE_MAX_WORKERS=2 keeps the coverage-instrumented pool
+      # inside the 16 GB runner's RAM (T-3747: -n auto OOM-kills a worker);
+      # FROB_COVERAGE_WALLCLOCK_DEADLINE_S=7200 gives the memory-capped 2-worker
+      # run room to finish (the 3600s default is for the faster -n auto run).
       - name: Test (ubuntu, timed with stack-dump-on-hang)
         if: runner.os == 'Linux'
         env:
           PYTHONFAULTHANDLER: "1"
+          FROB_COVERAGE_MAX_WORKERS: "2"
+          FROB_COVERAGE_WALLCLOCK_DEADLINE_S: "7200"
         # T-3516: `tee` a copy of the run's own output to a log file so the
         # step below can grep it for `WORKER-CRASH-REPORT:` -- `pipefail`
-        # keeps `timeout ... | tee ...`'s own exit code as pytest's real
-        # one (a plain test failure or the 40m ABRT timeout), not tee's
+        # keeps `timeout ... | tee ...`'s own exit code as the real one (a
+        # red suite via --fail-on-degraded or the ABRT timeout), not tee's
         # always-0 exit, so this step still fails exactly as before.
         run: |
           set -o pipefail
-          timeout -s ABRT 40m uv run pytest -q 2>&1 | tee /tmp/pytest-ubuntu.log
+          timeout -s ABRT 130m uv run frob coverage --full --fail-on-degraded 2>&1 | tee /tmp/pytest-ubuntu.log
       # T-3516: collect, do not scatter -- and stay loud even off the raw
       # log: an xdist worker crash today (see tests/conftest.py's
       # `WORKER-CRASH-REPORT:` section, T-3516) is otherwise only visible
@@ -1639,22 +1656,16 @@ jobs:
       # baseline are all repo-state, platform-independent, so the whole
       # step belongs on one leg. See T-3748 for the deeper reuse (run the
       # suite once WITH --cov in the Test step and stamp from that).
+      # T-3748: this step no longer re-runs the suite under coverage -- the
+      # ubuntu Test step above now does that ONCE (frob coverage --full
+      # --fail-on-degraded), leaving coverage.xml + .frob/coverage-stamp in
+      # the workspace for the stamp-baseline + TEST005/006 checks below to
+      # read. Only the reconcile/doctor/baseline-stamp bookkeeping remains.
       - name: coverage stamp + delta baseline must be freshly measurable and clean (T-1366)
         if: matrix.os == 'ubuntu-latest'
-        env:
-          # T-3747: cap the coverage xdist pool. `frob coverage --full`
-          # sizes its pool at 1536 MiB/worker (_DEFAULT_PER_WORKER_MEM_MB),
-          # which gave -n 4 on this 16 GB / 4-core runner -- but a
-          # coverage-instrumented worker with the native extensions loaded
-          # exceeds that, so a worker was OOM-killed (T-1672 signature) and
-          # the run fell back to the ~2x-slower serial (-p no:xdist) retry.
-          # Pinning 2 workers fits available RAM, avoids the OOM+fallback,
-          # and keeps the run parallel.
-          FROB_COVERAGE_MAX_WORKERS: "2"
         run: |
           uv run frob ticket reconcile --apply
           uv run frob doctor
-          uv run frob coverage --full
           # T-3740: a single bare `--stamp-baseline` (no --only) runs every
           # gate chunk in one process and always (re)stamps .frob/baseline.
           # The previous hand-maintained `--only <group>` enumeration

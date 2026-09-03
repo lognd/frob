@@ -558,6 +558,8 @@ _BOOL_FLAGS = (
     "claude_check",
     # frob:ticket T-1525
     "coverage_full",
+    # frob:ticket T-3748
+    "coverage_fail_on_degraded",
     # frob:ticket T-1697
     "verify_json",
     # frob:ticket T-2217

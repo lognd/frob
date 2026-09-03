@@ -1212,6 +1212,11 @@ class AppConfig(BaseModel):
     # refresh` (T-1516) -- `--full` forces a cold-start-style whole-suite
     # run instead of the default touched-set incremental refresh.
     coverage_full: bool = False
+    # frob coverage --fail-on-degraded (T-3748): exit non-zero when the
+    # suite ran RED (pytest exit != 0, not an xdist worker-crash) so a
+    # single `frob coverage --full --fail-on-degraded` can be CI's one
+    # combined pass/fail + coverage run instead of a second full suite.
+    coverage_fail_on_degraded: bool = False
     coverage_path: Path | None = None
     # frob:ticket T-1572
     coverage_base: str | None = None

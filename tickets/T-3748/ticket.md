@@ -2,7 +2,7 @@
 id: T-3748
 title: 'reuse: run the suite once with --cov in the Test step and stamp coverage from
   that, instead of a second full-suite run'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-03'

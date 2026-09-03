@@ -180,9 +180,20 @@ wait`/`native_coverage_refresh`'s own `base` kwarg -- has no effect with
 `--full`, which always runs the whole suite regardless of any touched-set
 base.
 
+`--fail-on-degraded` (T-3748): exit non-zero when the whole-suite run
+finished RED -- a pytest exit `!= 0` that was NOT an xdist worker-crash
+(a worker-crash is an environment abort `native_coverage_refresh` already
+recovers from with its serial retry, T-1672, so it must not fail the
+gate). Read from the coverage-run provenance
+(`.frob/coverage-run.json`), it lets one `frob coverage --full
+--fail-on-degraded` be CI's single combined pass/fail + coverage run
+instead of a second full-suite pass (the ubuntu Test step does exactly
+this). Has no effect without `--full`.
+
 ```
-frob coverage            # touched-set incremental refresh (or a no-op if already fresh)
-frob coverage --full     # whole-suite run under coverage, unconditionally
+frob coverage                            # touched-set incremental refresh (or a no-op if already fresh)
+frob coverage --full                     # whole-suite run under coverage, unconditionally
+frob coverage --full --fail-on-degraded  # ...and exit non-zero if the suite ran red (CI's one pass/fail + coverage run)
 ```
 
 **Decision: `frob check` does not auto-trigger this refresh, for any

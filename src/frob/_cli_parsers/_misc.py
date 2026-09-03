@@ -613,6 +613,16 @@ def _add_coverage_parser(sub) -> None:
         help="run the whole suite under coverage instead of the touched-set "
         "incremental refresh",
     )
+    # frob:ticket T-3748
+    coverage_p.add_argument(
+        "--fail-on-degraded",
+        dest="coverage_fail_on_degraded",
+        action="store_true",
+        help="exit non-zero if the suite ran RED (pytest exit != 0 that is "
+        "NOT an xdist worker-crash), so `--full --fail-on-degraded` can be "
+        "CI's single combined pass/fail + coverage run instead of a second "
+        "full-suite pass (T-3748); has no effect without --full",
+    )
     # frob:ticket T-1572
     coverage_p.add_argument(
         "--base",

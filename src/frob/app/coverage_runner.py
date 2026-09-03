@@ -76,6 +76,8 @@ def run(cfg: AppConfig) -> None:
         if result.is_err:
             _log.error("frob coverage --full: %s", result.danger_err.value)
             raise SystemExit(1)
+        if cfg.coverage_fail_on_degraded:
+            _fail_if_suite_degraded(root)
         _log.info("frob coverage --full: refresh complete")
         return
 
@@ -90,3 +92,43 @@ def run(cfg: AppConfig) -> None:
         _log.info("frob coverage: refreshed in %.1fs", result.duration_s)
     else:
         _log.info("frob coverage: already fresh, nothing to do")
+
+
+# frob:ticket T-3748
+# frob:tests tests/unit/test_coverage_runner.py::TestCoverageFailOnDegraded.test_red_suite_exits_nonzero  # noqa: E501
+# frob:tests tests/unit/test_coverage_runner.py::TestCoverageFailOnDegraded.test_worker_crash_does_not_fail  # noqa: E501
+# frob:tests tests/unit/test_coverage_runner.py::TestCoverageFailOnDegraded.test_green_suite_returns  # noqa: E501
+# frob:tests tests/unit/test_coverage_runner.py::TestCoverageFailOnDegraded.test_missing_provenance_fails_closed  # noqa: E501
+def _fail_if_suite_degraded(root: Path) -> None:
+    """`SystemExit(1)` when the last `--full` run's provenance says the suite
+    ran RED -- a pytest exit != 0 that was NOT an xdist worker-crash.
+
+    A worker-crash is an ENVIRONMENT abort the refresh already recovers from
+    with its serial retry (T-1672), not a real regression, so it must NOT
+    fail this gate; only a genuinely red suite does. Reading fails closed:
+    an unreadable provenance cannot confirm the suite passed. Lets one `frob
+    coverage --full --fail-on-degraded` be CI's combined pass/fail + coverage
+    run instead of a second full-suite pass (T-3748)."""
+    import json
+
+    from frob.testing._coverage_refresh import _RUN_PROVENANCE_REL
+
+    prov_path = root / _RUN_PROVENANCE_REL
+    try:
+        record = json.loads(prov_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        _log.error(
+            "frob coverage --fail-on-degraded: coverage-run provenance %s is "
+            "unreadable (%s) -- cannot confirm the suite passed, failing closed",
+            prov_path,
+            exc,
+        )
+        raise SystemExit(1) from exc
+    if record.get("degraded") and not record.get("worker_crash"):
+        _log.error(
+            "frob coverage --fail-on-degraded: the suite ran RED (pytest exit "
+            "%s) -- coverage was measured against a failing suite; failing the "
+            "gate (T-3748)",
+            record.get("pytest_exit_code"),
+        )
+        raise SystemExit(1)

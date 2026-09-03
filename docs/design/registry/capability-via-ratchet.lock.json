@@ -31,9 +31,9 @@
       "ticket": "T-3029"
     },
     "cli::fs.read": {
-      "accepted_count": 19,
-      "reason": "T-2871: SYS111 measured this pair above its committed ceiling of 18; the new site is src/frob/app/_check_chunking_baseline.py, already a declared fs.read via-source for cli from a prior split, not a fresh capability -- bumping the ceiling to the current measured count rather than re-justifying an already-declared site.",
-      "ticket": "T-2871"
+      "accepted_count": 20,
+      "reason": "T-3748: frob coverage --full --fail-on-degraded reads the coverage-run provenance (.frob/coverage-run.json) in src/frob/app/coverage_runner.py::_fail_if_suite_degraded to classify a red suite -- one real, new fs.read via-list site, the same shape sibling app runners already declare.",
+      "ticket": "T-3748"
     },
     "cli::fs.write": {
       "accepted_count": 19,
@@ -251,9 +251,9 @@
       "ticket": "T-3595"
     },
     "testsuite::fs.write": {
-      "accepted_count": 501,
-      "reason": "T-3696: adds tests/unit/gates/test_win32_kill_signal.py's own real, new fs.write via-list site (Path.write_text fixture-file setup, the same shape every sibling gate test module already declares) -- bumping the ceiling to the current measured count.",
-      "ticket": "T-3696"
+      "accepted_count": 502,
+      "reason": "T-3748: adds tests/unit/test_coverage_runner.py's own real, new fs.write via-list site (Path.write_text of a coverage-run provenance fixture for the --fail-on-degraded tests, the same shape every sibling test module already declares) -- bumping the ceiling to the current measured count.",
+      "ticket": "T-3748"
     },
     "testsuite::net.connect": {
       "accepted_count": 3,
