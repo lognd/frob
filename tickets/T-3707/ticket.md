@@ -115,6 +115,13 @@ scope_changes:
     tests
   actor: logan
   at: '2026-09-02'
+body_changes:
+- mode: append
+  reason: record BUG002 waiver for confirmatory-only-by-construction evidence
+  actor: logan
+  at: '2026-09-02'
+  old_length: 833
+  new_length: 1823
 evidence:
 - tests/gates_suite/test_run.py::TestProcessPoolGates::test_run_gates_leaves_no_live_pool_threads_or_children_behind
 - tests/unit/test_conftest_midrun_watchdog.py::TestTotalBudgetExceeded::test_true_at_exactly_the_budget
@@ -128,3 +135,8 @@ anchor_reason: null
 land_commit: null
 ---
 Follow-up to T-3692. CI run 33680767948 FROB_CHECK_TIMING breadcrumbs: every pipeline mark fires at ~1.0s, then a ~120s gap before atexit fires. Investigated frob.gates._open_process_pool: already properly torn down (shutdown(wait=True) in finally; teardown-exit marks land at ~1s) -- NOT the blocker. Real suspect found while narrowing, out of this scope, filed separately: src/frob/lang and src/frob/vet abandon ThreadPoolExecutor(max_workers=1) workers via shutdown(wait=False) on timeout; concurrent.futures.thread joins ALL such threads at interpreter atexit regardless of abandonment. In-scope work: (1) harden _open_process_pool/run_gates shutdown to context-manager + cancel_futures=True with a regression test proving no live pool threads/children survive run_check; (2) Part B watchdog total-budget + ci.yml budget var fix.
+
+
+
+frob:waive BUG002 reason="confirmatory-only by construction, same posture T-3692/T-3705 already established for this ticket family: the designated repro test (TestProcessPoolGates::test_run_gates_leaves_no_live_pool_threads_or_children_behind) proves a PROPERTY that was already true before this ticket (frob.gates's ProcessPoolExecutor already shuts down cleanly, per T-3692's own timing-breadcrumb evidence) -- there was no pool-teardown bug in this ticket's own scope to reproduce with a fail-then-pass test. The win32-only symptom this ticket investigates (the ~120s interpreter-shutdown gap) is unreproducible on this WSL/Linux host by construction; this land ships the narrowing evidence (gates pool ruled out), a belt-and-suspenders hardening (cancel_futures=True), a real regression test guarding that property going forward, and the T-3707 Part B watchdog total-budget addition for the NEXT windows CI run to confirm or refute -- matching T-3692/T-3705's own round precedent"
+
