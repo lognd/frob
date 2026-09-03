@@ -16,7 +16,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/perf/**
 - pyproject.toml
-- uv.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +37,12 @@ scope_changes:
   glob: uv.lock
   reason: uv sync regenerates uv.lock as a direct consequence of adding pytest-rerunfailures
     to pyproject.toml
+  actor: logan
+  at: '2026-09-02'
+- op: remove
+  glob: uv.lock
+  reason: uv.lock is land-owned (T-0731) -- regenerated at land time, not a ticket-scoped
+    file
   actor: logan
   at: '2026-09-02'
 designated_repro_test: null
