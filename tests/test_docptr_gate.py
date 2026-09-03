@@ -16,7 +16,7 @@ import subprocess
 from pathlib import Path
 
 from frob.findings import Severity
-from frob.gates._docptr import doc006_gate
+from frob.gates._docptr import _blank_ticket_reason_fields, doc006_gate
 from frob.graph import build_graph
 
 
@@ -1179,6 +1179,165 @@ class TestDoc006TicketHistoricalExclusion:
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert _by_rule(violations, "tickets/T-9007/evidence/fix-measurement.md")
+
+
+# frob:ticket T-3724
+class TestDoc006ReasonFieldExclusion:
+    """T-3724: a `frob ticket scope`-written `reason:` frontmatter value is
+    free-text accountability prose, never a doc pointer -- a reason
+    mentioning a future config key or nonexistent file must not resolve
+    as DOC006 pointer syntax. Positive control both directions: the
+    frontmatter reason is exempt, the ticket BODY (real prose) still
+    fires."""
+
+    def test_scope_change_reason_not_flagged(self, tmp_path: Path) -> None:
+        """A dangling-looking backtick span inside `scope_changes[].reason`
+        must NOT fire -- it is free text a human/agent wrote to justify a
+        scope mutation, not a pointer anyone is expected to keep live."""
+        _init_repo(tmp_path)
+        frontmatter = (
+            "---\n"
+            "id: T-9010\n"
+            "title: placeholder\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: human\n"
+            "created: '2026-09-03'\n"
+            "scope_changes:\n"
+            "- op: remove\n"
+            "  glob: tests/**\n"
+            "  reason: narrow scope, future config key is\n"
+            "    `frob.gates._docptr::long_gone_symbol`\n"
+            "  actor: logan\n"
+            "---\n"
+        )
+        _write(tmp_path, "tickets/T-9010/ticket.md", frontmatter + "placeholder\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets/T-9010/ticket.md")
+
+    def test_open_ticket_body_still_flagged_alongside_reason(
+        self, tmp_path: Path
+    ) -> None:
+        """The reason-field exemption is scoped to the frontmatter block
+        only -- a dangling pointer in the ticket BODY of the same open
+        ticket must still fire (must-FIRE half of the positive control,
+        guards against the fix widening into a whole-file exemption)."""
+        _init_repo(tmp_path)
+        frontmatter = (
+            "---\n"
+            "id: T-9011\n"
+            "title: placeholder\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: human\n"
+            "created: '2026-09-03'\n"
+            "scope_changes:\n"
+            "- op: remove\n"
+            "  glob: tests/**\n"
+            "  reason: mentions `frob.gates._docptr::long_gone_symbol` too\n"
+            "  actor: logan\n"
+            "---\n"
+        )
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "docs/guide.md", "# Anchor\n\nSee `real_thing`.\n")
+        body = "Plan: touch `src/pkg/mod.py::long_gone_symbol`.\n"
+        _write(tmp_path, "tickets/T-9011/ticket.md", frontmatter + body)
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert _by_rule(violations, "tickets/T-9011/ticket.md")
+
+
+# frob:ticket T-3724
+class TestBlankTicketReasonFields:
+    """Direct unit coverage of `_blank_ticket_reason_fields`'s exact line-
+    count-preserving, indent-boundary blanking logic (T-3724) -- the
+    gate-level tests above prove the end-to-end DOC006 behavior, these
+    pin the boundary arithmetic itself (continuation-vs-sibling-key
+    indent, blank-line-inside-continuation, non-frontmatter passthrough)
+    so a future edit cannot silently shift an off-by-one here."""
+
+    def test_non_frontmatter_text_untouched(self) -> None:
+        """No leading `---` line at all -- both `not lines` and `not
+        _FRONTMATTER_DELIM_RE.match(...)` must independently short-circuit
+        to a no-op (pins the `or`, not just one operand)."""
+        text = "plain text\nno frontmatter here\n"
+        assert _blank_ticket_reason_fields(text) == text
+
+    def test_empty_text_untouched(self) -> None:
+        """`lines` empty -- the other half of the `not lines or ...` guard."""
+        assert _blank_ticket_reason_fields("") == ""
+
+    def test_unterminated_frontmatter_untouched(self) -> None:
+        """Opening `---` with no closing `---` -- `end` stays `None`, text
+        passes through unchanged rather than blanking past EOF."""
+        text = "---\nreason: foo\nno closing delimiter\n"
+        assert _blank_ticket_reason_fields(text) == text
+
+    def test_reason_value_blanked_key_kept(self) -> None:
+        """The inline value after `reason:` is removed but the `key:`
+        prefix survives verbatim (pins the exact slice arithmetic, not an
+        off-by-one that eats or leaves a stray character)."""
+        text = "---\nreason: mentions `pkg.mod::gone` here\n---\nbody\n"
+        out = _blank_ticket_reason_fields(text)
+        lines = out.splitlines()
+        assert lines[1] == "reason:"
+        assert len(lines) == len(text.splitlines())
+
+    def test_continuation_indented_more_is_blanked(self) -> None:
+        """A wrapped continuation line indented MORE than the `reason:`
+        key is blanked -- and a SIBLING key at the SAME indent right after
+        it is left completely untouched (pins the strict `>` boundary,
+        not `>=`)."""
+        text = (
+            "---\n"
+            "- op: remove\n"
+            "  reason: first line\n"
+            "    wrapped continuation `pkg.mod::gone`\n"
+            "  actor: logan\n"
+            "---\n"
+        )
+        out = _blank_ticket_reason_fields(text)
+        lines = out.splitlines()
+        assert lines[3] == ""
+        assert lines[4] == "  actor: logan"
+        assert len(lines) == len(text.splitlines())
+
+    def test_blank_line_inside_continuation_also_blanked(self) -> None:
+        """A genuinely blank line inside a wrapped continuation keeps
+        being swallowed by the continuation loop (pins the `strip() ==
+        ""` disjunct, not just the indent-depth disjunct) -- the sibling
+        key that follows is still reached and left alone."""
+        text = (
+            "---\n"
+            "- op: remove\n"
+            "  reason: first line\n"
+            "\n"
+            "    more continuation text\n"
+            "  actor: logan\n"
+            "---\n"
+        )
+        out = _blank_ticket_reason_fields(text)
+        lines = out.splitlines()
+        assert lines[3] == ""
+        assert lines[4] == ""
+        assert lines[5] == "  actor: logan"
+
+    def test_reason_key_on_last_frontmatter_line_no_overrun(self) -> None:
+        """A `reason:` key sitting on the LAST line before the closing
+        `---` must not read or blank past `end` (pins the outer `while i
+        < end` bound, not an off-by-one that touches the delimiter
+        itself)."""
+        text = "---\nid: T-1\nreason: trailing value\n---\nbody\n"
+        out = _blank_ticket_reason_fields(text)
+        lines = out.splitlines()
+        assert lines[2] == "reason:"
+        assert lines[3] == "---"
+        assert len(lines) == len(text.splitlines())
 
 
 class TestDoc006LedgerExclusion:

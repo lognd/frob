@@ -1,7 +1,7 @@
 ---
 id: T-3724
 title: DOC006 scans free-text scope-change reason strings for pointer syntax
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -51,6 +51,16 @@ scope_changes:
     re-verification
   actor: logan
   at: '2026-09-03'
+evidence:
+- tests/test_docptr_gate.py::TestDoc006ReasonFieldExclusion::test_scope_change_reason_not_flagged
+- tests/test_docptr_gate.py::TestDoc006ReasonFieldExclusion::test_open_ticket_body_still_flagged_alongside_reason
+- tests/test_docptr_gate.py::TestBlankTicketReasonFields::test_non_frontmatter_text_untouched
+- tests/test_docptr_gate.py::TestBlankTicketReasonFields::test_empty_text_untouched
+- tests/test_docptr_gate.py::TestBlankTicketReasonFields::test_unterminated_frontmatter_untouched
+- tests/test_docptr_gate.py::TestBlankTicketReasonFields::test_reason_value_blanked_key_kept
+- tests/test_docptr_gate.py::TestBlankTicketReasonFields::test_continuation_indented_more_is_blanked
+- tests/test_docptr_gate.py::TestBlankTicketReasonFields::test_blank_line_inside_continuation_also_blanked
+- tests/test_docptr_gate.py::TestBlankTicketReasonFields::test_reason_key_on_last_frontmatter_line_no_overrun
 designated_repro_test: null
 threat: null
 component: null

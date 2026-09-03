@@ -126,6 +126,79 @@ def _blank_fenced_blocks(text: str) -> str:
     return "\n".join(lines)
 
 
+# frob:ticket T-3724
+_FRONTMATTER_DELIM_RE = re.compile(r"^---\s*$")
+_REASON_KEY_RE = re.compile(r"^(\s*)(\w*reason):\s?(.*)$")
+
+
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006ReasonFieldExclusion.test_scope_change_reason_no\
+# t_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006ReasonFieldExclusion.test_open_ticket_body_still\
+# _flagged_alongside_reason
+# frob:tests \
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_non_frontmatter_text_unto\
+# uched
+# frob:tests \
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_empty_text_untouched
+# frob:tests \
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_unterminated_frontmatter_\
+# untouched
+# frob:tests \
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_reason_value_blanked_key_\
+# kept
+# frob:tests \
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_continuation_indented_mor\
+# e_is_blanked
+# frob:tests \
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_blank_line_inside_continu\
+# ation_also_blanked
+# frob:tests \
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_reason_key_on_last_frontm\
+# atter_line_no_overrun
+def _blank_ticket_reason_fields(text: str) -> str:
+    """Blank the VALUE of every YAML frontmatter key ending in `reason`
+    (`reason`, `scope_breadth_ack_reason`, `staleness_reason`, ...),
+    preserving line count and indentation so other violations' line
+    numbers stay correct (T-3724).
+
+    `frob ticket scope`/`fail`/`ack` write these as free-text
+    accountability prose at mutation time -- why a glob moved, why a
+    ticket is stale, why a check was waived -- never doc-pointer prose. A
+    reason mentioning a future config key or a file path that does not
+    exist YET must not be resolved as a DOC006 pointer. Only the
+    frontmatter block is touched, so a legitimate pointer written in the
+    ticket BODY (prose a human reads and is expected to keep correct)
+    still gets checked."""
+    lines = text.splitlines()
+    if not lines or not _FRONTMATTER_DELIM_RE.match(lines[0]):
+        return text
+    end = None
+    for i in range(1, len(lines)):
+        if _FRONTMATTER_DELIM_RE.match(lines[i]):
+            end = i
+            break
+    if end is None:
+        return text
+    i = 1
+    while i < end:
+        match = _REASON_KEY_RE.match(lines[i])
+        if match is None:
+            i += 1
+            continue
+        indent = len(match.group(1))
+        lines[i] = lines[i][: len(match.group(1)) + len(match.group(2)) + 1]
+        i += 1
+        while i < end and (
+            lines[i].strip() == "" or len(lines[i]) - len(lines[i].lstrip(" ")) > indent
+        ):
+            lines[i] = ""
+            i += 1
+    blanked = "\n".join(lines)
+    return blanked + "\n" if text.endswith("\n") else blanked
+
+
 def _prose_tokens(text: str) -> list[tuple[int, str]]:
     """`(line_no, token)` for every inline backtick span and markdown-link
     target in prose text (1-indexed lines, matching every other gate in
@@ -1676,6 +1749,8 @@ def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         text = _read_md(root, doc_path)
         if text is None:
             continue
+        if _TICKET_DOC_RE.match(doc_path) is not None:
+            text = _blank_ticket_reason_fields(text)
         doc_lines = text.splitlines()
         prose = _blank_fenced_blocks(text)
         tokens = _prose_tokens(prose)

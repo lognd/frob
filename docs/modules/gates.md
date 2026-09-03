@@ -4708,6 +4708,17 @@ Every finding is `frob:waive DOC006 reason="..."`-able (same nearby-line
 convention as DOC004: same line or up to 3 preceding lines), for a
 genuinely external/illustrative/future-facing pointer.
 
+**Ticket `reason:` field exemption (T-3724)**: a `tickets/<id>/ticket.md`
+frontmatter value under a `*reason:` key (`scope_changes[].reason`,
+`staleness_reason`, `scope_breadth_ack_reason`, ...) is free-text
+accountability prose a human/agent wrote at mutation time to justify a
+scope change, a stale-ticket ack, or similar -- never doc-pointer prose,
+and the only fix available at write time is a hand-edit the ledger-
+integrity hooks already warn against. `doc006_gate` blanks every such
+key's VALUE (preserving line count, so unrelated findings on the same
+file keep correct line numbers) before scanning a ticket's frontmatter
+block; the ticket BODY is untouched and still scanned normally.
+
 **Turn-on disclosure**: shipped at WARN, not ERROR, because this repo's
 own tracked docs already carry pre-existing pointer drift the gate newly
 detects (see T-0437's Done report for the measured count at turn-on).
