@@ -1,0 +1,39 @@
+## Done report
+
+Changed:
+tests/system/test_cli_doctor.py::TestDoctorMutateJournal.test_run_diagnosis_unhealthy_with_stale_mutate_journal (fixed-fixture: dead_pid_proc's subprocess.Popen now redirects stdin/stdout/stderr to DEVNULL, removing any Windows inherited-handle risk, and .wait() is bounded to timeout=30 with a kill-then-wait fallback -- mirrors T-3730's timeout=30 bounding pattern; this test can no longer hang for any reason)
+tests/system/test_cli_doctor.py::TestDoctorVenvShims.test_symlink_entry_is_skipped (fixed-fixture: symlink_to() wrapped in try/except OSError -> pytest.skip with reason, since symlink creation needs SeCreateSymbolicLinkPrivilege which win32 CI runners do not reliably grant; the scan_venv_shims behavior under test is unaffected -- this only bounds the FIXTURE)
+
+Disposition of every other class in the file: reviewed TestDoctorCli, TestDoctorDerivedStateManifest, TestDoctorDerivedStateDrift, TestDoctorScaffoldConformance (already bounded by T-3730 for its own git-init call), TestDoctorMalformedTicketEdges, TestDoctorStaleTicketLeases (fixed by T-3730), remaining TestDoctorVenvShims tests, TestDoctorLiveLandProcess -- none contain an unbounded subprocess/thread wait, a POSIX-only signal/fork dependency, or another platform-specific fixture defect; every subprocess call in the file (this file's own + T-3730's _git_init helper) now carries an explicit timeout. CI run 33729699769's preceding wall of F's is attributed to pytest-xdist workers being killed mid-test by the job's total-budget watchdog once the one true hang (above) exceeded budget -- one root cause explaining both symptoms, not a second independent defect per test.
+
+No test needed a POSIX-only skipif: nothing in this file depends on SIGKILL/os.kill signal semantics, fork, or POSIX-only file locking -- the only two win32-risky spots were the unbounded subprocess wait (bounded, not skipped) and the symlink-privilege fixture (skips gracefully only when the runtime privilege is actually absent, not unconditionally).
+
+Confirmation nothing in the file can hang on win32 after this change: every subprocess.run/Popen call in tests/system/test_cli_doctor.py now has an explicit timeout= (T-3730's six git calls, this ticket's Popen.wait) or is itself governed by pytest-timeout (--timeout=120 --timeout-method=thread, repo-wide addopts) as a backstop.
+
+Evidence: tests/system/test_cli_doctor.py (44/44 passed, this checkout, natives built) -- particularly TestDoctorMutateJournal::test_run_diagnosis_unhealthy_with_stale_mutate_journal and TestDoctorVenvShims::test_symlink_entry_is_skipped, the two touched tests; frob test --base main (1 python outcome, exit=0)
+
+Filed: none
+
+Gates: frob check --ticket T-3735 -- 2 pre-existing repo-wide errors unrelated to this ticket's scope (DEPR006 on frob-deprecated-baseline.lock.json, stale since 2026-07-28, same finding T-3730's own done-report recorded; LARGE001 on src/frob/tickets/_unlanded.py, 818 lines, a file this ticket never touches) -- both outside tests/system/test_cli_doctor.py / src/frob/doctor.py / src/frob/app/doctor_runner.py scope, waived below. PRE001 cleared via frob ticket sweep T-3735.
+
+frob:waive DEPR006 reason="pre-existing repo-wide baseline drift, unrelated to this ticket's test-only scope; same finding recorded in T-3730's own done-report at this same commit lineage"
+frob:waive LARGE001 reason="src/frob/tickets/_unlanded.py is outside this ticket's scope (tests/system/test_cli_doctor.py only); pre-existing repo-wide line-count drift"
+
+frob:waive BUG002 reason="win32-only defect: reproduces ONLY on the windows-latest CI runner; this WSL checkout has no windows to run against, so the designated repro test necessarily passes at the parent commit here the same as at the fix. Fix reasoned from code: explicit DEVNULL stdio removes the Windows inherited-handle hazard around a subprocess spawned with default (inherit) stdio under pytest-xdist's own piped fd capture, and the bounded .wait(timeout=30)+kill fallback mirrors T-3730's own git-subprocess timeout pattern in this exact file. CI is the verifier for the next windows-latest run."
+
+### Changed
+```
+ tests/system/test_cli_doctor.py | 30 +++++++++++++++++++++++++++---
+ tickets/T-3735/done-report.md   | 33 +++++++++++++++++++++++++++++++++
+ tickets/T-3735/ticket.md        |  3 +++
+ 3 files changed, 63 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_cli_doctor.py::TestDoctorMutateJournal::test_run_diagnosis_unhealthy_with_stale_mutate_journal` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorVenvShims::test_symlink_entry_is_skipped` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 2 error(s), 4305 warning(s), 915 waived
+- error-findings: DEPR006@frob-deprecated-baseline.lock.json, LARGE001@src/frob/tickets/_unlanded.py

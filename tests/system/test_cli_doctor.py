@@ -404,10 +404,25 @@ class TestDoctorMutateJournal:
         # "python"/the "py" launcher are) -- sys.executable matches this
         # module's own FROB constant's convention and is guaranteed to
         # resolve on every platform this suite runs on.
+        # T-3735: run 33729699769 (post-T-3730) still hung here on win32
+        # -- explicit DEVNULL stdio removes any inherited-handle risk
+        # (a real Windows CreateProcess hazard when a subprocess is
+        # spawned with stdio left to inherit under pytest-xdist's own
+        # piped fd capture), and the bounded `.wait(timeout=...)` +
+        # kill-then-wait fallback mirrors T-3730's `timeout=30` pattern
+        # on the git subprocess calls elsewhere in this file: this test
+        # must never be able to hang regardless of root cause.
         dead_pid_proc = subprocess.Popen(  # noqa: S603
-            [sys.executable, "-c", "pass"]
+            [sys.executable, "-c", "pass"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
-        dead_pid_proc.wait()
+        try:
+            dead_pid_proc.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            dead_pid_proc.kill()
+            dead_pid_proc.wait(timeout=30)
         assert write_journal(
             tmp_path,
             target,
@@ -823,7 +838,16 @@ class TestDoctorVenvShims:
         real = venv_bin / "python3.12"
         real.write_text("")
         link = venv_bin / "python3"
-        link.symlink_to(real)
+        try:
+            link.symlink_to(real)
+        except OSError as exc:
+            # T-3735: symlink creation needs SeCreateSymbolicLinkPrivilege
+            # on win32 -- granted to an elevated/admin process or with
+            # Developer Mode on, neither guaranteed on every win32 CI
+            # runner. This is an environment limitation of the FIXTURE,
+            # not of `scan_venv_shims`'s `entry.is_symlink()` guard under
+            # test, so skip rather than fail when the platform refuses.
+            pytest.skip(f"symlink_to unavailable in this environment: {exc}")
 
         assert scan_venv_shims(tmp_path) == ()
 

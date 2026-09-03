@@ -1,7 +1,7 @@
 ---
 id: T-3735
 title: fix win32 hang+failures in test_cli_doctor.py round 2
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -19,6 +19,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/system/test_cli_doctor.py::TestDoctorMutateJournal::test_run_diagnosis_unhealthy_with_stale_mutate_journal
+- tests/system/test_cli_doctor.py::TestDoctorVenvShims::test_symlink_entry_is_skipped
 designated_repro_test: null
 threat: null
 component: null
