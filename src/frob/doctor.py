@@ -947,7 +947,14 @@ class DoctorReport(BaseModel):
 
     `drift` is informational only -- see `_detect_derived_state_drift`'s
     docstring for why it does not feed into `healthy`/`remediation` the
-    way a corrupt (`derived_state`) artifact does. `mutate_journals` is
+    way a corrupt (`derived_state`) artifact does. `scaffold_blocks`
+    (T-0736) is ALSO informational only as of T-3725: a missing/stale
+    LOCAL managed git hook (`.git/hooks/pre-commit` and friends) is a
+    dev-ergonomics nudge a CI checkout structurally never satisfies (CI
+    never runs `frob scaffold apply`), not a build-correctness failure --
+    see `_doctor_healthy`'s docstring for the motivating incident (CI run
+    33715737237). Still surfaced in `remediation` and the plain renderer
+    whenever present; never counts against `healthy`. `mutate_journals` is
     the opposite: any entry DOES make `healthy` False -- it names a real
     source file currently sitting in mutant form on disk, not disposable
     cache churn. `malformed_ticket_edges` (T-1132) is the same class as
@@ -1234,6 +1241,7 @@ def _log_doctor_diagnosis(
 # frob:ticket T-1501
 # frob:ticket T-1515
 # frob:ticket T-3276
+# frob:ticket T-3725
 def _doctor_healthy(
     natives_healthy: bool,
     corrupt,
@@ -1250,11 +1258,22 @@ def _doctor_healthy(
     """`_assemble_doctor_report`'s own `healthy` boolean, split out
     (T-3276) to keep that function under the ARCH001 threshold -- pure
     decision logic, no I/O, matching every other doctor helper's split
-    shape (T-1501/T-1162 already established this pattern)."""
+    shape (T-1501/T-1162 already established this pattern).
+
+    T-3725: `scaffold_needs_apply` (missing/stale LOCAL managed git hooks,
+    e.g. `.git/hooks/pre-commit`) is deliberately NOT one of the
+    conditions below -- see CI run 33715737237, where a fresh checkout
+    with a clean suite and a clean self-gate still failed a later `frob
+    doctor` preflight step solely because CI never runs `frob scaffold
+    apply` (there is no local git working tree convenience to protect in
+    a CI runner). Hooks-missing is a dev-ergonomics nudge, not a build-
+    correctness failure -- it stays visible (see `DoctorReport.
+    scaffold_blocks` and `_combined_remediation`'s scaffold hint) but no
+    longer flips `healthy`/exits 1, matching how `drift` and a
+    CONFIRMED-dead `live_land_process` are already informational-only."""
     return (
         natives_healthy
         and not corrupt
-        and not scaffold_needs_apply
         and not stale_mutate_journals
         and not malformed_ticket_edges
         and not stale_ticket_leases
@@ -1288,10 +1307,13 @@ def _assemble_doctor_report(
     extracted (T-1501) to keep `run_diagnosis` itself under the ARCH001
     60-line threshold now that its docstring has grown with each health
     check it documents. `healthy` is False if natives fail to import, the
-    derived-state manifest is corrupt, or any of the scaffold/mutate-
+    derived-state manifest is corrupt, or any of the mutate-
     journal/ticket-edge/ticket-lease/venv-shim/stale-binary/global-binary-
     skew/external-tools scans found something -- see `DoctorReport`'s own
     docstring for the per-field contract each of those checks documents.
+    `scaffold_needs_apply` (T-0736) is DELIBERATELY excluded from that
+    list as of T-3725 -- see `_doctor_healthy`'s docstring; it stays
+    informational (surfaced in `remediation`) but never flips `healthy`.
     `live_land_process` (T-1515)
     only affects `healthy` when its holder's liveness is AMBIGUOUS
     (`alive is None`) -- this repo genuinely cannot confirm the holder is

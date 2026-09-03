@@ -100,19 +100,45 @@ def _run_plain(cfg: AppConfig, run_diagnosis) -> None:  # noqa: ANN001
     if report.healthy:
         r.write.good("all native extensions available")
     else:
-        r.write.warn("native extensions missing")
-        # T-0448: deliberate fix, not a silent behavior change -- the
-        # pre-migration code interpolated `report.remediation` (which is
-        # `str | None`) straight into an f-string, so a healthy=False
-        # report with no remediation text printed the literal word "None".
-        # `write.kv` requires `str`, so the `or ""` here is intentional:
-        # an empty remediation line is honest, printing "None" was a bug.
-        r.write.kv("  remediation", report.remediation or "")
+        _print_unhealthy_summary(r, report)
 
     _print_orphaned_land_lock_disclosure(r, report)
+    _print_scaffold_disclosure(r, report)
 
     if not report.healthy:
         sys.exit(1)
+
+
+# frob:ticket T-3725
+# frob:tests \
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerUnhealthy.test_unhealthy_plai\
+# n_exits_1_and_prints_remediation
+def _print_unhealthy_summary(r: Renderer, report) -> None:
+    """`_run_plain`'s unhealthy-branch status line + remediation, extracted
+    (T-3725) to keep `_run_plain` under ARCH103's decision-point threshold.
+    This used to print the fixed label "native extensions missing"
+    whenever `report.healthy` was False for ANY reason -- CI run
+    33715737237 hit exactly this: `frob_core`/`strata_core` both reported
+    `available=True` (only their `version` was `unknown`, an unset
+    `__version__` attribute, not a misclassification -- `_extension_status`
+    already treats `available=True` as healthy regardless of version
+    string) while the report was unhealthy for an unrelated reason
+    (missing managed git hooks), and the printed line still blamed
+    extensions. Naming the actual failing extensions keeps the label
+    honest; a non-extensions failure gets a neutral heading instead of a
+    false accusation."""
+    unavailable = [ext.name for ext in report.extensions if not ext.available]
+    if unavailable:
+        r.write.warn("native extensions missing: " + ", ".join(unavailable))
+    else:
+        r.write.warn("frob doctor found issue(s)")
+    # T-0448: deliberate fix, not a silent behavior change -- the
+    # pre-migration code interpolated `report.remediation` (which is
+    # `str | None`) straight into an f-string, so a healthy=False report
+    # with no remediation text printed the literal word "None". `write.kv`
+    # requires `str`, so the `or ""` here is intentional: an empty
+    # remediation line is honest, printing "None" was a bug.
+    r.write.kv("  remediation", report.remediation or "")
 
 
 # frob:ticket T-1634
@@ -136,6 +162,40 @@ def _print_orphaned_land_lock_disclosure(r: Renderer, report) -> None:
             f"  orphaned land.lock found (pid {live.pid} confirmed NOT "
             "running) -- self-healing, no action needed; the next `frob "
             "ticket land` reclaims it automatically"
+        )
+
+
+# frob:ticket T-3725
+# frob:tests \
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_healt\
+# hy_report_with_scaffold_needs_apply_prints_disclosure_line
+# frob:tests \
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_healt\
+# hy_report_with_no_scaffold_blocks_prints_nothing_extra
+# frob:waive DUP001 reason="deliberate structural mirror of this same file's \
+# _print_orphaned_land_lock_disclosure directly above -- both are the identical \
+# 'informational-only finding, disclose on the otherwise-healthy path' shape T-1634 \
+# established; the detector's other 7 cross-file hits (refactor/vet/strata capability \
+# scanners, an unrelated deploy pilot test) are coincidental control-flow shape only, \
+# no shared domain"
+def _print_scaffold_disclosure(r: Renderer, report) -> None:
+    """T-3725: missing/stale LOCAL managed git hooks (`scaffold_blocks`,
+    T-0736) no longer make the overall report unhealthy (see
+    `frob.doctor._doctor_healthy`'s docstring for why -- a CI checkout
+    structurally never runs `frob scaffold apply`, so failing a build on
+    their absence was a false positive, not a real health signal) -- but
+    it is still a real, discoverable, human-actionable finding, so print
+    it even on the otherwise-healthy path, in addition to the unhealthy-
+    path `remediation` block `run` already prints above (which still
+    names it when some OTHER check also failed)."""
+    needs_apply = [s for s in report.scaffold_blocks if not s.present or s.stale]
+    if report.healthy and needs_apply:
+        r.blank()
+        names = ", ".join(f"{s.block_id} ({s.target})" for s in needs_apply)
+        r.write.warn(
+            f"  managed boilerplate blocks missing/stale: {names} -- run "
+            "`frob scaffold apply` (informational only, does not affect "
+            "the exit code)"
         )
 
 

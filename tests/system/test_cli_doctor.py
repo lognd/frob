@@ -323,21 +323,33 @@ class TestDoctorScaffoldConformance:
         assert report.healthy is True
 
     # frob:tests src/frob/doctor.py
+    # frob:waive PII012 reason="test name mirrors the run_diagnosis API symbol it \
+    # exercises; repository self-check machinery, no person-related data anywhere in \
+    # the test"
     def test_run_diagnosis_unhealthy_when_scaffold_blocks_missing(
         self, tmp_path: Path
     ) -> None:
-        """A `frob.toml`-bearing repo that has never run `frob scaffold
-        apply` reports every managed block missing and folds that into an
-        unhealthy verdict naming `frob scaffold apply` as the remedy."""
+        """T-3725: a `frob.toml`-bearing repo that has never run `frob
+        scaffold apply` reports every managed block missing and names
+        `frob scaffold apply` as the remedy in `remediation`, but this no
+        longer folds into an unhealthy verdict -- CI run 33715737237
+        showed a clean-suite, clean-self-gate job failing this exact
+        preflight step because CI checkouts structurally never run `frob
+        scaffold apply` (no local git working tree to protect there).
+        Hooks-missing is a dev-ergonomics nudge, not a build-correctness
+        failure -- see `frob.doctor._doctor_healthy`'s docstring. (Name
+        kept despite no longer causing `healthy=False`, so pre-existing
+        `frob:tests` evidence citations elsewhere naming this test id
+        keep resolving.)"""
         from frob.doctor import run_diagnosis
 
         (tmp_path / "frob.toml").write_text("[project]\n")
         report = run_diagnosis(tmp_path)
-        assert report.healthy is False
         assert report.scaffold_blocks
         assert all(not s.present for s in report.scaffold_blocks)
         assert report.remediation is not None
         assert "frob scaffold apply" in report.remediation
+        assert report.healthy is True
 
     # frob:tests src/frob/doctor.py
     def test_run_diagnosis_healthy_after_scaffold_apply(self, tmp_path: Path) -> None:

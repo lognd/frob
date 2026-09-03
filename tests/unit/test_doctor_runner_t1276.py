@@ -23,7 +23,12 @@ import pytest
 
 from frob.app import doctor_runner
 from frob.app.config import AppConfig
-from frob.doctor import DoctorReport, LiveLandProcess, NativeExtensionStatus
+from frob.doctor import (
+    DoctorReport,
+    LiveLandProcess,
+    ManagedBlockStatus,
+    NativeExtensionStatus,
+)
 
 
 def _cfg(**overrides: object) -> AppConfig:
@@ -39,11 +44,13 @@ def _cfg(**overrides: object) -> AppConfig:
 
 
 # frob:ticket T-1634
+# frob:ticket T-3725
 def _report(
     *,
     healthy: bool,
     remediation: str | None,
     live_land_process: LiveLandProcess | None = None,
+    scaffold_blocks: list[ManagedBlockStatus] | None = None,
 ) -> DoctorReport:
     return DoctorReport(
         frob_version="9.9.9",
@@ -58,6 +65,7 @@ def _report(
         healthy=healthy,
         remediation=remediation,
         live_land_process=live_land_process,
+        scaffold_blocks=list(scaffold_blocks or []),
     )
 
 
@@ -303,3 +311,63 @@ class TestDoctorRunnerOrphanedLandLockDisclosure:
         doctor_runner.run(_cfg())
         out = capsys.readouterr().out
         assert "orphaned land.lock" not in out
+
+
+# frob:ticket T-3725
+class TestDoctorRunnerScaffoldDisclosure:
+    """T-3725: missing/stale LOCAL managed git hooks (`scaffold_blocks`,
+    T-0736) no longer make `DoctorReport.healthy` `False` (CI run
+    33715737237 -- CI checkouts structurally never run `frob scaffold
+    apply`), but `run`'s plain-text output still discloses it -- mirrors
+    `TestDoctorRunnerOrphanedLandLockDisclosure`'s own shape for the
+    exact same informational-only-but-still-surfaced pattern."""
+
+    # frob:tests \
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_h\
+    # ealthy_report_with_scaffold_needs_apply_prints_disclosure_line
+    def test_healthy_report_with_scaffold_needs_apply_prints_disclosure_line(
+        self, monkeypatch, capsys
+    ) -> None:
+        """A `healthy=True` report carrying a missing managed git hook
+        still prints an explicit disclosure line and does NOT exit -- the
+        finding is surfaced, not silently dropped, even though it no
+        longer fails the health check."""
+        import frob.doctor as doctor_mod
+
+        missing = ManagedBlockStatus(
+            block_id="hook-pre-commit",
+            target=".git/hooks/pre-commit",
+            kind="hook",
+            present=False,
+            stale=False,
+            expected_digest="deadbeef",
+        )
+        monkeypatch.setattr(
+            doctor_mod,
+            "run_diagnosis",
+            lambda: _report(healthy=True, remediation=None, scaffold_blocks=[missing]),
+        )
+        doctor_runner.run(_cfg())
+        out = capsys.readouterr().out
+        assert "hook-pre-commit" in out
+        assert "frob scaffold apply" in out
+        assert "does not affect the exit code" in out
+
+    # frob:tests \
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerScaffoldDisclosure.test_h\
+    # ealthy_report_with_no_scaffold_blocks_prints_nothing_extra
+    def test_healthy_report_with_no_scaffold_blocks_prints_nothing_extra(
+        self, monkeypatch, capsys
+    ) -> None:
+        """A healthy report with no scaffold blocks at all (the common
+        case, `frob.toml`-less repo) prints no scaffold disclosure line."""
+        import frob.doctor as doctor_mod
+
+        monkeypatch.setattr(
+            doctor_mod,
+            "run_diagnosis",
+            lambda: _report(healthy=True, remediation=None, scaffold_blocks=[]),
+        )
+        doctor_runner.run(_cfg())
+        out = capsys.readouterr().out
+        assert "scaffold apply" not in out
