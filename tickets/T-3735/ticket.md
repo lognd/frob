@@ -1,7 +1,7 @@
 ---
 id: T-3735
 title: fix win32 hang+failures in test_cli_doctor.py round 2
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-03'
