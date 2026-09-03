@@ -2,7 +2,7 @@
 id: T-3747
 title: CI runs full coverage suite on all 3 OS and OOMs into a slow serial retry;
   gate to ubuntu + cap workers
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -34,6 +34,8 @@ scope_changes:
     matrix test locking the gating
   actor: logan
   at: '2026-09-03'
+evidence:
+- tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_is_gated_to_ubuntu_only
 designated_repro_test: null
 threat: null
 component: null
@@ -41,3 +43,5 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+
+frob:waive BUG002 reason="this ticket changes CI workflow configuration -- an if: OS gate and an xdist worker-count env cap on the coverage step -- not code with a wired caller path a test can exercise before/after. The bound evidence asserts the workflow's declared gating; the real effects (no redundant per-OS coverage run; no OOM->serial fallback) are only observable in a live CI run, not reproducible in this repo's own suite. Same spirit as T-3740/T-3746's BUG002 waives for the sibling CI-config changes."

@@ -1619,7 +1619,27 @@ jobs:
       # signal that catches tampering, since a hand-edited stamp cannot
       # reproduce a matching content hash either), or if a fresh TEST005/
       # TEST006 evaluation against it still finds a violation.
+      # T-3747: gated to ubuntu-latest ONLY. Coverage is platform-
+      # independent (the committed frob-coverage.lock.json is a single
+      # Linux-measured baseline), so running the full suite a SECOND time
+      # under coverage on macos and windows was pure duplication of the
+      # Test step's own suite run -- and on windows the -p no:xdist serial
+      # suite is already the job's long pole. Reconcile/doctor/stamp-
+      # baseline are all repo-state, platform-independent, so the whole
+      # step belongs on one leg. See T-3748 for the deeper reuse (run the
+      # suite once WITH --cov in the Test step and stamp from that).
       - name: coverage stamp + delta baseline must be freshly measurable and clean (T-1366)
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          # T-3747: cap the coverage xdist pool. `frob coverage --full`
+          # sizes its pool at 1536 MiB/worker (_DEFAULT_PER_WORKER_MEM_MB),
+          # which gave -n 4 on this 16 GB / 4-core runner -- but a
+          # coverage-instrumented worker with the native extensions loaded
+          # exceeds that, so a worker was OOM-killed (T-1672 signature) and
+          # the run fell back to the ~2x-slower serial (-p no:xdist) retry.
+          # Pinning 2 workers fits available RAM, avoids the OOM+fallback,
+          # and keeps the run parallel.
+          FROB_COVERAGE_MAX_WORKERS: "2"
         run: |
           uv run frob ticket reconcile --apply
           uv run frob doctor

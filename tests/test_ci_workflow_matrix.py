@@ -110,6 +110,26 @@ class TestCoverageStepUsesFrobNotMake:
     --full` directly instead."""
 
     # frob:tests .github/workflows/ci.yml
+    def test_coverage_step_is_gated_to_ubuntu_only(self) -> None:
+        """T-3747: the coverage-stamp step must run on ONE OS only.
+        Coverage is platform-independent, so running the full suite a
+        second time under coverage on every OS duplicated the Test step's
+        run (and on windows piled onto the serial-suite long pole). The
+        step's block must carry `if: matrix.os == 'ubuntu-latest'`."""
+        text = (
+            Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+        ).read_text(encoding="utf-8")
+        idx = text.find("coverage stamp + delta baseline must be freshly")
+        assert idx != -1, "the T-1366 coverage-stamp step was removed/renamed"
+        next_step_idx = text.find("\n      - name:", idx + 1)
+        step_text = text[idx : next_step_idx if next_step_idx != -1 else idx + 4000]
+        assert "if: matrix.os == 'ubuntu-latest'" in step_text, (
+            "the coverage-stamp step must be gated to ubuntu-latest only -- "
+            "coverage is platform-independent and running it on every OS "
+            "duplicates the Test step's suite run (T-3747)"
+        )
+
+    # frob:tests .github/workflows/ci.yml
     def test_coverage_step_does_not_shell_to_make(self) -> None:
         """No CI step may spell `make coverage`/`make <target>` -- T-1382's
         whole point is that workflows never depend on a Makefile."""
