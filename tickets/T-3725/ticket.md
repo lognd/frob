@@ -1,7 +1,7 @@
 ---
 id: T-3725
 title: fix frob doctor CI exit-1 on git-hooks-absent
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -20,6 +20,7 @@ scope:
 - tests/unit/test_doctor.py
 - tests/unit/test_doctor_runner_t1276.py
 - docs/guides/install.md
+- tests/system/test_cli_doctor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,12 @@ scope_changes:
 - op: add
   glob: docs/guides/install.md
   reason: doctor.py docstrings cite this doc; may need a T-3725 update
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: tests/system/test_cli_doctor.py
+  reason: test_run_diagnosis_unhealthy_when_scaffold_blocks_missing asserts scaffold-missing
+    hard-fails healthy; must update to informational-only per this ticket's fix
   actor: logan
   at: '2026-09-03'
 designated_repro_test: null
