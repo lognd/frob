@@ -6,7 +6,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-08-01'
-priority: medium
+priority: low
 parent: null
 tier: epic
 sprint: null
@@ -134,6 +134,15 @@ triage_changes:
     than leaving it flagged as rotting critical/high work'
   actor: logan
   at: '2026-08-31'
+- field: priority
+  old_value: medium
+  new_value: low
+  reason: 'TICK004 rot cleanup (2026-09-02): 32d queued at medium (30d threshold);
+    large decomposition-pending feature with a recent owner decision (2026-08-29)
+    but no child tickets filed yet, dropping to low priority (90d threshold) rather
+    than forcing/dropping real backlog work'
+  actor: logan
+  at: '2026-09-02'
 body_changes:
 - mode: append
   reason: 'record the owner''s scheduling decision (pre-1.0.0, NOT required for the
