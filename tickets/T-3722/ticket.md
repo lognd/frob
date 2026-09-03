@@ -1,7 +1,7 @@
 ---
 id: T-3722
 title: frob test --all prints stale/wrong xdist addopts warning
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -15,6 +15,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_worktree_guard.py
+- tests/test_worktree_guard.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +30,18 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_worktree_guard.py
   reason: the xdist-addopts assumption lives in tickets/_worktree_guard.py, not process/**
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: tests/test_worktree_guard.py
+  reason: evidence test file + affects()-closure doc for the touched xdist warning
+    functions
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: evidence test file + affects()-closure doc for the touched xdist warning
+    functions
   actor: logan
   at: '2026-09-03'
 designated_repro_test: null
