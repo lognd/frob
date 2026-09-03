@@ -60,6 +60,12 @@ scope_changes:
     _find_typosquat)'
   actor: logan
   at: '2026-09-03'
+evidence:
+- tests/vet_suite/test_lockfile.py::TestVetAllowNotAgeBlocked::test_allow_listed_package_not_age_blocked
+- tests/vet_suite/test_lockfile.py::TestVetAllowNotAgeBlocked::test_allow_listed_with_reasons_not_age_blocked
+- tests/vet_suite/test_lockfile.py::TestAdvisoryHookDoesNotBlock::test_no_vet_table_not_age_blocked
+- tests/vet_suite/test_lockfile.py::TestAdvisoryHookDoesNotBlock::test_frob_toml_without_vet_section_not_age_blocked
+- tests/vet_suite/test_lockfile.py::TestQuarantine::test_fresh_package_blocked
 designated_repro_test: null
 threat: null
 component: null
