@@ -1,7 +1,7 @@
 ---
 id: T-3733
 title: 'cache: InterfaceError escapes stale-reconnect handlers (round 9)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -20,6 +20,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_run_with_stale_reconnect_recovers_from_interface_error
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_check_fingerprint_with_recovery_recovers_from_interface_error
+- tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_is_stale_or_corrupt_connection_matches_interface_error_by_type
 designated_repro_test: null
 threat: null
 component: null
