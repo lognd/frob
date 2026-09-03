@@ -228,7 +228,17 @@ while time.monotonic() < deadline:
         # sustained load -- it is exactly what the bounded retry raises
         # once its budget is exhausted, never a raw sqlite escape.
         iters += 1
-    except sqlite3.OperationalError as exc:
+    except sqlite3.DatabaseError as exc:
+        # T-3706: was `except sqlite3.OperationalError`, which does NOT
+        # catch sqlite's "file is not a database" torn-read shape --
+        # sqlite raises that as a bare DatabaseError, the PARENT class,
+        # not an OperationalError subclass. The narrower catch let that
+        # shape crash this child process silently (stdout just stops,
+        # no OK:/ERRORS: line, no captured traceback -- run 33680767948,
+        # macOS). Catching DatabaseError here means any future escape of
+        # this kind reports as an assertable ERRORS: line instead of a
+        # bare "sibling did not print an OK: result line" AssertionError
+        # with no diagnostic content.
         errors.append(repr(exc))
         break
 if errors:
@@ -377,6 +387,77 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
         assert int(ok_lines[-1].split(":", 1)[1].strip()) > 0, (
             f"sibling loop completed zero connect+read round trips ({out!r}) "
             "-- the race harness did no real work, so a green result is vacuous"
+        )
+
+    # frob:ticket T-3706
+    # frob:tests \
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
+    # run_with_stale_reconnect_recovers_from_bare_database_error
+    def test_run_with_stale_reconnect_recovers_from_bare_database_error(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3706 (round 8, macOS run 33680767948): sqlite raises the
+        "file is not a database" torn-read shape as a bare
+        `sqlite3.DatabaseError` -- the PARENT exception class, not a
+        subclass of `OperationalError` -- confirmed directly here rather
+        than assumed. `_run_with_stale_reconnect` used to catch only
+        `OperationalError`, so this shape escaped its retry loop uncaught
+        even though `_is_stale_or_corrupt_connection` already matched the
+        message (T-3634). This deterministically forces the shape (no
+        timing dependency, unlike the two-process test above) and asserts
+        the retry loop recovers instead of propagating."""
+        assert not issubclass(sqlite3.DatabaseError, sqlite3.OperationalError), (
+            "sqlite3.DatabaseError became a subclass of OperationalError -- "
+            "this test's premise (why the narrower catch missed it) no "
+            "longer holds; re-check whether the widened catch is still needed"
+        )
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+
+        calls = {"n": 0}
+
+        def op(_conn: sqlite3.Connection) -> str:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise sqlite3.DatabaseError("file is not a database")
+            return "recovered"
+
+        result = graph_cache._run_with_stale_reconnect(conn, op, what="test op")
+        assert result == "recovered"
+        assert calls["n"] == 2, (
+            "op should have been retried exactly once after the bare DatabaseError"
+        )
+
+    # frob:ticket T-3706
+    # frob:tests \
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
+    # check_fingerprint_with_recovery_recovers_from_bare_database_error
+    def test_check_fingerprint_with_recovery_recovers_from_bare_database_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3706: same widened-catch fix, for the fingerprint recovery
+        loop specifically (`_check_fingerprint_with_recovery` /
+        `_recover_fingerprint_connection`) -- the second escape point
+        T-3700 hardened but still typed too narrowly."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+
+        calls = {"n": 0}
+        real_check_fingerprint = graph_cache._check_fingerprint
+
+        def flaky_check_fingerprint(c: sqlite3.Connection, p: Path) -> None:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise sqlite3.DatabaseError("file is not a database")
+            real_check_fingerprint(c, p)
+
+        monkeypatch.setattr(graph_cache, "_check_fingerprint", flaky_check_fingerprint)
+
+        result = graph_cache._check_fingerprint_with_recovery(conn, path)
+        assert isinstance(result, sqlite3.Connection)
+        assert calls["n"] == 2, (
+            "_check_fingerprint should have been retried exactly once "
+            "after the bare DatabaseError"
         )
 
     # frob:tests \

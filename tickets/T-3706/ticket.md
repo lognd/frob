@@ -1,7 +1,7 @@
 ---
 id: T-3706
 title: 'cache: sibling connect loop crashes on bare sqlite3.DatabaseError (round 8)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-02'

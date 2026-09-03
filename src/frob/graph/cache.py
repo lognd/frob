@@ -263,7 +263,7 @@ def _is_transient_lock_error(exc: sqlite3.OperationalError) -> bool:
 # frob:tests \
 # tests/unit/test_graph_cache.py::TestHandleIdentity.test_readonly_database_is_classifi\
 # ed_as_a_handle_fault
-def _is_readonly_handle_error(exc: sqlite3.OperationalError) -> bool:
+def _is_readonly_handle_error(exc: sqlite3.DatabaseError) -> bool:
     """True iff `exc` is sqlite's `attempt to write a readonly database`
     (T-3669) -- the shape a WRITE through a handle bound to a replaced-away
     inode takes on darwin.
@@ -969,7 +969,7 @@ def _recreate_and_reapply(
     return _recreate(conn, path)
 
 
-def _is_missing_meta_table(exc: sqlite3.OperationalError) -> bool:
+def _is_missing_meta_table(exc: sqlite3.DatabaseError) -> bool:
     """True iff `exc` is sqlite's "no such table: meta" shape."""
     return "no such table" in str(exc).lower() and "meta" in str(exc).lower()
 
@@ -985,7 +985,7 @@ _STALE_CONNECTION_ERROR_SHAPES = (
 )
 
 
-def _is_stale_or_corrupt_connection(exc: sqlite3.OperationalError) -> bool:
+def _is_stale_or_corrupt_connection(exc: sqlite3.DatabaseError) -> bool:
     """True iff `exc` is one of the sqlite error shapes a sibling's
     concurrent rebuild can produce against a connection whose backing
     file was atomically replaced or quarantined out from under it
@@ -1033,9 +1033,10 @@ _STALE_CONN_MAX_RETRIES = 3
 
 
 # frob:ticket T-3669
-# frob:raises sqlite3.OperationalError
+# frob:ticket T-3706
+# frob:raises sqlite3.DatabaseError
 def _reconnect_delay_for(
-    exc: sqlite3.OperationalError,
+    exc: sqlite3.DatabaseError,
     *,
     what: str,
     path: Path | None,
@@ -1056,7 +1057,14 @@ def _reconnect_delay_for(
     a stale/corrupt-connection shape means the reopen itself should have
     already fixed things, so a small fixed `_STALE_CONN_MAX_RETRIES` is
     the honest ceiling. Anything else, or an unknown path to reopen at,
-    propagates unchanged."""
+    propagates unchanged.
+
+    T-3706 (round 8): `exc` is typed `DatabaseError`, not the narrower
+    `OperationalError` -- sqlite raises the "file is not a database" shape
+    (already listed in `_STALE_CONNECTION_ERROR_SHAPES`) as a bare
+    `DatabaseError`, sqlite3's PARENT exception class, not a subclass of
+    `OperationalError`. The matcher already handled the shape by message;
+    only the catch type at the call site was too narrow to ever reach it."""
     readonly = _is_readonly_handle_error(exc)
     if not readonly and not _is_stale_or_corrupt_connection(exc):
         raise exc
@@ -1091,11 +1099,15 @@ def _reconnect_delay_for(
 
 # frob:ticket T-3634
 # frob:ticket T-3669
+# frob:ticket T-3706
 def _run_with_stale_reconnect(conn: sqlite3.Connection, op, *, what: str):  # noqa: ANN001, ANN202
     """Call `op(conn)` through a connection guaranteed to be bound to the
     file currently at the cache path, reopening and retrying rather than
     reusing a handle that a sibling's `os.replace` stranded on the old
-    inode (T-3634; T-3669 for the handle-lifecycle rewrite).
+    inode (T-3634; T-3669 handle-lifecycle rewrite; T-3706 widens the
+    catch from `OperationalError` to `DatabaseError` -- sqlite raises
+    "file is not a database" as the latter, sqlite3's PARENT class, so
+    it escaped uncaught even though the matcher already covers it).
 
     `op` receives the (possibly reopened) connection on each attempt and
     must be safe to call more than once; every current use (a read, or a
@@ -1103,8 +1115,7 @@ def _run_with_stale_reconnect(conn: sqlite3.Connection, op, *, what: str):  # no
     itself is never closed when it is merely stranded -- it belongs to the
     caller, whose own later calls route back through here -- so a write
     made through a connection of this function's own is committed here,
-    since the caller cannot commit a handle it was never given. See
-    T-3669 for why five rounds of same-handle retries could not fix this.
+    since the caller cannot commit a handle it was never given (T-3669).
     """
     deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
     canonical = _conn_path(conn)
@@ -1120,7 +1131,7 @@ def _run_with_stale_reconnect(conn: sqlite3.Connection, op, *, what: str):  # no
                     active, owned = fresh, True
             try:
                 result = op(active)
-            except sqlite3.OperationalError as exc:
+            except sqlite3.DatabaseError as exc:
                 path = _conn_path(active) or canonical
                 path, delay, readonly = _reconnect_delay_for(
                     exc,
@@ -1197,6 +1208,15 @@ def _check_fingerprint_with_recovery(
     `_STALE_CONN_MAX_RETRIES` consecutive losses -- a real, persistent
     problem, not a load-timing race -- does the last exception propagate,
     still declared via `frob:raises`.
+
+    T-3706 (round 8, macOS run 33680767948): the catch here was
+    `sqlite3.OperationalError` only, but sqlite raises the "file is not a
+    database" torn-read shape as a bare `sqlite3.DatabaseError` (sqlite3's
+    PARENT exception class, not a subclass of `OperationalError`) -- so it
+    escaped this recovery loop uncaught even though
+    `_is_stale_or_corrupt_connection` has matched that exact message since
+    T-3634. Widened to `DatabaseError` so the existing matcher is actually
+    reachable.
     """
     # T-3669: the fingerprint read is the exact statement the darwin
     # thrash loop kept answering from a replaced-away inode (`fingerprint
@@ -1209,26 +1229,29 @@ def _check_fingerprint_with_recovery(
         try:
             _check_fingerprint(conn, path)
             return conn
-        except sqlite3.OperationalError as exc:
+        except sqlite3.DatabaseError as exc:
             conn = _recover_fingerprint_connection(conn, path, exc, attempt)
             attempt += 1
 
 
 # frob:ticket T-3700
+# frob:ticket T-3706
 def _recover_fingerprint_connection(
-    conn: sqlite3.Connection, path: Path, exc: sqlite3.OperationalError, attempt: int
+    conn: sqlite3.Connection, path: Path, exc: sqlite3.DatabaseError, attempt: int
 ) -> sqlite3.Connection:
     """Recover one `_check_fingerprint` failure into a fresh connection
     ready for another read, or re-raise `exc` (T-3700, split out of
     `_check_fingerprint_with_recovery` to keep that function under ARCH001's
-    line threshold).
+    line threshold; T-3706 widens the accepted exception type).
 
     Re-raises on the last allowed `attempt` (the honest ceiling -- a
     genuine, non-racing fault), on a "no such table: meta" this rebuilds
     via `_recreate_and_reapply`, and on a stale/corrupt or readonly-handle
     shape reopens at the canonical inode (where a sibling's atomic
     `os.replace` publishes its schema-complete winner); anything else
-    propagates unchanged."""
+    propagates unchanged. `exc` is typed `DatabaseError`, not the narrower
+    `OperationalError`, because the "file is not a database" shape this
+    already matches by message is a bare `DatabaseError` at runtime."""
     if attempt >= _STALE_CONN_MAX_RETRIES:
         raise exc
     if _is_missing_meta_table(exc):
