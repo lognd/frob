@@ -1,7 +1,7 @@
 ---
 id: T-3726
 title: 'win32: total-budget watchdog never fires + budget-var recheck'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-03'
