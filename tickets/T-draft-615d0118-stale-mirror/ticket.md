@@ -2,7 +2,7 @@
 id: T-draft-615d0118-stale-mirror
 title: CI stamp-baseline --only chunk list desynced from _stamp_baseline_gate_chunks,
   .frob/baseline never written
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -79,3 +79,6 @@ command exits 0, and only the python assertion catches the missing file.
 3. Run `uv run pytest tests/test_ci_workflow_matrix.py -q` green.
 4. Land together with T-3740 (win32 budget fix) in one land -- same files,
    filed to avoid a lease collision per the coordinator's instruction.
+
+## Drop reason
+- 2026-09-03: stale mirrored ticket-body artifact from the mirror-body write feature, superseded by the worktree's own finalized T-draft-615d0118 record (renamed to avoid a T-2105 duplicate-id collision at T-3740's land)
