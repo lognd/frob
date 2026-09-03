@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/gates_suite/test_wire.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,12 @@ scope_changes:
   reason: declare the env.read capability on tests/gates_suite/test_wire.py so the
     win32-hang fix's os.environ read passes SELFAUDIT001 -- required for this ticket's
     own diff to land
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: bump the testsuite::env.read ratchet ceiling for the same new via-list site
+    this ticket's fix adds
   actor: logan
   at: '2026-09-03'
 body_changes:
