@@ -103,6 +103,18 @@ scope_changes:
     tests
   actor: logan
   at: '2026-09-02'
+- op: add
+  glob: tests/unit/test_check_admission.py
+  reason: reformatted by frob format (pre-existing drift) / new watchdog regression
+    tests
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: tests/unit/test_conftest_midrun_watchdog.py
+  reason: reformatted by frob format (pre-existing drift) / new watchdog regression
+    tests
+  actor: logan
+  at: '2026-09-02'
 designated_repro_test: null
 threat: null
 component: null
