@@ -361,7 +361,9 @@ class TestDoctorScaffoldConformance:
         from frob.doctor import run_diagnosis
         from frob.scaffold import apply_managed_blocks
 
-        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True, timeout=30
+        )
         (tmp_path / "frob.toml").write_text("[project]\n")
         result = apply_managed_blocks(tmp_path)
         assert result.is_ok
@@ -398,7 +400,13 @@ class TestDoctorMutateJournal:
 
         target = tmp_path / "m.py"
         target.write_bytes(b"def add(a, b):\n    return a + b\n")
-        dead_pid_proc = subprocess.Popen(["python3", "-c", "pass"])  # noqa: S603
+        # T-3730: "python3" is not guaranteed on PATH on win32 (only
+        # "python"/the "py" launcher are) -- sys.executable matches this
+        # module's own FROB constant's convention and is guaranteed to
+        # resolve on every platform this suite runs on.
+        dead_pid_proc = subprocess.Popen(  # noqa: S603
+            [sys.executable, "-c", "pass"]
+        )
         dead_pid_proc.wait()
         assert write_journal(
             tmp_path,
@@ -547,18 +555,51 @@ class TestDoctorStaleTicketLeases:
 
     @staticmethod
     def _git_init(root: Path) -> None:
-        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=str(root), check=True)
+        """Init a throwaway repo for the stale-lease scan fixtures.
+
+        T-3730: every call carries `timeout=30` -- a hang inside any of
+        these (e.g. an inherited global `commit.gpgsign=true`/credential
+        helper prompting for interactive input, which a fresh CI runner's
+        git config can trigger with no local override) previously had no
+        bound at all and could block the whole test process forever
+        instead of failing loudly. `GIT_TERMINAL_PROMPT=0` plus
+        `-c commit.gpgsign=false` on the `commit` invocation additionally
+        removes the two known interactive-prompt vectors outright rather
+        than only bounding them."""
+        env = dict(os.environ)
+        env["GIT_TERMINAL_PROMPT"] = "0"
+        subprocess.run(
+            ["git", "init", "-q", "-b", "main"],
+            cwd=str(root),
+            check=True,
+            timeout=30,
+            env=env,
+        )
         subprocess.run(
             ["git", "config", "user.email", "test@example.com"],
             cwd=str(root),
             check=True,
+            timeout=30,
+            env=env,
         )
         subprocess.run(
-            ["git", "config", "user.name", "Test"], cwd=str(root), check=True
+            ["git", "config", "user.name", "Test"],
+            cwd=str(root),
+            check=True,
+            timeout=30,
+            env=env,
         )
         (root / ".gitkeep").write_text("")
-        subprocess.run(["git", "add", "-A"], cwd=str(root), check=True)
-        subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=str(root), check=True)
+        subprocess.run(
+            ["git", "add", "-A"], cwd=str(root), check=True, timeout=30, env=env
+        )
+        subprocess.run(
+            ["git", "-c", "commit.gpgsign=false", "commit", "-q", "-m", "init"],
+            cwd=str(root),
+            check=True,
+            timeout=30,
+            env=env,
+        )
 
     # frob:tests src/frob/doctor.py
     # frob:waive PII012 reason="test name mirrors the run_diagnosis API symbol it \
