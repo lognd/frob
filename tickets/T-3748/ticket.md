@@ -21,6 +21,7 @@ scope:
 - src/frob/_cli_parsers/_misc.py
 - tests/unit/test_coverage_runner.py
 - tests/test_ci_workflow_matrix.py
+- tests/unit/test_app_config_flag_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -89,6 +90,30 @@ scope_changes:
   glob: tests/test_ci_workflow_matrix.py
   reason: 'narrow to the exact files: coverage CLI parser, coverage_runner, config,
     ci.yml, and the two test files'
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: tests/unit/test_app_config_flag_coverage.py
+  reason: flag-coverage test + config + runner + ci for the new --fail-on-degraded
+    flag
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: flag-coverage test + config + runner + ci for the new --fail-on-degraded
+    flag
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: src/frob/app/coverage_runner.py
+  reason: flag-coverage test + config + runner + ci for the new --fail-on-degraded
+    flag
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: .github/workflows/ci.yml
+  reason: flag-coverage test + config + runner + ci for the new --fail-on-degraded
+    flag
   actor: logan
   at: '2026-09-03'
 designated_repro_test: null
