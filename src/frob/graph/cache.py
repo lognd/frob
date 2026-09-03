@@ -263,7 +263,7 @@ def _is_transient_lock_error(exc: sqlite3.OperationalError) -> bool:
 # frob:tests \
 # tests/unit/test_graph_cache.py::TestHandleIdentity.test_readonly_database_is_classifi\
 # ed_as_a_handle_fault
-def _is_readonly_handle_error(exc: sqlite3.DatabaseError) -> bool:
+def _is_readonly_handle_error(exc: sqlite3.Error) -> bool:
     """True iff `exc` is sqlite's `attempt to write a readonly database`
     (T-3669) -- the shape a WRITE through a handle bound to a replaced-away
     inode takes on darwin.
@@ -969,7 +969,7 @@ def _recreate_and_reapply(
     return _recreate(conn, path)
 
 
-def _is_missing_meta_table(exc: sqlite3.DatabaseError) -> bool:
+def _is_missing_meta_table(exc: sqlite3.Error) -> bool:
     """True iff `exc` is sqlite's "no such table: meta" shape."""
     return "no such table" in str(exc).lower() and "meta" in str(exc).lower()
 
@@ -985,7 +985,7 @@ _STALE_CONNECTION_ERROR_SHAPES = (
 )
 
 
-def _is_stale_or_corrupt_connection(exc: sqlite3.DatabaseError) -> bool:
+def _is_stale_or_corrupt_connection(exc: sqlite3.Error) -> bool:
     """True iff `exc` is one of the sqlite error shapes a sibling's
     concurrent rebuild can produce against a connection whose backing
     file was atomically replaced or quarantined out from under it
@@ -1003,7 +1003,22 @@ def _is_stale_or_corrupt_connection(exc: sqlite3.DatabaseError) -> bool:
     a wider set of known "this connection is looking at dead state, not
     a real corruption" shapes -- anything else still propagates as a
     genuine error.
+
+    T-3733 (round 9, macOS CI run 33729699769): `exc` is typed as the
+    sqlite3 base `Error`, not `DatabaseError` -- a stale/closed handle
+    can raise `sqlite3.InterfaceError('bad parameter or other API
+    misuse')`, which is a SIBLING of `DatabaseError` under `Error`, not
+    a subclass of it, so it never matched the T-3706 catch clauses at
+    all. `InterfaceError`'s message is generic ("bad parameter or other
+    API misuse") and never appears in `_STALE_CONNECTION_ERROR_SHAPES`,
+    so unlike the other shapes here it is matched by TYPE, not message
+    substring: any `InterfaceError` reaching this point is, by
+    construction, sqlite3 itself reporting operation-on-a-dead-handle,
+    which is exactly the stale-connection condition this function
+    exists to detect.
     """
+    if isinstance(exc, sqlite3.InterfaceError):
+        return True
     msg = str(exc).lower()
     return any(shape in msg for shape in _STALE_CONNECTION_ERROR_SHAPES)
 
@@ -1021,7 +1036,10 @@ def _conn_path(conn: sqlite3.Connection) -> Path | None:
     """
     try:
         rows = conn.execute("PRAGMA database_list").fetchall()
-    except sqlite3.DatabaseError:
+    except sqlite3.Error:
+        # T-3733: a stale/closed handle can raise InterfaceError here
+        # too, a sibling of DatabaseError -- widened so this best-effort
+        # probe stays best-effort instead of propagating that shape.
         return None
     for _seq, name, file in rows:
         if name == "main" and file:
@@ -1034,9 +1052,10 @@ _STALE_CONN_MAX_RETRIES = 3
 
 # frob:ticket T-3669
 # frob:ticket T-3706
-# frob:raises sqlite3.DatabaseError
+# frob:ticket T-3733
+# frob:raises sqlite3.Error
 def _reconnect_delay_for(
-    exc: sqlite3.DatabaseError,
+    exc: sqlite3.Error,
     *,
     what: str,
     path: Path | None,
@@ -1064,7 +1083,16 @@ def _reconnect_delay_for(
     (already listed in `_STALE_CONNECTION_ERROR_SHAPES`) as a bare
     `DatabaseError`, sqlite3's PARENT exception class, not a subclass of
     `OperationalError`. The matcher already handled the shape by message;
-    only the catch type at the call site was too narrow to ever reach it."""
+    only the catch type at the call site was too narrow to ever reach it.
+
+    T-3733 (round 9, macOS CI run 33729699769): `exc` is typed `Error`,
+    not `DatabaseError` -- a stale/closed connection can raise
+    `sqlite3.InterfaceError`, which is a SIBLING of `DatabaseError`
+    under `Error`, not a subclass of it, so it still escaped even after
+    the T-3706 widening. `_is_stale_or_corrupt_connection` now matches
+    `InterfaceError` by type; only the parameter type here (and the
+    catch clause at the call site) needed widening to actually reach
+    it."""
     readonly = _is_readonly_handle_error(exc)
     if not readonly and not _is_stale_or_corrupt_connection(exc):
         raise exc
@@ -1100,14 +1128,15 @@ def _reconnect_delay_for(
 # frob:ticket T-3634
 # frob:ticket T-3669
 # frob:ticket T-3706
+# frob:ticket T-3733
 def _run_with_stale_reconnect(conn: sqlite3.Connection, op, *, what: str):  # noqa: ANN001, ANN202
     """Call `op(conn)` through a connection guaranteed to be bound to the
     file currently at the cache path, reopening and retrying rather than
     reusing a handle that a sibling's `os.replace` stranded on the old
-    inode (T-3634; T-3669 handle-lifecycle rewrite; T-3706 widens the
-    catch from `OperationalError` to `DatabaseError` -- sqlite raises
-    "file is not a database" as the latter, sqlite3's PARENT class, so
-    it escaped uncaught even though the matcher already covers it).
+    inode (T-3634; T-3669 handle-lifecycle rewrite; T-3706 widened the
+    catch to `DatabaseError`, sqlite's "file is not a database" PARENT
+    class; T-3733 widens once more to the base `Error`, since sibling
+    `InterfaceError` escaped the same way).
 
     `op` receives the (possibly reopened) connection on each attempt and
     must be safe to call more than once; every current use (a read, or a
@@ -1131,7 +1160,7 @@ def _run_with_stale_reconnect(conn: sqlite3.Connection, op, *, what: str):  # no
                     active, owned = fresh, True
             try:
                 result = op(active)
-            except sqlite3.DatabaseError as exc:
+            except sqlite3.Error as exc:
                 path = _conn_path(active) or canonical
                 path, delay, readonly = _reconnect_delay_for(
                     exc,
@@ -1217,6 +1246,14 @@ def _check_fingerprint_with_recovery(
     `_is_stale_or_corrupt_connection` has matched that exact message since
     T-3634. Widened to `DatabaseError` so the existing matcher is actually
     reachable.
+
+    T-3733 (round 9, macOS CI run 33729699769): the catch here was
+    `sqlite3.DatabaseError`, but `sqlite3.InterfaceError` -- the shape a
+    stale/closed connection raises as "bad parameter or other API
+    misuse" -- is a SIBLING of `DatabaseError` under `sqlite3.Error`, not
+    a subclass of it, so it still escaped uncaught after T-3706. Widened
+    to `sqlite3.Error`, the documented base for every sqlite3 exception,
+    so no future sibling shape can repeat this pattern.
     """
     # T-3669: the fingerprint read is the exact statement the darwin
     # thrash loop kept answering from a replaced-away inode (`fingerprint
@@ -1229,29 +1266,33 @@ def _check_fingerprint_with_recovery(
         try:
             _check_fingerprint(conn, path)
             return conn
-        except sqlite3.DatabaseError as exc:
+        except sqlite3.Error as exc:
             conn = _recover_fingerprint_connection(conn, path, exc, attempt)
             attempt += 1
 
 
 # frob:ticket T-3700
 # frob:ticket T-3706
+# frob:ticket T-3733
 def _recover_fingerprint_connection(
-    conn: sqlite3.Connection, path: Path, exc: sqlite3.DatabaseError, attempt: int
+    conn: sqlite3.Connection, path: Path, exc: sqlite3.Error, attempt: int
 ) -> sqlite3.Connection:
     """Recover one `_check_fingerprint` failure into a fresh connection
     ready for another read, or re-raise `exc` (T-3700, split out of
     `_check_fingerprint_with_recovery` to keep that function under ARCH001's
-    line threshold; T-3706 widens the accepted exception type).
+    line threshold; T-3706 widens the accepted exception type; T-3733
+    widens it again to the sqlite3 base `Error`).
 
     Re-raises on the last allowed `attempt` (the honest ceiling -- a
     genuine, non-racing fault), on a "no such table: meta" this rebuilds
     via `_recreate_and_reapply`, and on a stale/corrupt or readonly-handle
     shape reopens at the canonical inode (where a sibling's atomic
     `os.replace` publishes its schema-complete winner); anything else
-    propagates unchanged. `exc` is typed `DatabaseError`, not the narrower
-    `OperationalError`, because the "file is not a database" shape this
-    already matches by message is a bare `DatabaseError` at runtime."""
+    propagates unchanged. `exc` is typed as the sqlite3 base `Error`,
+    not `DatabaseError`, because `sqlite3.InterfaceError` -- the shape a
+    stale/closed connection raises -- is a SIBLING of `DatabaseError`,
+    not a subclass of it, and `_is_stale_or_corrupt_connection` matches
+    it by type."""
     if attempt >= _STALE_CONN_MAX_RETRIES:
         raise exc
     if _is_missing_meta_table(exc):

@@ -1,0 +1,74 @@
+## Done report
+
+Changed:
+src/frob/graph/cache.py::_is_stale_or_corrupt_connection
+src/frob/graph/cache.py::_is_readonly_handle_error
+src/frob/graph/cache.py::_is_missing_meta_table
+src/frob/graph/cache.py::_conn_path
+src/frob/graph/cache.py::_reconnect_delay_for
+src/frob/graph/cache.py::_run_with_stale_reconnect
+src/frob/graph/cache.py::_check_fingerprint_with_recovery
+src/frob/graph/cache.py::_recover_fingerprint_connection
+tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb (3 new tests)
+
+Root cause and fix:
+sqlite3.InterfaceError is a SIBLING of sqlite3.DatabaseError under
+sqlite3.Error, not a subclass, so the T-3706 widening to DatabaseError
+never caught it. Widened every stale-reconnect catch clause
+(_run_with_stale_reconnect, _check_fingerprint_with_recovery) and the
+best-effort _conn_path probe from `except sqlite3.DatabaseError` to
+`except sqlite3.Error`, widened the associated type hints
+(_reconnect_delay_for, _recover_fingerprint_connection,
+_is_stale_or_corrupt_connection, _is_readonly_handle_error,
+_is_missing_meta_table) to sqlite3.Error, and taught
+_is_stale_or_corrupt_connection to also match InterfaceError BY TYPE
+(its message "bad parameter or other API misuse" never appears in
+_STALE_CONNECTION_ERROR_SHAPES, unlike every other shape that function
+matches by substring). Bounded retry (_STALE_CONN_MAX_RETRIES) and the
+overall deadline are unchanged -- past the ceiling the code still
+re-raises the real sqlite exception (now sqlite3.Error-typed via
+`frob:raises sqlite3.Error`), same pattern every prior round used; no
+CacheError wrapper type exists in this module and introducing one was
+out of scope for this fix.
+
+Evidence:
+tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_run_with_stale_reconnect_recovers_from_interface_error
+tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_check_fingerprint_with_recovery_recovers_from_interface_error
+tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_is_stale_or_corrupt_connection_matches_interface_error_by_type
+--check-repro against commit 3fded0ff9 (test-only, pre-fix): FAILED_AT_PARENT
+(genuine repro, confirmed against the unfixed code with cache.py checked
+out to HEAD/pre-fix and restored afterward).
+tests/gates_suite/test_waive.py::TestWaive004DegradedRunGuard::test_healthy_run_below_threshold_still_deletes
+now passes locally.
+Two-process stress test
+(TestRecreateNeverExposesASchemaIncompleteDb::test_two_processes_connecting_concurrently_never_see_no_such_table_meta)
+run 10x locally: 10/10 pass.
+Full tests/unit/test_graph_cache.py: 28/28 pass.
+frob test --base main: exit=0, 5 python tests recorded.
+
+Filed: none (no out-of-scope work discovered).
+
+Gates: frob check --ticket T-3733 clean except two pre-existing,
+out-of-scope repo-wide errors -- gate:DEPR DEPR006 on
+frob-deprecated-baseline.lock.json and gate:LARGE LARGE001 on
+src/frob/tickets/_unlanded.py (818 lines) -- neither touches
+src/frob/graph/cache.py or tests/unit/test_graph_cache.py and neither
+was introduced by this change.
+
+### Changed
+```
+ src/frob/graph/cache.py        | 77 ++++++++++++++++++++++++++---------
+ tests/unit/test_graph_cache.py | 92 ++++++++++++++++++++++++++++++++++++++++++
+ tickets/T-3733/ticket.md       |  6 ++-
+ 3 files changed, 156 insertions(+), 19 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_run_with_stale_reconnect_recovers_from_interface_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_check_fingerprint_with_recovery_recovers_from_interface_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb::test_is_stale_or_corrupt_connection_matches_interface_error_by_type` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 2 error(s), 4327 warning(s), 918 waived
+- error-findings: DEPR006@frob-deprecated-baseline.lock.json, LARGE001@src/frob/tickets/_unlanded.py

@@ -1,7 +1,7 @@
 ---
 id: T-3733
 title: 'cache: InterfaceError escapes stale-reconnect handlers (round 9)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'

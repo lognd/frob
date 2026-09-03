@@ -460,6 +460,98 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
             "after the bare DatabaseError"
         )
 
+    # frob:ticket T-3733
+    # frob:tests \
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
+    # run_with_stale_reconnect_recovers_from_interface_error
+    def test_run_with_stale_reconnect_recovers_from_interface_error(
+        self, tmp_path: Path
+    ) -> None:
+        """T-3733 (round 9, macOS CI run 33729699769): a stale/closed
+        sqlite connection raises `sqlite3.InterfaceError('bad parameter
+        or other API misuse')` -- confirmed directly here rather than
+        assumed to be a SIBLING of `sqlite3.DatabaseError` under
+        `sqlite3.Error`, not a subclass of it. `_run_with_stale_reconnect`
+        used to catch only `DatabaseError` (T-3706), so this shape still
+        escaped its retry loop uncaught. This deterministically forces the
+        shape (no timing dependency) and asserts the retry loop recovers
+        instead of propagating."""
+        assert not issubclass(sqlite3.InterfaceError, sqlite3.DatabaseError), (
+            "sqlite3.InterfaceError became a subclass of DatabaseError -- "
+            "this test's premise (why the T-3706 widened catch still "
+            "missed it) no longer holds; re-check whether the sqlite3.Error "
+            "widening is still needed"
+        )
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+
+        calls = {"n": 0}
+
+        def op(_conn: sqlite3.Connection) -> str:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise sqlite3.InterfaceError("bad parameter or other API misuse")
+            return "recovered"
+
+        result = graph_cache._run_with_stale_reconnect(conn, op, what="test op")
+        assert result == "recovered"
+        assert calls["n"] == 2, (
+            "op should have been retried exactly once after the bare InterfaceError"
+        )
+
+    # frob:ticket T-3733
+    # frob:tests \
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
+    # check_fingerprint_with_recovery_recovers_from_interface_error
+    def test_check_fingerprint_with_recovery_recovers_from_interface_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3733: same widened-catch fix, for the fingerprint recovery
+        loop specifically (`_check_fingerprint_with_recovery` /
+        `_recover_fingerprint_connection`) -- the second escape point
+        that still typed too narrowly (`DatabaseError`) to reach an
+        `InterfaceError` raised by a stale/closed handle."""
+        path = tmp_path / "cache.db"
+        conn = graph_cache.connect(path)
+
+        calls = {"n": 0}
+        real_check_fingerprint = graph_cache._check_fingerprint
+
+        def flaky_check_fingerprint(c: sqlite3.Connection, p: Path) -> None:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise sqlite3.InterfaceError("bad parameter or other API misuse")
+            real_check_fingerprint(c, p)
+
+        monkeypatch.setattr(graph_cache, "_check_fingerprint", flaky_check_fingerprint)
+
+        result = graph_cache._check_fingerprint_with_recovery(conn, path)
+        assert isinstance(result, sqlite3.Connection)
+        assert calls["n"] == 2, (
+            "_check_fingerprint should have been retried exactly once "
+            "after the bare InterfaceError"
+        )
+
+    # frob:ticket T-3733
+    # frob:tests \
+    # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
+    # is_stale_or_corrupt_connection_matches_interface_error_by_type
+    def test_is_stale_or_corrupt_connection_matches_interface_error_by_type(
+        self,
+    ) -> None:
+        """T-3733: `InterfaceError`'s message ("bad parameter or other API
+        misuse") never appears in `_STALE_CONNECTION_ERROR_SHAPES`, so
+        unlike every other shape `_is_stale_or_corrupt_connection` matches
+        by substring, this one must be matched by TYPE -- confirm that
+        directly, since the message-substring path alone would silently
+        keep failing this shape even after the catch-clause widening."""
+        exc = sqlite3.InterfaceError("bad parameter or other API misuse")
+        assert graph_cache._is_stale_or_corrupt_connection(exc), (
+            "InterfaceError must be classified as a stale/corrupt "
+            "connection even though its message matches none of "
+            "_STALE_CONNECTION_ERROR_SHAPES"
+        )
+
     # frob:tests \
     # tests/unit/test_graph_cache.py::TestRecreateNeverExposesASchemaIncompleteDb.test_\
     # apply_schema_rebuild_replacement_always_has_files_table
