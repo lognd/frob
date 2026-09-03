@@ -1,7 +1,7 @@
 ---
 id: T-3727
 title: GATERULE001 fires on downstream repos own lint rule-ids not waivable (apollo)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -46,6 +46,11 @@ scope_changes:
   reason: frob ack writes acknowledgment digests into frob.lock
   actor: logan
   at: '2026-09-03'
+evidence:
+- tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption::test_downstream_repo_with_own_rule_catalog_is_silent
+- tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption::test_downstream_repo_declaring_a_different_project_name_is_silent
+- tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption::test_frobs_own_repo_still_scanned
+- tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate::test_unregistered_id_reported_as_error
 designated_repro_test: null
 threat: null
 component: null

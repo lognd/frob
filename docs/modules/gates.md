@@ -3667,6 +3667,19 @@ unreadable file, an encoding error), `GATERULE001` reports
 `Severity.UNRESOLVED` naming exactly what could not be scanned, instead
 of letting a silent "0 unregistered" read as a false-clean pass.
 
+**Frob's-own-repo scoping (T-3727)**: `_KNOWN_GATE_RULES` is frob's OWN
+gate rule registry, so this scan is only ever a meaningful check when
+`root` IS the frob source checkout itself. `gate_rule_registry_
+violations` gates the whole scan on `is_frob_own_repo(root)` (the same
+`frob.repo_meta` predicate PORT001/LANG004 already use, T-2706): silent
+(empty tuple, not `UNRESOLVED`) on any repo whose own `pyproject.toml`
+does not declare `[project] name = "frob"`. Before this, running against
+a downstream consumer repo reported every `PREFIX+digits`-shaped literal
+in that repo's OWN, wholly unrelated lint catalog (`COLOR001`,
+`SPACE001`) as "unregistered" -- a category error `frob:waive
+GATERULE001` could not rescue either, since the check should never have
+fired there at all.
+
 ## Baseline lock producer staleness (T-2999)
 
 `frob.gates._lock_producer` distinguishes a DELIBERATELY frozen committed

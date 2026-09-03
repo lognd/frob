@@ -363,6 +363,17 @@ class TestFindUnregisteredRuleIds:
         assert missing.get("ZZZTEST032") == "src/frob/gates/_new_synthetic_gate.py:2"
 
 
+def _write_frob_pyproject(tmp_path: Path) -> None:
+    """Stamp `tmp_path` as `is_frob_own_repo`-true (T-3727): GATERULE001
+    only scans when `root`'s own `pyproject.toml` declares `[project]
+    name = "frob"` -- every fixture below that wants the SCAN to actually
+    run (as opposed to the T-3727 downstream-repo exemption itself)
+    needs this stamp, matching the same declare-not-hardcode shape
+    `is_frob_own_repo`'s other callers (PORT001/LANG004, T-2706) rely
+    on."""
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "frob"\n')
+
+
 class TestGateRuleRegistryGate:
     """GATERULE001 (T-2448): `find_unregistered_rule_ids` run repo-wide
     as a STANDING gate, not just at one ticket's own close/land time."""
@@ -374,6 +385,7 @@ class TestGateRuleRegistryGate:
         # A src/ tree with zero rule-id-shaped candidates at all is
         # silent -- no findings, not even UNRESOLVED (a real scan ran
         # and genuinely found nothing to report).
+        _write_frob_pyproject(tmp_path)
         (tmp_path / "src" / "frob" / "gates").mkdir(parents=True)
         violations = gate_rule_registry_violations(tmp_path)
         assert violations == ()
@@ -382,6 +394,7 @@ class TestGateRuleRegistryGate:
         # frob:tests \
         # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_unre\
         # gistered_id_reported_as_error
+        _write_frob_pyproject(tmp_path)
         gates_dir = tmp_path / "src" / "frob" / "gates"
         gates_dir.mkdir(parents=True)
         (gates_dir / "_synthetic.py").write_text('RULE = "ZZZTEST030"\n')
@@ -404,6 +417,7 @@ class TestGateRuleRegistryGate:
         # T-2391 fail-loudly positive control: a repo with NO src/ at
         # all (a layout this scan cannot cover, T-2384) must report
         # UNRESOLVED, never an empty (falsely-clean) result.
+        _write_frob_pyproject(tmp_path)
         violations = gate_rule_registry_violations(tmp_path)
         assert len(violations) == 1
         assert violations[0].rule == "GATERULE001"
@@ -416,6 +430,7 @@ class TestGateRuleRegistryGate:
         # frob:tests \
         # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_scan\
         # _crash_is_unresolved_not_silently_swallowed
+        _write_frob_pyproject(tmp_path)
         (tmp_path / "src").mkdir()
 
         def _boom(*args, **kwargs):
@@ -428,3 +443,58 @@ class TestGateRuleRegistryGate:
         assert len(violations) == 1
         assert violations[0].severity == Severity.UNRESOLVED
         assert "scan crashed" in violations[0].message
+
+
+# frob:ticket T-3727
+class TestGateRuleRegistryDownstreamRepoExemption:
+    """T-3727: GATERULE001 must never fire against a downstream consumer
+    repo -- `_KNOWN_GATE_RULES` is frob's OWN gate-rule registry, and a
+    consumer's own unrelated PREFIX+digits lint catalog (`COLOR001`,
+    `SPACE001`) is not, and never was, measured against it. Scoped to
+    frob's own checkout via `is_frob_own_repo` (T-2706 precedent)."""
+
+    def test_downstream_repo_with_own_rule_catalog_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepo\
+        # Exemption.test_downstream_repo_with_own_rule_catalog_is_silent
+        # No pyproject.toml at all (the common case for a bare scan
+        # target) -- still not frob's own repo, still silent, even
+        # though the file below is shaped exactly like the
+        # test_unregistered_id_reported_as_error fixture that DOES fire
+        # once _write_frob_pyproject stamps the same tree as frob's own.
+        gates_dir = tmp_path / "src" / "mypkg" / "lint"
+        gates_dir.mkdir(parents=True)
+        (gates_dir / "_rules.py").write_text('RULE = "COLOR001"\n')
+        violations = gate_rule_registry_violations(tmp_path)
+        assert violations == ()
+
+    def test_downstream_repo_declaring_a_different_project_name_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepo\
+        # Exemption.test_downstream_repo_declaring_a_different_project_name_is_silent
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+        gates_dir = tmp_path / "src" / "mypkg" / "lint"
+        gates_dir.mkdir(parents=True)
+        (gates_dir / "_rules.py").write_text('RULE = "SPACE001"\n')
+        violations = gate_rule_registry_violations(tmp_path)
+        assert violations == ()
+
+    def test_frobs_own_repo_still_scanned(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepo\
+        # Exemption.test_frobs_own_repo_still_scanned
+        # Positive control: the SAME unregistered-id shape as
+        # test_unregistered_id_reported_as_error still fires once the
+        # tree is stamped as frob's own -- the fix narrows WHERE this
+        # gate applies, it does not silence it everywhere.
+        _write_frob_pyproject(tmp_path)
+        gates_dir = tmp_path / "src" / "frob" / "gates"
+        gates_dir.mkdir(parents=True)
+        (gates_dir / "_synthetic.py").write_text('RULE = "ZZZTEST031"\n')
+        violations = gate_rule_registry_violations(tmp_path)
+        matches = [v for v in violations if v.rule == "GATERULE001"]
+        assert any(v.symref == "ZZZTEST031" for v in matches)

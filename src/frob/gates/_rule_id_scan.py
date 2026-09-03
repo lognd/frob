@@ -488,6 +488,13 @@ def find_unregistered_rule_ids(
 # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_unregistered_id_reported_as_error  # noqa: E501
 # frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_missing_src_dir_is_unresolved_not_silent_zero  # noqa: E501
+# frob:ticket T-3727
+# frob:tests \
+# tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption.test_downstream_repo_with_own_rule_catalog_is_silent  # noqa: E501
+# frob:tests \
+# tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption.test_downstream_repo_declaring_a_different_project_name_is_silent  # noqa: E501
+# frob:tests \
+# tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryDownstreamRepoExemption.test_frobs_own_repo_still_scanned  # noqa: E501
 def gate_rule_registry_violations(root: Path) -> tuple[Violation, ...]:
     """GATERULE001 (T-2448): `find_unregistered_rule_ids` (T-1937) run
     repo-wide as a STANDING `frob check` gate, instead of only ever
@@ -504,6 +511,23 @@ def gate_rule_registry_violations(root: Path) -> tuple[Violation, ...]:
     inert CLI flags and T-2438's inert waiver directives already showed
     twice earlier the same day this gate was written).
 
+    T-3727: `_KNOWN_GATE_RULES` (`frob.gates._waive`) is FROB'S OWN gate
+    rule registry -- comparing a scanned repo's `rule="..."` literals
+    against it is only ever a meaningful check when `root` IS the frob
+    source checkout itself (this gate dogfooding its own registry
+    completeness). Run against a downstream consumer repo instead, the
+    scanner still walks that repo's `src/` for any PREFIX+digits literal
+    shaped like a gate rule id and reports every one as "unregistered",
+    including a downstream project's own, wholly unrelated lint catalog
+    (`COLOR001`/`SPACE001`, apollo FROBLEMS.md 2026-09-03) -- a category
+    error, not a real finding, and `frob:waive GATERULE001` cannot rescue
+    it either (T-2448: not viable as a per-repo dodge for a check that
+    should not have fired there at all). `is_frob_own_repo(root)` (the
+    same PORT001/LANG004 precedent, T-2706) gates the whole scan: silent
+    (empty tuple, not UNRESOLVED -- there is nothing this repo failed to
+    measure, the check simply does not apply here) on any repo whose
+    `pyproject.toml` does not declare itself as `frob`.
+
     T-2391 FAIL-LOUDLY: this scan's own coverage assumption is a
     top-level `root/src/` directory
     (`scan_candidate_rule_id_literals`'s own docstring/implementation --
@@ -517,6 +541,10 @@ def gate_rule_registry_violations(root: Path) -> tuple[Violation, ...]:
     left to propagate into a whole-`frob check` crash and never silently
     swallowed into an empty (and therefore falsely-clean) result."""
     from frob.gates._waive import known_gate_rule_ids
+    from frob.repo_meta import is_frob_own_repo
+
+    if not is_frob_own_repo(root):
+        return ()
 
     src_dir = root / "src"
     if not src_dir.is_dir():

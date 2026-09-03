@@ -2861,6 +2861,24 @@
       "old_digest": "34982d65c649e8682213661fe1cdc674f96061865b2a33e0654f21b981cd89c4",
       "reason": "T-3724: strengthened evidence with direct _blank_ticket_reason_fields unit tests for the boundary/mutation-kill pass; doc still true",
       "ref": "src/frob/gates/_docptr.py::doc006_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-03",
+      "facet": "body",
+      "new_digest": "3b2aea393e2f82a84fc8386dece67b54904aaf0fc4a917c995884aed81cadf56",
+      "old_digest": null,
+      "reason": "T-3727: added is_frob_own_repo scoping so GATERULE001 never fires against a downstream repo's own rule-id catalog; doc and behavior re-verified in sync",
+      "ref": "src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-09-03",
+      "facet": "sig",
+      "new_digest": "2a8a84a3f7ae2cd4d6b2c2351afc820b008ef20ce8f3d883c1607f35e122dad9",
+      "old_digest": null,
+      "reason": "T-3727: added is_frob_own_repo scoping so GATERULE001 never fires against a downstream repo's own rule-id catalog; doc and behavior re-verified in sync",
+      "ref": "src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations"
     }
   ],
   "entries": [
@@ -3413,6 +3431,16 @@
       "digest": "e95d9ae016e0c80327a72fd91fad9b392a388766fb6fcd5e2d075e26ae3c63f3",
       "facet": "sig",
       "ref": "src/frob/gates/_protocol_summary.py::protocol_summary_gate"
+    },
+    {
+      "digest": "3b2aea393e2f82a84fc8386dece67b54904aaf0fc4a917c995884aed81cadf56",
+      "facet": "body",
+      "ref": "src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations"
+    },
+    {
+      "digest": "2a8a84a3f7ae2cd4d6b2c2351afc820b008ef20ce8f3d883c1607f35e122dad9",
+      "facet": "sig",
+      "ref": "src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations"
     },
     {
       "digest": "3918169c7721a2ddb7ae62c3f262ee2cf4c644c78d82b9ac35c0965e183e8f0f",
