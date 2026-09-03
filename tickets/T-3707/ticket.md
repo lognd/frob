@@ -2,7 +2,7 @@
 id: T-3707
 title: 'win32 round 23: explicit executor shutdown for check pipeline post-submit
   120s gap'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-02'
@@ -21,6 +21,8 @@ scope:
 - .github/workflows/ci.yml
 - src/frob/gates/__init__.py
 - tests/gates_suite/test_run.py
+- tests/unit/test_check_admission.py
+- tests/unit/test_conftest_midrun_watchdog.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +41,18 @@ scope_changes:
 - op: add
   glob: tests/gates_suite/test_run.py
   reason: narrow to the process-pool shutdown site and its existing test module
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: tests/unit/test_check_admission.py
+  reason: reformatted by frob format (pre-existing drift) / new watchdog regression
+    tests
+  actor: logan
+  at: '2026-09-02'
+- op: add
+  glob: tests/unit/test_conftest_midrun_watchdog.py
+  reason: reformatted by frob format (pre-existing drift) / new watchdog regression
+    tests
   actor: logan
   at: '2026-09-02'
 designated_repro_test: null
