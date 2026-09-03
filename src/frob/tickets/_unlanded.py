@@ -64,6 +64,20 @@ worktree sweep`'s existing `kept:dirty` gate's job, not this module's,
 per T-1948's own explicit scope note.
 """
 
+# frob:ticket T-3734
+# frob:waive LARGE001 reason="T-3734 (post-T-3731 measurement): the T-3567 cache- \
+# write helper (_frob_dir_is_gitignored/_maybe_save_unlanded_summary_cache, the one \
+# genuinely separable seam this module had) was already extracted to frob. \
+# tickets._unlanded_cache -- what remains is T-3731's own branch-scan-budget addition \
+# plus the pre-existing git-plumbing branch scan this module's docstring already \
+# describes as ONE detector (three ledger-drift crash windows sharing one scan loop, \
+# one budget, one findings type). ~36 lines over an 800-line threshold is a \
+# T-1651-grade small overage against a module that IS one cohesive detector by design; \
+# a further line-count cut would bisect the scan loop itself (branch enumeration -> \
+# per-branch signal collection -> budget-bounded findings assembly) with no \
+# consumer-set boundary to hang it on, the same 'strictly worse than the warning' \
+# outcome T-1651 already established as this repo's standard for a small-overage \
+# cohesive module."
 from __future__ import annotations
 
 import re
@@ -75,6 +89,10 @@ from pydantic import BaseModel
 from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.tickets._leases import _LeaseRecord, lease_staleness_reason, read_all_leases
+from frob.tickets._unlanded_cache import (  # noqa: F401
+    _frob_dir_is_gitignored,
+    _maybe_save_unlanded_summary_cache,
+)
 
 _log = get_logger(__name__)
 

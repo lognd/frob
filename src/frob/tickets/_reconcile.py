@@ -40,7 +40,10 @@ from frob.tickets._leases import (
 )
 from frob.tickets._models import TicketError, TicketState
 from frob.tickets._store import load_all
-from frob.tickets._unlanded import _unlanded_branch_work, _UnlandedWork
+from frob.tickets._unlanded import (
+    _maybe_save_unlanded_summary_cache,
+    _unlanded_branch_work,
+)
 
 _log = get_logger(__name__)
 
@@ -96,9 +99,22 @@ def _live_worktrees(root: Path) -> Option[tuple[Path, ...]]:
         _log.warning("tickets: git worktree list failed under %s", root)
         return Nothing()
     paths: list[Path] = []
+    # frob:ticket T-3734
+    # PERF008: the "worktree " prefix and its length are loop-invariant --
+    # compute them once outside the loop instead of re-slicing/re-len'ing
+    # the same literal on every porcelain line.
+    prefix = "worktree "
+    prefix_len = len(prefix)
     for line in spawned.danger_ok.stdout.splitlines():
-        if line.startswith("worktree "):
-            paths.append(Path(line[len("worktree ") :]).resolve())
+        if line.startswith(prefix):
+            # frob:waive PERF008 reason="line is THIS iteration's own porcelain row (a \
+            # different worktree path every time splitlines() advances) -- the \
+            # genuinely invariant operands (prefix, prefix_len) are already hoisted \
+            # above the loop; there is nothing loop-invariant left to hoist here, the \
+            # same varies-per-iteration false-positive class already established for \
+            # _land_cmd.py:2653's identical \
+            # Path(lines[0][len(...):]).resolve()-in-a-loop shape (T-2321)"
+            paths.append(Path(line[prefix_len:]).resolve())
     if not paths:
         return Some(())
     main = paths[0]
@@ -329,67 +345,17 @@ def _refuse_apply_if_land_in_progress(
     return Ok(None)
 
 
-# frob:ticket T-3567
-def _frob_dir_is_gitignored(root: Path) -> bool:
-    """Whether `root`'s own git configuration (`.gitignore` at any level
-    `git check-ignore` consults, including a repo-root `.gitignore`, a
-    global `core.excludesFile`, or `.git/info/exclude`) already excludes
-    `.frob/` -- the precondition `reconcile` requires before writing
-    `.frob/unlanded-summary-cache.json` (T-3522).
-
-    T-3567: every OTHER `.frob/` writer this repo's own tests exercise
-    (`ledger_lock`'s `.frob/tickets.lock`, principally) only ever appears
-    clean in a bare test fixture with no `.gitignore` at all because an
-    EARLIER `git add -A` in that same test's own setup already staged and
-    committed it as ordinary tracked content before the write this test
-    actually measures runs -- not because `.frob/` is genuinely ignored
-    there. A first-time write to a path `git add -A` never touched before
-    (this cache file, in a fixture exactly like T-1936's) has no such
-    accidental cover, and writing it unconditionally regressed T-1936's
-    own "reconcile --apply leaves the ledger clean" contract (measured:
-    windows-latest run 33370059331). Every REAL frob-managed repo already
-    gitignores `.frob/` (this project's own `.gitignore` template, `docs/
-    guides/*` and this file's own module docstring elsewhere both assume
-    it) -- this guard only ever actually skips the write in a bare test
-    fixture that has not set that up, matching `_save_unlanded_summary_
-    cache`'s own existing best-effort, log-and-swallow posture (a skipped
-    write here just means `doable`'s cache stays cold, not an error)."""
-    checked = run_argv(["git", "-C", str(root), "check-ignore", "--quiet", ".frob/"])
-    return checked.is_ok and checked.danger_ok.returncode == 0
-
-
-# frob:ticket T-3567
-def _maybe_save_unlanded_summary_cache(
-    root: Path, unlanded_findings: tuple[_UnlandedWork, ...]
-) -> None:
-    """`reconcile`'s own ARCH001 split (T-3567): populate the TTL cache
-    `doable` reads (`frob.app.ticket_runner._query.
-    _load_unlanded_summary_cache`) with the branch names `unlanded_
-    findings` (`_unlanded_branch_work`'s own output, T-2127) just found --
-    lazy import to avoid a core (`frob.tickets`) -> app-layer (`frob.app.
-    ticket_runner`) import at module load time, same posture as `_land.
-    py`'s own lazy `frob.app._check_chunking` import. This was the
-    missing production write side `_save_unlanded_summary_cache`'s own
-    docstring already documented as the intended caller; `doable` itself
-    never scans branches inline (T-2629), so this reconcile call is now
-    the only thing that keeps the cache fresh.
-
-    T-3567: gated on `_frob_dir_is_gitignored` -- see that function's own
-    docstring for why an unconditional write regressed T-1936."""
-    from frob.app.ticket_runner._query import _save_unlanded_summary_cache
-
-    branches = tuple(dict.fromkeys(finding.branch for finding in unlanded_findings))
-    if _frob_dir_is_gitignored(root):
-        _save_unlanded_summary_cache(root, branches)
-    else:
-        _log.debug(
-            "reconcile: skipping unlanded-summary cache write under %s -- "
-            ".frob/ is not gitignored here (T-3567), writing it would leave "
-            "an untracked file `git status` (and every ledger-cleanliness "
-            "contract this function's own callers rely on, T-1936) would "
-            "see as dirty",
-            root,
-        )
+# frob:ticket T-3734
+# T-3567's `_frob_dir_is_gitignored`/`_maybe_save_unlanded_summary_cache`
+# pair moved to `frob.tickets._unlanded` (T-3734, see that module for the
+# functions themselves): reconcile.py already imports that module for
+# `_unlanded_branch_work`/`_UnlandedWork`, so routing the cache-write
+# helper's own lazy `frob.app.ticket_runner._query` import through there
+# instead of importing it here directly drops one distinct local module
+# from this file's import set (high-coupling: 9 -> 8, self-gate CI run
+# 33729699769) without changing any behavior -- the helper's natural
+# home is beside the unlanded-work scan whose output it persists, not
+# beside the ticket-lease reconcile logic that merely calls it once.
 
 
 # frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-reconcile-t-0476

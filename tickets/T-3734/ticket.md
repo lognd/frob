@@ -1,7 +1,7 @@
 ---
 id: T-3734
 title: fix self-gate PERF008/coupling findings in reconcile.py from T-3731
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
