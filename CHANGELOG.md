@@ -621,6 +621,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3275: PORT001 cannot see project identity hardcoded outside the four detector packages: frob coverage's src/frob target is invisible to dogfooding by construction
 - T-3276: Missing external tools degrade quietly instead of failing loud: no central resolution, doctor checks one binary, xdist absence unaccounted
 - T-3277: A freshly scaffolded project fails its own make check with 16 errors: docs promise green immediately, nothing tests scaffold-then-check
+- T-3279: Changed: frob-ratchet.lock.json (top-level pin object) Evidence: tests/unit/gates/test_lock_producer.py::TestProducerStatusVerdicts::test_must_stay_quiet_when_pinned covers the pin-suppresses-ABANDONED contract this fix relies on; frob check --only tickets confirms gate:WAIVE now 0 errors (WAIVE011 cleared) Filed: none (DEPR006/frob-deprecated-baseline.lock.json left as-is -- no CLI re-stamp verb found and it is outside this session's known self-gate error set; T-3279's own scope also names it but re-stamping it needs tighten_deprecated_baseline, an internal-only function with no exposed command) Gates: frob check --only tickets clean of WAIVE011
 - T-3283: 6 of T-3041's 13 live-repo self-conformance tests fail again: genuine post-close drift, not a stale claim
 - T-3285: close-time disclosure check false-positives on split done-report.md
 - T-3287: T-3256's admission registry is per-worktree, so the fleet's cross-worktree checks never see each other: the concurrency divisor is inert exactly where it was needed

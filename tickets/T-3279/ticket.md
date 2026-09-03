@@ -1,7 +1,7 @@
 ---
 id: T-3279
 title: Re-stamp abandoned deprecated-baseline and ratchet locks (DEPR006/WAIVE011)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'

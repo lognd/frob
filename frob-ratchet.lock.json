@@ -1,4 +1,8 @@
 {
+  "pin": {
+    "reason": "verified 2026-09-02 (T-3279): frob pool snapshot INV006 re-run against current main finds zero new or removed INV006 findings -- the 29-entry baseline is still current, nothing to re-stamp; pinning rather than committing a no-op re-run",
+    "ticket": "T-3279"
+  },
   "pools": [
     {
       "entries": [
