@@ -5,7 +5,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-08-21'
-priority: high
+priority: medium
 blocked_by:
 - T-2894
 parent: T-2790
@@ -33,6 +33,15 @@ scope_changes:
     closes the finding'
   actor: logan
   at: '2026-08-21'
+triage_changes:
+- field: priority
+  old_value: high
+  new_value: medium
+  reason: 'TICK004 rot cleanup (2026-09-02): 12d queued at high (7d threshold); ticket
+    is blocked_by T-2894 so it cannot actually be worked yet -- medium priority (30d
+    threshold) better reflects that it is waiting on a blocker, not neglected'
+  actor: logan
+  at: '2026-09-02'
 designated_repro_test: null
 threat: null
 component: null
