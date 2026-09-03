@@ -2,7 +2,7 @@
 id: T-3741
 title: re-enable xdist on the win32 CI Test step now that the subprocess-hang root
   causes are fixed
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-09-03'
@@ -41,6 +41,8 @@ body_changes:
   at: '2026-09-03'
   old_length: 0
   new_length: 1190
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_test_step_sets_frob_test_midrun_watchdog_seconds
 designated_repro_test: null
 threat: null
 component: null
@@ -75,3 +77,5 @@ re-tighten the wall-clock budgets T-3740 raised back down to something
 appropriate for a parallel run once xdist is confirmed stable there again.
 
 Leave in the backlog -- do not work this ticket as part of T-3740.
+
+frob:waive BUG002 reason="this ticket changes a CI workflow pytest invocation (removing -p no:xdist so the win32 leg runs parallel), not code with a wired caller path a test can exercise before/after. The bound evidence asserts a property of the win32 Test step; the real effect (the leg completing under budget instead of the single-threaded suite stalling the midrun watchdog) is only observable in a live windows-latest CI run, not reproducible in this repo's own suite. Same spirit as T-3740/T-3746/T-3747's BUG002 waives for the sibling CI-config changes."

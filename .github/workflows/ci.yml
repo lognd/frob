@@ -1549,7 +1549,18 @@ jobs:
           ${budget} = 3300  # 55m: win32 runs the suite single-threaded (-p no:xdist), so it needs far more wall-clock than ubuntu's xdist run; the python-side FROB_TEST_TOTAL_BUDGET_SECONDS=3000 cap fires first with a diagnostic, this Wait-Process budget is the outer backstop (T-3740)
           $stdout = Join-Path $env:RUNNER_TEMP "pytest-stdout.log"
           $stderr = Join-Path $env:RUNNER_TEMP "pytest-stderr.log"
-          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-p","no:xdist","-v","--full-trace" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          # T-3741: xdist re-enabled. `-p no:xdist -v --full-trace` was a
+          # T-3549/T-3560 diagnostics-era artifact from the win32 hang
+          # investigation -- single-threaded, so a collection-heavy suite
+          # crawled and the midrun watchdog false-fired from session start
+          # (run 33778211294). The hang root causes are fixed (T-3686 os.kill
+          # self-ctrl-c, T-3708 abandoned-thread atexit, T-3726 capture,
+          # T-3730/3735 test_cli_doctor, T-3738 test_wire) and the console
+          # ctrl mitigation (FROB_TEST_IGNORE_CONSOLE_CTRL=1, above) neutralizes
+          # the injected-SIGINT class, so the suite runs parallel like ubuntu/
+          # macos via pyproject's `-n auto --dist=loadgroup` addopts. `-q` keeps
+          # output sane under xdist (matches the macos step).
+          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
             Wait-Process -Id $p.Id -Timeout ${budget} -ErrorAction Stop
           } catch {
