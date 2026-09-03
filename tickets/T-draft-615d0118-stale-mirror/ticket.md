@@ -1,5 +1,5 @@
 ---
-id: T-draft-615d0118
+id: T-draft-615d0118-stale-mirror
 title: CI stamp-baseline --only chunk list desynced from _stamp_baseline_gate_chunks,
   .frob/baseline never written
 state: queued
