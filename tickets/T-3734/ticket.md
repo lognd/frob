@@ -17,6 +17,7 @@ scope:
 - src/frob/tickets/_reconcile.py
 - src/frob/tickets/_unlanded.py
 - tests/test_ticket_reconcile.py
+- src/frob/tickets/_unlanded_cache.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,12 @@ scope_changes:
   glob: docs/modules/tickets-lifecycle.md
   reason: 'revert: doc file balloons scope via pre-existing anchors unrelated to this
     fix; not touching docs'
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: src/frob/tickets/_unlanded_cache.py
+  reason: 'LARGE001 fix: extract T-3567 cache-write helper into its own module to
+    shrink _unlanded.py back under the 800-line threshold (coordinator directive)'
   actor: logan
   at: '2026-09-03'
 designated_repro_test: null
