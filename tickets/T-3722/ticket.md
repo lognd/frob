@@ -14,11 +14,22 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/process/**
+- src/frob/tickets/_worktree_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/process/**
+  reason: the xdist-addopts assumption lives in tickets/_worktree_guard.py, not process/**
+  actor: logan
+  at: '2026-09-03'
+- op: add
+  glob: src/frob/tickets/_worktree_guard.py
+  reason: the xdist-addopts assumption lives in tickets/_worktree_guard.py, not process/**
+  actor: logan
+  at: '2026-09-03'
 designated_repro_test: null
 threat: null
 component: null
