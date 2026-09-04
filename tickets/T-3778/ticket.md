@@ -32,6 +32,13 @@ scope_changes:
   reason: remove rerun tests
   actor: logan
   at: '2026-09-04'
+body_changes:
+- mode: append
+  reason: describe revert plan + waiver
+  actor: logan
+  at: '2026-09-04'
+  old_length: 0
+  new_length: 1328
 designated_repro_test: null
 threat: null
 component: null
@@ -39,3 +46,28 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+## Description
+
+T-3776 added `--reruns 2 --reruns-delay 1` to all three CI Test steps to
+absorb flaky tests. This backfired: on macOS (Python 3.14),
+pytest-rerunfailures 16.6 hits an INTERNALERROR under `-n auto
+--dist=loadgroup` whenever it tries to rerun a failed test -- the worker
+crashes inside pytest_rerunfailures.py `_sock_recv`/`get_test_failures`
+(xdist worker socket handling), aborting the whole suite. Confirmed on
+run 33903537198: ubuntu passed with --reruns but macos aborted with
+`INTERNALERROR> assert False, formatted_error` originating from
+pytest_rerunfailures.pytest_runtest_protocol. So --reruns converts a
+rare single-test flake into a deterministic whole-suite abort on the
+py3.14 leg.
+
+## Plan
+
+- In .github/workflows/ci.yml remove `--reruns 2 --reruns-delay 1` (and
+  the windows ArgumentList elements `,"--reruns","2","--reruns-delay","1"`)
+  from all three Test steps (ubuntu, macos, windows).
+- Replace the T-3775 rerun-rationale comments with a one-line note.
+- In tests/test_ci_workflow_matrix.py remove the TestTestStepsRerunFlakes
+  class added by T-3776.
+- Do NOT `git revert` the T-3776 land commit -- ledger stays intact.
+
+frob:waive BUG002 reason="CI-config revert; the rerunfailures/xdist/py3.14 INTERNALERROR only reproduces on the macOS CI runner, not a Linux parent-commit pytest repro"
