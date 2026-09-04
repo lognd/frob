@@ -200,6 +200,12 @@ class TestAcquireSingletonLockPlatformBackends:
         assert result.is_err
         assert result.danger_err == DaemonError.LockUnavailable
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="simulates the Windows msvcrt lock backend on POSIX via real "
+        "fcntl.flock; on real Windows the actual msvcrt backend runs and there "
+        "is no fcntl to stand in for it (T-3751)",
+    )
     def test_windows_backend_round_trips(
         self, root: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
