@@ -13,7 +13,10 @@ config shape.
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
+
+import pytest
 
 from frob.findings import Severity
 from frob.gates._docptr import _blank_ticket_reason_fields, doc006_gate
@@ -1390,6 +1393,12 @@ class TestDoc004Doc006ZeroOnFrobsOwnRepo:
     because the surrounding DOC family carries unrelated pre-existing
     DOC001/DOC002/DOC005 findings outside this ticket's scope."""
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="full-repo live-scan (frob self-conformance) is too slow on the "
+        "Windows CI runner and timeout-crashes its xdist worker, aborting the "
+        "whole suite; platform-independent, covered by the Linux/macOS legs (T-3754)",
+    )
     def test_doc004_doc006_zero_against_live_repo(self, tmp_path: Path) -> None:
         from frob.gates import _apply_waivers, doc004_gate
         from frob.gates._docptr import doc006_gate
@@ -1404,6 +1413,12 @@ class TestDoc004Doc006ZeroOnFrobsOwnRepo:
         assert offenders == [], f"unexpected DOC004/DOC006 finding(s): {offenders}"
 
     # frob:ticket T-3485
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="scans changelog.d (900+ files) live; too slow on the Windows CI "
+        "runner and timeout-crashes its xdist worker; platform-independent, "
+        "covered by the Linux/macOS legs (T-3754)",
+    )
     def test_changelog_d_fragment_doc006_zero(self, tmp_path: Path) -> None:
         """T-3485: a targeted pin on changelog.d/T-2691.md's own DOC006
         result, independent of the whole-repo assertion above -- that

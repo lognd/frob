@@ -12,6 +12,8 @@ appears in an ARCH001 finding.
 
 from __future__ import annotations
 
+import sys
+
 import pytest
 
 from tests.system.conftest import run
@@ -27,6 +29,13 @@ class TestFleetStatusTicketReadinessArch001:
     # raising the global 120s ceiling (docs/guides/testing.md#per-test-
     # timeout-ci-hardening, same reasoning T-0742 used for
     # test_scaffold_dx.py).
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="runs `frob check --only arch` over the whole repo; exceeds even "
+        "300s on the Windows CI runner and timeout-crashes its xdist worker, "
+        "aborting the suite; the arch scan is platform-independent and covered "
+        "by the Linux/macOS legs (T-3754)",
+    )
     @pytest.mark.timeout(300)
     def test_ticket_readiness_is_not_an_arch001_finding(self) -> None:
         # T-3247: `run`'s own DEFAULT_RUN_TIMEOUT_S (T-2980) caps a call
