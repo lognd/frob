@@ -28,6 +28,8 @@ scope_changes:
     usages
   actor: logan
   at: '2026-09-04'
+evidence:
+- tests/test_coverage.py::TestSpawnWithWatchdog::test_killed_process_group_leaves_no_surviving_children
 designated_repro_test: null
 threat: null
 component: null
