@@ -166,5 +166,9 @@
       ],
       "symbol": "src/frob/app/xref_runner.py::run"
     }
-  ]
+  ],
+  "pin": {
+    "reason": "Producer tighten_deprecated_baseline is unwired (no production caller); baseline is frozen at its 2026-07-28 seed pending T-3758 to wire or retire it. DEPR005 content check still passes against this frozen set.",
+    "ticket": "T-3758"
+  }
 }
