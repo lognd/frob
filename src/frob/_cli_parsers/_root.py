@@ -73,8 +73,14 @@ from frob.refactor._cli import add_refactor_parser
 _log = get_logger(__name__)
 
 # frob:ticket T-0578
+# frob:ticket T-3762
+# Python's own wording changed across versions: <=3.11 quotes each choice
+# ("choose from 'a', 'b'"), 3.12+ drops the quotes ("choose from a, b") --
+# capture the whole blob unconditionally and let `_did_you_mean` split it,
+# so the suggestion fires on both (T-3762: it silently went dark under the
+# 3.12 wording, e.g. the Windows CI leg's interpreter).
 _INVALID_CHOICE_RE = re.compile(
-    r"^argument [^:]+: invalid choice: '([^']+)' \(choose from ((?:'[^']*'(?:, )?)+)\)$"
+    r"^argument [^:]+: invalid choice: '([^']+)' \(choose from (.+)\)$"
 )
 # frob:ticket T-0578
 _UNRECOGNIZED_RE = re.compile(r"^unrecognized arguments: (.+)$")
@@ -170,7 +176,13 @@ def _did_you_mean(
     choice_match = _INVALID_CHOICE_RE.match(message)
     if choice_match is not None:
         bad, choices_blob = choice_match.groups()
+        # frob:ticket T-3762
+        # Python <=3.11 quotes each choice ('a', 'b'); 3.12+ does not
+        # (a, b) -- prefer the quoted extraction when present, otherwise
+        # fall back to a plain ", "-split of the unquoted blob.
         choices = re.findall(r"'([^']*)'", choices_blob)
+        if not choices:
+            choices = [c.strip() for c in choices_blob.split(", ") if c.strip()]
         return _closest(bad, choices)
 
     unrecognized_match = _UNRECOGNIZED_RE.match(message)
