@@ -96,6 +96,11 @@ def repo(tmp_path: Path) -> Path:
 class TestScanForLiveWorktreeProcess:
     """The shared `/proc` primitive both T-1715 and T-1739 call."""
 
+    # frob:ticket T-3763
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="reads /proc/<pid>/cwd directly; Linux-only primitive",
+    )
     def test_finds_a_process_cwd_into_the_path(self, repo: Path) -> None:
         # frob:tests tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess.test_finds_a_process_cwd_into_the_path  # noqa: E501
         wt = _add_worktree(repo, "wt1")
@@ -155,6 +160,11 @@ class TestLiveLeaseForWorktree:
 class TestRefuseIfWorktreeInUse:
     """The combined T-1715/T-1739 refusal function."""
 
+    # frob:ticket T-3763
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="scan_for_live_worktree_process reads /proc/<pid>/cwd directly; Linux-only primitive",
+    )
     def test_refuses_on_a_live_process_and_names_the_pid(
         self, repo: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -210,6 +220,11 @@ class TestRefuseIfWorktreeInUse:
 class TestFinishWorktree:
     """`_finish_worktree`'s own liveness-refusal wiring."""
 
+    # frob:ticket T-3763
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="scan_for_live_worktree_process reads /proc/<pid>/cwd directly; Linux-only primitive",
+    )
     def test_refuses_to_remove_a_worktree_a_live_process_is_cwd_into(
         self, repo: Path
     ) -> None:
@@ -237,6 +252,11 @@ class TestFinishWorktree:
         _finish_worktree(repo, wt, "T-1715", verified_landed=True)
         assert not wt.exists()
 
+    # frob:ticket T-3763
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="scan_for_live_worktree_process reads /proc/<pid>/cwd directly; Linux-only primitive",
+    )
     def test_force_removes_despite_a_live_process(self, repo: Path) -> None:
         # frob:tests tests/unit/test_land_finish_guard.py::TestFinishWorktree.test_force_removes_despite_a_live_process  # noqa: E501
         wt = _add_worktree(repo, "wt1")
@@ -261,6 +281,11 @@ class TestFinishWorktree:
             holder.kill()
             holder.wait(timeout=5)
 
+    # frob:ticket T-3763
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="scan_for_live_worktree_process reads /proc/<pid>/cwd directly; Linux-only primitive",
+    )
     def test_finish_worktree_force_requires_reason_when_guard_would_fire(
         self, repo: Path
     ) -> None:

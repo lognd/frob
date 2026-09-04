@@ -1,7 +1,7 @@
 ---
 id: T-3763
 title: skip win32 POSIX-only proc-cwd tests in test_land_finish_guard.py
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -26,6 +26,12 @@ body_changes:
   at: '2026-09-04'
   old_length: 523
   new_length: 652
+evidence:
+- tests/unit/test_land_finish_guard.py::TestScanForLiveWorktreeProcess::test_finds_a_process_cwd_into_the_path
+- tests/unit/test_land_finish_guard.py::TestRefuseIfWorktreeInUse::test_refuses_on_a_live_process_and_names_the_pid
+- tests/unit/test_land_finish_guard.py::TestFinishWorktree::test_refuses_to_remove_a_worktree_a_live_process_is_cwd_into
+- tests/unit/test_land_finish_guard.py::TestFinishWorktree::test_force_removes_despite_a_live_process
+- tests/unit/test_land_finish_guard.py::TestFinishWorktree::test_finish_worktree_force_requires_reason_when_guard_would_fire
 designated_repro_test: null
 threat: null
 component: null
