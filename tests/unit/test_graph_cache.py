@@ -13,6 +13,38 @@ import pytest
 
 from frob.graph import cache as graph_cache
 
+# frob:ticket T-3781
+#: T-3781: 6 tests below model (single-process, or a real subprocess
+#: sibling) another connection surviving an `os.replace` publish while it
+#: still has `path` open -- the whole point of this module's rename-not-
+#: unlink-in-place design (T-3607's docstring: "a rename does not
+#: invalidate any process's already-open fd or active mmap"). That
+#: guarantee is POSIX-specific. Confirmed via a minimal reproduction under
+#: winrun (T-3781): even a single PLAIN sqlite3 connection with no active
+#: transaction, opened by Python's bundled sqlite3 VFS, is enough to make
+#: `os.replace` targeting that same path raise `PermissionError: [WinError
+#: 5] Access is denied` on Windows -- CreateFile/MoveFileEx there refuse to
+#: replace a file with ANY open handle unless that handle was opened with
+#: FILE_SHARE_DELETE, which Python's bundled sqlite3 does not request.
+#: There is no stdlib-`sqlite3`-level way to request that share flag, so a
+#: caller with a stale connection (or a genuine cross-process sibling, as
+#: `test_sibling_reader_survives_concurrent_recreate`/`test_two_processes_
+#: connecting_concurrently_never_see_no_such_table_meta` construct with a
+#: real subprocess) structurally CANNOT be survived by an `os.replace`-
+#: based atomic publish on Windows -- not a gap in this module's retry/
+#: recovery logic, a platform primitive with no equivalent here.
+_WIN32_NO_REPLACE_OVER_OPEN_HANDLE = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason=(
+        "POSIX-only primitive: os.replace() must not invalidate another "
+        "already-open handle to the destination path. Windows' "
+        "CreateFile/MoveFileEx refuses to replace a file with any open "
+        "handle lacking FILE_SHARE_DELETE, which Python's bundled sqlite3 "
+        "does not request and cannot be made to via the stdlib API "
+        "(confirmed via a minimal winrun reproduction, T-3781)."
+    ),
+)
+
 
 # frob:ticket T-1464
 class TestParsedArtifacts:
@@ -121,6 +153,7 @@ class TestRecreateConcurrentReaderSurvives:
     # frob:tests \
     # tests/unit/test_graph_cache.py::TestRecreateConcurrentReaderSurvives.test_sibling\
     # _reader_survives_concurrent_recreate
+    @_WIN32_NO_REPLACE_OVER_OPEN_HANDLE
     def test_sibling_reader_survives_concurrent_recreate(self, tmp_path: Path) -> None:
         """A real sibling process reading in a tight loop never dies from
         a signal while this process repeatedly `_recreate`s the same
@@ -325,6 +358,7 @@ class TestRecreateNeverExposesASchemaIncompleteDb:
     # residual failure is timing starvation under xdist CI load, not a
     # deterministic defect.
     @pytest.mark.flaky(reruns=2, reruns_delay=1)
+    @_WIN32_NO_REPLACE_OVER_OPEN_HANDLE
     def test_two_processes_connecting_concurrently_never_see_no_such_table_meta(
         self, tmp_path: Path
     ) -> None:
@@ -602,6 +636,7 @@ class TestConnectNeverReturnsAStaleConnection:
     # frob:tests \
     # tests/unit/test_graph_cache.py::TestConnectNeverReturnsAStaleConnection.test_conn\
     # ect_after_forced_schema_rebuild_returns_a_fresh_live_connection
+    @_WIN32_NO_REPLACE_OVER_OPEN_HANDLE
     def test_connect_after_forced_schema_rebuild_returns_a_fresh_live_connection(
         self, tmp_path: Path
     ) -> None:
@@ -742,6 +777,7 @@ class TestHandleIdentity:
         )
 
     # frob:tests src/frob/graph/cache.py::_reopen_if_replaced
+    @_WIN32_NO_REPLACE_OVER_OPEN_HANDLE
     def test_replaced_away_handle_is_reopened_before_the_next_read(
         self, tmp_path: Path
     ) -> None:
@@ -814,6 +850,7 @@ class TestHandleIdentity:
         assert time.monotonic() - started < 5.0
 
     # frob:tests src/frob/graph/cache.py::_check_fingerprint_with_recovery
+    @_WIN32_NO_REPLACE_OVER_OPEN_HANDLE
     def test_fingerprint_read_after_a_replace_lands_on_the_live_file(
         self, tmp_path: Path
     ) -> None:
@@ -846,6 +883,7 @@ class TestHandleIdentity:
         )
 
     # frob:tests src/frob/graph/cache.py::store_file_data
+    @_WIN32_NO_REPLACE_OVER_OPEN_HANDLE
     def test_store_file_data_after_a_replace_lands_on_the_live_file(
         self, tmp_path: Path
     ) -> None:
