@@ -440,6 +440,33 @@ _SUITE_RESULT_MAX_NODE_IDS = 50
 name before collapsing the remainder into an 'and N more' tail -- keeps the
 always-visible summary bounded even on a suite with hundreds of failures."""
 
+_SUITE_RESULT_MAX_NODE_IDS_ENV = "FROB_TEST_SUITE_RESULT_MAX_NODE_IDS"
+"""T-3755: env override for the node-id cap above. A platform-drain drive
+(e.g. the win32 test-portability drain, T-3076) needs the FULL failing set
+from ONE CI run, not the first 50 + 'and N more'; the CI Test steps set this
+high so the whole list is emitted. Defaults to _SUITE_RESULT_MAX_NODE_IDS."""
+
+
+# frob:waive WIRE001 reason="called from pytest_sessionfinish (below), a \
+# name-discovered pytest hook the best-effort callgraph does not trace as an in-repo \
+# caller -- the same hook-discovery gap this file's other WIRE001/DEAD001 waivers \
+# already cover (T-3755)" follow_up="T-3381"
+def _suite_result_max_node_ids() -> int:
+    """The effective SUITE-RESULT-FAILED node-id cap: the
+    `FROB_TEST_SUITE_RESULT_MAX_NODE_IDS` env value if it is a positive int,
+    else `_SUITE_RESULT_MAX_NODE_IDS` (T-3755)."""
+    import os
+
+    raw = os.environ.get(_SUITE_RESULT_MAX_NODE_IDS_ENV)
+    if raw:
+        try:
+            value = int(raw)
+        except ValueError:
+            return _SUITE_RESULT_MAX_NODE_IDS
+        if value > 0:
+            return value
+    return _SUITE_RESULT_MAX_NODE_IDS
+
 
 _COMPLETED_EXIT_STATUSES = frozenset({0, 1})
 """T-3246: pytest's own documented exit codes for a run that actually
@@ -1621,7 +1648,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
                     "SUITE-RESULT: failing set INCOMPLETE -- run aborted before "
                     "collecting/executing all tests, this is NOT the full failing set"
                 )
-            shown = failing_ids[:_SUITE_RESULT_MAX_NODE_IDS]
+            shown = failing_ids[: _suite_result_max_node_ids()]
             for node_line in shown:
                 reporter.write_line(f"SUITE-RESULT-FAILED: {node_line}")
             remaining = len(failing_ids) - len(shown)

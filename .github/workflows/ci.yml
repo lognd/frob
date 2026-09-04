@@ -161,6 +161,10 @@ jobs:
         if: runner.os == 'Linux'
         env:
           PYTHONFAULTHANDLER: "1"
+          # T-3755: emit the FULL failing-node-id list (not the first 50 + "and
+          # N more") so a platform-drain drive can read the complete failure set
+          # from one CI run.
+          FROB_TEST_SUITE_RESULT_MAX_NODE_IDS: "500"
           FROB_COVERAGE_MAX_WORKERS: "2"
           FROB_COVERAGE_WALLCLOCK_DEADLINE_S: "7200"
         # T-3516: `tee` a copy of the run's own output to a log file so the
@@ -251,6 +255,10 @@ jobs:
         if: matrix.os == 'macos-latest'
         env:
           PYTHONFAULTHANDLER: "1"
+          # T-3755: emit the FULL failing-node-id list (not the first 50 + "and
+          # N more") so a platform-drain drive can read the complete failure set
+          # from one CI run.
+          FROB_TEST_SUITE_RESULT_MAX_NODE_IDS: "500"
         run: |
           set -uo pipefail
           budget=2400  # 40m, same budget/rationale as ubuntu's step above (T-3426/T-3482)
@@ -1533,6 +1541,10 @@ jobs:
         if: matrix.os == 'windows-latest'
         env:
           PYTHONFAULTHANDLER: "1"
+          # T-3755: emit the FULL failing-node-id list (not the first 50 + "and
+          # N more") so a platform-drain drive can read the complete failure set
+          # from one CI run.
+          FROB_TEST_SUITE_RESULT_MAX_NODE_IDS: "500"
           FROB_TEST_IGNORE_CONSOLE_CTRL: "1"
           FROB_TEST_HARD_EXIT: "1"
           FROB_TEST_MIDRUN_WATCHDOG_SECONDS: "1350"

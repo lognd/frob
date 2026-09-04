@@ -2,7 +2,7 @@
 id: T-3755
 title: 'win32 drain needs the full failing-node-id list: make SUITE-RESULT-FAILED
   cap env-overridable'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -44,6 +44,9 @@ scope_changes:
     the drain
   actor: logan
   at: '2026-09-04'
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_node_id_cap_env_override
+- tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_caps_failing_node_ids_with_and_n_more
 designated_repro_test: null
 threat: null
 component: null

@@ -327,11 +327,16 @@ class TestSuiteResultLine:
     # frob:tests \
     # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_cap\
     # s_failing_node_ids_with_and_n_more
-    def test_sessionfinish_caps_failing_node_ids_with_and_n_more(self) -> None:
+    def test_sessionfinish_caps_failing_node_ids_with_and_n_more(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """T-1673: past `_SUITE_RESULT_MAX_NODE_IDS` failures, the hook
         collapses the remainder into a single 'and N more' line instead of
         printing an unbounded list."""
         module = _load_conftest()
+        # T-3755: pin the default cap so a CI Test step that raises the cap via
+        # FROB_TEST_SUITE_RESULT_MAX_NODE_IDS does not defeat this bound test.
+        monkeypatch.delenv(module._SUITE_RESULT_MAX_NODE_IDS_ENV, raising=False)
         cap = module._SUITE_RESULT_MAX_NODE_IDS
         reports = [self._FakeReport(f"tests/x.py::test_{i}") for i in range(cap + 3)]
         stats = {"failed": reports, "error": []}
@@ -346,6 +351,35 @@ class TestSuiteResultLine:
         ]
         assert len(failed_lines) == cap + 1
         assert failed_lines[-1] == "SUITE-RESULT-FAILED: and 3 more"
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_nod\
+    # e_id_cap_env_override
+    def test_sessionfinish_node_id_cap_env_override(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3755: FROB_TEST_SUITE_RESULT_MAX_NODE_IDS raises the node-id cap so
+        a platform-drain drive gets the FULL failing list (no 'and N more')
+        from one CI run."""
+        module = _load_conftest()
+        default = module._SUITE_RESULT_MAX_NODE_IDS
+        monkeypatch.setenv(module._SUITE_RESULT_MAX_NODE_IDS_ENV, str(default + 100))
+        reports = [self._FakeReport(f"tests/x.py::test_{i}") for i in range(default + 5)]
+        stats = {"failed": reports, "error": []}
+        reporter = self._StatsReporter(stats)
+        config = self._FakeConfig(reporter=reporter, is_worker=False)
+        session = self._FakeSession(
+            config=config, collected=default + 5, failed=default + 5
+        )
+
+        module.pytest_sessionfinish(session=session, exitstatus=1)
+
+        failed_lines = [
+            line for line in reporter.lines if "SUITE-RESULT-FAILED:" in line
+        ]
+        # All default+5 shown, no 'and N more' collapse (cap raised to default+100).
+        assert len(failed_lines) == default + 5
+        assert not any("more" in line for line in failed_lines)
 
 
 class TestWorkerCrashReport:
