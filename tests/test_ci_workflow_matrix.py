@@ -970,6 +970,29 @@ class TestWindowsDiagStepDoesNotGateTheJob:
             "external Wait-Process timeout does"
         )
 
+    # frob:tests .github/workflows/ci.yml
+    # frob:waive DUP001 reason="matches this class's established \
+    # one-assertion-per-flag shape (see \
+    # test_test_step_sets_frob_test_ignore_console_ctrl/_hard_exit/ \
+    # _midrun_watchdog_seconds above); extracting a shared helper would obscure which \
+    # single Test-step property each self-contained, frob:tests-anchored test covers"
+    def test_win32_test_step_raises_per_test_timeout_to_600(self) -> None:
+        """T-3757: the windows Test step must pass --timeout=600 on the
+        pytest command line (overriding pyproject's --timeout=120
+        addopts) so a per-test hang gets 600s, not 120s, before
+        pytest-timeout fires -- utility check that the override stays
+        present in the Start-Process ArgumentList."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        test_step = next(
+            step for step in steps if step.get("name", "").startswith("Test (windows")
+        )
+        run_text = test_step.get("run", "")
+        assert '"--timeout=600"' in run_text, (
+            "windows Test step's pytest invocation must carry "
+            '"--timeout=600" in its ArgumentList'
+        )
+
     def test_test_step_is_untouched_and_still_windows_only(self) -> None:
         """Neither T-3604 nor T-3609 may touch the Test step itself --
         only the diagnostic step ahead of it."""
