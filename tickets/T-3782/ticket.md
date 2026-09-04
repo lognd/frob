@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_scaffold_pool.py
 - src/frob/app/pool_runner.py
+- src/frob/scaffold/_pool.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,11 @@ scope_changes:
 - op: add
   glob: src/frob/app/pool_runner.py
   reason: the warm-pool implementation is the actual fix surface
+  actor: logan
+  at: '2026-09-04'
+- op: add
+  glob: src/frob/scaffold/_pool.py
+  reason: the actual warm-pool implementation the failing tests exercise
   actor: logan
   at: '2026-09-04'
 designated_repro_test: null
