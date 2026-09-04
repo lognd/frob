@@ -1,7 +1,7 @@
 ---
 id: T-3777
 title: fix win32 failures in hook-guard test suite
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-04'
