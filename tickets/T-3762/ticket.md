@@ -20,6 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest
+- tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_ticket_subcommand_suggests_closest
 designated_repro_test: null
 threat: null
 component: null
