@@ -2,7 +2,7 @@
 id: T-3750
 title: T-3748/T-3749 ci.yml changes broke 4 workflow-assertion tests (job timeout
   ceiling, ubuntu-step regex, mac/ubuntu budget parity)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-03'
@@ -36,6 +36,11 @@ scope_changes:
     budgets intentionally diverge)
   actor: logan
   at: '2026-09-03'
+evidence:
+- tests/test_ci_workflow_timeout.py::TestBuildJobHasATimeoutBackstop::test_build_job_declares_timeout_minutes
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_ubuntu_test_step_budget_at_least_40_minutes
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_job_timeout_minutes_exceeds_ubuntu_step_budget
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_macos_and_ubuntu_step_budgets_match
 designated_repro_test: null
 threat: null
 component: null

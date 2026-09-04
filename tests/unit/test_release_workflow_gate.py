@@ -254,10 +254,19 @@ class TestCiUbuntuTestBudgetRaised:
 
     def test_ubuntu_test_step_budget_at_least_40_minutes(self) -> None:
         """MUST-FIRE: the ubuntu Test step's `timeout -s ABRT <N>m` budget
-        must be >= 40m."""
+        must be >= 40m. T-3748: ubuntu's Test step now runs the suite ONCE
+        under coverage (`frob coverage --full --fail-on-degraded`) as its
+        combined pass/fail + coverage gate, not a bare `pytest -q`, so this
+        matches the coverage form and its (larger) budget."""
         text = _CI_WORKFLOW.read_text(encoding="utf-8")
-        match = re.search(r"timeout -s ABRT (\d+)m uv run pytest -q", text)
-        assert match, "expected ubuntu's `timeout -s ABRT <N>m uv run pytest -q` step"
+        match = re.search(
+            r"timeout -s ABRT (\d+)m uv run frob coverage --full --fail-on-degraded",
+            text,
+        )
+        assert match, (
+            "expected ubuntu's `timeout -s ABRT <N>m uv run frob coverage "
+            "--full --fail-on-degraded` step (T-3748)"
+        )
         assert int(match.group(1)) >= 40, (
             f"ubuntu Test step budget regressed below 40m: {match.group(0)!r}"
         )
@@ -269,7 +278,10 @@ class TestCiUbuntuTestBudgetRaised:
         doc = _load(_CI_WORKFLOW)
         job_timeout = doc["jobs"]["build"]["timeout-minutes"]
         text = _CI_WORKFLOW.read_text(encoding="utf-8")
-        match = re.search(r"timeout -s ABRT (\d+)m uv run pytest -q", text)
+        match = re.search(
+            r"timeout -s ABRT (\d+)m uv run frob coverage --full --fail-on-degraded",
+            text,
+        )
         assert match
         step_budget = int(match.group(1))
         assert job_timeout > step_budget, (
@@ -318,18 +330,28 @@ class TestCiUbuntuTestBudgetRaised:
         _assert_step_uses_faulthandler_and_marker("Test (macos", "kill -ABRT")
 
     def test_macos_and_ubuntu_step_budgets_match(self) -> None:
-        """MUST-FIRE (T-3482): the two platforms' Test-step budgets must
-        stay EQUAL (40m each) so the class of drift this ticket fixed --
-        one platform's budget raised, the other left stale -- cannot
-        silently recur."""
+        """MUST-FIRE: guard against a Test-step budget silently regressing.
+
+        T-3482 originally required the two platforms' budgets to be EQUAL
+        (40m each). T-3748 deliberately broke that equality: ubuntu now runs
+        the suite ONCE under coverage (`frob coverage --full`, its combined
+        pass/fail + coverage gate, ~130m) while macOS still runs a bare
+        `pytest -q` (~40m). They legitimately differ now, so the invariant is
+        reframed: ubuntu (which does strictly more work) must be >= macOS,
+        and neither may fall below the original 40m floor."""
         text = _CI_WORKFLOW.read_text(encoding="utf-8")
-        ubuntu_match = re.search(r"timeout -s ABRT (\d+)m uv run pytest -q", text)
+        ubuntu_match = re.search(
+            r"timeout -s ABRT (\d+)m uv run frob coverage --full --fail-on-degraded",
+            text,
+        )
         macos_match = re.search(r"budget=(\d+)\s", text)
         assert ubuntu_match and macos_match
         ubuntu_minutes = int(ubuntu_match.group(1))
         macos_minutes = int(macos_match.group(1)) / 60
-        assert ubuntu_minutes == macos_minutes, (
-            f"ubuntu Test step budget ({ubuntu_minutes}m) and macOS Test "
-            f"step budget ({macos_minutes}m) have drifted apart -- raise "
-            f"whichever is smaller to match the other"
+        assert macos_minutes >= 40, f"macOS budget below 40m floor: {macos_minutes}m"
+        assert ubuntu_minutes >= 40, f"ubuntu budget below 40m floor: {ubuntu_minutes}m"
+        assert ubuntu_minutes >= macos_minutes, (
+            f"ubuntu Test step budget ({ubuntu_minutes}m) does the combined "
+            f"coverage+test run (T-3748) and must be >= the macOS test-only "
+            f"budget ({macos_minutes}m)"
         )

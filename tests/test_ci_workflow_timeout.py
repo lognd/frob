@@ -42,10 +42,12 @@ class TestBuildJobHasATimeoutBackstop:
             "can run for GitHub's own default ceiling (6 hours) before "
             "anyone notices, exactly the T-3192 failure mode"
         )
-        # Comfortably above the slowest OBSERVED full-job completion
-        # (macOS's ~23-minute Test stage, run 33135896391) but well under
-        # GitHub's 6-hour default -- a genuine hang still gets caught.
-        assert 0 < build_job["timeout-minutes"] <= 120
+        # Comfortably above the slowest OBSERVED full-job completion but
+        # well under GitHub's 6-hour default -- a genuine hang still gets
+        # caught. T-3748 raised the ceiling to accommodate ubuntu's now
+        # combined coverage+test run (`frob coverage --full`, ~130m budget),
+        # so the job timeout is 150m; keep the guard at 180m headroom.
+        assert 0 < build_job["timeout-minutes"] <= 180
 
 
 # frob:ticket T-3192
