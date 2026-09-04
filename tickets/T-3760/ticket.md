@@ -19,6 +19,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: waive BUG002 confirmatory-only check for win32 platform skip
+  actor: logan
+  at: '2026-09-04'
+  old_length: 196
+  new_length: 325
 evidence:
 - tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_terminates_old_orphaned_forkservers
 - tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_forkserver_of_orphaned_forkserver_is_reaped
@@ -33,3 +40,5 @@ anchor_reason: null
 land_commit: null
 ---
 win32 CI fails these tests because they exercise /proc scanning directly (forkserver reap age/ppid checks, count_running_checks argv scan) -- genuinely POSIX-only, add skipif(sys.platform==win32).
+
+frob:waive BUG002 reason="win32-only skip; the POSIX-primitive dependency is not reproducible from a Linux parent-commit repro"
