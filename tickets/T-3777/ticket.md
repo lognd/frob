@@ -19,6 +19,7 @@ scope:
 - tests/test_hook_frob_suggest.py
 - tests/test_hook_root_cleanliness_detector.py
 - .claude/hooks/_root_write_guard_lib.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,12 @@ scope_changes:
   glob: .claude/hooks/_root_write_guard_lib.py
   reason: escape/tokenization fix in the shared shell-token helper root-write-guard.py
     depends on lives here, not under src/frob/hooks
+  actor: logan
+  at: '2026-09-04'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001/SYS100 env.read capability declaration needs the two new test
+    files' os.environ reads added to testsuite's via list
   actor: logan
   at: '2026-09-04'
 designated_repro_test: null
