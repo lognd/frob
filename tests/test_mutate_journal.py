@@ -11,6 +11,7 @@ must never be blindly restored over."""
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 from typing import cast
 
@@ -162,6 +163,11 @@ def test_restore_and_list_skip_a_journal_owned_by_a_live_pid(tmp_path):
     assert target.read_bytes() == b"mutant in progress\n"
 
 
+# frob:ticket T-3765
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="starttime is read via /proc/<pid>/stat (Linux-specific, /proc is not portable)",
+)
 def test_recycled_pid_with_mismatched_starttime_is_treated_stale(tmp_path):
     # frob:tests \
     # tests/test_mutate_journal.py::test_recycled_pid_with_mismatched_starttime_is_trea\
@@ -283,6 +289,11 @@ def test_run_mutations_journals_and_cleans_up_on_success(tmp_path):
     assert list_stale_journals(tmp_path) == ()
 
 
+# frob:ticket T-3765
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="starttime is read via /proc/<pid>/stat (Linux-specific, /proc is not portable)",
+)
 def test_pytest_session_start_restores_leftover_journal(tmp_path, monkeypatch):
     # frob:ticket T-0885
     # frob:tests \

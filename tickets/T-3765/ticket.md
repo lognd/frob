@@ -1,7 +1,7 @@
 ---
 id: T-3765
 title: skip win32 /proc starttime tests in test_mutate_journal.py
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -26,6 +26,9 @@ body_changes:
   at: '2026-09-04'
   old_length: 301
   new_length: 430
+evidence:
+- tests/test_mutate_journal.py::test_recycled_pid_with_mismatched_starttime_is_treated_stale
+- tests/test_mutate_journal.py::test_pytest_session_start_restores_leftover_journal
 designated_repro_test: null
 threat: null
 component: null
