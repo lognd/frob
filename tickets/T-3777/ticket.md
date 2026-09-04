@@ -21,6 +21,7 @@ scope:
 - .claude/hooks/_root_write_guard_lib.py
 - design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
+- tickets/T-draft-70a3b4d4/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,13 @@ scope_changes:
   glob: docs/design/registry/capability-via-ratchet.lock.json
   reason: SELFAUDIT001 SYS111 ratchet bump required alongside the env.read via-list
     addition
+  actor: logan
+  at: '2026-09-04'
+- op: add
+  glob: tickets/T-draft-70a3b4d4/**
+  reason: filing a new out-of-scope ticket from within this ticket's worktree creates
+    its own tickets/ file on this branch; frob:tickets convention exempts tickets/**
+    writes generally but gate:SCOPE flags the specific new-ticket dir
   actor: logan
   at: '2026-09-04'
 evidence:
