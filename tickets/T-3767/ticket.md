@@ -1,7 +1,7 @@
 ---
 id: T-3767
 title: skip win32-only fcntl/proc land-lock and worktree tests
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -27,6 +27,11 @@ body_changes:
   at: '2026-09-04'
   old_length: 809
   new_length: 931
+evidence:
+- tests/test_ticket_leases.py::TestRefuseIfLandInProgress::test_allows_after_a_killed_lands_lock_is_os_released
+- tests/test_ticket_leases.py::TestRemoveWorktree::test_keeps_a_live_process_worktree
+- tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess::test_clean_no_lease_recent_head_live_process_kept
+- tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess::test_force_overrides_the_live_process_keep
 designated_repro_test: null
 threat: null
 component: null

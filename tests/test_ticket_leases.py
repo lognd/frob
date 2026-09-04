@@ -1618,6 +1618,13 @@ class TestRefuseIfLandInProgress:
             os.close(holder_fd)
 
     def test_allows_after_a_killed_lands_lock_is_os_released(self, repo: Path) -> None:
+        if sys.platform == "win32":
+            # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency \
+            # not reproducible from a Linux parent-commit repro"
+            pytest.skip(
+                "POSIX-only (T-3767): fcntl.flock and the kernel-releases-on-"
+                "SIGKILL guarantee this test relies on have no win32 equivalent"
+            )
         # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_allows_after_a_killed_lands_lock_is_os_released  # noqa: E501
         # Crash-safety without a timeout or a second liveness mechanism
         # (T-1619's explicit requirement): a subprocess holds the flock,
@@ -2170,6 +2177,14 @@ class TestRemoveWorktree:
 
     # frob:ticket T-2833
     def test_keeps_a_live_process_worktree(self, sweep_repo: Path) -> None:
+        if sys.platform == "win32":
+            # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency \
+            # not reproducible from a Linux parent-commit repro"
+            pytest.skip(
+                "POSIX-only (T-3767): relies on the /proc-based live-process "
+                "cwd scan (scan_for_live_worktree_process) and the sleep(1) "
+                "coreutil, neither available on win32"
+            )
         # frob:tests src/frob/tickets/_worktree_sweep.py::remove_worktree kind="unit"
         from frob.tickets._worktree_sweep import remove_worktree
 

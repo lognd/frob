@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 import shlex
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -748,6 +749,13 @@ class TestSweepWorktreesLiveProcess:
     to read as `removed`. This is that exact shape, reproduced."""
 
     def test_clean_no_lease_recent_head_live_process_kept(self, tmp_path: Path) -> None:
+        if sys.platform == "win32":
+            # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency \
+            # not reproducible from a Linux parent-commit repro"
+            pytest.skip(
+                "POSIX-only (T-3767): the test's own _proc_test_cwd_matches "
+                "helper reads /proc/<pid>/cwd directly, unavailable on win32"
+            )
         # frob:tests tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess.test_clean_no_lease_recent_head_live_process_kept  # noqa: E501
         main_repo = tmp_path / "main"
         _init_repo(main_repo)
@@ -784,6 +792,13 @@ class TestSweepWorktreesLiveProcess:
             holder.wait(timeout=5)
 
     def test_force_overrides_the_live_process_keep(self, tmp_path: Path) -> None:
+        if sys.platform == "win32":
+            # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency \
+            # not reproducible from a Linux parent-commit repro"
+            pytest.skip(
+                "POSIX-only (T-3767): the test's own _proc_test_cwd_matches "
+                "helper reads /proc/<pid>/cwd directly, unavailable on win32"
+            )
         # frob:tests tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess.test_force_overrides_the_live_process_keep  # noqa: E501
         main_repo = tmp_path / "main"
         _init_repo(main_repo)
