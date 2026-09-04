@@ -20,6 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:uv run python -m pytest tests/test_ci_workflow_matrix.py tests/unit/test_release_workflow_gate.py
+  -p no:xdist -q exit=0 sha256=b45c62f1acf0
 designated_repro_test: null
 threat: null
 component: null
