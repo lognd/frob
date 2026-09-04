@@ -83,6 +83,14 @@ class TestQuery:
         assert result.danger_err is ProxyReason.Disabled
 
     def test_no_daemon_no_socket_falls_back(self, root: Path, monkeypatch) -> None:
+        # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
+        # reproducible from a Linux parent-commit repro"
+        if sys.platform == "win32":
+            pytest.skip(
+                "POSIX-only (T-3766): query() refuses via "
+                "ProxyReason.PlatformUnsupported before touching "
+                "AF_UNIX on win32, not ProxyReason.Unreachable"
+            )
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestQuery.test_no_daemon_no_socket_falls_back
         # No daemon running and spawning is disabled (nonexistent
@@ -880,6 +888,14 @@ class TestProbeDaemon:
 
     def test_missing_socket_is_nosocket(self, tmp_path):
         """Nothing there at all -- the spawn case."""
+        # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
+        # reproducible from a Linux parent-commit repro"
+        if sys.platform == "win32":
+            pytest.skip(
+                "POSIX-only (T-3766): probe_daemon() refuses via "
+                "DaemonLiveness.PlatformUnsupported before touching "
+                "AF_UNIX on win32, not DaemonLiveness.NoSocket"
+            )
         from frob.app._daemon_proxy import DaemonLiveness, probe_daemon
 
         liveness, version = probe_daemon(self._socket_dir(tmp_path))

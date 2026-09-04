@@ -1,7 +1,7 @@
 ---
 id: T-3766
 title: skip win32-only AF_UNIX daemon-proxy tests
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'

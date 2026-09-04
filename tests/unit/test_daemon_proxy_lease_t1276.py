@@ -145,6 +145,14 @@ class TestDaemonLease:
         assert result.danger_err is ProxyReason.Disabled
 
     def test_no_daemon_falls_back_unreachable(self, root: Path, monkeypatch) -> None:
+        # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
+        # reproducible from a Linux parent-commit repro"
+        if sys.platform == "win32":
+            pytest.skip(
+                "POSIX-only (T-3766): try_daemon_lease() returns "
+                "Err(ProxyReason.PlatformUnsupported) before ever "
+                "reaching the AF_UNIX connect on win32"
+            )
         # frob:tests \
         # tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease.test_no_daemon_f\
         # alls_back_unreachable
