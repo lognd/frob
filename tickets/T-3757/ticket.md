@@ -2,7 +2,7 @@
 id: T-3757
 title: 'win32 suite aborts: raise per-test timeout so slow full-repo-scan gate tests
   do not crash their worker'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-04'
