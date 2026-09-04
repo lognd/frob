@@ -1,7 +1,7 @@
 ---
 id: T-3785
 title: surface win32 full-suite tracebacks in CI to diagnose the doctor cluster
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-04'
