@@ -1,7 +1,7 @@
 ---
 id: T-3792
 title: 'win32: fix backslash-path bugs breaking arch gate / tickets / gates on Windows'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-04'
