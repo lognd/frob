@@ -31,6 +31,13 @@ scope_changes:
   reason: possible arg-string assertion update
   actor: logan
   at: '2026-09-04'
+body_changes:
+- mode: append
+  reason: record BUG002 waiver rationale for the CI-config-only diagnostic change
+  actor: logan
+  at: '2026-09-04'
+  old_length: 0
+  new_length: 153
 designated_repro_test: null
 threat: null
 component: null
@@ -38,3 +45,5 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+
+frob:waive BUG002 reason="CI-config diagnostic verbosity change (win32 pytest -rA --tb=short); no runtime behavior/repro, no pass/fail semantic change"
