@@ -18,10 +18,18 @@ scope:
 - tests/test_hook_root_write_guard.py
 - tests/test_hook_frob_suggest.py
 - tests/test_hook_root_cleanliness_detector.py
+- .claude/hooks/_root_write_guard_lib.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .claude/hooks/_root_write_guard_lib.py
+  reason: escape/tokenization fix in the shared shell-token helper root-write-guard.py
+    depends on lives here, not under src/frob/hooks
+  actor: logan
+  at: '2026-09-04'
 designated_repro_test: null
 threat: null
 component: null
