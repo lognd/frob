@@ -1,7 +1,7 @@
 ---
 id: T-3777
 title: fix win32 failures in hook-guard test suite
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -21,7 +21,7 @@ scope:
 - .claude/hooks/_root_write_guard_lib.py
 - design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
-- tickets/T-draft-70a3b4d4/**
+- tickets/T-3780/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,7 +46,7 @@ scope_changes:
   actor: logan
   at: '2026-09-04'
 - op: add
-  glob: tickets/T-draft-70a3b4d4/**
+  glob: tickets/T-3780/**
   reason: filing a new out-of-scope ticket from within this ticket's worktree creates
     its own tickets/ file on this branch; frob:tickets convention exempts tickets/**
     writes generally but gate:SCOPE flags the specific new-ticket dir

@@ -23,6 +23,7 @@ case."""
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -31,6 +32,31 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 # frob:ticket T-2487
 _HOOK = _REPO_ROOT / ".claude" / "hooks" / "root-cleanliness-detector.py"
+
+
+# frob:ticket T-3777
+def _env(**extra: str) -> dict[str, str]:
+    """A subprocess environment carrying no frob marker vars (by default)
+    but still able to locate `git`: on Windows, `subprocess.run`'s
+    explicit-`env` `CreateProcess` path does no `PATH` search of its own
+    (unlike POSIX's `execvpe`, which falls back to `os.defpath` when
+    `PATH` is absent), so a bare `env={}` silently fails to find `git.exe`
+    -- the underlying `git status --porcelain`/`git worktree list` calls
+    then fail and the hook has nothing to report, reading as an
+    unexpected SILENT pass rather than the reports these tests assert,
+    not a difference in the hook's own logic. Carries `PATH` (and
+    `SystemRoot`, which Windows's C runtime needs to start any child
+    process at all) from the real environment, plus whatever marker vars
+    a test passes as `extra`."""
+    # frob:waive SEC110 reason="PATH/SystemRoot are non-secret process-launch plumbing \
+    # carried through so the spawned hook subprocess can find git.exe on Windows -- no \
+    # credential or secret value involved"
+    env = {"PATH": os.environ.get("PATH", "")}
+    system_root = os.environ.get("SystemRoot")
+    if system_root:
+        env["SystemRoot"] = system_root
+    env.update(extra)
+    return env
 
 
 # frob:ticket T-2487
@@ -111,7 +137,7 @@ def test_clean_root_in_agent_context_is_silent(tmp_path):
     """Must-still-allow control: a clean primary checkout, agent context,
     right after a Bash call -- no report at all."""
     primary, worktree = _make_repo_with_nested_worktree(tmp_path)
-    env = {"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)}
+    env = _env(FROB_AGENT="1", FROB_WORKTREE=str(worktree))
     result = _run_hook(cwd=primary, env=env)
     assert result.stdout.strip() == ""
 
@@ -126,7 +152,7 @@ def test_dirty_root_in_agent_context_is_reported(tmp_path):
     primary, worktree = _make_repo_with_nested_worktree(tmp_path)
     (primary / "README.md").write_text("x\nmore\n", encoding="utf-8")
     (primary / "stray.txt").write_text("dirty\n", encoding="utf-8")
-    env = {"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)}
+    env = _env(FROB_AGENT="1", FROB_WORKTREE=str(worktree))
     result = _run_hook(cwd=primary, env=env)
     message = _system_message(result)
     assert message is not None
@@ -143,7 +169,7 @@ def test_dirty_root_from_human_or_coordinator_shell_is_silent(tmp_path):
     shell."""
     primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
     (primary / "stray.txt").write_text("dirty\n", encoding="utf-8")
-    result = _run_hook(cwd=primary, env={})
+    result = _run_hook(cwd=primary, env=_env())
     assert result.stdout.strip() == ""
 
 
@@ -156,7 +182,7 @@ def test_dirty_root_reported_even_when_cwd_is_the_worktree(tmp_path):
     particular call's cwd was the agent's own (clean) worktree."""
     primary, worktree = _make_repo_with_nested_worktree(tmp_path)
     (primary / "stray.txt").write_text("dirty\n", encoding="utf-8")
-    env = {"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)}
+    env = _env(FROB_AGENT="1", FROB_WORKTREE=str(worktree))
     result = _run_hook(cwd=worktree, env=env)
     assert _system_message(result) is not None
 
@@ -169,11 +195,11 @@ def test_frob_land_internal_exempts_dirty_root(tmp_path):
     section 4b)."""
     primary, worktree = _make_repo_with_nested_worktree(tmp_path)
     (primary / "stray.txt").write_text("dirty\n", encoding="utf-8")
-    env = {
-        "FROB_AGENT": "1",
-        "FROB_WORKTREE": str(worktree),
-        "FROB_LAND_INTERNAL": "1",
-    }
+    env = _env(
+        FROB_AGENT="1",
+        FROB_WORKTREE=str(worktree),
+        FROB_LAND_INTERNAL="1",
+    )
     result = _run_hook(cwd=primary, env=env)
     assert result.stdout.strip() == ""
 

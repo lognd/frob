@@ -30,6 +30,7 @@ import os
 import re
 import shlex
 import subprocess
+import sys
 
 # frob:ticket T-2481
 #: T-2481: known MUTATING `frob ticket` subcommands -- deliberately excludes
@@ -165,6 +166,7 @@ _VAR_REF_RE = re.compile(r"^\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?$")
 
 
 # frob:ticket T-3421
+# frob:ticket T-3777
 def _shell_tokens(command: str) -> list[str] | None:
     """`command` split into shell tokens via `shlex` (POSIX quoting rules,
     `punctuation_chars=True` so `>`/`>>`/`&>`/`;`/`|`/`&`/`(`/`)` are their
@@ -182,6 +184,17 @@ def _shell_tokens(command: str) -> list[str] | None:
     without_heredocs = _HEREDOC_BODY_RE.sub(" ", command)
     lexer = shlex.shlex(without_heredocs, posix=True, punctuation_chars=True)
     lexer.whitespace_split = True
+    if sys.platform == "win32":
+        # Windows paths use `\` as their path separator, not a shell escape
+        # character; POSIX shlex's default `escape='\\'` silently eats every
+        # unquoted backslash in a Windows-native path (`C:\Users\...\wt` ->
+        # `C:Users...wt`), corrupting effective-cwd/redirect-target
+        # resolution for every real Windows path this hook has to reason
+        # about (`cd`/`pushd` targets, redirect targets, `~`-expansions).
+        # Disabling escape processing only on win32 keeps real POSIX
+        # backslash-escape semantics (`\ `, `\$`, ...) intact for the shell
+        # this hook models everywhere else.
+        lexer.escape = ""
     try:
         return list(lexer)
     except ValueError:

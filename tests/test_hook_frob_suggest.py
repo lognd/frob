@@ -57,11 +57,16 @@ _BASE_ENV_NO_ACK = {k: v for k, v in os.environ.items() if k != "FROB_SUGGEST_AC
 
 def _run_hook(command: str, *, home: Path, cwd: Path):
     """Invoke the hook's real PreToolUse stdin/stdout contract for a Bash
-    `command`, with `home` isolating the O_EXCL marker state dir per test.
-    `FROB_SUGGEST_ACK` is never inherited ambiently (T-3375): the
-    Bash-command path only ever reads the ack from the command string's
-    own `FROB_SUGGEST_ACK=1 ` prefix, so a caller wanting the ack passes
-    it as part of `command`, not via the runner's own environment."""
+    `command`, with `home` isolating the O_EXCL marker state dir per test
+    (`HOME` AND `USERPROFILE` both set: the hook locates its state dir via
+    `Path.home()`, whose `ntpath.expanduser` prefers `USERPROFILE` over
+    `HOME` on Windows -- setting `HOME` alone silently leaves the real
+    `USERPROFILE` in force there, so state leaks across tests instead of
+    isolating per-test). `FROB_SUGGEST_ACK` is never inherited ambiently
+    (T-3375): the Bash-command path only ever reads the ack from the
+    command string's own `FROB_SUGGEST_ACK=1 ` prefix, so a caller wanting
+    the ack passes it as part of `command`, not via the runner's own
+    environment."""
     payload = {"tool_input": {"command": command}, "cwd": str(cwd)}
     return subprocess.run(
         [sys.executable, str(_HOOK)],
@@ -69,7 +74,7 @@ def _run_hook(command: str, *, home: Path, cwd: Path):
         capture_output=True,
         text=True,
         check=False,
-        env={**_BASE_ENV_NO_ACK, "HOME": str(home)},
+        env={**_BASE_ENV_NO_ACK, "HOME": str(home), "USERPROFILE": str(home)},
     )
 
 
@@ -104,7 +109,7 @@ def _run_edit_hook(
         capture_output=True,
         text=True,
         check=False,
-        env={**_BASE_ENV_NO_ACK, "HOME": str(home), **(env or {})},
+        env={**_BASE_ENV_NO_ACK, "HOME": str(home), "USERPROFILE": str(home), **(env or {})},
     )
 
 

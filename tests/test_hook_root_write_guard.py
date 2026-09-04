@@ -24,6 +24,7 @@ identical target is still ALLOWED."""
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -32,6 +33,31 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 # frob:ticket T-2850
 _HOOK = _REPO_ROOT / ".claude" / "hooks" / "root-write-guard.py"
+
+
+# frob:ticket T-3777
+def _env(**extra: str) -> dict[str, str]:
+    """A subprocess environment carrying no frob marker vars (by default)
+    but still able to locate `git`/`python`: on Windows, `subprocess.run`'s
+    explicit-`env` `CreateProcess` path does no PATH search of its own
+    (unlike POSIX's `execvpe`, which falls back to `os.defpath` when `PATH`
+    is absent from the given env), so a bare `env={}` silently fails to
+    find `git.exe` there -- `_worktree_paths` then returns `[]` and the
+    hook fails OPEN, which reads as an unexpected ALLOW rather than the
+    refusal these tests assert, not a difference in the hook's own logic.
+    Carries `PATH` (and `SystemRoot`, which Windows's C runtime needs to
+    start any child process at all) from the real environment, plus
+    whatever marker vars a test passes as `extra`."""
+    # frob:waive SEC110 reason="PATH/SystemRoot are non-secret process-launch plumbing \
+    # carried through so the spawned hook subprocess can find git.exe/ python on \
+    # Windows -- same posture as this file's own FROB_LAND_INTERNAL waiver, no \
+    # credential or secret value involved"
+    env = {"PATH": os.environ.get("PATH", "")}
+    system_root = os.environ.get("SystemRoot")
+    if system_root:
+        env["SystemRoot"] = system_root
+    env.update(extra)
+    return env
 
 
 # frob:ticket T-2850
@@ -145,7 +171,7 @@ def test_no_marker_write_to_root_is_refused(tmp_path):
     is the case the pre-T-2850 discriminator could never see, because it
     is environmentally identical to a human/coordinator shell."""
     primary, _worktree = _make_repo_with_worktree(tmp_path)
-    result = _run_hook(cwd=primary, file_path=primary / "src.py", env={})
+    result = _run_hook(cwd=primary, file_path=primary / "src.py", env=_env())
     assert _denial_reason(result) is not None
 
 
@@ -161,7 +187,7 @@ def test_stale_agent_env_vars_do_not_exempt_a_root_write(tmp_path):
     result = _run_hook(
         cwd=primary,
         file_path=primary / "src.py",
-        env={"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)},
+        env=_env(FROB_AGENT="1", FROB_WORKTREE=str(worktree)),
     )
     assert _denial_reason(result) is not None
 
@@ -176,7 +202,7 @@ def test_coordinator_marker_allows_a_root_write(tmp_path):
     result = _run_hook(
         cwd=primary,
         file_path=primary / "src.py",
-        env={"FROB_COORDINATOR": "1"},
+        env=_env(FROB_COORDINATOR="1"),
     )
     assert result.stdout.strip() == ""
 
@@ -192,7 +218,7 @@ def test_write_inside_a_real_worktree_is_allowed_with_no_markers(tmp_path):
     result = _run_hook(
         cwd=worktree,
         file_path=worktree / "src.py",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -204,7 +230,7 @@ def test_write_inside_a_nested_worktree_is_allowed(tmp_path):
     checkout) -- a write inside it is allowed with no markers set, same as
     the sibling-sited case above."""
     primary, worktree = _make_repo_with_nested_worktree(tmp_path)
-    result = _run_hook(cwd=worktree, file_path=worktree / "src.py", env={})
+    result = _run_hook(cwd=worktree, file_path=worktree / "src.py", env=_env())
     assert result.stdout.strip() == ""
 
 
@@ -221,7 +247,7 @@ def test_fake_worktree_looking_path_does_not_exempt_a_root_write(tmp_path):
     result = _run_hook(
         cwd=primary,
         file_path=not_a_worktree / "src.py",
-        env={},
+        env=_env(),
     )
     # Not under the primary checkout at all -- never refused, but also
     # never because it was treated as a worktree.
@@ -238,7 +264,7 @@ def test_ledger_paths_are_exempt_with_no_markers(tmp_path):
     result = _run_hook(
         cwd=primary,
         file_path=primary / "tickets.md",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -253,7 +279,7 @@ def test_frob_land_internal_exempts_a_root_write_with_no_other_markers(tmp_path)
     result = _run_hook(
         cwd=primary,
         file_path=primary / "src.py",
-        env={"FROB_LAND_INTERNAL": "1"},
+        env=_env(FROB_LAND_INTERNAL="1"),
     )
     assert result.stdout.strip() == ""
 
@@ -267,7 +293,7 @@ def test_non_guarded_tool_is_ignored(tmp_path):
     result = _run_hook(
         cwd=primary,
         file_path=primary / "src.py",
-        env={},
+        env=_env(),
         tool_name="Grep",
     )
     assert result.stdout.strip() == ""
@@ -283,7 +309,7 @@ def test_notebook_edit_to_root_is_refused_with_no_markers(tmp_path):
     result = _run_hook(
         cwd=primary,
         file_path=primary / "nb.ipynb",
-        env={},
+        env=_env(),
         tool_name="NotebookEdit",
     )
     assert _denial_reason(result) is not None
@@ -296,7 +322,7 @@ def test_refusal_names_the_recovery_recipe(tmp_path):
     to work on the two incidents that motivated T-2850 -- git diff/apply
     --3way/bare checkout -- not just a pointer to `frob ticket work`."""
     primary, _worktree = _make_repo_with_worktree(tmp_path)
-    result = _run_hook(cwd=primary, file_path=primary / "src.py", env={})
+    result = _run_hook(cwd=primary, file_path=primary / "src.py", env=_env())
     reason = _denial_reason(result)
     assert reason is not None
     assert "git apply --3way" in reason
@@ -336,7 +362,7 @@ def test_bash_ticket_verb_with_no_cd_no_path_no_marker_is_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="timeout 540 uv run frob ticket land T-0001",
-        env={},
+        env=_env(),
     )
     assert _denial_reason(result) is not None
 
@@ -350,7 +376,7 @@ def test_bash_ticket_verb_with_coordinator_marker_is_allowed(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="timeout 540 uv run frob ticket land T-0001",
-        env={"FROB_COORDINATOR": "1"},
+        env=_env(FROB_COORDINATOR="1"),
     )
     assert result.stdout.strip() == ""
 
@@ -369,7 +395,7 @@ def test_bash_ledger_only_ticket_verb_is_allowed_with_no_markers_or_cd(tmp_path)
     result = _run_bash_hook(
         cwd=primary,
         command="frob ticket done-report T-0001 --why done",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -384,7 +410,7 @@ def test_bash_ticket_verb_with_cd_into_worktree_is_allowed(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command=f"cd {worktree} && frob ticket done-report T-0001 --why done",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -399,7 +425,7 @@ def test_bash_ticket_verb_with_explicit_path_flag_is_allowed(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command=f"frob ticket done-report T-0001 --why done --path {worktree}",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -414,7 +440,7 @@ def test_bash_redirect_into_primary_with_no_marker_is_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="echo hi > notes.txt",
-        env={},
+        env=_env(),
     )
     assert _denial_reason(result) is not None
 
@@ -428,7 +454,7 @@ def test_bash_redirect_inside_worktree_is_allowed_with_no_markers(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command=f"cd {worktree} && echo hi > notes.txt",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -444,7 +470,7 @@ def test_bash_ambiguous_redirect_target_is_allowed(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command='echo hi > "$OUTFILE"',
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -459,7 +485,7 @@ def test_bash_read_only_ticket_verb_is_never_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="frob ticket show T-0001",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -474,7 +500,7 @@ def test_bash_unrelated_command_is_never_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="git status",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -490,7 +516,7 @@ def test_land_with_real_registered_worktree_is_allowed_with_no_markers(tmp_path)
     result = _run_bash_hook(
         cwd=primary,
         command=f"timeout 540 uv run frob ticket land T-0001 --worktree {worktree} --finish",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -506,7 +532,7 @@ def test_land_with_unregistered_worktree_path_is_still_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command=f"timeout 540 uv run frob ticket land T-0001 --worktree {fake} --finish",
-        env={},
+        env=_env(),
     )
     assert _denial_reason(result) is not None
 
@@ -520,7 +546,7 @@ def test_land_with_no_worktree_flag_is_still_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="timeout 540 uv run frob ticket land T-0001",
-        env={},
+        env=_env(),
     )
     assert _denial_reason(result) is not None
 
@@ -543,7 +569,7 @@ def test_non_land_mutating_verb_with_worktree_flag_is_still_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command=f"frob ticket done-report T-0001 --why done --worktree {worktree}",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -563,7 +589,7 @@ def test_bash_redirect_target_outside_repo_via_home_relative_path_is_allowed(tmp
     outside_dir = monkeypatch_home / "notes"
     outside_dir.mkdir()
     primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
-    env = {"HOME": str(monkeypatch_home)}
+    env = _env(HOME=str(monkeypatch_home), USERPROFILE=str(monkeypatch_home))
     result = _run_bash_hook(
         cwd=primary,
         command="cat > ~/notes/scratch.md <<'EOF'\nx\nEOF",
@@ -585,7 +611,7 @@ def test_bash_redirect_target_inside_primary_via_home_relative_path_is_still_ref
     refusals, it does not create a new blind spot for a real root
     write expressed with a leading `~`."""
     primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
-    env = {"HOME": str(primary.parent)}
+    env = _env(HOME=str(primary.parent), USERPROFILE=str(primary.parent))
     result = _run_bash_hook(
         cwd=primary,
         command=f"cat > ~/{primary.name}/notes.txt <<'EOF'\nx\nEOF",
@@ -605,7 +631,7 @@ def test_coordinator_marker_file_allows_a_root_write_with_no_env_var(tmp_path):
     primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
     (primary / ".frob").mkdir(exist_ok=True)
     (primary / ".frob" / "coordinator-mode").touch()
-    result = _run_hook(cwd=primary, file_path=primary / "src.py", env={})
+    result = _run_hook(cwd=primary, file_path=primary / "src.py", env=_env())
     assert result.stdout.strip() == ""
 
 
@@ -620,7 +646,7 @@ def test_env_var_alone_still_works_when_genuinely_inherited(tmp_path):
     result = _run_hook(
         cwd=primary,
         file_path=primary / "src.py",
-        env={"FROB_COORDINATOR": "1"},
+        env=_env(FROB_COORDINATOR="1"),
     )
     assert result.stdout.strip() == ""
 
@@ -636,7 +662,7 @@ def test_bash_quoted_redirect_text_is_allowed(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="echo 'x > y'",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -651,7 +677,7 @@ def test_bash_double_quoted_redirect_text_is_allowed(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command='echo "x > y"',
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -670,7 +696,7 @@ def test_bash_heredoc_body_mentioning_redirect_is_allowed(tmp_path):
         "the guard refused an echo of a quoted redirect example\n"
         "EOF\n"
     )
-    result = _run_bash_hook(cwd=primary, command=command, env={})
+    result = _run_bash_hook(cwd=primary, command=command, env=_env())
     assert result.stdout.strip() == ""
 
 
@@ -685,7 +711,7 @@ def test_bash_fd_duplication_redirect_is_allowed(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="some-command 2>&1 | cat",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -700,7 +726,7 @@ def test_bash_truncating_redirect_into_checkout_is_still_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="echo hi > notes.txt",
-        env={},
+        env=_env(),
     )
     assert _denial_reason(result) is not None
 
@@ -714,7 +740,7 @@ def test_bash_appending_redirect_into_checkout_is_still_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="echo hi >> notes.txt",
-        env={},
+        env=_env(),
     )
     assert _denial_reason(result) is not None
 
@@ -730,7 +756,7 @@ def test_bash_variable_redirect_target_into_checkout_is_still_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="TARGET=notes.txt; echo hi > $TARGET",
-        env={},
+        env=_env(),
     )
     assert _denial_reason(result) is not None
 
@@ -744,7 +770,7 @@ def test_bash_tee_into_checkout_is_still_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="echo hi | tee notes.txt",
-        env={},
+        env=_env(),
     )
     assert _denial_reason(result) is not None
 
@@ -758,7 +784,7 @@ def test_bash_heredoc_redirected_into_checkout_is_still_refused(tmp_path):
     it is a real, untouched token pair the walk still sees."""
     primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
     command = "cat > notes.txt <<'EOF'\nhello\nEOF\n"
-    result = _run_bash_hook(cwd=primary, command=command, env={})
+    result = _run_bash_hook(cwd=primary, command=command, env=_env())
     assert _denial_reason(result) is not None
 
 
@@ -772,7 +798,7 @@ def test_bash_relative_redirect_into_checkout_is_still_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="echo hi > sub/notes.txt",
-        env={},
+        env=_env(),
     )
     assert _denial_reason(result) is not None
 
@@ -789,7 +815,7 @@ def test_bash_quoted_ticket_verb_argument_is_allowed(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command='ps aux | grep "frob ticket land"',
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -803,7 +829,7 @@ def test_bash_ticket_verb_in_single_quoted_commit_message_is_allowed(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command="git commit -m 'fixes the frob ticket land false positive'",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -819,7 +845,7 @@ def test_bash_ticket_land_still_refused_alongside_quoted_prose(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command='echo "just a note" && timeout 540 uv run frob ticket land T-0001',
-        env={},
+        env=_env(),
     )
     assert _denial_reason(result) is not None
 
@@ -838,7 +864,7 @@ def test_bash_set_prefixed_cd_into_worktree_is_allowed(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command=f"set -e; cd {worktree} && gh api repos/x/y > relative.log",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -853,7 +879,7 @@ def test_bash_pushd_into_worktree_is_allowed(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command=f"pushd {worktree} && echo hi > relative.log",
-        env={},
+        env=_env(),
     )
     assert result.stdout.strip() == ""
 
@@ -869,7 +895,7 @@ def test_bash_set_prefixed_cd_into_primary_still_refused(tmp_path):
     result = _run_bash_hook(
         cwd=primary,
         command=f"set -e; cd {primary} && echo hi > relative.log",
-        env={},
+        env=_env(),
     )
     assert _denial_reason(result) is not None
 
@@ -898,7 +924,7 @@ def test_bash_heredoc_body_containing_delimiter_substring_is_allowed(tmp_path):
         "example: echo x > root_file.txt\n"
         "EOF\n"
     )
-    result = _run_bash_hook(cwd=primary, command=command, env={})
+    result = _run_bash_hook(cwd=primary, command=command, env=_env())
     assert result.stdout.strip() == ""
 
 
@@ -918,5 +944,5 @@ def test_bash_heredoc_appending_into_checkout_still_refused_with_delimiter_subst
         'note: this fixes the "EOF\'s own recovery" wording bug\n'
         "EOF\n"
     )
-    result = _run_bash_hook(cwd=primary, command=command, env={})
+    result = _run_bash_hook(cwd=primary, command=command, env=_env())
     assert _denial_reason(result) is not None

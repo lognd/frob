@@ -216,9 +216,9 @@
       "ticket": "T-3591"
     },
     "testsuite::env.read": {
-      "accepted_count": 22,
-      "reason": "T-3738: TestWireGate's win32-hang fix adds a _git_env() helper reading os.environ to force GIT_TERMINAL_PROMPT=0 on every raw git subprocess call -- adds the real, new tests/gates_suite/test_wire.py env.read site; measured live via-list count.",
-      "ticket": "T-3738"
+      "accepted_count": 24,
+      "reason": "T-3777: the win32 hook-guard fixes add a shared `_env()` test helper (tests/test_hook_root_write_guard.py, tests/test_hook_root_cleanliness_detector.py) that reads PATH/SystemRoot from os.environ so the spawned hook subprocess can still locate git.exe/python on Windows -- 2 real, new env.read sites; measured live via-list count.",
+      "ticket": "T-3777"
     },
     "testsuite::env.write": {
       "accepted_count": 6,
