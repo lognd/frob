@@ -333,7 +333,15 @@ class TestLandLockPlatformBackends:
         standing in for the real Windows-only `msvcrt`, backed by real
         `fcntl.flock` under the hood -- proves the control flow (byte
         seeded, acquire, holder metadata written, release) the real
-        backend only ever runs for real on Windows."""
+        backend only ever runs for real on Windows.
+
+        T-3769: the platform check must run BEFORE `import fcntl` --
+        that module does not exist on real Windows at all, so importing
+        it unconditionally raised `ModuleNotFoundError` there instead of
+        reaching the (POSIX-only) skip this test intends."""
+        if sys.platform == "win32":
+            pytest.skip("POSIX-only (T-3244)")
+
         import fcntl as _real_fcntl
 
         import frob.process._lock as _lock_mod
@@ -345,8 +353,6 @@ class TestLandLockPlatformBackends:
 
             @staticmethod
             def locking(fd: int, mode: int, _nbytes: int) -> None:
-                if sys.platform == "win32":
-                    pytest.skip("POSIX-only (T-3244)")
                 if mode == _FakeMsvcrt.LK_UNLCK:
                     _real_fcntl.flock(fd, _real_fcntl.LOCK_UN)
                     return

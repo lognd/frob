@@ -1,7 +1,7 @@
 ---
 id: T-3769
 title: land-lock msvcrt-backend round-trip test crashes on real Windows
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
