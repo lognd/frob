@@ -14,8 +14,8 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/gates/_debt_deprecated.py tests/unit/gates/test_deprecated_baseline.py
 - tests/unit/gates/test_deprecated_baseline.py
+- src/frob/gates/_debt_deprecated.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +25,16 @@ scope_changes:
   glob: tests/unit/gates/test_deprecated_baseline.py
   reason: scope was accidentally a single space-joined glob string; split into two
     proper entries
+  actor: logan
+  at: '2026-09-04'
+- op: remove
+  glob: src/frob/gates/_debt_deprecated.py tests/unit/gates/test_deprecated_baseline.py
+  reason: correct the malformed single-glob scope into two proper entries
+  actor: logan
+  at: '2026-09-04'
+- op: add
+  glob: src/frob/gates/_debt_deprecated.py
+  reason: correct the malformed single-glob scope into two proper entries
   actor: logan
   at: '2026-09-04'
 designated_repro_test: null
