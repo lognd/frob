@@ -1,7 +1,7 @@
 ---
 id: T-3788
 title: fix win32 EffectGraph symref path-separator mismatch
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'

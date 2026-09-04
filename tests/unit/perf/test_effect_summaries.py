@@ -69,7 +69,12 @@ class TestEffectGraphSummaryUnknownDegradation:
         ]
         graph = EffectGraph(files)
 
-        summary = graph.summary(f"{path}::caller")
+        # T-3788: ParsedFile.path is a POSIX-normalized display path
+        # (`_display_path`), not the raw filesystem `Path`'s `str()` --
+        # symrefs must be built off `files[2].path` (what `EffectGraph`
+        # itself uses internally), or this mismatches on win32 where
+        # `str(path)` is backslash-separated.
+        summary = graph.summary(f"{files[2].path}::caller")
         assert any(kind == UNKNOWN_KIND for kind, _arg in summary)
         unknown_members = [arg for kind, arg in summary if kind == UNKNOWN_KIND]
         assert all(isinstance(arg, Unknown) for arg in unknown_members)
@@ -92,7 +97,7 @@ class TestEffectGraphSummaryUnknownDegradation:
         parsed = parse_file(path).danger_ok
         graph = EffectGraph([parsed])
 
-        summary = graph.summary(f"{path}::caller")
+        summary = graph.summary(f"{parsed.path}::caller")
         assert not any(kind == UNKNOWN_KIND for kind, _arg in summary)
         assert ("spawn", "(['git', 'status'], cwd=root)") in summary
 
@@ -133,7 +138,7 @@ class TestSplatArgumentDegradesToUnknown:
         parsed = parse_file(path).danger_ok
         graph = EffectGraph([parsed])
 
-        summary = graph.summary(f"{path}::caller")
+        summary = graph.summary(f"{parsed.path}::caller")
         assert any(kind == UNKNOWN_KIND for kind, _arg in summary)
         assert not any(kind == "spawn" for kind, _arg in summary)
 
@@ -156,7 +161,7 @@ class TestSplatArgumentDegradesToUnknown:
         parsed = parse_file(path).danger_ok
         graph = EffectGraph([parsed])
 
-        summary = graph.summary(f"{path}::caller")
+        summary = graph.summary(f"{parsed.path}::caller")
         assert not any(kind == UNKNOWN_KIND for kind, _arg in summary)
         assert any(kind == "spawn" for kind, _arg in summary)
 
@@ -194,7 +199,7 @@ class TestMemoizedCalleeDetection:
         parsed = parse_file(path).danger_ok
         graph = EffectGraph([parsed])
 
-        assert graph.is_memoized(f"{path}::run_argv")
+        assert graph.is_memoized(f"{parsed.path}::run_argv")
         assert graph.callee_is_memoized("run_argv")
 
     def test_undecorated_symbol_is_not_memoized(self, tmp_path: Path) -> None:
@@ -204,7 +209,7 @@ class TestMemoizedCalleeDetection:
         parsed = parse_file(path).danger_ok
         graph = EffectGraph([parsed])
 
-        assert not graph.is_memoized(f"{path}::run_argv")
+        assert not graph.is_memoized(f"{parsed.path}::run_argv")
         assert not graph.callee_is_memoized("run_argv")
 
     def test_bare_cache_named_parameter_is_not_mistaken_for_a_decorator(
@@ -219,7 +224,7 @@ class TestMemoizedCalleeDetection:
         parsed = parse_file(path).danger_ok
         graph = EffectGraph([parsed])
 
-        assert not graph.is_memoized(f"{path}::run_argv")
+        assert not graph.is_memoized(f"{parsed.path}::run_argv")
         assert not graph.callee_is_memoized("run_argv")
 
     def test_functools_dotted_lru_cache_decorator_is_memoized(
@@ -240,5 +245,5 @@ class TestMemoizedCalleeDetection:
         parsed = parse_file(path).danger_ok
         graph = EffectGraph([parsed])
 
-        assert graph.is_memoized(f"{path}::run_argv")
+        assert graph.is_memoized(f"{parsed.path}::run_argv")
         assert graph.callee_is_memoized("run_argv")
