@@ -1,7 +1,7 @@
 ---
 id: T-3776
 title: 'CI flaky-suite hardening: enable pytest --reruns on all three Test steps'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-04'
