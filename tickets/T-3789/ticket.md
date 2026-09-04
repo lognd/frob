@@ -27,3 +27,6 @@ anchor_reason: null
 land_commit: null
 ---
 win32 CI: 4 tests fail in tests/system/test_scaffold_pool.py (TestLeaseWorktree.test_lease_merges_base_ref_current, TestLeaseWorktree.test_leases_ready_slot_and_removes_it, TestPoolStatus.test_status_reflects_manifest, TestRefillAsync.test_refill_thread_rewarms_slot). Root cause TBD via winrun. Part of win32 CI drain.
+
+## Failure log
+- 2026-09-04 attempt 1: all 4 named tests in tests/system/test_scaffold_pool.py (TestLeaseWorktree, TestPoolStatus, TestRefillAsync) already pass on win32 (winrun-confirmed); no fix needed
