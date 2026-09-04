@@ -210,6 +210,11 @@ class TestPortableFlock:
             os.close(holder_fd)
             os.close(contender_fd)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="the fake msvcrt backend below is real fcntl.flock under "
+        "the hood, which does not exist on Windows (T-3752)",
+    )
     def test_windows_branch_selected_when_fcntl_absent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -316,6 +321,11 @@ class TestDerivedStateLockPlatformBackends:
             with derived_state_lock(tmp_path, exclusive=False):
                 pass
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="the fake msvcrt backend below is real fcntl.flock under "
+        "the hood, which does not exist on Windows (T-3752)",
+    )
     def test_windows_backend_round_trips(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -910,6 +920,11 @@ class TestSharedIdCounterPlatformBackends:
         with pytest.raises(_renumber_mod.TicketLockUnavailable):
             _allocate_ticket_id(primary, {}, {})
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="the fake msvcrt backend below is real fcntl.flock under "
+        "the hood, which does not exist on Windows (T-3752)",
+    )
     def test_windows_backend_round_trips(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

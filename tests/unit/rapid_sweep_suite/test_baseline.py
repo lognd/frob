@@ -346,6 +346,11 @@ class TestBaselineLock:
             entered = True
         assert entered is True
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="exercises POSIX fcntl.flock locking, which does not exist "
+        "on Windows where frob uses the msvcrt backend instead (T-3752)",
+    )
     def test_serializes_two_concurrent_holders(self, tmp_path: Path) -> None:
         if sys.platform == "win32":
             pytest.skip("POSIX-only (T-3244)")

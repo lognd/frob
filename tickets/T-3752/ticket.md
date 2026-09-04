@@ -1,7 +1,7 @@
 ---
 id: T-3752
 title: 'win32 test portability (fcntl class): skipif POSIX fcntl-locking tests'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'

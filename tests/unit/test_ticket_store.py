@@ -1304,6 +1304,11 @@ class TestLedgerLockPlatformBackends:
             with ledger_lock(tmp_path):
                 pass
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="the fake msvcrt backend below is real fcntl.flock under "
+        "the hood, which does not exist on Windows (T-3752)",
+    )
     def test_windows_backend_round_trips(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
