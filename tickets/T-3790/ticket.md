@@ -1,7 +1,7 @@
 ---
 id: T-3790
 title: fix win32 test_fix_engine scope-lease/tier-a failures
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'

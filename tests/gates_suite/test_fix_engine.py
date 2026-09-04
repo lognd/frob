@@ -58,8 +58,14 @@ class TestFixEngineTierA:
         # Modify one tracked file (dirty), leave the other untouched
         # (clean), and add a brand-new untracked file -- only the dirty
         # TRACKED file's content should be captured.
-        dirty.write_text("uncommitted edit\n", encoding="utf-8")
-        (root / "untracked.py").write_text("new\n", encoding="utf-8")
+        # T-3790: `newline=""` so this asserts against a specific LF byte
+        # sequence regardless of platform -- a bare text-mode write_text
+        # translates `\n` to `os.linesep` on write, which is `\r\n` on
+        # win32 and would make `_snapshot_dirty_files`'s exact-bytes
+        # comparison below fail on a platform difference the production
+        # code (which reads raw on-disk bytes verbatim) never introduces.
+        dirty.write_text("uncommitted edit\n", encoding="utf-8", newline="")
+        (root / "untracked.py").write_text("new\n", encoding="utf-8", newline="")
 
         snapshot = _snapshot_dirty_files(root)
 
@@ -2405,7 +2411,12 @@ class TestFixEngineScopeLease:
 
         # The ticket's OWN real, uncommitted, in-scope edit -- made before
         # `frob ticket land` (hence `apply_tier_a_fixes`) ever runs.
-        target.write_text("agent's own capability grant\n", encoding="utf-8")
+        # T-3790: `newline=""` -- see the sibling `_snapshot_dirty_files`
+        # exact-bytes fix above for why a bare text-mode write here would
+        # diverge on win32.
+        target.write_text(
+            "agent's own capability grant\n", encoding="utf-8", newline=""
+        )
 
         # `apply_tier_a_fixes` always captures the dirty-file snapshot
         # BEFORE running any handler -- exactly this call, at this point.
