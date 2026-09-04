@@ -49,6 +49,14 @@ scope_changes:
     to the real files
   actor: logan
   at: '2026-09-04'
+body_changes:
+- mode: append
+  reason: 'win32-only defect: BUG002 repro check runs on Linux only and cannot see
+    the win32 failure; waive with justification'
+  actor: logan
+  at: '2026-09-04'
+  old_length: 691
+  new_length: 1007
 evidence:
 - tests/test_arch_gate.py::TestArchGateLargeFile::test_test_file_exempt_from_large001
 - tests/test_tickets.py::TestAttach::test_index_increments
@@ -62,3 +70,5 @@ anchor_reason: null
 land_commit: null
 ---
 winrun-confirmed: several node-ids fail on win32 because str(Path)/f'{path}' produce backslash-separated paths that downstream code compares against forward-slash prefixes (e.g. is_test_file's PurePosixPath parts check) or splits on '/'. Fix each site to use .as_posix(). Covers: tests/test_arch_gate.py::TestArchGateLargeFile::test_test_file_exempt_from_large001, tests/test_tickets.py::TestAttach::test_index_increments, tests/test_tickets_brief.py::TestInferVerifyCommands::test_matches_test_file_by_stem, tests/test_gates_tick009_tick010.py::TestTick010StaleLeaseReport::test_missing_worktree_reports_once_with_path_and_remedy (message truncation looked path-shape related; investigate).
+
+frob:waive BUG002 reason="win32-only defect confirmed via winrun; no Linux parent-commit repro -- str(Path)/repr() backslash-path bugs only manifest on win32, the bound evidence passes on Linux at parent and child alike but was winrun-confirmed FAILING at parent and PASSING at the fix on the actual win32 mirror"
