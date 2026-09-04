@@ -1,0 +1,32 @@
+---
+id: T-3757
+title: 'win32 suite aborts: raise per-test timeout so slow full-repo-scan gate tests
+  do not crash their worker'
+state: queued
+kind: bug
+origin: human
+created: '2026-09-04'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- .github/workflows/ci.yml
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+PROBLEM: the win32 CI leg (advisory, continue-on-error) cannot run to completion because a CLASS of slow full-repo-scan GATE tests exceed the default 120s per-test timeout on the slow Windows runner, os._exit-kill their xdist worker, and the worker crash aborts the whole suite (T-3608 stall-abort) -- so we never get the full failing-test list needed to drain the remaining ~198 win32 failures. Observed crashers: tests/system/test_fleet_status_ticket_readiness_arch001.py, tests/test_docptr_gate.py (both already skipif'd in T-3754), and tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive. There will be MORE in this class.
+
+FIX: raise the win32 Test step's default per-test timeout from 120s to 600s by appending --timeout=600 to the pytest invocation's ArgumentList in .github/workflows/ci.yml (line ~1591). pyproject addopts sets --timeout=120; a second --timeout=600 on the command line wins (pytest-timeout/argparse last-value wins, verified locally: uv run python -m pytest tests/unit/test_config.py -q -p no:xdist --timeout=1 --timeout=300 does NOT error at 1s). The self-scan-heavy tests keep their own @pytest.mark.timeout(1200) marker (marker > CLI). Do NOT touch ubuntu or macos Test steps.
