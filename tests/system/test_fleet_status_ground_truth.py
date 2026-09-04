@@ -105,6 +105,16 @@ class TestLandLockHolderClaim:
     polling window too, so three fd-open pids read as three simultaneous
     "holders" when it was one real holder plus two waiters."""
 
+    # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency not \
+    # reproducible from a Linux parent-commit repro"
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "POSIX-only (T-3768): this whole test is a /proc/locks fixture "
+            "using os.major/os.minor, meaningless off Linux/POSIX -- "
+            "previously a self-asserting failure, now a clean skip"
+        ),
+    )
     def test_must_fire_the_true_holder_among_waiters(self, tmp_path: Path) -> None:
         """MUST-FIRE: one real flock holder (in `/proc/locks`) plus two
         fd-open waiters (no flock entry). The raw fd-open scan
@@ -120,7 +130,6 @@ class TestLandLockHolderClaim:
         # sys.platform != "win32":`); this whole test is a /proc/locks
         # fixture, meaningless off Linux/POSIX in the first place, but
         # ty checks the function body regardless of platform relevance.
-        assert sys.platform != "win32", "this suite only makes sense on POSIX"
         maj, minor = os.major(st.st_dev), os.minor(st.st_dev)
 
         proc = tmp_path / "proc"

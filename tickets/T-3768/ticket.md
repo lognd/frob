@@ -1,7 +1,7 @@
 ---
 id: T-3768
 title: skip win32-only PID-1-liveness and proc-locks tests
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -27,6 +27,9 @@ body_changes:
   at: '2026-09-04'
   old_length: 461
   new_length: 583
+evidence:
+- tests/unit/test_check_admission.py::TestAdmissionRegistryAnchor::test_two_worktrees_see_each_others_markers
+- tests/system/test_fleet_status_ground_truth.py::TestLandLockHolderClaim::test_must_fire_the_true_holder_among_waiters
 designated_repro_test: null
 threat: null
 component: null

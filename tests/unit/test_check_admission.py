@@ -11,6 +11,7 @@ fixture and monkeypatched module functions.
 from __future__ import annotations
 
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -459,6 +460,14 @@ class TestAdmissionRegistryAnchor:
         """MUST-FIRE, end to end: registering from two different linked
         worktrees, `_live_concurrent_checks` called from EITHER worktree
         counts BOTH -- the concrete fix for T-3256's inert divisor."""
+        if sys.platform == "win32":
+            # frob:waive BUG002 reason="win32-only skip; POSIX-primitive dependency \
+            # not reproducible from a Linux parent-commit repro"
+            pytest.skip(
+                "POSIX-only (T-3768): fixture assumes PID 1 always exists and "
+                "is alive (POSIX init-pid), which pid_alive(1) does not "
+                "guarantee on win32"
+            )
         import subprocess
 
         primary = tmp_path / "primary"
