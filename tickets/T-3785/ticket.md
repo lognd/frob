@@ -1,7 +1,7 @@
 ---
 id: T-3785
 title: surface win32 full-suite tracebacks in CI to diagnose the doctor cluster
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -38,6 +38,8 @@ body_changes:
   at: '2026-09-04'
   old_length: 0
   new_length: 153
+evidence:
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_win32_test_step_surfaces_failure_tracebacks
 designated_repro_test: null
 threat: null
 component: null

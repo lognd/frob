@@ -993,6 +993,28 @@ class TestWindowsDiagStepDoesNotGateTheJob:
             '"--timeout=600" in its ArgumentList'
         )
 
+    # frob:tests .github/workflows/ci.yml
+    def test_win32_test_step_surfaces_failure_tracebacks(self) -> None:
+        """T-3785: the windows Test step must pass -rA and --tb=short on
+        the pytest command line so a full-suite failure's traceback
+        (not just its SUITE-RESULT-FAILED node id) reaches the job log --
+        needed to diagnose the doctor-cluster tests that only fail under
+        the full Windows suite, never under isolated winrun."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        test_step = next(
+            step for step in steps if step.get("name", "").startswith("Test (windows")
+        )
+        run_text = test_step.get("run", "")
+        assert '"-rA"' in run_text, (
+            "windows Test step's pytest invocation must carry "
+            '"-rA" in its ArgumentList'
+        )
+        assert '"--tb=short"' in run_text, (
+            "windows Test step's pytest invocation must carry "
+            '"--tb=short" in its ArgumentList'
+        )
+
     def test_test_step_is_untouched_and_still_windows_only(self) -> None:
         """Neither T-3604 nor T-3609 may touch the Test step itself --
         only the diagnostic step ahead of it."""

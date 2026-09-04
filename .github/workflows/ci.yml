@@ -1605,7 +1605,15 @@ jobs:
           # default floor, not the explicitly-marked ceiling.
           # frob:waive BUG002 reason="CI-config timeout change; the worker-crash-abort is only reproducible on the slow Windows CI runner, not the Linux land suite"
           # T-3776 reverted (T-3777): pytest-rerunfailures 16.6 INTERNALERRORs under xdist on py3.14 (macos), turning a rare flake into a whole-suite abort; flakes are handled by fixing the specific flaky tests instead (T-3775).
-          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q","--timeout=600" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          # T-3785: append -rA --tb=short so a failure's full traceback
+          # (not just its node id from the SUITE-RESULT-FAILED line) reaches
+          # this step's log -- needed to diagnose the ~39 doctor-cluster
+          # tests that only fail in this full-suite Windows run, never under
+          # isolated winrun (T-3775/doctor). Reporting verbosity only: no
+          # --reruns, no change to which tests pass or fail. Verified
+          # locally (Linux) that -rA --tb=short prints the FAILURES section
+          # with full tracebacks under -n auto --dist=loadgroup -q.
+          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q","--timeout=600","-rA","--tb=short" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
             Wait-Process -Id $p.Id -Timeout ${budget} -ErrorAction Stop
           } catch {
