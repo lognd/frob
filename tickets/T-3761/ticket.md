@@ -1,7 +1,7 @@
 ---
 id: T-3761
 title: skip win32 POSIX-only flock tests in test_process_lock.py
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -26,6 +26,10 @@ body_changes:
   at: '2026-09-04'
   old_length: 483
   new_length: 612
+evidence:
+- tests/unit/test_process_lock.py::TestDerivedStateLock::test_shared_locks_do_not_block_each_other
+- tests/unit/test_process_lock.py::TestDerivedStateWriteLock::test_concurrent_separate_process_writer_still_blocked
+- tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance::test_independent_process_without_marker_still_blocks
 designated_repro_test: null
 threat: null
 component: null

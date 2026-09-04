@@ -112,6 +112,12 @@ class TestDerivedStateLock:
         assert max_active == 1
 
     # frob:ticket T-0859
+    # frob:ticket T-3761
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="exclusive=False (SHARED) fcntl.flock semantics are POSIX-only; "
+        "msvcrt has no shared-lock equivalent",
+    )
     def test_shared_locks_do_not_block_each_other(self, tmp_path: Path) -> None:
         """Two SHARED holders can be inside the critical section at the
         same time -- the reader side of the reader/writer contract."""
@@ -420,6 +426,13 @@ class TestDerivedStateWriteLock:
         assert result.get("ran") is True
 
     # frob:ticket T-0918
+    # frob:ticket T-3761
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="real cross-process EXCLUSIVE blocking via a second spawned "
+        "process against fcntl.flock; msvcrt's polling-based backend does "
+        "not reproduce this cross-process blocking guarantee identically",
+    )
     def test_concurrent_separate_process_writer_still_blocked(
         self, tmp_path: Path
     ) -> None:
@@ -535,6 +548,13 @@ class TestCrossProcessPoolInheritance:
         assert result is True
 
     # frob:tests tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_independent_process_without_marker_still_blocks  # noqa: E501
+    # frob:ticket T-3761
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="real cross-process EXCLUSIVE blocking via a second spawned "
+        "process against fcntl.flock; msvcrt's polling-based backend does "
+        "not reproduce this cross-process blocking guarantee identically",
+    )
     def test_independent_process_without_marker_still_blocks(
         self, tmp_path: Path
     ) -> None:
