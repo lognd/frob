@@ -52,6 +52,14 @@ scope_changes:
     writes generally but gate:SCOPE flags the specific new-ticket dir
   actor: logan
   at: '2026-09-04'
+body_changes:
+- mode: append
+  reason: 'BUG002 waiver: win32-only defects have no Linux-reproducible parent-commit
+    failure, confirmed instead via winrun before/after'
+  actor: logan
+  at: '2026-09-04'
+  old_length: 300
+  new_length: 1179
 evidence:
 - tests/test_hook_frob_suggest.py::TestHandRenameEditMultifile::test_frob_suggest_ack_env_var_bypasses_it
 - tests/test_hook_frob_suggest.py::TestHandRenameEditMultifile::test_refactor_residue_prose_fix_never_fires
@@ -88,3 +96,5 @@ anchor_reason: null
 land_commit: null
 ---
 Windows CI failures in hook_root_write_guard (18), hook_frob_suggest (7), hook_root_cleanliness_detector (2). Likely shared root cause: path normalization / shell-command parsing / backslash vs forward-slash in the hook's checkout-path detection. Fix shared cause if present, confirm each via winrun.
+
+frob:waive BUG002 reason="win32-only defects confirmed via winrun (real Windows tracebacks): (1) subprocess.run(..., env={...}) with no PATH silently fails to find git.exe on Windows only -- POSIX's execvpe falls back to os.defpath so the identical fixture passes on Linux at both main and the fix, giving no Linux-reproducible failing-at-main signal; (2) shlex's default posix escape='\\\\' corrupts Windows-native backslash paths, a defect that cannot exist on Linux where paths never contain backslashes; (3) Path.home()/ntpath.expanduser preferring USERPROFILE over HOME is Windows-only path-resolution behavior. All three are real code fixes (not confirmatory-only), each winrun-verified failing before the fix and passing after, on the actual Windows target this ticket drains; no Linux parent-commit pytest repro exists because the defects are not observable on Linux."
