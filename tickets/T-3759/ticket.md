@@ -33,6 +33,16 @@ body_changes:
   at: '2026-09-04'
   old_length: 0
   new_length: 703
+- mode: append
+  reason: 'waive BUG002 repro requirement: DEPR006 is a repo-history signal not a
+    code branch'
+  actor: logan
+  at: '2026-09-04'
+  old_length: 702
+  new_length: 1106
+evidence:
+- tests/unit/gates/test_deprecated_baseline.py::TestDepr006ProducerAbandoned::test_pinned_producer_stays_quiet
+- tests/unit/gates/test_lock_producer.py::TestProducerStatusVerdicts::test_must_stay_quiet_when_pinned
 designated_repro_test: null
 threat: null
 component: null
@@ -51,3 +61,5 @@ tracks, so this ticket adds the documented pin escape hatch: a top-level
 T-3758. DEPR005 content check still passes against the frozen baseline;
 only the abandonment signal is being silenced, deliberately, pending
 T-3758.
+
+frob:waive BUG002 reason="lock-pin config change; DEPR006 fires on repo commit-count-since-stamp (a repo-history property), not on code reachable from a parent-commit repro -- the designated evidence (test_pinned_producer_stays_quiet) covers the pinned-lock code path this change exercises, but cannot fail-then-pass across this commit since the defect is a git-history measurement, not a code branch"
