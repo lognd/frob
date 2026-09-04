@@ -1,7 +1,7 @@
 ---
 id: T-3764
 title: skip win32 os.nice tests in verify test_worker.py
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -26,6 +26,9 @@ body_changes:
   at: '2026-09-04'
   old_length: 214
   new_length: 343
+evidence:
+- tests/unit/verify/test_worker.py::TestEnsureReducedPriority::test_applies_nice_and_ionice_exactly_once
+- tests/unit/verify/test_worker.py::TestEnsureReducedPriority::test_failed_nice_call_never_raises
 designated_repro_test: null
 threat: null
 component: null

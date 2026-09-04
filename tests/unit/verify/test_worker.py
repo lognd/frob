@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
 
 import pytest
@@ -691,6 +692,11 @@ class TestEnsureReducedPriority:
     """T-1695: CPU/IO priority reduction is applied at most once per
     process, best-effort on both axes."""
 
+    # frob:ticket T-3764
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="os.nice does not exist on Windows; Linux/POSIX-only primitive",
+    )
     def test_applies_nice_and_ionice_exactly_once(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -703,6 +709,11 @@ class TestEnsureReducedPriority:
         _worker_mod._ensure_reduced_priority()
         assert nice_calls == [10]  # only the FIRST call actually ran os.nice
 
+    # frob:ticket T-3764
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="os.nice does not exist on Windows; Linux/POSIX-only primitive",
+    )
     def test_failed_nice_call_never_raises(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
