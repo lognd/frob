@@ -27,3 +27,6 @@ anchor_reason: null
 land_commit: null
 ---
 6 tests in this file confirmed failing on win32 CI, part of win32 CI drain. See scratchpad list.
+
+## Failure log
+- 2026-09-04 attempt 1: all 6 tests in tests/unit/test_conftest_suite_result_status.py already pass on win32 (winrun-confirmed); prior truncated-list confusion, no fix needed
