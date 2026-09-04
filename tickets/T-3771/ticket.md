@@ -1,7 +1,7 @@
 ---
 id: T-3771
 title: Add regression test for win32 pytest --timeout=600
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-04'
