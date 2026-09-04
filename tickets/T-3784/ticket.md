@@ -1,7 +1,7 @@
 ---
 id: T-3784
 title: fix win32 DEPR005/cycle-runner path separator mismatches
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'

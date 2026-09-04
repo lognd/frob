@@ -686,9 +686,19 @@ def _build_deprecated_ref_index(root: Path) -> _DeprecatedRefIndex:
     index = _DeprecatedRefIndex()
     for path in _collect_source_files(root, "python"):
         try:
-            rel = str(path.relative_to(root)) if root.is_dir() else path.name
+            # T-3784: always POSIX-separated (`.as_posix()`, never bare
+            # `str()`) so this index's file keys match the baseline's
+            # `frob-deprecated-baseline.lock.json` reference keys, which
+            # are stored/decoded with `/` -- a bare `str()` on win32
+            # returns `src\caller.py`, and that key would never equal the
+            # baseline's `src/caller.py`, so every file's current count
+            # would default against a phantom 0 baseline and DEPR005 would
+            # fire on files that never grew past their baseline.
+            rel = (
+                path.relative_to(root).as_posix() if root.is_dir() else path.name
+            )
         except ValueError:
-            rel = str(path)
+            rel = path.as_posix()
 
         _index_identifier_hits(path, rel, index)
         _index_definition_sites(path, rel, index)
