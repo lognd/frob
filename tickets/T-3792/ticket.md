@@ -15,9 +15,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/arch/__init__.py
-- src/frob/tickets/_attach.py
 - src/frob/tickets/_brief.py
-- src/frob/gates/_tickets.py
 - src/frob/tickets/_reporting_attachments.py
 - src/frob/gates/_tickets_gate.py
 scope_breadth_ack: false
@@ -37,6 +35,18 @@ scope_changes:
   reason: 'correct actual file names: attach() lives in _reporting_attachments.py,
     TICK010 gate lives in _tickets_gate.py, not the file names guessed in the ticket
     body'
+  actor: logan
+  at: '2026-09-04'
+- op: remove
+  glob: src/frob/tickets/_attach.py
+  reason: these file names never existed -- typo'd in the original ticket body; corrected
+    to the real files
+  actor: logan
+  at: '2026-09-04'
+- op: remove
+  glob: src/frob/gates/_tickets.py
+  reason: these file names never existed -- typo'd in the original ticket body; corrected
+    to the real files
   actor: logan
   at: '2026-09-04'
 designated_repro_test: null
