@@ -121,6 +121,14 @@ class TestLandLockHolderClaim:
         (`land_lock_holder_pids`) reports all three as "holders" -- this
         is defect (b)'s exact shape. `_true_flock_holder_pid`, reading
         `/proc/locks` directly, must report ONLY the real holder."""
+        # T-3774: the @skipif above already prevents win32 execution, but ty
+        # analyses this body under win32 too, where os.major/os.minor do not
+        # exist (typeshed guards them `if sys.platform != "win32":`). This
+        # in-body assert restores the platform narrowing that the skipif
+        # decorator alone does not give ty, so the POSIX-only calls below type-
+        # check cleanly. (Before T-3768 this narrowing came from an in-body
+        # `assert sys.platform != "win32"`; the skipif conversion dropped it.)
+        assert sys.platform != "win32"
         root = tmp_path / "repo"
         (root / ".frob").mkdir(parents=True)
         lock_path = root / ".frob" / "land.lock"

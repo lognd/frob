@@ -2,7 +2,7 @@
 id: T-3774
 title: 'ty win32 error: os.major/os.minor unnarrowed after T-3768 replaced the sys.platform
   assert with skipif'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
