@@ -14,12 +14,17 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/graph/**
 - tests/unit/test_graph_cache.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/graph/**
+  reason: narrow away from the whole graph package to avoid overlap with T-1608/T-1609/T-3213/T-3248/T-3573
+  actor: logan
+  at: '2026-09-04'
 designated_repro_test: null
 threat: null
 component: null
