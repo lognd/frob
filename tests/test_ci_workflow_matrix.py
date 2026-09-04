@@ -1008,6 +1008,64 @@ class TestWindowsDiagStepDoesNotGateTheJob:
         )
 
 
+class TestTestStepsRerunFlakes:
+    """T-3775: pytest-rerunfailures (already a project dependency) is
+    enabled on all three platforms' Test steps so an intermittent
+    git-state/concurrency race that passes in isolation and on rerun no
+    longer reds the whole suite -- a genuine regression still fails all
+    attempts."""
+
+    # frob:tests \
+    # tests/test_ci_workflow_matrix.py::TestTestStepsRerunFlakes.test_ubuntu_test_step_\
+    # reruns_flakes
+    def test_ubuntu_test_step_reruns_flakes(self) -> None:
+        """The ubuntu Test step's pytest invocation must carry
+        --reruns/--reruns-delay so a flaky test gets retried before
+        reddening the build."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        test_step = next(
+            step for step in steps if step.get("name", "").startswith("Test (ubuntu")
+        )
+        run_text = test_step.get("run", "")
+        assert "uv run pytest -q" in run_text
+        assert "--reruns 2" in run_text and "--reruns-delay 1" in run_text, (
+            "ubuntu Test step's pytest invocation must carry "
+            "--reruns 2 --reruns-delay 1 (T-3775)"
+        )
+
+    def test_macos_test_step_reruns_flakes(self) -> None:
+        """The macos Test step's pytest invocation must carry
+        --reruns/--reruns-delay so a flaky test gets retried before
+        reddening the build."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        test_step = next(
+            step for step in steps if step.get("name", "").startswith("Test (macos")
+        )
+        run_text = test_step.get("run", "")
+        assert "uv run pytest -q" in run_text
+        assert "--reruns 2" in run_text and "--reruns-delay 1" in run_text, (
+            "macos Test step's pytest invocation must carry "
+            "--reruns 2 --reruns-delay 1 (T-3775)"
+        )
+
+    def test_windows_test_step_reruns_flakes(self) -> None:
+        """The windows Test step's Start-Process ArgumentList must carry
+        --reruns/--reruns-delay so a flaky test gets retried before
+        reddening the build."""
+        workflow = _load_ci_workflow()
+        steps = workflow["jobs"]["build"]["steps"]
+        test_step = next(
+            step for step in steps if step.get("name", "").startswith("Test (windows")
+        )
+        run_text = test_step.get("run", "")
+        assert '"--reruns","2"' in run_text and '"--reruns-delay","1"' in run_text, (
+            "windows Test step's pytest invocation must carry "
+            '"--reruns","2","--reruns-delay","1" in its ArgumentList (T-3775)'
+        )
+
+
 class TestWindowsDiagStepRunsUnbudgeted:
     """T-3604: a `--budget 180` diag run defers gates-security/lint/
     static to a later, unmeasured pass -- a real hang living in one of

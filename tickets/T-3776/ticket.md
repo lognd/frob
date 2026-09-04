@@ -1,7 +1,7 @@
 ---
 id: T-3776
 title: 'CI flaky-suite hardening: enable pytest --reruns on all three Test steps'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -27,6 +27,10 @@ body_changes:
   at: '2026-09-04'
   old_length: 0
   new_length: 494
+evidence:
+- tests/test_ci_workflow_matrix.py::TestTestStepsRerunFlakes::test_ubuntu_test_step_reruns_flakes
+- tests/test_ci_workflow_matrix.py::TestTestStepsRerunFlakes::test_macos_test_step_reruns_flakes
+- tests/test_ci_workflow_matrix.py::TestTestStepsRerunFlakes::test_windows_test_step_reruns_flakes
 designated_repro_test: null
 threat: null
 component: null
