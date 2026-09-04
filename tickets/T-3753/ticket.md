@@ -2,7 +2,7 @@
 id: T-3753
 title: 'win32 test portability (fork/sysconf class): skipif POSIX fork-context and
   os.sysconf tests'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-04'
