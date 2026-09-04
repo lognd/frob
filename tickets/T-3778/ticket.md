@@ -2,7 +2,7 @@
 id: T-3778
 title: 'revert T-3776 --reruns: pytest-rerunfailures INTERNALERRORs under xdist on
   py3.14 macos'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-04'
