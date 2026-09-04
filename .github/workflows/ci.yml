@@ -1588,7 +1588,21 @@ jobs:
           # the injected-SIGINT class, so the suite runs parallel like ubuntu/
           # macos via pyproject's `-n auto --dist=loadgroup` addopts. `-q` keeps
           # output sane under xdist (matches the macos step).
-          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          # T-3757: append --timeout=600 (pyproject addopts sets --timeout=120).
+          # A second --timeout on the pytest command line wins over the addopts
+          # value (pytest-timeout/argparse last-value-wins; verified locally:
+          # `pytest -p no:xdist --timeout=1 --timeout=300` does NOT error at 1s).
+          # Slow full-repo-scan gate tests (test_fleet_status_ticket_readiness_
+          # arch001.py, test_docptr_gate.py, test_gates_tickets_hygiene.py::
+          # TestTick003StaleArchive, and more of that class) were exceeding the
+          # 120s default on the slower Windows runner, os._exit-killing their
+          # xdist worker and aborting the whole suite (T-3608 stall-abort)
+          # before the full failing-test list could ever be collected. The
+          # self-scan-heavy tests' own @pytest.mark.timeout(1200) marker still
+          # wins over this CLI value (marker > CLI), so this only widens the
+          # default floor, not the explicitly-marked ceiling.
+          # frob:waive BUG002 reason="CI-config timeout change; the worker-crash-abort is only reproducible on the slow Windows CI runner, not the Linux land suite"
+          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q","--timeout=600" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
             Wait-Process -Id $p.Id -Timeout ${budget} -ErrorAction Stop
           } catch {
