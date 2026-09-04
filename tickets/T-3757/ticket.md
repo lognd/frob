@@ -21,9 +21,17 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- cmd:uv run python -m pytest tests/test_ci_workflow_matrix.py tests/unit/test_release_workflow_gate.py
-  -p no:xdist -q exit=0 sha256=b45c62f1acf0
+- tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_win32_test_step_raises_per_test_timeout_to_600
 designated_repro_test: null
+evidence_changes:
+- old_node: cmd:uv run python -m pytest tests/test_ci_workflow_matrix.py tests/unit/test_release_workflow_gate.py
+    -p no:xdist -q exit=0 sha256=b45c62f1acf0
+  new_node: tests/test_ci_workflow_matrix.py::TestWindowsDiagStepDoesNotGateTheJob::test_win32_test_step_raises_per_test_timeout_to_600
+  reason: T-3757 win32 timeout=600 change needs pytest node-id evidence for a code-kind
+    ticket; the CI-config cmd-evidence is invalid per COV003, replaced with the T-3771
+    regression test that asserts --timeout=600 in ci.yml
+  actor: logan
+  at: '2026-09-04'
 threat: null
 component: null
 anchor: false
