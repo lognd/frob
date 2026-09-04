@@ -1008,20 +1008,19 @@ class TestWindowsDiagStepDoesNotGateTheJob:
         )
 
 
-class TestTestStepsRerunFlakes:
-    """T-3775: pytest-rerunfailures (already a project dependency) is
-    enabled on all three platforms' Test steps so an intermittent
-    git-state/concurrency race that passes in isolation and on rerun no
-    longer reds the whole suite -- a genuine regression still fails all
-    attempts."""
+class TestTestStepsNoRerunFlakes:
+    """T-3776 reverted (T-3777): pytest-rerunfailures 16.6 INTERNALERRORs
+    under xdist on py3.14 (macos), turning a rare flake into a
+    deterministic whole-suite abort. --reruns/--reruns-delay must not be
+    present on any of the three platforms' Test steps; flakes are handled
+    by fixing the specific flaky tests instead (T-3775)."""
 
     # frob:tests \
-    # tests/test_ci_workflow_matrix.py::TestTestStepsRerunFlakes.test_ubuntu_test_step_\
-    # reruns_flakes
-    def test_ubuntu_test_step_reruns_flakes(self) -> None:
-        """The ubuntu Test step's pytest invocation must carry
-        --reruns/--reruns-delay so a flaky test gets retried before
-        reddening the build."""
+    # tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes.test_ubuntu_test_ste\
+    # p_no_reruns_flakes
+    def test_ubuntu_test_step_no_reruns_flakes(self) -> None:
+        """The ubuntu Test step's pytest invocation must not carry
+        --reruns/--reruns-delay (T-3777)."""
         workflow = _load_ci_workflow()
         steps = workflow["jobs"]["build"]["steps"]
         test_step = next(
@@ -1029,15 +1028,13 @@ class TestTestStepsRerunFlakes:
         )
         run_text = test_step.get("run", "")
         assert "uv run pytest -q" in run_text
-        assert "--reruns 2" in run_text and "--reruns-delay 1" in run_text, (
-            "ubuntu Test step's pytest invocation must carry "
-            "--reruns 2 --reruns-delay 1 (T-3775)"
+        assert "--reruns" not in run_text, (
+            "ubuntu Test step's pytest invocation must not carry --reruns (T-3777)"
         )
 
-    def test_macos_test_step_reruns_flakes(self) -> None:
-        """The macos Test step's pytest invocation must carry
-        --reruns/--reruns-delay so a flaky test gets retried before
-        reddening the build."""
+    def test_macos_test_step_no_reruns_flakes(self) -> None:
+        """The macos Test step's pytest invocation must not carry
+        --reruns/--reruns-delay (T-3777)."""
         workflow = _load_ci_workflow()
         steps = workflow["jobs"]["build"]["steps"]
         test_step = next(
@@ -1045,24 +1042,21 @@ class TestTestStepsRerunFlakes:
         )
         run_text = test_step.get("run", "")
         assert "uv run pytest -q" in run_text
-        assert "--reruns 2" in run_text and "--reruns-delay 1" in run_text, (
-            "macos Test step's pytest invocation must carry "
-            "--reruns 2 --reruns-delay 1 (T-3775)"
+        assert "--reruns" not in run_text, (
+            "macos Test step's pytest invocation must not carry --reruns (T-3777)"
         )
 
-    def test_windows_test_step_reruns_flakes(self) -> None:
-        """The windows Test step's Start-Process ArgumentList must carry
-        --reruns/--reruns-delay so a flaky test gets retried before
-        reddening the build."""
+    def test_windows_test_step_no_reruns_flakes(self) -> None:
+        """The windows Test step's Start-Process ArgumentList must not
+        carry --reruns/--reruns-delay (T-3777)."""
         workflow = _load_ci_workflow()
         steps = workflow["jobs"]["build"]["steps"]
         test_step = next(
             step for step in steps if step.get("name", "").startswith("Test (windows")
         )
         run_text = test_step.get("run", "")
-        assert '"--reruns","2"' in run_text and '"--reruns-delay","1"' in run_text, (
-            "windows Test step's pytest invocation must carry "
-            '"--reruns","2","--reruns-delay","1" in its ArgumentList (T-3775)'
+        assert '"--reruns"' not in run_text, (
+            "windows Test step's pytest invocation must not carry --reruns (T-3777)"
         )
 
 

@@ -2,7 +2,7 @@
 id: T-3778
 title: 'revert T-3776 --reruns: pytest-rerunfailures INTERNALERRORs under xdist on
   py3.14 macos'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -39,6 +39,10 @@ body_changes:
   at: '2026-09-04'
   old_length: 0
   new_length: 1328
+evidence:
+- tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_ubuntu_test_step_no_reruns_flakes
+- tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_macos_test_step_no_reruns_flakes
+- tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_windows_test_step_no_reruns_flakes
 designated_repro_test: null
 threat: null
 component: null

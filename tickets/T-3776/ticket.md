@@ -28,10 +28,29 @@ body_changes:
   old_length: 0
   new_length: 494
 evidence:
-- tests/test_ci_workflow_matrix.py::TestTestStepsRerunFlakes::test_ubuntu_test_step_reruns_flakes
-- tests/test_ci_workflow_matrix.py::TestTestStepsRerunFlakes::test_macos_test_step_reruns_flakes
-- tests/test_ci_workflow_matrix.py::TestTestStepsRerunFlakes::test_windows_test_step_reruns_flakes
+- tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_ubuntu_test_step_no_reruns_flakes
+- tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_macos_test_step_no_reruns_flakes
+- tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_windows_test_step_no_reruns_flakes
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_ci_workflow_matrix.py::TestTestStepsRerunFlakes::test_ubuntu_test_step_reruns_flakes
+  new_node: tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_ubuntu_test_step_no_reruns_flakes
+  reason: T-3777 reverted the --reruns flags T-3776 added (pytest-rerunfailures INTERNALERRORs
+    under xdist on py3.14 macos); rebinding evidence to the surviving no-reruns assertion
+  actor: logan
+  at: '2026-09-04'
+- old_node: tests/test_ci_workflow_matrix.py::TestTestStepsRerunFlakes::test_macos_test_step_reruns_flakes
+  new_node: tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_macos_test_step_no_reruns_flakes
+  reason: T-3777 reverted the --reruns flags T-3776 added (pytest-rerunfailures INTERNALERRORs
+    under xdist on py3.14 macos); rebinding evidence to the surviving no-reruns assertion
+  actor: logan
+  at: '2026-09-04'
+- old_node: tests/test_ci_workflow_matrix.py::TestTestStepsRerunFlakes::test_windows_test_step_reruns_flakes
+  new_node: tests/test_ci_workflow_matrix.py::TestTestStepsNoRerunFlakes::test_windows_test_step_no_reruns_flakes
+  reason: T-3777 reverted the --reruns flags T-3776 added (pytest-rerunfailures INTERNALERRORs
+    under xdist on py3.14 macos); rebinding evidence to the surviving no-reruns assertion
+  actor: logan
+  at: '2026-09-04'
 threat: null
 component: null
 anchor: false

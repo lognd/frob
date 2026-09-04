@@ -169,12 +169,8 @@ jobs:
         # step still fails exactly as before.
         run: |
           set -o pipefail
-          # T-3775: --reruns 2 --reruns-delay 1 (pytest-rerunfailures, already
-          # a project dependency) retries a failing test up to twice before
-          # counting it red, so an intermittent git-state/concurrency race
-          # that passes in isolation and on rerun no longer reds the whole
-          # suite -- a genuine regression still fails all attempts.
-          timeout -s ABRT 40m uv run pytest -q --reruns 2 --reruns-delay 1 2>&1 | tee /tmp/pytest-ubuntu.log
+          # T-3776 reverted (T-3777): pytest-rerunfailures 16.6 INTERNALERRORs under xdist on py3.14 (macos), turning a rare flake into a whole-suite abort; flakes are handled by fixing the specific flaky tests instead (T-3775).
+          timeout -s ABRT 40m uv run pytest -q 2>&1 | tee /tmp/pytest-ubuntu.log
       # T-3516: collect, do not scatter -- and stay loud even off the raw
       # log: an xdist worker crash today (see tests/conftest.py's
       # `WORKER-CRASH-REPORT:` section, T-3516) is otherwise only visible
@@ -268,12 +264,8 @@ jobs:
           # pytest process, exactly like ubuntu's own `tee` step but without
           # ubuntu's `timeout`/pipefail shape (macOS has no GNU `timeout`,
           # T-3250) to lean on for that distinction.
-          # T-3775: --reruns 2 --reruns-delay 1 (pytest-rerunfailures, already
-          # a project dependency) retries a failing test up to twice before
-          # counting it red, so an intermittent git-state/concurrency race
-          # that passes in isolation and on rerun no longer reds the whole
-          # suite -- a genuine regression still fails all attempts.
-          uv run pytest -q --reruns 2 --reruns-delay 1 > >(tee /tmp/pytest-macos.log) 2>&1 &
+          # T-3776 reverted (T-3777): pytest-rerunfailures 16.6 INTERNALERRORs under xdist on py3.14 (macos), turning a rare flake into a whole-suite abort; flakes are handled by fixing the specific flaky tests instead (T-3775).
+          uv run pytest -q > >(tee /tmp/pytest-macos.log) 2>&1 &
           pid=$!
           (
             sleep "$budget"
@@ -1612,12 +1604,8 @@ jobs:
           # wins over this CLI value (marker > CLI), so this only widens the
           # default floor, not the explicitly-marked ceiling.
           # frob:waive BUG002 reason="CI-config timeout change; the worker-crash-abort is only reproducible on the slow Windows CI runner, not the Linux land suite"
-          # T-3775: --reruns 2 --reruns-delay 1 (pytest-rerunfailures, already
-          # a project dependency) retries a failing test up to twice before
-          # counting it red, so an intermittent git-state/concurrency race
-          # that passes in isolation and on rerun no longer reds the whole
-          # suite -- a genuine regression still fails all attempts.
-          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q","--timeout=600","--reruns","2","--reruns-delay","1" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          # T-3776 reverted (T-3777): pytest-rerunfailures 16.6 INTERNALERRORs under xdist on py3.14 (macos), turning a rare flake into a whole-suite abort; flakes are handled by fixing the specific flaky tests instead (T-3775).
+          $p = Start-Process -FilePath "uv" -ArgumentList "run","pytest","-q","--timeout=600" -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
             Wait-Process -Id $p.Id -Timeout ${budget} -ErrorAction Stop
           } catch {
