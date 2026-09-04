@@ -163,46 +163,54 @@ class TestCoverageStepUsesFrobNotMake:
         )
 
     # frob:tests .github/workflows/ci.yml
+    # frob:ticket T-3756
     def test_coverage_step_calls_frob_coverage_full(self) -> None:
         """T-3077 (T-1382 epic): the whole-suite coverage run must go through
         the frob-native `uv run frob coverage --full`, never a `make coverage`
-        target (windows-latest ships no `make`). T-3748 moved that invocation
-        from the coverage-stamp step into the ubuntu Test step, but the
-        make-free contract this test locks is unchanged: the workflow drives
-        coverage through frob, not make."""
+        target (windows-latest ships no `make`). T-3748 had moved that
+        invocation into the ubuntu Test step; T-3756 reverted the ubuntu Test
+        step to a coverage-free `pytest -q` and restored `frob coverage
+        --full` to the dedicated coverage step -- the make-free contract this
+        test locks is unchanged either way: the workflow drives coverage
+        through frob, not make."""
         text = (
             Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
         ).read_text(encoding="utf-8")
         assert "uv run frob coverage --full" in text, (
             "the workflow must run whole-suite coverage via `uv run frob "
-            "coverage --full` (T-3077); T-3748 keeps it in the ubuntu Test step"
+            "coverage --full` (T-3077); T-3756 runs it in the coverage step"
         )
 
     # frob:tests .github/workflows/ci.yml
+    # frob:ticket T-3756
     def test_suite_runs_under_coverage_once_not_twice(self) -> None:
-        """T-3748 (over T-3077): the suite runs under coverage exactly ONCE.
-        The ubuntu Test step is that single combined pass/fail + coverage run
-        (`frob coverage --full --fail-on-degraded`, the frob-native path, not
-        `make coverage`), and the T-1366 coverage-stamp step must NOT re-run
-        `frob coverage --full` -- that was the duplicate second full-suite
-        run T-3748 removed."""
+        """T-3756 (revert of T-3748): the ubuntu Test step's pass/fail gate
+        must be coverage-free (`uv run pytest -q`) -- see the step's own
+        comment for why T-3748's combined coverage+test run made ubuntu's
+        gate coverage-sensitive and reproducibly red. `uv run frob coverage
+        --full` runs separately in the dedicated coverage step (T-1366), as a
+        non-blocking best-effort measurement, not the pass/fail gate."""
         text = (
             Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
         ).read_text(encoding="utf-8")
-        assert "uv run frob coverage --full --fail-on-degraded" in text, (
-            "the ubuntu Test step must run the suite once under coverage as "
-            "its combined pass/fail + coverage gate via `frob coverage --full "
-            "--fail-on-degraded` (T-3748)"
+        assert "uv run pytest -q" in text, (
+            "the ubuntu Test step must run a coverage-free `uv run "
+            "pytest -q` as its pass/fail gate (T-3756)"
         )
-        # The coverage-stamp step's own slice must no longer re-run the suite.
+        # The coverage-stamp step's own slice must run frob coverage --full
+        # as a separate, non-blocking measurement.
         idx = text.find("coverage stamp + delta baseline must be freshly")
         assert idx != -1, "the T-1366 coverage-stamp step was removed/renamed"
         next_step_idx = text.find("\n      - name:", idx + 1)
         step_text = text[idx : next_step_idx if next_step_idx != -1 else idx + 4000]
-        assert "uv run frob coverage --full" not in step_text, (
-            "the coverage-stamp step must not re-run `frob coverage --full` -- "
-            "the ubuntu Test step already produced coverage.xml + the stamp "
-            "(T-3748); a second run is the duplication this ticket removed"
+        assert "uv run frob coverage --full" in step_text, (
+            "the coverage-stamp step must run `uv run frob coverage --full` "
+            "itself now that the ubuntu Test step is coverage-free (T-3756)"
+        )
+        assert "--fail-on-degraded" not in step_text, (
+            "the coverage step must not gate on --fail-on-degraded -- "
+            "coverage is a non-blocking best-effort measurement (T-3756), "
+            "backstopped by the step's own continue-on-error: true"
         )
 
 

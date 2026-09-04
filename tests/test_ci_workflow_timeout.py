@@ -44,9 +44,9 @@ class TestBuildJobHasATimeoutBackstop:
         )
         # Comfortably above the slowest OBSERVED full-job completion but
         # well under GitHub's 6-hour default -- a genuine hang still gets
-        # caught. T-3748 raised the ceiling to accommodate ubuntu's now
-        # combined coverage+test run (`frob coverage --full`, ~130m budget),
-        # so the job timeout is 150m; keep the guard at 180m headroom.
+        # caught. T-3748 had raised the ceiling to accommodate ubuntu's
+        # (since-reverted, T-3756) combined coverage+test run; the job
+        # timeout stays at its existing value, well within this 180m guard.
         assert 0 < build_job["timeout-minutes"] <= 180
 
 

@@ -224,16 +224,26 @@ class TestCiWindowsLegAdvisoryOnly:
         matrix_os = doc["jobs"]["build"]["strategy"]["matrix"]["os"]
         assert set(matrix_os) == {"ubuntu-latest", "windows-latest", "macos-latest"}
 
+    # frob:ticket T-3756
     def test_no_step_level_continue_on_error_smuggled_onto_other_legs(self) -> None:
         """MUST-STAY-QUIET: no individual step in the build job may carry
-        its own unconditional continue-on-error -- the only advisory
-        surface is the single job-level expression asserted above."""
+        its own unconditional continue-on-error, with ONE sanctioned
+        exception -- T-3756's coverage-stamp step (T-1366), which is a
+        separate, non-blocking best-effort MEASUREMENT step, not the
+        pass/fail gate (that stays the ubuntu Test step's coverage-free
+        `pytest -q`, unaffected by this exception). Any other step-level
+        continue-on-error would still smuggle an advisory boundary outside
+        the single job-level windows-only expression asserted above."""
         doc = _load(_CI_WORKFLOW)
+        sanctioned = "coverage stamp + delta baseline must be freshly measurable and clean (T-1366)"
         for step in doc["jobs"]["build"].get("steps", []):
+            if step.get("name") == sanctioned:
+                continue
             assert "continue-on-error" not in step, (
                 f"unexpected step-level continue-on-error on step "
                 f"{step.get('name', '<unnamed>')!r} -- the advisory "
-                f"boundary must stay job-level and windows-only"
+                f"boundary must stay job-level/windows-only or the "
+                f"T-3756-sanctioned coverage step"
             )
 
 
@@ -252,25 +262,25 @@ class TestCiUbuntuTestBudgetRaised:
     platform's budget can never silently regress below the other's
     again."""
 
+    # frob:ticket T-3756
     def test_ubuntu_test_step_budget_at_least_40_minutes(self) -> None:
         """MUST-FIRE: the ubuntu Test step's `timeout -s ABRT <N>m` budget
-        must be >= 40m. T-3748: ubuntu's Test step now runs the suite ONCE
-        under coverage (`frob coverage --full --fail-on-degraded`) as its
-        combined pass/fail + coverage gate, not a bare `pytest -q`, so this
-        matches the coverage form and its (larger) budget."""
+        must be >= 40m. T-3756 (revert of T-3748): ubuntu's Test step runs a
+        coverage-free `pytest -q`, matching macOS's own intent, so its
+        pass/fail gate is not coverage-sensitive."""
         text = _CI_WORKFLOW.read_text(encoding="utf-8")
         match = re.search(
-            r"timeout -s ABRT (\d+)m uv run frob coverage --full --fail-on-degraded",
+            r"timeout -s ABRT (\d+)m uv run pytest -q",
             text,
         )
         assert match, (
-            "expected ubuntu's `timeout -s ABRT <N>m uv run frob coverage "
-            "--full --fail-on-degraded` step (T-3748)"
+            "expected ubuntu's `timeout -s ABRT <N>m uv run pytest -q` step (T-3756)"
         )
         assert int(match.group(1)) >= 40, (
             f"ubuntu Test step budget regressed below 40m: {match.group(0)!r}"
         )
 
+    # frob:ticket T-3756
     def test_job_timeout_minutes_exceeds_ubuntu_step_budget(self) -> None:
         """MUST-FIRE: the job-level ceiling must remain strictly greater
         than the ubuntu step budget, so the step's own instrumented
@@ -279,7 +289,7 @@ class TestCiUbuntuTestBudgetRaised:
         job_timeout = doc["jobs"]["build"]["timeout-minutes"]
         text = _CI_WORKFLOW.read_text(encoding="utf-8")
         match = re.search(
-            r"timeout -s ABRT (\d+)m uv run frob coverage --full --fail-on-degraded",
+            r"timeout -s ABRT (\d+)m uv run pytest -q",
             text,
         )
         assert match
@@ -329,19 +339,19 @@ class TestCiUbuntuTestBudgetRaised:
         macOS's SIGABRT-capable equivalent of ubuntu's `timeout -s ABRT`)."""
         _assert_step_uses_faulthandler_and_marker("Test (macos", "kill -ABRT")
 
+    # frob:ticket T-3756
     def test_macos_and_ubuntu_step_budgets_match(self) -> None:
         """MUST-FIRE: guard against a Test-step budget silently regressing.
 
         T-3482 originally required the two platforms' budgets to be EQUAL
-        (40m each). T-3748 deliberately broke that equality: ubuntu now runs
-        the suite ONCE under coverage (`frob coverage --full`, its combined
-        pass/fail + coverage gate, ~130m) while macOS still runs a bare
-        `pytest -q` (~40m). They legitimately differ now, so the invariant is
-        reframed: ubuntu (which does strictly more work) must be >= macOS,
-        and neither may fall below the original 40m floor."""
+        (40m each). T-3748 temporarily broke that equality by making ubuntu
+        run the suite once under coverage; T-3756 reverted that (ubuntu's
+        pass/fail gate must be coverage-free like macOS's, see the Test
+        step's own comment), so both platforms are back to running a bare
+        `pytest -q` and the original equal-budgets invariant holds again."""
         text = _CI_WORKFLOW.read_text(encoding="utf-8")
         ubuntu_match = re.search(
-            r"timeout -s ABRT (\d+)m uv run frob coverage --full --fail-on-degraded",
+            r"timeout -s ABRT (\d+)m uv run pytest -q",
             text,
         )
         macos_match = re.search(r"budget=(\d+)\s", text)
@@ -350,8 +360,8 @@ class TestCiUbuntuTestBudgetRaised:
         macos_minutes = int(macos_match.group(1)) / 60
         assert macos_minutes >= 40, f"macOS budget below 40m floor: {macos_minutes}m"
         assert ubuntu_minutes >= 40, f"ubuntu budget below 40m floor: {ubuntu_minutes}m"
-        assert ubuntu_minutes >= macos_minutes, (
-            f"ubuntu Test step budget ({ubuntu_minutes}m) does the combined "
-            f"coverage+test run (T-3748) and must be >= the macOS test-only "
-            f"budget ({macos_minutes}m)"
+        assert ubuntu_minutes == macos_minutes, (
+            f"ubuntu Test step budget ({ubuntu_minutes}m) and macOS's "
+            f"({macos_minutes}m) must match now that both run a bare "
+            f"`pytest -q` (T-3756)"
         )

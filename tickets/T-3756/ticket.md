@@ -2,7 +2,7 @@
 id: T-3756
 title: 'revert T-3748 coverage-once: ubuntu pass/fail must run coverage-free like
   macOS (coverage-sensitive reds)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -30,6 +30,14 @@ body_changes:
   at: '2026-09-04'
   old_length: 332
   new_length: 592
+evidence:
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_ubuntu_test_step_budget_at_least_40_minutes
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_job_timeout_minutes_exceeds_ubuntu_step_budget
+- tests/unit/test_release_workflow_gate.py::TestCiUbuntuTestBudgetRaised::test_macos_and_ubuntu_step_budgets_match
+- tests/unit/test_release_workflow_gate.py::TestCiWindowsLegAdvisoryOnly::test_no_step_level_continue_on_error_smuggled_onto_other_legs
+- tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_coverage_step_calls_frob_coverage_full
+- tests/test_ci_workflow_matrix.py::TestCoverageStepUsesFrobNotMake::test_suite_runs_under_coverage_once_not_twice
+- tests/test_ci_workflow_timeout.py::TestBuildJobHasATimeoutBackstop::test_build_job_declares_timeout_minutes
 designated_repro_test: null
 threat: null
 component: null
