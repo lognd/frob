@@ -401,7 +401,7 @@ def _analyze_one_file(
     from frob.lang import LangError, raw_tree
 
     try:
-        rel = str(path.relative_to(root))
+        rel = path.relative_to(root).as_posix()
     except ValueError:
         return False
     try:

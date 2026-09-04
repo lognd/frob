@@ -1356,7 +1356,7 @@ def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
                 line=0,
                 message=(
                     f"TICK010: {ticket_id} lease {path} references worktree "
-                    f"{worktree!r}, which no longer exists -- remove the "
+                    f"{worktree}, which no longer exists -- remove the "
                     f"lease file (it will also be opportunistically "
                     f"pruned the next time `frob ticket doable`/`start` "
                     f"reads the leases directory)"

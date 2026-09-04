@@ -125,7 +125,7 @@ def _record_attachment(
     (`tickets/T-####/attachments/`) already nests under `tickets_dir`, so
     the stored value naturally comes out as `T-####/attachments/NN-x.ext`
     with no v2-specific branch needed here."""
-    rel_path = str(dest_path.relative_to(tickets_dir(root)))
+    rel_path = dest_path.relative_to(tickets_dir(root)).as_posix()
     attachment = Attachment(path=rel_path, caption=caption, sha256=sha256)
     updated = ticket.model_copy(
         update={"attachments": ticket.attachments + (attachment,)}

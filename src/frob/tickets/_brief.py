@@ -117,7 +117,7 @@ def _infer_verify_commands(root: Path, ticket: Ticket) -> tuple[str, ...]:
             # node_modules/build/dist/target to prune -- excludes.walk_pruned would \
             # add a filter that never fires here, not change behavior"
             for test_file in tests_dir.rglob(f"*{stem}*.py"):
-                candidates.add(str(test_file.relative_to(root)))
+                candidates.add(test_file.relative_to(root).as_posix())
     if candidates:
         joined = " ".join(sorted(candidates))
         commands.append(f'uv run pytest {joined} -q -o addopts=""')
