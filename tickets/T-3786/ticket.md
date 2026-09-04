@@ -1,7 +1,7 @@
 ---
 id: T-3786
 title: fix win32 path-separator bug in frob cycle graph node ids
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'

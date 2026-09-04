@@ -146,7 +146,13 @@ def _process_path(
             return None
         if exclude_globs and is_excluded(rel_path.as_posix(), exclude_globs):
             return None
-        rel = str(rel_path)
+        # T-3786: always POSIX-separated node ids (`.as_posix()`, never
+        # bare `str()`) -- a bare `str(rel_path)` on win32 returns
+        # `src\pkg\a.py`, so node ids built from different path shapes
+        # (e.g. `frob cycle src` vs `frob cycle src/pkg`) would silently
+        # stop agreeing with each other, and with every consumer (tests,
+        # DEPR005-style edges) that expects the POSIX form.
+        rel = rel_path.as_posix()
 
         graph.add_node(rel)
 
