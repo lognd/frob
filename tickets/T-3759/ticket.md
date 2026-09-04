@@ -2,7 +2,7 @@
 id: T-3759
 title: pin deprecated-baseline lock to clear DEPR006 abandonment (producer unwired,
   see T-3758)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-04'
