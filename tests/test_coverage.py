@@ -1167,6 +1167,11 @@ class TestSpawnWithWatchdog:
         assert result.danger_err == _refresh_mod._WatchdogAbortReason.NoProgress
         assert elapsed < 5.0
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="spawns a subprocess script that calls os.fork(), which "
+        "Windows lacks (T-3753)",
+    )
     def test_killed_process_group_leaves_no_surviving_children(
         self, tmp_path: Path
     ) -> None:
