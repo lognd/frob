@@ -1,7 +1,7 @@
 ---
 id: T-3782
 title: fix win32 failures in scaffold warm pool tests
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -38,6 +38,18 @@ scope_changes:
   reason: the actual warm-pool implementation the failing tests exercise
   actor: logan
   at: '2026-09-04'
+evidence:
+- tests/system/test_scaffold_pool.py::TestDefaultPoolDir::test_resolves_under_git_common_dir
+- tests/system/test_scaffold_pool.py::TestManifestRoundTrip::test_write_then_read_round_trips
+- tests/system/test_scaffold_pool.py::TestWarmWorktree::test_creates_worktree_and_marks_ready
+- tests/system/test_scaffold_pool.py::TestWarmWorktree::test_build_failure_marks_not_ready
+- tests/system/test_scaffold_pool.py::TestWarmPool::test_fills_pool_to_n_slots
+- tests/system/test_scaffold_pool.py::TestWarmPool::test_leaves_existing_ready_slots_alone
+- tests/system/test_scaffold_pool.py::TestLeaseWorktree::test_leases_ready_slot_and_removes_it
+- tests/system/test_scaffold_pool.py::TestLeaseWorktree::test_empty_pool_returns_err
+- tests/system/test_scaffold_pool.py::TestLeaseWorktree::test_lease_merges_base_ref_current
+- tests/system/test_scaffold_pool.py::TestRefillAsync::test_refill_thread_rewarms_slot
+- tests/system/test_scaffold_pool.py::TestPoolStatus::test_status_reflects_manifest
 designated_repro_test: null
 threat: null
 component: null

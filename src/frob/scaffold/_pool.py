@@ -37,6 +37,7 @@ report.
 from __future__ import annotations
 
 import json
+import os
 import threading
 from collections.abc import Callable
 from pathlib import Path
@@ -171,14 +172,20 @@ def read_manifest(pool_dir: Path) -> Result[tuple[PoolEntry, ...], PoolError]:
     return Ok(tuple(sorted(entries, key=lambda e: e.index)))
 
 
+# frob:ticket T-3782
 def _write_manifest(
     pool_dir: Path, entries: tuple[PoolEntry, ...]
 ) -> Result[None, PoolError]:
     """Overwrite `pool_dir`'s manifest with exactly `entries` (sorted by
     `index`), creating `pool_dir` first if needed. Writes to a `.tmp`
-    sibling and renames over the real path -- `Path.rename` is an atomic
-    replace on the same filesystem (POSIX and Windows both), so a reader
-    never observes a half-written manifest."""
+    sibling and replaces the real path with it -- `os.replace` is an
+    atomic replace on the same filesystem on POSIX AND Windows, so a
+    reader never observes a half-written manifest. T-3782: `Path.rename`
+    (`os.rename`) is NOT that on Windows -- it refuses with `WinError 183
+    Cannot create a file when that file already exists` the moment the
+    destination already exists (every re-warm of an already-initialized
+    pool), where POSIX `rename(2)` replaces silently; `os.replace` is the
+    one call with atomic-replace-on-both-platforms semantics."""
     try:
         pool_dir.mkdir(parents=True, exist_ok=True)
         tmp = _manifest_path(pool_dir).with_suffix(".tmp")
@@ -187,7 +194,7 @@ def _write_manifest(
             json.dumps([e.model_dump() for e in ordered], indent=2),
             encoding="utf-8",
         )
-        tmp.rename(_manifest_path(pool_dir))
+        os.replace(tmp, _manifest_path(pool_dir))
     except OSError as exc:
         _log.warning(
             "scaffold.pool: could not write manifest under %s: %s", pool_dir, exc
