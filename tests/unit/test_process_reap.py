@@ -2,6 +2,9 @@
 `multiprocessing` forkserver/worker processes.
 """
 
+# frob:waive BUG002 reason="win32-only skip; the POSIX-primitive dependency is not \
+# reproducible from a Linux parent-commit repro"
+
 from __future__ import annotations
 
 import multiprocessing
@@ -234,6 +237,11 @@ class TestReapOrphanedForkservers:
     signals a forkserver that is BOTH reparented to init AND older than the
     age floor -- never a young one, never a non-forkserver process."""
 
+    # frob:ticket T-3760
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="reads /proc/<pid>/stat for ppid+starttime; Linux-only primitive",
+    )
     def test_terminates_old_orphaned_forkservers(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -287,6 +295,11 @@ class TestReapOrphanedForkservers:
     def test_missing_proc_returns_empty(self, tmp_path: Path) -> None:
         assert reap_orphaned_forkservers(proc=tmp_path / "does-not-exist") == []
 
+    # frob:ticket T-3760
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="reads /proc/<pid>/stat for ppid+starttime; Linux-only primitive",
+    )
     def test_forkserver_of_orphaned_forkserver_is_reaped(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -533,6 +546,11 @@ class TestProcessStartAgeMatchesFleetStatus:
 
 
 # frob:ticket T-2473
+# frob:ticket T-3760
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="count_running_checks scans /proc/<pid>/cmdline directly; Linux-only primitive",
+)
 class TestCountRunningChecks:
     """`count_running_checks` -- T-2473's advisory concurrent-check
     counter: matches a live `frob check` process by its `frob`/`check`

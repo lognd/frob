@@ -1,7 +1,7 @@
 ---
 id: T-3760
 title: skip win32 POSIX-only /proc tests in test_process_reap.py
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'
