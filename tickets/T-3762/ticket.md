@@ -1,7 +1,7 @@
 ---
 id: T-3762
 title: did-you-mean suggestion missing on Python 3.12 (Windows)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-04'
