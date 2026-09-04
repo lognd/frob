@@ -1,7 +1,7 @@
 ---
 id: T-3791
 title: fix win32 test_cli_test frob-test-cli failures
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'

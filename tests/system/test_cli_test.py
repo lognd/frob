@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 from tests.system.conftest import run
@@ -26,11 +27,20 @@ def _init_repo_with_bound_test(tmp_path: Path) -> Path:
         "    # frob:tests pkg.py::add\n"
         "    assert add(1, 2) == 3\n"
     )
+    # T-3791: pin the runner to THIS interpreter (`sys.executable`,
+    # TOML-escaped for the literal backslashes a win32 path carries) --
+    # a bare `"python"` PATH lookup resolves to whatever `python` happens
+    # to be first on PATH, which on win32 CI is frequently a bare
+    # pyenv-style interpreter with no `pytest` installed, not the venv
+    # this test suite is actually running under (same class of failure
+    # `frob.process._pytest_spawn`'s own module docstring documents and
+    # exists to avoid in production code).
+    python = sys.executable.replace("\\", "\\\\")
     (tmp_path / "frob.toml").write_text(
         "[[test.runner]]\n"
         'language = "python"\n'
-        'command = ["python", "-m", "pytest", "-q", "{ids}"]\n'
-        'all_command = ["python", "-m", "pytest", "-q"]\n'
+        f'command = ["{python}", "-m", "pytest", "-q", "{{ids}}"]\n'
+        f'all_command = ["{python}", "-m", "pytest", "-q"]\n'
         'cwd = "."\n'
     )
     _git("add", "-A", cwd=tmp_path)
