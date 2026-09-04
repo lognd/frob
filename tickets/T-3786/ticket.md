@@ -1,7 +1,7 @@
 ---
 id: T-3786
 title: fix win32 path-separator bug in frob cycle graph node ids
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-04'
@@ -26,6 +26,19 @@ scope_changes:
   reason: add the test file this fix's evidence lives in
   actor: logan
   at: '2026-09-04'
+body_changes:
+- mode: append
+  reason: 'BUG002 waiver: win32-only defect, cannot repro on Linux CI'
+  actor: logan
+  at: '2026-09-04'
+  old_length: 332
+  new_length: 748
+evidence:
+- tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_all_path_shapes_agree_on_a_real_cycle[src/pkg]
+- tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_all_path_shapes_agree_on_a_real_cycle[src]
+- tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_all_path_shapes_agree_on_a_real_cycle[.]
+- tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_naive_relative_resolution_would_have_missed_this
+- tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_run_exits_nonzero_on_a_found_cycle
 designated_repro_test: null
 threat: null
 component: null
@@ -34,3 +47,5 @@ anchor_reason: null
 land_commit: null
 ---
 win32 CI: 5 tests in tests/unit/test_cycle_runner_root_resolution.py fail because _process_path builds graph node ids with bare str(rel_path) (backslash-separated on win32) while tests (and downstream consumers) expect POSIX-separated ids like 'src/pkg/a.py'. Same root-cause pattern as T-3784's DEPR005 fix. Part of win32 CI drain.
+
+frob:waive BUG002 reason="win32-only defect confirmed via winrun; on Linux the designated repro tests pass at both the parent commit and the fix commit because bare str(rel_path) already produces POSIX separators on Linux -- the node-id path-separator mismatch this ticket fixes only manifests when the process runs on win32, so no Linux-repro-at-parent-commit test can demonstrate the failure this fix addresses"
