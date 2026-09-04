@@ -2,7 +2,7 @@
 id: T-3756
 title: 'revert T-3748 coverage-once: ubuntu pass/fail must run coverage-free like
   macOS (coverage-sensitive reds)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-04'
