@@ -2,7 +2,7 @@
 id: T-3797
 title: guarded_subprocess_run must not raise on a missing/unlaunchable executable
   (win32 [WinError 2] crashed frob doctor)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
