@@ -18,13 +18,6 @@ scope:
 - src/frob/graph/dsl.py
 - tests/unit/graph/test_dsl.py
 - docs/guides/extending/comment-dsl-directives.md
-- docs/modules/gates.md
-- docs/modules/graph.md
-- tests/gates_suite/test_waive.py
-- tests/test_graph.py
-- tests/unit/gates/test_negexist.py
-- tests/unit/graph/test_dsl_markdown_waive.py
-- tests/unit/graph/test_dsl_mention_escape.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -236,6 +229,69 @@ scope_changes:
   reason: SCOPE002 closure for pre-existing dsl.py symbols (fold_comment_runs, markdown_anchors,
     mask_frob_mentions, dedupe_slug, _attrs_verb_error_waive) not touched by this
     diff but co-resident in the scoped file; no edits to these targets planned
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: 'revert: docs/modules/gates.md and graph.md each describe symbols across
+    nearly the whole codebase; scoping them in for SCOPE002 closure recurses into
+    hundreds of unrelated errors -- this file-level SCOPE002 gap on giant shared index
+    docs is a pre-existing structural limitation, not something T-3893 can or should
+    fix; filing a follow-up ticket instead'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: docs/modules/graph.md
+  reason: 'revert: docs/modules/gates.md and graph.md each describe symbols across
+    nearly the whole codebase; scoping them in for SCOPE002 closure recurses into
+    hundreds of unrelated errors -- this file-level SCOPE002 gap on giant shared index
+    docs is a pre-existing structural limitation, not something T-3893 can or should
+    fix; filing a follow-up ticket instead'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: tests/gates_suite/test_waive.py
+  reason: 'revert: docs/modules/gates.md and graph.md each describe symbols across
+    nearly the whole codebase; scoping them in for SCOPE002 closure recurses into
+    hundreds of unrelated errors -- this file-level SCOPE002 gap on giant shared index
+    docs is a pre-existing structural limitation, not something T-3893 can or should
+    fix; filing a follow-up ticket instead'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: tests/test_graph.py
+  reason: 'revert: docs/modules/gates.md and graph.md each describe symbols across
+    nearly the whole codebase; scoping them in for SCOPE002 closure recurses into
+    hundreds of unrelated errors -- this file-level SCOPE002 gap on giant shared index
+    docs is a pre-existing structural limitation, not something T-3893 can or should
+    fix; filing a follow-up ticket instead'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: tests/unit/gates/test_negexist.py
+  reason: 'revert: docs/modules/gates.md and graph.md each describe symbols across
+    nearly the whole codebase; scoping them in for SCOPE002 closure recurses into
+    hundreds of unrelated errors -- this file-level SCOPE002 gap on giant shared index
+    docs is a pre-existing structural limitation, not something T-3893 can or should
+    fix; filing a follow-up ticket instead'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: tests/unit/graph/test_dsl_markdown_waive.py
+  reason: 'revert: docs/modules/gates.md and graph.md each describe symbols across
+    nearly the whole codebase; scoping them in for SCOPE002 closure recurses into
+    hundreds of unrelated errors -- this file-level SCOPE002 gap on giant shared index
+    docs is a pre-existing structural limitation, not something T-3893 can or should
+    fix; filing a follow-up ticket instead'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: tests/unit/graph/test_dsl_mention_escape.py
+  reason: 'revert: docs/modules/gates.md and graph.md each describe symbols across
+    nearly the whole codebase; scoping them in for SCOPE002 closure recurses into
+    hundreds of unrelated errors -- this file-level SCOPE002 gap on giant shared index
+    docs is a pre-existing structural limitation, not something T-3893 can or should
+    fix; filing a follow-up ticket instead'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
