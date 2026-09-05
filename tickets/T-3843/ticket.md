@@ -14,10 +14,26 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_docptr.py
+- tests/test_docptr_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_docptr.py
+  reason: extend the T-3724 frontmatter-prose blanking helper to cover ticket titles,
+    and add must-fire/must-stay-quiet fixtures (T-3843)
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: extend the T-3724 frontmatter-prose blanking helper to cover ticket titles,
+    and add must-fire/must-stay-quiet fixtures (T-3843)
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
