@@ -19,6 +19,7 @@ scope:
 - tests/test_lang.py
 - tests/fixtures/lang/**
 - docs/modules/lang.md
+- docs/guides/install.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,11 @@ scope_changes:
   glob: docs/modules/lang.md
   reason: PARSE002 divergence lives in frob.lang's parse/PARSE002 path; differential
     test and fixtures land alongside it, T-0133 parity statement in docs/modules/lang.md
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/guides/install.md
+  reason: T-0133 honest-degrade parity statement lives here
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
