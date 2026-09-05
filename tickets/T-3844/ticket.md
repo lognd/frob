@@ -16,7 +16,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - frob.toml
-- tickets/**
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'ticket carries burn-down filing work: creates ~15 new burn-down
   tickets under tickets/, plus edits frob.toml severity zone'
@@ -33,6 +32,13 @@ scope_changes:
   glob: tickets/**
   reason: 'severity ratchet: promote zero-finding rules to error, carve out planning
     rules as repo-local warnings, file burn-down tickets'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: tickets/**
+  reason: blanket ledger glob took a write lease over every open ticket and deadlocked
+    T-3843, the CI blocker; this ticket edits frob.toml, and filing burn-down tickets
+    does not need tickets/** in scope
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
