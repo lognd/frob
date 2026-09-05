@@ -1,7 +1,7 @@
 ---
 id: T-3799
 title: resolve PATH executables via shutil.which in gitio.run_argv for win32 PATHEXT
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -15,10 +15,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gitio.py
+- docs/modules/testing.md
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/testing.md
+  reason: doc update for the win32 argv-resolution addition, plus the frob.lock digest
+    ack it required
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: frob.lock
+  reason: doc update for the win32 argv-resolution addition, plus the frob.lock digest
+    ack it required
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
