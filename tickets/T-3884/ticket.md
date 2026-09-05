@@ -21,6 +21,7 @@ scope:
 - tests/unit/test_release_workflow_gate.py
 - tests/system/test_artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -121,6 +122,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_artifact_smoke_script.py
   reason: mocked unit tests for check_* functions (COV001/TEST001/LANDPARITY001 evidence)
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: design/frob.strata
+  reason: adds this ticket own two test files to testsuite fs.read/fs.write/exec via-lists
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
