@@ -26,6 +26,13 @@ body_changes:
   at: '2026-09-05'
   old_length: 4592
   new_length: 7678
+- mode: append
+  reason: 'owner refinement: lexical results must be marked lexical in user-facing
+    text, and no state may imply frob checked something it did not'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 7678
+  new_length: 11043
 designated_repro_test: null
 threat: null
 component: null
@@ -169,3 +176,65 @@ case; `//`, `;`, `--` and `%` are all common in config and data files. Prefer
 recognising a known set and reporting an unhonourable directive (case 1's
 finding) over guessing broadly -- a wrong guess silently honours a directive
 that was never a directive, which is a worse failure than not honouring it.
+
+
+
+OWNER REFINEMENT 2026-09-05, on top of the decision above: "Anything lexical
+needs to be explicitly marked as lexical in the text; additionally, I think we
+already warn for an unknown grammar, but make sure there's no situation where
+someone thinks frob has capabilities that it doesn't have."
+
+TWO BINDING REQUIREMENTS.
+
+1. LEXICAL RESULTS MUST SAY THEY ARE LEXICAL, IN THE USER-FACING TEXT. Not in a
+   docstring, not in the ticket, not in a doc page -- in the message the
+   operator reads. A directive honoured by the no-grammar lexical scan, and any
+   finding derived from one, must carry a marker saying the file was not parsed
+   and the result came from a text scan. The reader must be able to tell a
+   parsed result from a scanned one WITHOUT knowing which extensions have
+   grammars.
+
+   Word it as a capability statement, not an apology. Something with the shape
+   of: "matched lexically (no grammar for .caddy; text scan, not parsed)". The
+   test is whether someone who has never read this ticket can tell, from the
+   output alone, that the guarantee here is weaker than a parsed result's.
+
+2. NO FALSE IMPRESSION OF CAPABILITY, ANYWHERE. The owner is right that an
+   unknown-grammar warning already exists. The requirement is stronger than
+   "warn once": there must be NO state in which a user reasonably concludes
+   frob checked something it did not.
+
+   Apply that to this ticket concretely -- a file scanned lexically is NOT
+   covered by the gates that need a parse. Its symbols are not in the graph, so
+   COV/DEAD/WIRE/ARCH and everything else structural simply do not see it. If
+   the lexical scan makes `frob:waive` work in a .caddy file, a user may
+   reasonably infer that frob now "handles" .caddy files. It does not -- it
+   handles their directives. Say so where it will be read.
+
+   THE FAILURE MODE TO AVOID IS SPECIFIC: making the directive work is exactly
+   what creates the false impression, because a working waiver is evidence to
+   the user that the file is understood. This fix therefore INCREASES the need
+   for the capability statement rather than reducing it.
+
+CHECK FOR THE SAME SHAPE ELSEWHERE while implementing, and report what you find
+rather than fixing it here. Candidate places where frob may imply more coverage
+than it has:
+  - a language with a grammar but no test collector (evidence for it is never
+    verified -- see T-3847)
+  - `--only <stage>` runs (there IS already a scope-note naming the gates that
+    did NOT run -- that note is the good precedent to copy)
+  - `gate:FMT`, which only examines directive lines in the CURRENT DIFF and
+    already says so in its own scope-note; another good precedent
+  - any stage skipped because a tool was missing rather than because it passed
+Report the list. If one of them is genuinely misleading today, file it; do not
+widen this ticket.
+
+ACCEPTANCE ADDITIONS
+- Every lexically-derived finding and honoured directive carries an explicit
+  in-text lexical marker.
+- A statement, in output a user actually sees, that a no-grammar file's
+  directives are honoured while the file itself remains unparsed and invisible
+  to structural gates.
+- The candidate-list of other over-implied capabilities reported, not fixed.
+- A fixture asserting the marker text is present on a lexical result -- the
+  marker is a requirement, so it needs a test like any other.
