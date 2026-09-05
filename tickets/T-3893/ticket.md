@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/dsl.py
 - tests/unit/graph/test_dsl.py
-- docs/modules/graph.md
 - docs/guides/extending/comment-dsl-directives.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -70,6 +69,12 @@ scope_changes:
   reason: unused in the final implementation -- quoted target parsing lives entirely
     in dsl.py; keeping these two files in scope pulled in unrelated pre-existing doc/test
     closures via SCOPE002
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: docs/modules/graph.md
+  reason: no edit made to this doc; comment-dsl-directives.md is the doc actually
+    updated for this ticket
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
