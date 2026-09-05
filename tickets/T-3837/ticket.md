@@ -25,6 +25,7 @@ scope:
 - src/frob/app/config.py
 - src/frob/tickets/_land_merge.py
 - tests/test_tickets_acceptance.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -81,6 +82,12 @@ scope_changes:
   glob: tests/test_tickets_acceptance.py
   reason: existing --accepts test suite hardcodes 0-based indices; must update alongside
     the 1-based fix or it false-fails
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'AFFECT001/DRIFT001: add_evidence/add_cmd_evidence docstring changed (0-based
+    -> 1-based), doc mirrors the old text'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
