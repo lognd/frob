@@ -24,6 +24,7 @@ scope:
 - docs/modules/tickets-landing.md
 - tests/ticket_land_suite/test_verify_intent.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -82,6 +83,12 @@ scope_changes:
   glob: design/frob.strata
   reason: 'T-3787: new land-suite test file exercises fs.write + exec (subprocess)
     capabilities; declare it in the testsuite node''s capability via-lists (SELFAUDIT001)'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'T-3787: exec+fs.write via-list ratchet ceilings bumped +1 for the new land-suite
+    test file (SYS111)'
   actor: logan
   at: '2026-09-05'
 body_changes:
