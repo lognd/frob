@@ -469,6 +469,89 @@ continuous stream of notifies that never lets the debounce window go
 quiet still forces a run once the floor elapses, so a busy repo cannot
 starve verification indefinitely.
 
+### Unmeasurable-cause separation (T-3886)
+
+<a id="unmeasurable-cause-separation-t-3886"></a>
+
+<!-- frob:describes src/frob/verify/_worker.py::_capture_unmeasurable_reason -->
+
+MEASURED 2026-09-05 (logand.app-v2 FROBLEMS F-043): `run_coalesced_
+verification` used to report `WorkerError.Unmeasurable` for FOUR
+different facts collapsed into one -- our own child timed out, our own
+spawn was refused, the child's output was unparsable, or the check
+itself genuinely could not measure anything. Only the last is a
+statement about the REPOSITORY; the first three are statements about OUR
+OWN subprocess management. A reporter hit a real incident (`frob ticket
+land` blocked 45 minutes on "unmeasurable verification", while the
+identical check run by hand succeeded in 560s) and had to infer, entirely
+by hand, that the worker's own timeout -- not the repository -- was the
+cause.
+
+**The fix: log-signal capture, not a return-type change.**
+`_land_cmd.unscoped_error_findings` (T-2450's public seam) already
+distinguishes these causes internally and logs them distinctly (a
+`TimeoutExpired` warning names "timed out after Ns"; a spawn refusal
+names "spawn refused"). `_default_verify_fn` wraps that call inside
+`_capture_unmeasurable_reason`, a context manager that attaches a
+temporary `logging.Handler` to `_land_cmd`'s own logger for the duration
+of the call and classifies whichever of those two log lines fired (or
+neither, for a genuinely-unmeasurable or unparsable result) into a
+`WorkerError` member. This was a real design compromise, not a rewrite:
+`src/frob/app/ticket_runner/_land_cmd.py` was held under another
+in-progress ticket's own scope lease when T-3886 was worked, and
+duplicating that function's ~100 lines of subprocess/parse logic here
+would have violated this repo's own no-duplication standard.
+`unscoped_error_findings` returning a proper `Result[frozenset | None,
+UnmeasurableReason]` is the more robust long-term shape and is filed as
+a follow-up (T-3886's own Done report).
+
+The classified reason is stored in `_LAST_UNMEASURABLE_REASON` (keyed by
+commit sha, popped -- never leaked -- the moment `run_coalesced_
+verification` reads it) and reported as `WorkerError.ChildTimedOut` /
+`WorkerError.ChildSpawnRefused` / plain `WorkerError.Unmeasurable`
+(genuine, or an injected test double with no logging -- the pre-T-3886
+contract, unchanged) instead of one undifferentiated verdict.
+
+**"Never spin" was already true, verified rather than assumed.**
+`frob.verify._backpressure.block_until_watermark_advances` (the land-path
+entrypoint that blocks at the verify ceiling) already has a bounded
+`timeout_s` (1800s default) and returns `Err(BackpressureError.
+BlockTimedOut)` rather than looping forever; its only caller
+(`_land_cmd.py`'s backpressure step) logs the timeout and PROCEEDS with
+the land rather than retrying, raising a synthetic quarantine finding
+instead. A single `frob ticket land` invocation therefore cannot spin
+past 1800s on an unmeasurable verify -- the reporter's 45-minute stall is
+consistent with a human or script re-invoking `land` repeatedly across
+multiple bounded waits, not one call looping without end. No code change
+was needed for this half of the acceptance criterion; it is disclosed
+here as a verified fact, not asserted from the ticket body alone.
+
+**Worker child budget.** `_default_verify_fn` runs `unscoped_error_
+findings(..., full=True)`, which is deliberately UNBUDGETED (no
+`--budget` ceiling) and bounded only by `_land_cmd._FULL_CHECK_TIMEOUT_S`
+(1800s). The reporter's hand-run measured 560s under load ~60 -- well
+inside that 1800s ceiling, so the worker's child budget was never the
+proximate cause of F-043's incident; the conflation (fact 1 above) was.
+
+**Historical count of false-unmeasurable verdicts: not directly
+measurable from this repo's persisted state, and the two candidate
+signals this repo already emits are NOT the same mechanism.** This
+repo's own `.frob/verify-watermark.json` holds only the CURRENT
+watermark, not a history of past `run_coalesced_verification` outcomes,
+so there is no durable log to count past `WorkerError.Unmeasurable`
+verdicts against. The `verified=SKIPPED-UNMEASURED` lines this ticket's
+own body cites from T-3820's land (and this series' own T-3857/T-3884
+lands, both under the `rapid` profile) are a DIFFERENT mechanism:
+`frob.tickets._land_verify._skipped_unmeasured_top_level`'s
+`claims_reverify=` outcome, which fires whenever `collected`/`passed`
+callables are `None` -- the DESIGN-INTENDED shape for a rapid-profile
+land, not a worker-child-death symptom. Conflating the two would have
+been the wrong measurement; the honest answer is that this ticket's own
+logging fix (above) is what makes the count trackable going forward, and
+the count itself is zero confirmable, one indeterminate (F-043's own
+incident, plausible but not logged distinctly at the time), pending
+enough post-fix history to accumulate.
+
 ### Resource budget: never starve foreground agents (T-1695)
 
 <!-- frob:describes src/frob/verify/_worker.py::DEFAULT_LEASE_CEILING -->

@@ -452,9 +452,36 @@ def _lower_io_priority() -> None:
 
 # frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 class WorkerError(ErrorSet):
-    """Fallible outcomes of `run_coalesced_verification`."""
+    """Fallible outcomes of `run_coalesced_verification`.
+
+    T-3886 (FROBLEMS F-043): `Unmeasurable` used to be the ONLY value a
+    `None` `verify_fn` result could produce, collapsing four different
+    facts -- our own child timed out, our own spawn was refused, the
+    child's output was unparsable, or the check genuinely could not
+    measure anything -- into one undifferentiated verdict. Only the
+    FIRST three are statements about OUR subprocess management; only the
+    fourth is a statement about the repository. `ChildTimedOut`/
+    `ChildSpawnRefused`/`ChildOutputUnparsable` name the first three
+    explicitly (`_classify_unmeasurable_reason`'s own docstring has the
+    detection mechanism); `Unmeasurable` is now reserved for the fourth
+    case AND for any injected test double that returns bare `None` with
+    no recorded reason (the pre-T-3886 test contract, unchanged)."""
 
     QueueUnreadable = "the verify queue could not be read"
+    ChildTimedOut = (
+        "our own child process exceeded its budget and was killed -- "
+        "this is a statement about OUR subprocess management, not the repository"
+    )
+    ChildSpawnRefused = (
+        "our own attempt to spawn the verification child was refused "
+        "(process-guard exec-disabled) -- our own subprocess "
+        "management, not the repository"
+    )
+    ChildOutputUnparsable = (
+        "the child ran to completion but its output could not be parsed into a "
+        "gate-summary line -- likely a truncated or malformed stream, our own "
+        "subprocess management, not necessarily the repository"
+    )
     Unmeasurable = (
         "the verification pass produced no parsable result -- watermark left untouched"
     )
@@ -505,6 +532,113 @@ class WorkerOutcome(BaseModel):
 #: without spawning a real `frob check` subprocess.
 VerifyFn = Callable[[Path, str], "frozenset[tuple[str, str]] | None"]
 
+#: T-3886: `commit_sha -> WorkerError` for the LAST `_default_verify_fn`
+#: call that returned `None` -- `run_coalesced_verification` pops this to
+#: report the SPECIFIC cause (child timeout / spawn refused / unparsable
+#: output / genuinely unmeasurable) instead of one undifferentiated
+#: `Unmeasurable`. Process-local, same shape as `_land_cmd._LAST_BUDGET_
+#: DEFERRALS` (T-2456) -- a transient signal for the very next read, not
+#: a durable record.
+_LAST_UNMEASURABLE_REASON: dict[str, "WorkerError"] = {}
+
+#: `_land_cmd._unscoped_error_findings`'s own log lines, by cause -- these
+#: exact substrings are this module's ONLY coupling to that function
+#: (T-3886: reading emitted log text rather than editing that file, which
+#: was under another ticket's scope lease). If that function's wording
+#: ever changes, `_classify_unmeasurable_reason` degrades to
+#: `WorkerError.Unmeasurable` (never a wrong specific classification --
+#: see its own docstring), not a crash.
+_TIMEOUT_LOG_SUBSTRING = "sweep timed out after"
+_SPAWN_REFUSED_LOG_SUBSTRING = "sweep spawn refused"
+
+
+def _make_unmeasurable_reason_handler():  # noqa: ANN201
+    """T-3886: a real `logging.Handler` subclass (built at call time, not
+    module scope, so importing this module never touches `logging`'s own
+    handler-class machinery unnecessarily) whose `.matched` attribute
+    records whether any handled record's formatted message matched a
+    known child-timeout or spawn-refused shape -- see
+    `_capture_unmeasurable_reason`'s own docstring for why this is a
+    context manager wrapping a handler rather than a return-value change
+    to `unscoped_error_findings` itself (that function's file was under
+    another ticket's scope lease when this was written)."""
+    import logging
+
+    class _Handler(logging.Handler):
+        def __init__(self) -> None:
+            super().__init__()
+            self.matched: WorkerError | None = None
+
+        def emit(self, record: logging.LogRecord) -> None:
+            """Classify `record`'s formatted message the first time a
+            known shape is seen; a later record never overwrites an
+            earlier match."""
+            if self.matched is not None:
+                return
+            message = record.getMessage()
+            if _TIMEOUT_LOG_SUBSTRING in message:
+                self.matched = WorkerError.ChildTimedOut
+            elif _SPAWN_REFUSED_LOG_SUBSTRING in message:
+                self.matched = WorkerError.ChildSpawnRefused
+
+    return _Handler()
+
+
+# frob:doc docs/modules/tickets-verify-sweep.md#unmeasurable-cause-separation-t-3886
+# frob:tests \
+# tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason.test_child_timeout_l\
+# og_line_classified
+# frob:tests \
+# tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason.test_spawn_refused_l\
+# og_line_classified
+# frob:tests \
+# tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason.test_no_matching_log\
+# _line_is_unmeasurable
+def _capture_unmeasurable_reason():  # noqa: ANN201
+    """T-3886: a context manager yielding a one-element list (`[reason]`)
+    -- attaches a temporary handler to `frob.app.ticket_runner._land_cmd`'s
+    OWN logger for the duration of the `with` block, classifying whichever
+    of `_unscoped_error_findings`'s own existing, ALREADY-DISTINCT log
+    lines fired (T-1463's `TimeoutExpired` warning names "timed out after
+    %ds"; a `ProcessGuardError.ExecDisabled` refusal names "spawn
+    refused") into a `WorkerError` member, defaulting to `Unmeasurable`
+    if neither fired (a plain unparsable-output or genuinely-unmeasurable
+    result, or an injected test double with no logging at all -- the
+    pre-T-3886 contract for those, unchanged).
+
+    WHY LOG-SIGNAL CAPTURE, NOT A RETURN-VALUE CHANGE: T-2450's public
+    seam `unscoped_error_findings` (and the private function it wraps)
+    already distinguishes these causes INTERNALLY and logs them
+    distinctly -- the gap this closes is only that the distinction never
+    reached this module's caller. Changing that function's return type
+    would be the more direct fix, but `src/frob/app/ticket_runner/
+    _land_cmd.py` was held under another in-progress ticket's scope lease
+    when T-3886 was worked, and duplicating its ~100 lines of subprocess/
+    parse logic here would violate this repo's own no-duplication
+    standard. This is disclosed as a real design compromise, not a
+    permanent architecture: `unscoped_error_findings` returning a proper
+    `Result[frozenset|None, UnmeasurableReason]` is the more robust long-
+    term shape and is filed as a follow-up (see this ticket's Done
+    report)."""
+    import contextlib
+    import logging
+
+    handler = _make_unmeasurable_reason_handler()
+    target_logger = logging.getLogger("frob.app.ticket_runner._land_cmd")
+    box: list[WorkerError] = [WorkerError.Unmeasurable]
+
+    @contextlib.contextmanager
+    def _cm():
+        target_logger.addHandler(handler)
+        try:
+            yield box
+        finally:
+            target_logger.removeHandler(handler)
+            if handler.matched is not None:
+                box[0] = handler.matched
+
+    return _cm()
+
 
 def _default_verify_fn(
     root: Path, commit_sha: str
@@ -536,11 +670,23 @@ def _default_verify_fn(
     file docstring and `docs/modules/tickets-verify-sweep.md`'s "Resource
     budget" section for the vicious cycle this closes. Measured
     uncontended full-check cost on this repo (2026-08-26): ~333s, well
-    inside `_land_cmd._FULL_CHECK_TIMEOUT_S`'s 1800s hard ceiling."""
+    inside `_land_cmd._FULL_CHECK_TIMEOUT_S`'s 1800s hard ceiling.
+
+    T-3886: on a `None` result, classifies WHY via `_capture_unmeasurable_
+    reason` (log-signal capture, not a code change to `_land_cmd` --
+    `src/frob/app/ticket_runner/_land_cmd.py` was under another ticket's
+    scope lease at the time this was written) and records it in
+    `_LAST_UNMEASURABLE_REASON` keyed by `commit_sha`, for
+    `run_coalesced_verification` to read and report distinctly instead
+    of a single undifferentiated `Unmeasurable`."""
     # frob:ticket T-2450
     from frob.app.ticket_runner._land_cmd import unscoped_error_findings
 
-    return unscoped_error_findings(root, commit_sha, full=True)
+    with _capture_unmeasurable_reason() as reason_box:
+        result = unscoped_error_findings(root, commit_sha, full=True)
+    if result is None:
+        _LAST_UNMEASURABLE_REASON[commit_sha] = reason_box[0]
+    return result
 
 
 def _findings_digest(findings: frozenset[tuple[str, str]]) -> str:
@@ -623,13 +769,26 @@ def run_coalesced_verification(
             # this early return is the ONLY thing standing between this
             # branch and the rest of the function -- advance_watermark is
             # not even reachable from here.
+            #
+            # T-3886: the SPECIFIC reason -- our own child timed out, our
+            # own spawn was refused, or the check genuinely could not
+            # measure -- is looked up here rather than collapsed into one
+            # undifferentiated "unmeasurable" (F-043's own incident: a
+            # reporter having to infer, by hand, that a 45-minute land
+            # stall was OUR child dying, not the repository being
+            # unmeasurable). `pop` (not a bare read) so a later, unrelated
+            # `None` for a DIFFERENT commit can never accidentally reuse
+            # this commit's stale classification.
+            worker_error = _LAST_UNMEASURABLE_REASON.pop(
+                tip.commit_sha, WorkerError.Unmeasurable
+            )
             _log.error(
-                "verify worker: unmeasurable verification at %s -- "
-                "watermark and queue left untouched, will retry on the "
-                "next wake",
+                "verify worker: %s at %s -- watermark and queue left "
+                "untouched, will retry on the next wake",
+                worker_error.value,
                 tip.commit_sha[:12],
             )
-            return Err(WorkerError.Unmeasurable)
+            return Err(worker_error)
 
         return _resolve_verification_outcome(root, tip, fresh)
     finally:

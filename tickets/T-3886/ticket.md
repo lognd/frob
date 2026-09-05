@@ -2,7 +2,7 @@
 id: T-3886
 title: verify worker reports unmeasurable when its own child was killed, and the land
   then spins forever on a queue that cannot drain
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -44,6 +44,16 @@ scope_changes:
     document/verify
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason::test_child_timeout_log_line_classified
+- tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason::test_spawn_refused_log_line_classified
+- tests/unit/verify/test_worker.py::TestClassifyUnmeasurableReason::test_no_matching_log_line_is_unmeasurable
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerificationDistinguishesUnmeasurableCauses::test_recorded_child_timeout_reason_is_reported
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerificationDistinguishesUnmeasurableCauses::test_recorded_spawn_refused_reason_is_reported
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerificationDistinguishesUnmeasurableCauses::test_no_recorded_reason_stays_plain_unmeasurable
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_unmeasurable_never_advances_watermark
+- tests/unit/verify/test_worker.py::TestDefaultVerifyFnRecordsUnmeasurableReason::test_unmeasurable_result_records_a_reason
+- tests/unit/verify/test_worker.py::TestDefaultVerifyFnRecordsUnmeasurableReason::test_measured_result_never_records_a_reason
 designated_repro_test: null
 threat: null
 component: null

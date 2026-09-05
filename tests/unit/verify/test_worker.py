@@ -935,3 +935,126 @@ class TestInFlightMarkerCrashSafety:
         # `_reconcile_stale_in_flight_marker` actually reads.
         assert not marker.exists()
         _worker_mod._reconcile_stale_in_flight_marker(tmp_path)  # never raises
+
+
+class TestClassifyUnmeasurableReason:
+    """T-3886 (FROBLEMS F-043): a worker child killed by its own timeout
+    is reported as a child timeout, naming the fact that it was OUR
+    subprocess management -- not as an undifferentiated "unmeasurable"
+    (the exact conflation the reporter had to infer by hand)."""
+
+    def test_child_timeout_log_line_classified(self) -> None:
+        # frob:tests src/frob/verify/_worker.py::_capture_unmeasurable_reason \
+        # kind="unit"
+        land_cmd_log = logging.getLogger("frob.app.ticket_runner._land_cmd")
+        with _worker_mod._capture_unmeasurable_reason() as box:
+            land_cmd_log.warning(
+                "ticket land: %s unscoped %s sweep timed out after %ds -- skipping",
+                "T-1",
+                "full",
+                900,
+            )
+        assert box[0] is WorkerError.ChildTimedOut
+
+    def test_spawn_refused_log_line_classified(self) -> None:
+        # frob:tests src/frob/verify/_worker.py::_capture_unmeasurable_reason \
+        # kind="unit"
+        land_cmd_log = logging.getLogger("frob.app.ticket_runner._land_cmd")
+        with _worker_mod._capture_unmeasurable_reason() as box:
+            land_cmd_log.warning(
+                "ticket land: %s unscoped post-land sweep spawn refused (%s)",
+                "T-1",
+                "ExecDisabled",
+            )
+        assert box[0] is WorkerError.ChildSpawnRefused
+
+    def test_no_matching_log_line_is_unmeasurable(self) -> None:
+        # frob:tests src/frob/verify/_worker.py::_capture_unmeasurable_reason \
+        # kind="unit"
+        land_cmd_log = logging.getLogger("frob.app.ticket_runner._land_cmd")
+        with _worker_mod._capture_unmeasurable_reason() as box:
+            land_cmd_log.warning("ticket land: %s something unrelated", "T-1")
+        assert box[0] is WorkerError.Unmeasurable
+
+    def test_handler_is_removed_after_the_with_block(self) -> None:
+        # frob:tests src/frob/verify/_worker.py::_capture_unmeasurable_reason \
+        # kind="unit"
+        land_cmd_log = logging.getLogger("frob.app.ticket_runner._land_cmd")
+        before = list(land_cmd_log.handlers)
+        with _worker_mod._capture_unmeasurable_reason():
+            assert len(land_cmd_log.handlers) == len(before) + 1
+        assert land_cmd_log.handlers == before
+
+
+class TestRunCoalescedVerificationDistinguishesUnmeasurableCauses:
+    """T-3886: `run_coalesced_verification` reports the SPECIFIC
+    unmeasurable cause when `_default_verify_fn`'s own log-signal capture
+    recorded one, never a bare `Unmeasurable` when a real reason is
+    known."""
+
+    def test_recorded_child_timeout_reason_is_reported(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
+        _enqueue_n(tmp_path, 1)
+        entries = queue_status(tmp_path).danger_ok
+        tip_sha = entries[-1].commit_sha
+        _worker_mod._LAST_UNMEASURABLE_REASON[tip_sha] = WorkerError.ChildTimedOut
+        result = run_coalesced_verification(tmp_path, verify_fn=lambda root, sha: None)
+        assert result.is_err
+        assert result.danger_err is WorkerError.ChildTimedOut
+        # popped, not leaked, so a later unrelated commit never reuses it
+        assert tip_sha not in _worker_mod._LAST_UNMEASURABLE_REASON
+
+    def test_recorded_spawn_refused_reason_is_reported(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
+        _enqueue_n(tmp_path, 1)
+        entries = queue_status(tmp_path).danger_ok
+        tip_sha = entries[-1].commit_sha
+        _worker_mod._LAST_UNMEASURABLE_REASON[tip_sha] = WorkerError.ChildSpawnRefused
+        result = run_coalesced_verification(tmp_path, verify_fn=lambda root, sha: None)
+        assert result.is_err
+        assert result.danger_err is WorkerError.ChildSpawnRefused
+
+    def test_no_recorded_reason_stays_plain_unmeasurable(self, tmp_path: Path) -> None:
+        """MUST-STAY-QUIET: a genuinely unmeasurable check (or an
+        injected test double with no logging at all) is still reported
+        as plain `Unmeasurable` -- the pre-T-3886 contract, unchanged."""
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
+        _enqueue_n(tmp_path, 1)
+        result = run_coalesced_verification(tmp_path, verify_fn=lambda root, sha: None)
+        assert result.is_err
+        assert result.danger_err is WorkerError.Unmeasurable
+
+
+class TestDefaultVerifyFnRecordsUnmeasurableReason:
+    """T-3886: `_default_verify_fn` itself (not just its caller) must
+    record a reason ONLY when the underlying check was actually
+    unmeasurable -- kills the mutant that flips its `result is None`
+    check (a real green/red result must never populate
+    `_LAST_UNMEASURABLE_REASON`, which would then poison a LATER,
+    unrelated commit's lookup)."""
+
+    def test_unmeasurable_result_records_a_reason(self, monkeypatch) -> None:  # noqa: ANN001
+        # frob:tests src/frob/verify/_worker.py::_default_verify_fn kind="unit"
+        import frob.app.ticket_runner._land_cmd as _land_cmd_mod
+
+        monkeypatch.setattr(
+            _land_cmd_mod, "unscoped_error_findings", lambda root, sha, full=False: None
+        )
+        _worker_mod._LAST_UNMEASURABLE_REASON.pop("sha-unmeasurable", None)
+        result = _worker_mod._default_verify_fn(Path("/nonexistent"), "sha-unmeasurable")
+        assert result is None
+        assert "sha-unmeasurable" in _worker_mod._LAST_UNMEASURABLE_REASON
+        del _worker_mod._LAST_UNMEASURABLE_REASON["sha-unmeasurable"]
+
+    def test_measured_result_never_records_a_reason(self, monkeypatch) -> None:  # noqa: ANN001
+        # frob:tests src/frob/verify/_worker.py::_default_verify_fn kind="unit"
+        import frob.app.ticket_runner._land_cmd as _land_cmd_mod
+
+        findings = frozenset({("RULE1", "a.py")})
+        monkeypatch.setattr(
+            _land_cmd_mod, "unscoped_error_findings", lambda root, sha, full=False: findings
+        )
+        _worker_mod._LAST_UNMEASURABLE_REASON.pop("sha-measured", None)
+        result = _worker_mod._default_verify_fn(Path("/nonexistent"), "sha-measured")
+        assert result == findings
+        assert "sha-measured" not in _worker_mod._LAST_UNMEASURABLE_REASON
