@@ -1255,6 +1255,131 @@ class TestDoc006ReasonFieldExclusion:
         assert _by_rule(violations, "tickets/T-9011/ticket.md")
 
 
+# frob:ticket T-3843
+class TestDoc006TitleFieldExclusion:
+    """T-3843: a ticket's `title:` frontmatter value is free-text prose
+    composed at filing time, in exactly the same sense a `reason:` value
+    is (T-3724) -- a feature ticket's title routinely names a config
+    section/symbol/path the ticket itself is PROPOSING, which cannot
+    resolve without implementing the feature it requests, and which has
+    no working waive form at all (DOC006's inline-HTML-comment waive
+    cannot be placed inside a YAML scalar). Positive control both
+    directions, matching `TestDoc006ReasonFieldExclusion`'s shape: the
+    frontmatter title is exempt (must-stay-quiet), the ticket BODY (real
+    prose) still fires (must-fire), and plain docs/ prose still fires."""
+
+    def test_single_line_title_not_flagged(self, tmp_path: Path) -> None:
+        """A bogus config-section citation sitting entirely on the
+        `title:` line itself (no wrap) must not fire."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        frontmatter = (
+            "---\n"
+            "id: T-9012\n"
+            "title: 'proposes a new [check.stack] config section'\n"
+            "state: queued\n"
+            "kind: feature\n"
+            "origin: human\n"
+            "created: '2026-09-03'\n"
+            "---\n"
+        )
+        _write(tmp_path, "tickets/T-9012/ticket.md", frontmatter + "placeholder\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets/T-9012/ticket.md")
+
+    def test_wrapped_title_not_flagged(self, tmp_path: Path) -> None:
+        """MEASURED CASE (T-3843): the title is long enough that the YAML
+        dumper wraps it across a continuation line, and the citation sits
+        on that continuation line, not the `title:` line itself -- must
+        still not fire."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        frontmatter = (
+            "---\n"
+            "id: T-9013\n"
+            "title: 'F-099: let frob.toml declare a new [check.stack] section for\n"
+            "  polyglot monorepos, mirroring [[test.runner]]'\n"
+            "state: queued\n"
+            "kind: feature\n"
+            "origin: human\n"
+            "created: '2026-09-03'\n"
+            "---\n"
+        )
+        _write(tmp_path, "tickets/T-9013/ticket.md", frontmatter + "placeholder\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets/T-9013/ticket.md")
+
+    def test_open_ticket_body_still_flagged_alongside_title(
+        self, tmp_path: Path
+    ) -> None:
+        """The title exemption is scoped to the frontmatter block only --
+        a dangling pointer in the ticket BODY of the same open ticket must
+        still fire (must-FIRE half of the positive control)."""
+        _init_repo(tmp_path)
+        frontmatter = (
+            "---\n"
+            "id: T-9014\n"
+            "title: 'F-099: proposes a new [check.stack] section, wrapped across\n"
+            "  two lines for good measure'\n"
+            "state: queued\n"
+            "kind: feature\n"
+            "origin: human\n"
+            "created: '2026-09-03'\n"
+            "---\n"
+        )
+        body = "Plan: touch `src/pkg/mod.py::long_gone_symbol`.\n"
+        _write(tmp_path, "tickets/T-9014/ticket.md", frontmatter + body)
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert _by_rule(violations, "tickets/T-9014/ticket.md")
+
+    def test_body_violation_below_blanked_title_reports_original_line(
+        self, tmp_path: Path
+    ) -> None:
+        """LINE-NUMBER FIXTURE (T-3843): blanking a wrapped title must not
+        shift the line number DOC006 reports for a real violation further
+        down in the BODY -- line count/indentation are preserved exactly,
+        so the body offender's line number is unaffected by how many
+        frontmatter lines were blanked above it."""
+        _init_repo(tmp_path)
+        frontmatter = (
+            "---\n"  # line 1
+            "id: T-9015\n"  # line 2
+            "title: 'F-099: proposes a new [check.stack] section, wrapped across\n"  # line 3
+            "  two lines for good measure'\n"  # line 4
+            "state: queued\n"  # line 5
+            "kind: feature\n"  # line 6
+            "origin: human\n"  # line 7
+            "created: '2026-09-03'\n"  # line 8
+            "---\n"  # line 9
+        )
+        body = "See `src/pkg/mod.py::long_gone_symbol` for the plan.\n"  # line 10
+        _write(tmp_path, "tickets/T-9015/ticket.md", frontmatter + body)
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        offenders = _by_rule(violations, "tickets/T-9015/ticket.md")
+        assert offenders
+        assert all(v.line == 10 for v in offenders)
+
+    def test_docs_prose_pointer_still_flagged(self, tmp_path: Path) -> None:
+        """Sanity control outside the ticket ledger entirely: a
+        non-resolving config-section pointer in ordinary `docs/` prose is
+        unaffected by this exemption (it never touches non-ticket files)
+        and must still fire."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "# Guide\n\nSee the [check.stack] config section.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert _by_rule(violations, "docs/guide.md")
+
+
 # frob:ticket T-3724
 class TestBlankTicketReasonFields:
     """Direct unit coverage of `_blank_ticket_reason_fields`'s exact line-
@@ -1340,6 +1465,49 @@ class TestBlankTicketReasonFields:
         lines = out.splitlines()
         assert lines[2] == "reason:"
         assert lines[3] == "---"
+        assert len(lines) == len(text.splitlines())
+
+    def test_title_value_blanked_key_kept(self) -> None:
+        """T-3843: `title:` is blanked exactly like a `reason:` key --
+        same slice arithmetic, same key-kept/value-removed shape."""
+        text = "---\ntitle: mentions `pkg.mod::gone` here\n---\nbody\n"
+        out = _blank_ticket_reason_fields(text)
+        lines = out.splitlines()
+        assert lines[1] == "title:"
+        assert len(lines) == len(text.splitlines())
+
+    def test_wrapped_title_continuation_blanked_line_count_preserved(
+        self,
+    ) -> None:
+        """T-3843's MEASURED case at the unit level: a `title:` value that
+        wraps onto an indented continuation line (the YAML dumper's
+        long-scalar wrap) is blanked across both lines, a sibling key
+        right after it is left untouched, and total line count is
+        unchanged."""
+        text = (
+            "---\n"
+            "id: T-1\n"
+            "title: 'F-099: proposes a new [check.stack] section for\n"
+            "  polyglot monorepos'\n"
+            "state: queued\n"
+            "---\n"
+        )
+        out = _blank_ticket_reason_fields(text)
+        lines = out.splitlines()
+        assert lines[2] == "title:"
+        assert lines[3] == ""
+        assert lines[4] == "state: queued"
+        assert len(lines) == len(text.splitlines())
+
+    def test_reason_key_blanking_not_regressed_by_title_addition(
+        self,
+    ) -> None:
+        """No-regression fixture: adding `title` to the shared prose-key
+        regex must not change `reason:`'s own blanking behavior."""
+        text = "---\nreason: mentions `pkg.mod::gone` here\n---\nbody\n"
+        out = _blank_ticket_reason_fields(text)
+        lines = out.splitlines()
+        assert lines[1] == "reason:"
         assert len(lines) == len(text.splitlines())
 
 

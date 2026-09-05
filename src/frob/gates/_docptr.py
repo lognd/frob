@@ -127,8 +127,20 @@ def _blank_fenced_blocks(text: str) -> str:
 
 
 # frob:ticket T-3724
+# frob:ticket T-3843
 _FRONTMATTER_DELIM_RE = re.compile(r"^---\s*$")
-_REASON_KEY_RE = re.compile(r"^(\s*)(\w*reason):\s?(.*)$")
+# T-3843: generalized from "any *reason key" (T-3724) to "any known PROSE
+# key" -- see `_blank_ticket_reason_fields`'s docstring for the full
+# enumeration (and T-3843's own ticket body for the durable published
+# version) of which `Ticket` frontmatter fields are free-text prose
+# (written by a human/agent at mutation time, never a doc pointer) versus
+# structured data (ids, enums, dates, bools, nested audit-trail lists) a
+# real DOC006 pointer could legitimately live in. `title` is the T-3843
+# addition: a feature ticket's title is prose in exactly the same sense a
+# `reason` field is, and DOC006's only waive mechanism (an inline HTML
+# comment adjacent to the citation) cannot be placed inside a YAML scalar,
+# making a frontmatter-title finding unwaivable by construction.
+_PROSE_KEY_RE = re.compile(r"^(\s*)(\w*reason|title):\s?(.*)$")
 
 
 # frob:tests \
@@ -157,20 +169,57 @@ _REASON_KEY_RE = re.compile(r"^(\s*)(\w*reason):\s?(.*)$")
 # frob:tests \
 # tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_reason_key_on_last_frontm\
 # atter_line_no_overrun
+# frob:tests \
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_title_value_blanked_key_k\
+# ept
+# frob:tests \
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_wrapped_title_continuatio\
+# n_blanked_line_count_preserved
+# frob:tests \
+# tests/test_docptr_gate.py::TestBlankTicketReasonFields.test_reason_key_blanking_not_r\
+# egressed_by_title_addition
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_single_line_title_not_f\
+# lagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_wrapped_title_not_flagg\
+# ed
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_open_ticket_body_still_\
+# flagged_alongside_title
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_body_violation_below_bl\
+# anked_title_reports_original_line
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion.test_docs_prose_pointer_stil\
+# l_flagged
 def _blank_ticket_reason_fields(text: str) -> str:
     """Blank the VALUE of every YAML frontmatter key ending in `reason`
-    (`reason`, `scope_breadth_ack_reason`, `staleness_reason`, ...),
-    preserving line count and indentation so other violations' line
-    numbers stay correct (T-3724).
+    (`reason`, `scope_breadth_ack_reason`, `staleness_reason`, ...) OR
+    named `title`, preserving line count and indentation so other
+    violations' line numbers stay correct (T-3724, extended by T-3843).
 
-    `frob ticket scope`/`fail`/`ack` write these as free-text
+    `frob ticket scope`/`fail`/`ack` write `*reason` keys as free-text
     accountability prose at mutation time -- why a glob moved, why a
     ticket is stale, why a check was waived -- never doc-pointer prose. A
     reason mentioning a future config key or a file path that does not
-    exist YET must not be resolved as a DOC006 pointer. Only the
-    frontmatter block is touched, so a legitimate pointer written in the
-    ticket BODY (prose a human reads and is expected to keep correct)
-    still gets checked."""
+    exist YET must not be resolved as a DOC006 pointer. `frob ticket new`
+    writes `title` the same way: free-text prose composed at filing time,
+    routinely naming a not-yet-implemented config key or symbol a FEATURE
+    ticket is proposing (T-3843's own measured case). Unlike a `reason`
+    field, a `title` finding has no working waive form at all -- DOC006's
+    waive mechanism is an inline HTML comment immediately preceding the
+    citation, which cannot be placed inside a YAML scalar -- so leaving
+    `title` unblanked makes such a finding unwaivable by construction, not
+    merely inconvenient.
+
+    Every OTHER `Ticket` frontmatter field (src/frob/tickets/_models.py)
+    is structured data (ids, enums, dates, bools, commit shas, nested
+    audit-trail entries) rather than narrative prose, and is deliberately
+    left untouched -- see T-3843's ticket body for the full field-by-field
+    enumeration. Only the frontmatter block is touched here, so a
+    legitimate pointer written in the ticket BODY (prose a human reads and
+    is expected to keep correct) still gets checked."""
     lines = text.splitlines()
     if not lines or not _FRONTMATTER_DELIM_RE.match(lines[0]):
         return text
@@ -183,7 +232,7 @@ def _blank_ticket_reason_fields(text: str) -> str:
         return text
     i = 1
     while i < end:
-        match = _REASON_KEY_RE.match(lines[i])
+        match = _PROSE_KEY_RE.match(lines[i])
         if match is None:
             i += 1
             continue
