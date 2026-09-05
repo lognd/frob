@@ -18,6 +18,25 @@ scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/app/ticket_runner/_lifecycle.py
 - tests/unit/test_ticket_sweep_terminal_state.py
+- docs/modules/gates.md
+- docs/modules/tickets-data-storage.md
+- docs/modules/tickets-landing.md
+- docs/modules/tickets-lifecycle.md
+- tests/test_ticket_lifecycle.py
+- tests/test_ticket_runner_pytest_env.py
+- tests/test_ticket_work_and_land_finish.py
+- tests/test_tickets.py
+- tests/test_tickets_evidence_cli.py
+- tests/test_tickets_no_scope.py
+- tests/ticket_land_suite/test_claim_close.py
+- tests/unit/test_app_runners_batch7.py
+- tests/unit/test_pytest_spawn_env_wiring.py
+- tests/unit/test_ticket_runner_designate_repro.py
+- tests/unit/test_ticket_runner_gate_findings.py
+- tests/unit/test_ticket_runner_land_release.py
+- tests/unit/test_ticket_runner_ledger_mirror.py
+- tests/unit/test_ticket_runner_repro_merge_base.py
+- tests/unit/test_ticket_runner_venv_sync_t3320.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +51,139 @@ scope_changes:
 - op: add
   glob: tests/unit/test_ticket_sweep_terminal_state.py
   reason: MUST-FIRE/MUST-STAY-QUIET regression tests for sweep on terminal states
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_ticket_lifecycle.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_ticket_runner_pytest_env.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_tickets.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_tickets_evidence_cli.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_tickets_no_scope.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/ticket_land_suite/test_claim_close.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_pytest_spawn_env_wiring.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_ticket_runner_designate_repro.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_ticket_runner_gate_findings.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_ticket_runner_ledger_mirror.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_ticket_runner_repro_merge_base.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_ticket_runner_venv_sync_t3320.py
+  reason: 'SCOPE002 closure: _lifecycle.py''s existing frob:doc/frob:tests edges (pre-existing,
+    unrelated to the sweep fix itself) require these in scope to close the declaration-time
+    triple'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
