@@ -12,7 +12,7 @@ TESTS     := tests
 # frob.toml) and frob IS the interface for those workflows, not a make
 # wrapper around it -- use the commands below directly:
 #
-#   frob format     ruff check --fix + ruff format
+#   frob format     ruff check --fix + ruff format + frob: directive canon
 #   frob check      the aggregate gate (ruff, ty, frob cycle/dup/arch/...)
 #   frob test       select and run tests for the touched set (or --all)
 #   frob coverage   refresh coverage.xml / the coverage stamp

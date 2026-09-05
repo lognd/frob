@@ -143,12 +143,17 @@ class Subcommand(str, enum.Enum):
     # T-0573: cross-repo status/gate rollup and ticket routing.
     fleet = "fleet"
     # T-0441: `frob:` directive comment canonical-form wrap/unwrap.
+    # T-3906: DEPRECATED alias (sunset 2026-12-01, ticket T-3911) for
+    # `frob format --directives` -- kept working through the sunset window,
+    # see fmt_runner.py's `frob:deprecated` directive.
     fmt = "fmt"
     # frob:ticket T-2251
+    # frob:ticket T-3906
     # T-2251: `ruff check --fix` + `ruff format` write pass -- the frob-
     # native replacement for the Makefile's format/lint-fix/all targets.
-    # Distinct from `fmt` above (frob: directive comments, not Python
-    # source formatting).
+    # T-3906: consolidated with `fmt` above under `--code`/`--directives`
+    # scoping flags (default: both) -- same verb name problem T-1238/
+    # T-1567/T-1568/T-1569 already solved for other scattered verb groups.
     format = "format"
     # frob:ticket T-1808
     # T-1808: materialize this repo's git-tracked Claude config out to
@@ -205,6 +210,7 @@ class Subcommand(str, enum.Enum):
 # frob:ticket T-1808
 # frob:ticket T-1925
 # frob:ticket T-1927
+# frob:ticket T-3906
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -1100,8 +1106,13 @@ class AppConfig(BaseModel):
     clean_yes: bool = False
     clean_json: bool = False
 
-    # fmt (T-0441: frob: directive canonical-form wrap/unwrap)
-    fmt_path: Path | None = None
+    # fmt (T-0441: frob: directive canonical-form wrap/unwrap).
+    # T-3906: `frob fmt` is now a DEPRECATED alias (sunset 2026-12-01,
+    # ticket T-3911) for `frob format --directives`; fields kept so the
+    # alias's own CLI surface (`--check`/`--json`/`--include-test-corpora`,
+    # T-3312's list-of-paths) keeps working unchanged through the sunset
+    # window.
+    fmt_paths: list[Path] = []
     fmt_check: bool = False
     fmt_json: bool = False
     #: T-2298: opt-in to also rewriting test-input corpus files
@@ -1109,13 +1120,33 @@ class AppConfig(BaseModel):
     fmt_include_test_corpora: bool = False
 
     # format (T-2251: `ruff check --fix` + `ruff format` write pass --
-    # replaces the Makefile's format/lint-fix/all targets)
-    format_path: Path | None = None
+    # replaces the Makefile's format/lint-fix/all targets).
+    # T-3906: consolidated with `frob fmt` under one verb -- `--code`/
+    # `--directives` scope which half runs (default: both), `--check`/
+    # `--json` now apply uniformly to both halves (closing the gap where
+    # only the directive half could preview without writing), and the path
+    # argument takes a list (T-3312) instead of one path.
+    format_paths: list[Path] = []
+    #: T-3906: run the ruff (code) half. Unset alongside `format_directives`
+    #: means "run both" -- the pre-consolidation default.
+    format_code: bool = False
+    #: T-3906: run the `frob:` directive half.
+    format_directives: bool = False
+    #: T-3906: preview without writing; exit nonzero if anything would
+    #: change, in EITHER half that ran. Previously code-formatting-only had
+    #: no such flag.
+    format_check: bool = False
+    #: T-3906: emit a JSON report instead of the human-readable one.
+    format_json: bool = False
     #: T-2251: `--select-imports-only` restricts the `ruff check --fix`
     #: stage to `--select I` (import sorting only), the `format:` Makefile
     #: target's narrower fix scope; the default (unset) is `lint-fix:`'s
-    #: full-rule-set autofix.
+    #: full-rule-set autofix. Applies only to the code half.
     format_select_imports_only: bool = False
+    #: T-2298/T-3906: opt-in to also rewriting test-input corpus files
+    #: (tests/**/*.strata) under the directive half -- excluded by default,
+    #: same reasoning as `fmt_include_test_corpora` above.
+    format_include_test_corpora: bool = False
 
     # claude (T-1808: fold .claude/hooks/sync-claude-config.py into a verb)
     claude_command: str | None = None  # sync

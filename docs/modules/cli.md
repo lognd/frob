@@ -565,8 +565,8 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob explore` | navigation: map/outline/xref/docs-search grouped under one verb (T-1238) |
 | `frob exports` | generate __init__.py from public symbols in a package directory |
 | `frob fleet` | cross-repo status, gate rollup, and ticket routing over a fleet.toml manifest of sibling repos (T-0573) |
-| `frob fmt` | canonicalize frob: directive comment line-wrapping (T-0441) |
-| `frob format` | ruff check --fix + ruff format, write mode (T-2251) |
+| `frob fmt` | DEPRECATED alias for frob format --directives (T-3906, sunset 2026-12-01) |
+| `frob format` | ruff (code) + frob: directive formatting, write mode by default (T-2251/T-0441/T-3906) |
 | `frob gitlog` | summarize git history by type/granularity (conventional commits) |
 | `frob graph` | obligation graph: build cache, query symbols, explain drift |
 | `frob map` | show whole-project structural map (symbols + line counts) -- also available as `frob explore map` (T-1238) |

@@ -466,19 +466,28 @@ def _populate_clean_args(clean_p) -> None:
 
 
 # frob:ticket T-0441
+# frob:ticket T-3906
 # frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
 # argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
 # does not trace this cross-package private import -- same class of gap as this repo's \
 # other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_fmt_parser(sub) -> None:
-    """Register the `frob fmt` subcommand: canonical-form wrap/unwrap of
-    `frob:` directive comment lines (`--check` previews without writing)."""
-    # -- fmt ---------------------------------------------------------------
+    """Register the `frob fmt` subcommand: a DEPRECATED alias (T-3906,
+    sunset 2026-12-01, ticket T-3911) for `frob format --directives` --
+    canonical-form wrap/unwrap of `frob:` directive comment lines
+    (`--check` previews without writing). Kept as a real, fully-working
+    subcommand through the sunset window so every existing invocation
+    (CI, scripts, remedy strings naming `frob fmt <path>`) keeps working
+    unchanged; `frob.app.fmt_runner.run` prints the deprecation notice."""
+    # -- fmt (deprecated alias, T-3906) -------------------------------------
     fmt_p = sub.add_parser(
         "fmt",
-        help="canonicalize frob: directive comment line-wrapping (T-0441)",
+        help="DEPRECATED alias for frob format --directives (T-3906, "
+        "sunset 2026-12-01)",
     )
-    fmt_p.add_argument("fmt_path", metavar="path", nargs="?", default=".")
+    fmt_p.add_argument(
+        "fmt_paths", metavar="path", nargs="*", default=["."]
+    )  # T-3312: list, not one path
     fmt_p.add_argument(
         "--check",
         dest="fmt_check",
@@ -500,28 +509,69 @@ def _add_fmt_parser(sub) -> None:
 
 
 # frob:ticket T-2251
+# frob:ticket T-3906
 # frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
 # argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
 # does not trace this cross-package private import -- same class of gap as \
 # _add_fmt_parser's own DEAD001 waiver just above (T-1024 precedent)"
 def _add_format_parser(sub) -> None:
-    """Register the `frob format` subcommand: `ruff check --fix` + `ruff
-    format`, the write-mode replacement for the Makefile's `format`/
-    `lint-fix`/`all` targets (T-2251)."""
+    """Register the `frob format` subcommand (T-3906 consolidation of the
+    former `frob fmt`/`frob format` split): `--code` runs `ruff check
+    --fix` + `ruff format` (T-2251), `--directives` runs the `frob:`
+    directive canonical-form pass (T-0441), and the default (neither flag
+    given) runs both -- mirroring the `explore`/`quality`/`design`/`ops`
+    consolidation precedent (T-1238/T-1567/T-1568/T-1569) of keeping every
+    member usable standalone while the group name stops being ambiguous.
+    `--check`/`--json` now apply uniformly to whichever half(ves) ran,
+    closing the T-3906 gap where only the directive half could preview
+    without writing."""
     # -- format --------------------------------------------------------
     format_p = sub.add_parser(
         "format",
-        help="ruff check --fix + ruff format, write mode (T-2251)",
+        help="ruff (code) + frob: directive formatting, write mode "
+        "by default (T-2251/T-0441/T-3906)",
     )
-    format_p.add_argument("format_path", metavar="path", nargs="?", default=".")
+    format_p.add_argument(
+        "format_paths", metavar="path", nargs="*", default=["."]
+    )  # T-3312: list, not one path
+    format_p.add_argument(
+        "--code",
+        dest="format_code",
+        action="store_true",
+        help="format Python source only (ruff); omit --directives too to run both",
+    )
+    format_p.add_argument(
+        "--directives",
+        dest="format_directives",
+        action="store_true",
+        help="canonicalize frob: directive comment line-wrapping only; "
+        "omit --code too to run both",
+    )
+    format_p.add_argument(
+        "--check",
+        dest="format_check",
+        action="store_true",
+        help="report what would change without writing, for whichever "
+        "half(ves) ran; exits nonzero if anything is not already formatted",
+    )
+    format_p.add_argument("--json", dest="format_json", action="store_true")
     format_p.add_argument(
         "--select-imports-only",
         dest="format_select_imports_only",
         action="store_true",
         help=(
-            "restrict ruff check --fix to --select I (import sorting only) "
-            "-- the Makefile format: target's narrower fix scope; omit for "
-            "lint-fix:'s full-rule-set autofix"
+            "code half only: restrict ruff check --fix to --select I "
+            "(import sorting only) -- the Makefile format: target's "
+            "narrower fix scope; omit for lint-fix:'s full-rule-set autofix"
+        ),
+    )
+    format_p.add_argument(
+        "--include-test-corpora",
+        dest="format_include_test_corpora",
+        action="store_true",
+        help=(
+            "directives half only: also rewrite test-input corpus files "
+            "(tests/**/*.strata) -- excluded by default (T-2298)"
         ),
     )
 

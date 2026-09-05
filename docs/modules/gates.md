@@ -6971,9 +6971,16 @@ class CoverageError(ErrorSet):
 
 ## frob fmt: directive canonicalization (T-0441)
 
+T-3906: exposed today as `frob format --directives [path ...] [--check]
+[--json]` -- `frob fmt` is a DEPRECATED alias (sunset 2026-12-01, ticket
+T-3908) that still works, unchanged, through the sunset window. The
+underlying `frob.gates._fmt_directives` module and everything below this
+heading is unaffected by the CLI-surface rename.
+
 `frob.gates._fmt_directives` is a canonical-form line-wrap/UN-wrap
-normalizer for `frob:` directive comment lines, exposed as `frob fmt
-[path] [--check] [--json]`. It exists so a long `frob:waive`/`frob:debt`/
+normalizer for `frob:` directive comment lines, exposed as `frob format
+--directives [path ...] [--check] [--json]` (formerly `frob fmt`). It
+exists so a long `frob:waive`/`frob:debt`/
 etc. reason never has to fight ruff E501 by hand: canonical form is the
 FEWEST physical lines that keep every line within the project's line
 length, using T-0286's own trailing-backslash continuation syntax. The

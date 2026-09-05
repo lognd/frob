@@ -437,14 +437,23 @@ lines. `FROB_VERBOSE=1` restores the full diagnostic stream.
   self-healing" section).
 - `fleet_runner.run` -- `frob fleet status`/`frob fleet route` (T-0573):
   cross-repo status/gate rollup and ticket routing (docs/modules/fleet.md).
-- `fmt_runner.run` -- `frob fmt [path] [--check] [--json]` (T-0441):
-  directive canonicalization.
-- `pyfmt_runner.run` -- `frob format [path] [--select-imports-only]`
-  (T-2251): write-mode `ruff check --fix` + `ruff format`, the frob-native
-  replacement for the Makefile's `format`/`lint-fix`/`all` targets. Default
-  (no flag) delegates to `frob.check._python._run_ruff_autofix` (T-2320/
-  T-2252, also `frob check --fix-ruff`'s own entry point); `--select-
-  imports-only` narrows the `ruff check --fix` stage to `--select I`.
+- `fmt_runner.run` -- `frob fmt [path ...] [--check] [--json]` (T-0441):
+  DEPRECATED alias (T-3906, sunset 2026-12-01, ticket T-3911) for
+  frob format --directives; unchanged behavior, kept working through the
+  sunset window.
+- `pyfmt_runner.run` -- `frob format [path ...] [--code] [--directives]
+  [--check] [--json] [--select-imports-only] [--include-test-corpora]`
+  (T-2251/T-0441/T-3906): the consolidated formatting verb. `--code` runs
+  write-mode `ruff check --fix` + `ruff format` (the frob-native
+  replacement for the Makefile's `format`/`lint-fix`/`all` targets);
+  `--directives` runs the `frob:` directive canonicalization pass (T-0441,
+  formerly the standalone `frob fmt` subcommand); neither flag runs both.
+  `--check` (new in T-3906 -- previously only the directive half had this)
+  previews without writing for whichever half(ves) ran. Code-half default
+  (no `--select-imports-only`) delegates to
+  `frob.check._python._run_ruff_autofix`/`_run_ruff` (T-2320/T-2252, also
+  `frob check --fix-ruff`'s own entry point); `--select-imports-only`
+  narrows the `ruff check --fix`/`ruff check` stage to `--select I`.
 - `natives_runner.run` -- `frob natives build`: frob-owned native crate
   builds (T-0864/T-0735).
 - `pool_runner.run` -- `frob pool snapshot|clear` (T-0569): ratchet-pool

@@ -176,14 +176,19 @@ class TestFormatLintTypecheckRecipesDelegateToFrob:
 
     # frob:tests tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob.test_format_calls_frob_format_select_imports_only  # noqa: E501
     def test_format_calls_frob_format_select_imports_only(self) -> None:
+        """T-3906: `--code` is required here so this target keeps its
+        pre-consolidation ruff-only scope -- `frob format` alone now also
+        canonicalizes `frob:` directive comments by default."""
         recipe = _recipe_body("format")
-        assert "uv run frob format --select-imports-only" in recipe, recipe
+        assert "uv run frob format --code --select-imports-only" in recipe, recipe
         assert "ruff" not in recipe
 
     # frob:tests tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob.test_lint_fix_calls_frob_format_full_rule_set  # noqa: E501
     def test_lint_fix_calls_frob_format_full_rule_set(self) -> None:
+        """T-3906: `--code` keeps this target's pre-consolidation ruff-only
+        scope, same reasoning as `format:` above."""
         recipe = _recipe_body("lint-fix")
-        assert "uv run frob format" in recipe, recipe
+        assert "uv run frob format --code" in recipe, recipe
         assert "--select-imports-only" not in recipe, recipe
         assert "ruff" not in recipe
 
@@ -273,7 +278,7 @@ class TestRepointedTargetsStillFailNonzeroOnRealViolations:
         from frob.app.pyfmt_runner import run
 
         (tmp_path / "broken.py").write_text("def f(:\n    pass\n", encoding="utf-8")
-        cfg = AppConfig(format_path=tmp_path, format_select_imports_only=False)
+        cfg = AppConfig(format_paths=[tmp_path], format_select_imports_only=False)
         with pytest.raises(SystemExit) as exc_info:
             run(cfg)
         assert exc_info.value.code == 1

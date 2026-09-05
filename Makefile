@@ -486,9 +486,14 @@ install-tool:
 # `[tool.pytest.ini_options] addopts`, so every pytest invocation (raw or
 # via `frob test`) gets it automatically; the old recipes' explicit `-n
 # auto` was already redundant with that.
+#
+# T-3906: `frob format` was consolidated with the former `frob fmt` and now
+# formats BOTH Python source and `frob:` directive comments by default --
+# these two targets pass `--code` explicitly to keep their pre-consolidation
+# scope (ruff only), unchanged.
 
 format: $(STAMP)
-	uv run frob format --select-imports-only
+	uv run frob format --code --select-imports-only
 
 # T-2244: `--skip-ruff-format` (T-2320) keeps this the same lint-only check
 # `lint:` always was -- `frob check --only ruff` alone would ALSO run
@@ -499,7 +504,7 @@ lint: $(STAMP)
 	uv run frob check --only ruff --skip-ruff-format --only ty
 
 lint-fix: $(STAMP)
-	uv run frob format
+	uv run frob format --code
 
 typecheck: $(STAMP)
 	uv run frob check --only ty

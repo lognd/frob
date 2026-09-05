@@ -300,9 +300,6 @@ _PATH_FIELDS = (
     "deploy_audit_output",
     "clean_path",
     "fleet_manifest",
-    "fmt_path",
-    # frob:ticket T-2251
-    "format_path",
     # frob:ticket T-0864
     "natives_path",
     # frob:ticket T-1525
@@ -387,6 +384,10 @@ _LIST_FIELDS = (
     "verify_dispose_dismissed",
     # frob:ticket T-2911
     "status_only",
+    # frob:ticket T-3906
+    # T-3312: a list, not one path.
+    "fmt_paths",
+    "format_paths",
 )
 
 # frob:ticket T-2387
@@ -556,6 +557,12 @@ _BOOL_FLAGS = (
     "fmt_include_test_corpora",
     # frob:ticket T-2251
     "format_select_imports_only",
+    # frob:ticket T-3906
+    "format_code",
+    "format_directives",
+    "format_check",
+    "format_json",
+    "format_include_test_corpora",
     # frob:ticket T-1808
     "claude_check",
     # frob:ticket T-1525

@@ -97,7 +97,7 @@ class TestFmtRunnerJsonGuard:
         monkeypatch.setattr(
             "frob.gates._fmt_directives.format_paths", fake_format_paths
         )
-        cfg = AppConfig(fmt_path=tmp_path, fmt_json=True, fmt_check=True)
+        cfg = AppConfig(fmt_paths=[tmp_path], fmt_json=True, fmt_check=True)
         mod.run(cfg)
 
         captured = capsys.readouterr()

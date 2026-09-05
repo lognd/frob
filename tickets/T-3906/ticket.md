@@ -2,7 +2,7 @@
 id: T-3906
 title: 'consolidate the format/fmt split: same word, two operations, and only one
   of them has --check'
-state: in-progress
+state: done
 kind: ux
 origin: human
 created: '2026-09-05'
@@ -48,7 +48,7 @@ scope:
 - src/frob/scaffold/data/shared/python/Makefile.j2
 - src/frob/scaffold/data/shared/python/README.md.j2
 - src/frob/scaffold/data/shared/python/docs/index.md.j2
-- tickets/T-3908/ticket.md
+- tickets/T-3911/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -210,31 +210,31 @@ scope_changes:
   at: '2026-09-05'
 - op: add
   glob: docs/modules/gates.md
-  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3908 sunset-followup
+  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3911 sunset-followup
     ticket this consolidation files'
   actor: logan
   at: '2026-09-05'
 - op: add
   glob: src/frob/scaffold/data/shared/python/Makefile.j2
-  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3908 sunset-followup
+  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3911 sunset-followup
     ticket this consolidation files'
   actor: logan
   at: '2026-09-05'
 - op: add
   glob: src/frob/scaffold/data/shared/python/README.md.j2
-  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3908 sunset-followup
+  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3911 sunset-followup
     ticket this consolidation files'
   actor: logan
   at: '2026-09-05'
 - op: add
   glob: src/frob/scaffold/data/shared/python/docs/index.md.j2
-  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3908 sunset-followup
+  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3911 sunset-followup
     ticket this consolidation files'
   actor: logan
   at: '2026-09-05'
 - op: add
-  glob: tickets/T-3908/ticket.md
-  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3908 sunset-followup
+  glob: tickets/T-3911/ticket.md
+  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3911 sunset-followup
     ticket this consolidation files'
   actor: logan
   at: '2026-09-05'

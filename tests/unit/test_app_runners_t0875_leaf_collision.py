@@ -117,7 +117,7 @@ class TestFmtRunnerRun:
 
     def test_check_mode_reports_all_canonical_on_empty_tree(self, tmp_path, capsys):
         """`--check` over an empty tree finds nothing to rewrite and exits cleanly."""
-        cfg = AppConfig(fmt_path=tmp_path, fmt_check=True, fmt_json=False)
+        cfg = AppConfig(fmt_paths=[tmp_path], fmt_check=True, fmt_json=False)
         fmt_run(cfg)
         out = capsys.readouterr().out
         assert "already canonical" in out

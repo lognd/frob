@@ -75,7 +75,7 @@ class TestFmtRunnerReachability:
 
         root, rel = _make_fixture(tmp_path)
         before = (root / rel).read_text()
-        cfg = AppConfig(fmt_path=root, fmt_check=True, fmt_json=True)
+        cfg = AppConfig(fmt_paths=[root], fmt_check=True, fmt_json=True)
         fmt_runner.run(cfg)
         after = (root / rel).read_text()
         assert after == before, "check mode must never write"
@@ -89,7 +89,7 @@ class TestFmtRunnerReachability:
 
         root, rel = _make_fixture(tmp_path)
         before = (root / rel).read_text()
-        cfg = AppConfig(fmt_path=root, fmt_check=False, fmt_json=True)
+        cfg = AppConfig(fmt_paths=[root], fmt_check=False, fmt_json=True)
         fmt_runner.run(cfg)
         after = (root / rel).read_text()
         assert after == before
