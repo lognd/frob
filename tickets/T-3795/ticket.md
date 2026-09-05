@@ -1,7 +1,7 @@
 ---
 id: T-3795
 title: skip sigkill worker crash repro test on win32 (no SIGKILL)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'

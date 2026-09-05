@@ -1419,6 +1419,10 @@ class TestWorkerCrashSignatureRealSubprocess:
         )
         assert _refresh_mod._WORKER_CRASH_SIGNATURE_RE.search(output), output
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="signal.SIGKILL does not exist on win32 (T-3795)",
+    )
     def test_sigkill_worker_crash_is_a_real_repro(self, tmp_path: Path) -> None:
         # frob:tests tests/test_coverage.py::TestWorkerCrashSignatureRealSubprocess.test_sigkill_worker_crash_is_a_real_repro  # noqa: E501
         output = self._run_real_crash(
