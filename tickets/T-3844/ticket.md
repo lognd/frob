@@ -16,6 +16,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - frob.toml
+- tickets/T-3860/ticket.md
+- tickets/T-3861/ticket.md
+- tickets/T-3863/ticket.md
+- tickets/T-3864/ticket.md
+- tickets/T-3865/ticket.md
+- tickets/T-3866/ticket.md
+- tickets/T-3867/ticket.md
+- tickets/T-3868/ticket.md
+- tickets/T-3869/ticket.md
+- tickets/T-3870/ticket.md
+- tickets/T-3871/ticket.md
+- tickets/T-3872/ticket.md
+- tickets/T-3874/ticket.md
+- tickets/T-3875/ticket.md
+- tickets/T-3876/ticket.md
+- tickets/T-3877/ticket.md
+- tickets/T-3878/ticket.md
+- tickets/T-3880/ticket.md
+- tickets/T-3881/ticket.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'ticket carries burn-down filing work: creates ~15 new burn-down
   tickets under tickets/, plus edits frob.toml severity zone'
@@ -39,6 +58,158 @@ scope_changes:
   reason: blanket ledger glob took a write lease over every open ticket and deadlocked
     T-3843, the CI blocker; this ticket edits frob.toml, and filing burn-down tickets
     does not need tickets/** in scope
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3860/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3861/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3863/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3864/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3865/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3866/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3867/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3868/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3869/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3870/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3871/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3872/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3874/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3875/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3876/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3877/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3878/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3880/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3881/ticket.md
+  reason: these are the 19 burn-down tickets T-3844 itself files as part of its Step
+    3 acceptance criteria; each needs its own narrow shard glob in scope so SCOPE001
+    does not flag them, without taking a blanket tickets/** lease over the rest of
+    the ledger
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
