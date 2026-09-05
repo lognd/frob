@@ -1,7 +1,7 @@
 ---
 id: T-3796
 title: fix mutate line-range scoping CRLF handling on win32
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'

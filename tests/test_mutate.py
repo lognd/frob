@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import subprocess
+import sys
 import threading
 from pathlib import Path
 
@@ -45,6 +46,7 @@ def test_generate_mutants_syntax_error_is_err():
 
 
 # invariant spec: [INV-017](invariants/INV-017.md)
+# frob:ticket T-3796
 def test_run_mutations_survivors_when_tests_weak(tmp_path):
     # frob:tests src/frob/mutate/__init__.py::run_mutations
     (tmp_path / "m.py").write_text(
@@ -55,7 +57,7 @@ def test_run_mutations_survivors_when_tests_weak(tmp_path):
         "import m\ndef test_add():\n    m.add(1, 2)\n", encoding="utf-8"
     )
     result = run_mutations(
-        tmp_path, Path("m.py"), ("python", "-m", "pytest", "-q", "t.py")
+        tmp_path, Path("m.py"), (sys.executable, "-m", "pytest", "-q", "t.py")
     )
     assert result.is_ok, result.err
     report = result.danger_ok
@@ -65,6 +67,7 @@ def test_run_mutations_survivors_when_tests_weak(tmp_path):
     assert (tmp_path / "m.py").read_text() == "def add(a, b):\n    return a + b\n"
 
 
+# frob:ticket T-3796
 def test_run_mutations_all_killed_by_strong_test(tmp_path):
     # frob:tests src/frob/mutate kind="integration"
     # run_mutations drives generate_mutants plus a real subprocess pytest
@@ -80,7 +83,7 @@ def test_run_mutations_all_killed_by_strong_test(tmp_path):
         encoding="utf-8",
     )
     result = run_mutations(
-        tmp_path, Path("m.py"), ("python", "-m", "pytest", "-q", "t.py")
+        tmp_path, Path("m.py"), (sys.executable, "-m", "pytest", "-q", "t.py")
     )
     report = result.danger_ok
     assert report.score == 1.0
@@ -88,6 +91,7 @@ def test_run_mutations_all_killed_by_strong_test(tmp_path):
 
 
 # frob:ticket T-0755
+# frob:ticket T-3796
 def test_run_mutations_max_mutants_caps_points_explored(tmp_path):
     # frob:tests src/frob/mutate/__init__.py::run_mutations
     # 4 mutation points (2 compares, an add, an and); max_mutants=1 must
@@ -100,13 +104,13 @@ def test_run_mutations_max_mutants_caps_points_explored(tmp_path):
         "import m\ndef test_f():\n    m.f(1, 2)\n", encoding="utf-8"
     )
     full = run_mutations(
-        tmp_path, Path("m.py"), ("python", "-m", "pytest", "-q", "t.py")
+        tmp_path, Path("m.py"), (sys.executable, "-m", "pytest", "-q", "t.py")
     ).danger_ok
     assert full.total > 1  # sanity: more than one mutation point exists
     capped = run_mutations(
         tmp_path,
         Path("m.py"),
-        ("python", "-m", "pytest", "-q", "t.py"),
+        (sys.executable, "-m", "pytest", "-q", "t.py"),
         max_mutants=1,
     ).danger_ok
     assert capped.total == 1
@@ -169,6 +173,7 @@ def test_point_collector_indexing_matches_mutator():
 
 
 # frob:ticket T-0755
+# frob:ticket T-3796
 def test_run_mutations_line_ranges_scopes_to_changed_lines(tmp_path):
     # frob:tests src/frob/mutate/__init__.py::run_mutations
     # T-0755 reviewer round 2 CRITICAL fix: a file-wide point selection
@@ -189,13 +194,13 @@ def test_run_mutations_line_ranges_scopes_to_changed_lines(tmp_path):
         "import m\ndef test_changed():\n    m.changed(1, 2)\n", encoding="utf-8"
     )
     unrestricted = run_mutations(
-        tmp_path, Path("m.py"), ("python", "-m", "pytest", "-q", "t.py")
+        tmp_path, Path("m.py"), (sys.executable, "-m", "pytest", "-q", "t.py")
     ).danger_ok
     assert unrestricted.total >= 2  # sees both unrelated.py's and changed's points
     scoped = run_mutations(
         tmp_path,
         Path("m.py"),
-        ("python", "-m", "pytest", "-q", "t.py"),
+        (sys.executable, "-m", "pytest", "-q", "t.py"),
         line_ranges=((6, 7),),
     ).danger_ok
     assert scoped.total == 1
@@ -205,6 +210,7 @@ def test_run_mutations_line_ranges_scopes_to_changed_lines(tmp_path):
 
 
 # frob:ticket T-0755
+# frob:ticket T-3796
 def test_run_mutations_sets_mutation_run_sentinel_in_child_env(tmp_path):
     # frob:tests src/frob/mutate/__init__.py::run_mutations
     # Recursion guard: every spawned test process must see
@@ -218,7 +224,7 @@ def test_run_mutations_sets_mutation_run_sentinel_in_child_env(tmp_path):
         f"sys.exit(0 if os.environ.get({MUTATION_RUN_ENV!r}) == '1' else 1)\n"
     )
     (tmp_path / "probe.py").write_text(probe, encoding="utf-8")
-    report = run_mutations(tmp_path, Path("m.py"), ("python", "probe.py")).danger_ok
+    report = run_mutations(tmp_path, Path("m.py"), (sys.executable, "probe.py")).danger_ok
     assert report.total >= 1
     assert report.killed == 0  # every mutant "survived": sentinel was seen
 
@@ -230,6 +236,7 @@ def test_run_mutations_missing_file(tmp_path):
 
 
 # frob:ticket T-0879
+# frob:ticket T-3796
 def test_run_mutations_holds_exclusive_lock_blocking_a_shared_reader(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -261,7 +268,7 @@ def test_run_mutations_holds_exclusive_lock_blocking_a_shared_reader(
 
     def _call_run_mutations() -> None:
         result_holder["result"] = run_mutations(
-            tmp_path, Path("m.py"), ("python", "-m", "pytest", "-q", "t.py")
+            tmp_path, Path("m.py"), (sys.executable, "-m", "pytest", "-q", "t.py")
         )
 
     writer_thread = threading.Thread(target=_call_run_mutations)
@@ -294,6 +301,7 @@ def test_run_mutations_holds_exclusive_lock_blocking_a_shared_reader(
 
 
 # frob:ticket T-0803
+# frob:ticket T-3796
 def test_run_mutations_kill_switch_refuses_without_spawning(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -327,7 +335,7 @@ def test_run_mutations_kill_switch_refuses_without_spawning(
 
     monkeypatch.setattr(subprocess, "run", _spy)
     result = run_mutations(
-        tmp_path, Path("m.py"), ("python", "-m", "pytest", "-q", "t.py")
+        tmp_path, Path("m.py"), (sys.executable, "-m", "pytest", "-q", "t.py")
     )
     assert not spawned
     assert result.is_err
@@ -377,6 +385,7 @@ def test_mutator_visit_constant():
 
 
 # frob:ticket T-3039
+# frob:ticket T-3796
 def test_run_mutants_scores_a_timeout_as_killed_and_continues(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -416,7 +425,7 @@ def test_run_mutants_scores_a_timeout_as_killed_and_continues(
     monkeypatch.setattr("frob.process._guard.guarded_subprocess_run", _fake_guarded_run)
 
     result = _run_mutants(
-        tmp_path / "m.py", mutants, ("python", "-c", "pass"), tmp_path, 5.0
+        tmp_path / "m.py", mutants, (sys.executable, "-c", "pass"), tmp_path, 5.0
     )
     assert result.is_ok
     killed, survivors = result.danger_ok
