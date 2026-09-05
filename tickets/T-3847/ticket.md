@@ -2,7 +2,7 @@
 id: T-3847
 title: 'evidence verification buckets only python and rust: cpp/kotlin/ts ids are
   silently never verified, and catch2 is unsupported'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -19,6 +19,7 @@ scope:
 - src/frob/testing/_collect.py
 - src/frob/testing/__init__.py
 - tests/unit/test_verify_language_buckets.py
+- src/frob/app/ticket_runner/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,6 +51,12 @@ scope_changes:
   reason: wire cpp/kotlin/ts collectors into evidence verification buckets (registry-derived),
     make an unbucketed evidence id a loud typed UNMEASURED refusal naming the id and
     languages tried
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: export new _verify_unbucketed_ids helper alongside sibling _verify_* re-exports,
+    same pattern as _verify_one_bucket_passing
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
