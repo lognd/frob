@@ -17,8 +17,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - frob.toml
 - tickets/**
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: 'ticket carries burn-down filing work: creates ~15 new burn-down
+  tickets under tickets/, plus edits frob.toml severity zone'
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
