@@ -245,6 +245,21 @@ scope_changes:
     of fighting T-3902'
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/unit/test_pyfmt_runner.py::TestRun::test_default_delegates_to_run_ruff_autofix
+- tests/unit/test_pyfmt_runner.py::TestRun::test_select_imports_only_uses_dash_dash_select_i
+- tests/unit/test_pyfmt_runner.py::TestRun::test_nonzero_exit_propagates
+- tests/unit/test_pyfmt_runner.py::TestRunCheckModeDoesNotWrite::test_check_mode_does_not_write
+- tests/unit/test_pyfmt_runner.py::TestRunCheckModeDoesNotWrite::test_check_mode_nonzero_exit_on_dirty_tree
+- tests/unit/test_pyfmt_runner.py::TestRunScopeFlags::test_code_only_skips_directives
+- tests/unit/test_pyfmt_runner.py::TestRunScopeFlags::test_directives_only_skips_ruff
+- tests/unit/test_pyfmt_runner.py::TestRunMultiplePaths::test_multiple_paths_each_get_processed
+- tests/unit/test_pyfmt_runner.py::TestFormattedTreePassesCheckCleanly::test_clean_tree_check_exits_zero_for_both_halves
+- tests/unit/test_pyfmt_runner.py::TestDeprecatedAliasStillWorks::test_fmt_alias_still_formats_and_warns
+- tests/unit/test_pyfmt_runner.py::TestRunRuffCheckSelectImportsNoFix::test_missing_binary_yields_typed_result
+- tests/unit/test_pyfmt_runner.py::TestRuffFormatCheckOnly::test_missing_binary_yields_typed_result
+- tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob::test_format_calls_frob_format_select_imports_only
+- tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob::test_lint_fix_calls_frob_format_full_rule_set
 designated_repro_test: null
 threat: null
 component: null
