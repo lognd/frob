@@ -2,7 +2,7 @@
 id: T-3843
 title: 'DOC006 resolves pointers in ticket frontmatter titles where its own waive
   mechanism cannot be applied: sole ubuntu and macOS CI failure'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
