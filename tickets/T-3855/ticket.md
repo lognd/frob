@@ -27,6 +27,13 @@ body_changes:
   at: '2026-09-05'
   old_length: 4180
   new_length: 4180
+- mode: append
+  reason: second independent sighting from stpone F-016 adds the framework-wired half,
+    which is a distinct population from uncallable-by-construction
+  actor: logan
+  at: '2026-09-05'
+  old_length: 4180
+  new_length: 6538
 designated_repro_test: null
 threat: null
 component: null
@@ -107,3 +114,44 @@ ACCEPTANCE
 - All fixtures committed.
 - ../apollo is READ-ONLY. Their T-0024 closes on their side once this lands;
   do not touch their tree.
+
+
+
+SECOND INDEPENDENT SIGHTING, 2026-09-05. stpone FROBLEMS F-016 reports the same
+gap from a different repo and a different angle:
+
+    F-016  WIRE001 has no way to declare a framework-wired or type-only symbol
+
+apollo's T-0024 (this ticket's origin) hit the TYPE-ONLY half: a
+`typing.Protocol` member whose body is `...` and which is never called through
+the call graph, so its WIRE001 waiver can never discharge its follow_up.
+
+stpone adds the FRAMEWORK-WIRED half, which is a distinct population: a symbol
+that IS called, but by machinery frob's static call graph cannot see -- a
+callback registered by a decorator, an entry point resolved by name, a handler
+found by convention. Those are not uncallable; they are un-observable.
+
+WHY THE TWO HALVES MATTER TO THE FIX. The enumeration in this ticket's body
+(abstractmethod, overload, TYPE_CHECKING) is all one kind: UNCALLABLE BY
+CONSTRUCTION. Framework-wired symbols are the opposite kind -- genuinely live,
+invisible to static analysis. A fix that only exempts uncallable symbols leaves
+stpone exactly where it started, and a fix that lumps them together would
+exempt real dead code whenever someone claims a framework calls it.
+
+So there are probably TWO mechanisms, not one:
+  - uncallable-by-construction: frob can DETECT these itself (Protocol member,
+    abstractmethod, overload, TYPE_CHECKING) and should exempt them with no
+    author action at all. No waiver, no follow_up, nothing to declare.
+  - framework-wired: frob CANNOT detect these, so the author must declare them,
+    and the declaration should be a first-class directive rather than a waiver
+    with an undischargeable follow_up. A waiver means "suppress this finding
+    pending work"; this needs "this symbol is wired by <mechanism>", which is a
+    statement of fact, not a deferral.
+
+Decide whether both are in scope here or whether the framework-wired half is its
+own ticket. Either is fine -- but say which, and do not let the framework case
+be silently absorbed into the uncallable exemption, because the two have
+opposite risk profiles: exempting an uncallable symbol is free, while exempting
+anything an author declares framework-wired is a hole real dead code can hide
+in. The declaration form should therefore be greppable and reviewable, and
+probably ought to name the wiring mechanism rather than being a bare marker.
