@@ -1069,7 +1069,14 @@ class TestCargoEnv:
         assert result.is_ok
         overlay = result.danger_ok
         assert overlay["PYO3_PYTHON"] == "/usr/bin/python3.13"
-        assert str(lib_dir) in overlay["LD_LIBRARY_PATH"]
+        if sys.platform == "win32":
+            # T-3914/T-3801: win32 has no LD_LIBRARY_PATH at all -- the
+            # product's own win32 branch overlays PATH with the
+            # interpreter's directory instead (a pythonXY.dll is found
+            # next to python.exe), never touching LD_LIBRARY_PATH.
+            assert "PATH" in overlay
+        else:
+            assert str(lib_dir) in overlay["LD_LIBRARY_PATH"]
 
     def test_cargo_env_err_when_no_qualifying_interpreter(self, monkeypatch) -> None:
         # frob:tests src/frob/testing/_runners.py::_cargo_env
@@ -1819,13 +1826,21 @@ class TestNativeFingerprint:
 
         from frob.testing._collect import _compiled_artifacts
 
-        so = tmp_path / "singlemod.abi3.so"
+        # T-3914: the real extension suffix `find_spec` recognizes is
+        # platform-specific (`.so` on POSIX, `.pyd` on win32) --
+        # `importlib.machinery.EXTENSION_SUFFIXES` is the authoritative
+        # source, not a hardcoded literal, or this fixture is invisible
+        # to `find_spec` on win32 and the test never reaches the code
+        # under test at all.
+        suffix = importlib.machinery.EXTENSION_SUFFIXES[0]
+        so_name = f"singlemod{suffix}"
+        so = tmp_path / so_name
         so.write_bytes(b"\x00ext")
         monkeypatch.syspath_prepend(str(tmp_path))
         importlib.invalidate_caches()
         found = importlib.util.find_spec("singlemod")
         assert found is not None
-        assert [p.name for p in _compiled_artifacts(found)] == ["singlemod.abi3.so"]
+        assert [p.name for p in _compiled_artifacts(found)] == [so_name]
 
 
 class TestCollectBranchGaps:

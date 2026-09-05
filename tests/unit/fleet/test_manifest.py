@@ -3,6 +3,7 @@ for the manifest-format contract this exercises."""
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 from frob.fleet import FleetError, load_manifest
@@ -11,10 +12,19 @@ from frob.fleet import FleetError, load_manifest
 # invariant spec: [INV-046](invariants/INV-046.md)
 class TestLoadManifest:
     def test_load_manifest_ok(self, tmp_path: Path) -> None:
+        # T-3914: "/abs/b" is absolute on POSIX but NOT on win32
+        # (Path.is_absolute() requires a drive there), so a POSIX-only
+        # literal exercises the relative-rebase branch instead of the
+        # already-absolute one this test means to pin. Use a genuinely
+        # absolute literal on both platforms -- tmp_path's own drive on
+        # win32, a bare root on POSIX.
+        abs_repo = (
+            f"{Path(tmp_path).drive}/abs/b" if sys.platform == "win32" else "/abs/b"
+        )
         manifest_path = tmp_path / "fleet.toml"
         manifest_path.write_text(
             '[[repo]]\nname = "a"\npath = "../a"\n'
-            '\n[[repo]]\nname = "b"\npath = "/abs/b"\n'
+            f'\n[[repo]]\nname = "b"\npath = "{abs_repo}"\n'
         )
         result = load_manifest(manifest_path)
         assert result.is_ok
@@ -23,7 +33,7 @@ class TestLoadManifest:
         # relative path rebased against the manifest file's own directory
         assert manifest.repos[0].path == (tmp_path / "../a")
         # already-absolute path left untouched
-        assert manifest.repos[1].path == Path("/abs/b")
+        assert manifest.repos[1].path == Path(abs_repo)
 
     # frob:tests tests/unit/fleet/test_manifest.py::TestLoadManifest.test_relative_path_resolves_against_manifest_dir_not_cwd  # noqa: E501
     def test_relative_path_resolves_against_manifest_dir_not_cwd(

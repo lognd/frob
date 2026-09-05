@@ -68,7 +68,11 @@ def _seed_draft_with_attachment(
     attachment_path = ticket_dir / "attachments" / "01-x.png"
     attachment_path.write_bytes(data)
     sha256 = hashlib.sha256(data).hexdigest()
-    rel_path = str(attachment_path.relative_to(tickets_dir(tmp_path)))
+    # T-3914: .as_posix(), not str() -- Attachment.path is posix-shaped
+    # everywhere the product writes it (see _reporting_attachments.py's
+    # own .as_posix() call); str() on win32 would leak a native
+    # backslash separator into this fixture's own record.
+    rel_path = attachment_path.relative_to(tickets_dir(tmp_path)).as_posix()
     attachment = Attachment(path=rel_path, caption=caption, sha256=sha256)
     (ticket_dir / "ticket.md").write_text(
         _serialize_ticket(_draft_ticket(draft_id, (attachment,)))
@@ -186,7 +190,7 @@ def _seed_pre_t2199_promoted_ticket(
     attachment_path = ticket_dir / "attachments" / "01-x.png"
     attachment_path.write_bytes(data)
     sha256 = hashlib.sha256(data).hexdigest()
-    real_rel_path = str(attachment_path.relative_to(tickets_dir(tmp_path)))
+    real_rel_path = attachment_path.relative_to(tickets_dir(tmp_path)).as_posix()
     recorded_path = (
         f"{draft_id}/attachments/01-x.png" if record_stale_path else real_rel_path
     )

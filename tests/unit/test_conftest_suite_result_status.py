@@ -82,16 +82,31 @@ class _FakeConfig:
 
 # frob:ticket T-3246
 class _FakeSession:
-    """Stand-in for `pytest.Session`, carrying just the `config`/
-    `testscollected`/`testsfailed` attributes `pytest_sessionfinish` reads."""
+    """Stand-in for `pytest.Session`, carrying the `config`/
+    `testscollected`/`testsfailed`/`exitstatus` attributes
+    `pytest_sessionfinish` reads. `exitstatus` (T-3914) is read by
+    `_maybe_hard_exit_after_session_finish` -- exercised in this test
+    module only under CI's `FROB_TEST_HARD_EXIT=1`, which ci.yml sets on
+    the windows-latest leg only (T-3675/T-3693), so a real
+    `pytest.Session` was always the object that code path actually saw;
+    this fake was simply never asked to carry the attribute until a
+    win32 run did."""
 
     # frob:ticket T-3246
-    def __init__(self, *, config: object, collected: int = 0, failed: int = 0) -> None:
+    def __init__(
+        self,
+        *,
+        config: object,
+        collected: int = 0,
+        failed: int = 0,
+        exitstatus: int = 0,
+    ) -> None:
         """Store the fields `pytest_sessionfinish` reads off a real
         `pytest.Session` at the given values."""
         self.config = config
         self.testscollected = collected
         self.testsfailed = failed
+        self.exitstatus = exitstatus
 
 
 # frob:ticket T-3246
@@ -133,7 +148,7 @@ class TestSuiteResultDidNotComplete:
         module = _load_conftest()
         reporter = _FakeReporter()
         config = _FakeConfig(reporter=reporter)
-        session = _FakeSession(config=config, collected=12491, failed=24)
+        session = _FakeSession(config=config, collected=12491, failed=24, exitstatus=3)
 
         module.pytest_sessionfinish(session=session, exitstatus=3)
 
@@ -165,7 +180,7 @@ class TestSuiteResultDidNotComplete:
         module = _load_conftest()
         reporter = _FakeReporter()
         config = _FakeConfig(reporter=reporter)
-        session = _FakeSession(config=config, collected=50, failed=0)
+        session = _FakeSession(config=config, collected=50, failed=0, exitstatus=0)
 
         module.pytest_sessionfinish(session=session, exitstatus=0)
 
@@ -187,7 +202,7 @@ class TestSuiteResultDidNotComplete:
         stats = {"failed": [_FakeReport("tests/a.py::test_one")], "error": []}
         reporter = _StatsReporter(stats)
         config = _FakeConfig(reporter=reporter)
-        session = _FakeSession(config=config, collected=100, failed=1)
+        session = _FakeSession(config=config, collected=100, failed=1, exitstatus=3)
 
         module.pytest_sessionfinish(session=session, exitstatus=3)
 
@@ -216,7 +231,7 @@ class TestSuiteResultDidNotComplete:
         stats = {"failed": [_FakeReport("tests/a.py::test_one")], "error": []}
         reporter = _StatsReporter(stats)
         config = _FakeConfig(reporter=reporter)
-        session = _FakeSession(config=config, collected=100, failed=1)
+        session = _FakeSession(config=config, collected=100, failed=1, exitstatus=1)
 
         module.pytest_sessionfinish(session=session, exitstatus=1)
 
@@ -236,7 +251,7 @@ class TestSuiteResultDidNotComplete:
         module = _load_conftest()
         reporter = _FakeReporter()
         config = _FakeConfig(reporter=reporter)
-        session = _FakeSession(config=config, collected=12491, failed=24)
+        session = _FakeSession(config=config, collected=12491, failed=24, exitstatus=3)
 
         # frob:ticket T-3246
         class _FakeExcInfo:
@@ -271,7 +286,15 @@ class TestSuiteResultDidNotComplete:
 
         # frob:ticket T-3246
         class _FakeConfigureConfig:
-            pass
+            """T-3914: `pluginmanager` (unused by this test's own
+            assertions, but read unconditionally by `pytest_configure`'s
+            `FROB_TEST_MIDRUN_WATCHDOG_SECONDS` arm-line write) must be
+            present -- CI sets that env var only on the windows-latest
+            leg (T-3692), so only there did `pytest_configure` ever
+            actually reach the attribute this bare fake lacked."""
+
+            def __init__(self) -> None:
+                self.pluginmanager = _FakePluginManager(None)
 
         module.pytest_configure(config=_FakeConfigureConfig())
 
@@ -307,7 +330,7 @@ class TestSuiteResultFailureReprDump:
         }
         reporter = _StatsReporter(stats)
         config = _FakeConfig(reporter=reporter)
-        session = _FakeSession(config=config, collected=1, failed=1)
+        session = _FakeSession(config=config, collected=1, failed=1, exitstatus=1)
 
         module.pytest_sessionfinish(session=session, exitstatus=1)
 
@@ -333,7 +356,7 @@ class TestSuiteResultFailureReprDump:
         }
         reporter = _StatsReporter(stats)
         config = _FakeConfig(reporter=reporter)
-        session = _FakeSession(config=config, collected=1, failed=1)
+        session = _FakeSession(config=config, collected=1, failed=1, exitstatus=1)
 
         module.pytest_sessionfinish(session=session, exitstatus=1)
 

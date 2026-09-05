@@ -33,6 +33,7 @@ naming the path, rather than silently accepted as a valid terse body."""
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -40,6 +41,21 @@ import pytest
 from frob.app.config import AppConfig
 from frob.app.ticket_runner._new import _new, _resolve_new_body
 from frob.tickets import load_queue
+
+# T-3914: this whole module's repro fixture (`_pipe_path_with_content`)
+# depends on `/dev/fd/<n>` exposing an anonymous `os.pipe()` fd as an
+# openable path -- a POSIX-only mechanism (no `/dev/fd`, and no
+# equivalent way to re-open a raw pipe fd by path, exists on win32).
+# `TestDoubleReadDrainsAPipe`/`TestBodyFileFifoSurvivesFullNew` pin a
+# POSIX-specific double-read hazard; `_resolve_new_body`'s actual fix
+# (read once, thread the text through) is platform-neutral and already
+# covered on every OS by this module's non-pipe tests plus the ordinary
+# regular-file coverage elsewhere -- only the PIPE-shaped repro itself is
+# unrepresentable on win32.
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="T-3914: /dev/fd/<n> pipe-path exposure is POSIX-only; no win32 equivalent",
+)
 
 
 def _pipe_path_with_content(content: str) -> Path:

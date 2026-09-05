@@ -1299,8 +1299,12 @@ def _scope_overlap_warnings(root: Path, new_ticket_id: str, scope) -> tuple[str,
         # no fixed, iteration-independent sequence to sort once outside the loop and \
         # reuse; a genuinely different sort target every time is not the \
         # accidental-repeated-sort shape this rule targets"
+        # T-3914: .as_posix(), not str() -- same native-separator-leak
+        # class as T-3662/T-3664 (a different call site): this message
+        # is consumer-facing text, and every consumer/test comparing
+        # against it expects a posix-shaped path regardless of host OS.
         overlap = sorted(
-            str(p.relative_to(root)) if p.is_relative_to(root) else str(p)
+            p.relative_to(root).as_posix() if p.is_relative_to(root) else p.as_posix()
             for p in (my_paths & other_paths)
         )
         if overlap:

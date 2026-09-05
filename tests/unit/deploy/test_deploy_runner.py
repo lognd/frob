@@ -10,6 +10,7 @@ CLI dispatch and file-writing logic around it.
 
 from __future__ import annotations
 
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -86,8 +87,12 @@ class TestGenerate:
         for filename, content in rendered.items():
             written = deploy_dir / filename
             assert written.read_text(encoding="utf-8") == content
-            # writer sets the scripts executable (0o755)
-            assert written.stat().st_mode & 0o777 == 0o755
+            # writer sets the scripts executable (0o755) -- win32 has no
+            # POSIX permission bits (st_mode is a fabricated constant,
+            # never the writer's chmod), so this is only meaningful on
+            # POSIX (T-3914).
+            if sys.platform != "win32":
+                assert written.stat().st_mode & 0o777 == 0o755
 
     # frob:tests src/frob/app/deploy_runner.py::run kind="unit"
     def test_generate_check_clean_no_exit(self, tmp_path):

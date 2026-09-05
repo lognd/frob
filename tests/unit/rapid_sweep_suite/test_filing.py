@@ -55,7 +55,13 @@ class TestRelativizeRegressionScopeFile:
         relative path -- and logged loudly."""
         import logging
 
-        outside = str(Path("/definitely/not/under/tmp_path/x.py"))
+        # T-3914: a bare "/..." literal is absolute on POSIX but NOT on
+        # win32 (Path.is_absolute() requires a drive there), so it would
+        # exercise the relative no-op branch instead of the genuinely-
+        # absolute-but-outside-root branch this test means to pin.
+        # Anchor on tmp_path's own drive/root so the literal is absolute
+        # on every platform while still resolving outside tmp_path.
+        outside = str(Path(tmp_path.anchor) / "definitely" / "not" / "under" / "tmp_path" / "x.py")
         with caplog.at_level(logging.WARNING):
             result = _relativize_regression_scope_file(tmp_path, outside)
         assert result == outside

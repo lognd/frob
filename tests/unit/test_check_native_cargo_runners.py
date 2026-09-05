@@ -534,7 +534,11 @@ class TestFindTestBinaryFromCargoJson:
         )
         binary = native_mod._find_test_binary_from_cargo_json(stdout)
         assert binary is not None
-        assert str(binary) == "/tmp/foo-abc123"
+        # T-3914: compare Path objects, not str() -- a str() comparison
+        # bakes in the POSIX separator this fixture's literal happens to
+        # use, which win32's Path would render with backslashes even
+        # though the two paths are the same value.
+        assert binary == Path("/tmp/foo-abc123")
 
     def test_ignores_non_test_artifacts(self) -> None:
         # frob:tests tests/unit/test_check_native_cargo_runners.py::TestFindTestBinaryFromCargoJson.test_ignores_non_test_artifacts  # noqa: E501
