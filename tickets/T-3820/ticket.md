@@ -2,7 +2,7 @@
 id: T-3820
 title: graph cache os.replace unguarded on Windows [WinError 5] under concurrent access
   -- retry-on-PermissionError + un-skip the transient T-3781 tests
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -40,6 +40,10 @@ body_changes:
   at: '2026-09-05'
   old_length: 0
   new_length: 1429
+evidence:
+- tests/unit/test_graph_cache.py::TestReplaceWithRetry::test_transient_permission_error_is_retried_then_succeeds
+- tests/unit/test_graph_cache.py::TestReplaceWithRetry::test_persistent_permission_error_is_reraised_after_the_deadline
+- tests/unit/test_graph_cache.py::TestReplaceWithRetry::test_posix_happy_path_replaces_on_the_first_attempt
 designated_repro_test: null
 threat: null
 component: null

@@ -14,6 +14,24 @@ import pytest
 from frob.graph import cache as graph_cache
 
 # frob:ticket T-3781
+# frob:ticket T-3820
+#: T-3820 re-confirmed all 6 under winrun WITH the production
+#: retry-on-PermissionError fix (`cache._replace_with_retry`) in place --
+#: every one still fails on Windows, because each keeps a handle open on
+#: the destination ACROSS the publish for the whole test: five hold a
+#: single reader/`conn` open persistently (`test_connect_after_forced_
+#: schema_rebuild`, `test_replaced_away_handle_is_reopened`,
+#: `test_fingerprint_read_after_a_replace`, `test_store_file_data_after_a_
+#: replace`, `test_sibling_reader_survives_concurrent_recreate`), and the
+#: sixth (`test_two_processes_connecting_concurrently_...`) saturates the
+#: path with a zero-gap sibling `connect()`/`close()` loop so no retry
+#: window ever opens. The bounded retry helps the REALISTIC transient
+#: production shape -- a gate worker that opens+closes the db around each
+#: access, leaving gaps (proven separately by `TestReplaceWithRetry` on
+#: Linux + a minimal winrun repro) -- but NONE of these 6 model that gap,
+#: so they remain honestly skipped rather than masked. The production
+#: limitation for the persistent-handle case is documented on `cache.py`
+#: (search "T-3820 platform invariant") and tracked by ticket T-3820.
 #: T-3781: 6 tests below model (single-process, or a real subprocess
 #: sibling) another connection surviving an `os.replace` publish while it
 #: still has `path` open -- the whole point of this module's rename-not-
@@ -41,7 +59,10 @@ _WIN32_NO_REPLACE_OVER_OPEN_HANDLE = pytest.mark.skipif(
         "CreateFile/MoveFileEx refuses to replace a file with any open "
         "handle lacking FILE_SHARE_DELETE, which Python's bundled sqlite3 "
         "does not request and cannot be made to via the stdlib API "
-        "(confirmed via a minimal winrun reproduction, T-3781)."
+        "(confirmed via a minimal winrun reproduction, T-3781; re-confirmed "
+        "under winrun WITH cache._replace_with_retry in place, T-3820 -- the "
+        "bounded retry fixes the transient gap-between-accesses shape, not a "
+        "handle held open across the whole publish, which these 6 all do)."
     ),
 )
 
@@ -917,3 +938,108 @@ class TestHandleIdentity:
             "store_file_data wrote through a replaced-away handle -- the "
             "row never reached the db that is actually at the cache path"
         )
+
+
+# frob:ticket T-3820
+class TestReplaceWithRetry:
+    """`_replace_with_retry` is the shared atomic-publish primitive: it must
+    retry a TRANSIENT `os.replace` failure (Windows [WinError 5] while a
+    concurrent reader momentarily holds the destination open) and land the
+    publish once a window opens, yet re-raise cleanly when the fault never
+    clears (a reader holding the handle open for the whole rebuild).
+
+    Cross-platform by construction -- the real Windows failure is simulated
+    by monkeypatching `os.replace`, so this pins the retry contract on every
+    platform (the genuine Windows behavior itself is confirmed via winrun,
+    T-3820/T-3781; the 6 skipped tests above cover the unsupported
+    persistent-handle case)."""
+
+    @staticmethod
+    def _marked_db(path: Path, marker: str) -> None:
+        """Write a sqlite db at `path` carrying `meta.marker = marker` -- a
+        distinguishable payload to prove which file won a publish, without
+        raw `read_bytes`/`write_bytes` (which the testsuite node's effect
+        gate tracks as an undeclared fs capability)."""
+        conn = sqlite3.connect(str(path))
+        try:
+            conn.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT, value TEXT)")
+            conn.execute(
+                "INSERT INTO meta (key, value) VALUES ('marker', ?)", (marker,)
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    @staticmethod
+    def _marker(path: Path) -> str | None:
+        """`meta.marker` at `path` via an INDEPENDENT sqlite connection."""
+        reader = sqlite3.connect(str(path))
+        try:
+            row = reader.execute(
+                "SELECT value FROM meta WHERE key = 'marker'"
+            ).fetchone()
+        finally:
+            reader.close()
+        return None if row is None else row[0]
+
+    def test_transient_permission_error_is_retried_then_succeeds(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Two consecutive `PermissionError`s (the transient competing-handle
+        shape) are absorbed by backoff; the third attempt publishes."""
+        src = tmp_path / "src.db"
+        self._marked_db(src, "winner")
+        dst = tmp_path / "dst.db"
+        self._marked_db(dst, "old")
+
+        real_replace = os.replace
+        calls = {"n": 0}
+
+        def flaky_replace(a: Path, b: Path) -> None:
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise PermissionError(5, "Access is denied")
+            real_replace(a, b)
+
+        monkeypatch.setattr(graph_cache.os, "replace", flaky_replace)
+        graph_cache._replace_with_retry(src, dst, what="probe")
+
+        assert calls["n"] == 3, "the transient faults were not retried to success"
+        assert self._marker(dst) == "winner", "the publish did not land"
+        assert not src.exists(), "the temp file was not consumed by the rename"
+
+    def test_persistent_permission_error_is_reraised_after_the_deadline(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A never-clearing `PermissionError` (a reader holding the handle
+        open across the whole rebuild) is re-raised once the bounded budget
+        is spent -- the fault is surfaced, never swallowed."""
+        src = tmp_path / "src.db"
+        self._marked_db(src, "winner")
+        dst = tmp_path / "dst.db"
+
+        def always_denied(a: Path, b: Path) -> None:
+            raise PermissionError(5, "Access is denied")
+
+        monkeypatch.setattr(graph_cache.os, "replace", always_denied)
+        monkeypatch.setattr(graph_cache, "_REPLACE_RETRY_TOTAL_TIMEOUT_SECONDS", 0.2)
+
+        started = time.monotonic()
+        with pytest.raises(PermissionError):
+            graph_cache._replace_with_retry(src, dst, what="probe")
+        elapsed = time.monotonic() - started
+        assert elapsed < 5.0, "the bounded retry did not honor its deadline"
+
+    def test_posix_happy_path_replaces_on_the_first_attempt(
+        self, tmp_path: Path
+    ) -> None:
+        """With no fault, exactly one `os.replace` runs -- POSIX behavior is
+        unchanged, the retry loop adds no overhead on the common path."""
+        src = tmp_path / "src.db"
+        self._marked_db(src, "winner")
+        dst = tmp_path / "dst.db"
+        self._marked_db(dst, "old")
+
+        graph_cache._replace_with_retry(src, dst, what="probe")
+        assert self._marker(dst) == "winner"
+        assert not src.exists()

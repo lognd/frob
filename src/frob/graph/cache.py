@@ -231,6 +231,89 @@ def _lock_backoff_seconds(attempt: int, *, remaining: float) -> float:
     return max(0.0, min(delay, _LOCK_BACKOFF_CAP_SECONDS, remaining))
 
 
+# frob:ticket T-3820
+_REPLACE_RETRY_TOTAL_TIMEOUT_SECONDS = 2.0
+
+
+# T-3820 platform invariant (documented in prose and tracked by ticket
+# T-3820; not expressed as a machine-checked directive, as it has no
+# tree-local measure a gate could evaluate):
+# on Windows/stdlib-sqlite3, publishing a rebuilt
+# cache db over `path` via os.replace can only survive a CONCURRENT reader
+# whose handle on `path` is TRANSIENT (opened and closed around each
+# access, leaving gaps) -- `_replace_with_retry` lands the publish in such
+# a gap. A reader that holds a handle open for its whole lifetime across
+# the rebuild (a process-lifetime connection, or a zero-gap connect loop)
+# CANNOT be survived: CreateFile/MoveFileEx refuse to replace a file any
+# handle has open without FILE_SHARE_DELETE, which Python's bundled sqlite3
+# does not request and cannot be made to via the stdlib API. That case is
+# unsupported by design on Windows (POSIX is unaffected -- rename never
+# invalidates an open fd there); the 6 skipped T-3781/T-3820 tests in
+# tests/unit/test_graph_cache.py model exactly that persistent-handle case.
+# frob:ticket T-3820
+# frob:raises OSError
+def _replace_with_retry(tmp_path: Path, path: Path, *, what: str) -> None:
+    """Atomically publish `tmp_path` over `path` via `os.replace`, retrying
+    with backoff on a transient `PermissionError`/`OSError` before giving up
+    (T-3820).
+
+    The shared publish primitive for every schema-complete-db swap in this
+    module (`_recreate`, `_rebuild_schema_atomically`, first-connect
+    `_create_schema_complete_db`). On POSIX `os.replace` is a single atomic
+    rename that never fails just because another process holds `path` open
+    -- the whole rename-not-unlink design this module leans on -- so the
+    retry loop's first attempt is the only one that runs and behavior is
+    unchanged. It exists for Windows, where `CreateFile`/`MoveFileEx` refuse
+    to replace a file that ANY handle currently has open without
+    `FILE_SHARE_DELETE` (which Python's bundled sqlite3 does not request):
+    a concurrent gate worker that momentarily opens+closes `path` around
+    each cache read (the common production shape) leaves a brief window in
+    which the open handle is gone and the replace succeeds. A bounded
+    retry-with-backoff lands the publish in exactly that window instead of
+    crashing the rebuild with an unhandled `PermissionError: [WinError 5]
+    Access is denied` (confirmed via a minimal winrun reproduction, T-3820).
+
+    This is the TRANSIENT case only. A reader that holds a handle open for
+    its whole lifetime across the rebuild (a process-lifetime connection)
+    can never be survived by an `os.replace`-based publish on stdlib
+    Windows sqlite3 -- no bounded retry closes a window that never opens.
+    That structural limitation is accounted separately (see the T-3820
+    invariant note on this module and the narrowed skip in
+    `tests/unit/test_graph_cache.py`), not masked here.
+    """
+    deadline = time.monotonic() + _REPLACE_RETRY_TOTAL_TIMEOUT_SECONDS
+    attempt = 0
+    while True:
+        try:
+            os.replace(tmp_path, path)
+            return
+        except OSError as exc:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                _log.warning(
+                    "cache: %s could not publish %s over %s within %.1fs "
+                    "(a reader is holding the destination open, e.g. Windows "
+                    "[WinError 5]) -- re-raising: %s",
+                    what,
+                    tmp_path,
+                    path,
+                    _REPLACE_RETRY_TOTAL_TIMEOUT_SECONDS,
+                    exc,
+                )
+                raise
+            _log.warning(
+                "cache: %s hit a transient os.replace fault publishing %s "
+                "over %s (%.1fs remaining), retrying: %s",
+                what,
+                tmp_path,
+                path,
+                remaining,
+                exc,
+            )
+            time.sleep(_lock_backoff_seconds(attempt, remaining=remaining))
+            attempt += 1
+
+
 # frob:ticket T-3644
 # frob:tests tests/unit/test_graph_build_lock.py::TestBuildGraphLockScope.test_two_processes_never_commit_to_the_same_cache_concurrently  # noqa: E501
 # frob:tests tests/test_graph_lock.py::TestCacheLockRetry.test_non_locked_operational_error_is_not_retried  # noqa: E501
@@ -698,7 +781,9 @@ def _rebuild_schema_atomically(
         _close_conn(conn)
         tmp_path = _build_schema_complete_db(path)
         _quarantine_sidecars(path)
-        os.replace(tmp_path, path)
+        _replace_with_retry(
+            tmp_path, path, what="atomic schema-complete rebuild publish"
+        )
         return _open(path)
     finally:
         if lock_fd is not None:
@@ -854,7 +939,7 @@ def _create_schema_complete_db(path: Path) -> None:
     construction, never a half-built one.
     """
     tmp_path = _build_schema_complete_db(path)
-    os.replace(tmp_path, path)
+    _replace_with_retry(tmp_path, path, what="first-connect schema publish")
 
 
 def _recreate(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
@@ -908,7 +993,9 @@ def _recreate(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
         # regression when this was tried the other way around).
         tmp_path = _build_schema_complete_db(path)
         _quarantine_sidecars(path)
-        os.replace(tmp_path, path)
+        _replace_with_retry(
+            tmp_path, path, what="atomic schema-complete rebuild publish"
+        )
         return _open(path)
     finally:
         if lock_fd is not None:
