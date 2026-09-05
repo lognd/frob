@@ -34,6 +34,14 @@ scope_changes:
     and add must-fire/must-stay-quiet fixtures (T-3843)
   actor: logan
   at: '2026-09-05'
+body_changes:
+- mode: set
+  reason: add DOC006 waive for the illustrative quoted finding, state the (a)/(b)/(c)
+    decision and prose-key enumeration per acceptance criteria
+  actor: logan
+  at: '2026-09-05'
+  old_length: 4581
+  new_length: 7563
 designated_repro_test: null
 threat: null
 component: null
@@ -54,6 +62,7 @@ MEASURED 2026-09-05.
     AssertionError: unexpected DOC004/DOC006 finding(s): [Violation(
       rule='DOC006', file='tickets/T-3807/ticket.md', line=4,
       message="config reference pointer ... does not resolve --
+      <!-- frob:waive DOC006 reason="quoting the measured finding verbatim, not a live pointer" -->
       [check.stack] is not a real frob.toml/pyproject.toml/Cargo.toml
       section/key")]
 
@@ -125,3 +134,50 @@ ACCEPTANCE
 - `test_doc004_doc006_zero_against_live_repo` passing against the live repo.
 - All fixtures above committed, must-fire ones included -- a pointer gate that
   goes quiet is indistinguishable from one that stopped looking.
+
+DECISION (made 2026-09-05, implementing agent): (b), with the enumeration
+below published as the durable output.
+
+Rationale: (a) fixes today's instance and nothing else -- the very failure
+mode this ticket exists because of (a red CI leg is how the LAST prose key
+was discovered). (c) is worse: it also gives up checking legitimately
+resolvable structured frontmatter keys, and none of `Ticket`'s frontmatter
+fields hold anything DOC006 could usefully resolve anyway (see enumeration),
+so (c) buys nothing (a) does not already buy while being less precise about
+WHY the exemption exists. (b) costs one extra alternation in the existing
+regex and pays for itself the next time a prose field is added.
+
+ENUMERATION of `Ticket` (src/frob/tickets/_models.py) frontmatter fields,
+prose vs. structured, as of this ticket:
+
+  PROSE (free text written by a human/agent at mutation time -- exempted):
+    - title                          (T-3843: newly exempted)
+    - reason                         (T-3724, via `\w*reason` suffix match)
+    - scope_breadth_ack_reason       (T-3724, same suffix match)
+    - runs_last_parallel_safe_reason (T-3724, same suffix match)
+    - no_scope_declared_reason       (T-3724, same suffix match)
+    - anchor_reason                  (T-3724, same suffix match)
+    (nested `reason:` keys inside scope_changes/triage_changes/body_changes/
+    evidence_changes/etc. audit-trail list entries are ALSO caught by the
+    same suffix regex, since it matches the key regardless of indent depth)
+
+  STRUCTURED (ids, enums, dates, bools, commit shas, audit-trail scaffolding
+  -- correctly left un-blanked; DOC006 could in principle resolve a pointer
+  in one of these, though none currently hold citation-shaped text):
+    id, state, kind, origin, created, priority, blocked_by, parent, tier,
+    sprint, runs_last, milestone, runs_last_parallel_safe, scope,
+    findings, evidence_scope, scope_breadth_ack, no_scope_declared,
+    scope_changes/triage_changes/body_changes/lease_force_releases/
+    evidence_changes/acceptance_amendments/designated_repro_changes/reviews
+    (structural fields of these entries: op, glob, actor, at, from, to,
+    commit, verdict, etc. -- only their `reason:` sub-keys are prose),
+    evidence, kind_history, designated_repro_test, attachments, acceptance,
+    threat, component, labels, anchor, land_commit
+
+  Not exempted and NOT prose in the free-text sense, but freeform strings
+  worth naming explicitly since they are not enum-constrained: `component`
+  (a short category tag, e.g. "gates") and `labels` (short freeform tags).
+  Neither wraps across frontmatter lines in practice and neither is written
+  as narrative prose the way `title`/`reason` are, so they are left
+  un-blanked; if either is ever observed holding a citation-shaped false
+  positive, this same mechanism (add the key to the alternation) is the fix.
