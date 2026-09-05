@@ -2,7 +2,7 @@
 id: T-3893
 title: allow quoted positional directive values so a vitest title with spaces can
   be cited, reusing the existing attribute quoting
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-05'
