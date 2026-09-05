@@ -25,6 +25,7 @@ scope:
 - tests/test_testing.py
 - tests/unit/rapid_sweep_suite/test_filing.py
 - tests/test_fuzz.py
+- tests/unit/test_new_ticket_scope_overlap_warning.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -66,6 +67,25 @@ scope_changes:
     while draining the 49'
   actor: logan
   at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_new_ticket_scope_overlap_warning.py
+  reason: covers the scope-overlap as_posix() fix landed under this ticket
+  actor: logan
+  at: '2026-09-05'
+evidence:
+- tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_labels_did_not_complete_runs
+- tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_configure_resets_stale_internal_error
+- tests/unit/test_draft_finalize_attachments.py::TestFinalizeDraftRelocatesAttachmentRecords::test_attachment_path_follows_the_rename
+- tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths::test_leaves_a_correctly_recorded_attachment_untouched
+- tests/unit/test_ticket_new_body_file_pipe_t2021.py::TestDoubleReadDrainsAPipe::test_second_read_of_a_drained_pipe_is_empty
+- tests/test_testing.py::TestCargoEnv::test_cargo_env_ok_when_python311_and_libdir_found
+- tests/test_testing.py::TestNativeFingerprint::test_single_file_extension_fingerprinted
+- tests/unit/deploy/test_deploy_runner.py::TestGenerate::test_generate_writes_files
+- tests/unit/fleet/test_manifest.py::TestLoadManifest::test_load_manifest_ok
+- tests/unit/rapid_sweep_suite/test_filing.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged
+- tests/unit/test_check_native_cargo_runners.py::TestFindTestBinaryFromCargoJson::test_finds_test_executable
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_overlapping_scope_names_the_other_ticket_and_path
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_glob_vs_file_overlap_is_detected
 designated_repro_test: null
 threat: null
 component: null
