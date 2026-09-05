@@ -45,7 +45,6 @@ scope:
 - tests/unit/test_app_runners_json_guard_t2492.py
 - tests/unit/test_app_runners_t0875_leaf_collision.py
 - tests/unit/test_format_consolidation_t3906.py
-- docs/modules/gates.md
 - src/frob/scaffold/data/shared/python/Makefile.j2
 - src/frob/scaffold/data/shared/python/README.md.j2
 - src/frob/scaffold/data/shared/python/docs/index.md.j2
@@ -237,6 +236,13 @@ scope_changes:
   glob: tickets/T-3908/ticket.md
   reason: 'T-3906: docs edits + scaffold template comment updates + the T-3908 sunset-followup
     ticket this consolidation files'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: 'T-3906: revert -- gates.md is a scope-closure hub file (T-3902''s known
+    SCOPE002 explosion), unaddable to any ticket scope; reverted the edit instead
+    of fighting T-3902'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
