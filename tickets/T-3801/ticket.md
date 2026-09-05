@@ -1,7 +1,7 @@
 ---
 id: T-3801
 title: skip rust/cargo behavioral capability checks on win32 (no libpython path)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/test_lang_conformance_gate.py
+- src/frob/testing/_runners.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/testing/_runners.py
+  reason: investigate a real platform-aware cargo_env fix instead of a skip, per user
+    request
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
