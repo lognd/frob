@@ -17,10 +17,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_guard.py
 - tests/unit/test_process_guard.py
+- tickets/T-draft-baec25fa/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-draft-baec25fa/ticket.md
+  reason: filing this follow-up ticket in-worktree auto-committed its ticket.md into
+    T-3797's diff
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
