@@ -35,6 +35,13 @@ body_changes:
   at: '2026-09-05'
   old_length: 4744
   new_length: 7555
+- mode: append
+  reason: third sighting (stpone F-019, epic tier); the leaf-evidence workaround succeeds
+    or fails depending on container scope breadth, which rewards over-broad scope
+  actor: logan
+  at: '2026-09-05'
+  old_length: 7555
+  new_length: 10247
 designated_repro_test: null
 threat: null
 component: null
@@ -179,3 +186,51 @@ ADDITIONAL ACCEPTANCE:
   - The blocked_by-resolves-on-start behaviour measured and reported, with a
     stated verdict on whether it is intended. Do not change it under this
     ticket if it turns out to be deliberate -- file it separately.
+
+
+
+THIRD INDEPENDENT SIGHTING, 2026-09-05: stpone FROBLEMS F-019, "An epic cannot
+close on its own terms". `frob ticket close T-0001` (tier=epic, every leaf done)
+-> MissingEvidence. They cross-referenced this ticket themselves.
+
+That makes three repos plus frob's own fleet:
+    logand.app-v2 F-040   story tier
+    stpone        F-019   epic tier
+    frob          T-2982  epic, NEEDS CLOSE, 10d past threshold
+
+ONE NEW FACT, AND IT CHANGES THE PICTURE. In stpone the leaf-evidence workaround
+WORKED: "Binding one evidence node id from each leaf to the epic was accepted
+and the close then succeeded." In logand.app-v2 the same workaround FAILED with
+EvidenceScopeUnbound, because that story's scope was only its own L5 doc.
+
+So the escape is available or not depending on how broad the container's scope
+happens to be. That is worse than a uniform refusal, for two reasons:
+
+  1. It is inconsistent in a way nobody can predict from the error message. Two
+     operators hitting the same MissingEvidence get different outcomes from the
+     same remedy, decided by a scope declaration that has nothing to do with
+     evidence.
+  2. Where it DOES work, it works by making the container's scope broad enough
+     to cover a leaf's test file -- which means the workaround's availability is
+     proportional to how over-broad the container's scope already is. frob is
+     effectively rewarding the wider scope declaration. Since scope is also the
+     write lease, that is the opposite of the incentive we want, and it is the
+     same hazard flagged earlier in this ticket against widening scope
+     deliberately.
+
+stpone also states the expected behaviour slightly differently from
+logand.app-v2, and the difference is worth keeping: "an epic/story closes when
+all children are done (OR WITH `--evidence-cmd` PROOF THAT THEY ARE)". That
+second clause is a better answer than either auto-close or a bare rollup: it
+keeps close explicit and evidenced, while letting the evidence be a command that
+demonstrates child terminality rather than a pytest node id the container cannot
+own. `--evidence-cmd` already exists for docs-kind tickets, so the mechanism is
+present -- check whether extending it to containers is cheaper than a new
+rollup path, and say which you chose.
+
+This does not change the ticket's core requirement (close stays EXPLICIT, no
+auto-close on child terminality, per the T-1382 counter-example above). It adds:
+the fix must produce the SAME outcome regardless of the container's scope
+breadth, and must not leave the leaf-evidence borrow as a working alternative
+path -- if borrowing is wrong, it should stop working everywhere, not only where
+scope happens to be narrow.
