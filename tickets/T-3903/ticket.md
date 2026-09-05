@@ -21,10 +21,6 @@ scope:
 - tickets/T-draft-d58a8691/ticket.md
 - tickets/T-draft-4919a464/ticket.md
 - tickets/T-draft-c277fc9b/ticket.md
-- docs/guides/release.md
-- scripts/artifact_smoke.py
-- scripts/verify_release_ci_status.py
-- src/frob/doctor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -150,6 +146,30 @@ scope_changes:
   glob: src/frob/doctor.py
   reason: widen to resolve SCOPE002 hard error; doctor.py/scripts files pulled in
     by doc-closure, not edited
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: docs/guides/release.md
+  reason: 'revert cascade widen: SCOPE002 fix made things worse (5 -> 12 errors);
+    investigating narrower remedy'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: scripts/artifact_smoke.py
+  reason: 'revert cascade widen: SCOPE002 fix made things worse (5 -> 12 errors);
+    investigating narrower remedy'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: scripts/verify_release_ci_status.py
+  reason: 'revert cascade widen: SCOPE002 fix made things worse (5 -> 12 errors);
+    investigating narrower remedy'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: src/frob/doctor.py
+  reason: 'revert cascade widen: SCOPE002 fix made things worse (5 -> 12 errors);
+    investigating narrower remedy'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
