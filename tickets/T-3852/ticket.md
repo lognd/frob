@@ -18,6 +18,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'reporter addendum: the leaf-evidence workaround also fails with EvidenceScopeUnbound,
+    so a container is unclosable by any path; plus blocked_by appears to resolve on
+    start'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 4744
+  new_length: 7555
 designated_repro_test: null
 threat: null
 component: null
@@ -107,3 +116,58 @@ ACCEPTANCE
 - All fixtures committed.
 - T-2982 closed as the first real exercise of the new path, or a statement of
   why it should not be.
+
+
+
+ADDENDUM FROM THE REPORTER, 2026-09-05. Two facts that change this ticket.
+
+FACT 1 -- THE WORKAROUND DOES NOT EXIST. I described binding a leaf's evidence
+as an available-but-wrong escape. It is not available:
+
+    "with leaf evidence bound the close then fails EvidenceScopeUnbound
+     (the story's scope is only its L5 doc)"
+
+So the sequence is: close refuses with MissingEvidence; the operator borrows a
+leaf's pytest id to satisfy it; close then refuses with EvidenceScopeUnbound,
+because that test file is not in the story's scope. A container ticket is
+UNCLOSEABLE BY ANY PATH. Two gates each enforcing a reasonable rule compose into
+a state with no exit -- the same shape as T-3843's unwaivable DOC006, and it
+means the priority here is higher than "friction".
+
+Widening the story's scope to cover a leaf's test file would be the next
+workaround, and it must NOT be recommended: scope is also the write lease, so
+that hands the parent a lease over its child's files and creates exactly the
+cross-ticket contention the lease system exists to prevent.
+
+FACT 2 -- AND THIS ONE IS ITS OWN QUESTION. The reporter's coping strategy:
+
+    "The dependent stories became doable anyway once the story was STARTED, so
+     I left T-0006/T-0010 in-progress on main."
+
+So `blocked_by` resolves when the blocker is STARTED, not when it is DONE.
+Measure and confirm that before acting on it; if true, decide explicitly whether
+it is intended:
+  - If intended, the dependency is "work has begun", which is a much weaker
+    guarantee than the name suggests, and the docs should say so plainly.
+  - If unintended, dependents are being released early, and every ticket that
+    ever unblocked this way did so on a premise that had not been met.
+Either way the reporter's workaround leaves container tickets PERMANENTLY
+in-progress on main to keep their dependents flowing. That is ledger corruption
+adopted out of necessity, and it will read to any later audit as abandoned work.
+It also means the NEEDS CLOSE rot signal cannot distinguish "container waiting
+on a rollup" from "container deliberately parked to unblock dependents".
+
+REVISED PRIORITY. This is not friction. A container ticket cannot be closed, and
+the only way to keep dependent work moving is to leave it permanently
+in-progress. Fixing the close path (the main body above) also fixes the
+incentive to park them.
+
+ADDITIONAL FIXTURE REQUIRED:
+  - a container whose scope does not cover a leaf's test file can still close
+    via the rollup path, WITHOUT widening its scope and WITHOUT borrowing
+    evidence.
+
+ADDITIONAL ACCEPTANCE:
+  - The blocked_by-resolves-on-start behaviour measured and reported, with a
+    stated verdict on whether it is intended. Do not change it under this
+    ticket if it turns out to be deliberate -- file it separately.
