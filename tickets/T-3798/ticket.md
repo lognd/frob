@@ -1,7 +1,7 @@
 ---
 id: T-3798
 title: make fake gh preflight integration test spawn on win32
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'

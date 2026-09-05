@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -261,6 +262,15 @@ class TestViewRun:
 
 
 class TestPreflightIntegration:
+    # frob:ticket T-3798
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="the fake gh is a #!/bin/sh script shadowed onto PATH by "
+        "bare extensionless name; Windows CreateProcess only appends "
+        ".exe to an extensionless argv[0] (never the rest of PATHEXT), so "
+        "a fake gh.bat/.cmd is never found and the argv falls through to "
+        "any real gh.exe already installed on the machine instead (T-3798)",
+    )
     def test_real_subprocess_seam_against_a_fake_gh_binary(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
