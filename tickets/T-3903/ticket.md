@@ -2,7 +2,7 @@
 id: T-3903
 title: VERSION001 reads only the native extra's pins, so T-3845's new default-dependency
   pins are unguarded going into a required bump
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
