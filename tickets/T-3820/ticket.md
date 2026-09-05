@@ -2,7 +2,7 @@
 id: T-3820
 title: graph cache os.replace unguarded on Windows [WinError 5] under concurrent access
   -- retry-on-PermissionError + un-skip the transient T-3781 tests
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
