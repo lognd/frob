@@ -2,7 +2,7 @@
 id: T-3912
 title: DEPR003 fires as error severity in frob check --json despite being documented
   as WARN while in its sunset window
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
