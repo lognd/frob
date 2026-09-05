@@ -2,7 +2,7 @@
 id: T-3845
 title: ship frob-core and strata-core with frob by default now that the release workflow
   publishes both
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-05'
