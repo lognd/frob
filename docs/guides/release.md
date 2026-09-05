@@ -378,3 +378,61 @@ later tag both refer back to it):
   would produce `0.530.1` when `0.531.0` is required). Scope belongs in
   `src/frob/release/_publish.py` / `scripts/bump_version.py`, outside
   this ticket's `docs/guides/release.md`-only scope.
+
+## Decision 5: mcp 2.x pin (T-3857)
+
+MEASURED 2026-09-05 (FROBLEMS F-001): `pyproject.toml`'s `serve` extra and
+dev group both pinned `mcp>=1.28.1` with no upper bound. mcp 2.x renamed
+`FastMCP` to `MCPServer` (2.x's own mcp.server.fastmcp module, in the
+`mcp` package itself, is a deliberate compat shim whose only content is
+`raise ModuleNotFoundError` naming the rename and a migration guide URL),
+so `frob.serve.server`'s `from mcp.server.fastmcp import FastMCP` import
+fails against any freshly
+resolved mcp 2.x. This repo's own checkout resolved mcp 1.28.1 and stayed
+green throughout; the break was invisible from inside the repo and
+reproduced only in a clean resolve -- exactly what `pip install
+"frob[serve]"` gives a new user. Fixed by bounding both pins:
+`mcp>=1.28.1,<2`.
+
+**Port now, or after the alpha? AFTER, deliberately.** The three mcp APIs
+`frob.serve.server` actually uses -- the `FastMCP`/`MCPServer`
+constructor's `name` positional, the `@server.tool()` decorator, and
+`server.run(transport="stdio")` -- all exist on mcp 2.1.1's `MCPServer`
+with a compatible signature (checked directly against the downloaded
+2.1.1 wheel, not assumed from the rename alone). That makes the port
+itself low-risk, but nothing here has run `frob serve` against a real
+mcp 2.x client end-to-end, and the alpha is held on "a working build",
+not "a plausible port" -- so the port is real follow-up work, not a
+same-ticket addition. Tracked as T-3904 (filed alongside T-3857), triggered
+by this pin.
+
+The `_require_mcp` error message (`frob.serve.server.McpUnavailable`,
+"the 'mcp' SDK is not installed; run `uv sync --extra serve` ...") stays
+even though the bound pin makes it unreachable through a normal resolve:
+a user can still force `pip install "mcp>=2"` past the bound, and the
+message names the exact cause rather than a bare `ImportError`. This is
+the rare case where a clear failure message earns its keep after the fix
+that makes it rare -- see T-3857's own Done report.
+
+### Unbounded-dependency enumeration (T-3857)
+
+Every `pyproject.toml` dependency floor was checked against its current
+published version (2026-09-05) for a major-version release since the
+floor was set. Per T-3857's own instruction, this is a report, not a
+bulk edit -- an upper bound is a real resolution cost and is added only
+where a specific major-version break is known, as `mcp` was here.
+
+| dependency | floor | latest published | major crossed? |
+|---|---|---|---|
+| mcp (serve extra, dev group) | 1.28.1 | 2.1.1 | YES -- fixed by this ticket |
+| tree-sitter-language-pack | 0.13 | 1.16.1 | YES (0.x -> 1.x), unbounded, production dependency -- not yet known to break `frob.lang`, worth a follow-up compatibility check before the next floor bump |
+| pytest (dev group) | 8 | 9.1.1 | YES (dev-only; a fresh dev sync could resolve pytest 9, not exercised by this repo's own CI which pins via `uv.lock`) |
+| mypy (dev group) | 1.10 | 2.3.1 | YES (dev-only diagnostic oracle, `frob.gates._suppress`) |
+| packaging | 24 | 26.3 | calendar-versioned, not semver -- no evidence of an intentional break |
+| pydantic, tree-sitter, tree-sitter-python, tree-sitter-cpp, pyyaml, jinja2, ruff, ty, typani, hypothesis, pytest-cov, pytest-xdist, pytest-timeout, pytest-rerunfailures | -- | -- | no, still inside the pinned major (or pre-1.0 with no stable major boundary yet) |
+
+None of the unbounded production dependencies besides `tree-sitter-language-pack`
+have crossed a major boundary since their floor. `tree-sitter-language-pack`
+is flagged for the next person touching `frob.lang`'s grammar loading to
+decide whether a bound is warranted; not added here since T-3857's scope
+is the mcp break, and no failure against 1.x has been observed.

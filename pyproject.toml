@@ -82,7 +82,15 @@ dependencies = [
 # serve` degrades to a clear "mcp not installed" message without it.
 # Install with: uv pip install "frob[serve]"
 [project.optional-dependencies]
-serve = ["mcp>=1.28.1"]
+# T-3857: bounded below 2 -- mcp 2.x renamed `mcp.server.fastmcp.FastMCP`
+# to `mcp.server.mcpserver.MCPServer` (mcp 2.x's own
+# mcp/server/fastmcp.py is now a deliberate compat shim that raises
+# ModuleNotFoundError on import, naming the rename). An unbounded lower
+# bound let a fresh resolve pick up mcp 2.x and made a published extra
+# fail on import; see docs/guides/release.md's Decision 5 section for
+# the full incident and the port-later decision. Raise this bound only
+# once frob.serve.server is ported to the mcp 2.x API.
+serve = ["mcp>=1.28.1,<2"]
 # T-3845: `frob-core`/`strata-core` are now ALSO plain default
 # dependencies above (see that comment for the publish-ordering
 # reasoning) -- this is option (c), not (a) alone: the extra stays so
@@ -157,7 +165,11 @@ dev = [
     "pytest-cov>=5",
     "pytest-testmon>=2",
     "hypothesis>=6",
-    "mcp>=1.28.1",
+    # T-3857: bounded below 2, same reason as the `serve` extra above --
+    # a dev-group-only bound would leave the published extra broken, and
+    # this bound alone (without the extra's) would mean CI never
+    # exercises what a user installing `frob[serve]` actually gets.
+    "mcp>=1.28.1,<2",
     "pytest-xdist>=3",
     "pytest-timeout>=2",
     # T-3709: bounded rerun for genuinely load-sensitive tests (CPU-relative

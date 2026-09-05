@@ -2,7 +2,7 @@
 id: T-3857
 title: 'frob serve is broken against mcp 2.x: the serve extra pins mcp unbounded,
   so a fresh resolve ships a failing import'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -18,6 +18,7 @@ scope:
 - pyproject.toml
 - docs/guides/release.md
 - tests/unit/test_dependency_pins.py
+- tickets/T-3904/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +42,15 @@ scope_changes:
     regression
   actor: logan
   at: '2026-09-05'
+- op: add
+  glob: tickets/T-3904/**
+  reason: the follow-up port ticket this ticket files
+  actor: logan
+  at: '2026-09-05'
+evidence:
+- tests/unit/test_dependency_pins.py::TestMcpPinIsBounded::test_serve_extra_excludes_mcp_2x
+- tests/unit/test_dependency_pins.py::TestMcpPinIsBounded::test_dev_group_excludes_mcp_2x
+- tests/unit/test_dependency_pins.py::TestMcpPinIsBounded::test_serve_extra_still_allows_mcp_1x
 designated_repro_test: null
 threat: null
 component: null

@@ -432,7 +432,7 @@ requires-dist = [
     { name = "frob-core", directory = "frob-core" },
     { name = "frob-core", marker = "extra == 'native'", directory = "frob-core" },
     { name = "jinja2", specifier = ">=3.1" },
-    { name = "mcp", marker = "extra == 'serve'", specifier = ">=1.28.1" },
+    { name = "mcp", marker = "extra == 'serve'", specifier = ">=1.28.1,<2" },
     { name = "packaging", specifier = ">=24" },
     { name = "pydantic", specifier = ">=2.12.0" },
     { name = "pyyaml", specifier = ">=6" },
@@ -452,7 +452,7 @@ provides-extras = ["serve", "native", "smt"]
 [package.metadata.requires-dev]
 dev = [
     { name = "hypothesis", specifier = ">=6" },
-    { name = "mcp", specifier = ">=1.28.1" },
+    { name = "mcp", specifier = ">=1.28.1,<2" },
     { name = "mypy", specifier = ">=1.10" },
     { name = "packaging" },
     { name = "pytest", specifier = ">=8" },
