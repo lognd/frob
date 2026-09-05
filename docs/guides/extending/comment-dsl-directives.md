@@ -21,6 +21,27 @@ strata; `src/frob/lang/_extract.py:60`) strip comment delimiters first, so
 `dsl.py` only ever sees the bare `frob:...` text regardless of `#`, `//`,
 or `/* */` origin.
 
+### Quoted positional targets (T-3893)
+
+A `<target>` that must contain a space -- a vitest node id, whose target is
+a describe/it title written as human prose -- is written double-quoted,
+reusing the SAME `"([^"]*)"` grammar `key="value"` attributes already use:
+
+```
+frob:tests "src/x.test.ts describes a thing with several words" kind="unit"
+```
+
+An unquoted target containing a space is still an error (it is read up to
+the first space, and the remainder fails to parse as `key="value"`
+attributes) -- quoting is required, not inferred. There is no escape for a
+literal `"` inside a quoted target or attribute value: a value containing
+one is refused by name (`nested quote in ...`) rather than silently
+truncated at the inner quote. A quoted target survives unchanged through
+`frob fmt`'s line-wrap/unwrap and through every resolver that matches a
+`frob:tests` target against collected test ids (`matches_collected`) --
+it is treated as one opaque string throughout, exactly like any other
+target.
+
 ### `frob:waive` vs `frob:debt` (T-0412)
 
 Two directives suppress a gate finding at a site, with deliberately

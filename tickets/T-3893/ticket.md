@@ -2,7 +2,7 @@
 id: T-3893
 title: allow quoted positional directive values so a vitest title with spaces can
   be cited, reusing the existing attribute quoting
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-05'
@@ -294,6 +294,14 @@ scope_changes:
     fix; filing a follow-up ticket instead'
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget::test_quoted_target_with_spaces_parses_as_one_value
+- tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget::test_quoted_target_with_no_trailing_attrs
+- tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget::test_unquoted_target_with_space_is_still_an_error
+- tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget::test_nested_quote_in_quoted_target_is_a_named_refusal
+- tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget::test_unterminated_quoted_target_is_a_named_refusal
+- tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget::test_attribute_form_is_untouched
+- tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget::test_quoted_target_round_trips_through_fmt_wrap
 designated_repro_test: null
 threat: null
 component: null

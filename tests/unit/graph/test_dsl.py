@@ -885,3 +885,133 @@ class TestVerbShapedContinuationProse:
             assert not malformed, f"limit={limit} produced malformed: {malformed}"
             assert len(edges) == 1
             assert edges[0].attrs["reason"] == expected_reason
+
+
+class TestQuotedPositionalTarget:
+    """T-3893: a double-quoted positional target, reusing `_ATTR_RE`'s own
+    `"([^"]*)"` quoting convention so a `frob:tests` target containing
+    spaces (a vitest describe/it title, F-047) can be written as one
+    value."""
+
+    def test_quoted_target_with_spaces_parses_as_one_value(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_line
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:tests "src/x.test.ts describes a thing with spaces" '
+            'kind="unit"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].target == "src/x.test.ts describes a thing with spaces"
+        assert edges[0].attrs["kind"] == "unit"
+
+    def test_quoted_target_with_no_trailing_attrs(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_line
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:tests "src/x.test.ts a title with spaces"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].target == "src/x.test.ts a title with spaces"
+
+    def test_unquoted_target_with_space_is_still_an_error(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_line
+        # MUST-FIRE (T-3893): no silent truncation of an unquoted value
+        # that contains a space -- it must still fail to parse.
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:tests src/x.test.ts a title with spaces\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+
+    def test_nested_quote_in_quoted_target_is_a_named_refusal(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_line
+        # MUST-FIRE (T-3893): a value containing a literal `"` cannot be
+        # expressed by this quoting convention (no escape mechanism) --
+        # the failure must name the problem, never silently truncate at
+        # the inner quote.
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:tests "a title with an inner \\" quote character"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "nested quote" in malformed[0].reason
+
+    def test_unterminated_quoted_target_is_a_named_refusal(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_line
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:tests "never closed\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "unterminated quoted target" in malformed[0].reason
+
+    def test_attribute_form_is_untouched(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_attrs
+        # MUST-STAY-QUIET (T-3893): the existing key="value" attribute
+        # form is unaffected by positional-value quoting.
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:waive RULE-1 reason="a reason with spaces"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].attrs["reason"] == "a reason with spaces"
+
+    def test_quoted_target_round_trips_through_fmt_wrap(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_line
+        # T-3893/T-3889: a quoted span wrapped mid-string by `frob fmt`
+        # must read back as the identical value once unfolded.
+        from frob.gates._fmt_directives import canonicalize_text
+
+        logical = (
+            'frob:tests "src/x.test.ts a fairly long describe title with '
+            'several words in it" kind="unit"'
+        )
+        expected_target = (
+            "src/x.test.ts a fairly long describe title with several "
+            "words in it"
+        )
+        src_template = "def foo() -> None:\n    # {}\n    pass\n"
+        original = src_template.format(logical)
+        path = tmp_path / "a.py"
+        for limit in range(20, 120, 4):
+            rewritten = canonicalize_text(original, path=str(path), limit=limit)
+            path.write_text(rewritten)
+            pf = parse_file(path).danger_ok
+            edges, malformed = parse_directives(pf)
+            assert not malformed, f"limit={limit} produced malformed: {malformed}"
+            assert len(edges) == 1
+            assert edges[0].target == expected_target, f"limit={limit}"

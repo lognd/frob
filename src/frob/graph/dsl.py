@@ -176,6 +176,20 @@ def _blank_code_spans(text: str) -> str:
 
 _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")
 _ATTR_RE = re.compile(r'(\w+)\s*=\s*"([^"]*)"')
+# T-3893: a POSITIONAL target (the bare word `_parse_line` reads via
+# `rest.partition(" ")`) wrapped in double quotes, exactly `_ATTR_RE`'s own
+# `"([^"]*)"` value grammar -- the SAME quoting convention, applied to the
+# one place `_ATTR_RE` cannot reach (attribute values only, never a bare
+# leading target). This is what lets `frob:tests "describes a thing, does
+# another" kind="unit"` cite a vitest node id whose describe/it title is
+# human prose full of spaces: `matches_collected`/the per-framework
+# resolvers see the space-bearing string as one opaque target, same as any
+# other target, once past this regex. No embedded-quote support (see
+# `_parse_attrs`'s leftover check just below `_ATTR_RE.sub` for the
+# explicit-refusal half of that story) -- deliberately not a second
+# quoting mechanism, just this one convention read from a different
+# position on the line.
+_QUOTED_TARGET_RE = re.compile(r'^"([^"]*)"\s*(.*)$', re.DOTALL)
 # T-0757: "property" joins the existing three kinds -- a `frob:tests`
 # edge declared `kind="property"` asserts it exercises a PROPERTY SPACE
 # (a comparator's ordering, a round-trip, a monotonicity claim) rather
@@ -773,6 +787,17 @@ def _enclosing_src(comment: RawComment, path: str) -> str:
     return path
 
 
+# frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_nested_quote_in_quoted_target_is_a_named_refusal  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
+# reports it unchanged), same unwrappable shape as this file's own pre-existing long \
+# frob:tests lines (e.g. the TestMarkdownAnchorsUntilAndClaimsAbsence block above \
+# markdown_anchors)"
+# frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_attribute_form_is_untouched  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
+# reports it unchanged), same unwrappable shape as this file's own pre-existing long \
+# frob:tests lines"
 def _parse_attrs(
     verb: str, attr_text: str, *, path: str, lineno: int
 ) -> dict[str, str] | MalformedDirective:
@@ -789,6 +814,25 @@ def _parse_attrs(
     # quote), so a '#' that survives into `leftover` was never inside quotes.
     leftover = leftover.split("#", 1)[0].strip()
     if leftover:
+        if '"' in leftover:
+            # T-3893: leftover text that itself contains a raw `"` is
+            # almost always a NESTED quote -- a quoted target or
+            # attribute value whose own text contained a literal `"`,
+            # which `"([^"]*)"` closed early on, leaving the rest of the
+            # intended value stranded here as unparseable tail. Nested
+            # quotes are not supported (no escape mechanism exists for
+            # this DSL's quoting convention) -- name the problem rather
+            # than silently truncating the value at the inner quote.
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(
+                    f"nested quote in {leftover!r} -- a quoted value "
+                    "cannot itself contain a literal '\"' (no escape "
+                    "mechanism; rewrite the value without an embedded "
+                    "quote)"
+                ),
+            )
         return MalformedDirective(
             file=path, line=lineno, reason=f"bad attribute syntax: {leftover!r}"
         )
@@ -1051,12 +1095,73 @@ def _parse_attrs_verb_error(
     return validator(attrs, path=path, lineno=lineno)
 
 
+# frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_quoted_target_with_spaces_parses_as_one_value  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
+# reports it unchanged), same unwrappable shape as this file's own pre-existing long \
+# frob:tests lines"
+# frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_unquoted_target_with_space_is_still_an_error  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
+# reports it unchanged), same unwrappable shape as this file's own pre-existing long \
+# frob:tests lines"
+# frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_nested_quote_in_quoted_target_is_a_named_refusal  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
+# reports it unchanged), same unwrappable shape as this file's own pre-existing long \
+# frob:tests lines"
+# frob:tests tests/unit/graph/test_dsl.py::TestQuotedPositionalTarget.test_unterminated_quoted_target_is_a_named_refusal  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
+# reports it unchanged), same unwrappable shape as this file's own pre-existing long \
+# frob:tests lines"
+def _parse_target(
+    verb: str, rest: str, *, path: str, lineno: int
+) -> tuple[str, dict[str, str]] | MalformedDirective:
+    """Split `rest` into `(target, attrs)` for every verb NOT in
+    `_ATTR_ONLY_VERBS` -- split out of `_parse_line` for ARCH001 (T-3893).
+
+    A `rest` starting with `"` is a quoted target (T-3893): read via
+    `_QUOTED_TARGET_RE`, the same quoting convention `_ATTR_RE` uses for
+    attribute values, so a target containing spaces (a vitest describe/it
+    title) is one value. An unterminated quote is a named refusal, never
+    a silent fall-through to the unquoted split. An UNQUOTED target
+    containing a literal `"` (almost always a stray leading space before
+    an intended opening quote) is likewise refused by name rather than
+    binding a target string no downstream resolver expects."""
+    if rest.startswith('"'):
+        quoted = _QUOTED_TARGET_RE.match(rest)
+        if quoted is None:
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=f"unterminated quoted target: {rest!r}",
+            )
+        target, attr_text = quoted.group(1), quoted.group(2)
+    else:
+        target, _, attr_text = rest.partition(" ")
+        if '"' in target:
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(
+                    f"target {target!r} contains a literal '\"' -- quote "
+                    "the whole target (frob:%s \"...\") if it must "
+                    "contain spaces or quotes" % verb
+                ),
+            )
+    attrs = _parse_attrs(verb, attr_text.strip(), path=path, lineno=lineno)
+    if isinstance(attrs, MalformedDirective):
+        return attrs
+    return target, attrs
+
+
 def _parse_line(
     line: str, *, path: str, lineno: int, src: str
 ) -> Edge | MalformedDirective | None:
     """Parse one `frob:...` comment line into an `Edge`, a `MalformedDirective`,
-    or `None` for a reserved marker verb (`_RESERVED_MARKER_VERBS`) that another
-    subsystem owns and the DSL parser must silently ignore."""
+    or `None` for a reserved marker verb another subsystem owns
+    (`_RESERVED_MARKER_VERBS`). T-3893: `_parse_target` splits target/attrs."""
     origin = f"{path}:{lineno}"
     match = _LINE_RE.match(line)
     if match is None:
@@ -1091,10 +1196,10 @@ def _parse_line(
             return attrs
         target = attrs["proto"]
     else:
-        target, _, attr_text = rest.partition(" ")
-        attrs = _parse_attrs(verb, attr_text.strip(), path=path, lineno=lineno)
-        if isinstance(attrs, MalformedDirective):
-            return attrs
+        parsed = _parse_target(verb, rest, path=path, lineno=lineno)
+        if isinstance(parsed, MalformedDirective):
+            return parsed
+        target, attrs = parsed
 
     # T-0265: a literal self-referential `frob:tests` directive (target ==
     # src) is NOT rejected here -- it is this repo's own widespread,
