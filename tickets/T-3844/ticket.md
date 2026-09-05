@@ -2,7 +2,7 @@
 id: T-3844
 title: 'severity ratchet: promote every zero-finding rule to error including VMOD001,
   carve out planning rules as repo-local warnings'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-05'
