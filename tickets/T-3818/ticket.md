@@ -2,7 +2,7 @@
 id: T-3818
 title: 'T-3797 regression: check tool-runners render Err(SpawnFailed) as tool_disabled
   instead of tool_unavailable (mac+ubuntu red on test_check_tool_unavailable)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
