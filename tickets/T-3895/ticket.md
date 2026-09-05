@@ -14,10 +14,40 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/lang/**
+- tests/test_lang.py
+- tests/fixtures/lang/**
+- docs/modules/lang.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/lang/**
+  reason: PARSE002 divergence lives in frob.lang's parse/PARSE002 path; differential
+    test and fixtures land alongside it, T-0133 parity statement in docs/modules/lang.md
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_lang.py
+  reason: PARSE002 divergence lives in frob.lang's parse/PARSE002 path; differential
+    test and fixtures land alongside it, T-0133 parity statement in docs/modules/lang.md
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/fixtures/lang/**
+  reason: PARSE002 divergence lives in frob.lang's parse/PARSE002 path; differential
+    test and fixtures land alongside it, T-0133 parity statement in docs/modules/lang.md
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/lang.md
+  reason: PARSE002 divergence lives in frob.lang's parse/PARSE002 path; differential
+    test and fixtures land alongside it, T-0133 parity statement in docs/modules/lang.md
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
