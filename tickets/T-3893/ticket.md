@@ -19,6 +19,8 @@ scope:
 - src/frob/nodeid.py
 - src/frob/tickets/_evidence.py
 - tests/unit/graph/test_dsl.py
+- docs/modules/graph.md
+- docs/guides/extending/comment-dsl-directives.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +48,16 @@ scope_changes:
   glob: tests/unit/graph/test_dsl.py
   reason: extend positional directive values to accept quoted spans, reusing _ATTR_RE
     quoting convention; must survive to resolvers and frob fmt round trip
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/graph.md
+  reason: directive doc pages referenced by dsl.py public symbols in scope
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/guides/extending/comment-dsl-directives.md
+  reason: directive doc pages referenced by dsl.py public symbols in scope
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
