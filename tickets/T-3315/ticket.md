@@ -2,7 +2,7 @@
 id: T-3315
 title: frob ticket sweep refuses on a done ticket with no stated remedy after a post-close
   scope fix
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
