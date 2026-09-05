@@ -14,10 +14,40 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/graph/dsl.py
+- src/frob/nodeid.py
+- src/frob/tickets/_evidence.py
+- tests/unit/graph/test_dsl.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: extend positional directive values to accept quoted spans, reusing _ATTR_RE
+    quoting convention; must survive to resolvers and frob fmt round trip
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/nodeid.py
+  reason: extend positional directive values to accept quoted spans, reusing _ATTR_RE
+    quoting convention; must survive to resolvers and frob fmt round trip
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: extend positional directive values to accept quoted spans, reusing _ATTR_RE
+    quoting convention; must survive to resolvers and frob fmt round trip
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/graph/test_dsl.py
+  reason: extend positional directive values to accept quoted spans, reusing _ATTR_RE
+    quoting convention; must survive to resolvers and frob fmt round trip
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
