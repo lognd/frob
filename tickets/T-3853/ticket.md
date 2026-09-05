@@ -18,6 +18,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: de-backtick citations that cannot resolve in this repo (proposed artifacts,
+    a proposed verb, sibling-repo paths); they are prose, not pointers, and were blocking
+    every land touching the docptr gate
+  actor: logan
+  at: '2026-09-05'
+  old_length: 5581
+  new_length: 5581
 designated_repro_test: null
 threat: null
 component: null
@@ -45,7 +54,7 @@ WHAT logand.app-v2 ACTUALLY HAS (read-only inspection, 2026-09-05):
     scripts/vmodel_gen.py     <- a GENERATOR they had to write themselves
     tests/unit/test_vmodel_gen.py
 
-The docs layout alone is inert. `design/vmodel.strata` is the enforceable
+The docs layout alone is inert. "design/vmodel.strata" is the enforceable
 artifact: `vmodel_node`/`vmodel_edge` statements that VMOD001 aggregates across
 every .strata file and runs `vmodel_check` against for structural closure.
 That they ALSO wrote `vmodel_gen.py` is the tell -- hand-authoring the graph
@@ -73,11 +82,11 @@ WHAT TO BUILD -- scaffold the enforceable artifact, not just the docs.
   a. The scaffold ships the L1-L5 spec skeleton (both arms of the V: each
      specification level paired with its verification level) with the docs as
      stubs, not prose.
-  b. The scaffold ships a `design/vmodel.strata` declaring the corresponding
+  b. The scaffold ships a "design/vmodel.strata" declaring the corresponding
      vmodel_node/vmodel_edge set, so VMOD001 has a graph to check on day one.
   c. GENERATION, NOT HAND-AUTHORING. logand.app-v2 wrote vmodel_gen.py because
      keeping declarations in step with docs by hand does not hold. Decide
-     whether frob should own that generation as a verb (`frob vmodel sync`, or
+     whether frob should own that generation as a verb ("frob vmodel sync", or
      an extension of an existing verb) rather than leaving every consumer repo
      to write its own script. Read scripts/vmodel_gen.py first (READ-ONLY --
      ../logand.app-v2 is not ours to modify) and report what it does; if the
