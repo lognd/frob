@@ -28,6 +28,13 @@ body_changes:
   at: '2026-09-05'
   old_length: 2990
   new_length: 6051
+- mode: set
+  reason: 'de-pointer the proposed --scope002-ack flag: it cannot resolve until the
+    ticket is implemented, and it is one of four errors blocking a green CI run'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 6051
+  new_length: 6049
 designated_repro_test: null
 threat: null
 component: null
@@ -83,7 +90,7 @@ silently widening or silently ignoring it.
   add" -- similar to how the ledger/tickets/<id>/ shard are already
   always-in-scope exemptions elsewhere in this codebase), or (c) leaving
   error severity but adding a documented, first-class escape hatch (a
-  `frob ticket scope --scope002-ack` parallel to `scope_breadth_ack`)
+  "frob ticket scope --scope002-ack" parallel to scope_breadth_ack)
   for exactly this "the doc is too broadly shared to close" shape.
 
 
