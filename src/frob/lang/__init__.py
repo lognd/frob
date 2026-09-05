@@ -1033,6 +1033,12 @@ _parse_file_memoized: Callable[..., Result[ParsedFile, LangError]] | None = None
 # frob:tests tests/unit/test_memo.py::test_parse_file_second_call_is_memo_hit
 # invariant spec: [INV-015](invariants/INV-015.md)
 # frob:tests tests/test_lang.py::TestErrors.test_syntax_error_yields_partial_symbols
+# frob:tests \
+# tests/test_lang.py::TestNativeIndependentParsing.test_corpus_parses_identically_with_\
+# and_without_natives
+# frob:tests \
+# tests/test_lang.py::TestKnownGrammarGaps.test_anonymous_bitfield_partial_parse_is_nat\
+# ive_independent
 def parse_file(
     path: Path, *, expect_heterogeneous: bool = False
 ) -> Result[ParsedFile, LangError]:

@@ -59,6 +59,18 @@ that actually uses `.strata` files gets a loud, non-degrading failure
 instead of a silent pass -- see "Loud failure when `.strata` is used without
 natives" below, unchanged by T-3845.
 
+**Parity, not just availability (T-3895):** `.py`/`.ts`/`.rs`/`.c`/`.cpp`/
+etc. parsing (`frob.lang.parse_file` for every `_EXTENSION_TABLE` extension)
+is unaffected by whether these natives are present -- it always goes
+through `tree-sitter-language-pack` alone, natives or not, so there is
+nothing to degrade there and no divergence T-0133 needs to cover for those
+languages. `.strata` is the one extension where the native's presence
+changes the outcome (`NativeParserUnavailable` vs a real parse). See
+docs/modules/lang.md#what-t-0133s-degrade-guarantee-does-and-does-not-promise-t-3895
+for the full parity statement and T-3895's own finding that a real,
+reproducible C-parsing PARSE002 divergence exists in tree-sitter's own "c"
+grammar -- independent of any frob native.
+
 ## Editable dev install
 
 Editable dev work in this repo (not an end-user install) builds the

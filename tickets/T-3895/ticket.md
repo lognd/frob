@@ -2,7 +2,7 @@
 id: T-3895
 title: the native and pure-Python parser backends disagree on the same C file, so
   gate results depend on which machine ran them
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -132,6 +132,10 @@ scope_changes:
     not created by this ticket''s one-file diagnosis+test diff'
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/test_lang.py::TestNativeIndependentParsing::test_natives_are_actually_blocked_by_the_harness
+- tests/test_lang.py::TestNativeIndependentParsing::test_corpus_parses_identically_with_and_without_natives
+- tests/test_lang.py::TestKnownGrammarGaps::test_anonymous_bitfield_partial_parse_is_native_independent
 designated_repro_test: null
 threat: null
 component: null

@@ -544,6 +544,50 @@ syntax error. Consumers (`frob.graph._process_source_file`) log this case at
 debug, not warning, to avoid one warning line per `.strata` file per build in
 every natives-less install.
 
+### What T-0133's degrade guarantee does and does not promise (T-3895)
+
+T-0133/`NativeParserUnavailable` is a promise about **availability**: a
+missing native extension is always a clear typed `Err`, never a crash. It
+says nothing about **correctness parity between backends**, and T-3895
+(FROBLEMS F-021) is the record of that gap being read as a parity promise
+it never made. The actual shape, verified directly rather than assumed:
+
+- **`.py`/`.ts`/`.tsx`/`.rs`/`.c`/`.h`/`.cpp`/`.cs`/`.java`/`.cu`/`.cuh`/
+  `.zig`/`.kt`/`.kts`/`.sh`/`.bash`** (every `_EXTENSION_TABLE` entry) have
+  **exactly one parser**: `tree_sitter_language_pack.get_parser`. Neither
+  `frob_core` nor `strata_core` is imported anywhere on this path (grep-
+  verified against `frob.lang._parse`/`_extract.py`/every `_walk_*.py`
+  walker) -- installing or removing either native changes NOTHING about how
+  these files parse. There is no "native vs pure-Python" backend choice to
+  disagree here; whatever tree-sitter's bundled grammar decides is the only
+  answer, on every install. `tests/test_lang.py::TestNativeIndependentParsing`
+  is the regression guard: it force-blocks both natives and asserts
+  `parse_file` is byte-identical across a C/C++/Rust/TypeScript/Python
+  corpus either way.
+- **`.strata`** is the one extension with a real single-native dependency
+  (`strata_core`); its guarantee is exactly T-0133's original scope --
+  `NativeParserUnavailable` instead of a crash, never a second parser
+  producing a different tree.
+- **Parity NOT guaranteed**: tree-sitter's own grammars can have real
+  parsing gaps against the language they claim to support, independent of
+  any frob native. T-3895's own reduced repro:
+  `tests/fixtures/lang/anonymous_bitfield.c` (an ISO C11 6.7.2.1p12-legal
+  anonymous bit-field, common in embedded/HAL register structs) is only
+  partially parsed by `tree-sitter-language-pack`'s "c" grammar (verified
+  across releases 0.13.0 through 1.16.1 -- not a version-skew artifact),
+  firing PARSE002 on every install, natively-accelerated or not. A
+  `frob:waive PARSE002 reason="..."` on such a file is stable across every
+  install for this same reason: there being one backend and one answer, per
+  `TestKnownGrammarGaps` in `tests/test_lang.py`, is exactly what makes the
+  waiver's "matches 0 findings" (WAIVE004) false alarm from the reporter's
+  original report NOT reproduce in this codebase as it stands today.
+- **T-3845 cross-reference**: making `frob-core`/`strata-core` default
+  dependencies shifts who has natives installed, but per the point above it
+  does not change a single tree-sitter-backed parse result -- the packaging
+  change T-3845 makes is honestly a pure packaging change for `.py`/`.ts`/
+  `.rs`/`.c`/`.cpp`/etc; only `.strata` parsing and `frob.dup`'s R3+ rungs
+  actually depend on which natives are present.
+
 <!-- frob:describes src/frob/lang/_walk_strata.py::NATIVE_UNAVAILABLE_MESSAGE -->
 
 `frob.lang._walk_strata.NATIVE_UNAVAILABLE_MESSAGE` is the exact `Err`
