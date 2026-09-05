@@ -18,6 +18,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'owner addition: Result.catch is the exception-to-Result boundary; 93 candidate
+    sites measured, kept separate from the @propagate half'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 5143
+  new_length: 9390
 designated_repro_test: null
 threat: null
 component: null
@@ -127,3 +135,83 @@ ACCEPTANCE
 - The dynamic-extent hazard investigated and a stated discipline.
 - Hot-path performance measured before any hot-path conversion.
 - Refactor landed in slices, each verified.
+
+
+
+OWNER ADDITION 2026-09-05: "We also have a exception -> result boundary with
+Result.catch; refactor where needed."
+
+This is the SECOND half of the typani 0.1.0 adoption and it is a different
+transformation from @propagate above. Keep them separate in the work, even
+though they land under one ticket.
+
+  @propagate   Result -> early return   (collapses `if x.is_err: return Err(...)`)
+  Result.catch exception -> Result      (collapses `try/except: return Err(...)`)
+
+THE API, measured from typani/_propagate.py:
+
+    catching(*exceptions, on_error=Callable[[BaseException], Any]) -> decorator
+
+    "Decorator factory: wrap a whole function in Result.catch semantics.
+     Equivalent to calling Result.catch(lambda: func(*a, **kw), *exceptions,
+     on_error=on_error) on every call. Supports both sync and async."
+
+Note the sync path delegates to `Result.catch` while the async path inlines an
+equivalent try/except -- so `Result.catch` is the primitive and `catching` is
+its decorator form. Use whichever fits: `Result.catch` for a single call being
+guarded inline, `@catching` for a whole function that is itself the boundary.
+
+DENOMINATOR, measured in frob's src/ on 2026-09-05:
+
+    93 sites where an `except` block is followed within three lines by
+    `return Err(...)`
+
+That is the candidate population, not the confirmed one -- the grep is a shape
+match and will include some sites that also do real work in the handler.
+
+WHY THIS MATTERS MORE THAN THE @propagate HALF, despite being a seventh the
+size. The house rule is that every fallible operation a caller must handle
+returns a Result, and exceptions are only for unrecoverable programmer bugs. The
+93 sites are where frob CONVERTS one to the other -- they are the boundary the
+rule is about. Each hand-written conversion is a chance to get the boundary
+subtly wrong, and the two failure modes are ones this repo has already paid for:
+  - too broad: a bare `except Exception` swallows a programmer bug and returns
+    it as a user-facing Err, hiding a real defect behind a recoverable-looking
+    value.
+  - too narrow / wrong place: an exception escapes past a boundary that should
+    have converted it, and a caller expecting a Result gets a traceback.
+`catching(*exceptions, ...)` forces the exception set to be NAMED at the
+boundary, which is exactly the discipline a hand-rolled try/except lets you
+skip.
+
+WHAT TO DO
+  1. Classify the 93. For each: which exceptions are caught, does the handler do
+     anything besides constructing the Err (logging, cleanup, context), and is
+     the caught set specific or a bare `except Exception`. Report the counts.
+     The bare-Exception subset is the interesting one and may be a finding in
+     its own right regardless of whether it is refactored.
+  2. Convert the sites where the handler ONLY constructs an Err from the
+     exception. Those are mechanical and `on_error=` expresses them exactly.
+  3. Leave sites whose handler does real work, unless `on_error` can carry it
+     honestly. Do not push cleanup or logging into an `on_error` lambda just to
+     make a site convertible -- that trades clarity for uniformity.
+  4. Where a bare `except Exception` is found at a boundary, decide whether the
+     catch set can be narrowed. That is a behaviour change and needs its own
+     justification per site; do not narrow silently as part of a refactor.
+
+DO NOT convert a try/except that exists to SUPPRESS rather than to convert --
+some of the 93 may be guarding optional behaviour where the Err is discarded.
+Those interact with TYP003 (discarded Result) and should be looked at under
+T-3849 instead.
+
+ADDITIONAL FIXTURES:
+  MUST-FIRE:   an exception type NOT in the declared catch set still propagates
+               out of a converted function (proves the set is honoured)
+  MUST-STAY-QUIET: each converted site's existing tests pass unchanged
+  THIRD:       a converted async boundary behaves the same as its sync twin
+
+ADDITIONAL ACCEPTANCE
+- The 93 classified with counts (mechanical / handler-does-work / bare-Exception).
+- Only the mechanical subset converted, unless a case is argued individually.
+- The bare-Exception population reported even if left alone -- that list is
+  worth having regardless of this refactor.
