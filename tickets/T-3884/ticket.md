@@ -2,7 +2,7 @@
 id: T-3884
 title: 'nothing installs the built frob wheel and runs it before publish: CI proves
   the source tree, not the artifact'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -14,10 +14,37 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- .github/workflows/release.yml
+- docs/guides/release.md
+- scripts/artifact_smoke.py
+- tests/unit/test_release_workflow_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .github/workflows/release.yml
+  reason: 'artifact smoke stage: install built wheel from clean venv, gate publish'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/guides/release.md
+  reason: 'artifact smoke stage: install built wheel from clean venv, gate publish'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: scripts/artifact_smoke.py
+  reason: 'artifact smoke stage: install built wheel from clean venv, gate publish'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_release_workflow_gate.py
+  reason: must update the exact needs-set assertion once artifact-smoke joins upload
+    needs
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
