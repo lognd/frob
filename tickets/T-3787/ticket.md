@@ -2,7 +2,7 @@
 id: T-3787
 title: 'frob land: support landing onto a non-main target branch (unblocks off-main
   v1.0.0 dev after alpha)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-04'
@@ -22,6 +22,7 @@ scope:
 - src/frob/app/_config_external.py
 - tests/ticket_land_suite/test_land_target_branch.py
 - docs/modules/tickets-landing.md
+- tests/ticket_land_suite/test_verify_intent.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -67,6 +68,13 @@ scope_changes:
   glob: docs/modules/tickets-landing.md
   reason: 'T-3787: land --branch/--onto target-branch support + config default; touches
     land flow, models, CLI arg, config field, LAND-PROOF, tests, docs'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/ticket_land_suite/test_verify_intent.py
+  reason: 'T-3787: _land_proof_checks gained a target_branch kwarg (LAND-PROOF ancestry
+    now checks the real land target); this test stubs that function and its lambda
+    must accept the new kwarg'
   actor: logan
   at: '2026-09-05'
 body_changes:
