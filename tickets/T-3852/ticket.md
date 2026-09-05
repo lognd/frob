@@ -6,7 +6,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-09-05'
-priority: high
+priority: critical
 parent: null
 tier: ticket
 sprint: null
@@ -18,6 +18,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: high
+  new_value: critical
+  reason: 'no exit state: a container ticket cannot be closed by any path, and the
+    only way to keep dependents flowing is to park it in-progress on main'
+  actor: logan
+  at: '2026-09-05'
 body_changes:
 - mode: append
   reason: 'reporter addendum: the leaf-evidence workaround also fails with EvidenceScopeUnbound,
