@@ -20,6 +20,7 @@ scope:
 - scripts/artifact_smoke.py
 - tests/unit/test_release_workflow_gate.py
 - tests/system/test_artifact_smoke.py
+- tests/unit/test_artifact_smoke_script.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -115,6 +116,11 @@ scope_changes:
   glob: src/frob/gates/_version_coupling.py
   reason: closure cascade is unbounded (100+ transitive files); reverting, will disclose
     as debt instead
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_artifact_smoke_script.py
+  reason: mocked unit tests for check_* functions (COV001/TEST001/LANDPARITY001 evidence)
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
