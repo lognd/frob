@@ -41,6 +41,7 @@ scope:
 - tests/unit/test_fmt_wiring_reachability_t2761.py
 - tests/gates_suite/test_waive.py
 - tests/unit/test_makefile_coverage.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -174,6 +175,12 @@ scope_changes:
 - op: add
   glob: tests/unit/test_makefile_coverage.py
   reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'T-3906: fmt/format CLI args must be wired through from_external''s field
+    tuples'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
