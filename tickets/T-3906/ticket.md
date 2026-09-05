@@ -2,7 +2,7 @@
 id: T-3906
 title: 'consolidate the format/fmt split: same word, two operations, and only one
   of them has --check'
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-09-05'
