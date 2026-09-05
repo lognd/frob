@@ -42,6 +42,16 @@ body_changes:
   at: '2026-09-05'
   old_length: 4581
   new_length: 7563
+evidence:
+- tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
+- tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion::test_single_line_title_not_flagged
+- tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion::test_wrapped_title_not_flagged
+- tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion::test_open_ticket_body_still_flagged_alongside_title
+- tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion::test_body_violation_below_blanked_title_reports_original_line
+- tests/test_docptr_gate.py::TestDoc006TitleFieldExclusion::test_docs_prose_pointer_still_flagged
+- tests/test_docptr_gate.py::TestBlankTicketReasonFields::test_title_value_blanked_key_kept
+- tests/test_docptr_gate.py::TestBlankTicketReasonFields::test_wrapped_title_continuation_blanked_line_count_preserved
+- tests/test_docptr_gate.py::TestBlankTicketReasonFields::test_reason_key_blanking_not_regressed_by_title_addition
 designated_repro_test: null
 threat: null
 component: null
