@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/app/ticket_runner/_lifecycle.py
+- tests/unit/test_ticket_sweep_terminal_state.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,11 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_lifecycle.py
   reason: sweep command handler (_sweep_cmd) actually lives here, not _verify.py --
     correcting the ticket's declared scope to match reality
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_ticket_sweep_terminal_state.py
+  reason: MUST-FIRE/MUST-STAY-QUIET regression tests for sweep on terminal states
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
