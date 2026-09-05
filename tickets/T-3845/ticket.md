@@ -2,7 +2,7 @@
 id: T-3845
 title: ship frob-core and strata-core with frob by default now that the release workflow
   publishes both
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-05'
@@ -54,6 +54,8 @@ scope_changes:
   reason: uv.lock is land-owned (T-0731), never hand-committed
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_fails_loud_with_sys004_when_strata_present
 designated_repro_test: null
 threat: null
 component: null

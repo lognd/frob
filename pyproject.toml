@@ -40,6 +40,41 @@ dependencies = [
     # packaging.version at import time; without this a bare wheel install
     # crashed every frob invocation with ModuleNotFoundError.
     "packaging>=24",
+    # T-3845: `frob-core` (frob.dup R3+ clone-detection kernels) and
+    # `strata-core` (frob.strata closure/staleness/demand kernels), both
+    # PyO3/abi3-py311 extensions built by maturin, ship as DEFAULT
+    # dependencies now that .github/workflows/release.yml's `upload` job
+    # publishes both to PyPI before frob itself (verified 2026-09-05: its
+    # three publish steps run in one job with no `continue-on-error`, so
+    # GitHub Actions' default step-abort-on-failure means a failed
+    # frob-core or strata-core publish stops the job before the "Publish
+    # frob to PyPI" step ever runs -- frob's own new version is never
+    # pushed unless both cores already succeeded this run). That ordering
+    # guarantee is why these are pinned EXACT (`==`), not `>=`/`~=` (option
+    # (a) of T-3845, not the floor-pin or extra-only alternatives): a
+    # reversed partial (frob published, a core missing) cannot happen
+    # given the job's real abort behavior, and three separately published
+    # artifacts is otherwise three chances to skew -- this repo already
+    # paid for that lesson once (T-2884 needed a git-SHA check on the
+    # daemon BECAUSE VERSION STRINGS ALONE WERE NOT ENOUGH to detect
+    # skew). Enforced by frob.gates._version_coupling (VERSION001), not
+    # left to convention. A worst case of "cores published, frob's own
+    # publish step fails" leaves the PREVIOUS frob release still
+    # installable (nothing regresses) with the new cores simply unused
+    # until the next successful run -- see
+    # docs/guides/release.md#version-coupling-t-3011.
+    #
+    # T-0133 DEGRADE PATH STILL APPLIES: a source install (`pip install
+    # frob` with no matching wheel for this platform, or any environment
+    # where the native extensions are stripped/absent) still installs and
+    # runs frob in pure-Python mode -- these are Requires-Dist entries a
+    # resolver satisfies when a wheel exists, not a hard runtime import
+    # requirement. frob.dup and frob.strata catch ImportError from the
+    # native modules and return a clear Err, never crash; see
+    # tests/system/test_cli_native_missing.py and
+    # docs/guides/release.md#native-acceleration-degrade-doctrine-t-3011.
+    "frob-core==0.530.0",
+    "strata-core==0.530.0",
 ]
 
 # Optional: `frob serve` (the MCP adapter) needs the mcp SDK; installing it
@@ -48,23 +83,20 @@ dependencies = [
 # Install with: uv pip install "frob[serve]"
 [project.optional-dependencies]
 serve = ["mcp>=1.28.1"]
-# T-3011: the native acceleration extra -- `frob-core` (frob.dup R3+
-# clone-detection kernels) and `strata-core` (frob.strata closure/
-# staleness/demand kernels), both PyO3/abi3-py311 extensions built by
-# maturin. Pinned EXACT (`==`), not `>=`/`~=`, and to frob's OWN version
-# number: three separately published artifacts is three chances to skew,
-# and this repo already paid for that lesson once (T-2884 needed a
-# git-SHA check on the daemon BECAUSE VERSION STRINGS ALONE WERE NOT
-# ENOUGH to detect skew). All three are cut together at release time; a
-# loose pin on an ABI-coupled native extension produces bug reports
-# nobody can reproduce. Enforced by frob.gates._version_coupling
-# (VERSION001), not left to convention -- see
-# docs/guides/release.md#version-coupling-t-3011 for the full reasoning.
-# Without this extra (a bare `pip install frob`, or any platform with no
-# matching wheel), frob still installs and runs in pure-Python mode and
-# says so loudly at startup: see
-# docs/guides/release.md#native-acceleration-degrade-doctrine-t-3011.
-# Install with: uv pip install "frob[native]"
+# T-3845: `frob-core`/`strata-core` are now ALSO plain default
+# dependencies above (see that comment for the publish-ordering
+# reasoning) -- this is option (c), not (a) alone: the extra stays so
+# `frob[native]` keeps resolving for anyone pinning it, AND so
+# frob.gates._version_coupling's VERSION001 (which reads
+# `[project.optional-dependencies].native` for its exact-pin check) and
+# frob.doctor's native-extension remediation message (which tells a user
+# to `pip install 'frob[native]'`) both keep working unchanged --
+# reworking either is out of this ticket's declared scope. The two lists
+# must stay identical; VERSION001 already enforces that its extra pin
+# matches frob's own version, and this comment plus the duplication is
+# the enforcement that the two lists don't drift from EACH OTHER (no
+# automated check for that narrower fact exists; consider one if a
+# future edit desyncs them).
 native = ["frob-core==0.530.0", "strata-core==0.530.0"]
 # R7 (docs/modules/dup.md's bounded-SMT rung): translates tiny pure int/bool
 # functions to Z3 and checks equivalence formally. Optional -- z3-solver
@@ -142,14 +174,19 @@ dev = [
     "mypy>=1.10",
 ]
 
-# T-3011: `frob-core`/`strata-core` are not published to PyPI yet -- this
-# repo's own `uv sync`/`uv lock` must keep working against the LOCAL
-# crate checkouts (dev builds them in-place via `make core`/maturin,
-# never installs a PyPI wheel of its own natives), so the `native` extra
-# above resolves against these paths instead of querying the PyPI index
-# for a package that does not exist there. Drop this section (and the
-# extra keeps working unchanged) once both crates have a first real PyPI
-# release -- see docs/guides/release.md.
+# T-3845 update: both crates ARE published to PyPI now (release.yml
+# builds and uploads both -- see the T-3845 comment on `dependencies`),
+# but this section still has a job: this repo's OWN `uv sync`/`uv lock`
+# must keep resolving `frob-core`/`strata-core` (now default deps, not
+# just the `native` extra) against the LOCAL crate checkouts, since dev
+# builds them in-place via `make core`/maturin rather than pulling a
+# published wheel of its own natives. Verified 2026-09-05 this does not
+# leak into the published artifact: `[tool.uv.sources]` path entries are
+# a uv-lock/dev-resolution-only construct -- a built wheel's METADATA
+# carries only `Requires-Dist: frob-core==0.530.0` / `strata-core==...`,
+# no path information, confirmed by inspecting `uv build --wheel`'s
+# actual output. A consumer resolving frob from the index is unaffected;
+# this section only matters inside this checkout.
 [tool.uv.sources]
 frob-core = { path = "frob-core" }
 strata-core = { path = "strata-core" }

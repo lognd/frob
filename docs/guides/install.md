@@ -1,66 +1,68 @@
-# Installing frob (T-0133)
+# Installing frob (T-0133, T-3845)
 
-frob ships as one pure-Python package (`frob`) plus two optional Rust/PyO3
-native extensions built with maturin: `frob-core` (smart-dup's R3+ rungs --
+frob ships as one pure-Python package (`frob`) plus two Rust/PyO3 native
+extensions built with maturin: `frob-core` (smart-dup's R3+ rungs --
 tree-edit-distance and beyond) and `strata-core` (the real parser for
 `.strata` design files, used by `frob.lang`, `frob.graph`, `frob check`,
-`frob outline`, `frob xref`, and friends). Neither extension is a hard
-dependency of `frob` -- every code path that needs one degrades to a typed
-`Result.Err` (never a crash, never an exception) when it is missing. This is
-the contract T-0133 hardens: a bare `uv tool install frob` must always work.
-
-## Bare install (no natives)
+`frob outline`, `frob xref`, and friends). As of T-3845, both are published
+to PyPI (`.github/workflows/release.yml` builds each as an abi3-py311 wheel
+across five platform targets and publishes them ahead of `frob` itself) and
+are DEFAULT `[project]` dependencies of `frob`, hard-pinned to frob's own
+version (`frob-core==<v>`, `strata-core==<v>` -- see the T-3845 comment on
+`pyproject.toml`'s `dependencies` for why an exact pin is safe given the
+release workflow's real publish-order/abort behavior). A plain install now
+gets both:
 
 ```bash
 uv tool install frob
 ```
 
-Gets you: the full CLI, tickets, gates, doc-drift checking, xref, outline,
-graph build, and Python/TypeScript/Rust/C/C++ parsing -- everything except
-the two features above. `.strata` files are still *listed* by
-`supported_extensions()` (the graph still sees they exist -- they are not
-silently invisible to coverage or xref) but each one fails to parse with
-`LangError.NativeParserUnavailable`, logged once at debug level per file,
-not warning-spam. `frob-core`-only dup rungs (R3+) turn off; R1/R2 and every
-other `frob.dup` rung are pure Python and still run.
+Neither extension is a HARD RUNTIME requirement, though -- this is still the
+T-0133 contract, unchanged by T-3845: every code path that needs one
+degrades to a typed `Result.Err` (never a crash, never an exception) when it
+is missing. A source install on a platform with no published wheel (or any
+environment where the compiled extensions are stripped after install) still
+installs and runs frob in pure-Python mode; see "Degrading without the
+natives" below.
 
-`ruff` and `ty` (the tools `frob check`'s Python-language stage shells out
-to) are real `[project]` dependencies (T-0142), so a bare install is fully
-functional for Python repos out of the box -- no separate `pip install
-ruff ty` step needed. Should any check-stage tool still be missing from
-`PATH` (a non-Python stage's `cargo`/`clang-tidy`/`npx`, or a `ruff`/`ty`
-shadowed by a broken shim), the corresponding stage reports a typed
-failing `ToolResult` ("tool unavailable: `<name>` -- install it or use
-`make install-tool`") instead of crashing -- a missing tool is always a
+## Standard install (natives included)
+
+```bash
+uv tool install frob
+```
+
+Gets you the full CLI, tickets, gates, doc-drift checking, xref, outline,
+graph build, Python/TypeScript/Rust/C/C++ parsing, the accelerated
+`frob-core` dup rungs (R3+), and full `.strata` parsing via `strata-core` --
+no separate step. `ruff` and `ty` (the tools `frob check`'s Python-language
+stage shells out to) are also real `[project]` dependencies (T-0142), so a
+bare install is fully functional for Python repos out of the box. Should any
+check-stage tool still be missing from `PATH` (a non-Python stage's
+`cargo`/`clang-tidy`/`npx`, or a `ruff`/`ty` shadowed by a broken shim), the
+corresponding stage reports a typed failing `ToolResult` ("tool unavailable:
+`<name>` -- install it") instead of crashing -- a missing tool is always a
 loud, visible failure in the `frob check` summary, never a silent skip.
 
-## Full install (with natives)
+## Degrading without the natives
 
-Native extensions have no published wheels (no PyPI project -- they are
-local maturin path packages under `frob-core/` and `strata-core/` in this
-repo, not standalone publishable artifacts yet; see "why not a pip extra"
-below). To get them into a `uv tool install`'d environment, build from
-source and install them as `--with` deps of the same tool venv:
-
-```bash
-git clone https://github.com/lognd/frob
-cd frob
-make install-tool
-```
-
-`make install-tool` runs:
-
-```bash
-uv tool install --force --reinstall . --with ./strata-core --with ./frob-core
-```
-
-Requires a Rust toolchain (`cargo`) on `PATH` -- `uv` invokes maturin's
-PEP 517 build backend for each local path dependency, which needs `cargo`
-to compile the extension. If `cargo` is absent, this fails loudly (unlike
-`make core`'s best-effort skip for the dev venv) since the whole point of
-running this target is to get the natives.
+If your platform has no published wheel for `frob-core`/`strata-core` (pip
+then falls back to each crate's sdist and needs a Rust toolchain to build
+it, or the build fails outright), or your environment deliberately strips
+the compiled extensions after install, frob keeps working: `.strata` files
+are still *listed* by `supported_extensions()` (the graph still sees they
+exist -- they are not silently invisible to coverage or xref) but each one
+fails to parse with `LangError.NativeParserUnavailable`, logged once at
+debug level per file, not warning-spam. `frob-core`-only dup rungs (R3+)
+turn off; R1/R2 and every other `frob.dup` rung are pure Python and still
+run. `frob doctor` reports the gap and its remediation (see below); a repo
+that actually uses `.strata` files gets a loud, non-degrading failure
+instead of a silent pass -- see "Loud failure when `.strata` is used without
+natives" below, unchanged by T-3845.
 
 ## Editable dev install
+
+Editable dev work in this repo (not an end-user install) builds the
+extensions in place with `cargo` on `PATH`:
 
 ```bash
 pip install -e .        # or: make install
@@ -71,16 +73,30 @@ make core                # builds+installs frob-core and strata-core in-place
 `cargo` is not on `PATH`, since most `frob.dup`/`frob.lang` functionality
 does not need it.
 
-## `uv sync` evicts the natives -- why every entrypoint self-heals (T-0340)
+## `uv sync` and the natives, post-T-3845
 
-`strata_core`/`frob_core` are maturin-develop editable installs, not
-`uv.lock`-tracked dependencies of this project (see "Why not `pip install
-'frob[strata]'`?" below for why they cannot be declared that way). `uv
-sync` reconciles the venv against ONLY the declared dependency set, so it
-silently REMOVES both natives whenever it runs, even though `make core`
-just installed them -- `uv lock`, `uv sync`, a `uv build` triggered by a
-version-bump stamp, and some `uv run` invocations after a `pyproject.toml`
-edit all trigger this. Before this ticket, only a remembered manual `make
+Before T-3845, `strata_core`/`frob_core` were maturin-develop editable
+installs, not `uv.lock`-tracked dependencies of this project, so `uv sync`
+reconciled the venv against a declared dependency set that did not mention
+them and silently REMOVED both natives whenever it ran -- `uv lock`, `uv
+sync`, a `uv build` triggered by a version-bump stamp, and some `uv run`
+invocations after a `pyproject.toml` edit all triggered this.
+
+T-3845 makes `frob-core`/`strata-core` real default dependencies (see
+`pyproject.toml`'s `[tool.uv.sources]`, which points this checkout's own
+resolution at the local `frob-core/`/`strata-core/` path crates rather than
+the published index versions). Verified 2026-09-05: a plain `uv sync` in
+this worktree no longer evicts the natives -- they are now part of the
+declared, lock-tracked dependency set, so `uv sync` installs/keeps them
+like any other dependency instead of removing an out-of-band install.
+The `Makefile`'s `core`-as-prerequisite self-heal machinery described below
+is therefore likely no longer load-bearing for this specific eviction
+failure mode; changing the `Makefile` is out of this ticket's scope, so it
+is left as-is and a follow-up is filed to re-verify and simplify it
+(T-3850). The history below is kept for context on why the machinery
+exists at all.
+
+Before this ticket, only a remembered manual `make
 core` restored them, and forgetting it surfaced as an oblique
 `ModuleNotFoundError: strata_core`/`frob_core` or `NativeExtensionUnavailable`
 mid test-collection or mid `frob check` -- looking like a real regression
@@ -169,26 +185,29 @@ work (a leasing/refresh daemon, not a Makefile variable) than the shared-
 cache mechanism above; see the ticket filed in T-0732's Done report
 (`tickets.md`) for the tracked scope.
 
-## Why not `pip install "frob[strata]"`?
+## History: why `frob-core`/`strata-core` were not a plain extra (resolved, T-3845)
 
-`[project.optional-dependencies]` extras resolve through the same index
-`pip`/`uv` would install `frob` from -- they need a real published
-distribution (a wheel on PyPI, or at minimum a VCS/path URL baked into the
-extra itself, which breaks the moment the extra is installed outside this
-repo's checkout). `frob-core` and `strata-core` are not published anywhere;
-declaring them as an extra with a local relative path (`frob-core @
-file://./frob-core`) only resolves when installing from a checkout at that
-exact relative location, which silently breaks for anyone who does
-`pip install frob` from PyPI. `--with <path>` on `uv tool install` sidesteps
-this because the path is supplied at install time by whoever is running the
-command, from whatever checkout they have on disk -- it is a valid install
-mechanism today, not a placeholder for something better.
+Before T-3845, `frob-core`/`strata-core` had no published wheels, so they
+could not be a normal `[project.optional-dependencies]` extra: an extra
+resolves through the same index `pip`/`uv` install `frob` from, and a local
+relative path (`frob-core @ file://./frob-core`) only resolves when
+installing from a checkout at that exact relative location -- it silently
+breaks for anyone who does `pip install frob` from PyPI. The install path
+of that era was `uv tool install --force --reinstall . --with ./strata-core
+--with ./frob-core` (`--with` supplies the path at install time, from
+whatever checkout the installer has on disk).
 
-Publishing `frob-core`/`strata-core` as real wheels to PyPI (one abi3 wheel
-per supported platform via `maturin build --release`, then a normal
-`[project.optional-dependencies]` extra pinned to the published version) is
-the correct long-term fix and is explicitly out of scope for T-0133 -- filed
-as follow-up work, not attempted here.
+`.github/workflows/release.yml` now builds and publishes both crates as
+real abi3-py311 wheels ahead of `frob` itself, so as of T-3845 they are
+plain default `[project]` dependencies, hard-pinned (`frob-core==<v>`,
+`strata-core==<v>`) -- see the top of this document and the T-3845 comment
+on `pyproject.toml`. The `native` extra also still exists, listing the same
+two pins, purely so `pip install "frob[native]"` keeps resolving for any
+script or doc that already names it, and so
+`frob.gates._version_coupling`'s VERSION001 check (which reads that extra
+for its exact-pin invariant) and `frob doctor`'s remediation message (which
+names `frob[native]`) both keep working unchanged; it adds nothing a plain
+install does not already provide.
 
 ## CI contract
 
@@ -231,32 +250,29 @@ exits nonzero from both `frob check` and `frob sys audit` and names
 `design/` dir at all exits 0 unaffected -- the T-0135 opt-in guarantee, not
 just the loud-failure one.
 
-## Detecting a stripped native install (the "reinstall wiped my wheel"
-gotcha)
+## History: the "reinstall wiped my wheel" gotcha (resolved, T-3845)
 
-`uv tool install --force --reinstall . --with ./strata-core --with
-./frob-core` (`make install-tool`) is a one-shot install: the `--with`
-local-path deps are resolved and installed alongside `frob` into that tool
-venv AT THAT MOMENT. A later plain `uv tool upgrade frob` or `uv tool
-install --force --reinstall frob` (no `--with` flags) reinstalls only the
-pure-Python `frob` distribution into the same venv and does NOT re-add the
-`--with` extras -- it silently strips `strata_core`/`frob_core` back out,
-regressing to the bare-install posture with no warning at install time.
-This is the exact failure mode the T-0316 FROBLEMS report describes
+Before T-3845, `uv tool install --force --reinstall . --with ./strata-core
+--with ./frob-core` (`make install-tool`) was a one-shot install: the
+`--with` local-path deps were resolved and installed alongside `frob` into
+that tool venv AT THAT MOMENT. A later plain `uv tool upgrade frob` or `uv
+tool install --force --reinstall frob` (no `--with` flags) reinstalled only
+the pure-Python `frob` distribution into the same venv and did NOT re-add
+the `--with` extras -- it silently stripped `strata_core`/`frob_core` back
+out, regressing to the bare-install posture with no warning at install
+time. This is the exact failure mode the T-0316 FROBLEMS report describes
 ("bit mid-campaign when a reinstall wiped the manually-added wheel").
 
-Until `frob-core`/`strata-core` are published as real wheels (see "Why not
-`pip install \"frob[strata]\"`?" above -- still out of scope, tracked as a
-follow-up ticket), there is no install-time guard against this: `uv tool
-upgrade`/`uv tool install --force --reinstall` on a bare `frob` spec is a
-valid way to ask for exactly that (upgrade `frob`, natives excluded), so
-frob cannot distinguish "the user wants natives gone" from "the user forgot
-`--with`" at install time. The check that CAN and does catch it is the
-loud-failure guarantee above: the next `frob check`/`frob sys audit` run
-against a repo with `.strata` files fails immediately with a named
-`SYS004`/`NativeExtensionUnavailable`, rather than silently going quiet --
-treat that failure as the signal to re-run `make install-tool`, not a
-regression to chase in application code.
+T-3845 removes the underlying cause: `frob-core`/`strata-core` are now
+plain default `[project]` dependencies (real published wheels, hard-pinned
+to frob's version), so `uv tool upgrade frob` / `uv tool install --force
+--reinstall frob` resolves and reinstalls them like any other dependency of
+`frob` -- there is no longer a separate `--with` step to forget. The loud
+non-degrading failure described above (`SYS004`/`NativeExtensionUnavailable`
+on a repo that actually uses `.strata`) still exists as defense in depth for
+a platform genuinely missing a wheel, but the specific "reinstall silently
+dropped a manually-added extension" gotcha no longer applies to a standard
+install.
 
 ## `frob doctor`: native-extension diagnosis (T-0319)
 
