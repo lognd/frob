@@ -27,6 +27,13 @@ body_changes:
   at: '2026-09-05'
   old_length: 4334
   new_length: 9638
+- mode: set
+  reason: the bare basename citation resolved against this repo and missed; name the
+    sibling-repo file as prose instead of a pointer
+  actor: logan
+  at: '2026-09-05'
+  old_length: 9638
+  new_length: 9656
 designated_repro_test: null
 threat: null
 component: null
@@ -137,8 +144,8 @@ MEASURED 2026-09-05, so the implementer does not re-derive it:
       --ignore      drop this rule id
       --no-info     hide info-severity findings
 
-  OUTPUT: JSON, not junit. `_report.py::render_json` builds a payload and
-  returns `json.dumps(payload)`; `render_text` is the human form. So the answer
+  OUTPUT: JSON, not junit. typani.lint's own "_report.py::render_json" builds a payload and
+  returns `json.dumps(payload)`; "render_text" is the human form. So the answer
   to "json or junit" is JSON, and the collection path is `-m typani.lint --json`.
 
   (Aside worth noting: typani's own `_report.py` carries a `frob:doc
