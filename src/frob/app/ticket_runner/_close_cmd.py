@@ -84,8 +84,8 @@ def _hint_acceptance_unbound(ticket_id: str, err, verb: str) -> str:  # noqa: AN
         f"{verb} failed: {err} -- see the WARNING line above naming "
         f"which acceptance criterion/criteria still have no resolving "
         f"evidence id; bind one with `frob ticket evidence {ticket_id} "
-        f"<node-id> --accepts <index>` (0-based, per "
-        f"`frob ticket show {ticket_id}`'s acceptance list)"
+        f"<node-id> --accepts <index>` (1-based, T-3837, per "
+        f"`frob ticket show {ticket_id}`'s [N] acceptance list)"
     )
 
 

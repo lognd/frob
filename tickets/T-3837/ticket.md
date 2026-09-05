@@ -2,7 +2,7 @@
 id: T-3837
 title: 'F-032: frob ticket evidence --accepts N is 0-indexed and silently accepts
   a wrong index (silent mis-binding)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -90,6 +90,17 @@ scope_changes:
     -> 1-based), doc mirrors the old text'
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/test_tickets_acceptance.py::TestAcceptsOneBasedMisBinding::test_must_fire_the_old_0_based_third_criterion_index_now_binds_second
+- tests/test_tickets_acceptance.py::TestAcceptsOneBasedMisBinding::test_must_fire_zero_is_a_loud_out_of_range_refusal_not_a_silent_bind
+- tests/test_tickets_acceptance.py::TestAcceptsOneBasedMisBinding::test_must_fire_one_past_the_end_is_a_loud_refusal
+- tests/test_tickets_acceptance.py::TestAcceptsOneBasedMisBinding::test_must_stay_quiet_first_and_last_1_based_positions_bind_correctly
+- tests/test_tickets_acceptance.py::TestAcceptsOneBasedMisBinding::test_must_stay_quiet_show_render_uses_matching_1_based_brackets
+- tests/test_tickets_acceptance.py::TestAddEvidenceAccepts::test_accepts_binds_evidence_onto_the_named_criterion
+- tests/test_tickets_acceptance.py::TestAddEvidenceAccepts::test_accepts_out_of_range_rejects_the_whole_batch
+- tests/test_tickets_acceptance.py::TestCloseGate::test_binding_the_criterion_via_accepts_then_closing_succeeds
+- tests/test_tickets_acceptance.py::TestAcceptsCliWiring::test_from_external_carries_accepts_from_parsed_argv
+- tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_evidence_cmd_with_accepts_binds_acceptance_via_cli
 designated_repro_test: null
 threat: null
 component: null

@@ -558,7 +558,7 @@ class TestCmdEvidenceAcceptsBinding:
             ticket_id="T-0001",
             ticket_path=tmp_path,
             ticket_evidence_cmd="printf ok",
-            ticket_accepts=[0],
+            ticket_accepts=[1],
         )
         _evidence(tmp_path, cfg)
 
@@ -579,7 +579,7 @@ class TestCmdEvidenceAcceptsBinding:
             ticket_id="T-0001",
             ticket_path=tmp_path,
             ticket_evidence_cmd="printf ok",
-            ticket_accepts=[0],
+            ticket_accepts=[1],
         )
         _close(tmp_path, cfg)
 
@@ -646,7 +646,7 @@ class TestReplaceEvidence:
     ) -> None:
         from frob.tickets import replace_evidence
 
-        ticket_id = self._seed_ticket(tmp_path, monkeypatch, accepts=[0])
+        ticket_id = self._seed_ticket(tmp_path, monkeypatch, accepts=[1])
 
         result = replace_evidence(
             tmp_path,

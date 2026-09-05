@@ -228,7 +228,8 @@ def _validate_acceptance_bound(ticket: Ticket) -> Result[None, LandError]:
             "land: %s cannot land -- unbound acceptance criterion/criteria "
             "(no evidence id resolves them): %s; bind evidence to the "
             "criterion (`frob ticket evidence %s <node-id>... "
-            "--accepts <index>`, 0-based) and retry `frob ticket land %s`",
+            "--accepts <index>`, 1-based, T-3837) and retry `frob ticket "
+            "land %s`",
             ticket.id,
             [c.text for c in unbound],
             ticket.id,

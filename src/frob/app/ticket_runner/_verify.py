@@ -2483,9 +2483,10 @@ def _apply_evidence(
     `add_evidence` Result unchanged so callers (e.g. `_close`) can refuse
     to transition state on failure.
 
-    `accepts` (T-0572) threads straight through to `add_evidence`'s own
-    `accepts`: 0-based `ticket.acceptance` indices `node_ids` also bind to,
-    in the same write. `None`/empty binds nothing (the pre-T-0572 default).
+    `accepts` (T-0572, 1-based since T-3837) threads straight through to
+    `add_evidence`'s own `accepts`: 1-based `ticket.acceptance` positions
+    `node_ids` also bind to, in the same write. `None`/empty binds nothing
+    (the pre-T-0572 default).
 
     T-0301 (feldspar T-0015 escalation): a `--evidence` id must resolve
     against the union of every collected oracle the repo's `[[test.runner]]`

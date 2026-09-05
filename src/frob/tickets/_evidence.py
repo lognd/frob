@@ -1112,7 +1112,17 @@ def _sync_cross_worktree_lease(
 # sequence of early-return guard calls itself, matching this module's own idiomatic \
 # and_then style -- splitting further would just rename the same guard clauses behind \
 # a second layer of indirection"
+# frob:waive AFFECT001 reason="T-3837: docs/modules/tickets.md#public-api's accepts \
+# description was already updated in this same change to say 1-based (was 0-based); \
+# the frob ack write that clears the DRIFT001 digest stamp needs frob.lock, which is \
+# under a concurrent T-3799 (unrelated Windows PATHEXT work) scope lease this ticket \
+# cannot take -- content is current, only the ack bookkeeping is blocked, same T-2466 \
+# precedent frob/gates/_wire.py already carries for this exact lease-contention shape"
+# frob:waive DRIFT001 reason="same T-3799 frob.lock lease conflict as the AFFECT001 \
+# waiver immediately above -- docs/modules/tickets.md is already re-verified accurate \
+# for this change, the ack write alone is blocked"
 # frob:ticket T-1727
+# frob:ticket T-3837
 def add_evidence(
     root: Path,
     ticket_id: str,
@@ -1143,16 +1153,32 @@ def add_evidence(
     from `passed` (verified by their own exit-code/digest channel instead,
     see `add_cmd_evidence`/`reverify_cmd_evidence`).
 
-    `accepts` (T-0572) is a list of 0-based `ticket.acceptance` indices:
-    every `node_ids` entry is ALSO bound onto each named acceptance
-    criterion's own `evidence` tuple, in the same write as the evidence-list
-    append -- the CLI surface for closing the "closed but not what was
-    asked" hole (`--accepts N` on `frob ticket evidence`/`close`).
+    `accepts` (T-0572, renumbered 1-based by T-3837) is a list of 1-based
+    `ticket.acceptance` positions (1..len(ticket.acceptance), matching the
+    `[1] ...`/`[2] ...` numbering `frob ticket show` prints): every
+    `node_ids` entry is ALSO bound onto each named acceptance criterion's
+    own `evidence` tuple, in the same write as the evidence-list append --
+    the CLI surface for closing the "closed but not what was asked" hole
+    (`--accepts N` on `frob ticket evidence`/`close`).
+
+    T-3837: this was 0-based through T-0572..T-0844. 0-based indexing plus
+    an out-of-range check that only rejects i<0 or i>=len(acceptance) let a
+    caller who (reasonably) counts acceptance criteria 1, 2, 3... pass an
+    index that is off by one from what they meant, land INSIDE the valid
+    range, and bind silently to the WRONG criterion -- a mis-binding that
+    looks identical to a correct one in the ticket record, the done report,
+    and every downstream coverage check. Out-of-range rejection alone
+    cannot catch this: the whole point is that the wrong index is still a
+    valid index. Moving to 1-based numbering (matching the display) removes
+    the ambiguity at the source instead of only catching the subset of
+    mistakes that happen to fall outside the range.
+
     `accepts=None` (default) binds nothing, matching every caller before
-    T-0572. An out-of-range index rejects the whole batch
-    (`Err(AcceptanceIndexOutOfRange)`) before anything is written -- a
-    typo'd index must never silently bind evidence to the wrong criterion
-    or to nothing at all."""
+    T-0572. An out-of-range index (i<1 or i>len(ticket.acceptance), or 0 --
+    a common leftover-habit typo from the old 0-based scheme) rejects the
+    whole batch (`Err(AcceptanceIndexOutOfRange)`) before anything is
+    written -- a typo'd index must never silently bind evidence to the
+    wrong criterion or to nothing at all."""
     from frob.tickets import _validate_evidence_list
 
     leased = enforce_worktree_lease(root)
@@ -1185,13 +1211,14 @@ def add_evidence(
         return Err(passing.danger_err)
 
     if accepts is not None:
-        out_of_range = [i for i in accepts if i < 0 or i >= len(ticket.acceptance)]
+        out_of_range = [i for i in accepts if i < 1 or i > len(ticket.acceptance)]
         if out_of_range:
             _log.warning(
                 "tickets: %s --accepts index/indices out of range %s "
-                "(ticket has %d acceptance item(s))",
+                "(ticket has %d acceptance item(s), valid range is 1..%d)",
                 ticket_id,
                 out_of_range,
+                len(ticket.acceptance),
                 len(ticket.acceptance),
             )
             return Err(TicketError.AcceptanceIndexOutOfRange)
@@ -1435,7 +1462,13 @@ def _append_evidence_and_write(
     (T-0572, also deduplicated), and write the updated ticket in one atomic
     write -- the append and the acceptance binding are never split across
     two writes, so a crash between them can never leave evidence recorded
-    without its acceptance mapping (or vice versa)."""
+    without its acceptance mapping (or vice versa).
+
+    `accepts` is 1-based (T-3837) -- `enumerate(acceptance)`'s 0-based `i`
+    is compared against `accepts` as `i + 1` so position 1 in `accepts`
+    binds `acceptance[0]`, matching both `frob ticket show`'s `[1] ...`
+    display and the caller-side range check in `add_evidence`/
+    `add_cmd_evidence`."""
     from frob.tickets import write_ticket
 
     merged = ticket.evidence + tuple(
@@ -1450,7 +1483,7 @@ def _append_evidence_and_write(
                     + tuple(nid for nid in node_ids if nid not in c.evidence)
                 }
             )
-            if i in accepts
+            if (i + 1) in accepts
             else c
             for i, c in enumerate(acceptance)
         )
@@ -1961,6 +1994,12 @@ def _check_cmd_evidence_kind(
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_cmd_evidence.py::TestKindGate.test_docs_kind_closes
 # frob:tests tests/test_tickets_cmd_evidence.py::TestKindGate.test_bug_kind_rejected
+# frob:waive AFFECT001 reason="T-3837: same fix/lease-conflict shape as add_evidence's \
+# own AFFECT001/DRIFT001 waivers immediately above in this file -- \
+# docs/modules/tickets.md#public-api already reflects the 1-based accepts change, only \
+# the frob.lock ack write is blocked by the concurrent T-3799 lease"
+# frob:waive DRIFT001 reason="see the AFFECT001 waiver immediately above"
+# frob:ticket T-3837
 def add_cmd_evidence(
     root: Path,
     ticket_id: str,
@@ -1976,15 +2015,16 @@ def add_cmd_evidence(
     with Err(EvidenceKindNotAllowed) so a code change can never close on an
     unrelated shell command's exit status alone.
 
-    `accepts` (T-0796) mirrors `add_evidence`'s acceptance-binding: a list
-    of 0-based `ticket.acceptance` indices the recorded cmd-evidence entry
-    is ALSO bound onto, in the same write as the evidence-list append. Its
-    validation is identical to `add_evidence` -- an out-of-range index
-    rejects the whole call (`Err(AcceptanceIndexOutOfRange)`) before
-    anything is written. Before T-0796 this parameter did not exist, so
-    `--accepts` passed alongside `--evidence-cmd` on the CLI was silently
-    dropped and docs-kind tickets closed with UNBOUND acceptance despite
-    the operator's explicit binding request.
+    `accepts` (T-0796, renumbered 1-based by T-3837) mirrors `add_evidence`'s
+    acceptance-binding: a list of 1-based `ticket.acceptance` positions the
+    recorded cmd-evidence entry is ALSO bound onto, in the same write as the
+    evidence-list append. Its validation is identical to `add_evidence` --
+    an out-of-range index (i<1 or i>len(ticket.acceptance)) rejects the
+    whole call (`Err(AcceptanceIndexOutOfRange)`) before anything is
+    written. Before T-0796 this parameter did not exist, so `--accepts`
+    passed alongside `--evidence-cmd` on the CLI was silently dropped and
+    docs-kind tickets closed with UNBOUND acceptance despite the operator's
+    explicit binding request.
     """
     from frob.tickets import _load_one
 
@@ -2001,13 +2041,14 @@ def add_cmd_evidence(
         return Err(kind_check.danger_err)
 
     if accepts is not None:
-        out_of_range = [i for i in accepts if i < 0 or i >= len(ticket.acceptance)]
+        out_of_range = [i for i in accepts if i < 1 or i > len(ticket.acceptance)]
         if out_of_range:
             _log.warning(
                 "tickets: %s --accepts index/indices out of range %s "
-                "(ticket has %d acceptance item(s))",
+                "(ticket has %d acceptance item(s), valid range is 1..%d)",
                 ticket_id,
                 out_of_range,
+                len(ticket.acceptance),
                 len(ticket.acceptance),
             )
             return Err(TicketError.AcceptanceIndexOutOfRange)

@@ -135,9 +135,10 @@ def _add_ticket_close_parser(ticket_sub):
         type=int,
         default=[],
         metavar="INDEX",
-        help="T-0572: 0-based ticket.acceptance index that --evidence/"
-        "--evidence-cmd's id(s) also bind to (repeatable); an unbound "
-        "acceptance criterion refuses the close",
+        help="T-0572: 1-based ticket.acceptance position (T-3837; see "
+        "`frob ticket show`'s [N] list) that --evidence/--evidence-cmd's "
+        "id(s) also bind to (repeatable); an unbound acceptance criterion "
+        "refuses the close",
     )
     # frob:ticket T-0571
     ticket_close_p.add_argument(
@@ -246,8 +247,9 @@ def _add_ticket_reverify_parser(ticket_sub):
         type=int,
         default=[],
         metavar="INDEX",
-        help="T-0572: 0-based ticket.acceptance index --evidence/"
-        "--evidence-cmd's id(s) also bind to (repeatable)",
+        help="T-0572: 1-based ticket.acceptance position (T-3837; see "
+        "`frob ticket show`'s [N] list) --evidence/--evidence-cmd's "
+        "id(s) also bind to (repeatable)",
     )
     ticket_reverify_p.add_argument(
         "--strict",
@@ -411,10 +413,10 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         type=int,
         default=[],
         metavar="INDEX",
-        help="T-0572: 0-based ticket.acceptance index the node id(s) above "
-        "also bind to (repeatable) -- binds evidence to a specific "
-        "acceptance criterion instead of only the ticket's flat evidence "
-        "list",
+        help="T-0572: 1-based ticket.acceptance position (T-3837; see "
+        "`frob ticket show`'s [N] list) the node id(s) above also bind "
+        "to (repeatable) -- binds evidence to a specific acceptance "
+        "criterion instead of only the ticket's flat evidence list",
     )
     # frob:ticket T-1178
     ticket_evidence_p.add_argument(

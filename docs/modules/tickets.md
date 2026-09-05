@@ -374,12 +374,17 @@ def add_evidence(root: Path, ticket_id: str, node_ids: Sequence[str],
     # batch as Err(EvidenceNotPassing), so a collected-but-currently-
     # FAILING test can never become evidence. `passed=None` (default)
     # skips this check.
-    # T-0572: `accepts` is a list of 0-based ticket.acceptance indices --
+    # T-0572: `accepts` is a list of ticket.acceptance positions --
     # node_ids are ALSO bound onto each named criterion's own `evidence`
     # tuple, in the same atomic write as the evidence-list append. An
     # out-of-range index rejects the whole batch as
     # Err(AcceptanceIndexOutOfRange) before anything is written.
     # `accepts=None` (default) binds nothing.
+    # T-3837: `accepts` is 1-based (matching `frob ticket show`'s own
+    # `[1] ...`/`[2] ...` acceptance display), not 0-based -- it was
+    # 0-based through T-0572..T-0844, which let an in-range but off-by-one
+    # index silently bind the wrong criterion (the out-of-range check alone
+    # cannot catch a wrong index that still falls inside the valid range).
 def run_cmd_evidence(command: str) -> Result[str, TicketError]
     # T-0215: runs `command` through the shell and folds exit status + a
     # stdout digest into one evidence string (`cmd:<command> exit=0

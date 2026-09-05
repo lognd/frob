@@ -247,17 +247,19 @@ def _render_designated_repro(ticket) -> str:  # noqa: ANN001
 
 
 # frob:ticket T-0572
+# frob:ticket T-3837
 def _render_acceptance(ticket) -> str:  # noqa: ANN001
     """The `\\nacceptance[i]: <bound|UNBOUND> <text>` lines `frob ticket
     show` appends after `scope=` (T-0572) -- the human-readable surface for
-    finding an acceptance item's 0-based index to bind with `frob ticket
-    evidence <id> <node-id> --accepts <index>`, without needing `--json`.
-    Empty string (no extra lines) when the ticket declares no acceptance
-    criteria at all, matching pre-T-0572 output exactly."""
+    finding an acceptance item's 1-based position (T-3837; was 0-based
+    through T-0572..T-0844) to bind with `frob ticket evidence <id>
+    <node-id> --accepts <index>`, without needing `--json`. Empty string
+    (no extra lines) when the ticket declares no acceptance criteria at
+    all, matching pre-T-0572 output exactly."""
     if not ticket.acceptance and not ticket.acceptance_amendments:
         return ""
     lines = ["\nacceptance:"] if ticket.acceptance else []
-    for i, item in enumerate(ticket.acceptance):
+    for i, item in enumerate(ticket.acceptance, start=1):
         status = f"bound({list(item.evidence)})" if item.evidence else "UNBOUND"
         lines.append(f"  [{i}] {status}: {item.text}")
     lines.extend(_render_acceptance_amendments(ticket))

@@ -770,10 +770,13 @@ class AppConfig(BaseModel):
     ticket_evidence_archived: bool = False
     # frob:ticket T-0572
     # frob:ticket T-0749
+    # frob:ticket T-3837
     # `frob ticket evidence <id> <node-id>... --accepts N [N ...]` /
     # `frob ticket close <id> --evidence <node-id>... --accepts N [N ...]`
-    # -- 0-based ticket.acceptance indices the given evidence ids also bind
-    # to, in the same write as the evidence append (see add_evidence).
+    # -- 1-based (T-3837; was 0-based T-0572..T-0844 -- an in-range but
+    # off-by-one index silently bound the wrong criterion) ticket.acceptance
+    # positions the given evidence ids also bind to, in the same write as
+    # the evidence append (see add_evidence).
     # T-0749: `from_external` never copied this field from the parsed CLI
     # namespace into the AppConfig kwargs dict at all (missing from every
     # field-copy loop below) -- `--accepts N` was parsed by argparse into

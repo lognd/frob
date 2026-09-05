@@ -163,7 +163,7 @@ class TestAddEvidenceAccepts:
             ["tests/x.py::test_a"],
             collected=frozenset({"tests/x.py::test_a"}),
             passed=frozenset({"tests/x.py::test_a"}),
-            accepts=[0],
+            accepts=[1],
         )
         assert result.is_ok, result.err
         ticket = result.danger_ok
@@ -194,8 +194,86 @@ class TestAddEvidenceAccepts:
             ["tests/x.py::test_a"],
             collected=frozenset({"tests/x.py::test_a"}),
             passed=frozenset({"tests/x.py::test_a"}),
-            accepts=[0],
+            accepts=[1],
         )
+        result = add_evidence(
+            tmp_path,
+            "T-0001",
+            ["tests/x.py::test_a"],
+            collected=frozenset({"tests/x.py::test_a"}),
+            passed=frozenset({"tests/x.py::test_a"}),
+            accepts=[1],
+        )
+        assert result.is_ok, result.err
+        assert result.danger_ok.acceptance[0].evidence == ("tests/x.py::test_a",)
+
+
+# frob:ticket T-3837
+class TestAcceptsOneBasedMisBinding:
+    """T-3837 (F-032): `--accepts N` was 0-based through T-0572..T-0844.
+    0-based indexing plus an out-of-range check that only rejects i<0 or
+    i>=len(acceptance) let a caller who counts criteria 1, 2, 3... (as
+    `frob ticket show`'s own `[1] ...`/`[2] ...` display invites) pass an
+    index that is off by one from what they meant, land INSIDE the valid
+    range, and silently bind to the WRONG criterion -- a mis-binding
+    indistinguishable from a correct one in the ticket record. Moving to
+    1-based numbering removes the ambiguity at the source; these tests
+    prove the MUST-FIRE (the exact mis-binding shape, now impossible to
+    reach silently) and MUST-STAY-QUIET (ordinary correct usage, unchanged
+    behavior) cases."""
+
+    def _seed_four(self, tmp_path: Path) -> None:
+        new_ticket(
+            tmp_path,
+            TicketSpec(
+                title="four-criteria acceptance-bound",
+                kind=TicketKind.FEATURE,
+                origin=Origin.AGENT,
+                acceptance=[  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+                    "first criterion",
+                    "second criterion",
+                    "third criterion",
+                    "fourth criterion",
+                ],
+            ),
+        )
+
+    def test_must_fire_the_old_0_based_third_criterion_index_now_binds_second(
+        self, tmp_path: Path
+    ) -> None:
+        """The exact T-3837 mis-binding shape: under the OLD 0-based
+        scheme, a caller who means "the 3rd criterion" (as displayed,
+        `[3] third criterion`) would type `--accepts 2` -- landing INSIDE
+        the valid 0..3 range and silently binding the SECOND criterion
+        instead. Under the fixed 1-based scheme, `accepts=[2]` now means
+        exactly what the display says: the second criterion -- so the
+        would-be mis-binding is simply gone, not merely caught."""
+        self._seed_four(tmp_path)
+        result = add_evidence(
+            tmp_path,
+            "T-0001",
+            ["tests/x.py::test_a"],
+            collected=frozenset({"tests/x.py::test_a"}),
+            passed=frozenset({"tests/x.py::test_a"}),
+            accepts=[2],
+        )
+        assert result.is_ok, result.err
+        ticket = result.danger_ok
+        # bound to the SECOND criterion (1-based position 2) -- never the
+        # third, which is what the old 0-based scheme's "--accepts 2"
+        # silently produced.
+        assert ticket.acceptance[0].evidence == ()
+        assert ticket.acceptance[1].evidence == ("tests/x.py::test_a",)
+        assert ticket.acceptance[2].evidence == ()
+        assert ticket.acceptance[3].evidence == ()
+
+    def test_must_fire_zero_is_a_loud_out_of_range_refusal_not_a_silent_bind(
+        self, tmp_path: Path
+    ) -> None:
+        """`--accepts 0` -- the most likely leftover habit from the old
+        0-based scheme -- must be a loud typed refusal (naming the valid
+        1..N range), never a silent clamp/wraparound onto any criterion."""
+        self._seed_four(tmp_path)
         result = add_evidence(
             tmp_path,
             "T-0001",
@@ -204,8 +282,68 @@ class TestAddEvidenceAccepts:
             passed=frozenset({"tests/x.py::test_a"}),
             accepts=[0],
         )
+        assert result.is_err
+        assert result.danger_err == TicketError.AcceptanceIndexOutOfRange
+        ticket = load_queue(tmp_path).danger_ok.tickets["T-0001"]
+        assert ticket.evidence == ()
+        assert all(c.evidence == () for c in ticket.acceptance)
+
+    def test_must_fire_one_past_the_end_is_a_loud_refusal(
+        self, tmp_path: Path
+    ) -> None:
+        """`--accepts N+1` on an N-criterion ticket (the 1-based upper
+        boundary) must refuse loudly, not silently bind nothing or wrap."""
+        self._seed_four(tmp_path)
+        result = add_evidence(
+            tmp_path,
+            "T-0001",
+            ["tests/x.py::test_a"],
+            collected=frozenset({"tests/x.py::test_a"}),
+            passed=frozenset({"tests/x.py::test_a"}),
+            accepts=[5],
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.AcceptanceIndexOutOfRange
+
+    def test_must_stay_quiet_first_and_last_1_based_positions_bind_correctly(
+        self, tmp_path: Path
+    ) -> None:
+        """Ordinary correct usage at both ends of the range: `--accepts 1`
+        binds the FIRST criterion and `--accepts 4` binds the LAST (of 4)
+        -- unremarkable, must keep working exactly as before."""
+        self._seed_four(tmp_path)
+        result = add_evidence(
+            tmp_path,
+            "T-0001",
+            ["tests/x.py::test_a"],
+            collected=frozenset({"tests/x.py::test_a"}),
+            passed=frozenset({"tests/x.py::test_a"}),
+            accepts=[1, 4],
+        )
         assert result.is_ok, result.err
-        assert result.danger_ok.acceptance[0].evidence == ("tests/x.py::test_a",)
+        ticket = result.danger_ok
+        assert ticket.acceptance[0].evidence == ("tests/x.py::test_a",)
+        assert ticket.acceptance[1].evidence == ()
+        assert ticket.acceptance[2].evidence == ()
+        assert ticket.acceptance[3].evidence == ("tests/x.py::test_a",)
+
+    def test_must_stay_quiet_show_render_uses_matching_1_based_brackets(
+        self, tmp_path: Path
+    ) -> None:
+        """`frob ticket show`'s own acceptance display must number
+        criteria the SAME way `--accepts` binds them (1-based) -- the
+        display is the human-readable surface for finding the index to
+        pass, so a mismatch between the two would silently reintroduce
+        the exact off-by-one confusion this ticket fixes."""
+        from frob.app.ticket_runner._query import _render_acceptance
+
+        self._seed_four(tmp_path)
+        ticket = load_queue(tmp_path).danger_ok.tickets["T-0001"]
+        rendered = _render_acceptance(ticket)
+        assert "[1] UNBOUND: first criterion" in rendered
+        assert "[2] UNBOUND: second criterion" in rendered
+        assert "[3] UNBOUND: third criterion" in rendered
+        assert "[4] UNBOUND: fourth criterion" in rendered
 
 
 class TestCloseGate:
@@ -280,7 +418,7 @@ class TestCloseGate:
             ticket_id="T-0001",
             ticket_path=tmp_path,
             ticket_evidence_ids=["tests/x.py::test_a"],
-            ticket_accepts=[0],
+            ticket_accepts=[1],
         )
         _close(tmp_path, cfg)
         ticket = load_queue(tmp_path).danger_ok.tickets["T-0001"]
@@ -298,7 +436,7 @@ class TestCloseGate:
             ticket_id="T-0001",
             ticket_path=tmp_path,
             ticket_evidence_ids=["tests/x.py::test_a"],
-            ticket_accepts=[0],
+            ticket_accepts=[1],
         )
         _evidence(tmp_path, evidence_cfg)
 
@@ -349,13 +487,13 @@ class TestAcceptsCliWiring:
                 "T-0001",
                 "tests/x.py::test_a",
                 "--accepts",
-                "0",
+                "1",
                 "--path",
                 str(tmp_path),
             ]
         )
         cfg = AppConfig.from_external(args, tmp_path / "pyproject.toml")
-        assert cfg.ticket_accepts == [0]
+        assert cfg.ticket_accepts == [1]
 
     def test_evidence_cli_binds_acceptance_via_path_flag(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -378,7 +516,7 @@ class TestAcceptsCliWiring:
                 "T-0001",
                 "tests/x.py::test_a",
                 "--accepts",
-                "0",
+                "1",
                 "--path",
                 str(tmp_path),
             ]
@@ -412,7 +550,7 @@ class TestAcceptsCliWiring:
                 "T-0001",
                 "tests/x.py::test_a",
                 "--accepts",
-                "0",
+                "1",
             ]
         )
         monkeypatch.chdir(tmp_path)
@@ -447,7 +585,7 @@ class TestAcceptsCliWiring:
                 "T-0001",
                 "tests/x.py::test_a",
                 "--accepts",
-                "0",
+                "1",
                 "--path",
                 str(tmp_path),
             ]
@@ -551,7 +689,7 @@ class TestAmendAcceptance:
             ["tests/x.py::test_a"],
             collected=frozenset({"tests/x.py::test_a"}),
             passed=frozenset({"tests/x.py::test_a"}),
-            accepts=[0],
+            accepts=[1],
         )
         assert bound.is_ok, bound
         result = amend_acceptance(
