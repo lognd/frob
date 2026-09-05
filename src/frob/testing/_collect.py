@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import importlib.machinery
 import importlib.util
+from collections.abc import Callable
 from pathlib import Path
 
 from typani import Err, Ok
@@ -612,7 +613,51 @@ def _collection_cache_key(root: Path, natives: tuple[NativeSpec, ...]) -> str:
     return hashlib.sha256(f"{content}\n{native}".encode()).hexdigest()
 
 
+# frob:ticket T-3847
+# frob:waive COV001 reason="a frob:doc anchor here would live in \
+# docs/modules/testing.md, whose own SCOPE002 closure (every OTHER symbol that shared \
+# doc file describes) is out of proportion to pull into T-3847's narrow \
+# evidence-verification-wiring scope -- same doc-anchor scope-closure tension \
+# src/frob/gates/_rule_id_scan.py's SCANNED_BASES/RETIRED_RULE_IDS waivers already \
+# document (T-1010/ T-1937); this dict's own docstring below is the authoritative \
+# description"
+LANGUAGE_COLLECTORS: dict[
+    str, Callable[[Path], Result[CollectedTests, TestingError]]
+] = {
+    "python": collect_python_tests,
+    "rust": collect_rust_tests,
+    "cpp": collect_cpp_tests,
+    "kotlin": collect_kotlin_tests,
+    "ts": collect_ts_tests,
+}
+"""T-3847: the ONE registry of every language this repo can collect test
+node ids for, keyed by the same language name a `[[test.runner]]` entry's
+`language=` field uses. `frob.app.ticket_runner._verify._verify_ids_passing`
+derives its evidence-verification bucket set by iterating this dict rather
+than a hand-written per-language dict -- adding a new collector here wires
+it into verification automatically, closing the exact gap T-3847 measured
+(cpp/kotlin/ts collectors existed and were simply never consulted).
+catch2 and doctest tests registered via CMake's `catch_discover_tests()`/
+`doctest_discover_tests()` are ALREADY reachable through `collect_cpp_tests`
+(it reads `ctest --show-only=json-v1`, which is framework-agnostic --
+any `add_test()` entry a CMake test-discovery macro generates is
+collected, regardless of which C++ test framework produced it), so no
+separate catch2/doctest entry exists or is needed here. `cargo nextest`
+is likewise IN with no separate entry: nextest re-executes the SAME
+compiled test binaries `cargo test` does and reports the SAME
+`module::path::test_name` ids (it changes the harness/output format, not
+the test identity), so an id `collect_rust_tests` already collects binds
+correctly whether the evidence was run via `cargo test` or `cargo
+nextest run`. jest is OUT for now: unlike catch2/doctest/nextest, it is
+NOT a drop-in alternate frontend over an already-collected id space --
+it is a distinct JS/TS runner with its own CLI, JSON reporter shape, and
+node-id spelling, so supporting it is genuine new collector work, not a
+generalization of `collect_ts_tests`'s existing vitest path. Filed as
+T-3921 rather than folded into this ticket."""
+
+
 __all__ = [
+    "LANGUAGE_COLLECTORS",
     "collect_cpp_tests",
     "collect_kotlin_tests",
     "collect_python_tests",

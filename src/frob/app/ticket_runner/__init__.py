@@ -183,6 +183,7 @@ from ._verify import (
     _shared_check_spawn_fn,
     _verify_ids_passing,
     _verify_one_bucket_passing,
+    _verify_unbucketed_ids,
 )
 from ._waive_audit import run as _waive_audit
 
@@ -316,6 +317,7 @@ __all__ = [
     "_unblock",
     "_verify_ids_passing",
     "_verify_one_bucket_passing",
+    "_verify_unbucketed_ids",
     "_wave",
     "_work",
     "_changelog_note_for_ticket",

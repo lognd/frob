@@ -2089,10 +2089,18 @@ def _verify_ids_passing(
     one language (e.g. no PyO3 env for rust) must not silently swallow a
     python id's real, successful verification -- each bucket's own
     Err/failure is logged and only THAT bucket's ids are withheld from the
-    returned passing set, never the whole call. An id that resolves
-    against neither collected set is simply absent from the result (it
-    already fails resolution elsewhere; this function only concerns
-    itself with ids that at least exist).
+    returned passing set, never the whole call.
+
+    T-3847: python/rust are collected by the caller (unchanged call
+    shape), but an id that resolves against NEITHER is no longer simply
+    absent from the result -- `_verify_unbucketed_ids` tries every OTHER
+    registered collector (`frob.testing.LANGUAGE_COLLECTORS`, cpp/kotlin/
+    ts today) against the remainder, and whatever still matches nothing
+    gets a LOUD `UNMEASURED` outcome naming the id and every language
+    tried, rather than a silent absence from `outcomes` that reads
+    identically to "verified clean" (the defect this ticket fixes: a
+    cpp/kotlin/ts evidence id previously vanished from `outcomes` here
+    with no trace).
 
     T-0856: a bucket itself is no longer all-or-nothing either -- when the
     bucket's OWN single batched run comes back not-ok (but the run
@@ -2106,6 +2114,7 @@ def _verify_ids_passing(
     from frob.tickets._models import matches_collected
 
     outcomes: dict[str, VerifyOutcome] = {}
+    matched: set[str] = set()
     buckets = {
         "python": tuple(n for n in node_ids if matches_collected(n, python_collected)),
         "rust": tuple(n for n in node_ids if matches_collected(n, rust_collected)),
@@ -2113,6 +2122,90 @@ def _verify_ids_passing(
     for language, items in buckets.items():
         if items:
             outcomes.update(_verify_one_bucket_passing(root, language, items, runners))
+            matched.update(items)
+
+    remaining = tuple(n for n in node_ids if n not in matched)
+    if remaining:
+        outcomes.update(
+            _verify_unbucketed_ids(
+                root, remaining, tried=tuple(buckets), runners=runners
+            )
+        )
+    return outcomes
+
+
+# frob:ticket T-3847
+# frob:tests tests/unit/test_verify_language_buckets.py::TestUnbucketedIdsAreLoud.test_id_matching_no_collector_is_a_named_unmeasured_refusal  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
+# reports it unchanged), same unwrappable shape as this repo's other pre-existing long \
+# frob:tests lines"
+# frob:tests tests/unit/test_verify_language_buckets.py::TestUnbucketedIdsAreLoud.test_id_matching_a_registered_non_python_rust_collector_verifies  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob format --directives` \
+# reports it unchanged), same unwrappable shape as this repo's other pre-existing long \
+# frob:tests lines"
+def _verify_unbucketed_ids(
+    root: Path,
+    node_ids: tuple[str, ...],
+    *,
+    tried: tuple[str, ...],
+    runners,  # noqa: ANN001
+) -> dict[str, VerifyOutcome]:
+    """T-3847: `_verify_ids_passing`'s handling for ids that resolved
+    against neither python nor rust's already-collected sets -- tries
+    every OTHER language `frob.testing.LANGUAGE_COLLECTORS` registers
+    (cpp/kotlin/ts today; deriving the set from the registry rather than a
+    second hand-written dict is the fix this ticket asks for) against the
+    remainder, bucketing and verifying whatever matches exactly like
+    `_verify_ids_passing`'s own python/rust buckets. Collection is lazy
+    (only paid when an id did not already resolve) and best-effort per
+    language: a collector `Err` (no build dir, tool not installed) is
+    logged and that language is simply added to `tried` with nothing
+    collected, never raised.
+
+    Whatever STILL matches no collector after every registered language
+    has been tried is the actual defect this ticket closes: instead of
+    silently vanishing from `outcomes` (indistinguishable from "verified
+    clean"), it gets a typed `UNMEASURED` outcome whose `reason` names the
+    id and every language attempted -- a known-unverifiable id is
+    acceptable; an invisibly-unverified one is not."""
+    from frob.testing import LANGUAGE_COLLECTORS
+    from frob.tickets._models import matches_collected
+
+    outcomes: dict[str, VerifyOutcome] = {}
+    matched: set[str] = set()
+    remaining = node_ids
+    tried_languages = list(tried)
+    for language, collector in LANGUAGE_COLLECTORS.items():
+        if not remaining or language in tried:
+            continue
+        tried_languages.append(language)
+        collected = collector(root)
+        if collected.is_err:
+            _log.warning(
+                "ticket evidence: %s collection failed (%s); ids for this "
+                "language stay unmeasured",
+                language,
+                collected.danger_err,
+            )
+            continue
+        collected_ids = frozenset(collected.danger_ok.node_ids)
+        items = tuple(n for n in remaining if matches_collected(n, collected_ids))
+        if items:
+            outcomes.update(_verify_one_bucket_passing(root, language, items, runners))
+            matched.update(items)
+            remaining = tuple(n for n in remaining if n not in matched)
+
+    for node_id in remaining:
+        outcomes[node_id] = VerifyOutcome(
+            status=VerifyStatus.UNMEASURED,
+            reason=(
+                f"no collector recognized {node_id!r} -- tried: "
+                f"{', '.join(tried_languages)} (add a [[test.runner]] "
+                "entry for its language, or check the id's spelling)"
+            ),
+        )
     return outcomes
 
 

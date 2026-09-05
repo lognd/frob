@@ -11,6 +11,7 @@ the bindings exist, `frob test` runs the bound tests.
 from __future__ import annotations
 
 from frob.testing._collect import (
+    LANGUAGE_COLLECTORS,
     collect_cpp_tests,
     collect_kotlin_tests,
     collect_python_tests,
@@ -89,6 +90,7 @@ __all__ = [
     "CoverageWaitOutcome",
     "DEFAULT_REGRESSION_TAIL_K",
     "FlakeError",
+    "LANGUAGE_COLLECTORS",
     "NativeSpec",
     "RunnerOutcome",
     "RunnerSpec",

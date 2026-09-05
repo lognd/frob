@@ -2,7 +2,7 @@
 id: T-3847
 title: 'evidence verification buckets only python and rust: cpp/kotlin/ts ids are
   silently never verified, and catch2 is unsupported'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -59,6 +59,13 @@ scope_changes:
     same pattern as _verify_one_bucket_passing
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/unit/test_verify_language_buckets.py::TestUnbucketedIdsAreLoud::test_id_matching_no_collector_is_a_named_unmeasured_refusal
+- tests/unit/test_verify_language_buckets.py::TestUnbucketedIdsAreLoud::test_id_matching_a_registered_non_python_rust_collector_verifies
+- tests/unit/test_verify_language_buckets.py::TestUnbucketedIdsAreLoud::test_collector_error_is_tried_but_never_raises
+- tests/unit/test_verify_language_buckets.py::TestVerifyIdsPassingFallsThroughToOtherCollectors::test_id_unmatched_by_python_and_rust_still_gets_an_outcome
+- tests/unit/test_verify_language_buckets.py::TestVerifyIdsPassingFallsThroughToOtherCollectors::test_python_and_rust_matches_are_unaffected_by_this_change
+- tests/unit/test_verify_language_buckets.py::TestUnbucketedIdsSkipAlreadyTriedLanguages::test_already_tried_language_collector_is_never_invoked
 designated_repro_test: null
 threat: null
 component: null
