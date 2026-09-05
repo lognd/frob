@@ -2,7 +2,7 @@
 id: T-3846
 title: distill README into the verbs, fix its make-target drift, and answer why no
   gate caught it
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-09-05'
@@ -26,6 +26,8 @@ scope_changes:
   reason: distill README around verbs, fix make-target drift
   actor: logan
   at: '2026-09-05'
+evidence:
+- cmd:python3 /tmp/readme_doc_check.py exit=0 sha256=783c5e39a9fb
 designated_repro_test: null
 threat: null
 component: null
