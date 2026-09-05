@@ -15,11 +15,11 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/lang/**
 - tests/test_lang.py
 - tests/fixtures/lang/**
 - docs/modules/lang.md
 - docs/guides/install.md
+- src/frob/lang/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -52,6 +52,20 @@ scope_changes:
 - op: add
   glob: docs/guides/install.md
   reason: T-0133 honest-degrade parity statement lives here
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: src/frob/lang/**
+  reason: narrow to the one file actually touched; src/frob/lang/** as a whole pulls
+    in repo-wide fan-in (docs/graph.md, dup.md, frob-core, doctor.py, ...) that this
+    ticket's diagnosis/test change never touches
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/lang/__init__.py
+  reason: narrow to the one file actually touched; src/frob/lang/** as a whole pulls
+    in repo-wide fan-in (docs/graph.md, dup.md, frob-core, doctor.py, ...) that this
+    ticket's diagnosis/test change never touches
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
