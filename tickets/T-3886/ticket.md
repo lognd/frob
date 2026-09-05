@@ -2,7 +2,7 @@
 id: T-3886
 title: verify worker reports unmeasurable when its own child was killed, and the land
   then spins forever on a queue that cannot drain
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -142,3 +142,29 @@ ACCEPTANCE
   considered.
 - The historical count of false-unmeasurable verdicts reported.
 - All fixtures committed.
+
+ADDENDUM 2026-09-05 (coordinator, second independently-reported instance):
+logand.app-v2 FROBLEMS F-049 ("real bug, misleading refusal") is the SAME
+conflation at a different site. A land failed with "evidence no longer
+resolves post-merge" because pytest --collect-only ERRORED on seven modules
+(ModuleNotFoundError: fakeredis -- the root uv workspace did not install the
+backend member's dev group). The real cause was three lines earlier:
+collect_python_tests: pytest --collect-only exited 2. The site is
+_land_collected_fn/_land_passed_fn in src/frob/app/ticket_runner/_land_cmd.py
+(both fold a collection ERROR -- infrastructure -- into a bare frozenset(),
+which then reads identically to a collection SUCCESS that simply found
+nothing matching, so "evidence no longer resolves" is reported as a semantic
+finding about the code when the true cause was "we could not even collect").
+
+NOT FIXED IN THIS PASS: src/frob/app/ticket_runner/_land_cmd.py was held
+under another in-progress ticket's (T-3906) scope lease for the whole of
+T-3886's work session, so this site could not be touched. Filed as
+follow-up scope, not silently dropped -- the same distinguish-the-outcomes
+fix this ticket applied to frob.verify._worker (log-signal capture, or
+better, a proper Result[frozenset|None, Reason] return type) is the shape
+that closes this second site too, once _land_cmd.py's lease clears.
+
+F-049's SECOND, separate half (agents' uv sync pulling member dev groups
+that the per-ticket gate environment does not) is an environment-consistency
+defect of the T-3887 family (gates executing project code in frob's own
+interpreter) -- not this ticket's shape, and not fixed here.
