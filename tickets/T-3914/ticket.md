@@ -19,10 +19,53 @@ scope:
 - tests/unit/test_draft_finalize_attachments.py
 - tests/unit/test_ticket_new_body_file_pipe_t2021.py
 - src/frob/app/ticket_runner/_new.py
+- tests/unit/deploy/test_deploy_runner.py
+- tests/unit/fleet/test_manifest.py
+- tests/unit/test_check_native_cargo_runners.py
+- tests/test_testing.py
+- tests/unit/rapid_sweep_suite/test_filing.py
+- tests/test_fuzz.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/deploy/test_deploy_runner.py
+  reason: 'T-3914 slice: test-harness win32 fixes span these files too, discovered
+    while draining the 49'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/fleet/test_manifest.py
+  reason: 'T-3914 slice: test-harness win32 fixes span these files too, discovered
+    while draining the 49'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_check_native_cargo_runners.py
+  reason: 'T-3914 slice: test-harness win32 fixes span these files too, discovered
+    while draining the 49'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_testing.py
+  reason: 'T-3914 slice: test-harness win32 fixes span these files too, discovered
+    while draining the 49'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/rapid_sweep_suite/test_filing.py
+  reason: 'T-3914 slice: test-harness win32 fixes span these files too, discovered
+    while draining the 49'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_fuzz.py
+  reason: 'T-3914 slice: test-harness win32 fixes span these files too, discovered
+    while draining the 49'
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
