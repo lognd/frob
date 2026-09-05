@@ -19,6 +19,10 @@ scope:
 - docs/guides/release.md
 - scripts/artifact_smoke.py
 - tests/unit/test_release_workflow_gate.py
+- scripts/verify_release_ci_status.py
+- src/frob/doctor.py
+- src/frob/gates/_version_coupling.py
+- tests/system/test_artifact_smoke.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +47,26 @@ scope_changes:
   glob: tests/unit/test_release_workflow_gate.py
   reason: must update the exact needs-set assertion once artifact-smoke joins upload
     needs
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: scripts/verify_release_ci_status.py
+  reason: doc-anchor scope closure (SCOPE002) + the must-fire fixture test file
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/doctor.py
+  reason: doc-anchor scope closure (SCOPE002) + the must-fire fixture test file
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/gates/_version_coupling.py
+  reason: doc-anchor scope closure (SCOPE002) + the must-fire fixture test file
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/system/test_artifact_smoke.py
+  reason: doc-anchor scope closure (SCOPE002) + the must-fire fixture test file
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
