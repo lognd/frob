@@ -18,7 +18,6 @@ scope:
 - src/frob/gates/_version_coupling.py
 - tests/unit/gates/test_version_coupling.py
 - pyproject.toml
-- docs/guides/release.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +44,12 @@ scope_changes:
 - op: add
   glob: docs/guides/release.md
   reason: 'closure: version_coupling_gate frob:doc target'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: docs/guides/release.md
+  reason: not editing this doc; closure demands unrelated scripts/doctor.py out of
+    scope for this pin-matching fix
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
