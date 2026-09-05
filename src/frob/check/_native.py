@@ -11,7 +11,11 @@ from pathlib import Path
 
 from frob.excludes import iter_files
 from frob.logging import get_logger
-from frob.process._guard import EXEC_KILL_SWITCH_ENV, guarded_subprocess_run
+from frob.process._guard import (
+    EXEC_KILL_SWITCH_ENV,
+    ProcessGuardError,
+    guarded_subprocess_run,
+)
 from frob.process.parsers.common import (
     Diagnostic,
     ToolResult,
@@ -67,6 +71,8 @@ def _cmake_configure(root: Path, build_dir: Path) -> ToolResult | None:
         _log.debug("_cmake_configure: unexpected failure: %s", exc)
         return tool_crash_result("cmake-configure", exc)
     if run_result.is_err:
+        if run_result.danger_err == ProcessGuardError.SpawnFailed:
+            return tool_unavailable_result("cmake-configure", "cmake")
         return tool_disabled_result("cmake-configure", EXEC_KILL_SWITCH_ENV)
     cfg = run_result.danger_ok
     if cfg.returncode == 0:
@@ -105,6 +111,8 @@ def _run_cmake_build(root: Path, build_dir: Path) -> ToolResult:
         _log.debug("_run_cmake_build: unexpected failure: %s", exc)
         return tool_crash_result("cmake-build", exc)
     if run_result.is_err:
+        if run_result.danger_err == ProcessGuardError.SpawnFailed:
+            return tool_unavailable_result("cmake-build", "cmake")
         return tool_disabled_result("cmake-build", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
     r = parse_clang(
@@ -146,6 +154,8 @@ def _run_clang_tidy_cmake(root: Path, build_dir: Path) -> ToolResult | None:
         _log.debug("_run_clang_tidy_cmake: unexpected failure: %s", exc)
         return tool_crash_result("clang-tidy", exc)
     if run_result.is_err:
+        if run_result.danger_err == ProcessGuardError.SpawnFailed:
+            return tool_unavailable_result("clang-tidy", "clang-tidy")
         return tool_disabled_result("clang-tidy", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
     try:
@@ -167,6 +177,8 @@ def _run_clang_format(root: Path) -> ToolResult | None:
     if run_result is None:
         return tool_unavailable_result("clang-format", "clang-format")
     if run_result.is_err:
+        if run_result.danger_err == ProcessGuardError.SpawnFailed:
+            return tool_unavailable_result("clang-format", "clang-format")
         return tool_disabled_result("clang-format", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
     if not proc.returncode:
@@ -241,6 +253,8 @@ def _run_ctest(build_dir: Path, *, valgrind: bool = False) -> ToolResult | None:
         _log.debug("_run_ctest: unexpected failure: %s", exc)
         return tool_crash_result("ctest", exc)
     if run_result.is_err:
+        if run_result.danger_err == ProcessGuardError.SpawnFailed:
+            return tool_unavailable_result("ctest", "ctest")
         return tool_disabled_result("ctest", EXEC_KILL_SWITCH_ENV)
 
     return _ctest_result(build_dir, run_result.danger_ok)
@@ -299,6 +313,8 @@ def _run_cargo(
         _log.debug("_run_cargo: unexpected failure: %s", exc)
         return tool_crash_result(f"cargo-{subcmd}", exc)
     if run_result.is_err:
+        if run_result.danger_err == ProcessGuardError.SpawnFailed:
+            return tool_unavailable_result(f"cargo-{subcmd}", "cargo")
         return tool_disabled_result(f"cargo-{subcmd}", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
     return parse_cargo(
@@ -322,6 +338,8 @@ def _run_cargo_fmt_check(root: Path) -> ToolResult | None:
         _log.debug("_run_cargo_fmt_check: unexpected failure: %s", exc)
         return tool_crash_result("cargo-fmt", exc)
     if run_result.is_err:
+        if run_result.danger_err == ProcessGuardError.SpawnFailed:
+            return tool_unavailable_result("cargo-fmt", "cargo")
         return tool_disabled_result("cargo-fmt", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
     if proc.returncode == 0:
@@ -377,6 +395,8 @@ def _run_cargo_valgrind(root: Path) -> ToolResult | None:
         _log.debug("_run_cargo_valgrind: build failure: %s", exc)
         return tool_crash_result("cargo-test(valgrind)", exc)
     if build_result.is_err:
+        if build_result.danger_err == ProcessGuardError.SpawnFailed:
+            return tool_unavailable_result("cargo-test(valgrind)", "cargo")
         return tool_disabled_result("cargo-test(valgrind)", EXEC_KILL_SWITCH_ENV)
     build_proc = build_result.danger_ok
     binary = _find_test_binary_from_cargo_json(build_proc.stdout)
@@ -395,6 +415,8 @@ def _run_cargo_valgrind(root: Path) -> ToolResult | None:
         _log.debug("_run_cargo_valgrind: run failure: %s", exc)
         return tool_crash_result("cargo-test(valgrind)", exc)
     if run_result.is_err:
+        if run_result.danger_err == ProcessGuardError.SpawnFailed:
+            return tool_unavailable_result("cargo-test(valgrind)", "valgrind")
         return tool_disabled_result("cargo-test(valgrind)", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
     r = parse_valgrind(proc.stdout + proc.stderr, exit_code=proc.returncode)
@@ -424,6 +446,8 @@ def _run_cargo_test(root: Path, *, valgrind: bool = False) -> ToolResult | None:
         _log.debug("_run_cargo_test: unexpected failure: %s", exc)
         return tool_crash_result("cargo-test", exc)
     if run_result.is_err:
+        if run_result.danger_err == ProcessGuardError.SpawnFailed:
+            return tool_unavailable_result("cargo-test", "cargo")
         return tool_disabled_result("cargo-test", EXEC_KILL_SWITCH_ENV)
     proc = run_result.danger_ok
     return parse_cargo(

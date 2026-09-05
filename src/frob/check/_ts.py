@@ -11,7 +11,11 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from frob.process._guard import EXEC_KILL_SWITCH_ENV, guarded_subprocess_run
+from frob.process._guard import (
+    EXEC_KILL_SWITCH_ENV,
+    ProcessGuardError,
+    guarded_subprocess_run,
+)
 from frob.process.parsers.common import (
     Diagnostic,
     ToolResult,
@@ -66,6 +70,8 @@ def _run_npx(root: Path, args: list[str], tool: str):  # noqa: ANN201
     except subprocess.TimeoutExpired:
         return None
     if run_result.is_err:
+        if run_result.danger_err == ProcessGuardError.SpawnFailed:
+            return None
         return _NPX_DISABLED
     return run_result.danger_ok
 

@@ -22,7 +22,11 @@ from typing import TYPE_CHECKING
 
 from frob.excludes import iter_files
 from frob.logging import get_logger
-from frob.process._guard import EXEC_KILL_SWITCH_ENV, guarded_subprocess_run
+from frob.process._guard import (
+    EXEC_KILL_SWITCH_ENV,
+    ProcessGuardError,
+    guarded_subprocess_run,
+)
 from frob.process.parsers.common import (
     Diagnostic,
     Severity,
@@ -90,7 +94,7 @@ def _run_ruff(
             out.append(tool_unavailable_result("ruff-check", "ruff"))
         else:
             if run_result.is_err:
-                out.append(tool_disabled_result("ruff-check", EXEC_KILL_SWITCH_ENV))
+                out.append(_guard_err_result(run_result, "ruff-check", "ruff"))
             else:
                 proc = run_result.danger_ok
                 r = parse_ruff_json(proc.stdout, exit_code=proc.returncode)
@@ -125,7 +129,7 @@ def _ruff_format_result(root: Path) -> ToolResult:
     except FileNotFoundError:
         return tool_unavailable_result("ruff-format", "ruff")
     if run_result.is_err:
-        return tool_disabled_result("ruff-format", EXEC_KILL_SWITCH_ENV)
+        return _guard_err_result(run_result, "ruff-format", "ruff")
     proc = run_result.danger_ok
     if not proc.returncode:
         return ToolResult(
@@ -153,6 +157,18 @@ def _reformat_diagnostics(reformat_lines: list[str]) -> list[Diagnostic]:
         )
         for ln in reformat_lines
     ]
+
+
+# frob:ticket T-3818
+def _guard_err_result(run_result, tool: str, binary: str) -> ToolResult:  # noqa: ANN001
+    """T-3797/T-3818: render a `guarded_subprocess_run` `Err` as the typed
+    result its caller must show -- `tool_unavailable_result` for a spawn
+    failure (T-3797 regression: a missing binary must read as "tool
+    unavailable", never "exec disabled"), `tool_disabled_result` for every
+    other guard error (kill switch, timeout)."""
+    if run_result.danger_err == ProcessGuardError.SpawnFailed:
+        return tool_unavailable_result(tool, binary)
+    return tool_disabled_result(tool, EXEC_KILL_SWITCH_ENV)
 
 
 # frob:ticket T-2320
@@ -191,7 +207,7 @@ def _run_ruff_autofix(root: Path) -> list[ToolResult]:
         out.append(tool_unavailable_result("ruff-check-fix", "ruff"))
     else:
         if run_result.is_err:
-            out.append(tool_disabled_result("ruff-check-fix", EXEC_KILL_SWITCH_ENV))
+            out.append(_guard_err_result(run_result, "ruff-check-fix", "ruff"))
         else:
             proc = run_result.danger_ok
             msg = (proc.stdout + proc.stderr).strip()
@@ -212,7 +228,7 @@ def _run_ruff_autofix(root: Path) -> list[ToolResult]:
         out.append(tool_unavailable_result("ruff-format-write", "ruff"))
     else:
         if format_result.is_err:
-            out.append(tool_disabled_result("ruff-format-write", EXEC_KILL_SWITCH_ENV))
+            out.append(_guard_err_result(format_result, "ruff-format-write", "ruff"))
         else:
             proc = format_result.danger_ok
             msg = (proc.stdout + proc.stderr).strip()
@@ -354,7 +370,7 @@ def _run_ty_one(cmd: list[str], platform: str) -> ToolResult:
     except FileNotFoundError:
         return tool_unavailable_result(f"ty:{platform}", "ty")
     if run_result.is_err:
-        return tool_disabled_result(f"ty:{platform}", EXEC_KILL_SWITCH_ENV)
+        return _guard_err_result(run_result, f"ty:{platform}", "ty")
     proc = run_result.danger_ok
     r = parse_ty(proc.stdout + proc.stderr, exit_code=proc.returncode)
     r.tool = f"ty:{platform}"

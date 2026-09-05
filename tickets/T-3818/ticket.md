@@ -2,7 +2,7 @@
 id: T-3818
 title: 'T-3797 regression: check tool-runners render Err(SpawnFailed) as tool_disabled
   instead of tool_unavailable (mac+ubuntu red on test_check_tool_unavailable)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -38,6 +38,14 @@ scope_changes:
   reason: fix Err(SpawnFailed) rendering at all tool-runner sites
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/unit/test_check_tool_unavailable.py::TestRuffUnavailable::test_run_ruff_missing_binary_returns_failing_results
+- tests/unit/test_check_tool_unavailable.py::TestRuffUnavailable::test_ruff_format_result_missing_binary_returns_failing_result
+- tests/unit/test_check_tool_unavailable.py::TestTyUnavailable::test_run_ty_missing_binary_returns_failing_result
+- tests/unit/test_check_tool_unavailable.py::TestCargoUnavailable::test_run_cargo_missing_binary_returns_failing_result
+- tests/unit/test_check_tool_unavailable.py::TestCargoUnavailable::test_run_cargo_fmt_check_missing_binary_returns_failing_result
+- tests/unit/test_check_tool_unavailable.py::TestCargoUnavailable::test_run_cargo_test_missing_binary_returns_failing_result
+- tests/unit/test_check_tool_unavailable.py::TestTscUnavailable::test_run_tsc_missing_npx_returns_failing_result
 designated_repro_test: null
 threat: null
 component: null
