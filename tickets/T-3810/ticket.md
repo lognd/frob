@@ -28,7 +28,10 @@ scope_changes:
   reason: test file for _collect_ts.py lives here
   actor: logan
   at: '2026-09-05'
-designated_repro_test: null
+evidence:
+- tests/test_testing.py::TestCollectTsTests::test_vitest_node_id_relative_root_absolute_file
+- tests/test_testing.py::TestCollectTsTests::test_ts_content_key_relative_root_absolute_file
+designated_repro_test: tests/test_testing.py::TestCollectTsTests::test_vitest_node_id_relative_root_absolute_file
 threat: null
 component: null
 anchor: false
