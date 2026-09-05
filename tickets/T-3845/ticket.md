@@ -19,6 +19,7 @@ scope:
 - docs/guides/install.md
 - tests/system/test_cli_native_missing.py
 - tests/fixtures/fake_no_native/**
+- uv.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,11 @@ scope_changes:
 - op: add
   glob: tests/fixtures/fake_no_native/**
   reason: ship cores as default deps, update install docs, verify degrade path fixture
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: uv.lock
+  reason: uv sync regenerates the lock now that cores are default deps
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
