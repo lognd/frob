@@ -18,10 +18,6 @@ scope:
 - src/frob/gates/_version_coupling.py
 - tests/unit/gates/test_version_coupling.py
 - pyproject.toml
-- docs/guides/release.md
-- scripts/artifact_smoke.py
-- scripts/verify_release_ci_status.py
-- src/frob/doctor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -78,6 +74,30 @@ scope_changes:
   glob: src/frob/doctor.py
   reason: AFFECT001 doc-drift closure requires updating the version-coupling section
     of release.md, which pulls in that doc's other described symbols by closure
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: docs/guides/release.md
+  reason: 'revert: doc-closure cascade from release.md pulls in unrelated doctor.py/install.md
+    chains disproportionate to this pin-matching fix; waive AFFECT001 instead'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: scripts/artifact_smoke.py
+  reason: 'revert: doc-closure cascade from release.md pulls in unrelated doctor.py/install.md
+    chains disproportionate to this pin-matching fix; waive AFFECT001 instead'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: scripts/verify_release_ci_status.py
+  reason: 'revert: doc-closure cascade from release.md pulls in unrelated doctor.py/install.md
+    chains disproportionate to this pin-matching fix; waive AFFECT001 instead'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: src/frob/doctor.py
+  reason: 'revert: doc-closure cascade from release.md pulls in unrelated doctor.py/install.md
+    chains disproportionate to this pin-matching fix; waive AFFECT001 instead'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
