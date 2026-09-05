@@ -18,6 +18,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'owner decision: option (a), lexical scan authorised for no-grammar files
+    only, with the automatic-warn scope judged per directive presence'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 4592
+  new_length: 7678
 designated_repro_test: null
 threat: null
 component: null
@@ -108,3 +116,56 @@ ACCEPTANCE
 - The lexical-scan justification stated explicitly against the token-not-lexical
   directive, so it is not mistaken for a violation of it later.
 - All fixtures committed.
+
+
+
+OWNER DECISION 2026-09-05, superseding the (a)/(b)/(c) choice above: "No grammar
+should AUTOMATICALLY warn, but I think lexical ONLY IN NO-GRAMMAR situations is
+okay. Make your best judgement."
+
+So: OPTION (a) IS CHOSEN. Lexically scan files with no registered grammar for
+`frob:` directives and honour them. The lexical scan is authorised ONLY for the
+no-grammar case -- a file WITH a registered grammar must keep going through its
+grammar, always. Do not let this decision leak into parsed languages; the
+token-not-lexical directive still governs everywhere a token stream exists.
+
+The reasoning that makes this consistent rather than an exception: where there
+is no grammar there is no token stream to compare against, so lexical is not a
+shortcut past a better method -- it is the only method. And a `frob:` directive
+is a fixed literal prefix inside a comment, not a code construct being inferred.
+Record that argument in the code so a later reader does not "fix" it.
+
+ON "AUTOMATICALLY WARN", and this is the judgement call the owner delegated.
+Warning on every no-grammar file would drown the signal: most unparseable files
+in a real repo are ordinary assets -- images, lock files, binaries, vendored
+blobs -- and a warning per file per run would be noise nobody reads, which is
+how the current once-per-(ext,site) dedup came to exist in the first place.
+
+So make the warning UNCONDITIONAL AND LOUD for the case that is actually
+actionable, and leave the rest quiet:
+
+  1. A no-grammar file that CONTAINS a `frob:` directive: always report, every
+     run, never deduped, never demoted to DEBUG, and NOT silenceable by
+     `expect_heterogeneous=True`. This is the case where silence costs the user
+     a waiver they think is working. If the directive can be honoured by the
+     lexical scan, honour it and say nothing; if it cannot be honoured (an
+     unrecognised comment syntax, say), that is a FINDING naming the file, the
+     line and the directive.
+  2. A no-grammar file with NO directives: keep today's behaviour. It is a
+     parse-coverage fact, not a correctness problem, and it is already logged.
+
+That split is the whole point: the existing message is deduped and silenceable
+because it answers "was this file parsed?", which is routine. The new one
+answers "is a directive you wrote being ignored?", which never is.
+
+CONSEQUENCE FOR expect_heterogeneous: today that flag makes the no-grammar
+notice DEBUG-only and permanently silent for that call site. That must not
+suppress case 1. Check every call site passing it and confirm none of them is on
+a path where user-authored directives live.
+
+The comment-syntax question stands and is now the main design work: decide which
+leading markers count as a comment in an unknown format. `#` is the reporter's
+case; `//`, `;`, `--` and `%` are all common in config and data files. Prefer
+recognising a known set and reporting an unhonourable directive (case 1's
+finding) over guessing broadly -- a wrong guess silently honours a directive
+that was never a directive, which is a worse failure than not honouring it.
