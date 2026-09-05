@@ -20,9 +20,6 @@ scope:
 - scripts/artifact_smoke.py
 - tests/unit/test_release_workflow_gate.py
 - tests/system/test_artifact_smoke.py
-- scripts/verify_release_ci_status.py
-- src/frob/doctor.py
-- src/frob/gates/_version_coupling.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -100,6 +97,24 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_version_coupling.py
   reason: SCOPE002 doc-anchor closure over pre-existing release.md anchors
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: scripts/verify_release_ci_status.py
+  reason: closure cascade is unbounded (100+ transitive files); reverting, will disclose
+    as debt instead
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: src/frob/doctor.py
+  reason: closure cascade is unbounded (100+ transitive files); reverting, will disclose
+    as debt instead
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: src/frob/gates/_version_coupling.py
+  reason: closure cascade is unbounded (100+ transitive files); reverting, will disclose
+    as debt instead
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
