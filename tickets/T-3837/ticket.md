@@ -2,7 +2,7 @@
 id: T-3837
 title: 'F-032: frob ticket evidence --accepts N is 0-indexed and silently accepts
   a wrong index (silent mis-binding)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
