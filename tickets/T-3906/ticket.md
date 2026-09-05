@@ -44,6 +44,7 @@ scope:
 - src/frob/app/_config_external.py
 - tests/unit/test_app_runners_json_guard_t2492.py
 - tests/unit/test_app_runners_t0875_leaf_collision.py
+- tests/unit/test_format_consolidation_t3906.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -195,6 +196,12 @@ scope_changes:
   glob: tests/unit/test_app_runners_t0875_leaf_collision.py
   reason: 'T-3906: fmt_path/format_path renamed to fmt_paths/format_paths (T-3312
     list support), these tests construct AppConfig directly with the old field name'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_format_consolidation_t3906.py
+  reason: 'T-3906: dedicated MUST-FIRE/MUST-STAY-QUIET fixture tests for the format/fmt
+    consolidation'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
