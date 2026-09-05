@@ -891,6 +891,16 @@ class AppConfig(BaseModel):
     # entries -- the same call --drain makes automatically after draining,
     # for a deployment that never calls --drain at all.
     ticket_land_run_mutation_sweep: bool = False
+    # frob:ticket T-3787
+    # `frob ticket land <id> --branch/--onto NAME`, or `[tool.frob]
+    # ticket_land_branch = "NAME"` in pyproject.toml: the branch this land
+    # publishes onto, defaulting to `None` (root's current checked-out
+    # branch, the historical `main`-in-practice default). Set the config
+    # key to make every land default to a dedicated dev branch so post-
+    # alpha work never lands onto a frozen `main` by accident -- with it
+    # set, a land while root is checked out on the WRONG branch refuses
+    # (LandError.TargetBranchInvalid) rather than silently hitting main.
+    ticket_land_branch: str | None = None
     ticket_worktree: Path | None = None
     # frob:ticket T-1243
     # `frob ticket brief --cluster <id>` / `frob ticket work --cluster <id>`

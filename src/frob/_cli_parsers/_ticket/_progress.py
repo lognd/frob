@@ -297,6 +297,24 @@ def _add_ticket_land_parser(ticket_sub):
         help="path to the worktree checked out to the ticket's branch "
         "(required unless --drain)",
     )
+    # frob:ticket T-3787
+    ticket_land_p.add_argument(
+        "--branch",
+        "--onto",
+        dest="ticket_land_branch",
+        metavar="NAME",
+        default=None,
+        help=(
+            "T-3787: land onto branch NAME instead of the historical "
+            "default (root's current checked-out branch). NAME must be an "
+            "existing branch that the root checkout is currently on -- "
+            "landing publishes onto and resyncs root's own checkout, so "
+            "this validates that invariant and refuses otherwise. Also "
+            'settable as `[tool.frob] ticket_land_branch = "NAME"` in '
+            "pyproject.toml to change the default so post-alpha work lands "
+            "on a dev branch, never a frozen main by accident."
+        ),
+    )
     # frob:ticket T-1269
     ticket_land_p.add_argument(
         "--plan",

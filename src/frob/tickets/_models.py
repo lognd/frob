@@ -2916,6 +2916,16 @@ class LandError(ErrorSet):
         "same diff, or re-scope it and record fresh evidence, before "
         "retrying"
     )
+    # frob:ticket T-3787
+    TargetBranchInvalid = (
+        "the requested land target branch (frob ticket land --branch/"
+        "--onto, or the ticket_land_branch config default) does not exist "
+        "in the root checkout, or the root checkout is not currently on it "
+        "-- landing publishes onto and resyncs root's OWN checked-out "
+        "branch, so the target must name an existing branch that root is "
+        "checked out on; `cd <root> && git checkout <branch>` (or create "
+        "it) first, then retry"
+    )
 
 
 # frob:ticket T-0176
@@ -2932,6 +2942,15 @@ class LandReport(BaseModel):
     wip_committed: bool
     merged_main_into_worktree: bool
     ledger_spliced: bool
+    # frob:ticket T-3787
+    # The branch this land published onto (root's own checked-out branch,
+    # resolved at precheck from `--branch`/`--onto`/the ticket_land_branch
+    # config default, defaulting to `main`). Defaulted to "main" so every
+    # existing LandReport construction/deserialization is unchanged; the
+    # LAND-PROOF ancestry check (_land_cmd._land_proof_checks) reads this
+    # to verify the commit landed on the ACTUAL target branch instead of a
+    # hardcoded "main", the one thing that broke on a non-main target.
+    target_branch: str = "main"
     unowned_deletions: tuple[str, ...] = ()
     commit_sha: str | None = None
     files_changed: tuple[str, ...] = ()

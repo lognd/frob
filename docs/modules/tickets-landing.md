@@ -546,6 +546,50 @@ never dropped -- previously an evidence-count tiebreak picked ONE side's
 evidence set wholesale, silently discarding the other side's ids when two
 worktrees closed the same ticket with disjoint evidence.
 
+### Landing onto a non-main target branch (T-3787)
+
+<!-- frob:describes src/frob/tickets/_land.py::_resolve_land_target_branch -->
+
+The whole land pipeline -- squash-compose, the `publish_ref_cas` onto
+`refs/heads/<branch>`, the post-publish resync of `root`'s working tree,
+and the `_assert_still_on_expected_branch` drift guard -- has always
+operated on **root's own checked-out branch**, resolved via
+`current_branch(root)`; the historical `main` was never a hardcoded land
+target, only the branch root happened to be on. The one genuine exception
+was the LAND-PROOF ancestry check (`_is_ancestor_with_retry`), which
+verified `git merge-base --is-ancestor <sha> main` against a literal
+`main` and so printed `verified=False` for a perfectly correct off-main
+land.
+
+`frob ticket land --branch <name>` (alias `--onto <name>`) makes the land
+target explicit, defaulting to `None` (root's current branch -- the
+historical behavior, byte-for-byte). It can also be set as a **config
+default** so post-alpha work never lands onto a frozen `main` by accident:
+
+```toml
+# pyproject.toml
+[tool.frob]
+ticket_land_branch = "dev"
+```
+
+`_resolve_land_target_branch(root, ticket_id, target_branch)` validates a
+given target against the invariant the rest of the pipeline relies on:
+the branch must (a) exist in `root` and (b) equal root's current branch,
+because landing publishes onto and resyncs root's OWN checkout. A missing
+branch, or a target root is not checked out on, refuses with
+`LandError.TargetBranchInvalid` (naming the `git checkout` remedy) rather
+than silently writing onto the wrong ref. The resolved target rides on
+`LandReport.target_branch` (default `"main"`) so LAND-PROOF now verifies
+ancestry against the branch the land actually published onto.
+
+The intended off-main workflow: keep the published remote `main` frozen at
+a green release, run the dev checkout on a dedicated branch (`dev`), land
+every ticket onto it with full frob gates/accounting, and fast-forward/
+merge `dev` into `main` only once a second release is proven green.
+Landing onto a branch root is NOT checked out on (without switching root's
+checkout) is deliberately deferred to a follow-up ticket -- it needs the
+CAS base, the resync, and the drift guard all re-pointed off root's HEAD.
+
 ### Pollable land-status marker (T-2691)
 
 `land()` writes a small JSON marker at `<root>/.frob/land-status.json`

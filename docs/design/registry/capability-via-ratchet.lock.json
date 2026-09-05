@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 291,
-      "reason": "T-3697: adds tests/test_hook_frob_directive_guard.py's own real, new exec via-list site (subprocess.run against the new frob-directive-guard.py hook, the same standalone-hook subprocess-contract shape tests/test_hook_root_write_guard.py and tests/test_hook_frob_timeout_guard.py already declare) -- bumping the ceiling to the current measured count.",
-      "ticket": "T-3697"
+      "accepted_count": 292,
+      "reason": "T-3787: adds tests/ticket_land_suite/test_land_target_branch.py's own real, new exec via-list site (subprocess.run of git merge-base --is-ancestor to assert which branch a landed commit sits on, the same land-suite subprocess shape sibling tests already declare) -- bumping the ceiling to the current measured count.",
+      "ticket": "T-3787"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -251,9 +251,9 @@
       "ticket": "T-3595"
     },
     "testsuite::fs.write": {
-      "accepted_count": 502,
-      "reason": "T-3748: adds tests/unit/test_coverage_runner.py's own real, new fs.write via-list site (Path.write_text of a coverage-run provenance fixture for the --fail-on-degraded tests, the same shape every sibling test module already declares) -- bumping the ceiling to the current measured count.",
-      "ticket": "T-3748"
+      "accepted_count": 503,
+      "reason": "T-3787: adds tests/ticket_land_suite/test_land_target_branch.py's own real, new fs.write via-list site (Path.write_text of source-file fixtures in the throwaway worktree the non-main-target land tests exercise, the same shape every sibling land-suite module already declares) -- bumping the ceiling to the current measured count.",
+      "ticket": "T-3787"
     },
     "testsuite::net.connect": {
       "accepted_count": 3,

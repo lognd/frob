@@ -2,7 +2,7 @@
 id: T-3787
 title: 'frob land: support landing onto a non-main target branch (unblocks off-main
   v1.0.0 dev after alpha)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-04'
@@ -98,6 +98,11 @@ body_changes:
   at: '2026-09-04'
   old_length: 0
   new_length: 1273
+evidence:
+- tests/ticket_land_suite/test_land_target_branch.py::TestLandOntoNonMainBranch::test_real_land_onto_dev_lands_on_dev_not_main
+- tests/ticket_land_suite/test_land_target_branch.py::TestDefaultTargetUnchanged::test_default_land_targets_main_and_reports_main
+- tests/ticket_land_suite/test_land_target_branch.py::TestTargetBranchRefusals::test_missing_target_branch_refuses
+- tests/ticket_land_suite/test_land_target_branch.py::TestTargetBranchRefusals::test_target_branch_root_is_not_on_refuses
 designated_repro_test: null
 threat: null
 component: null

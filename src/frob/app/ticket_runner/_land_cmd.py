@@ -1402,11 +1402,25 @@ _LAND_PROOF_ANCESTOR_RETRY_DELAYS: tuple[float, ...] = (0.1, 0.2, 0.4)
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAncestorRetry.test_retries_until_ancestor_check_settles_true  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandProofAncestorRetry.test_gives_up_after_exhausting_retries_on_a_genuine_non_ancestor  # noqa: E501
 def _is_ancestor_with_retry(
-    root: Path, commit_sha: str, *, sleep: Callable[[float], None] = time.sleep
+    root: Path,
+    commit_sha: str,
+    *,
+    target_branch: str = "main",
+    sleep: Callable[[float], None] = time.sleep,
 ) -> bool:
-    """`git -C root merge-base --is-ancestor commit_sha main`, retried up
-    to `len(_LAND_PROOF_ANCESTOR_RETRY_DELAYS)` extra times with a short
-    backoff between attempts before giving up and returning False (T-1913).
+    """`git -C root merge-base --is-ancestor commit_sha <target_branch>`,
+    retried up to `len(_LAND_PROOF_ANCESTOR_RETRY_DELAYS)` extra times with
+    a short backoff between attempts before giving up and returning False
+    (T-1913).
+
+    T-3787: `target_branch` (default `"main"`) is the branch this land
+    actually published onto -- threaded from `LandReport.target_branch` so
+    a land onto a non-main branch (`frob ticket land --branch`/`--onto`,
+    or the ticket_land_branch config default) verifies its commit landed
+    on THAT branch instead of always checking `main`, which would report
+    `verified=False` for a perfectly correct off-main land. The default
+    keeps every existing call (and the recovered-marker path, which has no
+    report to read a target off) byte-identical.
 
     T-1913 investigated a real, unreproduced incident (T-1895, `frob
     ticket land` printed `is_ancestor_of_main=False` for a commit that
@@ -1427,7 +1441,15 @@ def _is_ancestor_with_retry(
     `sleep` is injectable so a test can drive this without actually
     waiting."""
     is_ancestor = run_argv(
-        ["git", "-C", str(root), "merge-base", "--is-ancestor", commit_sha, "main"]
+        [
+            "git",
+            "-C",
+            str(root),
+            "merge-base",
+            "--is-ancestor",
+            commit_sha,
+            target_branch,
+        ]
     )
     if is_ancestor.is_ok and is_ancestor.danger_ok.returncode == 0:
         return True
@@ -1440,7 +1462,15 @@ def _is_ancestor_with_retry(
         # loop would collapse the retry to a single attempt and defeat its entire \
         # purpose (T-2321)"
         retried = run_argv(
-            ["git", "-C", str(root), "merge-base", "--is-ancestor", commit_sha, "main"]
+            [
+                "git",
+                "-C",
+                str(root),
+                "merge-base",
+                "--is-ancestor",
+                commit_sha,
+                target_branch,
+            ]
         )
         if retried.is_ok and retried.danger_ok.returncode == 0:
             _log.info(
@@ -1495,7 +1525,7 @@ def _land_proof_state_ok(ticket) -> bool:  # noqa: ANN001
 
 
 def _land_proof_checks(
-    root: Path, final_id: str, commit_sha: str
+    root: Path, final_id: str, commit_sha: str, *, target_branch: str = "main"
 ) -> tuple[bool, str, bool]:
     """The two checks `_print_land_proof`'s `LAND-PROOF:` line reports
     (T-1175), split out (T-1523) so `_report_stale_post_land_verify_
@@ -1510,7 +1540,7 @@ def _land_proof_checks(
     logging itself."""
     from frob.tickets import load_all
 
-    ancestor_ok = _is_ancestor_with_retry(root, commit_sha)
+    ancestor_ok = _is_ancestor_with_retry(root, commit_sha, target_branch=target_branch)
 
     state_desc = "unknown"
     state_ok = False
@@ -1603,8 +1633,13 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
         _ClaimsReverifyOutcome,
     )
 
+    # T-3787: verify ancestry against the branch this land actually
+    # published onto, not a hardcoded `main`. `getattr` fallback keeps a
+    # recovered marker or a test's lightweight fake report (neither carries
+    # a `target_branch`) on the historical `main` behavior unchanged.
+    target_branch = getattr(report, "target_branch", "main")
     ancestor_ok, state_desc, state_ok = _land_proof_checks(
-        root, report.final_id, report.commit_sha
+        root, report.final_id, report.commit_sha, target_branch=target_branch
     )
     verified = ancestor_ok and state_ok
 
@@ -5510,6 +5545,10 @@ def _land_core_invoke(
             if rapid_land
             else _land_pre_commit_sweep_fn(baseline_thread, baseline_holder, cfg)
         ),
+        # T-3787: the land target branch -- `--branch`/`--onto`, else the
+        # ticket_land_branch config default, else `None` (root's current
+        # branch, the historical default).
+        target_branch=cfg.ticket_land_branch,
     )
 
 

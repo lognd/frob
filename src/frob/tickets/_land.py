@@ -1400,6 +1400,7 @@ def land(
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
     pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
+    target_branch: str | None = None,
 ) -> Result[LandReport, LandError]:
     """T-1618/T-1675: `_land_precheck` runs an early, distinct refusal
     (`LandError.AlreadyLandedOnMain`) when the ticket's own declared scope
@@ -1576,7 +1577,25 @@ def land(
     the real incident (6 version-number collisions from parallel branches
     in one session) this closes. Manual, non-`land` coordinator surgery
     that mutates `root` while holding no lock is not protected by this --
-    only concurrent `land()` calls are serialized against each other."""
+    only concurrent `land()` calls are serialized against each other.
+
+    T-3787: `target_branch` (default `None`) is the OPTIONAL land target
+    branch (`frob ticket land --branch`/`--onto`, or the ticket_land_
+    branch config default). `None` preserves the historical behavior
+    BYTE-FOR-BYTE: the target is resolved from `root`'s CURRENT checked-
+    out branch (`current_branch(root)`), typically `main`, and every
+    downstream step (merge, CAS publish onto `refs/heads/<target>`,
+    resync, branch-drift guard) is unchanged. When a name IS given,
+    `_resolve_main_branch_for_land` requires it to (a) exist as a branch
+    in `root` and (b) equal `root`'s current branch -- landing publishes
+    onto and resyncs root's OWN checkout, so the target must be the branch
+    root is on; a mismatch or missing branch refuses with
+    `LandError.TargetBranchInvalid` rather than landing onto the wrong
+    ref. The resolved target rides on `LandReport.target_branch` so the
+    LAND-PROOF ancestry check verifies against it instead of a hardcoded
+    `main`. Landing onto a branch root is NOT checked out on (without
+    switching root's checkout) is deliberately out of scope here and left
+    to a follow-up ticket; see docs/modules/tickets-landing.md."""
     root, worktree = root.resolve(), worktree.resolve()
 
     # T-1003 (churn item 4): `root` defaults to the invoker's cwd
@@ -1657,6 +1676,7 @@ def land(
                 skip_mutation_evidence=skip_mutation_evidence,
                 allow_cross_ticket=allow_cross_ticket,
                 pre_commit_sweep=pre_commit_sweep,
+                target_branch=target_branch,
             )
             # T-2691: last phase written while still holding the lock, so
             # a poller can never observe "lock-acquired"/"running" racing
@@ -2579,6 +2599,7 @@ def _land_locked(
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
     pre_commit_sweep: Callable[[Path, str], bool | None] | None = None,
+    target_branch: str | None = None,
 ) -> Result[LandReport, LandError]:
     """`land`'s actual body (T-0577), run by the caller already holding
     `root`'s `ledger_lock` -- split out only so `land`'s docstring can state
@@ -2613,6 +2634,7 @@ def _land_locked(
         covers_scope=covers_scope,
         skip_mutation_evidence=skip_mutation_evidence,
         allow_cross_ticket=allow_cross_ticket,
+        target_branch=target_branch,
     )
     if precheck.is_err:
         return Err(precheck.danger_err)
@@ -2797,7 +2819,10 @@ def _land_locked(
                 return Err(LandError.ClaimDivergence)
 
         if dry_run_report is not None:
-            return Ok(dry_run_report)
+            # T-3787: same target-branch stamp as the real-land return below.
+            return Ok(
+                dry_run_report.model_copy(update={"target_branch": main_branch_name})
+            )
 
         # T-2679: brackets the ONE step that writes ticket_id's terminal
         # state (`_land_finalize_and_close`'s own `transition(..., DONE)`,
@@ -2848,6 +2873,16 @@ def _land_locked(
         finally:
             _clear_land_repair_marker(root, ticket_id)
         if squash_result.is_ok:
+            # T-3787: stamp the resolved land target branch onto the report
+            # so LAND-PROOF verifies ancestry against the branch this land
+            # actually published onto, not a hardcoded `main`. Byte-identical
+            # to before whenever `main_branch_name` resolved to `main`
+            # (LandReport.target_branch's own default).
+            squash_result = Ok(
+                squash_result.danger_ok.model_copy(
+                    update={"target_branch": main_branch_name}
+                )
+            )
             # T-1736: feed the T-1686 watermark epic's verify queue --
             # best-effort, never gates an already-sealed land.
             _record_verify_intent_for_landed_commit(
@@ -6683,18 +6718,83 @@ def _load_ticket_for_land(worktree: Path, ticket_id: str) -> Result[Ticket, Land
 
 
 # frob:ticket T-1326
-def _resolve_main_branch_for_land(
-    root: Path, worktree: Path, ticket: Ticket, ticket_id: str
+def _resolve_land_target_branch(
+    root: Path, ticket_id: str, target_branch: str | None
 ) -> Result[str, LandError]:
-    """Resolve `root`'s current branch name AND run `_check_committed_
-    waive_deletions` against it -- split out of `_land_precheck` purely to
-    keep that function under the ARCH001 line-count threshold; the two
-    steps are inseparable (the committed-waiver check needs the resolved
-    branch name to compute a true merge-base) so they are kept together
-    here rather than split further."""
-    main_branch = current_branch(root)
-    if main_branch.is_err:
+    """Resolve the branch this land will publish onto (T-3787).
+
+    `target_branch is None` (no `--branch`/`--onto`, no ticket_land_branch
+    config default) preserves the historical behavior exactly: the target
+    is `root`'s CURRENT checked-out branch, since the whole land pipeline
+    (CAS publish, resync, branch-drift guard) operates on root's own
+    checkout.
+
+    A given `target_branch` is validated against that same invariant
+    rather than trusted: it must (a) exist as a branch in `root` and (b)
+    equal root's current branch -- landing publishes onto and resyncs
+    root's OWN checkout, so a target root is not on cannot be landed here
+    without silently writing onto the wrong ref. Either failure refuses
+    with `LandError.TargetBranchInvalid`, naming the remedy."""
+    current = current_branch(root)
+    if current.is_err:
         return Err(LandError.GitFailed)
+    if target_branch is None:
+        return Ok(current.danger_ok)
+    exists = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            f"refs/heads/{target_branch}",
+        ]
+    )
+    if exists.is_err or exists.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s refused -- requested target branch %r does not exist "
+            "in %s. Create it (or fix --branch/--onto/the ticket_land_branch "
+            "config) before landing.",
+            ticket_id,
+            target_branch,
+            root,
+        )
+        return Err(LandError.TargetBranchInvalid)
+    if current.danger_ok != target_branch:
+        _log.error(
+            "land: %s refused -- requested target branch %r but %s is "
+            "checked out on %r. Landing publishes onto and resyncs root's "
+            "OWN checked-out branch, so check it out first: cd %s && git "
+            "checkout %s ; then retry.",
+            ticket_id,
+            target_branch,
+            root,
+            current.danger_ok,
+            root,
+            target_branch,
+        )
+        return Err(LandError.TargetBranchInvalid)
+    return Ok(target_branch)
+
+
+def _resolve_main_branch_for_land(
+    root: Path,
+    worktree: Path,
+    ticket: Ticket,
+    ticket_id: str,
+    target_branch: str | None = None,
+) -> Result[str, LandError]:
+    """Resolve the land target branch (T-3787: `target_branch`, defaulting
+    to `root`'s current branch when `None` -- see `_resolve_land_target_
+    branch`) AND run `_check_committed_waive_deletions` against it -- split
+    out of `_land_precheck` purely to keep that function under the ARCH001
+    line-count threshold; the two steps are inseparable (the committed-
+    waiver check needs the resolved branch name to compute a true merge-
+    base) so they are kept together here rather than split further."""
+    main_branch = _resolve_land_target_branch(root, ticket_id, target_branch)
+    if main_branch.is_err:
+        return Err(main_branch.danger_err)
     committed_waive_deletion_check = _check_committed_waive_deletions(
         worktree, ticket, ticket_id, main_branch.danger_ok
     )
@@ -6734,6 +6834,7 @@ def _land_precheck(
     covers_scope: Callable[[Ticket], bool | None] | None = None,
     skip_mutation_evidence: bool = False,
     allow_cross_ticket: bool = False,
+    target_branch: str | None = None,
 ) -> Result[tuple[Ticket, str], LandError]:
     """Refuse on root/worktree being the same path (T-0795) or a dirty
     main, load+validate the worktree's ticket is closeable (including,
@@ -6767,7 +6868,7 @@ def _land_precheck(
     # to compute the true merge-base) can run in this same preflight
     # pass, still strictly before any git mutation.
     main_branch_resolved = _resolve_main_branch_for_land(
-        root, worktree, ticket, ticket_id
+        root, worktree, ticket, ticket_id, target_branch=target_branch
     )
     if main_branch_resolved.is_err:
         return Err(main_branch_resolved.danger_err)

@@ -98,6 +98,8 @@ _STRING_FIELDS = (
     "pool_reason",
     "ticket_command",
     "ticket_id",
+    # frob:ticket T-3787
+    "ticket_land_branch",
     # frob:ticket T-1243
     "ticket_cluster",
     "ticket_title",

@@ -323,7 +323,13 @@ class TestPrintLandProofSurfacesBudgetDeferred:
         monkeypatch.setattr(
             _land_cmd,
             "_land_proof_checks",
-            lambda root, final_id, commit_sha: (True, "done", True),
+            # T-3787: _land_proof_checks gained a keyword-only target_branch
+            # (LAND-PROOF now verifies ancestry against the real land target).
+            lambda root, final_id, commit_sha, *, target_branch="main": (
+                True,
+                "done",
+                True,
+            ),
         )
 
     # frob:ticket T-2456
