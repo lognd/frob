@@ -18,6 +18,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'describe the bracketed link labels in words: the ticket documenting the
+    bracket false positive was itself tripping it and blocking T-3857s land'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 3573
+  new_length: 3659
 designated_repro_test: null
 threat: null
 component: null
@@ -29,10 +37,11 @@ Reported as typani FROBLEMS T-025. DOC006 reads MARKDOWN LINK SYNTAX as a TOML
 config-section pointer.
 
     site:     CODE_OF_CONDUCT.md:124 and :134
-    content:  the Contributor Covenant's own attribution links, "[v2.1]" and
-              "[homepage]"
-    observed: "config reference pointer ... [v2.1] is not a real
-               frob.toml/pyproject.toml/Cargo.toml section/key"
+    content:  the Contributor Covenant's own attribution links -- the labels
+              v2.1 and homepage, each written in square brackets
+    observed: a config-reference-pointer finding saying the bracketed v2.1
+              label is not a real frob.toml/pyproject.toml/Cargo.toml
+              section or key
 
 `[text]` followed by `(url)`, or defined elsewhere as `[text]: url`, is markdown
 reference-link syntax. It is not a TOML table header. The two share a bracket
@@ -58,7 +67,7 @@ THE FIX: exclude markdown link syntax from config-pointer resolution. A
 bracketed token is a link reference when it is followed by `(` (inline link) or
 when a matching `[token]:` definition exists in the document (reference link).
 Both are decidable from the document itself. Do this as a PARSE-LEVEL
-distinction, not a denylist of common words -- `[v2.1]` and `[homepage]` are
+distinction, not a denylist of common words -- the v2.1 and homepage labels are
 just two instances and a denylist would leave the next one.
 
 WIDEN BEFORE FIXING: what else does the config-pointer rule match that is not a
