@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/_version_coupling.py
 - tests/unit/gates/test_version_coupling.py
 - pyproject.toml
+- docs/guides/release.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,11 @@ scope_changes:
   glob: pyproject.toml
   reason: 'T-3903: extend VERSION001 to match by package name repo-wide across pyproject;
     add fixtures; pyproject.toml scoped read-only for the bump-path audit finding'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/guides/release.md
+  reason: 'closure: version_coupling_gate frob:doc target'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
