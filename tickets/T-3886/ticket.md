@@ -14,10 +14,36 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/verify/_worker.py
+- docs/modules/tickets-verify-sweep.md
+- tests/unit/verify/test_worker.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/verify/_worker.py
+  reason: separate child-timeout/spawn-refused/unparsable/genuine-unmeasurable outcomes
+    via log-signal capture (land_cmd.py locked by T-3906); never-spin already bounded,
+    document/verify
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: separate child-timeout/spawn-refused/unparsable/genuine-unmeasurable outcomes
+    via log-signal capture (land_cmd.py locked by T-3906); never-spin already bounded,
+    document/verify
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/verify/test_worker.py
+  reason: separate child-timeout/spawn-refused/unparsable/genuine-unmeasurable outcomes
+    via log-signal capture (land_cmd.py locked by T-3906); never-spin already bounded,
+    document/verify
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
