@@ -1,7 +1,7 @@
 ---
 id: T-3308
 title: frob ticket new --json does not print JSON
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-28'
