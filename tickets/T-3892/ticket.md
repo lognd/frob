@@ -18,6 +18,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'second sighting F-068 plus the root cause: the ledger merge driver was
+    retired on a v2-disjointness premise that concurrent edits to one ticket falsify;
+    driver still registered but unrouted'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 4381
+  new_length: 8872
 designated_repro_test: null
 threat: null
 component: null
@@ -106,3 +115,80 @@ ACCEPTANCE
 - The historical scan reported: how many tickets lost evidence to this, and
   whether any of them are closed.
 - All fixtures committed.
+
+
+
+SECOND SIGHTING AND A ROOT CAUSE, 2026-09-05. logand.app-v2 F-068 is F-048 with
+a different field set, and chasing it found the mechanism.
+
+F-068's report: `git merge main` into worktree t-0068 conflicted in
+tickets/T-0068/ticket.md because MAIN carried the coordinator's `scope` and
+`accept` mirror commits while the BRANCH carried the agent's start/evidence/done
+edits. The land then aborted with "frontmatter is not valid YAML" and "ticket
+not found in the worktree's store". Resolved by hand, keeping the branch side.
+
+So it is not specifically the evidence block (F-048's field): it is ANY
+concurrent edit to one ticket's own frontmatter from two sides.
+
+THE ROOT CAUSE IS A RETIRED MERGE DRIVER, AND ITS RETIREMENT RESTED ON A
+PREMISE THESE TWO REPORTS FALSIFY. From this repo's .gitattributes:
+
+    # T-1258/T-2356: this repo cut over to ledger v2 (disjoint tickets/T-####/
+    # directories, ordinary git objects git's native per-file 3-way merge
+    # already resolves correctly). tickets.md/tickets-archive.md and the
+    # frob-ledger merge driver they needed are gone ...
+    # The merge driver itself (`frob ticket merge-driver`, splice_ledger) is
+    # NOT removed from frob's own source -- other repos using frob may still
+    # be on v1/monofile mode ...; only THIS repo's now-inert data files and
+    # the .gitattributes lines that routed them through the driver are
+    # retired here.
+
+The v2 argument was that per-ticket directories are disjoint, so git's native
+3-way merge suffices. That holds for disjointness BETWEEN tickets. It does not
+hold for TWO SIDES EDITING ONE TICKET'S OWN FILE -- which is the fleet's normal
+operating mode: the coordinator mirrors scope/accept on main while an agent
+edits state/evidence in its worktree. Git then line-merges YAML frontmatter and
+can leave conflict markers inside it, which is how a structured record becomes
+unparseable.
+
+MEASURED HERE 2026-09-05: the driver still exists and is still REGISTERED --
+    merge.frob-ledger.driver        uv run frob ticket merge-driver %O %A %B
+    merge.frob-ticket-ledger.driver uv run frob ticket merge-driver %O %A %B %P
+-- only the .gitattributes routing was retired. So the machinery is present and
+unwired.
+
+DO NOT SIMPLY RE-ADD THE ROUTING. Two reasons, and the second is already
+documented in the same file:
+  1. `splice_ledger` was written for the v1 MONOFILE. Whether it handles a v2
+     per-ticket file at all is unverified -- check before assuming.
+  2. The T-1873 note directly below argues AGAINST a custom driver for exactly
+     this class: git's built-in `merge=union` was preferred over a new frob
+     driver because a driver "needs per-clone `git config` registration -- a
+     worktree that skipped that one-time setup silently falls back to the
+     default (conflicting) driver, which is exactly the failure mode this
+     ticket exists to close." That argument applies here in full, and it is
+     sharper than it looks: a fresh clone or a new worktree that missed the
+     registration gets the CONFLICTING behaviour silently, so the fix would
+     work on the machine that installed it and fail everywhere else.
+
+SO EVALUATE, IN THIS ORDER:
+  (a) a built-in git strategy that needs no registration (union is wrong here
+      -- frontmatter is not append-only -- but check whether an attribute-level
+      option covers the structured case)
+  (b) making the conflict IMPOSSIBLE rather than merge-able: if the coordinator
+      never wrote scope/accept mirrors to main while a branch held the ticket,
+      there would be nothing to conflict. F-068's own suggestion -- "union of
+      evidence, branch wins on state" -- is a semantic rule that could equally
+      be enforced by WHO WRITES WHAT, WHEN, instead of by a merge driver.
+  (c) re-routing through a v2-aware driver, accepting the registration
+      fragility and mitigating it (fail loudly when unregistered rather than
+      falling back silently).
+State which and why. (b) deserves real consideration: it removes the failure
+mode instead of resolving it, and this repo already has the mirror commits as a
+distinct, controllable code path.
+
+WHATEVER IS CHOSEN, THE LOADER FIX FROM THE MAIN BODY STILL STANDS
+INDEPENDENTLY: a ticket file containing conflict markers must be reported as an
+unresolved merge naming the file and field, never as "frontmatter is not valid
+YAML" and never as "ticket not found in the worktree's store". Both of those
+messages sent this reporter looking in the wrong place.
