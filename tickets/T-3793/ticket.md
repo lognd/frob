@@ -2,7 +2,7 @@
 id: T-3793
 title: 'conftest: env-gated failure-longrepr dump to surface win32 CI tracebacks (doctor
   diagnosis)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-09-04'
