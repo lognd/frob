@@ -24,6 +24,7 @@ scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/app/config.py
 - src/frob/tickets/_land_merge.py
+- tests/test_tickets_acceptance.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -74,6 +75,12 @@ scope_changes:
   glob: src/frob/tickets/_land_merge.py
   reason: comment/log text also documents --accepts as 0-based; must stay consistent
     with the fix
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_tickets_acceptance.py
+  reason: existing --accepts test suite hardcodes 0-based indices; must update alongside
+    the 1-based fix or it false-fails
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
