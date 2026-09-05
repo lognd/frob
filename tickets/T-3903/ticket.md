@@ -18,6 +18,9 @@ scope:
 - src/frob/gates/_version_coupling.py
 - tests/unit/gates/test_version_coupling.py
 - pyproject.toml
+- tickets/T-draft-d58a8691/ticket.md
+- tickets/T-draft-4919a464/ticket.md
+- tickets/T-draft-c277fc9b/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -98,6 +101,27 @@ scope_changes:
   glob: src/frob/doctor.py
   reason: 'revert: doc-closure cascade from release.md pulls in unrelated doctor.py/install.md
     chains disproportionate to this pin-matching fix; waive AFFECT001 instead'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-draft-d58a8691/ticket.md
+  reason: these are new tickets filed FROM T-3903's worktree recording out-of-scope
+    findings (bump-path gap, generalization question, tree-sitter-language-pack bound)
+    -- their ticket.md files are committed on this branch and must be in scope
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-draft-4919a464/ticket.md
+  reason: these are new tickets filed FROM T-3903's worktree recording out-of-scope
+    findings (bump-path gap, generalization question, tree-sitter-language-pack bound)
+    -- their ticket.md files are committed on this branch and must be in scope
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-draft-c277fc9b/ticket.md
+  reason: these are new tickets filed FROM T-3903's worktree recording out-of-scope
+    findings (bump-path gap, generalization question, tree-sitter-language-pack bound)
+    -- their ticket.md files are committed on this branch and must be in scope
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
