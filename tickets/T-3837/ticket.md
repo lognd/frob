@@ -21,6 +21,7 @@ scope:
 - src/frob/_cli_parsers/_ticket/_closeout.py
 - tests/test_tickets_evidence_cli.py
 - tests/unit/test_ticket_store.py
+- src/frob/app/ticket_runner/_close_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +55,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_ticket_store.py
   reason: surface for --accepts index validation/display fix
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: hint text for --accepts also says 0-based, must update with the fix
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
