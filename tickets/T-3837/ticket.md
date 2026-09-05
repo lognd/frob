@@ -22,6 +22,8 @@ scope:
 - tests/test_tickets_evidence_cli.py
 - tests/unit/test_ticket_store.py
 - src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/app/config.py
+- src/frob/tickets/_land_merge.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -60,6 +62,18 @@ scope_changes:
 - op: add
   glob: src/frob/app/ticket_runner/_close_cmd.py
   reason: hint text for --accepts also says 0-based, must update with the fix
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/app/config.py
+  reason: comment/log text also documents --accepts as 0-based; must stay consistent
+    with the fix
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/tickets/_land_merge.py
+  reason: comment/log text also documents --accepts as 0-based; must stay consistent
+    with the fix
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
