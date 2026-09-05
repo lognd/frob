@@ -17,6 +17,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/fixtures/lang/**
 - src/frob/lang/__init__.py
+- tests/test_lang.py
+- docs/modules/lang.md
+- docs/guides/install.md
 evidence_scope:
 - tests/test_lang.py
 - docs/modules/lang.md
@@ -94,6 +97,39 @@ scope_changes:
     own package-wide SCOPE002 closure (docs/modules/graph.md, dup.md, frob-core, doctor.py,
     ...) belongs to the whole frob.lang package's pre-existing doc/test organization,
     not to this ticket's narrow one-file diagnosis+test change (disposition 1, docs/design/tickets-package-scope-precedent.md)
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_lang.py
+  reason: 'revert T-3895''s own demote-to-evidence-only: releasing the write lease
+    on these three ALREADY-EDITED files turned SCOPE002 (warn) into real SCOPE001
+    (diff outside declared scope) errors, worse than the SCOPE002 fan-in it was meant
+    to avoid -- restore normal scope; the SCOPE002 fan-in against docs/modules/lang.md/tests/test_lang.py
+    is disposition-2-shaped debt (docs/design/tickets-package-scope-precedent.md):
+    both files are frob.lang''s own package-wide doc/test home by pre-existing design,
+    not created by this ticket''s one-file diagnosis+test diff'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/lang.md
+  reason: 'revert T-3895''s own demote-to-evidence-only: releasing the write lease
+    on these three ALREADY-EDITED files turned SCOPE002 (warn) into real SCOPE001
+    (diff outside declared scope) errors, worse than the SCOPE002 fan-in it was meant
+    to avoid -- restore normal scope; the SCOPE002 fan-in against docs/modules/lang.md/tests/test_lang.py
+    is disposition-2-shaped debt (docs/design/tickets-package-scope-precedent.md):
+    both files are frob.lang''s own package-wide doc/test home by pre-existing design,
+    not created by this ticket''s one-file diagnosis+test diff'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/guides/install.md
+  reason: 'revert T-3895''s own demote-to-evidence-only: releasing the write lease
+    on these three ALREADY-EDITED files turned SCOPE002 (warn) into real SCOPE001
+    (diff outside declared scope) errors, worse than the SCOPE002 fan-in it was meant
+    to avoid -- restore normal scope; the SCOPE002 fan-in against docs/modules/lang.md/tests/test_lang.py
+    is disposition-2-shaped debt (docs/design/tickets-package-scope-precedent.md):
+    both files are frob.lang''s own package-wide doc/test home by pre-existing design,
+    not created by this ticket''s one-file diagnosis+test diff'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
