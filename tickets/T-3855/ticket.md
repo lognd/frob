@@ -18,6 +18,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: de-backtick citations that cannot resolve in this repo (proposed artifacts,
+    a proposed verb, sibling-repo paths); they are prose, not pointers, and were blocking
+    every land touching the docptr gate
+  actor: logan
+  at: '2026-09-05'
+  old_length: 4180
+  new_length: 4180
 designated_repro_test: null
 threat: null
 component: null
@@ -28,9 +37,9 @@ land_commit: null
 Parked in a consumer repo: ../apollo T-0024 (queued). It exists ONLY to hold a
 follow_up pointer that can never resolve, which is the defect.
 
-APOLLO'S SITUATION, in their words: `src/apollo/report/terminal.py::_IsattyStream`
+APOLLO'S SITUATION, in their words: "src/apollo/report/terminal.py::_IsattyStream"
 (a structural `typing.Protocol`) and its `isatty` method, plus the mirroring
-test double `tests/unit/test_report.py::_FakeStream.isatty`, carry
+test double "tests/unit/test_report.py::_FakeStream.isatty", carry
 `frob:waive WIRE001` markers. gate:WIRE requires every WIRE001 waiver to bind a
 `follow_up=T-####`. But -- their words -- "a Protocol method body is literally
 '...' and is never called through the call graph gate:WIRE inspects, so there is
