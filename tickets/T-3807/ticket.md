@@ -27,6 +27,13 @@ body_changes:
   at: '2026-09-05'
   old_length: 0
   new_length: 987
+- mode: set
+  reason: remove the body waive that measurement showed does not suppress a frontmatter
+    finding; record the measurement instead and fix the gate
+  actor: logan
+  at: '2026-09-05'
+  old_length: 987
+  new_length: 890
 designated_repro_test: null
 threat: null
 component: null
@@ -34,18 +41,18 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-
 CI NOTE, 2026-09-05. This ticket's TITLE names the config section it proposes
-to create, and DOC006 flags that as a non-resolving config reference pointer at
-tickets/T-3807/ticket.md:4. That single finding is currently the ONLY failure on
-the ubuntu and macOS CI legs, via
+to create, and DOC006 flags it as a non-resolving config reference pointer at
+tickets/T-3807/ticket.md:4. That single finding was the ONLY failure on the
+ubuntu and macOS CI legs, via
 tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo
 ::test_doc004_doc006_zero_against_live_repo, which asserts DOC004/DOC006 are
 zero against the live repo.
 
-The reference is future-facing by construction: the whole point of this ticket
-is that the section does not exist yet.
+A body-level `frob:waive DOC006` was tried and MEASURED NOT TO WORK: the finding
+is in YAML frontmatter, and the waive mechanism DOC006's own message points at
+is an inline HTML comment adjacent to the citation, which cannot exist inside
+YAML. The finding is unwaivable by construction from this file.
 
-<!-- frob:waive DOC006 reason="this ticket PROPOSES the config section its title names, so the pointer is future-facing by construction and cannot be made to resolve without implementing the feature; DOC006's own message names external/illustrative/future-facing as the exempt case" -->
-The proposed section is the double-bracketed check.stack array-of-tables in
-frob.toml, carrying type/cwd and reusing the test.runner cwd.
+The cause is being fixed in the gate rather than papered over here -- see the
+DOC006 frontmatter ticket. Nothing in this ticket's own scope needs to change.
