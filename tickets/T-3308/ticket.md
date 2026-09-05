@@ -1,7 +1,7 @@
 ---
 id: T-3308
 title: frob ticket new --json does not print JSON
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -15,10 +15,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_new.py
+- tests/unit/test_ticket_new_json.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_new_json.py
+  reason: MUST-FIRE/MUST-STAY-QUIET regression tests for --json output
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_ticket_new_json.py
+  reason: MUST-FIRE/MUST-STAY-QUIET regression tests for --json output
+  actor: logan
+  at: '2026-09-05'
+evidence:
+- tests/unit/test_ticket_new_json.py::TestNewJsonOutput::test_json_flag_prints_parseable_json_with_id
+- tests/unit/test_ticket_new_json.py::TestNewJsonOutput::test_without_json_flag_output_is_unchanged
 designated_repro_test: null
 threat: null
 component: null

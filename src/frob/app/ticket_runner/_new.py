@@ -941,10 +941,39 @@ def _commit_new_ticket_ledger_change_or_exit(  # noqa: ANN001
         sys.exit(1)
 
 
+# frob:ticket T-3308
+def _log_scope_plausibility_warnings(
+    root: Path, title: str, scope: list[str], body: str
+) -> list[str]:
+    """`_new`'s T-2177 scope-plausibility pass (ARCH001 split): logs each
+    warning exactly as before AND returns them as a list -- so `--json`'s
+    structured `warnings` array (T-3308) can echo the SAME text a human
+    run would see logged, instead of silently dropping it (a scripted
+    caller passing `--json` never sees stderr/log output at all in most CI
+    harnesses, so this was the one class of warning `--json` could
+    otherwise make invisible rather than merely differently-formatted).
+
+    Takes the already-validated `title` as `str` (not `cfg`/`cfg.
+    ticket_title: str | None`) so this function's own signature carries
+    the None-check `_new` already performed, rather than repeating an
+    Optional the type checker cannot narrow across a function boundary.
+
+    Runs at FILING time, before a lease can exist -- once an agent holds
+    the ticket, re-scoping it is refused to anyone else (T-1617/T-2079's
+    ownership guard), so a scope mistake caught only later costs a full
+    dispatch round-trip. See `_scope_plausibility_warnings`'s own
+    docstring for what "implausible" means here."""
+    warnings = list(_scope_plausibility_warnings(root, title, body, scope))
+    for warning in warnings:
+        _log.warning("ticket new: scope plausibility: %s", warning)
+    return warnings
+
+
 # frob:ticket T-0030
 # frob:ticket T-0106
 # frob:ticket T-1130
 # frob:ticket T-2937
+# frob:ticket T-3308
 def _new(root: Path, cfg: AppConfig) -> None:
     """Create a ticket from `cfg`'s new-ticket flags; if `--evidence` ids
     were given, apply them (via `_apply_evidence`) after creation succeeds,
@@ -975,15 +1004,9 @@ def _new(root: Path, cfg: AppConfig) -> None:
     _refuse_unacknowledged_related_tickets(root, cfg, cfg.ticket_title, body)
 
     # frob:ticket T-2177
-    # Runs at FILING time, before a lease can exist -- once an agent holds
-    # the ticket, re-scoping it is refused to anyone else (T-1617/T-2079's
-    # ownership guard), so a scope mistake caught only later costs a full
-    # dispatch round-trip. See `_scope_plausibility_warnings`'s own
-    # docstring for what "implausible" means here.
-    for warning in _scope_plausibility_warnings(
-        root, cfg.ticket_title, body, cfg.ticket_scope
-    ):
-        _log.warning("ticket new: scope plausibility: %s", warning)
+    plausibility_warnings = _log_scope_plausibility_warnings(
+        root, cfg.ticket_title, cfg.ticket_scope, body
+    )
 
     spec = _ticket_spec_from_cfg(
         root, cfg, title=cfg.ticket_title, kind=cfg.ticket_kind, body=body
@@ -1003,16 +1026,32 @@ def _new(root: Path, cfg: AppConfig) -> None:
         _log.error("ticket new failed: %s", result.danger_err)
         sys.exit(1)
     ticket = result.danger_ok
-    _log.info("created %s: %s", ticket.id, ticket.title)
-    # frob:ticket T-0998
+    if not cfg.ticket_json:
+        _log.info("created %s: %s", ticket.id, ticket.title)
+    _emit_new_ticket_side_effects(root, cfg, ticket, body)
+    _commit_new_ticket_ledger_change_or_exit(root, ticket, cfg.ticket_no_commit)
+
+    # frob:ticket T-3308
+    if cfg.ticket_json:
+        _emit_new_ticket_json(ticket, plausibility_warnings)
+
+
+# frob:ticket T-3308
+def _emit_new_ticket_side_effects(
+    root: Path, cfg: AppConfig, ticket, body: str
+) -> None:  # noqa: ANN001
+    """`_new`'s post-creation side effects (ARCH001 split): scope-closure/
+    overlap/body-similarity warnings, the telemetry event, `--evidence`
+    application, and the clipboard-image offer -- everything `_new` does
+    to `ticket` between `new_ticket` succeeding and the final ledger
+    commit. Exits 1 (via `_apply_evidence`) if `--evidence` was given and
+    failed to resolve, same as before this split."""
     _emit_scope_closure_warnings(
         "ticket new", ticket.id, _scope_closure_warnings(root, ticket.scope)
     )
-    # frob:ticket T-2257
     _emit_scope_overlap_warnings(root, ticket.id, ticket.scope)
-    # frob:ticket T-3124
     _emit_body_similarity_warnings(root, ticket.id, body)
-    # frob:ticket T-0178
+
     from frob.app.telemetry import record_ticket_event
 
     record_ticket_event(root, ticket_id=ticket.id, event="created")
@@ -1024,7 +1063,41 @@ def _new(root: Path, cfg: AppConfig) -> None:
 
     _maybe_attach_clipboard_image(root, ticket.id)
 
-    _commit_new_ticket_ledger_change_or_exit(root, ticket, cfg.ticket_no_commit)
+
+# frob:ticket T-3308
+# frob:tests tests/unit/test_ticket_new_json.py::TestNewJsonOutput.test_json_flag_prints_parseable_json_with_id  # noqa: E501
+# frob:tests tests/unit/test_ticket_new_json.py::TestNewJsonOutput.test_without_json_flag_output_is_unchanged  # noqa: E501
+def _emit_new_ticket_json(ticket, warnings: list[str]) -> None:  # noqa: ANN001
+    """`frob ticket new --json`'s stdout payload (T-3308): before this,
+    `--json` was silently ignored by `new` -- output stayed the plain
+    `created T-####: <title>` human line regardless, so a scripted caller
+    had to regex the id out of prose despite explicitly asking for JSON
+    (unlike `frob ticket show --json`, which already honors the flag via
+    `ticket.model_dump_json`, precedent this mirrors).
+
+    Emitted LAST, after every other write this command makes (evidence
+    apply, clipboard attach, the ledger commit) -- so `id` is never printed
+    before the ticket it names is fully durable on disk, matching the
+    ordering the plain-text `created ...` line already had.
+
+    `warnings` (T-2177's `_scope_plausibility_warnings`, echoed here as a
+    structured list rather than only logged) is the one class of warning
+    this command emits that a caller can compute BEFORE creation and that
+    is cheap to carry through verbatim; the several `_emit_*_warnings`
+    helpers below `new_ticket` itself log directly and are not
+    restructured here -- a scripted caller that wants those already has
+    `frob ticket doctor`/`frob check` as the authoritative source, and
+    duplicating their exact text into this payload would risk the two
+    surfaces drifting apart (this module owns neither)."""
+    import json
+
+    payload = {
+        "id": ticket.id,
+        "title": ticket.title,
+        "kind": ticket.kind.value,
+        "warnings": warnings,
+    }
+    _log.info(json.dumps(payload, indent=2))
 
 
 # frob:ticket T-1556
