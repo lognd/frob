@@ -27,6 +27,13 @@ body_changes:
   at: '2026-09-05'
   old_length: 4381
   new_length: 8872
+- mode: append
+  reason: 'F-100 broadens part B: any malformed ledger file reports not-found, not
+    just conflict markers; three states are collapsed into one wrong message'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 8872
+  new_length: 10842
 designated_repro_test: null
 threat: null
 component: null
@@ -192,3 +199,39 @@ INDEPENDENTLY: a ticket file containing conflict markers must be reported as an
 unresolved merge naming the file and field, never as "frontmatter is not valid
 YAML" and never as "ticket not found in the worktree's store". Both of those
 messages sent this reporter looking in the wrong place.
+
+
+
+BROADENED BY F-100, 2026-09-05: "a malformed ledger file makes frob report
+'ticket not found in the worktree's store'".
+
+Part B of this ticket already required that CONFLICT MARKERS be reported as an
+unresolved merge rather than as MalformedFrontmatter or as "ticket not found in
+the worktree's store". F-100 shows the misdiagnosis is not specific to conflict
+markers: ANY malformed ledger file produces the not-found message.
+
+SO PART B IS BROADER THAN FILED, AND SHOULD BE IMPLEMENTED THAT WAY. The ticket
+file EXISTS; frob can see it; it simply cannot parse it. Reporting that as "not
+found" tells the operator the opposite of the truth and sends them looking for a
+missing file, a wrong id, or a wrong worktree -- none of which is the problem.
+Three distinct states are being collapsed into one message:
+    the file is absent
+    the file is present and unparseable (malformed, for any reason)
+    the file is present and parseable but holds no such ticket
+Only the first is "not found". The second is the one that occurs after a bad
+merge, a truncated write, or a killed process, and it is exactly when a
+misleading message costs the most, because the repository is already in a state
+the operator did not intend.
+
+MINIMUM FIX, independent of the mirror work in part A and worth landing on its
+own: distinguish the three states and name the file and the parse failure. If
+conflict markers are present, say so specifically -- that detail turns a
+mystifying error into a ten-second fix, and it is why part B was separated from
+part A in the first place.
+
+MEASURED CONTEXT FROM THIS DRIVE: this repo's own memory records that a single
+malformed character in ledger frontmatter has taken every gate down before,
+which is why hand-editing the ledger is forbidden. The tool's own recovery path
+therefore has to be legible: an operator hitting a malformed ledger is, by
+definition, already having a bad day and cannot afford a message that points
+away from the cause.
