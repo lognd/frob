@@ -15,11 +15,12 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- tests/test_lang.py
 - tests/fixtures/lang/**
+- src/frob/lang/__init__.py
+evidence_scope:
+- tests/test_lang.py
 - docs/modules/lang.md
 - docs/guides/install.md
-- src/frob/lang/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -66,6 +67,33 @@ scope_changes:
   reason: narrow to the one file actually touched; src/frob/lang/** as a whole pulls
     in repo-wide fan-in (docs/graph.md, dup.md, frob-core, doctor.py, ...) that this
     ticket's diagnosis/test change never touches
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: tests/test_lang.py
+  reason: these are large pre-existing shared files I added incremental content to
+    (new test class, new doc section) as evidence for the T-3895 diagnosis -- their
+    own package-wide SCOPE002 closure (docs/modules/graph.md, dup.md, frob-core, doctor.py,
+    ...) belongs to the whole frob.lang package's pre-existing doc/test organization,
+    not to this ticket's narrow one-file diagnosis+test change (disposition 1, docs/design/tickets-package-scope-precedent.md)
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: docs/modules/lang.md
+  reason: these are large pre-existing shared files I added incremental content to
+    (new test class, new doc section) as evidence for the T-3895 diagnosis -- their
+    own package-wide SCOPE002 closure (docs/modules/graph.md, dup.md, frob-core, doctor.py,
+    ...) belongs to the whole frob.lang package's pre-existing doc/test organization,
+    not to this ticket's narrow one-file diagnosis+test change (disposition 1, docs/design/tickets-package-scope-precedent.md)
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: docs/guides/install.md
+  reason: these are large pre-existing shared files I added incremental content to
+    (new test class, new doc section) as evidence for the T-3895 diagnosis -- their
+    own package-wide SCOPE002 closure (docs/modules/graph.md, dup.md, frob-core, doctor.py,
+    ...) belongs to the whole frob.lang package's pre-existing doc/test organization,
+    not to this ticket's narrow one-file diagnosis+test change (disposition 1, docs/design/tickets-package-scope-precedent.md)
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
