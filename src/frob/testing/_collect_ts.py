@@ -113,7 +113,7 @@ def _ts_content_key(root: Path, projects: list[Path]) -> str:
         except OSError as exc:
             _log.warning("collect_ts_tests: could not read %s: %s", path, exc)
             continue
-        rel = path.relative_to(root).as_posix()
+        rel = path.resolve().relative_to(root.resolve()).as_posix()
         hasher.update(f"{rel}:{digest}\n".encode())
     return hasher.hexdigest()
 
@@ -185,12 +185,19 @@ def _run_vitest_list(project_dir: Path) -> Result[list[tuple[str, str]], Testing
 def _vitest_node_id(root: Path, project_dir: Path, file: str, name: str) -> str:
     """A `(file, name)` pair from `_parse_vitest_json` as a `path::qualname`
     symref, `file` resolved relative to `project_dir` (vitest's own
-    default) unless it is already absolute."""
+    default) unless it is already absolute. Both `file_path` and `root` are
+    `.resolve()`d before `relative_to` -- vitest 4 reports absolute file
+    paths while `root` may still be relative/empty (F-009), and
+    `Path.relative_to` raises `ValueError` when one side is absolute and
+    the other is not (mirrors `_collect_cpp.py`'s `resolve()`-both-sides
+    pattern)."""
     file_path = Path(file)
     if file_path.is_absolute():
-        rel_file = file_path.relative_to(root).as_posix()
+        rel_file = file_path.resolve().relative_to(root.resolve()).as_posix()
     else:
-        rel_file = (project_dir / file_path).relative_to(root).as_posix()
+        rel_file = (
+            (project_dir / file_path).resolve().relative_to(root.resolve()).as_posix()
+        )
     return f"{rel_file}::{name}"
 
 

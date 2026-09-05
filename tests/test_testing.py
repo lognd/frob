@@ -2346,6 +2346,53 @@ class TestCollectTsTests:
         assert result.danger_ok.node_ids == frozenset({"src/widget.test.ts::adds"})
         assert any("malformed vitest entry" in msg for msg in caplog.messages)
 
+    def test_vitest_node_id_relative_root_absolute_file(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect_ts.py::_vitest_node_id
+        # F-009: vitest 4's `vitest list --json` reports absolute file
+        # paths even when the collector's `root` is still relative (or
+        # empty, e.g. `Path(".")`) -- `Path.relative_to` used to raise
+        # ValueError ("is not in the subpath of ... OR one path is
+        # relative and the other is absolute") instead of resolving both
+        # sides first.
+        import frob.testing._collect_ts as collect_mod
+
+        project_dir = tmp_path / "frontend"
+        project_dir.mkdir()
+        abs_file = project_dir / "tests" / "unit" / "App.test.tsx"
+        abs_file.parent.mkdir(parents=True)
+        abs_file.write_text("", encoding="utf-8")
+
+        monkeypatch.chdir(tmp_path)
+        relative_root = Path(".")
+
+        node_id = collect_mod._vitest_node_id(
+            relative_root, Path("frontend"), str(abs_file), "renders"
+        )
+        assert node_id == "frontend/tests/unit/App.test.tsx::renders"
+
+    def test_ts_content_key_relative_root_absolute_file(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect_ts.py::_ts_content_key
+        # F-009 companion: `_ts_content_key` hashes each discovered file's
+        # path via the same `relative_to(root)` shape and must not raise
+        # ValueError when `root` is relative and the resolved test-file
+        # path is absolute.
+        import frob.testing._collect_ts as collect_mod
+
+        project_dir = tmp_path / "frontend"
+        _write(project_dir, "package.json", '{"devDependencies": {"vitest": "^1.0.0"}}')
+        _write(project_dir, "src/widget.test.ts", "test('x', () => {})")
+
+        monkeypatch.chdir(tmp_path)
+        relative_root = Path(".")
+
+        key = collect_mod._ts_content_key(relative_root, [Path("frontend")])
+        assert isinstance(key, str)
+        assert len(key) == 64
+
 
 # frob:ticket T-0587
 class TestFindVitestProjects:

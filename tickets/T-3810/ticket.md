@@ -2,7 +2,7 @@
 id: T-3810
 title: 'F-009: frob check crashes on vitest project when repo root is relative (_collect_ts
   relative_to(root) vs vitest absolute paths)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
