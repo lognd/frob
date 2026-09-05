@@ -1,7 +1,7 @@
 ---
 id: T-3794
 title: skipif win32 for POSIX-only fs-notify test
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-04'

@@ -6,6 +6,7 @@ re-verify job and the rebase-bot conflict-warning job, plus the
 from __future__ import annotations
 
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -157,6 +158,7 @@ class TestWatchThreadNotifiesVerifyWorker:
     `graph-changed` event publish -- closing the scope cut
     `_poll_verify_worker`'s own docstring used to disclose."""
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="socketd transport is socketserver.ThreadingUnixStreamServer, a POSIX-only unix-domain-socket server -- no Windows equivalent (T-2961)")
     def test_fs_change_notifies_the_cached_verify_worker(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_serve_daemon.py::TestWatchThreadNotifiesVerifyWorker.test_fs_chang\
