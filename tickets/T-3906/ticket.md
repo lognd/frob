@@ -14,10 +14,168 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/app/fmt_runner.py
+- src/frob/app/pyfmt_runner.py
+- src/frob/_cli_parsers/_misc.py
+- src/frob/app/config.py
+- src/frob/app/app.py
+- src/frob/gates/_fmt_directives.py
+- src/frob/gates/_todo_fmt.py
+- src/frob/gates/_waive.py
+- src/frob/tickets/_land.py
+- src/frob/tickets/_land_git_ops.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/check/_python.py
+- Makefile
+- docs/commands/format.md
+- docs/commands/fmt.md
+- docs/modules/app.md
+- docs/modules/cli.md
+- docs/index.md
+- docs/guides/agent-playbook.md
+- docs/guides/agent-playbook-appendix.md
+- tests/unit/test_pyfmt_runner.py
+- tests/test_gates_fmt_directives.py
+- tests/unit/test_fmt_wiring_reachability_t2761.py
+- tests/gates_suite/test_waive.py
+- tests/unit/test_makefile_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/fmt_runner.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/app/pyfmt_runner.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/app/app.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/gates/_fmt_directives.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/gates/_todo_fmt.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: Makefile
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/commands/format.md
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/commands/fmt.md
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/cli.md
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/index.md
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/guides/agent-playbook.md
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/guides/agent-playbook-appendix.md
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_pyfmt_runner.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_gates_fmt_directives.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_fmt_wiring_reachability_t2761.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/gates_suite/test_waive.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_makefile_coverage.py
+  reason: 'T-3906: consolidate frob format/fmt surface'
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
