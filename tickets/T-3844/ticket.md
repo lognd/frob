@@ -212,6 +212,13 @@ scope_changes:
     the ledger
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/gates_suite/test_run.py::TestSeverityOverrides::test_override_downgrades_and_ignores_garbage
+- tests/gates_suite/test_run.py::TestSeverityOverrides::test_no_frob_toml_is_identity
+- tests/gates_suite/test_run.py::TestSeverityOverrides::test_sec110_promoted_to_error_gates_a_real_repo_toml
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/gates_suite/test_sys.py::TestKnownGateRuleIds::test_is_frozenset
+- tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_must_still_pass_this_repos_own_frob_toml
 designated_repro_test: null
 threat: null
 component: null
