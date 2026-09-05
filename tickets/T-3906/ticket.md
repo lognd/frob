@@ -45,6 +45,11 @@ scope:
 - tests/unit/test_app_runners_json_guard_t2492.py
 - tests/unit/test_app_runners_t0875_leaf_collision.py
 - tests/unit/test_format_consolidation_t3906.py
+- docs/modules/gates.md
+- src/frob/scaffold/data/shared/python/Makefile.j2
+- src/frob/scaffold/data/shared/python/README.md.j2
+- src/frob/scaffold/data/shared/python/docs/index.md.j2
+- tickets/T-3908/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -204,6 +209,36 @@ scope_changes:
     consolidation'
   actor: logan
   at: '2026-09-05'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3908 sunset-followup
+    ticket this consolidation files'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/Makefile.j2
+  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3908 sunset-followup
+    ticket this consolidation files'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/README.md.j2
+  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3908 sunset-followup
+    ticket this consolidation files'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/scaffold/data/shared/python/docs/index.md.j2
+  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3908 sunset-followup
+    ticket this consolidation files'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tickets/T-3908/ticket.md
+  reason: 'T-3906: docs edits + scaffold template comment updates + the T-3908 sunset-followup
+    ticket this consolidation files'
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
@@ -245,7 +280,7 @@ is the established one, not yet applied here.
 
 RECOMMENDED SHAPE, but make the call yourself and give the reasoning:
     ONE `frob format` verb formatting both, scoped by flag
-    (`--code` / `--directives`, default both), with `--check` and `--json`
+    ("--code" / "--directives", default both), with "--check" and "--json"
     applying to the whole thing. `fmt` becomes a deprecated alias through a
     sunset window -- `frob:deprecated` with `sunset=`/`ticket=` already models
     exactly that, so the deprecation is expressible and enforceable rather than
@@ -262,28 +297,28 @@ CHECK BEFORE CHANGING:
     misses a remedy string produces the T-3859 defect (a remedy naming a flag
     the verb does not accept).
   - whether `--select-imports-only` has a natural home under the consolidated
-    flag set, or is code-specific and should be scoped to `--code`.
+    flag set, or is code-specific and should be scoped to "--code".
   - T-3312 is already filed: `frob fmt` accepts only ONE path argument while
     FMT001's hint implies a list. Fold it in if the surface is being reworked
     anyway; a list-of-paths is the right shape for both halves.
 
 DO NOT break the standalone-usability property the other groups preserve. Those
 consolidations kept every member runnable directly; a consolidation here that
-forces `frob format --directives` where `frob fmt` used to work is a regression
+forces "frob format --directives" where `frob fmt` used to work is a regression
 for every existing script until the sunset passes.
 
 MUST-FIRE FIXTURES:
-  - `frob format --check` on an unformatted tree exits non-zero and writes
+  - "frob format --check" on an unformatted tree exits non-zero and writes
     nothing
   - the deprecated alias still works and emits its deprecation notice
 MUST-STAY-QUIET:
-  - a formatted tree passes `--check` cleanly for both halves
+  - a formatted tree passes "--check" cleanly for both halves
   - existing invocations in CI, scaffold templates and the playbook keep
     working through the sunset window
 
 ACCEPTANCE
 - The consolidation-vs-rename decision stated with reasoning.
-- The `--check` gap closed for code formatting regardless of which is chosen.
+- The "--check" gap closed for code formatting regardless of which is chosen.
 - Every caller enumerated and updated, remedy strings included.
 - T-3312 folded in or explicitly deferred with a reason.
 - Deprecation expressed via frob:deprecated with a real sunset and ticket.
