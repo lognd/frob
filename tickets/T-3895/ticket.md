@@ -2,7 +2,7 @@
 id: T-3895
 title: the native and pure-Python parser backends disagree on the same C file, so
   gate results depend on which machine ran them
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
