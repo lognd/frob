@@ -17,6 +17,7 @@ scope:
 - src/frob/gitio.py
 - docs/modules/testing.md
 - frob.lock
+- tests/test_gitio.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ scope_changes:
   glob: frob.lock
   reason: doc update for the win32 argv-resolution addition, plus the frob.lock digest
     ack it required
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_gitio.py
+  reason: unit tests added for _resolve_win32_executable and run_argv wiring
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
