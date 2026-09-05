@@ -939,14 +939,39 @@ def _spawn_background_sweep(root: Path, ticket_id: str) -> None:
     )
 
 
+# frob:ticket T-3315
 def _sweep_cmd(root: Path, cfg: AppConfig) -> None:
-    """Re-record the pre-work sweep for an in-progress ticket (scope widened)."""
+    """Re-record the pre-work sweep for an in-progress ticket (scope
+    widened).
+
+    T-3315: a done/dropped ticket is a genuine no-op SUCCESS here (exit 0),
+    not a refusal -- a terminal ticket has no more pre-work left to sweep
+    (PRE001, the gate this command's own sweep record feeds, only ever
+    fires for an IN_PROGRESS ticket in the first place, so there is
+    nothing downstream this sweep could still be clearing). Before this,
+    `frob ticket scope <id> --add ...` succeeding on an already-DONE
+    ticket (a legitimate post-close scope correction) left an operator who
+    then tried `sweep` -- the verb every OTHER stale-scope situation in
+    this codebase points at -- with a hard FAST_EXIT1 refusal and no
+    stated remedy: the scope fix had already taken effect, but the tool
+    demanded a command that can never succeed for a terminal ticket. Any
+    OTHER non-in-progress state (queued, planned, blocked) still refuses:
+    those states have a real "start it first" remedy `sweep` cannot
+    substitute for, so only the two TERMINAL states get the no-op."""
     from frob.tickets import TicketState
 
     if cfg.ticket_id is None:
         _log.error("frob ticket sweep requires <id>")
         sys.exit(1)
     ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="sweep")
+    if ticket.state in (TicketState.DONE, TicketState.DROPPED):
+        _log.info(
+            "ticket sweep: %s is %s -- nothing to sweep, a terminal ticket "
+            "has no pre-work sweep left to perform",
+            cfg.ticket_id,
+            ticket.state.value,
+        )
+        return
     if ticket.state != TicketState.IN_PROGRESS:
         _log.error("ticket sweep: %s is not in-progress", cfg.ticket_id)
         sys.exit(1)

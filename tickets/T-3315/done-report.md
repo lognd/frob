@@ -1,0 +1,30 @@
+## Done report
+
+frob ticket scope <id> --add ... succeeds on an already-DONE ticket (a legitimate post-close scope correction), but the follow-up frob ticket sweep <id> -- the verb every other stale-scope situation in this codebase points at -- then exited 1 (FAST_EXIT1) because the ticket is closed. The scope edit had already taken effect, so the sweep refusal was a dead end with no stated remedy: the fix already worked, but the tool demanded a command that can never succeed for a terminal ticket.
+
+Investigated where the recommendation to run sweep post-close actually comes from: PRE001 (gates/__init__.py::prework_gate) only ever fires for IN_PROGRESS tickets (its own first line returns () otherwise), and frob ticket scope's own CLI output never mentions sweep at all -- so nothing in the CURRENT codebase actively recommends sweep for a closed ticket. The ticket's premise still holds as a genuine defect: sweep itself was a hard refusal with no remedy on a terminal ticket regardless of what led an operator there (muscle memory, an older/different remediation text, general workflow habit), and refusing is simply the wrong answer for a state that legitimately has no more pre-work left to sweep.
+
+Fix (option a from the ticket's own WHAT TO BUILD): frob.app.ticket_runner._lifecycle._sweep_cmd now treats DONE/DROPPED as a genuine no-op success (exit 0, logs 'nothing to sweep, a terminal ticket has no pre-work sweep left to perform'). Every other non-in-progress state (queued/planned/blocked) still refuses exactly as before -- those states have a real 'start it first' remedy sweep cannot substitute for.
+
+MUST-FIRE: test_sweep_on_done_ticket_is_a_quiet_success and test_sweep_on_dropped_ticket_is_a_quiet_success prove the no-op success on both terminal states. MUST-STAY-QUIET: test_sweep_on_queued_ticket_still_refuses and test_sweep_on_in_progress_ticket_still_runs prove every other state's behavior is unchanged.
+
+Filed: T-3902 (out of scope) -- SCOPE002 (promoted to error in frob.toml:690, contradicting its own WARN-turn-on docstring) makes _lifecycle.py's frob:doc edge to docs/modules/gates.md impossible to close without an unbounded scope-widening cascade (measured: adding that one doc alone produced 3143 additional closure warnings). This ticket's own frob check --ticket therefore still shows those SCOPE002 findings plus 3 pre-existing, unrelated DOC006 findings (tickets/T-3886, tickets/T-3900, confirmed pre-existing on main) -- both classes are structural/pre-existing, not introduced by this one-function fix, and are tracked separately rather than chased here.
+
+### Changed
+```
+ src/frob/app/ticket_runner/_lifecycle.py       |  27 ++-
+ tests/unit/test_ticket_sweep_terminal_state.py | 129 +++++++++++
+ tickets/T-3315/ticket.md                       | 296 +++++++++++++++++++++++++
+ 3 files changed, 451 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_sweep_terminal_state.py::TestSweepOnTerminalState::test_sweep_on_done_ticket_is_a_quiet_success` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_sweep_terminal_state.py::TestSweepOnTerminalState::test_sweep_on_dropped_ticket_is_a_quiet_success` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_sweep_terminal_state.py::TestSweepOnTerminalState::test_sweep_on_queued_ticket_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_sweep_terminal_state.py::TestSweepOnTerminalState::test_sweep_on_in_progress_ticket_still_runs` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 3 error(s), 4352 warning(s), 925 waived
+- error-findings: DOC006@tickets/T-3886/ticket.md, DOC006@tickets/T-3900/ticket.md, SCOPE002@tickets.md

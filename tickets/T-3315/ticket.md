@@ -2,7 +2,7 @@
 id: T-3315
 title: frob ticket sweep refuses on a done ticket with no stated remedy after a post-close
   scope fix
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-28'
@@ -319,6 +319,11 @@ scope_changes:
     problem as its own out-of-scope ticket instead'
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/unit/test_ticket_sweep_terminal_state.py::TestSweepOnTerminalState::test_sweep_on_done_ticket_is_a_quiet_success
+- tests/unit/test_ticket_sweep_terminal_state.py::TestSweepOnTerminalState::test_sweep_on_dropped_ticket_is_a_quiet_success
+- tests/unit/test_ticket_sweep_terminal_state.py::TestSweepOnTerminalState::test_sweep_on_queued_ticket_still_refuses
+- tests/unit/test_ticket_sweep_terminal_state.py::TestSweepOnTerminalState::test_sweep_on_in_progress_ticket_still_runs
 designated_repro_test: null
 threat: null
 component: null
