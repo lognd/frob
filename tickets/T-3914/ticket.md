@@ -72,6 +72,14 @@ scope_changes:
   reason: covers the scope-overlap as_posix() fix landed under this ticket
   actor: logan
   at: '2026-09-05'
+body_changes:
+- mode: append
+  reason: 'BUG002 waiver: win32-only env-var-gated code path cannot be reproduced
+    fail/pass locally'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 7088
+  new_length: 7614
 evidence:
 - tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_labels_did_not_complete_runs
 - tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_configure_resets_stale_internal_error
@@ -209,3 +217,5 @@ ACCEPTANCE
 - This ticket does not touch the ci.yml windows-latest advisory flag --
   that is T-3512, owner's call, blocked on the real count this ticket
   produces.
+
+frob:waive BUG002 reason="the designated repro test (and every other test-double fixture fix in this ticket) only fails when CI env vars set exclusively on the windows-latest leg (FROB_TEST_HARD_EXIT, FROB_TEST_MIDRUN_WATCHDOG_SECONDS) are present -- this Linux worktree cannot reproduce a fail-before/pass-after cycle for it locally, same reproduction gap T-3540 hit and waived the same way; the fix is source-verified against tests/conftest.py's actual attribute reads and ci.yml's env-var scoping, not locally reproduced"
