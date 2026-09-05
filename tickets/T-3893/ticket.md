@@ -18,6 +18,13 @@ scope:
 - src/frob/graph/dsl.py
 - tests/unit/graph/test_dsl.py
 - docs/guides/extending/comment-dsl-directives.md
+- docs/modules/gates.md
+- docs/modules/graph.md
+- tests/gates_suite/test_waive.py
+- tests/test_graph.py
+- tests/unit/gates/test_negexist.py
+- tests/unit/graph/test_dsl_markdown_waive.py
+- tests/unit/graph/test_dsl_mention_escape.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -75,6 +82,62 @@ scope_changes:
   glob: docs/modules/graph.md
   reason: no edit made to this doc; comment-dsl-directives.md is the doc actually
     updated for this ticket
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'SCOPE002 closure: dsl.py carries other pre-existing symbols (fold_comment_runs,
+    markdown_anchors, mask_frob_mentions, dedupe_slug, _attrs_verb_error_waive) whose
+    doc/test targets live in these files; adding for closure, no edits planned to
+    their content'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'SCOPE002 closure: dsl.py carries other pre-existing symbols (fold_comment_runs,
+    markdown_anchors, mask_frob_mentions, dedupe_slug, _attrs_verb_error_waive) whose
+    doc/test targets live in these files; adding for closure, no edits planned to
+    their content'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/gates_suite/test_waive.py
+  reason: 'SCOPE002 closure: dsl.py carries other pre-existing symbols (fold_comment_runs,
+    markdown_anchors, mask_frob_mentions, dedupe_slug, _attrs_verb_error_waive) whose
+    doc/test targets live in these files; adding for closure, no edits planned to
+    their content'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/test_graph.py
+  reason: 'SCOPE002 closure: dsl.py carries other pre-existing symbols (fold_comment_runs,
+    markdown_anchors, mask_frob_mentions, dedupe_slug, _attrs_verb_error_waive) whose
+    doc/test targets live in these files; adding for closure, no edits planned to
+    their content'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/gates/test_negexist.py
+  reason: 'SCOPE002 closure: dsl.py carries other pre-existing symbols (fold_comment_runs,
+    markdown_anchors, mask_frob_mentions, dedupe_slug, _attrs_verb_error_waive) whose
+    doc/test targets live in these files; adding for closure, no edits planned to
+    their content'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/graph/test_dsl_markdown_waive.py
+  reason: 'SCOPE002 closure: dsl.py carries other pre-existing symbols (fold_comment_runs,
+    markdown_anchors, mask_frob_mentions, dedupe_slug, _attrs_verb_error_waive) whose
+    doc/test targets live in these files; adding for closure, no edits planned to
+    their content'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/graph/test_dsl_mention_escape.py
+  reason: 'SCOPE002 closure: dsl.py carries other pre-existing symbols (fold_comment_runs,
+    markdown_anchors, mask_frob_mentions, dedupe_slug, _attrs_verb_error_waive) whose
+    doc/test targets live in these files; adding for closure, no edits planned to
+    their content'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
