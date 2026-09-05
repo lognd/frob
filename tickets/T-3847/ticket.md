@@ -14,10 +14,44 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/testing/_collect.py
+- src/frob/testing/__init__.py
+- tests/unit/test_verify_language_buckets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: wire cpp/kotlin/ts collectors into evidence verification buckets (registry-derived),
+    make an unbucketed evidence id a loud typed UNMEASURED refusal naming the id and
+    languages tried
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/testing/_collect.py
+  reason: wire cpp/kotlin/ts collectors into evidence verification buckets (registry-derived),
+    make an unbucketed evidence id a loud typed UNMEASURED refusal naming the id and
+    languages tried
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/testing/__init__.py
+  reason: wire cpp/kotlin/ts collectors into evidence verification buckets (registry-derived),
+    make an unbucketed evidence id a loud typed UNMEASURED refusal naming the id and
+    languages tried
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_verify_language_buckets.py
+  reason: wire cpp/kotlin/ts collectors into evidence verification buckets (registry-derived),
+    make an unbucketed evidence id a loud typed UNMEASURED refusal naming the id and
+    languages tried
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
