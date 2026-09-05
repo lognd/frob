@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import sys
 import time
 import tomllib
 from collections.abc import Iterator, Mapping
@@ -356,16 +357,33 @@ def _find_pyo3_python() -> str | None:
 # python, builds the env overlay, or returns a real Err (never a fabricated pass) per \
 # T-0092; the probe-then-Err-or-overlay shape IS the single 'discover PyO3 env, \
 # honestly' concern the docstring names"
+# frob:ticket T-3801
 def _cargo_env() -> Result[dict[str, str], TestingError]:
-    """The `PYO3_PYTHON` + `LD_LIBRARY_PATH` overlay a `cargo test` subprocess
-    needs to link/run a PyO3 crate. `Err` -- never a fabricated pass -- when no
-    Python>=3.11 interpreter with a discoverable libpython exists (T-0092: the
-    known environment gap, degraded honestly instead of a cryptic linker
-    failure or a silently-skipped rust run)."""
+    """The `PYO3_PYTHON` + dynamic-linker-search overlay a `cargo test`
+    subprocess needs to link/run a PyO3 crate. `Err` -- never a fabricated
+    pass -- when no Python>=3.11 interpreter with a discoverable libpython
+    exists (T-0092: the known environment gap, degraded honestly instead of
+    a cryptic linker failure or a silently-skipped rust run).
+
+    T-3801: the runtime DLL-search overlay is platform-specific -- POSIX
+    dynamic linkers consult `LD_LIBRARY_PATH`, but win32 has no such
+    variable at all; a `pythonXY.dll` there is found via `PATH` instead
+    (already satisfied by a standard install, since the DLL sits next to
+    `python.exe`), so this overlays `PATH` with the interpreter's own
+    directory on win32 rather than trying (and failing) to resolve a
+    POSIX-style libdir via `sysconfig`."""
     python = _find_pyo3_python()
     if python is None:
         _log.error("cargo_env: no python>=3.11 interpreter found for PYO3_PYTHON")
         return Err(TestingError.CargoEnvUnavailable)
+    if sys.platform == "win32":
+        python_dir = Path(python).resolve().parent
+        existing_path = os.environ.get("PATH", "")
+        path_val = f"{python_dir}{os.pathsep}{existing_path}" if existing_path else str(
+            python_dir
+        )
+        _log.info("cargo_env: PYO3_PYTHON=%s PATH+=%s (win32)", python, python_dir)
+        return Ok({"PYO3_PYTHON": python, "PATH": path_val})
     lib_dir = _python_lib_dir(python)
     if lib_dir is None or not lib_dir.exists():
         _log.error("cargo_env: could not resolve a libpython dir for %s", python)

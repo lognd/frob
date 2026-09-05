@@ -191,6 +191,7 @@ class TestBehavioralCapabilityCheck:
         # state) -- this is a real, not vacuous, universal-coverage check.
         assert covered == set(supported_languages())
 
+    # frob:ticket T-3801
     # frob:ticket T-2365
     @pytest.mark.parametrize("language,capability", _implemented_behavioral_cells())
     def test_implemented_capability_behaves_as_claimed(
@@ -334,6 +335,7 @@ class TestBehavioralCapabilityCheck:
         cells = set(_implemented_behavioral_cells())
         assert ("rust", "test_discovery") in cells
 
+    # frob:ticket T-3801
     # frob:ticket T-2698
     def test_rust_test_discovery_passes_on_a_real_discoverable_fixture(
         self, tmp_path: Path
@@ -779,6 +781,7 @@ class TestCapabilityConformanceGate:
     -- exercised through the real `capability_conformance_gate` entrypoint,
     not just the underlying checker (`TestBehavioralCapabilityCheck` above)."""
 
+    # frob:ticket T-3801
     # frob:ticket T-2365
     def test_real_registry_is_behaviorally_clean(self) -> None:
         """The repo's own registered adapters all behave as their

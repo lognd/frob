@@ -1,7 +1,7 @@
 ---
 id: T-3801
 title: skip rust/cargo behavioral capability checks on win32 (no libpython path)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
