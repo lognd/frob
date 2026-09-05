@@ -18,6 +18,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: de-backtick citations that cannot resolve in this repo (proposed artifacts,
+    a proposed verb, sibling-repo paths); they are prose, not pointers, and were blocking
+    every land touching the docptr gate
+  actor: logan
+  at: '2026-09-05'
+  old_length: 2988
+  new_length: 2988
 designated_repro_test: null
 threat: null
 component: null
@@ -59,7 +68,7 @@ WHAT TO DO:
      resolver may apply to remedy strings with modest plumbing. Report what you
      find before proposing a design.
   3. SWEEP THE EXISTING REMEDY STRINGS regardless of whether a gate lands. Every
-     gate message naming a `frob ...` invocation is a candidate. Enumerate them,
+     gate message naming a "frob ..." invocation is a candidate. Enumerate them,
      run each, and report the ones that fail. That enumeration has value even if
      the automated check is deferred, and it is the denominator any future rule
      needs.
