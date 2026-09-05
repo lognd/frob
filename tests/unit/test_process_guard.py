@@ -160,6 +160,29 @@ class TestGuardedSubprocessRun:
         assert result.is_ok
         assert result.danger_ok.stdout.strip() == "hi"
 
+    # frob:ticket T-3797
+    def test_missing_binary_returns_err_spawn_failed_never_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-3797: an executable that cannot be spawned at all (missing
+        binary) must come back as `Err(ProcessGuardError.SpawnFailed)`,
+        never a raised `FileNotFoundError`/`OSError` escaping this
+        function -- on win32 this same case surfaces as `FileNotFoundError:
+        [WinError 2]` from `CreateProcess` and crashed `frob doctor`
+        (`doctor.py::scan_external_tools` -> `_probe_binary_version` ->
+        `guarded_subprocess_run`), which documents "never raises (missing
+        binary...)" and relied on this function actually honoring that."""
+        # frob:tests src/frob/process/_guard.py::guarded_subprocess_run kind="unit"
+        monkeypatch.delenv(EXEC_KILL_SWITCH_ENV, raising=False)
+        result = guarded_subprocess_run(
+            ["a-binary-that-does-not-exist-xyz123", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        assert result.is_err
+        assert result.danger_err is ProcessGuardError.SpawnFailed
+
 
 # frob:ticket T-3651
 class TestWin32IsolateConsoleGroup:

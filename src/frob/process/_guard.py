@@ -112,15 +112,22 @@ _TRUTHY = frozenset({"1", "true", "yes", "on"})
 
 
 # frob:doc docs/modules/process.md#public-api
+# frob:waive AFFECT001 reason="T-3797's scope is restricted to \
+# src/frob/process/_guard.py + tests/unit/test_process_guard.py only; \
+# docs/modules/process.md update filed as follow-up T-3802"
 class ProcessGuardError(ErrorSet):
     """Recoverable `guarded_subprocess_run` failures: a kill-switch
-    refusal before ever spawning (`ExecDisabled`), or a spawned process
+    refusal before ever spawning (`ExecDisabled`), a spawned process
     that outlived its caller-supplied `timeout=` budget (`Timeout`,
-    T-3015) -- both handed back as `Result` values, never a raised
-    exception."""
+    T-3015), or an executable that could not be spawned at all
+    (`SpawnFailed`, T-3797) -- all handed back as `Result` values, never
+    a raised exception."""
 
     ExecDisabled = "exec capability disabled via kill switch"
     Timeout = "subprocess exceeded its timeout= budget"
+    SpawnFailed = (
+        "subprocess could not be spawned (executable not found or not launchable)"
+    )
 
 
 def _env_flag_set(name: str) -> bool:
@@ -176,10 +183,15 @@ def pool_preload_enabled() -> bool:
 # frob:invariant INV-019
 # invariant spec: [INV-019](invariants/INV-019.md)
 # frob:ticket T-3015
+# frob:ticket T-3797
 # frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_disabled_returns_err_without_spawning  # noqa: E501
 # frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_enabled_spawns_and_returns_ok  # noqa: E501
 # frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_timeout_returns_err_never_raises  # noqa: E501
 # frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_healthy_path_unchanged_when_timeout_kwarg_given  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestGuardedSubprocessRun.test_missing_binary_returns_err_spawn_failed_never_raises  # noqa: E501
+# frob:waive AFFECT001 reason="T-3797's scope is restricted to \
+# src/frob/process/_guard.py + tests/unit/test_process_guard.py only; \
+# docs/modules/process.md update filed as follow-up T-3802"
 def guarded_subprocess_run(
     args: Sequence[str], **kwargs: object
 ) -> Result[subprocess.CompletedProcess[str], ProcessGuardError]:
@@ -192,7 +204,16 @@ def guarded_subprocess_run(
     should get to handle via `Result`, per this repo's house error-
     handling rule, never a raised `subprocess.TimeoutExpired` escaping
     this function uncaught (T-3015: this crashed `move-module`'s own
-    Verify phase mid-transaction, discovered via T-2989/T-2990). Otherwise
+    Verify phase mid-transaction, discovered via T-2989/T-2990); or
+    `Err(ProcessGuardError.SpawnFailed)` (T-3797) when the executable
+    itself cannot be launched at all (missing binary, not executable,
+    not a directory where one was expected) -- `subprocess.run` ->
+    `Popen` raises `FileNotFoundError`/`PermissionError`/
+    `NotADirectoryError` (all `OSError` subclasses; on win32 this
+    surfaces as `FileNotFoundError: [WinError 2]` from `CreateProcess`)
+    for exactly this case, and callers like `doctor.py::
+    _probe_binary_version` document "never raises (missing binary...)"
+    and rely on this function actually honoring that. Otherwise
     `Ok(subprocess.run(...))`. Every `frob.check` tool runner (`_python.
     py`/`_native.py`/`_ts.py`) calls this instead of `subprocess.run`
     directly so `FROB_DISABLE_EXEC=1` is a real, live, no-redeploy kill
@@ -225,6 +246,16 @@ def guarded_subprocess_run(
             kwargs.get("timeout"),
         )
         return Err(ProcessGuardError.Timeout)
+    except OSError as exc:
+        # T-3797: FileNotFoundError/PermissionError/NotADirectoryError are
+        # all OSError subclasses and are exactly what Popen/CreateProcess
+        # raises for a missing or unlaunchable executable (win32 surfaces
+        # this as "FileNotFoundError: [WinError 2]", which crashed
+        # doctor.py::scan_external_tools via _probe_binary_version on CI).
+        # Caught after TimeoutExpired (a SubprocessError, not an OSError)
+        # so that branch still matches first.
+        _log.warning("process: could not spawn %r: %s", list(args), exc)
+        return Err(ProcessGuardError.SpawnFailed)
     return Ok(proc)
 
 
