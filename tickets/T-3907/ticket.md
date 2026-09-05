@@ -2,7 +2,7 @@
 id: T-3907
 title: organise the README by the CLI's own verb groups with a concept paragraph per
   subsystem
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-09-05'
@@ -26,6 +26,9 @@ scope_changes:
   reason: README rewrite scope for T-3907
   actor: logan
   at: '2026-09-05'
+evidence:
+- cmd:python3 /tmp/claude-1000/-home-logan-projects-frob/79c6402d-b401-4652-bea7-f81df1be9322/scratchpad/readme_check.py
+  README.md exit=0 sha256=dcdcab570eef
 designated_repro_test: null
 threat: null
 component: null
