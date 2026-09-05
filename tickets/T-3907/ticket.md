@@ -2,7 +2,7 @@
 id: T-3907
 title: organise the README by the CLI's own verb groups with a concept paragraph per
   subsystem
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-09-05'
