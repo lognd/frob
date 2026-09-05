@@ -14,10 +14,33 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- pyproject.toml
+- docs/guides/release.md
+- tests/unit/test_dependency_pins.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: pyproject.toml
+  reason: bound mcp pin in serve extra + dev group; decision doc; fixture for unbounded-pin
+    regression
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/guides/release.md
+  reason: bound mcp pin in serve extra + dev group; decision doc; fixture for unbounded-pin
+    regression
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: tests/unit/test_dependency_pins.py
+  reason: bound mcp pin in serve extra + dev group; decision doc; fixture for unbounded-pin
+    regression
+  actor: logan
+  at: '2026-09-05'
 designated_repro_test: null
 threat: null
 component: null
