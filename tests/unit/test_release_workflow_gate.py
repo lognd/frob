@@ -160,14 +160,38 @@ class TestCiStatusGate:
         assert "environment" not in job
 
     def test_upload_needs_verify_ci_status_in_addition_to_existing_needs(self) -> None:
-        """T-3251 ADDS to `needs:`, it does not replace `build`/
+        """T-3251/T-3884 ADD to `needs:`, neither replaces `build`/
         `build-sdists` -- losing either of those would reintroduce the
         stale/non-existent-artifact risk `test_upload_job_needs_build`
         above already guards."""
         doc = _load(_RELEASE_WORKFLOW)
         needs = doc["jobs"]["upload"]["needs"]
         needs_set = {needs} if isinstance(needs, str) else set(needs)
-        assert needs_set == {"build", "build-sdists", "verify-ci-status"}
+        assert needs_set == {"build", "build-sdists", "verify-ci-status", "artifact-smoke"}
+
+    def test_artifact_smoke_job_needs_build_and_build_sdists(self) -> None:
+        """T-3884: `artifact-smoke` must depend on `build` (this
+        platform's frob-core/strata-core wheels) AND `build-sdists` (the
+        universal frob wheel) -- either missing would make it install a
+        stale or nonexistent artifact."""
+        doc = _load(_RELEASE_WORKFLOW)
+        needs = doc["jobs"]["artifact-smoke"]["needs"]
+        needs_set = {needs} if isinstance(needs, str) else set(needs)
+        assert needs_set == {"build", "build-sdists"}
+
+    def test_artifact_smoke_covers_every_build_target(self) -> None:
+        """T-3884: a linux-only smoke test would not catch a
+        Windows-only packaging fault -- `artifact-smoke`'s matrix must
+        cover every target `build`'s own matrix covers."""
+        doc = _load(_RELEASE_WORKFLOW)
+        build_targets = {
+            entry["target"] for entry in doc["jobs"]["build"]["strategy"]["matrix"]["include"]
+        }
+        smoke_targets = {
+            entry["target"]
+            for entry in doc["jobs"]["artifact-smoke"]["strategy"]["matrix"]["include"]
+        }
+        assert smoke_targets == build_targets
 
     def test_override_input_declared_and_defaults_to_false(self) -> None:
         """The escape hatch exists, but its default must be false (never

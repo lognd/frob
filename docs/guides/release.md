@@ -349,11 +349,16 @@ later tag both refer back to it):
 9. **Dispatch** `release.yml` (`workflow_dispatch`, manual, from the
    Actions UI or `gh workflow run`) against that exact commit. The
    `build` job runs unconditionally and retains wheels/sdists as CI
-   artifacts -- no approval needed for this half.
+   artifacts -- no approval needed for this half. `artifact-smoke`
+   (T-3884) then runs against those same artifacts, per platform; if it
+   fails on any target, `upload` cannot start (see [Decision
+   6](#artifact-smoke-stage-t-3884)) -- check that job's logs before
+   assuming a stalled release is only waiting on approval.
 10. **Owner approval.** The owner reviews the retained build artifacts
     and approves the `pypi` environment's required-reviewer gate for
-    that specific run. `upload` then runs, publishing all three packages
-    via OIDC trusted publishing (no stored token).
+    that specific run. `upload` then runs (only once `artifact-smoke` has
+    also passed on every target), publishing all three packages via OIDC
+    trusted publishing (no stored token).
 11. **Tag, after upload succeeds -- never before.** This repository has
     never had a git tag (`git tag` returns nothing as of T-3254). The cut
     DOES create one: after `upload` completes successfully, the owner
@@ -436,3 +441,66 @@ have crossed a major boundary since their floor. `tree-sitter-language-pack`
 is flagged for the next person touching `frob.lang`'s grammar loading to
 decide whether a bound is warranted; not added here since T-3857's scope
 is the mcp break, and no failure against 1.x has been observed.
+
+<a id="artifact-smoke-stage-t-3884"></a>
+## Decision 6: artifact smoke stage (T-3884)
+
+MEASURED 2026-09-05: `ci.yml` proves the SOURCE TREE passes its tests.
+Nothing installed the BUILT `frob` wheel and ran it before publish --
+`uv build`, upload, and publish, with the artifact itself never executed.
+T-3857 is a live instance of exactly the gap this closes: this checkout
+resolves mcp 1.28.1 (via `uv.lock`) and stayed green throughout, while a
+FRESH resolve of the same, then-unbounded `serve` extra picked up mcp 2.x
+and broke on import. No amount of source-tree CI can see that; only
+installing the artifact can.
+
+**What was built:** `scripts/artifact_smoke.py`, wired into
+`.github/workflows/release.yml` as a new `artifact-smoke` job that:
+
+1. Runs on every `build` target (five platforms, mirroring `build`'s own
+   matrix) -- a linux-only smoke test would not catch a Windows-only
+   packaging fault, same reasoning `build`'s own native-wheel install
+   check already uses.
+2. Installs the built `frob` wheel bare into a clean venv and runs `frob
+   --version` and `frob doctor` -- a real command, not just an import.
+3. Installs `frob[serve]` into a second clean venv and calls
+   `frob.serve.server._require_mcp()` directly -- the exact code path
+   `frob serve` runs, and the exact T-3857 regression shape (proven: see
+   `tests/system/test_artifact_smoke.py`'s must-fire test, which rebuilds
+   this repo's own wheel with the pre-fix unbounded `mcp>=1.28.1` pin
+   restored and asserts the smoke stage fails on it with the real mcp
+   2.x rename error).
+4. Installs `frob[native]` into a third clean venv and confirms the
+   natives import both directly (`import frob_core, strata_core`) AND
+   through frob's own code path (`frob doctor`, whose output must mention
+   "native").
+5. Fails (non-zero exit) the moment any check fails. `upload`'s `needs:`
+   now includes `artifact-smoke` -- GitHub Actions' default step/job
+   abort-on-failure means `upload` cannot start unless every platform's
+   smoke stage passed. This is a hard block, not a warning: an advisory
+   smoke test that could not stop a release is a green light nobody
+   reads.
+
+**Local dist vs index resolution -- local wheel, REAL index for
+everything else, deliberately not TestPyPI.** `frob-core`/`strata-core`
+are default dependencies of `frob` itself now (T-3845), pinned exact to
+frob's own version, so the smoke stage's `uv pip install <local-wheel>`
+resolves those two from a `--find-links` directory of the just-built
+platform wheels (they do not exist on the index yet -- this stage runs
+BEFORE publish) while resolving EVERY OTHER dependency (`mcp`, `pydantic`,
+`tree-sitter`, ...) from the real, configured index. That is what makes
+the T-3857 shape reproducible here at all: a `--no-index` or fully local
+install would never touch the real `mcp` index entry and would have
+passed regardless of the pin's bound. TestPyPI was considered and
+rejected -- it is a separate index with its own (often stale or missing)
+mirror of third-party packages like `mcp`, so a TestPyPI resolve answers
+"does this install from TestPyPI", not "does this install for a real
+user running `pip install frob[serve]`" -- the real index is the only
+one that reproduces what an adopter actually gets.
+
+**Scope, deliberately not a full test-suite run.** The stage exercises
+exactly `frob --version`, `frob doctor`, and each extra's own import
+surface -- it does not run frob's test suite against the installed
+artifact (slow, and duplicates `ci.yml`). The bar stated in this
+ticket's own acceptance text: does the thing about to be published
+install, start, and report healthy.

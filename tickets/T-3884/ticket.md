@@ -2,7 +2,7 @@
 id: T-3884
 title: 'nothing installs the built frob wheel and runs it before publish: CI proves
   the source tree, not the artifact'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -135,6 +135,15 @@ scope_changes:
   reason: bump exec/fs.read/fs.write ceilings for T-3884 own two new test files
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/unit/test_artifact_smoke_script.py::TestCheckBaseInstall::test_installs_and_runs_version_and_doctor
+- tests/unit/test_artifact_smoke_script.py::TestCheckServeExtra::test_mcp_import_failure_raises_smoke_check_error
+- tests/unit/test_artifact_smoke_script.py::TestMain::test_all_checks_pass_exits_zero
+- tests/system/test_artifact_smoke.py::TestArtifactSmokeMustFire::test_unbounded_mcp_pin_fails_serve_extra_check
+- tests/system/test_artifact_smoke.py::TestArtifactSmokeMustStayQuiet::test_current_pin_passes_serve_extra_check
+- tests/unit/test_release_workflow_gate.py::TestCiStatusGate::test_upload_needs_verify_ci_status_in_addition_to_existing_needs
+- tests/unit/test_release_workflow_gate.py::TestCiStatusGate::test_artifact_smoke_job_needs_build_and_build_sdists
+- tests/unit/test_release_workflow_gate.py::TestCiStatusGate::test_artifact_smoke_covers_every_build_target
 designated_repro_test: null
 threat: null
 component: null

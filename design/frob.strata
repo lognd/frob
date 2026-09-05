@@ -1550,6 +1550,7 @@ cache graph_cache of graphlang {
 // frob:ticket T-2910
 // frob:ticket T-3413
 // frob:ticket T-3607
+// frob:ticket T-3884
 node testsuite : trusted {
     attr interface=[];
     clearance Internal;
@@ -1575,9 +1576,9 @@ node testsuite : trusted {
     // subprocess-pytest fixture writes a synthetic tmp_path test file
     // (a plain Path.write_text) to prove the faulthandler_timeout
     // mechanism, same shape as the other synthetic-suite fixtures above.
-    may "fs.write" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/unit/test_fix_engine_journal.py", "tests/system/test_faulthandler_ci_hygiene.py", "tests/unit/test_wire001_multiprocessing_target.py", "tests/vet_suite/test_advisories.py", "tests/vet_suite/test_capability_scan_c.py", "tests/vet_suite/test_capability_scan_cpp.py", "tests/vet_suite/test_capability_scan_embedded.py", "tests/vet_suite/test_capability_scan_kotlin.py", "tests/vet_suite/test_capability_scan_python.py", "tests/vet_suite/test_capability_scan_rust.py", "tests/vet_suite/test_capability_scan_ts.py", "tests/vet_suite/test_fingerprint.py", "tests/vet_suite/test_lockfile.py", "tests/vet_suite/test_opaque_indirection.py", "tests/vet_suite/test_scan_tree.py", "tests/vet_suite/test_supply_chain.py", "tests/unit/conftest.py", "tests/unit/coordinator_suite/test_check_summary.py", "tests/unit/coordinator_suite/test_fleet_host_load.py", "tests/unit/coordinator_suite/test_fleet_land.py", "tests/unit/coordinator_suite/test_fleet_report.py", "tests/unit/coordinator_suite/test_fleet_worktrees.py", "tests/unit/gates/test_win32_kill_signal.py";
+    may "fs.write" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/unit/test_fix_engine_journal.py", "tests/system/test_faulthandler_ci_hygiene.py", "tests/unit/test_wire001_multiprocessing_target.py", "tests/vet_suite/test_advisories.py", "tests/vet_suite/test_capability_scan_c.py", "tests/vet_suite/test_capability_scan_cpp.py", "tests/vet_suite/test_capability_scan_embedded.py", "tests/vet_suite/test_capability_scan_kotlin.py", "tests/vet_suite/test_capability_scan_python.py", "tests/vet_suite/test_capability_scan_rust.py", "tests/vet_suite/test_capability_scan_ts.py", "tests/vet_suite/test_fingerprint.py", "tests/vet_suite/test_lockfile.py", "tests/vet_suite/test_opaque_indirection.py", "tests/vet_suite/test_scan_tree.py", "tests/vet_suite/test_supply_chain.py", "tests/unit/conftest.py", "tests/unit/coordinator_suite/test_check_summary.py", "tests/unit/coordinator_suite/test_fleet_host_load.py", "tests/unit/coordinator_suite/test_fleet_land.py", "tests/unit/coordinator_suite/test_fleet_report.py", "tests/unit/coordinator_suite/test_fleet_worktrees.py", "tests/unit/gates/test_win32_kill_signal.py", "tests/system/test_artifact_smoke.py", "tests/unit/test_artifact_smoke_script.py";
     // T-3516: _infer_worker_crash_cause reads back its own marker file.
-    may "fs.read" via "tests/conftest.py", "tests/vet_suite/test_fingerprint.py", "tests/vet_suite/test_opaque_indirection.py", "tests/unit/coordinator_suite/test_fleet_host_load.py", "tests/unit/coordinator_suite/test_fleet_report.py";
+    may "fs.read" via "tests/conftest.py", "tests/vet_suite/test_fingerprint.py", "tests/vet_suite/test_opaque_indirection.py", "tests/unit/coordinator_suite/test_fleet_host_load.py", "tests/unit/coordinator_suite/test_fleet_report.py", "tests/system/test_artifact_smoke.py", "tests/unit/test_artifact_smoke_script.py";
     // T-3516: TestWorkerCrashReportIntegration spawns a real
     // `python -m pytest -n 2` subprocess per MUST-FIRE/MUST-STAY-QUIET
     // case -- the only way to exercise an actual xdist worker crash.
@@ -1594,7 +1595,7 @@ node testsuite : trusted {
     // "multiprocessing.Process(" still lexically matches this scanner's
     // own textual needle table, same false-positive class T-3598/T-3526
     // hit for other fixture-literal shapes.
-    may "exec" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/system/test_faulthandler_ci_hygiene.py", "tests/unit/test_wire001_multiprocessing_target.py", "tests/vet_suite/test_capability_scan_python.py", "tests/vet_suite/test_fingerprint.py", "tests/vet_suite/test_opaque_indirection.py", "tests/unit/conftest.py", "tests/unit/coordinator_suite/test_fleet_worktrees.py", "tests/unit/coordinator_suite/test_verify_lands.py", "tests/unit/gates/test_win32_kill_signal.py";
+    may "exec" via "tests/conftest.py", "tests/unit/test_conftest_stackdump.py", "tests/system/test_faulthandler_ci_hygiene.py", "tests/unit/test_wire001_multiprocessing_target.py", "tests/vet_suite/test_capability_scan_python.py", "tests/vet_suite/test_fingerprint.py", "tests/vet_suite/test_opaque_indirection.py", "tests/unit/conftest.py", "tests/unit/coordinator_suite/test_fleet_worktrees.py", "tests/unit/coordinator_suite/test_verify_lands.py", "tests/unit/gates/test_win32_kill_signal.py", "tests/system/test_artifact_smoke.py", "tests/unit/test_artifact_smoke_script.py";
     // T-1478: tests/unit/strata/test_effects.py's own new argument-level
     // `of`-scoping fixtures contain real `os.environ.get(...)` needle
     // literals (exercising the SAME env-read observation the `of` join

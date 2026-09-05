@@ -231,9 +231,9 @@
       "ticket": "T-3592"
     },
     "testsuite::exec": {
-      "accepted_count": 292,
-      "reason": "T-3787: adds tests/ticket_land_suite/test_land_target_branch.py's own real, new exec via-list site (subprocess.run of git merge-base --is-ancestor to assert which branch a landed commit sits on, the same land-suite subprocess shape sibling tests already declare) -- bumping the ceiling to the current measured count.",
-      "ticket": "T-3787"
+      "accepted_count": 294,
+      "reason": "T-3884: adds scripts/artifact_smoke.py's own must-fire/must-stay-quiet fixtures -- tests/system/test_artifact_smoke.py's real uv-build subprocess spawns and tests/unit/test_artifact_smoke_script.py's importlib.util module exec_module call -- bumping the ceiling to the current measured count.",
+      "ticket": "T-3884"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -246,14 +246,14 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 220,
-      "reason": "T-3595: same split, fs.read via-list relocation across tests/conftest.py and the 7 new tests/unit/rapid_sweep_suite/*.py files -- measured live via-list count.",
-      "ticket": "T-3595"
+      "accepted_count": 222,
+      "reason": "T-3884: adds tests/system/test_artifact_smoke.py's read of this repo's own pyproject.toml (to rewrite the serve pin for the must-fire fixture) and tests/unit/test_artifact_smoke_script.py's spec-loading read of scripts/artifact_smoke.py -- bumping the ceiling to the current measured count.",
+      "ticket": "T-3884"
     },
     "testsuite::fs.write": {
-      "accepted_count": 503,
-      "reason": "T-3787: adds tests/ticket_land_suite/test_land_target_branch.py's own real, new fs.write via-list site (Path.write_text of source-file fixtures in the throwaway worktree the non-main-target land tests exercise, the same shape every sibling land-suite module already declares) -- bumping the ceiling to the current measured count.",
-      "ticket": "T-3787"
+      "accepted_count": 505,
+      "reason": "T-3884: adds tests/system/test_artifact_smoke.py's tmp_path source-tree copy and rewritten pyproject.toml for its must-fire/must-stay-quiet wheel builds -- bumping the ceiling to the current measured count.",
+      "ticket": "T-3884"
     },
     "testsuite::net.connect": {
       "accepted_count": 3,
