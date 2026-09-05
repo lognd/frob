@@ -2,7 +2,7 @@
 id: T-3903
 title: VERSION001 reads only the native extra's pins, so T-3845's new default-dependency
   pins are unguarded going into a required bump
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -18,9 +18,9 @@ scope:
 - src/frob/gates/_version_coupling.py
 - tests/unit/gates/test_version_coupling.py
 - pyproject.toml
-- tickets/T-draft-d58a8691/ticket.md
-- tickets/T-draft-4919a464/ticket.md
-- tickets/T-draft-c277fc9b/ticket.md
+- tickets/T-3916/ticket.md
+- tickets/T-3915/ticket.md
+- tickets/T-3917/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -104,21 +104,21 @@ scope_changes:
   actor: logan
   at: '2026-09-05'
 - op: add
-  glob: tickets/T-draft-d58a8691/ticket.md
+  glob: tickets/T-3916/ticket.md
   reason: these are new tickets filed FROM T-3903's worktree recording out-of-scope
     findings (bump-path gap, generalization question, tree-sitter-language-pack bound)
     -- their ticket.md files are committed on this branch and must be in scope
   actor: logan
   at: '2026-09-05'
 - op: add
-  glob: tickets/T-draft-4919a464/ticket.md
+  glob: tickets/T-3915/ticket.md
   reason: these are new tickets filed FROM T-3903's worktree recording out-of-scope
     findings (bump-path gap, generalization question, tree-sitter-language-pack bound)
     -- their ticket.md files are committed on this branch and must be in scope
   actor: logan
   at: '2026-09-05'
 - op: add
-  glob: tickets/T-draft-c277fc9b/ticket.md
+  glob: tickets/T-3917/ticket.md
   reason: these are new tickets filed FROM T-3903's worktree recording out-of-scope
     findings (bump-path gap, generalization question, tree-sitter-language-pack bound)
     -- their ticket.md files are committed on this branch and must be in scope
@@ -172,7 +172,16 @@ scope_changes:
     investigating narrower remedy'
   actor: logan
   at: '2026-09-05'
-designated_repro_test: null
+evidence:
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_matched_versions_clean
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_skewed_core_version_fires
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_loose_pin_fires
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_missing_extra_fires
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_mismatched_extra_pin_fires
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_skewed_default_dependency_pin_fires
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_loose_default_dependency_pin_fires
+- tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_pin_in_new_extra_fires
+designated_repro_test: tests/unit/gates/test_version_coupling.py::TestVersionCouplingGate::test_skewed_default_dependency_pin_fires
 threat: null
 component: null
 anchor: false

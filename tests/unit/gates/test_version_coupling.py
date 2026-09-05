@@ -19,21 +19,35 @@ def _write_repo(
     native_extra: list[str] | None = None,
     core_version: str = "1.2.3",
     strata_version: str = "1.2.3",
+    dependencies: list[str] | None = None,
+    extra_extras: dict[str, list[str]] | None = None,
 ) -> Path:
     """A minimal three-`pyproject.toml` fixture tree under `tmp_path`,
-    matching the real repo's layout (root + frob-core/ + strata-core/)."""
+    matching the real repo's layout (root + frob-core/ + strata-core/).
+    `dependencies` (T-3903) writes `[project].dependencies` -- the second
+    pin site T-3845 added -- and `extra_extras` (T-3903) writes additional
+    `[project.optional-dependencies]` extras besides `native`, so fixtures
+    can plant a pin in a site other than the one the gate used to check by
+    name."""
     if native_extra is None:
         native_extra = [f"frob-core=={core_version}", f"strata-core=={strata_version}"]
     extra_lines = ", ".join(f'"{spec}"' for spec in native_extra)
+    deps_line = ""
+    if dependencies is not None:
+        deps_lines = ", ".join(f'"{spec}"' for spec in dependencies)
+        deps_line = f"dependencies = [{deps_lines}]\n"
+    optional_deps = f"native = [{extra_lines}]\n"
+    for name, specs in (extra_extras or {}).items():
+        specs_lines = ", ".join(f'"{spec}"' for spec in specs)
+        optional_deps += f"{name} = [{specs_lines}]\n"
     (tmp_path / "pyproject.toml").write_text(
         f"""\
 [project]
 name = "frob"
 version = "{frob_version}"
-
+{deps_line}
 [project.optional-dependencies]
-native = [{extra_lines}]
-""",
+{optional_deps}""",
         encoding="utf-8",
     )
     core_dir = tmp_path / "frob-core"
@@ -100,5 +114,50 @@ class TestVersionCouplingGate:
         violations = version_coupling_gate(root)
         assert any(
             v.rule == "VERSION001" and "frob-core is pinned to" in v.message
+            for v in violations
+        )
+
+    def test_skewed_default_dependency_pin_fires(self, tmp_path: Path) -> None:
+        """T-3903: a skewed pin in `[project].dependencies` -- the second
+        pin site T-3845 added -- fires, not just a skew inside the
+        `native` extra. This is the exact gap the ticket closes: matching
+        by package name across the whole document, not by table name."""
+        root = _write_repo(
+            tmp_path, dependencies=["frob-core==1.2.2", "strata-core==1.2.3"]
+        )
+        violations = version_coupling_gate(root)
+        assert any(
+            v.rule == "VERSION001"
+            and "project.dependencies" in v.message
+            and "frob-core is pinned to" in v.message
+            for v in violations
+        )
+
+    def test_loose_default_dependency_pin_fires(self, tmp_path: Path) -> None:
+        """T-3903: a loose (`>=`) pin in `[project].dependencies` fires,
+        same as it already does for the `native` extra -- the check is not
+        specific to one table."""
+        root = _write_repo(tmp_path, dependencies=["frob-core>=1.2.3"])
+        violations = version_coupling_gate(root)
+        assert any(
+            v.rule == "VERSION001"
+            and "project.dependencies" in v.message
+            and "not an exact" in v.message
+            for v in violations
+        )
+
+    def test_pin_in_new_extra_fires(self, tmp_path: Path) -> None:
+        """T-3903: a skewed pin inside a NEWLY ADDED extra (not named
+        `native`) fires -- proof the gate matches by package name across
+        every `[project.optional-dependencies]` entry, not a hardcoded
+        list of extras to look inside."""
+        root = _write_repo(
+            tmp_path, extra_extras={"other": ["frob-core==9.9.9"]}
+        )
+        violations = version_coupling_gate(root)
+        assert any(
+            v.rule == "VERSION001"
+            and "optional-dependencies.other" in v.message
+            and "frob-core is pinned to" in v.message
             for v in violations
         )

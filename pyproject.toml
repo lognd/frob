@@ -95,16 +95,15 @@ serve = ["mcp>=1.28.1,<2"]
 # dependencies above (see that comment for the publish-ordering
 # reasoning) -- this is option (c), not (a) alone: the extra stays so
 # `frob[native]` keeps resolving for anyone pinning it, AND so
-# frob.gates._version_coupling's VERSION001 (which reads
-# `[project.optional-dependencies].native` for its exact-pin check) and
 # frob.doctor's native-extension remediation message (which tells a user
 # to `pip install 'frob[native]'`) both keep working unchanged --
 # reworking either is out of this ticket's declared scope. The two lists
-# must stay identical; VERSION001 already enforces that its extra pin
-# matches frob's own version, and this comment plus the duplication is
-# the enforcement that the two lists don't drift from EACH OTHER (no
-# automated check for that narrower fact exists; consider one if a
-# future edit desyncs them).
+# must stay identical; frob.gates._version_coupling's VERSION001 (T-3903)
+# reads EVERY pin naming frob-core/strata-core anywhere in this file --
+# `[project].dependencies` above, this extra, and any future
+# `[dependency-groups]` pin -- by package name, not by table name, so it
+# enforces both lists (and any future one) match frob's own version and
+# each other without needing to be told where a new pin site is.
 native = ["frob-core==0.530.0", "strata-core==0.530.0"]
 # R7 (docs/modules/dup.md's bounded-SMT rung): translates tiny pure int/bool
 # functions to Z3 and checks equivalence formally. Optional -- z3-solver
