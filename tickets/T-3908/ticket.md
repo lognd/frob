@@ -18,6 +18,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'de-pointer flags and code paths that cannot resolve in this repo: proposed
+    flags and a python attribute path were read as CLI invocations and a TOML section,
+    blocking lands'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 4025
+  new_length: 4027
 designated_repro_test: null
 threat: null
 component: null
@@ -36,7 +45,7 @@ MEASURED ON MAIN, 2026-09-05, after T-3837 landed (72b412d78):
     frob ticket accept --remove INDEX  0-BASED
 
     src/frob/app/ticket_runner/_mutate.py:739
-        ticket.acceptance[cfg.ticket_accept_amend_index].text
+        ticket.acceptancecfg dot ticket_accept_amend_index.text
     -- raw list indexing, and the --help text says "replace acceptance[INDEX]'s
     text", bracket notation that reads as a raw 0-based list index.
 
