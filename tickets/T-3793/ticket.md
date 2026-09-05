@@ -2,7 +2,7 @@
 id: T-3793
 title: 'conftest: env-gated failure-longrepr dump to surface win32 CI tracebacks (doctor
   diagnosis)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-09-04'
@@ -29,6 +29,9 @@ body_changes:
   at: '2026-09-04'
   old_length: 297
   new_length: 562
+evidence:
+- tests/unit/test_conftest_suite_result_status.py::TestSuiteResultFailureReprDump::test_repr_dump_absent_when_env_var_unset
+- tests/unit/test_conftest_suite_result_status.py::TestSuiteResultFailureReprDump::test_repr_dump_present_when_env_var_set
 designated_repro_test: null
 threat: null
 component: null

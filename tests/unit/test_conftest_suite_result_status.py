@@ -100,9 +100,11 @@ class _FakeReport:
     `nodeid` attribute `pytest_sessionfinish` reads off `stats`."""
 
     # frob:ticket T-3246
-    def __init__(self, nodeid: str) -> None:
-        """Store `nodeid` for `pytest_sessionfinish` to read."""
+    def __init__(self, nodeid: str, longrepr: str | None = None) -> None:
+        """Store `nodeid` (and optionally `longrepr`, for T-3793's
+        SUITE-RESULT-REPR coverage) for `pytest_sessionfinish` to read."""
         self.nodeid = nodeid
+        self.longrepr = longrepr
 
 
 # frob:ticket T-3246
@@ -274,3 +276,70 @@ class TestSuiteResultDidNotComplete:
         module.pytest_configure(config=_FakeConfigureConfig())
 
         assert module._last_internal_error is None
+
+
+# frob:ticket T-3793
+class TestSuiteResultFailureReprDump:
+    """T-3793: win32 CI's `FROB_TEST_HARD_EXIT=1` `os._exit()`s at session
+    end BEFORE pytest's own FAILURES/terminal-summary section flushes, so a
+    win32-only failure's traceback is never seen. `FROB_TEST_DUMP_FAILURE_
+    REPR` gates an additional `SUITE-RESULT-REPR-BEGIN/END` dump of each
+    failed/errored report's `longrepr`, on the same always-flushing
+    `write_line` channel -- MUST-STAY-QUIET when unset, matching the
+    existing pinned formats above exactly."""
+
+    # frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultFailureReprDump.test_repr_dump_absent_when_env_var_unset  # noqa: E501
+    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
+    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
+    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
+    # existing FMT001 waivers"
+    # frob:ticket T-3793
+    def test_repr_dump_absent_when_env_var_unset(self, monkeypatch) -> None:
+        """MUST-STAY-QUIET: with `FROB_TEST_DUMP_FAILURE_REPR` unset (the
+        default everywhere except the win32 CI leg), a failing report's
+        `longrepr` never appears -- output is byte-for-byte the same as
+        before this ticket."""
+        monkeypatch.delenv("FROB_TEST_DUMP_FAILURE_REPR", raising=False)
+        module = _load_conftest()
+        stats = {
+            "failed": [_FakeReport("tests/a.py::test_one", longrepr="boom traceback")],
+            "error": [],
+        }
+        reporter = _StatsReporter(stats)
+        config = _FakeConfig(reporter=reporter)
+        session = _FakeSession(config=config, collected=1, failed=1)
+
+        module.pytest_sessionfinish(session=session, exitstatus=1)
+
+        assert not any("SUITE-RESULT-REPR" in line for line in reporter.lines)
+        assert "boom traceback" not in "\n".join(reporter.lines)
+
+    # frob:tests tests/unit/test_conftest_suite_result_status.py::TestSuiteResultFailureReprDump.test_repr_dump_present_when_env_var_set  # noqa: E501
+    # frob:waive FMT001 reason="single-line frob:tests directive naming a long test \
+    # node id -- already at frob fmt's own canonical form (verified: `frob fmt` \
+    # reports it unchanged), same unwrappable shape as src/frob/app/_json_guard.py's \
+    # existing FMT001 waivers"
+    # frob:ticket T-3793
+    def test_repr_dump_present_when_env_var_set(self, monkeypatch) -> None:
+        """MUST-FIRE: with `FROB_TEST_DUMP_FAILURE_REPR` set, a failing
+        report's `longrepr` is emitted between a `SUITE-RESULT-REPR-BEGIN:`
+        and `SUITE-RESULT-REPR-END:` pair naming its node id, on the same
+        `write_line` channel that flushes before win32's hard-exit."""
+        monkeypatch.setenv("FROB_TEST_DUMP_FAILURE_REPR", "1")
+        module = _load_conftest()
+        stats = {
+            "failed": [_FakeReport("tests/a.py::test_one", longrepr="boom traceback")],
+            "error": [],
+        }
+        reporter = _StatsReporter(stats)
+        config = _FakeConfig(reporter=reporter)
+        session = _FakeSession(config=config, collected=1, failed=1)
+
+        module.pytest_sessionfinish(session=session, exitstatus=1)
+
+        begin_idx = reporter.lines.index(
+            "SUITE-RESULT-REPR-BEGIN: tests/a.py::test_one"
+        )
+        end_idx = reporter.lines.index("SUITE-RESULT-REPR-END: tests/a.py::test_one")
+        assert begin_idx < end_idx
+        assert "boom traceback" in reporter.lines[begin_idx + 1 : end_idx]

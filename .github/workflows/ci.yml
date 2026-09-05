@@ -1544,6 +1544,12 @@ jobs:
           FROB_TEST_SUITE_RESULT_MAX_NODE_IDS: "500"
           FROB_TEST_IGNORE_CONSOLE_CTRL: "1"
           FROB_TEST_HARD_EXIT: "1"
+          # T-3793: temporary diagnostic for the ~39 CI-only doctor-cluster
+          # failures -- FROB_TEST_HARD_EXIT above os._exit()s before
+          # pytest's own FAILURES section flushes, so this dumps each
+          # failed/errored test's longrepr via the SUITE-RESULT reporter
+          # (which DOES flush first). windows-only; ubuntu/macos unchanged.
+          FROB_TEST_DUMP_FAILURE_REPR: "1"
           FROB_TEST_MIDRUN_WATCHDOG_SECONDS: "1350"
           # T-3707 Part B: a suite that never stalls 180s at a stretch but
           # sums past this step's own 3300s Wait-Process budget still gets

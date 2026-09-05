@@ -1630,6 +1630,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         stats = getattr(reporter, "stats", None)
         if stats:
             failing_ids: list[str] = []
+            failing_reports: list[pytest.TestReport] = []
             for outcome in ("failed", "error"):
                 for report in stats.get(outcome, []):
                     nodeid = getattr(report, "nodeid", None)
@@ -1643,6 +1644,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
                         if cause is not None:
                             node_line += f" -- {cause}"
                         failing_ids.append(node_line)
+                        failing_reports.append(report)
             if failing_ids and not completed:
                 reporter.write_line(
                     "SUITE-RESULT: failing set INCOMPLETE -- run aborted before "
@@ -1654,6 +1656,23 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             remaining = len(failing_ids) - len(shown)
             if remaining > 0:
                 reporter.write_line(f"SUITE-RESULT-FAILED: and {remaining} more")
+            # T-3793/T-3260: the win32 CI Test step sets
+            # FROB_TEST_HARD_EXIT=1, which os._exit()s at session end
+            # BEFORE pytest's own FAILURES/terminal-summary section
+            # flushes -- so a win32-only failure's traceback is never
+            # seen. This reporter block DOES run and flush (via the same
+            # `reporter.write_line` channel) before that hard-exit, so
+            # when FROB_TEST_DUMP_FAILURE_REPR is set, dump each
+            # failed/errored report's longrepr here too, to make the
+            # ~39 CI-only doctor-cluster failures diagnosable.
+            # MUST-STAY-QUIET when unset: byte-for-byte unchanged output.
+            if os.environ.get("FROB_TEST_DUMP_FAILURE_REPR"):
+                for report in failing_reports:
+                    nodeid = getattr(report, "nodeid", "<unknown>")
+                    reporter.write_line(f"SUITE-RESULT-REPR-BEGIN: {nodeid}")
+                    longrepr = getattr(report, "longrepr", None)
+                    reporter.write_line(str(longrepr) if longrepr is not None else "")
+                    reporter.write_line(f"SUITE-RESULT-REPR-END: {nodeid}")
         # T-3516: ONE end-of-run collected report of every worker crash this
         # session observed, on the SAME always-visible channel as
         # SUITE-RESULT -- MUST-STAY-QUIET: a clean run (empty
