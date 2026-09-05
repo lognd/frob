@@ -18,6 +18,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'F-098: the same T-1619 scan also matches the lands own child pid, a self-deadlock;
+    the marker-based fix already specified solves both over-matches'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 4291
+  new_length: 6765
 designated_repro_test: null
 threat: null
 component: null
@@ -109,3 +117,52 @@ ACCEPTANCE
   about itself rather than by parsing argv.
 - fleet_status.py's listing corrected, and any duplicated predicate unified.
 - The T-1619 protection demonstrably intact via the must-fire fixtures.
+
+
+
+SECOND DEFECT IN THE SAME SCAN, 2026-09-05. logand.app-v2 F-098: "a land can
+block on its own process: the T-1619 belt-and-braces scan finds the land's own
+child pid".
+
+So T-1619's process scan has at least TWO independent over-match failures, and
+they share a fix site:
+
+  (a) NO TARGET-REPO FILTER (this ticket's original finding). A
+      `frob ticket land` running against a DIFFERENT repository blocks ledger
+      writes here. Measured: pid 1095675, cmdline naming
+      ../logand.app-v2/.claude/worktrees/sub-01, cwd
+      /home/logan/projects/logand.app-v2 -- reported as "a land is in progress
+      for THIS repository".
+
+  (b) NO SELF/DESCENDANT EXCLUSION (F-098). The scan finds the land's OWN child
+      pid and the land blocks on itself.
+
+(b) IS THE WORSE OF THE TWO, because it is a SELF-DEADLOCK: retrying cannot
+help, since every attempt recreates the process it trips over. (a) at least
+clears when the other repo's land finishes.
+
+CORROBORATING OBSERVATION FROM THIS REPO: fleet_status reports MULTIPLE PIDS PER
+LAND -- e.g. "T-3843 pids=1022878,1022880,1022884" and "T-3857
+pids=2476745,...". So a land genuinely is a process TREE, and any scan matching
+on command shape will find the descendants of the very land asking the question.
+That is not an edge case; it is the normal structure of every land.
+
+THIS STRENGTHENS THE FIX ALREADY SPECIFIED and narrows it. The original body
+asks for matching on the resolved TARGET REPO rather than the process name,
+preferably via a marker the land writes about itself. That marker approach
+solves (b) as well, and more cleanly than a pid-exclusion list: if a land
+records its own identity, the scan can ask "is there a land for THIS repo whose
+identity is not mine" rather than "is there any process that looks like a land".
+Pid-based self-exclusion would still be fooled by grandchildren and by pid
+reuse -- which this repo already warns about elsewhere ("the recorded pid may be
+reused, do not trust it or lock age").
+
+ADD TO THE FIXTURES:
+  MUST-STAY-QUIET: a land in progress does not block ITSELF, and does not block
+                   on its own descendants.
+  MUST-FIRE:       a DIFFERENT land targeting this repo still blocks (the
+                   T-1619 protection must survive both fixes).
+
+DO NOT fix (b) alone by excluding the current pid. The measured process trees
+show three pids per land, so a naive self-check would still trip on siblings and
+children. Fix the predicate, not the symptom.
