@@ -26,6 +26,14 @@ body_changes:
   at: '2026-09-05'
   old_length: 5143
   new_length: 9390
+- mode: append
+  reason: 'typani 0.2 handoff: lexical scoping fixes the dynamic-extent hazard, measured
+    per-hop costs supplied, TYP004 split and TYP007 worklist now exist; trial pin
+    is branch-only'
+  actor: logan
+  at: '2026-09-05'
+  old_length: 9390
+  new_length: 14701
 designated_repro_test: null
 threat: null
 component: null
@@ -215,3 +223,96 @@ ADDITIONAL ACCEPTANCE
 - Only the mechanical subset converted, unless a case is argued individually.
 - The bare-Exception population reported even if left alone -- that list is
   worth having regardless of this refactor.
+
+
+
+TYPANI 0.2 HANDOFF, received 2026-09-05 via ../typani/FROBLEMS.md. typani main
+is at 7d1e2f8, deliberately UNRELEASED: frob is the first real consumer of the
+new propagation contract, and 0.2.0 is cut only after frob runs one refactor
+slice and reports back. This supersedes several open questions in this ticket.
+
+THE DYNAMIC-EXTENT HAZARD IS FIXED BY DESIGN. This ticket flagged it as the
+thing most needing verification before a wide rollout:
+
+    "@propagate catches UnwrapError raised ANYWHERE in the dynamic extent of
+     the decorated call ... an UNdecorated helper that unwraps would have ITS
+     container returned by the outer decorated function -- wrong provenance"
+
+typani 0.2's answer: @propagate is now LEXICALLY scoped. It catches an
+UnwrapError only when the unwrap() site is inside the decorated function's own
+code (including its lambdas, comprehensions and nested defs). An undecorated
+helper that unwraps an Err now raises UnwrapError THROUGH the outer function
+instead of being returned by it.
+
+The rule that follows, and it is the one discipline this refactor must hold:
+A HELPER EITHER RETURNS ITS RESULT (and the caller unwraps), OR IS DECORATED
+ITSELF. Never rely on an outer @propagate to catch a helper's unwrap.
+
+THE PERFORMANCE QUESTION IS ANSWERED WITH NUMBERS, so it no longer needs
+measuring from scratch (verify on a real frob hot path, but do not re-derive):
+    happy path            +110ns per decorated call (one frame)
+    a propagating hop     2.2us, against a 0.9us floor for ANY Python exception
+    the old three-line return  0.5us
+Their guidance: do not decorate hot pure-Python loops; decorate functions with
+two or more propagation sites. That is a better rule than "measure everything"
+and this ticket adopts it.
+
+THE CLASSIFICATION I ASKED FOR NOW EXISTS IN THE LINT. This ticket required the
+649 be split before any conversion; typani built the split:
+    TYP004 pass-through   649   -> candidates for `unwrap()` under @propagate
+    TYP004 mapped          27   -> candidates for `unwrap(err=...)`
+    TYP007                 17   -> broad `except` inside Result-returning
+                                   functions; the exception-boundary list
+NOTE THE DISCREPANCY WITH MY OWN GREP: I counted 93 sites where an `except` is
+followed within three lines by `return Err(...)`. TYP007 finds 17. The criteria
+differ -- mine was a shape grep including narrow, deliberate excepts; TYP007
+targets BROAD excepts inside Result-returning functions. Use TYP007's 17 as the
+conversion worklist and treat my 93 as the wider population to classify. Report
+which of my 93 TYP007 does not flag and why; if the answer is "they are narrow
+and deliberate", that is a good outcome and worth recording.
+
+NEW CAPABILITIES THIS TICKET SHOULD EXPLOIT:
+  - Err.trace accumulates "qualname:line" per hop; repr shows
+    "; via a:12 <- b:40". Notes (.note) and trace survive map_err/wrap_err/
+    unwrap(err=)/pickle; equality ignores both. This directly serves the
+    LOGGING concern raised above -- propagation stops being invisible, because
+    the trace records the path. Re-evaluate which sites still need an explicit
+    log line once trace is available; some of the logging objection dissolves.
+  - `@propagate(on_error=fn)` hook plus a DEBUG log on the "typani.propagate"
+    logger at every hop. Use the hook at SUBSYSTEM BOUNDARIES where a WARNING
+    is wanted. That is the honest answer to "do not silently delete logging
+    while collapsing a branch": convert the branch, and put the boundary log in
+    the hook.
+  - Mapped sites: `r.unwrap(err=Outer.X)` == `r.wrap_err(Outer.X).unwrap()`,
+    which records "caused by <inner>" as a note. Use map_err ONLY when the new
+    error is computed from the old one. Option gets
+    `o.unwrap(err=Outer.Missing)` replacing `o.ok_or(...).unwrap()`.
+
+THE TRIAL PIN IS BRANCH-ONLY AND MUST NOT REACH MAIN:
+
+    [tool.uv.sources]
+    typani = { git = "https://github.com/lognd/typani", rev = "7d1e2f8" }
+
+then `uv lock && uv sync`. Verify with
+`python -c "import typani; print(typani.__version__, typani.backend_name())"`
+-- expect `0.1.0 pure` (the version literal bumps only at release; the git rev
+is what matters). The native core is NOT part of this trial.
+
+THIS IS A HARD CONSTRAINT: that [tool.uv.sources] entry stays on the refactor
+worktree/branch and is REMOVED before anything lands on main. A git source in
+published metadata would make frob uninstallable from the index -- the same
+class as the path-source hazard already flagged on T-3845.
+
+WHAT TO REPORT BACK (typani asked for these specifically):
+  - any UnwrapError that ESCAPES in the refactored slice: the trace string, and
+    whether the helper was undecorated (expected, our bug) or the lexical scope
+    check misjudged a site (a typani bug -- include the code shape)
+  - any place the lint's TYP004 pass-through vs mapped classification was wrong
+  - whether trace/notes made a real failure easier to read, with one example
+    log line
+  - wall-clock of a frob test subset before/after the slice, to confirm the
+    per-hop cost is invisible in practice
+
+SCOPE OF THE TRIAL: ONE SLICE, not the 649. Pick a subsystem with a clear
+boundary and two-or-more propagation sites per function, avoid hot loops, and
+land nothing to main with the git pin in place.
