@@ -16,8 +16,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/dsl.py
-- src/frob/nodeid.py
-- src/frob/tickets/_evidence.py
 - tests/unit/graph/test_dsl.py
 - docs/modules/graph.md
 - docs/guides/extending/comment-dsl-directives.md
@@ -58,6 +56,20 @@ scope_changes:
 - op: add
   glob: docs/guides/extending/comment-dsl-directives.md
   reason: directive doc pages referenced by dsl.py public symbols in scope
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: src/frob/nodeid.py
+  reason: unused in the final implementation -- quoted target parsing lives entirely
+    in dsl.py; keeping these two files in scope pulled in unrelated pre-existing doc/test
+    closures via SCOPE002
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: src/frob/tickets/_evidence.py
+  reason: unused in the final implementation -- quoted target parsing lives entirely
+    in dsl.py; keeping these two files in scope pulled in unrelated pre-existing doc/test
+    closures via SCOPE002
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
