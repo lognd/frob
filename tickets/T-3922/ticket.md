@@ -2,7 +2,7 @@
 id: T-3922
 title: none of frob's eight third-party GitHub Actions are SHA-pinned, including the
   one that publishes to PyPI
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-09-05'
