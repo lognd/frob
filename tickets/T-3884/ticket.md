@@ -22,6 +22,7 @@ scope:
 - tests/system/test_artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -127,6 +128,11 @@ scope_changes:
 - op: add
   glob: design/frob.strata
   reason: adds this ticket own two test files to testsuite fs.read/fs.write/exec via-lists
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: bump exec/fs.read/fs.write ceilings for T-3884 own two new test files
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
