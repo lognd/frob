@@ -2,7 +2,7 @@
 id: T-3914
 title: 'win32: classify and drain the current 49-failure set (post T-3797), split
   test-harness vs real defects'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
