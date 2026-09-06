@@ -31,6 +31,17 @@ body_changes:
   at: '2026-09-06'
   old_length: 3369
   new_length: 5970
+- mode: set
+  reason: 'F-293 is this ticket''s defect seen from the scope side: three of their
+    tickets had to scope --add frob.lock because frob ack writes it. I hit the other
+    half today when the same write left the root dirty and blocked an implementer''s
+    land. frob.lock is the cleanest case in the set -- pure frob bookkeeping no ticket
+    owns -- so the verb should account for the write rather than the file being exempted
+    from SCOPE001'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 5970
+  new_length: 8393
 designated_repro_test: null
 threat: null
 component: null
@@ -145,3 +156,47 @@ ADDITIONAL ACCEPTANCE
 
 ADDITIONAL FIXTURE: running a reporting verb (check) on a clean tree leaves the
 tree clean.
+
+## F-293: THE SCOPE-SIDE CONSEQUENCE, AND I HIT THE SAME WRITE MYSELF TODAY
+
+logand.app-v2, 2026-09-06:
+
+  "EVERY TICKET that acks a drifted body ends up running
+   `frob ticket scope --add frob.lock` (T-0249, T-0242, T-0248). A file that
+   FROB'S OWN VERBS MUTATE should be exempt from SCOPE001, or the verb should add
+   it implicitly."
+
+THREE OF THEIR TICKETS PAID THE SAME TAX. This is the same defect this ticket
+records -- a verb that reads as a query mutating tracked state -- observed from
+the SCOPE side rather than the dirty-tree side. `frob ack` writes frob.lock, so
+every ticket that acks must widen its declared scope to include a file it never
+meant to own, purely to satisfy SCOPE001.
+
+I HIT THE OTHER HALF OF THIS TODAY, which is what makes the pair complete: I ran
+`frob ack` from the coordinator session to clear a DRIFT001 failing macOS CI, it
+rewrote frob.lock, I did not commit it, and the dirty root DirtyMain-BLOCKED AN
+IMPLEMENTER'S LAND until I noticed. So the same write costs a coordinator a
+blocked fleet and costs an implementer a scope amendment. One mutation, two
+different taxes, neither of them the author's actual work.
+
+WHY frob.lock IS THE CLEANEST CASE IN THIS TICKET'S SET. The other instances
+(verify now rewriting a coverage lock, check rewriting a security.txt timestamp)
+involve some judgement about ownership. frob.lock is UNAMBIGUOUS: it is frob's own
+bookkeeping, written by frob's own verb, in a format only frob reads. No ticket
+"owns" it in the sense SCOPE001 means, and no author decision is recorded by the
+change. THEIR SECOND SUGGESTION IS THEREFORE THE RIGHT ONE -- the VERB should
+account for the write (implicitly scope it, or auto-commit it with attribution) --
+rather than exempting the file from SCOPE001, which would leave the dirty-root
+problem I hit entirely unsolved.
+
+NOTE THAT AN EXEMPTION FIXES ONLY ONE OF THE TWO SYMPTOMS. Exempting frob.lock
+from SCOPE001 would spare the implementer the scope amendment and do nothing
+about the coordinator's blocked fleet, because the file is still dirty and
+uncommitted. Whatever is built must handle the WRITE, not just the RULE that
+notices it.
+
+ADDITIONAL ACCEPTANCE
+- `frob ack` accounts for its own frob.lock write -- no ticket needs to widen
+  scope to include it, AND no run leaves the root dirty for the next land.
+- The fix addresses the write rather than exempting the file from the rule that
+  notices it.
