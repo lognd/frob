@@ -30,6 +30,16 @@ body_changes:
   at: '2026-09-06'
   old_length: 4199
   new_length: 7064
+- mode: set
+  reason: found the actual condition at _evidence.py:2163 -- cmd evidence is allowed
+    if kind is docs/ux OR the scope has no Python file at all (T-3156, deliberate).
+    That makes all three of my 'contradictory' observations consistent with one rule,
+    so I am retracting the version-skew hypothesis. The remaining defects are the
+    incomplete help text and the scope-shape coupling
+  actor: logan
+  at: '2026-09-06'
+  old_length: 7064
+  new_length: 9835
 designated_repro_test: null
 threat: null
 component: null
@@ -159,3 +169,51 @@ ADDITIONAL ACCEPTANCE
 - Evidence eligibility keyed on what the ticket actually CHANGED, not on
   untouched scope entries -- or an explicit reason why scope is the right input.
 - No ticket has to narrow its declared scope to obtain a working evidence path.
+
+## RESOLVED BY MEASUREMENT: THE RULE IS A DISJUNCTION, AND THE CONTRADICTION DISSOLVES
+
+I found the condition. src/frob/tickets/_evidence.py:2155-2172:
+
+    """`Err(EvidenceKindNotAllowed)` unless `kind` is in
+    `CMD_EVIDENCE_ALLOWED_KINDS`, OR (T-3156) `scope` has NO PYTHON FILE AT ALL
+    (`scope_has_python_surface`) -- a Rust-only or docs/ledger-only ticket of ANY
+    KIND structurally has no other legitimate D-02 route..."""
+
+    if kind in CMD_EVIDENCE_ALLOWED_KINDS or not scope_has_python_surface(root, scope):
+        return Ok(None)
+
+SO THE RULE IS: cmd evidence is allowed if the kind is docs/ux **OR** the scope
+contains no Python file at all. It is a deliberate design (T-3156) with a stated
+rationale, not an enforcement hole.
+
+THAT DISSOLVES THE THREE-WAY DISAGREEMENT RECORDED ABOVE, and I am retracting the
+version-skew hypothesis I attached to it:
+  - The consumer's FEATURE tickets bound cmd evidence successfully because their
+    scopes were frontend-only -- NO PYTHON SURFACE, so the second clause applied.
+  - The SAME kind of ticket was refused once ops/ (.py files) entered scope,
+    because the second clause stopped applying.
+  - The help text saying "docs-kind only" is simply INCOMPLETE -- it states the
+    first clause and omits the second.
+All three observations are consistent with one rule. No stale install is
+required, and I should not have reached for T-4001 before finding the code.
+
+WHAT REMAINS A REAL DEFECT, narrowed:
+1. THE HELP TEXT IS STILL WRONG. T-4000 corrected it from "docs-kind only" to
+   docs/ux, which is closer and still omits the scope clause entirely. A user
+   reading it cannot discover the route that actually works for a Rust-only or
+   frontend-only ticket. Note the WARNING message at :2165 DOES state the full
+   rule ("or a scope with no Python file at all") -- so the failure path is
+   accurate and the help path is not, which is the worse way round.
+2. THE SCOPE-SHAPE COUPLING IS STILL QUESTIONABLE, and this is the design
+   question worth keeping. The rationale is sound for its motivating case (a
+   Rust-only ticket has no pytest route), but it keys on the DECLARED SCOPE
+   rather than the DIFF -- so adding a file a ticket never edits can remove its
+   evidence route, and an agent responded by NARROWING ITS DECLARED SCOPE to get
+   the route back. Scope is load-bearing for SCOPE001/002, COV and the write
+   lease; an evidence rule should not be able to push it toward under-declaration.
+   Consider keying on the diff's languages, which is what the evidence is about
+   and is already computed.
+
+THE SEQUENCING TRAP ABOVE IS UNCHANGED AND STILL BINDING: vitest node ids must
+become first-class for code kinds before any tightening, or TypeScript tickets
+lose their only working route.
