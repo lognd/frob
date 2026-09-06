@@ -170,7 +170,30 @@ scope_changes:
     via its own implicit scope exemption; adding explicitly to unblock the close'
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores::test_absent_cores_report_named_core_missing
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_both_cores_present_does_not_raise
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_both_cores_absent_names_both
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_one_core_absent_names_only_that_one
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_main_reports_missing_core_before_any_install_attempt
+- tests/unit/test_artifact_smoke_script.py::TestMain::test_all_checks_pass_exits_zero
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/system/test_artifact_smoke.py::TestArtifactSmokeMustFire::test_unbounded_mcp_pin_fails_serve_extra_check
+  new_node: tests/system/test_artifact_smoke.py::TestArtifactSmokeAbsentCores::test_absent_cores_report_named_core_missing
+  reason: 'the MustFire/serve-extra test already passed at the parent commit (BUG002)
+    -- it is pre-existing T-3857 coverage, not a repro of THIS defect; the absent-cores
+    test is the real repro (fails at parent commit with AttributeError: no _require_core_wheels,
+    passes after the fix)'
+  actor: logan
+  at: '2026-09-06'
+- old_node: tests/system/test_artifact_smoke.py::TestArtifactSmokeMustStayQuiet::test_current_pin_passes_serve_extra_check
+  new_node: tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_both_cores_present_does_not_raise
+  reason: MustStayQuiet also passed at the parent commit (pre-existing T-3857 coverage,
+    unrelated to this defect); keeping only genuinely new repro evidence for T-3935
+    itself
+  actor: logan
+  at: '2026-09-06'
 threat: null
 component: null
 anchor: false
