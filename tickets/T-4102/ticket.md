@@ -2,7 +2,7 @@
 id: T-4102
 title: two T-3947/T-3948 Windows fixtures assert a false premise (fnmatch normcases
   the glob too), and is_excluded's matching is platform-dependent
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-06'
