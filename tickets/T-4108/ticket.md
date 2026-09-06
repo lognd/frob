@@ -2,7 +2,7 @@
 id: T-4108
 title: frob ticket close silently keeps only the last evidence command while accumulating
   every acceptance index, so criteria bind to the wrong evidence and the close succeeds
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-06'
@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/_ticket/_closeout.py
+- tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py
+  reason: new test evidence for the repeated --evidence-cmd refusal fix
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 acceptance:
 - text: given two evidence commands passed to one frob ticket close, when the invocation
