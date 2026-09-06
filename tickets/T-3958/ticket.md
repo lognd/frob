@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'F-211 is the mirror image of this ticket (worktree stale, root current)
+    with the same root cause: two stores and no stated authority rule. Recorded here
+    rather than as a duplicate, with the caveat that their cp -r mirroring was unsanctioned
+    and only the MASKING half is ours'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3700
+  new_length: 5926
 designated_repro_test: null
 threat: null
 component: null
@@ -92,3 +102,41 @@ ACCEPTANCE
   chosen, with the reason.
 - Root and worktree agree, or the disagreement is stated in the output.
 - All three fixtures committed.
+## THE MIRROR-IMAGE CASE: F-211, 2026-09-06
+
+Same consumer, same day, same fault line, opposite direction. This ticket records
+the ROOT being stale after a worktree close. F-211 records the WORKTREE being
+stale while the root is current:
+
+  "T-0181 was mirrored into two worktrees with plain cp -r at different times;
+   the main checkout's copy had since gained scope_changes and a body append that
+   the earlier mirror did not have, so `frob check --only scope --ticket T-0181`
+   on that worktree flagged files as out-of-scope even though the ticket's
+   canonical state already covered them. `frob ticket show` against the main
+   checkout reported the up-to-date scope, MASKING the staleness until the
+   worktree-local check ran."
+
+BE PRECISE ABOUT FAULT: they mirrored with a plain `cp -r`, which is not a
+sanctioned operation, so the divergence is partly self-inflicted and this should
+NOT be filed as a separate defect. What is genuinely ours is the second half --
+the MASKING. Querying from the main checkout returned the canonical state and
+gave no indication that the worktree the work was actually happening in held a
+different one. The user had no way to see the disagreement; they discovered it as
+a confusing scope-gate failure.
+
+WHY IT BELONGS HERE RATHER THAN ON ITS OWN TICKET: both directions have one
+cause. There are two stores and no stated rule about which is authoritative for
+which operation, so a query answers from whichever one it happens to resolve, and
+never says which. That is why remedy (b) on this ticket -- have show/list NAME
+the checkout they read -- is worth doing REGARDLESS of how the mirroring question
+is settled: it makes both directions visible instead of only fixing one.
+
+THEIR ADDITIONAL ASK, worth folding into the design: a staleness check at
+`ticket start` comparing the worktree's ticket-file hash against the tracked
+branch's copy. That catches the divergence at the moment work begins rather than
+at the moment a gate fails confusingly, and it needs no decision about which
+store wins.
+
+ADDITIONAL FIXTURE: a worktree whose ticket copy differs from the tracked
+branch's is reported at start, naming both hashes -- not discovered later as an
+unexplained scope violation.
