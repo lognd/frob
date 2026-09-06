@@ -30,6 +30,16 @@ body_changes:
   at: '2026-09-06'
   old_length: 3700
   new_length: 5926
+- mode: set
+  reason: 'F-236 and F-237 escalate this from a stale-query defect to a workflow blocker:
+    a co-located passenger ticket cannot be landed without hand-copying ledger files
+    onto main, which is exactly the hand-editing this repo forbids. F-236 also adds
+    a third, distinct staleness mechanism (an in-process cache never reread after
+    a write)'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 5926
+  new_length: 8601
 designated_repro_test: null
 threat: null
 component: null
@@ -140,3 +150,49 @@ store wins.
 ADDITIONAL FIXTURE: a worktree whose ticket copy differs from the tracked
 branch's is reported at start, naming both hashes -- not discovered later as an
 unexplained scope violation.
+
+## ESCALATION: THIS BLOCKS A WORKFLOW, IT IS NOT A DISPLAY BUG (F-236, F-237)
+
+Two further reports, same day, upgrade this ticket's severity. It is no longer
+"a query shows stale state"; it is "a shared-worktree land cannot proceed".
+
+F-236: "T-0203 and T-0197 shared one worktree; after `frob ticket close T-0197`
+(ticket.md shows done) the CROSSTICKET check still said T-0197 IN_PROGRESS
+across THREE RUNS. The check reads a cached ledger; reread after any ledger
+write in the same process tree."
+
+  Note this is a THIRD staleness mechanism, distinct from the two already on this
+  ticket. Not root-vs-worktree divergence -- an in-process CACHE not invalidated
+  by a write that the same process tree performed. Three runs in a row returned
+  the stale answer, so it is not a race; the cache is simply never reread.
+
+F-237: "The land refused 'T-0197 is still open on main' although T-0197 was
+closed in the worktree; the coordinator had to COPY THE TICKET FILES ONTO MAIN BY
+HAND first."
+
+  That is the operational cost of the unmirrored close, stated plainly. The
+  documented remedy for a co-located passenger ticket does not exist, so a human
+  hand-copied ledger files into the primary checkout to get a land through. This
+  repo has a standing rule that the ledger must never be hand-edited -- so the
+  missing mirror forces exactly the operation the rules forbid. That is the
+  strongest possible argument that the gap is real and load-bearing.
+
+WHAT THIS CHANGES ABOUT THE FIX. The earlier analysis offered (a) mirror the
+close and (b) have queries name the checkout they read, and asked first whether
+the close is deliberately unmirrored because a worktree's terminal state should
+not publish before its code lands. F-237 answers that question from the field:
+for a CO-LOCATED PASSENGER ticket, main genuinely needs the closed state BEFORE
+the shared land, so "never mirror a close" cannot be the rule. Their alternative
+-- have `land --allow-cross-ticket` CARRY the passenger's close -- is the more
+conservative shape and does not require closes to publish speculatively. Weigh
+it against (a); either is defensible, but doing nothing is not.
+
+ADD TO THE ACCEPTANCE:
+- The in-process cache is reread (or invalidated) after any ledger write in the
+  same process tree -- F-236's mechanism, which neither remedy above addresses.
+- A co-located passenger ticket can be closed and landed WITHOUT hand-copying
+  ledger files into the primary checkout.
+
+ADDITIONAL FIXTURE: two tickets sharing one worktree -- closing the passenger
+then landing the driver succeeds with no manual file movement, and CROSSTICKET001
+reflects the close on its next run in the same process.
