@@ -21,6 +21,7 @@ scope:
 - docs/modules/tickets.md
 - docs/modules/tickets-lifecycle.md
 - docs/modules/tickets-landing.md
+- src/frob/tickets/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -55,6 +56,13 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-landing.md
   reason: doc-coverage targets for symbols touched in _evidence.py/_verify.py
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: remove_evidence must be re-exported from frob.tickets.__init__ alongside
+    replace_evidence/add_cmd_evidence, the existing pattern for every public evidence-family
+    function
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
