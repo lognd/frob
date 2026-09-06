@@ -18,6 +18,7 @@ scope:
 - tests/conftest.py
 - tests/unit/test_conftest_stackdump.py
 - .github/workflows/ci.yml
+evidence_scope:
 - tests/integration/test_gitlog.py
 - tests/test_mutate_journal.py
 - tests/unit/test_conftest_parse_reset.py
@@ -65,6 +66,34 @@ scope_changes:
     workaround comment; SCOPE002 requires every file bound via frob:tests to a conftest.py
     symbol, and SCOPE001 requires ci.yml since the ticket body explicitly directs
     a comment update there
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/integration/test_gitlog.py
+  reason: these were pulled in only via SCOPE002 closure on pre-existing conftest.py
+    frob:tests bindings unrelated to the symbol T-4103 actually changed (pytest_sessionfinish);
+    no write to these files is intended, so evidence-only avoids leasing them
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/test_mutate_journal.py
+  reason: these were pulled in only via SCOPE002 closure on pre-existing conftest.py
+    frob:tests bindings unrelated to the symbol T-4103 actually changed (pytest_sessionfinish);
+    no write to these files is intended, so evidence-only avoids leasing them
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_conftest_parse_reset.py
+  reason: these were pulled in only via SCOPE002 closure on pre-existing conftest.py
+    frob:tests bindings unrelated to the symbol T-4103 actually changed (pytest_sessionfinish);
+    no write to these files is intended, so evidence-only avoids leasing them
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_conftest_suite_result_status.py
+  reason: these were pulled in only via SCOPE002 closure on pre-existing conftest.py
+    frob:tests bindings unrelated to the symbol T-4103 actually changed (pytest_sessionfinish);
+    no write to these files is intended, so evidence-only avoids leasing them
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
