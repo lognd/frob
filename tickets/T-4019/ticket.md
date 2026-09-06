@@ -111,6 +111,18 @@ scope_changes:
     registry entry'
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_malformed_bad_id
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_duplicate_id
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_missing_directory_ok
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_loads_valid
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_descriptive_id_loads
+- tests/gates_suite/test_invariant.py::TestInvariantLoad::test_one_malformed_file_does_not_block_others
+- tests/gates_suite/test_run.py::TestInvariantLoadBlastRadius::test_must_fire_malformed_invariant_file_produces_named_error
+- tests/gates_suite/test_run.py::TestInvariantLoadBlastRadius::test_must_stay_quiet_other_gates_run_normally_beside_one_malformed_file
+- tests/gates_suite/test_run.py::TestInvariantLoadBlastRadius::test_descriptive_id_directive_and_loader_agree
+- tests/unit/test_check.py::TestGatesErrorResultTotalAbort::test_config_malformed_is_a_hard_error_not_a_pass
+- tests/unit/test_check.py::TestGatesErrorResultTotalAbort::test_graph_unavailable_is_a_hard_error_not_a_pass
 designated_repro_test: null
 threat: null
 component: null
