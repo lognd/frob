@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: third and fourth reports of the same silent prettier failure, and they name
+    T-2521 as having already documented this as a known silent-crash gap -- so the
+    general fix (what the runner does with any tool that exits nonzero with no diagnostic)
+    is likely the right level, not a prettier-specific patch
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3383
+  new_length: 5450
 designated_repro_test: null
 threat: null
 component: null
@@ -86,3 +96,39 @@ ACCEPTANCE
 - Exit code and parsed output reconciled into one verdict with a stated rule for
   which wins and why.
 - All three fixtures committed.
+## THIRD AND FOURTH REPORTS, AND A NAMED PRIOR TICKET: F-255
+
+logand.app-v2, 2026-09-06 (their T-0230, after T-0217 and T-0210 above):
+
+  "`frob check --json`'s prettier tool stage exited nonzero WITH NO
+   ERROR-SEVERITY DIAGNOSTIC explaining why (T-2521 warns this is a KNOWN
+   SILENT-CRASH GAP). Ran `npx prettier --check` directly on every file T-0230
+   touched/added -- all clean. Not caused by this ticket's diff."
+
+TWO THINGS THIS ADDS:
+
+1. THEY VERIFIED THE NEGATIVE PROPERLY. Rather than assuming, they ran
+   `npx prettier --check` on every touched and added file and found all clean.
+   So the nonzero exit is not a formatting problem being mis-reported -- there is
+   nothing to report. Combined with the earlier "0 files need formatting" text,
+   the tool stage is failing for a reason unrelated to its subject.
+
+2. WE ALREADY KNEW. They cite T-2521 as warning that this is a "known
+   silent-crash gap". CHECK THAT TICKET FIRST -- if a prior ticket documented
+   that a tool stage can exit nonzero with no diagnostic and that was accepted as
+   a known gap, then this ticket is that gap coming due, and the right fix may be
+   the general one T-2521 describes rather than a prettier-specific patch. A
+   documented known gap that four reports later still produces confusing failures
+   is a gap that was under-prioritised, not an unknown.
+
+THE GENERAL DEFECT IS NOW CLEARER THAN IT WAS: a tool stage that exits nonzero
+with NO error-severity diagnostic produces a FAIL that no one can act on. The
+prettier case is the visible instance; the question for this ticket is what the
+runner should do with ANY tool that fails silently. Options worth weighing:
+surface the raw exit status and stderr as the diagnostic (so the failure is at
+least legible), or treat "nonzero with no parsed diagnostic" as its own distinct
+finding kind rather than as a formatting verdict.
+
+DO NOT lose the earlier constraint while doing this: the fix must not make us
+blind to prettier's GENUINE failures. A tool exiting nonzero WITH a real
+diagnostic must still be surfaced.
