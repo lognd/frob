@@ -7,7 +7,7 @@ kind: bug
 origin: human
 created: '2026-09-06'
 priority: medium
-parent: null
+parent: T-4050
 tier: ticket
 sprint: null
 runs_last: false
@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-4050
+  reason: one of five independently-reported defects that are all about what set a
+    ticket's scope is computed over (universe, breadth, commit range, propagation);
+    parenting them so the denominator is answered once rather than narrowed five conflicting
+    ways
+  actor: logan
+  at: '2026-09-06'
 body_changes:
 - mode: set
   reason: 'F-244 supplies the mechanism behind this ticket''s filed-ticket half: frob
