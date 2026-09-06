@@ -18,7 +18,6 @@ scope:
 - src/frob/gates/invariants.py
 - src/frob/gates/__init__.py
 - tests/gates_suite/test_invariant.py
-- docs/modules/gates.md
 - src/frob/check/_python.py
 - tests/unit/test_check.py
 - tests/gates_suite/test_run.py
@@ -83,6 +82,15 @@ scope_changes:
   glob: src/frob/gates/_waive.py
   reason: the two new rule ids this fix introduces (INV009, GATES001) must be registered
     in _KNOWN_GATE_RULES or GATERULE001 flags them as unregistered
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: docs/modules/gates.md documents the ENTIRE gates module (hundreds of symbols
+    across dozens of unrelated files) -- scoping it pulled in a 217-error SCOPE002
+    closure cascade over doc anchors this ticket has nothing to do with. Reverted
+    the doc edit; filing a follow-up ticket for it instead of paying that closure
+    cost here.
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
