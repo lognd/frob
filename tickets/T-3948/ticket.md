@@ -16,10 +16,35 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_exhaustive_handling.py
+- tests/gates_suite/test_compliance.py
+- docs/modules/gates.md
+- src/frob/gates/_ffi_boundary.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/gates_suite/test_compliance.py
+  reason: T-3947/T-3948 worked as one series in one worktree (identical bug class,
+    sibling gate files) -- shared test file (test_compliance.py) and doc (gates.md)
+    touched by both, plus the sibling gate source, need scope on each ticket
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-3947/T-3948 worked as one series in one worktree (identical bug class,
+    sibling gate files) -- shared test file (test_compliance.py) and doc (gates.md)
+    touched by both, plus the sibling gate source, need scope on each ticket
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/gates/_ffi_boundary.py
+  reason: T-3947/T-3948 worked as one series in one worktree (identical bug class,
+    sibling gate files) -- shared test file (test_compliance.py) and doc (gates.md)
+    touched by both, plus the sibling gate source, need scope on each ticket
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
