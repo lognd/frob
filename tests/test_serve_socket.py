@@ -376,6 +376,14 @@ class TestRunSocketDaemon:
         assert response.is_ok
         assert response.danger_ok == []
 
+        # frob:waive PERF003 reason="PROVABLY FALSE: an AST walk of this function reports \
+        # 2 loops with nested_pairs=[] -- the socket-reachability poll and the thread-death \
+        # poll are SEQUENTIAL, not nested. There is no inner collection and no key to \
+        # index by, so PERF003's own suggested remedy is inapplicable. The second loop was \
+        # added by T-4055 to fix a real flake (verified 15/15 clean at -n 4) and this false \
+        # finding is the sole error failing the self-gate on both posix legs. REMOVE THIS \
+        # WAIVER when the predicate is fixed -- it documents a detector bug, not a code \
+        # decision" follow_up="T-4088"
         # T-4055: do not bet on the scheduler -- a fixed `join(timeout=5)`
         # followed immediately by `assert not thread.is_alive()` failed
         # under xdist load on ubuntu CI (a 0.3s idle-timeout daemon thread
