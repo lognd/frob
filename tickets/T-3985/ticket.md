@@ -26,8 +26,16 @@ scope:
 - docs/modules/gates.md
 - design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: SUBJECT001's proof-of-concept wiring touches shared, heavily
+  cross-documented/cross-tested files (docs/modules/gates.md's rule-catalog anchor,
+  design/frob.strata's testsuite node, src/frob/gates/_waive.py's T-1002 managed rule
+  registry, src/frob/check/_python.py) each of which fans out into hundreds of unrelated
+  doc/test/private-helper closure edges once entered into ANY ticket's scope -- narrowing
+  further would mean pulling in most of src/frob/gates/**, src/frob/testing/**, and
+  a large slice of docs/** and tests/** for a change that actually touches ~10 files;
+  same disclosed-breadth class as T-3914/T-4019 (docs/modules/gates.md's own scope-closure
+  breadth) and tracked generically at F-036/T-3841
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
