@@ -22,6 +22,7 @@ scope:
 - docs/modules/process.md
 - tests/unit/gates/test_profile_boundary_subject_count.py
 - src/frob/gates/_waive.py
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -108,6 +109,12 @@ scope_changes:
   reason: SUBJECT001 must be registered in the T-1002 managed _KNOWN_GATE_RULES zone
     before GATERULE001 will allow this ticket to close (T-1937/T-1956's close-time
     gate refuses an unregistered constructed rule id)
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 'REG010: SUBJECT001 needs a CHK-GATE-SUBJECT001 entry in the registry, filed
+    via frob registry audit --sync-gate-rules'
   actor: logan
   at: '2026-09-06'
 body_changes:
