@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: F-210 is a sixth instance of the zero-match scope glob defect, and the first
+    from a consumer repo rather than from my own filings; it also extends the fix
+    toward a nearest-match suggestion and names the correct denominator (the target
+    branch's tracked set)
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3645
+  new_length: 5616
 designated_repro_test: null
 threat: null
 component: null
@@ -88,3 +98,37 @@ ACCEPTANCE
 - The T-0561 new-test-file carve-out is demonstrably unbroken.
 - Test fixtures against empty repos do not become noisy.
 - All fixtures committed.
+## CORROBORATED FROM A SECOND REPO: F-210
+
+logand.app-v2, 2026-09-06: "T-0031's scope named
+frontend/tests/unit/content-projects.test.ts while T-0159 had marked the pending
+stub at tests/unit/pages/; the agent had to scope-add the old path to move it.
+`frob ticket new` could validate scope paths against the branch the ticket
+targets and warn on a nearby match."
+
+This is the SIXTH instance of the same defect and the first from outside this
+repo, which matters: the five recorded above were all my own or a planner
+agent's, so they could be dismissed as one actor's habit. They cannot now.
+
+IT ALSO EXTENDS THE FIX IN A USEFUL DIRECTION. Their case is not a fabricated
+path -- it is a REAL path that moved. The glob matched nothing because an earlier
+ticket had parked the file elsewhere, so the failure mode is identical (a lease
+over nothing, zero overlap warnings, silence) while the cause is drift rather
+than invention. That means:
+
+  - A NEAREST-MATCH SUGGESTION is worth more than a bare zero-match warning. When
+    the glob matches nothing but a similar tracked path exists, name it. That
+    turns the warning from "this is wrong" into "did you mean this", which is
+    what the user needs in the drift case and equally useful in the invented one.
+  - This is the same nearest-match shape as T-3981 (unresolved evidence ids
+    should suggest the closest collected id). If both land, they should share one
+    suggestion helper rather than two -- check T-3981 before building.
+
+Their second clause -- "validate scope paths against THE BRANCH THE TICKET
+TARGETS" -- is the sharper version of the git-tracked signal proposed above, and
+is the correct refinement: the right denominator is the tracked file set of the
+ticket's target branch, not the working tree.
+
+MUST-STAY-QUIET addition: a zero-match glob with NO near candidate warns plainly
+and does not invent a bad suggestion. A confidently wrong "did you mean" would
+reproduce this bug in a new costume.
