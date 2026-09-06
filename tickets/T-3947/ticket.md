@@ -92,6 +92,10 @@ scope_changes:
     explosion, this time over the design registry's own doc/test cross-references)
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_rel_path_fed_to_exclude_and_test_checks_is_posix_style
+- tests/unit/gates/test_ffi_boundary_path_shape.py::test_windows_shaped_rel_path_mechanism
 designated_repro_test: null
 threat: null
 component: null
