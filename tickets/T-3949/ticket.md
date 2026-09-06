@@ -40,6 +40,15 @@ body_changes:
   at: '2026-09-06'
   old_length: 6583
   new_length: 9721
+- mode: set
+  reason: F-288 shows frob ALREADY prints HOT FILE for the contended L5 doc in doable
+    and does nothing with it -- a detector with no consumer, which is cheaper to fix
+    than general granularity. It also names COMP-xxxx rows as an existing structural
+    lease unit, matching F-246's frob:describes anchor observation
+  actor: logan
+  at: '2026-09-06'
+  old_length: 9721
+  new_length: 11676
 designated_repro_test: null
 threat: null
 component: null
@@ -217,3 +226,38 @@ ADDITIONAL ACCEPTANCE
 - A ticket that must edit a file inside a sibling's directory-glob lease has a
   compliant route -- it never has to close in known violation.
 - Directory-glob leases specifically addressed, not just whole-file ones.
+
+## F-288: FROB ITSELF ALREADY PRINTS "HOT FILE" AND STILL CANNOT ACT ON IT
+
+logand.app-v2, 2026-09-06:
+
+  "one L5 doc is the HOT FILE of every shell ticket; whole-file leases serialise
+   the whole branch ... `frob ticket doable` EVEN PRINTS 'HOT FILE' ... lease L5
+   docs at row/anchor granularity (COMP-xxxx rows are the natural unit)."
+
+THE MOST TELLING DETAIL IS THAT WE ALREADY DETECT IT. `frob ticket doable`
+identifies the file as HOT -- it knows this one file is contended by many tickets
+-- and then offers no mechanism that uses that knowledge. The information exists,
+is computed, is displayed, and changes nothing. Every ticket in that area still
+serialises behind a whole-file lease.
+
+So this is not a missing detector. It is a detector whose output has no consumer,
+which is a different and cheaper problem to fix than the general granularity
+question: something that already knows a file is contended could, at minimum,
+warn at `start` that taking this lease will block N other tickets, or order the
+queue to take the hot file first, or refuse to hand it out for a two-line edit.
+
+THEIR PROPOSED UNIT IS CONCRETE AND ALREADY EXISTS IN THE DATA: "COMP-xxxx rows
+are the natural unit". This is the same observation F-246 made about the
+`frob:describes` anchor table -- for these L5 docs there is ALREADY a structural
+sub-file boundary, so row/anchor-granular leasing does not require inventing a
+concept, only leasing against a unit the documents already have. That materially
+lowers the cost of the docs half of this ticket, and it should be attempted
+before the general symbol-granularity work.
+
+ADDITIONAL ACCEPTANCE
+- `doable`'s existing HOT FILE detection is wired to something -- at minimum a
+  warning at `start` naming how many tickets the lease will block.
+- Row/anchor-granular leasing for L5 docs evaluated against the COMP-xxxx row
+  boundary that already exists, separately from (and before) general
+  symbol-granular leasing.
