@@ -19,6 +19,7 @@ scope:
 - .github/dependabot.yml
 - tests/test_ci_workflow_actions_pinned.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +46,12 @@ scope_changes:
   glob: design/frob.strata
   reason: declare tests/test_ci_workflow_actions_pinned.py's fs.read effect (Path.read_text
     on the workflow yaml) in the testsuite node's via-list, required by SELFAUDIT001/SYS100
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: bump testsuite::fs.read ratchet ceiling for the new repro test's genuine,
+    new fs.read site
   actor: logan
   at: '2026-09-05'
 evidence:
