@@ -21,6 +21,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: F-190 is a same-day recurrence of F-189 from a second ticket; recording
+    the corroboration and the sharper mechanism (no test executes upgrade() directly)
+    on the existing ticket rather than filing a duplicate
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3639
+  new_length: 5210
 designated_repro_test: null
 threat: null
 component: null
@@ -87,3 +96,31 @@ ACCEPTANCE
 - Cross-referenced with T-3939 and F-188; if one shared "surface it earlier"
   mechanism serves all three, say so and build it once.
 - All three fixtures committed.
+
+## RECURRENCE, same day: F-190
+
+  "T-0173 hit it exactly as T-0170 did: the gate mutates nullable=True to False
+   in op.add_column and no test executes upgrade() directly, so close and land
+   both need --skip-mutation-evidence. Exempt migration files by default or
+   count the migration chain test as their evidence."
+
+SECOND TICKET, SAME DAY, SAME FILE CLASS. This upgrades the severity: it is not
+an awkward edge case, it is EVERY TICKET THAT ADDS A COLUMN. For a repo doing
+schema work that is a standing tax on routine changes, and the only available
+remedy is a skip flag -- which trains the user that the honest response to this
+gate is to turn it off.
+
+IT ALSO SHARPENS THE DIAGNOSIS, and makes complaint B more clearly ours than I
+first judged. The precise mechanism they name is: the gate mutates nullable=True
+to False inside op.add_column, and NO TEST EXECUTES upgrade() DIRECTLY. So the
+surviving mutant is not evidence of a weak test suite -- it is evidence that
+mutation testing is being applied to code whose correctness is established by a
+different instrument (the migration chain test). The gate is asking the wrong
+question of this file class, not asking a good question that the suite fails to
+answer.
+
+That said, the caution above STILL HOLDS and is now the crux: "the migration
+chain test proves it" remains their claim about their suite. The fix must make
+the exemption DECLARED and auditable -- naming what does cover those files --
+rather than a silent default. Two independent reports justify raising the
+priority, not lowering the rigour.
