@@ -20,6 +20,7 @@ scope:
 - tests/unit/test_process.py
 - tests/unit/test_check.py
 - docs/modules/process.md
+- tests/unit/gates/test_profile_boundary_subject_count.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -93,6 +94,12 @@ scope_changes:
   glob: docs/modules/process.md
   reason: subject_count field needs a frob:doc anchor in the existing process.md#public-api
     section
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/gates/test_profile_boundary_subject_count.py
+  reason: moved PROFILE001 subject-count POC tests to a new file since the existing
+    tests/unit/gates/test_profile_boundary.py is under an active lease held by T-3936
   actor: logan
   at: '2026-09-06'
 body_changes:
