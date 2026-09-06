@@ -29,6 +29,10 @@ body_changes:
   at: '2026-09-05'
   old_length: 0
   new_length: 4085
+evidence:
+- tests/unit/test_xref.py::test_definition_and_usage_file_fields_are_posix_style
+- tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate::test_positive_control_reintroduced_branch_is_flagged
+- tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate::test_pre_t2361_shape_is_flagged
 designated_repro_test: null
 threat: null
 component: null
