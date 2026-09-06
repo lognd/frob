@@ -2,7 +2,7 @@
 id: T-4055
 title: 'Ubuntu CI fails exactly one DIFFERENT test per run: a load-sensitive flake
   population makes green unreachable by chance'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -20,6 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_serve_socket.py::TestRunSocketDaemon::test_serves_one_request_then_idle_exits
+- tests/test_serve_socket.py::TestRunSocketDaemon::test_stale_socket_file_is_replaced
 designated_repro_test: null
 threat: null
 component: null
