@@ -19,6 +19,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'folds in T-4121 (consumer report F-308, dropped as a duplicate of this
+    better-located ticket): the consumer reverted a correct doc fix rather than widen
+    scope, and three independent agents measured the same explosion at 140, 345 and
+    71 on 2026-09-06, which settles the population question this repo needed answered
+    before choosing a design'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 2079
+  new_length: 5752
 designated_repro_test: null
 threat: null
 component: null
@@ -61,3 +72,64 @@ reverse-doc-closure. Proposed fix (one of):
 
 Filed rather than fixed silently or worked around by disproportionately
 widening T-4110's scope to ~140 unrelated files.
+
+THIS IS ALSO A CONSUMER-REPORTED DEFECT, AND T-4121 WAS FILED FOR IT SEPARATELY
+BEFORE THIS TICKET EXISTED. T-4121 is now dropped in favour of this one, which
+locates the mechanism precisely where T-4121 only described it. Its content is
+folded in here so nothing is lost.
+
+THE CONSUMER REPORT (logand.app-v2 F-308): editing ONE ROW of a shared doc table
+caused the scope gate to demand that every symbol anchored anywhere in that
+document be in the ticket's scope. Their agent REVERTED the correct one-sentence
+doc fix rather than widen scope that far.
+
+THAT REVERSION IS THE FINDING, and it is what raises this above a friction
+report. A gate whose cheapest clearing action is to abandon a correct
+documentation fix has made the record worse -- the wrong-incentive class. It does
+so specifically to the smallest and safest kind of doc change, a one-row
+correction, which is the change we most want people to make freely.
+
+THREE INDEPENDENT MEASUREMENTS OF THE SAME EXPLOSION, all on 2026-09-06:
+    ~140 unrelated files   this ticket's own measurement, from T-4110
+     345 closure warnings  a planner scoping an unrelated leaf to the gates
+                           catalog; it dropped the catalog from every leaf's
+                           scope and left the doc as an unscoped append at close
+      71 closure warnings  filing T-4121 itself, scoped to two closure modules
+Three different agents, three different tasks, one file. The population question
+is settled for this repo: hub files exist here and the explosion is routine.
+
+WHY FILE GRANULARITY IS THE WRONG UNIT HERE. Scope closure is right in general --
+edit the doc a symbol is anchored to and you are implicitly touching that
+symbol's contract. It breaks down for a file that is a TABLE OF INDEPENDENT ROWS,
+each anchored to a different symbol. There, file granularity asserts a coupling
+that does not exist: editing row 40 says nothing about row 3. The closure
+computes a true statement about the FILE and a false one about the CHANGE.
+
+EVALUATE THE DIFF-SCOPED OPTION FIRST, ahead of any new declaration syntax. The
+diff already says which lines changed and each anchor's position in the file is
+already known, so narrowing the closure to the anchors the diff actually touches
+needs no new syntax and no consumer action. A fix consumers must adopt is a fix
+most of them will not get. Row-granular doc ownership -- which the consumer
+proposed, and which they note would also fix the lease collisions they reported
+separately on the same files -- is the fallback if the diff-scoped option fails.
+If it is adopted, confirm or refute their claim that one mechanism causes both
+symptom families.
+
+NOTE WHAT BOTH SIDES HAVE BEEN DOING INSTEAD, because both workarounds degrade
+the record and neither should survive the fix: they revert correct edits; we drop
+the hub file from scope and patch it as an unscoped append at close time.
+
+MUST-FIRE FIXTURE:   a one-row edit to a hub file carrying anchors for many
+                     symbols requires only the edited row's symbol in scope.
+MUST-STAY-QUIET:     an edit to a doc section that genuinely covers several
+                     symbols still requires all of them -- the closure must not
+                     become a blanket escape.
+THIRD FIXTURE:       an edit to a single-symbol doc file behaves exactly as today.
+
+ACCEPTANCE
+- The diff-scoped option evaluated first and either adopted or ruled out with a
+  stated reason.
+- A ticket touching one row of either named hub file no longer pulls the rest of
+  the file's anchors into scope.
+- The lease-collision symptom on the same files checked against the chosen fix.
+- All three fixtures committed.
