@@ -20,6 +20,7 @@ scope:
 - scripts/artifact_smoke.py
 - tests/system/test_artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
+- tickets/T-draft-3bf296c3/**
 evidence_scope:
 - docs/guides/release.md
 - scripts/verify_release_ci_status.py
@@ -160,6 +161,13 @@ scope_changes:
     docs/guides/install.md, docs/modules/cli.md via other unrelated symbols in the
     same shared doc/file; filing a separate ticket for the structural gap rather than
     forcing an ever-widening scope onto T-3935'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tickets/T-draft-3bf296c3/**
+  reason: 'SCOPE001 false-positive: this tickets own bookkeeping file (filed while
+    working T-3935, documenting an out-of-scope discovery) is not being recognized
+    via its own implicit scope exemption; adding explicitly to unblock the close'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
