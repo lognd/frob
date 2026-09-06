@@ -2,7 +2,7 @@
 id: T-4046
 title: 'Windows: zoneinfo needs the tzdata package and nothing declares it, so even
   ZoneInfo(''UTC'') raises'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
