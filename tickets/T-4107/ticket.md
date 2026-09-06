@@ -20,6 +20,9 @@ scope:
 - src/frob/dup/_legacy_common.py
 - src/frob/dup/_legacy_cpp.py
 - src/frob/dup/_legacy_py.py
+- tests/test_excludes.py
+- tests/unit/test_memo.py
+- tests/unit/test_dup_legacy_py.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -163,6 +166,21 @@ scope_changes:
   glob: tests/unit/test_memo.py
   reason: revert -- these test files themselves cover unrelated modules (excludes/arch/memo/graph/lang),
     expanding SCOPE002 breadth further; not the right remedy
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/test_excludes.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: existing tests covering the touched functions'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_memo.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: existing tests covering the touched functions'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_dup_legacy_py.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: existing tests covering the touched functions'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
