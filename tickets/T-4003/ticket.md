@@ -29,6 +29,15 @@ body_changes:
   at: '2026-09-06'
   old_length: 3789
   new_length: 5517
+- mode: set
+  reason: 'root cause found and verified (T-4016: the TS walker emits no symbol for
+    describe/it call expressions); my cache/invalidation hypothesis is superseded,
+    and this ticket is retained as the symptom to re-measure rather than closed on
+    the cause landing'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 5517
+  new_length: 7383
 designated_repro_test: null
 threat: null
 component: null
@@ -129,3 +138,37 @@ The acceptance order above is unchanged: rule stale-install in or out FIRST, the
 trace the cache/invalidation path. Use prerender.ts as the second reproduction
 case -- a plain .ts script is a simpler subject than a .tsx component and is the
 better one to bisect against.
+
+## ROOT CAUSE FOUND -- MY CACHE HYPOTHESIS IS SUPERSEDED (T-4016)
+
+The consumer filed F-230 and it is verified in our source:
+
+    git grep -c "call_expression" -- src/frob/lang/_walk_typescript.py  ->  0
+
+frob.lang._walk_typescript emits RawSymbols for function_declaration (:43),
+class-member methods (:83) and top-level lexical_declaration constants (:107),
+and has NO call-expression handling at all. `describe(...)` and `it(...)` are
+call expressions, so a frob:tests directive above an `it()` has no enclosing
+symbol to attach to and degrades to the bare file path -- which can never equal a
+vitest node id.
+
+SO BOTH OF MY EARLIER OBSERVATIONS WERE CORRECT AND NEITHER WAS THE ANSWER. I
+verified that all three collectors are called (gates/__init__.py:6367-6384) and
+that TS was deliberately admitted to TEST002/TEST003 by T-0730, and concluded the
+remaining suspect was a cache/invalidation path. Collection is fine and the
+collected ids are fine; the missing half is the OTHER side of the edge -- the
+graph holds no symbol for the test, so there is nothing for a collected id to
+match against. Stop chasing the cache.
+
+IT ALSO EXPLAINS THE TWO-SYMBOL-CLASS SPREAD recorded above. F-219 (.tsx
+components) and F-225 (plain .ts scripts) are one defect, because the failure is
+not in the documented subject at all -- it is in the test symbol every TS
+frob:tests directive must resolve to, which is absent for every vitest test in
+every TS file.
+
+THIS TICKET STAYS OPEN, deliberately: T-4016 fixes the walker, and this one is
+the SYMPTOM that must be RE-MEASURED against that fix before either is closed.
+Do not close this on the strength of T-4016 landing -- that would repeat the
+mistake of declaring a symptom fixed because a plausible cause was addressed. The
+stale-install question above is also still unresolved and remains worth ruling
+out independently.
