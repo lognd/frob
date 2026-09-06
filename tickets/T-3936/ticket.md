@@ -16,9 +16,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/gates/test_profile_boundary.py
-- tests/ticket_land_suite/test_land_lock.py
-- tests/test_tickets_mutation_evidence.py
-- tests/unit/test_conftest_suite_result_status.py
 - tests/unit/strata/test_strata_core_gil.py
 - tests/unit/rapid_sweep_suite/test_filing.py
 - tests/unit/arch_suite/test_misc.py
@@ -35,6 +32,34 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/unit/test_conftest_suite_result_status.py
+  reason: these 3 files' Windows fixes are landing separately under T-draft-61146c03
+    (a narrow carve-out of 6 of the 19 Windows failures, including the suite-abort
+    hang) -- narrowing T-3936's own scope to the remaining 15/19 (unblocks T-draft-61146c03's
+    start, which was refused on a scope-lease collision with this now-stale portion
+    of T-3936's declared scope)
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/ticket_land_suite/test_land_lock.py
+  reason: these 3 files' Windows fixes are landing separately under T-draft-61146c03
+    (a narrow carve-out of 6 of the 19 Windows failures, including the suite-abort
+    hang) -- narrowing T-3936's own scope to the remaining 15/19 (unblocks T-draft-61146c03's
+    start, which was refused on a scope-lease collision with this now-stale portion
+    of T-3936's declared scope)
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/test_tickets_mutation_evidence.py
+  reason: these 3 files' Windows fixes are landing separately under T-draft-61146c03
+    (a narrow carve-out of 6 of the 19 Windows failures, including the suite-abort
+    hang) -- narrowing T-3936's own scope to the remaining 15/19 (unblocks T-draft-61146c03's
+    start, which was refused on a scope-lease collision with this now-stale portion
+    of T-3936's declared scope)
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
