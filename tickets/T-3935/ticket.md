@@ -20,9 +20,6 @@ scope:
 - scripts/artifact_smoke.py
 - tests/system/test_artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
-- docs/guides/release.md
-- scripts/verify_release_ci_status.py
-- src/frob/doctor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -76,6 +73,30 @@ scope_changes:
     into docs/guides/release.md; SCOPE002 doc-closure requires the whole anchor target
     set (including two unrelated symbols this doc also anchors) in scope even though
     only the artifact-smoke-stage-t-3884 section is actually touched by this ticket
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: docs/guides/release.md
+  reason: 'reverting the scope-closure spiral: adding the doc file transitively demanded
+    unrelated files (docs/guides/install.md, docs/modules/cli.md, ...) neither this
+    ticket nor its diff touches; dropping the new frob:doc citation on _require_core_wheels
+    instead'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: scripts/verify_release_ci_status.py
+  reason: 'reverting the scope-closure spiral: adding the doc file transitively demanded
+    unrelated files (docs/guides/install.md, docs/modules/cli.md, ...) neither this
+    ticket nor its diff touches; dropping the new frob:doc citation on _require_core_wheels
+    instead'
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: src/frob/doctor.py
+  reason: 'reverting the scope-closure spiral: adding the doc file transitively demanded
+    unrelated files (docs/guides/install.md, docs/modules/cli.md, ...) neither this
+    ticket nor its diff touches; dropping the new frob:doc citation on _require_core_wheels
+    instead'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
