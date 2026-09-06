@@ -2,7 +2,7 @@
 id: T-4056
 title: 'Windows CI cluster C: CYCLE001 node ids use bare str() not as_posix, cycle
   detection finds nothing on Windows'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
