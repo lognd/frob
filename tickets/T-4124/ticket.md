@@ -2,7 +2,7 @@
 id: T-4124
 title: 'audit: other fnmatch-against-path-glob call sites share T-4102/T-4013''s normcase
   platform-dependence bug'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -20,12 +20,9 @@ scope:
 - src/frob/gates/_fix_engine_text.py
 - src/frob/gates/_refs.py
 - src/frob/strata/_code_binding.py
-- src/frob/strata/_effects.py
-- src/frob/tickets/_doable.py
 - src/frob/tickets/_land_git_ops.py
 - src/frob/tickets/_land_merge_zones.py
 - src/frob/tickets/_models.py
-- src/frob/tickets/_new_renumber.py
 - src/frob/tickets/_scope.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -36,6 +33,36 @@ scope_changes:
   glob: src/frob/strata/_selfconform_kinds.py
   reason: collides with T-4110's active lease on this file; auditing this site separately/later
     to avoid blocking on that ticket
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/strata/_effects.py
+  reason: 'splitting out: _effects.py''s via/grant matcher is a perf-critical (4.5M
+    calls/~40s) security-capability-conformance hot path needing its own benchmark-backed
+    ticket, not a blanket sweep edit; _doable.py/_new_renumber.py''s fnmatch.filter
+    sites are the T-0453 over-broad-scope perf path (624k-call precedent) and belong
+    together in their own ticket for the same reason -- filing both as follow-ups
+    per T-4124''s own audit findings'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/tickets/_doable.py
+  reason: 'splitting out: _effects.py''s via/grant matcher is a perf-critical (4.5M
+    calls/~40s) security-capability-conformance hot path needing its own benchmark-backed
+    ticket, not a blanket sweep edit; _doable.py/_new_renumber.py''s fnmatch.filter
+    sites are the T-0453 over-broad-scope perf path (624k-call precedent) and belong
+    together in their own ticket for the same reason -- filing both as follow-ups
+    per T-4124''s own audit findings'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/tickets/_new_renumber.py
+  reason: 'splitting out: _effects.py''s via/grant matcher is a perf-critical (4.5M
+    calls/~40s) security-capability-conformance hot path needing its own benchmark-backed
+    ticket, not a blanket sweep edit; _doable.py/_new_renumber.py''s fnmatch.filter
+    sites are the T-0453 over-broad-scope perf path (624k-call precedent) and belong
+    together in their own ticket for the same reason -- filing both as follow-ups
+    per T-4124''s own audit findings'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
