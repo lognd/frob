@@ -355,14 +355,28 @@ def _function_violations(
 
 
 # frob:doc docs/modules/gates.md#exhaust001exhaust002-t-0688
+# frob:waive AFFECT001 reason="T-3948 only normalizes this function's internal rel \
+# path to .as_posix() (a Windows-only backslash bugfix with no Linux-visible behavior \
+# change); docs/modules/gates.md's EXHAUST001/EXHAUST002 section documents this gate's \
+# rule semantics, not its internal path-separator handling, so it needs no update"
 # frob:ticket T-0688
 # frob:ticket T-1402
+# frob:ticket T-3948
 # frob:tests tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_partial_catch_of_named_type_fires_exhaust002  # noqa: E501
 # frob:tests tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_unresolvable_callee_fires_exhaust003_not_exhaust001  # noqa: E501
 # frob:tests tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_ambiguous_bare_reraise_still_fires_exhaust001  # noqa: E501
 # frob:tests tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_catch_all_of_unknown_does_not_fire_exhaust001  # noqa: E501
 # frob:tests tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_declared_frob_raises_directive_discharges_exhaust002  # noqa: E501
 # frob:tests tests/gates_suite/test_compliance.py::TestExhaustiveHandlingGate.test_function_with_no_catches_is_not_a_boundary  # noqa: E501
+# frob:tests \
+# tests/unit/gates/test_exhaustive_handling_path_shape.py::test_exclude_glob_and_test_d\
+# ir_are_honored_not_scanned_as_production
+# frob:tests \
+# tests/unit/gates/test_exhaustive_handling_path_shape.py::test_rel_path_fed_to_exclude\
+# _and_test_checks_is_posix_style
+# frob:tests \
+# tests/unit/gates/test_exhaustive_handling_path_shape.py::test_windows_shaped_rel_path\
+# _mechanism
 # frob:enforces CHK-GATE-EXHAUST001
 # frob:enforces CHK-GATE-EXHAUST002
 # frob:enforces CHK-GATE-EXHAUST003
@@ -385,8 +399,10 @@ def exhaustive_handling_gate(root: Path) -> tuple[Violation, ...]:
     violations: list[Violation] = []
 
     for path in iter_files(root, suffix=".py"):
+        # T-3948: is_excluded/is_test_file need POSIX rel (backslash on
+        # Windows broke both, same class as T-3941's PROFILE001).
         try:
-            rel = str(path.relative_to(root))
+            rel = path.relative_to(root).as_posix()
         except ValueError:
             continue
         if is_excluded(rel, exclude_globs) or is_test_file(rel):

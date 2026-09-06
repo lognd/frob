@@ -2,7 +2,7 @@
 id: T-3948
 title: EXHAUST001/2/3 gate mis-scopes test/excluded files on Windows (backslash rel
   path, same class as PROFILE001)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -76,6 +76,10 @@ scope_changes:
     two changed sites cover this instead
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/gates/test_exhaustive_handling_path_shape.py::test_exclude_glob_and_test_dir_are_honored_not_scanned_as_production
+- tests/unit/gates/test_exhaustive_handling_path_shape.py::test_rel_path_fed_to_exclude_and_test_checks_is_posix_style
+- tests/unit/gates/test_exhaustive_handling_path_shape.py::test_windows_shaped_rel_path_mechanism
 designated_repro_test: null
 threat: null
 component: null
