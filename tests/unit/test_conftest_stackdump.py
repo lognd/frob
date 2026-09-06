@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -213,15 +214,53 @@ class TestSuiteResultLine:
     via `TerminalReporter.write_line`, which is not gated by that verbosity
     level, so it survives regardless of how many `-q` flags stack."""
 
+    class _FakeTerminalWriter:
+        """Stand-in for the real `TerminalWriter` object `pytest_sessionfinish`
+        reaches via `reporter._tw` (T-4103) -- tracks column-zero state via
+        `width_of_current_line`, the primitive `ensure_newline()` alone was
+        MEASURED (against real pytest 9.0.3, see the hook's own comment) not
+        to cover for pytest's low-verbosity dot-progress path."""
+
+        def __init__(self, *, lines: list[str], at_line_start: bool) -> None:
+            self._lines = lines
+            self.width_of_current_line = 0 if at_line_start else 79
+
+        def line(self, s: str = "") -> None:
+            self._lines.append("_NEWLINE_" if s == "" else s)
+            self.width_of_current_line = 0
+
     class _FakeReporter:
         """Records every `write_line` call so a test can assert on exactly
-        what `pytest_sessionfinish` sent it, without a real terminal."""
+        what `pytest_sessionfinish` sent it, without a real terminal.
 
-        def __init__(self) -> None:
+        T-4103: also simulates `TerminalReporter`'s column-zero tracking so
+        a test can exercise `ensure_newline()` plus the `_tw.width_of_
+        current_line` backup the way the real hook does -- `at_line_start`
+        starts `True` (mirrors a fresh terminal / one whose last write
+        already ended in a newline), a plain `write_line` call always
+        leaves the terminal at column zero afterward (it appends its own
+        newline), and a newline is only ever inserted (as a `_NEWLINE_`
+        marker in `lines`) when NOT already at column zero -- never
+        unconditionally, matching the real primitives' no-op-when-already-
+        at-start-of-line behavior."""
+
+        def __init__(self, *, at_line_start: bool = True) -> None:
             self.lines: list[str] = []
+            self.at_line_start = at_line_start
+            self._tw = TestSuiteResultLine._FakeTerminalWriter(
+                lines=self.lines, at_line_start=at_line_start
+            )
 
         def write_line(self, line: str, **_markup: bool) -> None:
             self.lines.append(line)
+            self.at_line_start = True
+            self._tw.width_of_current_line = 0
+
+        def ensure_newline(self) -> None:
+            if not self.at_line_start:
+                self.lines.append("_NEWLINE_")
+                self.at_line_start = True
+                self._tw.width_of_current_line = 0
 
     class _FakePluginManager:
         def __init__(self, reporter: object | None) -> None:
@@ -364,7 +403,9 @@ class TestSuiteResultLine:
         module = _load_conftest()
         default = module._SUITE_RESULT_MAX_NODE_IDS
         monkeypatch.setenv(module._SUITE_RESULT_MAX_NODE_IDS_ENV, str(default + 100))
-        reports = [self._FakeReport(f"tests/x.py::test_{i}") for i in range(default + 5)]
+        reports = [
+            self._FakeReport(f"tests/x.py::test_{i}") for i in range(default + 5)
+        ]
         stats = {"failed": reports, "error": []}
         reporter = self._StatsReporter(stats)
         config = self._FakeConfig(reporter=reporter, is_worker=False)
@@ -380,6 +421,48 @@ class TestSuiteResultLine:
         # All default+5 shown, no 'and N more' collapse (cap raised to default+100).
         assert len(failed_lines) == default + 5
         assert not any("more" in line for line in failed_lines)
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_sta\
+    # rts_line_at_column_zero_when_terminal_is_mid_line
+    def test_sessionfinish_starts_line_at_column_zero_when_terminal_is_mid_line(
+        self,
+    ) -> None:
+        """T-4103 MUST-FIRE: pytest's `-q` progress output ("......[100%]")
+        ends without a trailing newline, leaving the terminal mid-line. The
+        hook must call `ensure_newline()` before its first `write_line` so
+        the `SUITE-RESULT:` text begins at column zero and a `^SUITE-RESULT`
+        anchor matches it, instead of the two sharing one physical line."""
+        module = _load_conftest()
+        reporter = self._FakeReporter(at_line_start=False)
+        config = self._FakeConfig(reporter=reporter, is_worker=False)
+        session = self._FakeSession(config=config, collected=50, failed=2)
+
+        module.pytest_sessionfinish(session=session, exitstatus=1)
+
+        assert reporter.lines[0] == "_NEWLINE_"
+        assert reporter.lines[1] == "SUITE-RESULT: exitstatus=1 collected=50 failed=2"
+        assert re.match(r"^SUITE-RESULT", reporter.lines[1])
+
+    # frob:tests \
+    # tests/unit/test_conftest_stackdump.py::TestSuiteResultLine.test_sessionfinish_sta\
+    # ys_byte_for_byte_unchanged_when_terminal_already_at_column_zero
+    def test_sessionfinish_stays_byte_for_byte_unchanged_when_terminal_already_at_column_zero(
+        self,
+    ) -> None:
+        """T-4103 MUST-STAY-QUIET: when the terminal is already at column
+        zero (progress output that DID end in a newline), `ensure_newline()`
+        is a no-op -- no blank line is inserted, and the emitted lines are
+        byte-for-byte identical to before this change."""
+        module = _load_conftest()
+        reporter = self._FakeReporter(at_line_start=True)
+        config = self._FakeConfig(reporter=reporter, is_worker=False)
+        session = self._FakeSession(config=config, collected=50, failed=2)
+
+        module.pytest_sessionfinish(session=session, exitstatus=1)
+
+        assert reporter.lines == ["SUITE-RESULT: exitstatus=1 collected=50 failed=2"]
+        assert "_NEWLINE_" not in reporter.lines
 
 
 class TestWorkerCrashReport:

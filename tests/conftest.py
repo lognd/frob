@@ -1626,6 +1626,34 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             line += f" cause={_last_internal_error}"
     reporter = session.config.pluginmanager.get_plugin("terminalreporter")
     if reporter is not None:
+        # T-4103: pytest's `-q` progress output (e.g. `[100%]`) ends without
+        # a trailing newline, so a plain `write_line` here appends the
+        # `SUITE-RESULT:` line to whatever column the terminal is already
+        # at -- breaking the `^`-anchored grep every consumer relies on.
+        # `ensure_newline()` writes a newline only when the terminal is NOT
+        # already at column zero, so a run whose progress output already
+        # ended in a newline is byte-for-byte unchanged (no inserted blank
+        # line); do not use `write_line("")`, which would unconditionally
+        # emit one.
+        #
+        # MEASURED (not assumed): `ensure_newline()` alone does NOT fix the
+        # reported bug. Its no-op condition is gated on
+        # `TerminalReporter.currentfspath`, which the verbose per-file
+        # report path sets but the low-verbosity DOT-progress path (`-q`,
+        # and this repo's own doubled `-q -q`, the exact reported scenario)
+        # never touches -- confirmed by running this exact hook end-to-end
+        # under real pytest 9.0.3 at `-q -q`: the line still landed glued to
+        # `[100%]`. `TerminalWriter.width_of_current_line` DOES reflect the
+        # dot-progress column correctly, so it backs up `ensure_newline()`
+        # for that path. Both calls are kept: `ensure_newline()` per the
+        # ticket's primitive, plus this width check for the path it does
+        # not cover. Verified end-to-end (real pytest, not mocked) at `-v`,
+        # bare, `-q`, and `-q -q`, both passing and failing runs: byte-for-
+        # byte identical to before this change whenever the terminal was
+        # already at column zero, and `^SUITE-RESULT` now matches at `-q -q`.
+        reporter.ensure_newline()
+        if reporter._tw.width_of_current_line != 0:
+            reporter._tw.line("")
         reporter.write_line(line)
         stats = getattr(reporter, "stats", None)
         if stats:

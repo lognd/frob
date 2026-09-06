@@ -2,7 +2,7 @@
 id: T-4103
 title: the first SUITE-RESULT line shares a line with pytest's [100%] progress output,
   so the repo's own always-greppable signal cannot be anchored
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-06'
@@ -21,7 +21,7 @@ scope:
 - tests/integration/test_gitlog.py
 - tests/unit/test_conftest_parse_reset.py
 - tests/unit/test_conftest_suite_result_status.py
-- tickets/T-draft-91788a34/ticket.md
+- tickets/T-4122/ticket.md
 evidence_scope:
 - tests/integration/test_gitlog.py
 - tests/test_mutate_journal.py
@@ -286,21 +286,27 @@ scope_changes:
   actor: logan
   at: '2026-09-06'
 - op: add
-  glob: tickets/T-draft-91788a34/ticket.md
+  glob: tickets/T-4122/ticket.md
   reason: artifact of filing+dropping a duplicate-check ticket from this worktree
     during T-4103's SCOPE002 investigation; the dropped ticket file itself is now
     part of this branch's diff
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_starts_line_at_column_zero_when_terminal_is_mid_line
+- tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_stays_byte_for_byte_unchanged_when_terminal_already_at_column_zero
+- tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_prints_greppable_line_at_any_verbosity
 designated_repro_test: null
 acceptance:
 - text: given pytest progress output that ended mid-line, when pytest_sessionfinish
     writes the SUITE-RESULT line, then that text begins at column zero and matches
     a ^-anchored grep
-  evidence: []
+  evidence:
+  - tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_starts_line_at_column_zero_when_terminal_is_mid_line
 - text: given a terminal already at column zero, when the SUITE-RESULT line is written,
     then the output is byte-for-byte identical to before this change
-  evidence: []
+  evidence:
+  - tests/unit/test_conftest_stackdump.py::TestSuiteResultLine::test_sessionfinish_stays_byte_for_byte_unchanged_when_terminal_already_at_column_zero
 threat: null
 component: null
 anchor: false

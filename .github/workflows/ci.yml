@@ -233,15 +233,23 @@ jobs:
           fi
           # T-3531: NOT `^`-anchored -- pytest's own `-q` progress output
           # ("......[100%]") and the FIRST `SUITE-RESULT:` summary line
-          # (tests/conftest.py) print with no newline between them
-          # (measured directly off a real run's raw log: both share one
-          # timestamped line), so a `^SUITE-RESULT` anchor silently misses
+          # (tests/conftest.py) used to print with no newline between them
+          # (measured directly off a real run's raw log: both shared one
+          # timestamped line), so a `^SUITE-RESULT` anchor silently missed
           # exactly that one line. `-o` extracts the matched suffix from
           # wherever it starts, dropping the leading dots/percentage
           # instead of anchoring past them. Every `SUITE-RESULT-FAILED:`
           # line (the per-test failing-set detail, the actual signal this
           # ticket cares about) already starts its own line and matches
           # either way.
+          #
+          # T-4103: the producer (`pytest_sessionfinish` in
+          # tests/conftest.py) is now fixed -- it calls
+          # `reporter.ensure_newline()` before writing the line, so a
+          # NEWER run's log always has `SUITE-RESULT:` at column zero. This
+          # workaround is deliberately LEFT IN PLACE (not re-anchored with
+          # `^`) because this step must keep matching logs produced by
+          # OLDER commits during any bisect or rerun.
           if [ -f "$log" ] && grep -qE 'SUITE-RESULT(-FAILED)?:' "$log"; then
             {
               echo '## Suite result (T-3531)'
