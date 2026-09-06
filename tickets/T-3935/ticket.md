@@ -20,6 +20,9 @@ scope:
 - scripts/artifact_smoke.py
 - tests/system/test_artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
+- docs/guides/release.md
+- scripts/verify_release_ci_status.py
+- src/frob/doctor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +52,30 @@ scope_changes:
   reason: 'reverting: doc-closure pulled in unrelated release.md anchors (verify_release_ci_status.py,
     doctor.py) outside this tickets scope; dropping the frob:doc citation instead
     of widening scope further'
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: docs/guides/release.md
+  reason: scripts/artifact_smoke.py (already in scope) has pre-existing frob:doc anchors
+    into docs/guides/release.md; SCOPE002 doc-closure requires the whole anchor target
+    set (including two unrelated symbols this doc also anchors) in scope even though
+    only the artifact-smoke-stage-t-3884 section is actually touched by this ticket
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: scripts/verify_release_ci_status.py
+  reason: scripts/artifact_smoke.py (already in scope) has pre-existing frob:doc anchors
+    into docs/guides/release.md; SCOPE002 doc-closure requires the whole anchor target
+    set (including two unrelated symbols this doc also anchors) in scope even though
+    only the artifact-smoke-stage-t-3884 section is actually touched by this ticket
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/doctor.py
+  reason: scripts/artifact_smoke.py (already in scope) has pre-existing frob:doc anchors
+    into docs/guides/release.md; SCOPE002 doc-closure requires the whole anchor target
+    set (including two unrelated symbols this doc also anchors) in scope even though
+    only the artifact-smoke-stage-t-3884 section is actually touched by this ticket
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
