@@ -16,10 +16,41 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/policy/__init__.py
+- tests/test_policy.py
+- pyproject.toml
+- uv.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_policy.py
+  reason: 'T-4013 fix requires: fixture tests in tests/test_policy.py demonstrating
+    must-fire/must-stay-quiet/widening-delta behaviour; pathspec added as an explicit
+    direct dependency (was only reachable transitively via mypy, a dev dependency
+    -- a bare wheel install would ModuleNotFoundError) in pyproject.toml, re-locked
+    in uv.lock'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: pyproject.toml
+  reason: 'T-4013 fix requires: fixture tests in tests/test_policy.py demonstrating
+    must-fire/must-stay-quiet/widening-delta behaviour; pathspec added as an explicit
+    direct dependency (was only reachable transitively via mypy, a dev dependency
+    -- a bare wheel install would ModuleNotFoundError) in pyproject.toml, re-locked
+    in uv.lock'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: uv.lock
+  reason: 'T-4013 fix requires: fixture tests in tests/test_policy.py demonstrating
+    must-fire/must-stay-quiet/widening-delta behaviour; pathspec added as an explicit
+    direct dependency (was only reachable transitively via mypy, a dev dependency
+    -- a bare wheel install would ModuleNotFoundError) in pyproject.toml, re-locked
+    in uv.lock'
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
