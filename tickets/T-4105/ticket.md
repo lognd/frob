@@ -2,7 +2,7 @@
 id: T-4105
 title: the --base flag is dropped by every nested frob check spawn, so off-main ticket
   work is judged against main by all diff-driven gates
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-06'
@@ -54,18 +54,79 @@ scope_changes:
   reason: test evidence for the --base forwarding fix touches these test files
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestUnscopedCheckSpawnArgsForwardsBase::test_no_base_omits_the_flag
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestUnscopedCheckSpawnArgsForwardsBase::test_explicit_base_reaches_argv
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestSharedCheckSpawnFnForwardsBase::test_no_base_omits_the_flag
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestSharedCheckSpawnFnForwardsBase::test_explicit_base_reaches_argv
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGateSpawnsForwardBase::test_gate_claims_no_base_omits_the_flag
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGateSpawnsForwardBase::test_gate_claims_explicit_base_reaches_argv
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGateSpawnsForwardBase::test_own_obligations_explicit_base_reaches_argv
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_detached_sweep_env_sets_the_var_when_given
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_detached_sweep_env_omits_the_var_by_default
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_spawn_true_count_check_forwards_base_from_env
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_spawn_true_count_check_omits_base_when_env_unset
+- tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam::test_delegates_with_the_same_arguments
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGuardsBaseResolution::test_default_main_resolves_to_no_base_forwarded
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGuardsBaseResolution::test_non_main_base_ref_is_forwarded
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestDoneReportBaseResolution::test_default_main_resolves_to_no_base_forwarded
+- tests/unit/test_ticket_runner_base_forward_t4105.py::TestDoneReportBaseResolution::test_non_main_base_ref_is_forwarded
 designated_repro_test: null
 acceptance:
 - text: given a ticket branched off a non-main target branch and an explicit base
     naming it, when close or land spawns its nested frob check, then that child judges
     the diff against the named base rather than main
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestUnscopedCheckSpawnArgsForwardsBase::test_no_base_omits_the_flag
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestUnscopedCheckSpawnArgsForwardsBase::test_explicit_base_reaches_argv
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestSharedCheckSpawnFnForwardsBase::test_no_base_omits_the_flag
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestSharedCheckSpawnFnForwardsBase::test_explicit_base_reaches_argv
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGateSpawnsForwardBase::test_gate_claims_no_base_omits_the_flag
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGateSpawnsForwardBase::test_gate_claims_explicit_base_reaches_argv
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGateSpawnsForwardBase::test_own_obligations_explicit_base_reaches_argv
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_detached_sweep_env_sets_the_var_when_given
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_detached_sweep_env_omits_the_var_by_default
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_spawn_true_count_check_forwards_base_from_env
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_spawn_true_count_check_omits_base_when_env_unset
+  - tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam::test_delegates_with_the_same_arguments
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGuardsBaseResolution::test_default_main_resolves_to_no_base_forwarded
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGuardsBaseResolution::test_non_main_base_ref_is_forwarded
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestDoneReportBaseResolution::test_default_main_resolves_to_no_base_forwarded
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestDoneReportBaseResolution::test_non_main_base_ref_is_forwarded
 - text: given no base supplied anywhere, when a nested check spawns, then its behaviour
     is identical to today
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestUnscopedCheckSpawnArgsForwardsBase::test_no_base_omits_the_flag
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestUnscopedCheckSpawnArgsForwardsBase::test_explicit_base_reaches_argv
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestSharedCheckSpawnFnForwardsBase::test_no_base_omits_the_flag
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestSharedCheckSpawnFnForwardsBase::test_explicit_base_reaches_argv
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGateSpawnsForwardBase::test_gate_claims_no_base_omits_the_flag
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGateSpawnsForwardBase::test_gate_claims_explicit_base_reaches_argv
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGateSpawnsForwardBase::test_own_obligations_explicit_base_reaches_argv
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_detached_sweep_env_sets_the_var_when_given
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_detached_sweep_env_omits_the_var_by_default
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_spawn_true_count_check_forwards_base_from_env
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_spawn_true_count_check_omits_base_when_env_unset
+  - tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam::test_delegates_with_the_same_arguments
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGuardsBaseResolution::test_default_main_resolves_to_no_base_forwarded
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGuardsBaseResolution::test_non_main_base_ref_is_forwarded
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestDoneReportBaseResolution::test_default_main_resolves_to_no_base_forwarded
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestDoneReportBaseResolution::test_non_main_base_ref_is_forwarded
 - text: given a top-level check_base default in frob.toml, when a nested check spawns,
     then that default still applies and an explicit flag overrides it
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestUnscopedCheckSpawnArgsForwardsBase::test_no_base_omits_the_flag
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestUnscopedCheckSpawnArgsForwardsBase::test_explicit_base_reaches_argv
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestSharedCheckSpawnFnForwardsBase::test_no_base_omits_the_flag
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestSharedCheckSpawnFnForwardsBase::test_explicit_base_reaches_argv
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGateSpawnsForwardBase::test_gate_claims_no_base_omits_the_flag
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGateSpawnsForwardBase::test_gate_claims_explicit_base_reaches_argv
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestCloseGateSpawnsForwardBase::test_own_obligations_explicit_base_reaches_argv
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_detached_sweep_env_sets_the_var_when_given
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_detached_sweep_env_omits_the_var_by_default
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_spawn_true_count_check_forwards_base_from_env
+  - tests/unit/test_ticket_runner_base_forward_t4105.py::TestRapidSweepBaseHandoff::test_spawn_true_count_check_omits_base_when_env_unset
+  - tests/ticket_land_suite/test_verify_intent.py::TestUnscopedErrorFindingsPublicSeam::test_delegates_with_the_same_arguments
 threat: null
 component: null
 anchor: false

@@ -34,15 +34,17 @@ class TestUnscopedErrorFindingsPublicSeam:
             budget: int | None = None,
             env: dict[str, str] | None = None,
             full: bool = False,
+            base: str | None = None,
         ) -> frozenset[tuple[str, str]] | None:
-            seen["args"] = (root, ticket_id, budget, env, full)
+            seen["args"] = (root, ticket_id, budget, env, full, base)
             return frozenset()
 
         monkeypatch.setattr(_land_cmd, "_unscoped_error_findings", _fake)
         result = _land_cmd.unscoped_error_findings(tmp_path, "T-0001", full=True)
 
         assert result == frozenset()
-        assert seen["args"] == (tmp_path, "T-0001", None, None, True)
+        # frob:ticket T-4105
+        assert seen["args"] == (tmp_path, "T-0001", None, None, True, None)
 
 
 class TestUnscopedErrorFindingsExcludesNoTicketNoise:

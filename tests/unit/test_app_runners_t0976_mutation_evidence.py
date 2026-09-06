@@ -181,10 +181,14 @@ class TestCloseGuardsMutationEvidenceDowngrade:
             ticket_runner, "_reverify_evidence_for_close", lambda root, t: None
         )
         monkeypatch.setattr(
-            ticket_runner, "_close_gate_claims_for_ticket", lambda root, t: None
+            ticket_runner,
+            "_close_gate_claims_for_ticket",
+            lambda root, t, base=None: None,
         )
         monkeypatch.setattr(
-            ticket_runner, "_close_own_obligations_for_ticket", lambda root, t: None
+            ticket_runner,
+            "_close_own_obligations_for_ticket",
+            lambda root, t, base=None: None,
         )
         cfg = AppConfig(ticket_close_skip_mutation_evidence=skip)
         return ticket_runner._close_guards_for_ticket(Path("."), cfg, object())

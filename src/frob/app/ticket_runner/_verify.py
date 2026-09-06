@@ -891,7 +891,7 @@ def _python_for_tree(root: Path) -> str:
 # frob:ticket T-0919
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestSharedCheckSpawnFn \
 # kind="unit"
-def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
+def _shared_check_spawn_fn(root: Path, ticket_id: str, base: str | None = None):  # noqa: ANN201
     """T-0919: build a zero-arg closure that spawns `frob check --ticket
     <id>` in `root` AT MOST ONCE, caching the resulting
     `subprocess.CompletedProcess`-shaped object (or `None` on a refused/
@@ -917,6 +917,19 @@ def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
     one-spawn-per-consumer behavior for free by passing `spawn=None` (the
     default on both consumers), which makes each build its own private,
     unshared spawn closure exactly as before this ticket.
+
+    T-4105: `base` (default `None`) is the caller's already-resolved
+    effective base ref (e.g. `cfg.ticket_base_ref`/`cfg.ticket_land_branch`
+    when that differs from the command's own hardcoded default) -- when
+    given, appended as `--base <base>` to the spawned `frob check`
+    argv below so this nested spawn judges its diff-driven gates
+    (SCOPE/COV002/etc.) against the SAME base the parent command resolved,
+    instead of always silently falling back to `main`/frob.toml's
+    top-level `check_base`. `None` (every pre-T-4105 caller, and every
+    caller whose command has no non-default base to report) omits `--base`
+    entirely, leaving this spawn's own `check_base` resolution (CLI flag
+    unset -> frob.toml's `check_base` -> `"main"`) completely unchanged --
+    the T-4105 must-stay-quiet fixture.
 
     T-2076 CORRECTION to this docstring's own prior implicit claim: every
     paragraph below assumed the spawn either runs a real `frob check` or
@@ -1048,16 +1061,20 @@ def _shared_check_spawn_fn(root: Path, ticket_id: str):  # noqa: ANN201
         # top of the caller's real environment (never a wholesale env
         # wipe -- PATH, venv vars, etc. all still pass through).
         child_env = {**os.environ, "FROB_ALLOW_FULL_CHECK": "1"}
+        argv = [
+            _python_for_tree(root),
+            "-m",
+            "frob",
+            "check",
+            "--ticket",
+            ticket_id,
+            "--json",
+        ]
+        # frob:ticket T-4105
+        if base is not None:
+            argv += ["--base", base]
         guarded = _ticket_runner.guarded_subprocess_run(
-            [
-                _python_for_tree(root),
-                "-m",
-                "frob",
-                "check",
-                "--ticket",
-                ticket_id,
-                "--json",
-            ],
+            argv,
             cwd=root,
             capture_output=True,
             text=True,
@@ -2034,7 +2051,20 @@ def _done_report(root: Path, cfg: AppConfig) -> None:
 
     # T-0919: one shared spawn feeds BOTH check_gates/check_gate_findings
     # below instead of each running its own full `frob check --ticket`.
-    _shared_spawn = _shared_check_spawn_fn(root, cfg.ticket_id)
+    # frob:ticket T-4105
+    # T-4105: `cfg.ticket_base_ref`'s argparse default is the literal
+    # string `"main"` (no unset sentinel -- `done-report --base-ref` has
+    # no way to distinguish "user typed --base-ref main" from "flag
+    # omitted"), so forwarding it unconditionally would send an explicit
+    # `--base main` to every nested spawn and silently override a repo's
+    # own frob.toml `check_base` default even when the user never asked
+    # for `main` specifically. Forwarding only when it differs from that
+    # default is the deliberate compromise: a real `--base-ref
+    # <other-branch>` reaches the nested spawn (fixture 1), while leaving
+    # it unset stays byte-identical to pre-T-4105 behavior including the
+    # frob.toml fallback (fixtures 2/3).
+    _base = cfg.ticket_base_ref if cfg.ticket_base_ref != "main" else None
+    _shared_spawn = _shared_check_spawn_fn(root, cfg.ticket_id, base=_base)
     result = set_done_report(
         root,
         cfg.ticket_id,

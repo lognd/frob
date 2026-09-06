@@ -985,7 +985,9 @@ def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
 # frob:ticket T-2030
 # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnv.test_pins_frob_root_to_the_correct_root  # noqa: E501
 # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDetachedSweepEnv.test_strips_worktree_lease_env  # noqa: E501
-def _detached_sweep_env(root: Path) -> dict[str, str]:
+def _detached_sweep_env(
+    root: Path, target_branch: str | None = None
+) -> dict[str, str]:
     """T-2030: the `env=` this module's detached `sweep-async` child MUST
     be spawned with -- never the bare inherited `os.environ`.
 
@@ -1012,11 +1014,29 @@ def _detached_sweep_env(root: Path) -> dict[str, str]:
     5b's identical precedent for `tests/system/**`'s subprocess helper --
     a detached sweep against the resolved land root is not "a dispatched
     worktree agent" and must not inherit whichever worktree the LANDING
-    process happened to be leased to)."""
+    process happened to be leased to).
+
+    T-4105: `target_branch` (default `None`) is `cfg.ticket_land_branch`
+    from the land that is deferring this sweep -- when given, set as
+    `FROB_LAND_TARGET_BRANCH` in the child's env so `_spawn_true_count_
+    check` (running inside the DETACHED `sweep-async` process this env
+    feeds, a separate OS process this function's own argv-building
+    caller cannot pass a CLI flag to without a new `sweep-async` parser
+    flag, which is `_cli_parsers/` code and out of this ticket's scope)
+    can forward it on as `--base` to its own nested `frob check` spawn.
+    An explicit env var is the deliberate exception to 'thread as an
+    argument, not an env var' here: the alternative is a same-file-only
+    variable that never crosses this specific process boundary. Unset
+    (`None`) omits the var entirely -- an ordinary main-line land's
+    detached sweep is byte-identical to pre-T-4105 behavior."""
     env = dict(os.environ)
     env["FROB_ROOT"] = str(root)
     env.pop("FROB_WORKTREE", None)
     env.pop("FROB_AGENT", None)
+    if target_branch is not None:
+        env["FROB_LAND_TARGET_BRANCH"] = target_branch
+    else:
+        env.pop("FROB_LAND_TARGET_BRANCH", None)
     return env
 
 
@@ -1046,7 +1066,11 @@ def detached_sweep_env(root: Path) -> dict[str, str]:
 # frob:tests tests/unit/rapid_sweep_suite/test_sweep_run.py::TestDeferredSweepSpawn.test_exec_disabled_records_debt_and_refuses  # noqa: E501
 # frob:ticket T-1684
 def spawn_deferred_post_land_sweep(
-    root: Path, ticket_id: str, final_id: str, commit_sha: str
+    root: Path,
+    ticket_id: str,
+    final_id: str,
+    commit_sha: str,
+    target_branch: str | None = None,
 ) -> Result[int, RapidSweepError]:
     """Fire the unscoped post-land sweep for `final_id` into a DETACHED
     child and return its pid immediately -- the whole point of the rapid
@@ -1056,7 +1080,13 @@ def spawn_deferred_post_land_sweep(
 
     Never raises and never blocks: a refused spawn is `Err(SpawnRefused)`
     and the caller logs it and proceeds. The land commit is already
-    durable at this point; nothing here can or should undo it."""
+    durable at this point; nothing here can or should undo it.
+
+    T-4105: `target_branch` (default `None`) is `cfg.ticket_land_branch`
+    from the deferring land -- forwarded to `_detached_sweep_env` (see its
+    own T-4105 paragraph) so the detached child can recover it as
+    `FROB_LAND_TARGET_BRANCH` and pass it on as `--base` to its own nested
+    `frob check` spawn."""
     from frob.process import exec_enabled
     from frob.tickets._evidence import record_rapid_debt
 
@@ -1091,7 +1121,7 @@ def spawn_deferred_post_land_sweep(
             proc = subprocess.Popen(  # noqa: S603
                 argv,
                 cwd=root,
-                env=_detached_sweep_env(root),
+                env=_detached_sweep_env(root, target_branch=target_branch),
                 stdout=handle,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.DEVNULL,
@@ -1591,23 +1621,39 @@ def _spawn_true_count_check(root: Path, budget: int):  # noqa: ANN201 -- Result[
     success, or `None` on any of the three unmeasurable outcomes (timeout,
     spawn refused, decode failure) -- each already logged here at WARNING
     with the specific reason, so the caller only has to check for `None`
-    and degrade."""
+    and degrade.
+
+    T-4105: this runs inside the DETACHED `sweep-async` process (see
+    `_detached_sweep_env`'s own T-4105 paragraph for why this is the one
+    site in this ticket that reads a base via `os.environ` rather than an
+    explicit argument -- crossing an actual OS-process boundary this
+    module cannot add a new `sweep-async` CLI flag for without touching
+    `_cli_parsers/`, out of scope). `FROB_LAND_TARGET_BRANCH`, set by
+    `_detached_sweep_env` only when the deferring land had an explicit
+    target branch, is forwarded here as `--base`; unset (the ordinary
+    main-line-land case) omits `--base` entirely, unchanged from
+    pre-T-4105 behavior."""
+    import os as _os
     import subprocess as _subprocess
 
     from frob.app.ticket_runner._verify import _python_for_tree
     from frob.process._guard import guarded_subprocess_run
 
+    _argv = [
+        _python_for_tree(root),
+        "-m",
+        "frob",
+        "check",
+        "--budget",
+        str(budget),
+        "--json",
+    ]
+    _target_branch = _os.environ.get("FROB_LAND_TARGET_BRANCH")
+    if _target_branch:
+        _argv += ["--base", _target_branch]
     try:
         guarded = guarded_subprocess_run(
-            [
-                _python_for_tree(root),
-                "-m",
-                "frob",
-                "check",
-                "--budget",
-                str(budget),
-                "--json",
-            ],
+            _argv,
             cwd=root,
             capture_output=True,
             text=True,

@@ -403,7 +403,9 @@ def _matching_gate_claim_files(
 
 
 # frob:ticket T-1410
-def _close_gate_claims_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
+def _close_gate_claims_for_ticket(
+    root: Path, ticket, base: str | None = None  # noqa: ANN001
+) -> bool | None:
     """T-1410 CLI wiring: whether every acceptance criterion on `ticket`
     shaped as a package-wide gate-outcome claim ("0 <RULE> findings under
     <glob>", `frob.tickets._evidence._gate_claim_criteria`) actually holds
@@ -446,15 +448,19 @@ def _close_gate_claims_for_ticket(root: Path, ticket) -> bool | None:  # noqa: A
 
     from frob.app import ticket_runner as _ticket_runner
 
+    _argv = [
+        _ticket_runner._python_for_tree(root),
+        "-m",
+        "frob",
+        "check",
+        "--only",
+        "gates",
+    ]
+    # frob:ticket T-4105
+    if base is not None:
+        _argv += ["--base", base]
     spawned = _ticket_runner.guarded_subprocess_run(
-        [
-            _ticket_runner._python_for_tree(root),
-            "-m",
-            "frob",
-            "check",
-            "--only",
-            "gates",
-        ],
+        _argv,
         cwd=root,
         capture_output=True,
         text=True,
@@ -807,6 +813,7 @@ def _own_obligations_diff_findings(
     root: Path,
     ticket,
     touched: set[str],  # noqa: ANN001
+    base: str | None = None,
 ) -> list[str] | None:
     """The COV001/SELFAUDIT001 half of `_close_own_obligations_for_ticket`
     (ARCH001 split): the sorted `"<rule>:<file>"` list of live findings
@@ -825,15 +832,19 @@ def _own_obligations_diff_findings(
     ticket is already touching."""
     from frob.app import ticket_runner as _ticket_runner
 
+    _argv = [
+        _ticket_runner._python_for_tree(root),
+        "-m",
+        "frob",
+        "check",
+        "--only",
+        "gates",
+    ]
+    # frob:ticket T-4105
+    if base is not None:
+        _argv += ["--base", base]
     spawned = _ticket_runner.guarded_subprocess_run(
-        [
-            _ticket_runner._python_for_tree(root),
-            "-m",
-            "frob",
-            "check",
-            "--only",
-            "gates",
-        ],
+        _argv,
         cwd=root,
         capture_output=True,
         text=True,
@@ -869,7 +880,9 @@ def _own_obligations_diff_findings(
 
 
 # frob:ticket T-1387
-def _close_own_obligations_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
+def _close_own_obligations_for_ticket(
+    root: Path, ticket, base: str | None = None  # noqa: ANN001
+) -> bool | None:
     """T-1387 CLI wiring for T-1384's `own_obligations_clean` guard:
     whether `ticket`'s OWN diff (every file `working_diff(root, "main")`
     reports a hunk in) leaves outstanding (a) a new-symbol `frob:doc` edge
@@ -904,7 +917,7 @@ def _close_own_obligations_for_ticket(root: Path, ticket) -> bool | None:  # noq
         return None
 
     rel_dirty = _own_obligations_rel_bump_dirty(root, ticket)
-    dirty = _own_obligations_diff_findings(root, ticket, touched)
+    dirty = _own_obligations_diff_findings(root, ticket, touched, base=base)
     if dirty is None:
         return False
     if dirty:
@@ -1193,7 +1206,19 @@ def _close_guards_for_ticket(root: Path, cfg: AppConfig, fresh_ticket) -> tuple:
     own-obligations) -- each guard is its own existing helper; this just
     threads `cfg.ticket_close_skip_mutation_evidence` through to downgrade
     a `False` mutation-evidence verdict to `None` (skip) when the escape
-    hatch was passed."""
+    hatch was passed.
+
+    T-4105: `_gate_base` is `cfg.ticket_base_ref` forwarded to the
+    gate-claim/own-obligations nested `frob check --only gates` spawns
+    ONLY when it differs from its own argparse default (`"main"`) --
+    `close` itself has no `--base-ref` flag at all (only `reverify`/
+    `evidence`/`done-report` register one onto this same dest), so
+    `cfg.ticket_base_ref` is the literal default `"main"` for every plain
+    `frob ticket close` today and this resolves to `None` (no `--base`
+    forwarded, must-stay-quiet unchanged); `reverify` sharing this same
+    guard helper is the one path where an explicit non-main `--base-ref`
+    can reach these two spawns."""
+    _gate_base = cfg.ticket_base_ref if cfg.ticket_base_ref != "main" else None
     from frob.app import ticket_runner as _ticket_runner
 
     covers_scope = _ticket_runner._covers_scope_for_ticket(root, fresh_ticket)
@@ -1215,12 +1240,12 @@ def _close_guards_for_ticket(root: Path, cfg: AppConfig, fresh_ticket) -> tuple:
     from frob.app import ticket_runner as _ticket_runner
 
     gate_claims_verified = _ticket_runner._close_gate_claims_for_ticket(
-        root, fresh_ticket
+        root, fresh_ticket, base=_gate_base
     )
     from frob.app import ticket_runner as _ticket_runner
 
     own_obligations_clean = _ticket_runner._close_own_obligations_for_ticket(
-        root, fresh_ticket
+        root, fresh_ticket, base=_gate_base
     )
     return (
         covers_scope,
@@ -1774,7 +1799,16 @@ def _reverify(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
-    _shared_spawn = _shared_check_spawn_fn(root, cfg.ticket_id)
+    # frob:ticket T-4105
+    # T-4105: forward `cfg.ticket_base_ref` only when it differs from its
+    # own argparse default ("main") -- that default carries no unset
+    # sentinel, so an explicit `--base-ref main` is indistinguishable from
+    # the flag never being passed at all; forwarding unconditionally would
+    # send every reverify an explicit `--base main`, silently overriding a
+    # repo's own frob.toml `check_base` default. See
+    # `_shared_check_spawn_fn`'s own T-4105 docstring paragraph.
+    _base = cfg.ticket_base_ref if cfg.ticket_base_ref != "main" else None
+    _shared_spawn = _shared_check_spawn_fn(root, cfg.ticket_id, base=_base)
     report_result = _set_done_report(
         root,
         cfg.ticket_id,

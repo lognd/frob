@@ -64,10 +64,14 @@ def _bypass_other_close_guards(monkeypatch: pytest.MonkeyPatch, ticket_runner) -
         ticket_runner, "_reverify_evidence_for_close", lambda root, ticket: None
     )
     monkeypatch.setattr(
-        ticket_runner, "_close_gate_claims_for_ticket", lambda root, ticket: None
+        ticket_runner,
+        "_close_gate_claims_for_ticket",
+        lambda root, ticket, base=None: None,
     )
     monkeypatch.setattr(
-        ticket_runner, "_close_own_obligations_for_ticket", lambda root, ticket: None
+        ticket_runner,
+        "_close_own_obligations_for_ticket",
+        lambda root, ticket, base=None: None,
     )
 
 

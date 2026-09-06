@@ -637,18 +637,31 @@ def _unscoped_check_spawn_args(
     budget: int | None,
     env: dict[str, str] | None,
     full: bool,
+    base: str | None = None,
 ) -> tuple[list[str], dict[str, str] | None, int]:
     """T-3001 (ARCH001 split out of `_unscoped_error_findings`): resolve
     the `argv`/`env`/timeout triple for one spawned `frob check --json`,
     branching exactly once on `full` -- see `_unscoped_error_findings`'s
     own docstring for the full `full=True` vs `full=False` contract this
     implements. No behavior change from inlining this at the prior call
-    site."""
+    site.
+
+    T-4105: `base` (default `None`) is the land's already-resolved target
+    branch (`cfg.ticket_land_branch`, T-3787's `--branch`/`--onto`/
+    `ticket_land_branch` pyproject default) -- appended as `--base <base>`
+    to `argv` below when given, so this unscoped diff-driven sweep judges
+    against the SAME branch `land()` is actually landing onto instead of
+    always falling back to `main`/frob.toml's `check_base`. `None` (every
+    caller with no explicit land target) omits `--base` entirely, leaving
+    the nested spawn's own default resolution unchanged."""
     import os
 
     from frob.app._check_chunking import _derive_post_land_sweep_budget_s
 
     argv = [_python_for_tree(root), "-m", "frob", "check", "--json"]
+    # frob:ticket T-4105
+    if base is not None:
+        argv += ["--base", base]
     if full:
         # T-3001: no `--budget` at all -- see this function's own
         # docstring for why a bounded ceiling is pure downside for a
@@ -675,11 +688,16 @@ def _unscoped_error_findings(
     budget: int | None = None,
     env: dict[str, str] | None = None,
     full: bool = False,
+    base: str | None = None,
 ) -> frozenset[tuple[str, str]] | None:
     """Spawn an UNSCOPED `frob check --json` in `root` and parse the
     `(rule_id, file)` error-identity set from it, reusing
     `_parse_error_findings_from_stdout` (T-0846's shared parser -- no
     second hand-typed copy of the `## Errors` section format).
+
+    T-4105: `base` (default `None`) forwards straight to
+    `_unscoped_check_spawn_args` -- see that function's own T-4105
+    paragraph for the exact contract.
 
     T-2715: `budget=None`, the default for every caller below, derives the
     ceiling from `root`'s own measured stage timing via `derive_post_land_
@@ -757,7 +775,7 @@ def _unscoped_error_findings(
     from frob.app import ticket_runner as _ticket_runner
 
     argv, spawn_env, timeout_s = _unscoped_check_spawn_args(
-        root, budget=budget, env=env, full=full
+        root, budget=budget, env=env, full=full, base=base
     )
 
     spawn_kwargs: dict[str, object] = {
@@ -832,6 +850,7 @@ def unscoped_error_findings(
     budget: int | None = None,
     env: dict[str, str] | None = None,
     full: bool = False,
+    base: str | None = None,
 ) -> frozenset[tuple[str, str]] | None:
     """T-2450: public seam for `_unscoped_error_findings`, for callers
     OUTSIDE `app.ticket_runner`'s own node (`frob.verify._worker`'s
@@ -839,8 +858,14 @@ def unscoped_error_findings(
     `full=True` measurement `frob verify now` uses) -- see
     `_rapid_sweep.detached_sweep_env`'s own docstring for the T-2407/
     SYS003 debt this closes; every in-module caller keeps using
-    `_unscoped_error_findings` directly, unchanged."""
-    return _unscoped_error_findings(root, ticket_id, budget=budget, env=env, full=full)
+    `_unscoped_error_findings` directly, unchanged.
+
+    T-4105: `base` (default `None`, back-compatible) forwards straight to
+    `_unscoped_error_findings`; no pre-existing caller passes it, so
+    behavior is unchanged for all of them."""
+    return _unscoped_error_findings(
+        root, ticket_id, budget=budget, env=env, full=full, base=base
+    )
 
 
 # frob:doc docs/modules/tickets-landing.md#post-land-unscoped-error-sweep-t-1456
@@ -1052,8 +1077,14 @@ def _post_land_unscoped_error_sweep(
     final_id: str,
     pre_land_sha: str,
     baseline_findings: frozenset[tuple[str, str]] | None,
+    base: str | None = None,
 ) -> bool:
-    """T-1456: after `land()`'s squash-apply commit has already landed on
+    """T-4105: `base` (default `None`) is `cfg.ticket_land_branch`,
+    forwarded to both `_unscoped_error_findings` calls below so the
+    post-land sweep judges against the SAME branch this land actually
+    published onto, not always `main`/frob.toml's `check_base`.
+
+    T-1456: after `land()`'s squash-apply commit has already landed on
     `root`, compare a fresh UNSCOPED error-finding identity set against
     `baseline_findings` (the same identity set captured against `root`
     BEFORE `land()` ran, at `pre_land_sha`). Every wave of this drive left
@@ -1091,7 +1122,7 @@ def _post_land_unscoped_error_sweep(
         )
         return True
 
-    fresh = _unscoped_error_findings(root, ticket_id)
+    fresh = _unscoped_error_findings(root, ticket_id, base=base)
     if fresh is None:
         _log.warning(
             "ticket land: %s post-land unscoped sweep skipped -- fresh "
@@ -1122,7 +1153,7 @@ def _post_land_unscoped_error_sweep(
     if fixed_count == 0:
         reverify: frozenset[tuple[str, str]] | None = fresh
     else:
-        reverify = _unscoped_error_findings(root, ticket_id)
+        reverify = _unscoped_error_findings(root, ticket_id, base=base)
     still_new = (reverify - baseline_findings) if reverify is not None else new_findings
     if not still_new:
         _log.info(
@@ -1305,8 +1336,14 @@ def _pre_commit_unscoped_error_sweep(
     ticket_id: str,
     final_id: str,
     baseline_findings: frozenset[tuple[str, str]] | None,
+    base: str | None = None,
 ) -> bool | None:
-    """T-1514: the pre-commit twin of `_post_land_unscoped_error_sweep` --
+    """T-4105: `base` (default `None`) is `cfg.ticket_land_branch`,
+    forwarded to every `_unscoped_error_findings` call below -- see
+    `_post_land_unscoped_error_sweep`'s own T-4105 paragraph, this is its
+    pre-commit twin's identical contract.
+
+    T-1514: the pre-commit twin of `_post_land_unscoped_error_sweep` --
     same identity-set comparison and Tier-A-auto-fix-then-refuse logic,
     but run at `_land_squash_apply_finish`'s LAST checkpoint before the
     final commit, while `root`'s working tree still holds only the staged,
@@ -1333,7 +1370,7 @@ def _pre_commit_unscoped_error_sweep(
         )
         return None
 
-    fresh = _unscoped_error_findings(root, ticket_id)
+    fresh = _unscoped_error_findings(root, ticket_id, base=base)
     if fresh is None:
         _log.warning(
             "ticket land: %s pre-commit unscoped sweep skipped -- staged "
@@ -1362,7 +1399,9 @@ def _pre_commit_unscoped_error_sweep(
         sorted(new_findings),
     )
     fixed_paths = _sweep_apply_tier_a_pre_commit(root, ticket_id)
-    reverify = _unscoped_error_findings(root, ticket_id) if fixed_paths else fresh
+    reverify = (
+        _unscoped_error_findings(root, ticket_id, base=base) if fixed_paths else fresh
+    )
     still_new = (reverify - baseline_findings) if reverify is not None else new_findings
     still_new = _drop_checkpoint_exempt_findings(
         root, final_id, still_new, log_exclusions=False
@@ -3486,23 +3525,33 @@ def _capture_pre_land_baseline(
     on top of `land()`'s own worktree-scoped checks, and was the single
     biggest reason a land could exceed the playbook's foreground budget).
     Falls back to scanning `root` directly (the pre-T-1463 behavior) if
-    the snapshot worktree cannot be created for any reason."""
+    the snapshot worktree cannot be created for any reason.
+
+    T-4105: every `_unscoped_error_findings` call below passes `base=
+    cfg.ticket_land_branch` -- `None` unless the land was given an
+    explicit `--branch`/`--onto` or a `ticket_land_branch` pyproject.toml
+    default (T-3787), so an ordinary main-line land forwards no `--base`
+    at all (must-stay-quiet unchanged) while an off-main land's baseline
+    is captured against the branch it is actually landing onto."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
     if cfg.ticket_dry_run:
         return None, None
+    _base = cfg.ticket_land_branch
     pre_land_sha: str | None = None
     rev = run_argv(["git", "-C", str(root), "rev-parse", "HEAD"])
     if rev.is_ok and rev.danger_ok.returncode == 0:
         pre_land_sha = rev.danger_ok.stdout.strip()
     if pre_land_sha is None:
-        pre_land_findings = _unscoped_error_findings(root, cfg.ticket_id)
+        pre_land_findings = _unscoped_error_findings(root, cfg.ticket_id, base=_base)
         return pre_land_sha, pre_land_findings
     snapshot = _spawn_baseline_snapshot_worktree(root, pre_land_sha)
     if snapshot is None:
-        pre_land_findings = _unscoped_error_findings(root, cfg.ticket_id)
+        pre_land_findings = _unscoped_error_findings(root, cfg.ticket_id, base=_base)
         return pre_land_sha, pre_land_findings
     try:
-        pre_land_findings = _unscoped_error_findings(snapshot, cfg.ticket_id)
+        pre_land_findings = _unscoped_error_findings(
+            snapshot, cfg.ticket_id, base=_base
+        )
     finally:
         _remove_baseline_snapshot_worktree(root, snapshot)
     return pre_land_sha, pre_land_findings
@@ -3532,7 +3581,7 @@ def _land_pre_commit_sweep_fn(
             baseline_holder[0] if baseline_holder else (None, None)
         )
         return _pre_commit_unscoped_error_sweep(
-            root, ticket_id, final_id, pre_land_findings
+            root, ticket_id, final_id, pre_land_findings, base=cfg.ticket_land_branch
         )
 
     return sweep
@@ -3554,6 +3603,16 @@ def _land_plan_tick_findings(
     means unmeasurable (refused spawn, timeout, unparsable output) --
     never a false empty-set claim, matching every other T-0846/T-0850
     unmeasured-is-not-zero convention in this module.
+
+    T-4105 DECISION (documented, not silently skipped): this spawn does
+    NOT forward a `--base`. `frob ticket land --plan` (`_land_plan_cmd`)
+    has no `--branch`/`--onto`/target-branch concept at all -- unlike
+    plain `land`, `land_plan()` always merges the design-phase worktree
+    onto `root` in place, so there is no resolved non-default base value
+    anywhere in this call chain to forward. This is the deliberate
+    "the parent had no base" case T-4105 requires be decided explicitly
+    rather than left implicit: `--only tickets` findings stay judged
+    against `main`/frob.toml's `check_base`, unchanged.
 
     `cwd` (T-2198): a `frob check` spawn is not read-only against the tree
     it runs in -- it can write scratch/lock artifacts (observed: a bare
@@ -5555,7 +5614,10 @@ def _land_core_invoke(
 
     # T-0919: one shared spawn feeds BOTH check_gates/check_gate_findings
     # below instead of each running its own full `frob check --ticket`.
-    _shared_spawn = _shared_check_spawn_fn(worktree, cfg.ticket_id)
+    # frob:ticket T-4105
+    _shared_spawn = _shared_check_spawn_fn(
+        worktree, cfg.ticket_id, base=cfg.ticket_land_branch
+    )
     return land(
         root,
         cfg.ticket_id,
@@ -5621,8 +5683,13 @@ def _land_core_finish_post_land(
                 spawn_deferred_post_land_sweep,
             )
 
+            # frob:ticket T-4105
             spawn_deferred_post_land_sweep(
-                root, cfg.ticket_id, report.final_id, report.commit_sha
+                root,
+                cfg.ticket_id,
+                report.final_id,
+                report.commit_sha,
+                target_branch=cfg.ticket_land_branch,
             )
             # T-2310/T-2317: fire the automatic watermark drain alongside
             # the existing sweep spawn -- same call site, same detached,
@@ -5651,7 +5718,12 @@ def _land_core_finish_post_land(
         if report.commit_sha is not None:
             _write_post_land_verify_marker(root, cfg.ticket_id, report.commit_sha)
         swept = _post_land_unscoped_error_sweep(
-            root, cfg.ticket_id, report.final_id, pre_land_sha, pre_land_findings
+            root,
+            cfg.ticket_id,
+            report.final_id,
+            pre_land_sha,
+            pre_land_findings,
+            base=cfg.ticket_land_branch,
         )
         # Either outcome resolves the pending window: `swept=True` means
         # root is confirmed clean at `report.commit_sha`; `swept=False`
