@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: F-294 shows the evidence rule is a conjunction of ticket kind AND 'Python-coverable
+    scope', not kind alone -- which may dissolve the three-way contradiction I filed
+    without needing version skew. It also shows an agent NARROWED its declared scope
+    to obtain an evidence path, making scope under-declare what the ticket owns
+  actor: logan
+  at: '2026-09-06'
+  old_length: 4199
+  new_length: 7064
 designated_repro_test: null
 threat: null
 component: null
@@ -103,3 +113,49 @@ ACCEPTANCE
 - Vitest node ids first-class for code kinds BEFORE any enforcement tightening.
 - All kind-naming messages derived from the constant.
 - All three fixtures committed.
+## F-294 CORRECTS THIS TICKET'S MODEL: THE RULE KEYS ON SCOPE SHAPE, NOT ONLY KIND
+
+logand.app-v2, 2026-09-06:
+
+  "`--evidence-cmd` REFUSED FOR A FEATURE TICKET WHILE ops/ (.py files) WAS IN
+   SCOPE ('Python-coverable scope, cmd evidence only allowed for docs/ux kind'):
+   A SCOPE ENTRY THE TICKET NEVER TOUCHED CHANGED THE EVIDENCE RULES; the agent
+   had to REMOVE THE ENTRY to bind vitest evidence."
+
+I analysed this ticket as a question about TICKET KIND -- whether
+CMD_EVIDENCE_ALLOWED_KINDS = {DOCS, UX} is enforced, and why the consumer saw
+feature-kind calls succeed. That model was incomplete. The refusal message names
+a SECOND condition: "Python-coverable scope". So the gate is a conjunction of kind
+AND the shape of the declared scope, and a ticket's evidence options change
+depending on which FILES it declares -- including files it never edits.
+
+THAT EXPLAINS THE EARLIER CONTRADICTION on this ticket. I recorded a three-way
+disagreement: the help text says docs-only, the code says {DOCS, UX}, and the
+consumer observed feature-kind tickets binding successfully. If the enforcement
+depends on scope shape as well, then feature tickets with NO Python-coverable
+scope may legitimately pass while ones with such scope are refused -- so all three
+observations can be true simultaneously and no version skew is required. VERIFY
+THIS BEFORE ANYTHING ELSE; it may dissolve the contradiction I filed.
+
+THE PERVERSE OUTCOME IS THE PART TO FIX. To bind vitest evidence for TypeScript
+work, the agent REMOVED A LEGITIMATE SCOPE ENTRY. So an evidence rule caused a
+ticket to under-declare what it owns -- which then feeds every scope-based check
+(SCOPE001/002, COV, the write lease) a false picture. This is the wrong-incentive
+class (T-4069) reaching a new surface: the cheapest way to satisfy the evidence
+rule DEGRADES THE SCOPE DECLARATION, and scope is load-bearing for half the
+system. Add it to that ticket's audit set as a sixth instance.
+
+WHAT THIS CHANGES ABOUT THE FIX. The sequencing trap recorded above still stands
+-- do not tighten enforcement before vitest node ids are first-class for code
+kinds -- but the target is now clearer: A TICKET'S EVIDENCE OPTIONS SHOULD NOT
+DEPEND ON SCOPE ENTRIES IT DOES NOT TOUCH. Whether the rule should look at the
+DIFF's languages rather than the SCOPE's languages is the design question; the
+diff is what the evidence is about, and it is already computed.
+
+ADDITIONAL ACCEPTANCE
+- The "Python-coverable scope" condition located and documented alongside
+  CMD_EVIDENCE_ALLOWED_KINDS; the three-way disagreement re-checked against it
+  before being treated as version skew.
+- Evidence eligibility keyed on what the ticket actually CHANGED, not on
+  untouched scope entries -- or an explicit reason why scope is the right input.
+- No ticket has to narrow its declared scope to obtain a working evidence path.
