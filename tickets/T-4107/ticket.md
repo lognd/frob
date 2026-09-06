@@ -21,6 +21,7 @@ scope:
 - src/frob/dup/_legacy_cpp.py
 - src/frob/dup/_legacy_py.py
 - tests/unit/test_dup_legacy_py.py
+- src/frob/dup
 evidence_scope:
 - tests/test_excludes.py
 - tests/unit/test_memo.py
@@ -270,6 +271,12 @@ scope_changes:
     (excludes.py 28 symbols; test_memo.py covers arch/check/graph/lang), so full write-scope
     promotion diverges again; accept as pre-existing scope debt from the ticket's
     whole-file scope on _legacy.py, not something this 3-line indexer fix should absorb
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/dup
+  reason: 'T-4107 gate:SCOPE SCOPE002: directory-coverage marker for the end-to-end
+    dup scan test'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
