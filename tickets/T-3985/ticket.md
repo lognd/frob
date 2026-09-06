@@ -15,10 +15,79 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/parsers/common.py
+- src/frob/check/_python.py
+- src/frob/gates/_profile_boundary.py
+- tests/unit/test_process.py
+- tests/unit/test_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/check/_python.py
+  reason: T-3985's design requires wiring subject_count from common.py's model into
+    the check pipeline's family-result construction and PROFILE001 (the proven T-3941
+    positive control) as the proof-of-concept, per the ticket body's own acceptance
+    criterion 3
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/gates/_profile_boundary.py
+  reason: T-3985's design requires wiring subject_count from common.py's model into
+    the check pipeline's family-result construction and PROFILE001 (the proven T-3941
+    positive control) as the proof-of-concept, per the ticket body's own acceptance
+    criterion 3
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_process.py
+  reason: T-3985's design requires wiring subject_count from common.py's model into
+    the check pipeline's family-result construction and PROFILE001 (the proven T-3941
+    positive control) as the proof-of-concept, per the ticket body's own acceptance
+    criterion 3
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: T-3985's design requires wiring subject_count from common.py's model into
+    the check pipeline's family-result construction and PROFILE001 (the proven T-3941
+    positive control) as the proof-of-concept, per the ticket body's own acceptance
+    criterion 3
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: T-3985's design requires wiring subject_count from common.py's model into
+    the check pipeline's family-result construction and PROFILE001 (the proven T-3941
+    positive control) as the proof-of-concept, per the ticket body's own acceptance
+    criterion 3
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/gates/_profile_boundary.py
+  reason: T-3985's design requires wiring subject_count from common.py's model into
+    the check pipeline's family-result construction and PROFILE001 (the proven T-3941
+    positive control) as the proof-of-concept, per the ticket body's own acceptance
+    criterion 3
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_process.py
+  reason: T-3985's design requires wiring subject_count from common.py's model into
+    the check pipeline's family-result construction and PROFILE001 (the proven T-3941
+    positive control) as the proof-of-concept, per the ticket body's own acceptance
+    criterion 3
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: T-3985's design requires wiring subject_count from common.py's model into
+    the check pipeline's family-result construction and PROFILE001 (the proven T-3941
+    positive control) as the proof-of-concept, per the ticket body's own acceptance
+    criterion 3
+  actor: logan
+  at: '2026-09-06'
 body_changes:
 - mode: append
   reason: T-4025 item 1 is another instance of the subject-count primitive (reachability-from-entrypoint
