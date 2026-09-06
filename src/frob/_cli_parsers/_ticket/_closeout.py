@@ -7,7 +7,10 @@ argparse tree.
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
+
+from frob._cli_parsers._ticket._metadata import _CrossVerbFlagHint
 
 
 # frob:waive AFFECT001 reason="T-2254 adds --backfill-drafts/--apply flags to the \
@@ -518,6 +521,46 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "the default budget is not necessarily confirmatory-only; raise "
         "this instead of reaching for --designate-repro-force on a test "
         "you have not actually verified fails at the parent commit",
+    )
+
+    # frob:ticket T-4106
+    # T-4106 mirror direction: an agent who has learned evidence binds
+    # here may then reach for CRITERION TEXT management flags on this
+    # verb instead of `accept`. `--criterion`/`--criterion-file`/`--amend`
+    # exist ONLY on `accept` (never legitimately typed here), so trapping
+    # them is exactly as cheap as the forward direction -- see
+    # `_CrossVerbFlagHint`'s own docstring. `--remove`/`--reason` are
+    # deliberately NOT trapped here: both already exist on THIS verb with
+    # a different meaning (`--remove EVIDENCE-ID` drops an evidence id,
+    # `accept --remove INDEX` drops a criterion) -- an agent typing either
+    # here gets a real flag, not an unrecognized one, so there is no
+    # argparse error to attach a hint to without changing what a
+    # legitimate `--remove`/`--reason` on evidence does, which is exactly
+    # the aliasing this ticket rules out.
+    _CRITERION_HINT = (
+        "criterion text is managed on `frob ticket accept <id> "
+        "--criterion TEXT` (or --amend INDEX --text TEXT --reason ..., "
+        "--remove INDEX --reason ...) -- not `evidence`, which only binds "
+        "evidence to an already-existing criterion index (--accepts N); "
+        "see `frob ticket accept --help`"
+    )
+    ticket_evidence_p.add_argument(
+        "--criterion",
+        action=_CrossVerbFlagHint,
+        hint=_CRITERION_HINT,
+        help=argparse.SUPPRESS,
+    )
+    ticket_evidence_p.add_argument(
+        "--criterion-file",
+        action=_CrossVerbFlagHint,
+        hint=_CRITERION_HINT,
+        help=argparse.SUPPRESS,
+    )
+    ticket_evidence_p.add_argument(
+        "--amend",
+        action=_CrossVerbFlagHint,
+        hint=_CRITERION_HINT,
+        help=argparse.SUPPRESS,
     )
 
     ticket_drop_p = ticket_sub.add_parser(

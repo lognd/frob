@@ -2,7 +2,7 @@
 id: T-4106
 title: frob ticket accept gives a bare argparse error when an agent reaches for an
   evidence flag on it; three consumer agents in a row guessed the wrong verb
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-09-06'
@@ -27,15 +27,43 @@ scope_changes:
   reason: new test evidence for the accept/evidence flag-hint fix
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestAcceptEvidenceFlagHint::test_evidence_flag_on_accept_names_the_evidence_verb
+- tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestAcceptEvidenceFlagHint::test_bare_evidence_flag_on_accept_names_the_evidence_verb
+- tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestAcceptUnrelatedFlagUnchanged::test_unrelated_unrecognized_flag_gets_the_ordinary_error
+- tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestCorrectInvocationsUnaffected::test_accept_help_does_not_list_the_trap_flags
+- tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestCorrectInvocationsUnaffected::test_evidence_help_does_not_list_the_trap_flags
+- tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestCorrectInvocationsUnaffected::test_accept_plain_criterion_append_still_parses
+- tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestCorrectInvocationsUnaffected::test_evidence_plain_node_id_still_parses
+- tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestEvidenceCriterionFlagHintMirror::test_criterion_flag_on_evidence_names_the_accept_verb
+- tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestEvidenceCriterionFlagHintMirror::test_remove_on_evidence_is_not_trapped_it_is_a_real_flag
 designated_repro_test: null
 acceptance:
 - text: given frob ticket accept invoked with an evidence-shaped unrecognized flag,
     when argparse rejects it, then the output names frob ticket evidence and its acceptance-index
     flag
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestAcceptEvidenceFlagHint::test_evidence_flag_on_accept_names_the_evidence_verb
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestAcceptEvidenceFlagHint::test_bare_evidence_flag_on_accept_names_the_evidence_verb
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestAcceptUnrelatedFlagUnchanged::test_unrelated_unrecognized_flag_gets_the_ordinary_error
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestCorrectInvocationsUnaffected::test_accept_help_does_not_list_the_trap_flags
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestCorrectInvocationsUnaffected::test_evidence_help_does_not_list_the_trap_flags
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestCorrectInvocationsUnaffected::test_accept_plain_criterion_append_still_parses
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestCorrectInvocationsUnaffected::test_evidence_plain_node_id_still_parses
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestEvidenceCriterionFlagHintMirror::test_criterion_flag_on_evidence_names_the_accept_verb
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestEvidenceCriterionFlagHintMirror::test_remove_on_evidence_is_not_trapped_it_is_a_real_flag
 - text: given an unrecognized flag unrelated to evidence, when frob ticket accept
     rejects it, then the message is the ordinary argparse error unchanged
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestAcceptEvidenceFlagHint::test_evidence_flag_on_accept_names_the_evidence_verb
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestAcceptEvidenceFlagHint::test_bare_evidence_flag_on_accept_names_the_evidence_verb
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestAcceptUnrelatedFlagUnchanged::test_unrelated_unrecognized_flag_gets_the_ordinary_error
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestCorrectInvocationsUnaffected::test_accept_help_does_not_list_the_trap_flags
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestCorrectInvocationsUnaffected::test_evidence_help_does_not_list_the_trap_flags
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestCorrectInvocationsUnaffected::test_accept_plain_criterion_append_still_parses
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestCorrectInvocationsUnaffected::test_evidence_plain_node_id_still_parses
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestEvidenceCriterionFlagHintMirror::test_criterion_flag_on_evidence_names_the_accept_verb
+  - tests/unit/test_ticket_accept_evidence_hint_t4106.py::TestEvidenceCriterionFlagHintMirror::test_remove_on_evidence_is_not_trapped_it_is_a_real_flag
 threat: null
 component: null
 anchor: false

@@ -62,6 +62,48 @@ class _RefuseRepeatedOption(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
+# frob:ticket T-4106
+class _CrossVerbFlagHint(argparse.Action):
+    """argparse `Action` that makes a flag from a CONFUSABLE sibling verb a
+    RECOGNIZED no-op on this parser, whose only behavior is to refuse
+    immediately with a message naming the verb that actually owns it
+    (T-4106) -- instead of leaving argparse's generic "unrecognized
+    arguments: --foo" error, which names the bad flag and nothing else,
+    to send the agent through a `--help` round trip to discover it.
+
+    THIS IS NOT AN ALIAS: the flag never does the confused thing it looks
+    like it should -- `__call__` always refuses via `parser.error(...)`,
+    never stores a value or otherwise succeeds. Registering it is what
+    turns the mistake from an "unrecognized arguments" error (which
+    argparse's own leftover-args handling raises on the ROOT parser,
+    T-2107 -- unreachable to intercept from a single subcommand's own
+    parser builder without editing `_cli_parsers/_root.py`, out of this
+    ticket's scope) into an error THIS subparser's own `parse_known_args`
+    raises directly, where a per-flag hint is reachable.
+
+    T-4106 (F-305): filed after three consumer agents in a row reached
+    for an evidence-binding flag on `frob ticket accept` (the verb that
+    manages acceptance CRITERION TEXT) when the flag they wanted lives on
+    `frob ticket evidence` (the verb that BINDS evidence to a criterion
+    index) -- a confusable-name pair, not three unrelated typos. Do not
+    add a third trapped flag pair without a matching measured confusion;
+    this is a targeted hint mechanism, not a general "nice error" pattern
+    to spray across every flag some agent might guess."""
+
+    def __init__(self, *args, hint: str, **kwargs) -> None:  # noqa: ANN002,ANN003
+        """Store the exact refusal `hint` text this flag should append to
+        argparse's `error: ` line -- passed straight through by
+        `add_argument(..., hint=...)` alongside argparse's own kwargs."""
+        self._hint = hint
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ANN001
+        """Always refuse (never stores a value) -- `parser.error(...)`
+        prints usage and exits nonzero the same way any other argparse
+        usage mistake does, just with `self._hint` appended."""
+        parser.error(f"{option_string}: {self._hint}")
+
+
 # frob:ticket T-2353
 def _add_triage_reason_flags(parser) -> None:  # noqa: ANN001
     """Register the shared `--reason TEXT | --reason-file PATH` pair
@@ -460,6 +502,41 @@ def _add_ticket_accept_parser(ticket_sub):
         "--reason",
     )
     _add_no_commit_flag(ticket_accept_p)  # frob:ticket T-1615
+
+    # frob:ticket T-4106
+    # T-4106 (F-305): three consumer agents in a row reached for one of
+    # these on `accept` -- they all bind evidence to an acceptance index,
+    # which is `frob ticket evidence`'s job, not this verb's. See
+    # `_CrossVerbFlagHint`'s own docstring for why this is a targeted
+    # recognized-refusal, not an alias.
+    _EVIDENCE_HINT = (
+        "evidence binds to a criterion on `frob ticket evidence <id> "
+        "--evidence-cmd COMMAND --accepts N` (or plain pytest node-id "
+        "positionals + --accepts N) -- not `accept`, which only manages "
+        "criterion TEXT (--criterion/--amend/--remove); see `frob ticket "
+        "evidence --help`"
+    )
+    ticket_accept_p.add_argument(
+        "--evidence-cmd",
+        action=_CrossVerbFlagHint,
+        hint=_EVIDENCE_HINT,
+        nargs=None,
+        help=argparse.SUPPRESS,
+    )
+    ticket_accept_p.add_argument(
+        "--accepts",
+        action=_CrossVerbFlagHint,
+        hint=_EVIDENCE_HINT,
+        nargs=None,
+        help=argparse.SUPPRESS,
+    )
+    ticket_accept_p.add_argument(
+        "--evidence",
+        action=_CrossVerbFlagHint,
+        hint=_EVIDENCE_HINT,
+        nargs="*",
+        help=argparse.SUPPRESS,
+    )
     return ticket_accept_p
 
 
