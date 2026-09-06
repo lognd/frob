@@ -19,6 +19,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 fails CI against this ticket''s own body: the PROPOSED refs.artifact
+    section written in literal TOML form parses as a live config pointer and no such
+    key exists. Rewritten as prose, same fix as T-3931'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 1243
+  new_length: 1463
 designated_repro_test: null
 acceptance:
 - text: given a design note deciding what watched means for an artifact glob (annotation-required
@@ -57,4 +66,4 @@ T-3928 frontend-unique item. VERIFIED: git grep confirms [[refs.entrypoint]] exi
 
 FINDING THIS WOULD HAVE CAUGHT: frontend/public/** (or equivalent verbatim-copy build directories) is outside every strata code glob and every frob entrypoint, yet ships to production byte-for-byte. The consumer's framing, worth preserving: "files that reach production without passing through a compiler is the highest-leverage unwatched surface in any frontend repo" -- these files get zero review pressure from anything frob does today because nothing treats them as reachable/shippable at all.
 
-Proposed: `[[refs.artifact]]` alongside `[[refs.entrypoint]]`, each file individually justified (mirroring entrypoint's own per-entry reason= discipline visible in _refs_schema.py), declaring a verbatim-copy build/static directory as a watched surface. What "watched" means in practice (min: a change to a declared artifact glob requires a reasoned annotation; ambitious: some content check e.g. no obvious secret/credential pattern) is a design decision to make explicit before implementing.
+Proposed: a refs.artifact construct alongside the existing refs.entrypoint one (both named in prose here, not in literal double-bracket TOML form -- refs.artifact does not exist yet, so as a literal section header it parses as a live config pointer and DOC006 correctly refuses it), each file individually justified (mirroring entrypoint's own per-entry reason= discipline visible in _refs_schema.py), declaring a verbatim-copy build/static directory as a watched surface. What "watched" means in practice (min: a change to a declared artifact glob requires a reasoned annotation; ambitious: some content check e.g. no obvious secret/credential pattern) is a design decision to make explicit before implementing.
