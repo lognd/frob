@@ -255,6 +255,7 @@ from ._selfconform_ids import (
     SYS_UNDECLARED_INTERFACE,
     SYS_UNMODELED_CODE,
     SYS_VIA_LESS_LARGE_NODE,
+    SYS_ZERO_MATCH_DECLARATION,
 )
 from ._selfconform_kinds import (
     _EXTENDED_KINDS,
@@ -296,6 +297,7 @@ __all__ = [
     "SYS_UNDECLARED_INTERFACE",
     "SYS_UNMODELED_CODE",
     "SYS_VIA_LESS_LARGE_NODE",
+    "SYS_ZERO_MATCH_DECLARATION",
     "SelfConformReport",
     "SelfConformViolation",
     "_EXTENDED_KINDS",
@@ -318,6 +320,7 @@ from ._selfconform_core_rules import (
     _coverage_totality_violations,
     _extended_kind_violations,
     _stale_design_violations,
+    _zero_match_declaration_violations,
 )
 from ._selfconform_surface_rules import (
     _duplicate_interface_violations,
@@ -554,8 +557,13 @@ def _collect_sys_violations(
     root: Path,
     capability_files: list[Path] | None = None,
 ) -> list[SelfConformViolation]:
-    """Every SYS100/SYS100-extended/SYS101/SYS102/SYS103 finding, in that
-    order, for `check_self_conformance`. T-0266: the extended SYS100 pass is
+    """Every SYS100/SYS100-extended/SYS101/SYS102/SYS103/SYS113 finding,
+    in that order, for `check_self_conformance`. T-4110/H3-10: SYS113
+    (`_zero_match_declaration_violations`) runs right alongside SYS101 --
+    same `capability_binding`, same `root` -- since it judges the SAME
+    `code=`/`via` declarations, just the "matches zero files at all" side
+    of the join SYS101 leaves untouched (SYS101 requires >=1 match).
+    T-0266: the extended SYS100 pass is
     deduped against the core pass (`_dedupe_sys100_extended_against_core`)
     before being appended, so a `(node, capability)` observed by BOTH
     passes surfaces as ONE finding, not two. T-0830 (H5): the extended
@@ -583,6 +591,9 @@ def _collect_sys_violations(
         _stale_design_violations(
             model, root, capability_binding, _all_kinds_view(raw_by_file)
         )
+    )
+    violations.extend(
+        _zero_match_declaration_violations(model, capability_binding, root)
     )
     violations.extend(_unmodeled_violations(root, capability_binding))
     violations.extend(
@@ -617,6 +628,7 @@ def _apply_sys_waivers(model: KernelModel, violations: list[SelfConformViolation
             SYS_COVERAGE_TOTALITY,
             SYS_PURPOSE_CONTRACT,
             SYS_BINDING_TOTALITY,
+            SYS_ZERO_MATCH_DECLARATION,
         )
     )
     return apply_waivers(
@@ -626,12 +638,14 @@ def _apply_sys_waivers(model: KernelModel, violations: list[SelfConformViolation
         target_of=lambda v: v.node,
         # T-0174 REJECT round: SYS100/SYS101 fire once per capability kind
         # per node, so the sub-target IS the capability kind
-        # (`SelfConformViolation.capability`); SYS102/SYS103 have no
-        # sub-target concept (one finding per unmodeled directory/file) and
-        # leave `capability` `None`, so both accept only the bare-rule
-        # waiver form (`_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES` excludes
-        # them -- see `_coverage_totality_violations`'s docstring for why
-        # SYS103 must not populate `capability`).
+        # (`SelfConformViolation.capability`); SYS102/SYS103/SYS113 have no
+        # sub-target concept (one finding per unmodeled directory/file, or
+        # T-4110, per zero-match declaration surface) and leave `capability`
+        # `None`, so all three accept only the bare-rule waiver form
+        # (`_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES` excludes them -- see
+        # `_coverage_totality_violations`'s docstring for why SYS103 must
+        # not populate `capability`; SYS113 follows the same rationale, see
+        # `_zero_match_code_violation`/`_zero_match_via_violation`).
         sub_target_of=lambda v: v.capability,
         # T-0174: this call only ever sees SYS100-102 findings -- a waiver
         # declared for any other rule (LINT004, THREAT002, ...) belongs to
@@ -685,6 +699,7 @@ __all__ = [
     "SYS_STALE_DESIGN",
     "SYS_UNDECLARED_INTERFACE",
     "SYS_UNMODELED_CODE",
+    "SYS_ZERO_MATCH_DECLARATION",
     "SelfConformReport",
     "SelfConformViolation",
     "check_self_conformance",

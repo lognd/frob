@@ -251,9 +251,9 @@
       "ticket": "T-3922"
     },
     "testsuite::fs.write": {
-      "accepted_count": 508,
-      "reason": "T-3985: adds tests/unit/gates/test_profile_boundary_subject_count.py, whose fixtures write real Python source files under tmp_path (via _write/Path.write_text) to prove profile_boundary_subject_count's PROFILE001 subject-count probe -- bumping the ceiling to the current measured count, 507 -> 508, one real new site.",
-      "ticket": "T-3985"
+      "accepted_count": 510,
+      "reason": "T-4110: adds tests/unit/strata/test_selfconform_kinds.py and tests/unit/strata/test_selfconform_core_rules.py, both of whose fixtures write real files under tmp_path (via the same _write/Path.write_text helper test_selfconform.py already carries) to build the SYS113 zero-match-declaration fixtures -- bumping the ceiling to the current measured count, 508 -> 510, two real new sites.",
+      "ticket": "T-4110"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
@@ -261,9 +261,9 @@
       "ticket": "T-1628"
     },
     "testsuite::net": {
-      "accepted_count": 26,
-      "reason": "T-3592: same split, net via-list relocation -- measured live via-list count.",
-      "ticket": "T-3592"
+      "accepted_count": 27,
+      "reason": "T-4110: adds tests/unit/strata/test_selfconform_core_rules.py, whose fixtures write the same literal 'import requests\\nrequests.get(...)' net-effect source string test_selfconform.py already carries (as a tmp_path fixture argument, needle-matched at the file's own physical source line) to build a SYS113 clean-case fixture -- bumping the ceiling to the current measured count, 26 -> 27, one real new site.",
+      "ticket": "T-4110"
     },
     "testsuite::net-mutate": {
       "accepted_count": 1,

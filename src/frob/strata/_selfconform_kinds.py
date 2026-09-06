@@ -4,7 +4,7 @@
 These functions carry no violation semantics of their own -- they answer
 "what capability kinds does this node/file/binding actually exhibit" and
 nothing about whether that is right or wrong. `_selfconform_core_rules.py`
-(SYS100/SYS101/SYS103), `_selfconform_surface_rules.py` (SYS105/SYS108/
+(SYS100/SYS101/SYS103/SYS113), `_selfconform_surface_rules.py` (SYS105/SYS108/
 SYS110), `_selfconform_binding_rules.py` (SYS102/SYS106/SYS107), and
 `_selfconform.py`'s own orchestration (`_collect_sys_violations`) all
 build on this one shared layer rather than re-walking `root` or
@@ -12,12 +12,20 @@ re-deriving a node's owned files independently -- T-2729's own
 investigation found `_observed_raw_kinds_by_node`/`_observed_kinds_for_
 files` feeding both the SYS100-extended and SYS101 scans, which is
 exactly the seam this module now names explicitly instead of leaving
-implicit inside one 2290-line file."""
+implicit inside one 2290-line file.
+
+T-4110/H3-10: this module also now draws the line between "a glob
+matches >=1 real file" (SYS101's territory: declared but never
+observed) and "a glob matches ZERO real files at all" (SYS113's own
+territory: `_zero_match_node_code_ids`/`_zero_match_via_entries`) --
+these two used to collapse into the single waivable SYS101 signal;
+they no longer do."""
 
 from __future__ import annotations
 
 import fnmatch
 import os
+from collections.abc import Sequence
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
@@ -31,7 +39,7 @@ from frob.vet._capability import (
 )
 
 from ._code_binding import FOREIGN, CodeBinding, _node_code_globs
-from ._effects import _KIND_MAP, _may_kind
+from ._effects import _KIND_MAP, _may_kind, _via_glob_and_symbol
 from ._errors import StrataError
 from ._models import KernelModel
 
@@ -352,6 +360,19 @@ def _repo_files_excluding_skip_dirs(root: Path) -> list[str]:
     return sorted(all_files)
 
 
+# frob:ticket T-4110
+def _matched_real_files(globs: Sequence[str], all_files: Sequence[str]) -> list[str]:
+    """Every `rel` in `all_files` matching any of `globs` -- the single
+    fnmatch join `_fully_excluded_node_ids` (whole-glob-set, >=1 match
+    all excluded) and `_zero_match_node_code_ids`/`_zero_match_via_
+    entries` (T-4110, zero match at all) both need, split out so the two
+    checks can never diverge on how "matches" is decided (the same
+    "observation and this skip cannot diverge" discipline
+    `_fully_excluded_node_ids`'s own docstring already names for its
+    exclude source)."""
+    return [rel for rel in all_files if any(fnmatch.fnmatch(rel, g) for g in globs)]
+
+
 # frob:ticket T-0310
 # frob:ticket T-2729
 def _fully_excluded_node_ids(model: KernelModel, root: Path) -> frozenset[str]:
@@ -363,11 +384,14 @@ def _fully_excluded_node_ids(model: KernelModel, root: Path) -> frozenset[str]:
     there is provably no file, excluded or not, observation could EVER see.
     A node qualifies only if its glob matches at least one REAL (skip-dir-
     filtered) file AND every such match is excluded -- a glob matching
-    nothing at all is a different, pre-existing case (e.g. a typo'd glob)
-    left to fire SYS101 unchanged, since that is genuine potential drift,
-    not a structurally-unobservable node. Uses the SAME exclude source
-    (`load_exclude_globs`/`is_excluded`) `_sorted_capability_files` already
-    uses for observation, so observation and this skip cannot diverge."""
+    nothing at all is a DIFFERENT case (e.g. a typo'd glob), no longer left
+    to fire SYS101 unchanged as this docstring used to say: T-4110/H3-10
+    gives it its own SYS113 finding instead (`_zero_match_node_code_ids`
+    below), since a zero-file glob and an unobserved-but-real declaration
+    are two different facts that used to collapse into the one waivable
+    SYS101 signal. Uses the SAME exclude source (`load_exclude_globs`/
+    `is_excluded`) `_sorted_capability_files` already uses for
+    observation, so observation and this skip cannot diverge."""
     exclude_globs = load_exclude_globs(root)
     if not exclude_globs:
         return frozenset()
@@ -377,11 +401,9 @@ def _fully_excluded_node_ids(model: KernelModel, root: Path) -> frozenset[str]:
         globs = _node_code_globs(node)
         if not globs:
             continue
-        matched = [
-            rel for rel in all_files if any(fnmatch.fnmatch(rel, g) for g in globs)
-        ]
+        matched = _matched_real_files(globs, all_files)
         if not matched:
-            continue  # glob matches nothing at all -- unaffected, not this fix's target
+            continue  # glob matches nothing at all -- SYS113's target, not this rule's
         if all(is_excluded(rel, exclude_globs) for rel in matched):
             fully_excluded.add(node.id)
             _log.info(
@@ -392,6 +414,125 @@ def _fully_excluded_node_ids(model: KernelModel, root: Path) -> frozenset[str]:
                 len(matched),
             )
     return frozenset(fully_excluded)
+
+
+# frob:ticket T-4110
+def _zero_match_node_code_ids(model: KernelModel, root: Path) -> frozenset[str]:
+    """Node ids (T-4110/H3-10) whose OWN `code=` glob set matches ZERO real
+    (skip-dir-filtered) files under `root` AT ALL -- the "a typo'd glob"
+    case `_fully_excluded_node_ids`'s docstring used to leave to fire
+    SYS101 unchanged, now its own SYS113 finding instead. Distinct from
+    `_fully_excluded_node_ids` (>=1 real match, all graph-excluded): that
+    is "the code is here and unobservable by exclusion policy", this is
+    "the code named by this glob is not here at all" -- exactly the two
+    facts H3-10 says must not collapse into one signal. A node with no
+    `code=` globs at all has nothing to match and is skipped, mirroring
+    `_fully_excluded_node_ids`'s own `if not globs: continue` guard.
+    Deliberately ignores `[graph].exclude` entirely (unlike
+    `_fully_excluded_node_ids`): a glob matching nothing has no excluded-
+    vs-real distinction to make."""
+    all_files = _repo_files_excluding_skip_dirs(root)
+    zero_match: set[str] = set()
+    for node in model.nodes:
+        globs = _node_code_globs(node)
+        if not globs:
+            continue
+        if not _matched_real_files(globs, all_files):
+            zero_match.add(node.id)
+            _log.warning(
+                "selfconform: SYS113 node %s code= glob %s matches zero real "
+                "files on this branch",
+                node.id,
+                globs,
+            )
+    return frozenset(zero_match)
+
+
+# frob:ticket T-4110
+def _via_entry_is_zero_match(
+    entry_glob: str,
+    owned: list[str],
+    all_raw_files: list[str],
+    exclude_globs: tuple[str, ...],
+) -> bool:
+    """True (T-4110/H3-10) for one glob-form `via` entry's glob that never
+    resolves to a file its node's grant can actually reach -- split out
+    of `_zero_match_via_entries` purely to keep its loop body short.
+
+    Judged in two steps, mirroring `_fully_excluded_node_ids`'s own
+    exclude-vs-nothing distinction at NODE granularity, now applied per
+    `via` entry:
+    1. Match `entry_glob` against the RAW (skip-dir-filtered, NOT
+       exclude-filtered) repo file set. Zero raw matches is
+       unconditionally a zero-match entry -- "the code named by this
+       glob is not here at all", H3-10's exact case.
+    2. A non-zero raw match set that is ENTIRELY `[graph].exclude`'d is
+       the SAME legitimate carve-out `_fully_excluded_node_ids` grants a
+       whole node's `code=` glob: capability observation already skips
+       excluded files by policy, so there is nothing this `via` entry
+       could ever discharge either way -- NOT a zero-match entry.
+       (Measured directly: `tests/fixtures/lang/sample.py`, excluded by
+       `frob.toml`'s own `[graph] exclude`, is a real file a `via` entry
+       can legitimately name -- flagging it would be exactly the false
+       positive this two-step split exists to avoid.)
+    3. Otherwise (>=1 raw match, not all excluded) the entry is judged
+       against the node's OWNED files (`owned`, from `binding`): a `via`
+       naming a real, non-excluded file some OTHER node owns is exactly
+       as dead as one naming a file that does not exist anywhere --
+       neither ever discharges THIS node's grant."""
+    raw_matched = _matched_real_files([entry_glob], all_raw_files)
+    if raw_matched and all(is_excluded(rel, exclude_globs) for rel in raw_matched):
+        return False  # the _fully_excluded_node_ids carve-out, at via grain
+    return not _matched_real_files([entry_glob], owned)
+
+
+# frob:ticket T-4110
+def _zero_match_via_entries(
+    model: KernelModel, binding: CodeBinding, root: Path
+) -> list[tuple[str, str, str]]:
+    """Every `(node_id, atom, via_entry)` (T-4110/H3-10) for a glob-form
+    (non-symbol) `may` grant `via` entry that never resolves to a file
+    THIS node's grant can actually reach -- the per-declaration sibling
+    of `_zero_match_node_code_ids`, narrowed to one grant's own `via`
+    surface instead of the whole node's `code=` set. Per-entry judgment
+    (the exclude-vs-nothing split) lives in `_via_entry_is_zero_match`.
+
+    Symbol-form entries (`glob::symbol`) are deliberately SKIPPED:
+    `_effects.py::check_stale_via_symbols` (SYS109) already flags a
+    symbol-form entry resolving against zero candidate files as stale
+    (its own docstring: "zero candidate files trivially contain zero
+    matching symbols") -- covering them again here would double-report
+    the identical fact under two rule ids."""
+    exclude_globs = load_exclude_globs(root)
+    all_raw_files = _repo_files_excluding_skip_dirs(root)
+    owned_by_node: dict[str, list[str]] = {}
+    for rel, owner in binding.owner.items():
+        if owner == FOREIGN:
+            continue
+        owned_by_node.setdefault(owner, []).append(rel)
+    found: list[tuple[str, str, str]] = []
+    for node in model.nodes:
+        owned = owned_by_node.get(node.id, [])
+        # frob:waive PERF004 reason="distinct small per-node grant/via list, not \
+        # repeated"
+        for grant in node.may_grants:
+            for entry in grant.via:
+                glob, symbol = _via_glob_and_symbol(entry)
+                if symbol is not None:
+                    continue  # SYS109's territory, not SYS113's
+                if not _via_entry_is_zero_match(
+                    glob, owned, all_raw_files, exclude_globs
+                ):
+                    continue
+                _log.warning(
+                    "selfconform: SYS113 node %s atom %s via %s matches zero "
+                    "reachable files",
+                    node.id,
+                    grant.atom,
+                    entry,
+                )
+                found.append((node.id, grant.atom, entry))
+    return found
 
 
 # frob:ticket T-2729

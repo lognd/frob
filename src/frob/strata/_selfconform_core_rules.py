@@ -1,10 +1,20 @@
-"""SYS100/SYS101/SYS103 rule family (T-2729 layer 2, split out of
-`_selfconform.py`): undeclared interface, stale design, and coverage
-totality. Each function here computes ONE rule's violation list from the
-shared observed-kinds layer (`_selfconform_kinds.py`) plus THREAT004's
+"""SYS100/SYS101/SYS103/SYS113 rule family (T-2729 layer 2, split out of
+`_selfconform.py`): undeclared interface, stale design, coverage
+totality, and (T-4110/H3-10) declaration glob matches zero files. Each
+function here computes ONE rule's violation list from the shared
+observed-kinds layer (`_selfconform_kinds.py`) plus THREAT004's
 `check_capability_conformance` -- see `_selfconform.py`'s own module
 docstring for the full SYS100/SYS101/SYS103 design narrative (gap
-statements, delegation boundaries); this module holds only the code."""
+statements, delegation boundaries); this module holds only the code.
+
+SYS113 (`_zero_match_declaration_violations`) is deliberately its own
+rule, not a SYS101 variant: SYS101 requires a `code=`/`via` glob to match
+at least one real file (declared but never observed there); SYS113 fires
+exactly when that match count is zero -- "the code named by this glob is
+not here at all", not "the code is here and does not use the
+capability". Before this ticket both facts fired SYS101 (or nothing, for
+a node with no declared `may` atoms at all) and were suppressed by the
+same waiver."""
 
 from __future__ import annotations
 
@@ -14,7 +24,7 @@ from frob.logging import get_logger
 from frob.vet._capability import is_self_pattern_path, scan_file_capabilities
 from frob.vet._capability_modes import canonical_declared_kind, expand_declared_kind
 
-from ._code_binding import FOREIGN, CodeBinding
+from ._code_binding import FOREIGN, CodeBinding, _node_code_globs
 from ._effects import (
     _declared_kinds,
     _may_kind,
@@ -26,6 +36,7 @@ from ._selfconform_ids import (
     SYS_COVERAGE_TOTALITY,
     SYS_STALE_DESIGN,
     SYS_UNDECLARED_INTERFACE,
+    SYS_ZERO_MATCH_DECLARATION,
 )
 from ._selfconform_kinds import (
     _EXTENDED_KINDS,
@@ -34,6 +45,8 @@ from ._selfconform_kinds import (
     _observed_kinds_for_files,
     _raw_declared_kinds,
     _sorted_capability_files,
+    _zero_match_node_code_ids,
+    _zero_match_via_entries,
 )
 from ._selfconform_models import SelfConformViolation
 
@@ -376,4 +389,86 @@ def _coverage_totality_violations(
                 ),
             )
         )
+    return found
+
+
+# frob:ticket T-4110
+def _zero_match_code_violation(
+    node_id: str, globs: tuple[str, ...]
+) -> SelfConformViolation:
+    """Build one SYS113 finding (T-4110/H3-10) for a node whose entire
+    `code=` glob set matches zero real files -- split out of
+    `_zero_match_declaration_violations` purely to keep its loop body
+    short, mirroring `_stale_grant_violation`'s own split. No `capability`
+    sub-target (mirrors SYS102/SYS103): this finding is about the node's
+    whole declared surface, not one observed capability kind."""
+    _log.warning(
+        "selfconform: SYS113 node %s code= glob %s matches zero real files",
+        node_id,
+        globs,
+    )
+    return SelfConformViolation(
+        rule=SYS_ZERO_MATCH_DECLARATION,
+        node=node_id,
+        detail=(
+            f"code= glob {globs!r} matches zero real files on this branch "
+            "-- not a declared-but-unobserved capability (SYS101), the "
+            "declared surface itself does not exist"
+        ),
+    )
+
+
+# frob:ticket T-4110
+def _zero_match_via_violation(
+    node_id: str, atom: str, via: str
+) -> SelfConformViolation:
+    """Build one SYS113 finding (T-4110/H3-10) for a glob-form `via` entry
+    on a `may` grant whose glob matches zero of its node's own bound
+    files -- split out of `_zero_match_declaration_violations` purely to
+    keep its loop body short. No `capability` sub-target, same rationale
+    as `_zero_match_code_violation`: `atom`/`via` are folded into `detail`
+    instead, mirroring `_stale_grant_violation`'s own `via` handling."""
+    _log.warning(
+        "selfconform: SYS113 node %s atom %s via %s matches zero owned files",
+        node_id,
+        atom,
+        via,
+    )
+    return SelfConformViolation(
+        rule=SYS_ZERO_MATCH_DECLARATION,
+        node=node_id,
+        detail=(
+            f"capability {atom!r} via {via!r} matches zero of this node's own "
+            "bound files on this branch -- not a declared-but-unobserved "
+            "capability (SYS101), the via surface itself does not exist"
+        ),
+    )
+
+
+# frob:enforces CHK-GATE-SYS113
+# frob:ticket T-4110
+def _zero_match_declaration_violations(
+    model: KernelModel, binding: CodeBinding, root: Path
+) -> list[SelfConformViolation]:
+    """SYS113 (T-4110/H3-10) over every node: a `code=` glob set matching
+    zero real files (`_zero_match_node_code_ids`), plus every glob-form
+    `via` entry matching zero of its own node's bound files
+    (`_zero_match_via_entries`) -- the H3-10 gap this ticket closes,
+    docstring-disclosed as a "different, pre-existing case ... left to
+    fire SYS101 unchanged" by `_fully_excluded_node_ids` before this
+    ticket. Deliberately its OWN rule id, never folded into SYS101: a
+    glob matching nothing is "the code named by this glob is not here at
+    all" (a typo, a rename, a deleted file), a fact `may` waivers must
+    not be able to suppress by waiving "capability unobserved" instead.
+    `binding` is the T-0169 capability-binding superset, same as every
+    other `_selfconform_core_rules.py` join that needs a node's owned-
+    file set."""
+    found: list[SelfConformViolation] = []
+    zero_match_nodes = _zero_match_node_code_ids(model, root)
+    for node in model.nodes:
+        if node.id not in zero_match_nodes:
+            continue
+        found.append(_zero_match_code_violation(node.id, _node_code_globs(node)))
+    for node_id, atom, via in _zero_match_via_entries(model, binding, root):
+        found.append(_zero_match_via_violation(node_id, atom, via))
     return found

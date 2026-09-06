@@ -1301,6 +1301,13 @@ _KNOWN_GATE_RULES = frozenset(
         # _sys_selfaudit.py, src/frob/strata/_effects.py::
         # check_ambient_capability_reasons.
         "SYS112",
+        # T-4110: SYS113 (H3-10, a node's `code=` glob set or a glob-form
+        # `may` grant `via` entry matching zero real files on the current
+        # branch) -- folded into `check_self_conformance`/
+        # `_collect_sys_violations` the same way SYS100-108/SYS110 are
+        # (constructed via `SelfConformViolation(rule=SYS_ZERO_MATCH_
+        # DECLARATION, ...)`), src/frob/strata/_selfconform_core_rules.py.
+        "SYS113",
         # CVEFP001 (src/frob/strata/_cve_fingerprint.py, `rule: str =
         # "CVEFP001"` typed pydantic field default) -- CVE-fingerprint
         # `cwe_id` join miss, see FingerprintViolation.
