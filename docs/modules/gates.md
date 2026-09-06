@@ -10,7 +10,7 @@ declaration).
 
 ## Rule catalog
 
-<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,ARCHSCHEMA001,AUTOFIX001,BUDGET001,BUG002,BUG003,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,COV008,CPLACE001,CPLACE002,CPPTHROW001,CROSSTICKET001,CVEFP001,CYCLE001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DEPR006,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOC012,DOC013,DOCARCH001,DOCBLOCKSSCHEMA001,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,DUPSCHEMA001,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,EXHAUST004,F401,FFI001,FFI002,FLAGCOV001,FMT001,FUZZ001,FUZZ002,FUZZ003,GATERULE001,GATESSCHEMA001,GRAPHSCHEMA001,HOST-BLAST,HOST001,HOST002,I001,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANDPARITY001,LANDPARITY002,LANG001,LANG002,LANG003,LANG004,LARGE001,LEDGERV1001,LEXCHECK001,LINT001,LINT002,LINT003,LINT004,LINT005,MILE001,MILE002,MILE003,MILE004,NARR001,NATIVE001,NATIVESCHEMA001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PLATFORM001,PLATFORM002,PORT001,PORT001-DEFAULT,PORT001-IDENT,PORT001-PATH,PRE001,PROFILE001,PROFILESCHEMA001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,QUEUE001,REF001,REF002,REF003,REFSCHEMA001,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS112,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TDD001,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,TESTINGSCHEMA001,TESTRUNNERSCHEMA001,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TICK012,TICK013,TICK014,TODO001,TODO002,TODO003,TOPSCALARSCHEMA001,VERSION001,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,VMOD001,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WAIVE009,WAIVE010,WAIVE011,WALK001,WIRE001,WIRE002,WIRE003" -->
+<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,ARCHSCHEMA001,AUTOFIX001,BUDGET001,BUG002,BUG003,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,COV008,CPLACE001,CPLACE002,CPPTHROW001,CROSSTICKET001,CVEFP001,CYCLE001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DEPR006,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOC012,DOC013,DOCARCH001,DOCBLOCKSSCHEMA001,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,DUPSCHEMA001,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,EXHAUST004,F401,FFI001,FFI002,FLAGCOV001,FMT001,FUZZ001,FUZZ002,FUZZ003,GATERULE001,GATES001,GATESSCHEMA001,GRAPHSCHEMA001,HOST-BLAST,HOST001,HOST002,I001,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV009,INV051,KRB001,KRB002,KRB003,KRB004,LANDPARITY001,LANDPARITY002,LANG001,LANG002,LANG003,LANG004,LARGE001,LEDGERV1001,LEXCHECK001,LINT001,LINT002,LINT003,LINT004,LINT005,MILE001,MILE002,MILE003,MILE004,NARR001,NATIVE001,NATIVESCHEMA001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PLATFORM001,PLATFORM002,PORT001,PORT001-DEFAULT,PORT001-IDENT,PORT001-PATH,PRE001,PROFILE001,PROFILESCHEMA001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,QUEUE001,REF001,REF002,REF003,REFSCHEMA001,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS112,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TDD001,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,TESTINGSCHEMA001,TESTRUNNERSCHEMA001,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TICK012,TICK013,TICK014,TODO001,TODO002,TODO003,TOPSCALARSCHEMA001,VERSION001,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,VMOD001,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WAIVE009,WAIVE010,WAIVE011,WALK001,WIRE001,WIRE002,WIRE003" -->
 
 | Rule | Gate | Fails when |
 |---|---|---|
@@ -43,6 +43,7 @@ declaration).
 | INV005 | invariant | (warn, T-0543/B12) an invariant's evidence collects (satisfies INV001) but is never shown, via a `frob:tests` edge or same-file trust to the anchor, to actually reach its `frob:invariant`-anchored symbol -- a name-match-only existence check proves nothing about which invariant a test covers; see "INV005 (T-0543)" below |
 | INV007 | invariant | (T-0757) a `frob:invariant ... no_import="pkg[,pkg2,...]"` anchor whose own file actually imports the forbidden module or one of its submodules -- see "INV007 and INV008 (T-0757)" below |
 | INV008 | invariant | (T-0757) a `frob:invariant ... establishes="..."` anchor with no `frob:tests ... kind="property"` edge bound to it -- see "INV007 and INV008 (T-0757)" below |
+| INV009 | invariant | (T-4019) an `invariants/*.md` file failed to load (malformed frontmatter/id/statement/criticality/evidence shape, or a duplicate id) -- names the exact failing file; every OTHER invariant file and gate family runs unaffected, see the blast-radius note in "Invariants" above |
 | INV051 | policy_weakening | (T-1482/T-1843) a `design/` policy whose scope is a strict subset of a containing policy's, but which re-declares `confine_use`/`at_call_require_arg`/`mediate` less restrictively than the parent already required for the same target |
 | MILE001 | milestone | (error, T-2580) an OPEN ticket `blocked_by` another OPEN ticket whose EFFECTIVE milestone (`frob.tickets._doable.effective_milestone`, real semver order) is LATER than the blocked ticket's own -- a provable release deadlock: the earlier milestone can never ship while it depends on work scheduled for a later one. A terminal blocker, an unresolved `blocked_by` id, or either side's milestone failing to resolve at all (MILE003's concern) never fires |
 | MILE002 | milestone | (error, T-2580) an OPEN ticket has an OPEN descendant (any depth via `parent`) whose EFFECTIVE milestone is LATER than the ancestor's own -- the same deadlock as MILE001, reached through the ticket hierarchy instead of `blocked_by`: `_done_transition_guard` already forbids an ancestor closing DONE while any descendant is open, so the ancestor's earlier milestone can never ship first either |
@@ -5494,16 +5495,32 @@ Two-layer fix, matching the two places this gap actually bites:
 <!-- frob:describes src/frob/gates/invariants.py::_Criticality -->
 <!-- frob:describes src/frob/gates/invariants.py::Invariant -->
 <!-- frob:describes src/frob/gates/invariants.py::InvariantError -->
+<!-- frob:describes src/frob/gates/invariants.py::InvariantLoadError -->
+<!-- frob:describes src/frob/gates/invariants.py::LoadedInvariants -->
 
 - `Criticality` -- how severe a broken invariant would be (`high` |
   `medium`); feeds severity weighting in INV001/INV002 reporting.
 - `Invariant` -- one tracked invariant: id, statement, criticality, and
-  its evidence list, parsed from `invariants/INV-###.md`.
-- `InvariantError` -- failure values `load_invariants` can return
-  (malformed frontmatter, duplicate id).
+  its evidence list, parsed from `invariants/*.md`.
+- `InvariantError` -- the per-file failure reason a bad `invariants/*.md`
+  file gets: `Malformed` (bad frontmatter/id/statement/criticality/
+  evidence shape) or `DuplicateId` (a second file declaring an id
+  another file already claimed).
+- `InvariantLoadError` -- one bad file's path plus its `InvariantError`
+  (T-4019).
+- `LoadedInvariants` -- `load_invariants`'s return value: every invariant
+  that parsed, plus one `InvariantLoadError` per file that didn't.
+
+An invariant id is `INV-` followed by one or more dash-separated
+all-caps/digit segments -- both the original three-digit convention
+(`INV-045`) and a descriptive id (`INV-ADMIN-DATA-001`,
+`INV-RENDER-SOLE-STDOUT`) are valid; this is the ONE grammar shared by
+the loader and the `frob:invariant` code-comment directive (T-4019 --
+before this, the loader rejected descriptive ids the directive already
+accepted with no restriction of its own).
 
 "Proving things that matter": an invariant is a tracked statement whose
-truth must have standing evidence. Files in `invariants/INV-###.md`:
+truth must have standing evidence. Files in `invariants/*.md`:
 
 ```markdown
 ---
@@ -5522,6 +5539,22 @@ INV001/INV002 close the loop: every invariant is anchored in code
 that `frob check` verifies still exists (test collected, rule loaded).
 Security work becomes monotonic: each audit finding lands as an invariant
 plus a policy rule or property test, never a one-off fix.
+
+**T-4019: a bad file is scoped to itself, loudly.** `load_invariants`
+parses every `invariants/*.md` file independently -- one malformed file
+(or a duplicate id) becomes its own `InvariantLoadError` naming that
+exact path, never a whole-load failure. `gate:invariant` turns each of
+these into an ERROR-severity **INV009** violation naming the bad file;
+every OTHER invariant file still loads, and every OTHER gate family
+(`SEC`, `PII`, `COV`, `SCOPE`, ...) is completely unaffected. Before this
+fix, ONE bad `invariants/*.md` file aborted graph/queue/lock/invariants/
+policy loading for the WHOLE run (`run_gates` returned `Err`), which
+`frob check` then rendered as `exit_code=0` "gates skipped: ..." --
+every gate silently off, reported as a clean pass. `run_gates`'s Err path
+(a genuinely unassemblable graph/lock/policy, distinct from a per-file
+invariant problem) is now a hard, non-zero-exit `GATES001` error instead
+of that soft skip, for the same reason: a stage that did not run must
+never report pass.
 
 ### INV003 (T-0462)
 

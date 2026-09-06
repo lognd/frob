@@ -12,7 +12,12 @@ from frob.gates import (
     invariant_gate,
     root_asset_dir_gate,
 )
-from frob.gates.invariants import InvariantError, _Criticality, load_invariants
+from frob.gates.invariants import (
+    InvariantError,
+    InvariantLoadError,
+    _Criticality,
+    load_invariants,
+)
 from frob.gitio import Diff
 from frob.testing import CollectedTests
 from frob.tickets import TicketQueue
@@ -861,28 +866,46 @@ class TestEnvVarDocGate:
 
 
 class TestInvariantLoad:
+    """T-4019: `load_invariants` returns a plain `LoadedInvariants` (never
+    `Result`) -- ONE malformed file becomes its own `InvariantLoadError`
+    in `.errors`, never a whole-load failure, and never silently dropped
+    either (`.errors` always names it)."""
+
     def test_malformed_bad_id(self, tmp_path: Path) -> None:
         (tmp_path / "invariants").mkdir()
         (tmp_path / "invariants" / "INV-abc.md").write_text(
             "---\nid: INV-abc\nstatement: x\ncriticality: high\nevidence: []\n---\nprose\n"
         )
-        result = load_invariants(tmp_path)
-        assert result.is_err
-        assert result.danger_err == InvariantError.Malformed
+        loaded = load_invariants(tmp_path)
+        assert loaded.invariants == ()
+        assert loaded.errors == (
+            InvariantLoadError(
+                path="invariants/INV-abc.md", error=InvariantError.Malformed
+            ),
+        )
 
     def test_duplicate_id(self, tmp_path: Path) -> None:
+        """The FIRST file in sorted path order ("INV-001-dup.md" < "INV-001.md",
+        `-` sorts before `.`) keeps its invariant; the SECOND becomes its
+        own `InvariantLoadError` naming its own path -- both files are
+        distinguishable in the result, never a single undifferentiated
+        `DuplicateId`."""
         (tmp_path / "invariants").mkdir()
         text = "---\nid: INV-001\nstatement: x\ncriticality: high\nevidence: []\n---\nprose\n"
         (tmp_path / "invariants" / "INV-001.md").write_text(text)
         (tmp_path / "invariants" / "INV-001-dup.md").write_text(text)
-        result = load_invariants(tmp_path)
-        assert result.is_err
-        assert result.danger_err == InvariantError.DuplicateId
+        loaded = load_invariants(tmp_path)
+        assert [inv.id for inv in loaded.invariants] == ["INV-001"]
+        assert loaded.errors == (
+            InvariantLoadError(
+                path="invariants/INV-001.md", error=InvariantError.DuplicateId
+            ),
+        )
 
     def test_missing_directory_ok(self, tmp_path: Path) -> None:
-        result = load_invariants(tmp_path)
-        assert result.is_ok
-        assert result.danger_ok == ()
+        loaded = load_invariants(tmp_path)
+        assert loaded.invariants == ()
+        assert loaded.errors == ()
 
     def test_loads_valid(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/invariants.py::load_invariants
@@ -892,16 +915,49 @@ class TestInvariantLoad:
             "evidence:\n  - tests/test_lock.py::test_atomic\n---\nRationale.\n"
         )
         (tmp_path / "invariants" / "INV-007.md").write_text(text)
-        result = load_invariants(tmp_path)
-        assert result.is_ok
-        assert result.danger_ok[0].id == "INV-007"
-        assert result.danger_ok[0].evidence == ("tests/test_lock.py::test_atomic",)
+        loaded = load_invariants(tmp_path)
+        assert loaded.errors == ()
+        assert loaded.invariants[0].id == "INV-007"
+        assert loaded.invariants[0].evidence == ("tests/test_lock.py::test_atomic",)
+
+    def test_descriptive_id_loads(self, tmp_path: Path) -> None:
+        """T-4019 defect 3: a descriptive id (the shape the `frob:invariant`
+        code directive already accepts with no restriction of its own --
+        `INV-RENDER-SOLE-STDOUT` is a real, working example in this repo)
+        is accepted by the file loader too, not just three digits."""
+        (tmp_path / "invariants").mkdir()
+        text = (
+            "---\nid: INV-ADMIN-DATA-001\nstatement: admin data is scoped\n"
+            "criticality: high\nevidence:\n  - tests/test_admin.py::test_scope\n"
+            "---\nRationale.\n"
+        )
+        (tmp_path / "invariants" / "INV-ADMIN-DATA-001.md").write_text(text)
+        loaded = load_invariants(tmp_path)
+        assert loaded.errors == ()
+        assert loaded.invariants[0].id == "INV-ADMIN-DATA-001"
+
+    def test_one_malformed_file_does_not_block_others(self, tmp_path: Path) -> None:
+        """T-4019 defect 2 (blast radius): a malformed file alongside a
+        valid one produces exactly one `InvariantLoadError` for the bad
+        file, while the valid file's invariant still loads."""
+        (tmp_path / "invariants").mkdir()
+        (tmp_path / "invariants" / "INV-bad.md").write_text("no frontmatter at all\n")
+        (tmp_path / "invariants" / "INV-002.md").write_text(
+            "---\nid: INV-002\nstatement: x\ncriticality: high\n"
+            "evidence:\n  - tests/test_x.py::test_x\n---\nRationale.\n"
+        )
+        loaded = load_invariants(tmp_path)
+        assert [inv.id for inv in loaded.invariants] == ["INV-002"]
+        assert len(loaded.errors) == 1
+        assert loaded.errors[0].path == "invariants/INV-bad.md"
+        assert loaded.errors[0].error == InvariantError.Malformed
 
     def test_unreadable_file_is_malformed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """An `OSError` reading the invariant file is `Err(Malformed)`, not
-        a crash -- proves `_frontmatter_dict`'s read-failure branch."""
+        """An `OSError` reading the invariant file becomes a per-file
+        `InvariantLoadError(error=Malformed)`, not a crash -- proves
+        `_frontmatter_dict`'s read-failure branch."""
         (tmp_path / "invariants").mkdir()
         (tmp_path / "invariants" / "INV-001.md").write_text(
             "---\nid: INV-001\nstatement: x\ncriticality: high\nevidence: []\n---\n"
@@ -914,41 +970,47 @@ class TestInvariantLoad:
             return real_read_text(self, *a, **kw)
 
         monkeypatch.setattr(Path, "read_text", _boom)
-        result = load_invariants(tmp_path)
-        assert result.is_err
-        assert result.danger_err == InvariantError.Malformed
+        loaded = load_invariants(tmp_path)
+        assert loaded.invariants == ()
+        assert loaded.errors[0].error == InvariantError.Malformed
 
     def test_no_frontmatter_block_is_malformed(self, tmp_path: Path) -> None:
-        """A file with no `---`-delimited frontmatter block at all is
-        `Err(Malformed)` -- proves the no-match regex branch."""
+        """A file with no `---`-delimited frontmatter block at all becomes
+        a per-file `Malformed` error -- proves the no-match regex branch."""
         (tmp_path / "invariants").mkdir()
         (tmp_path / "invariants" / "INV-001.md").write_text("just prose, no yaml\n")
-        result = load_invariants(tmp_path)
-        assert result.is_err
-        assert result.danger_err == InvariantError.Malformed
+        loaded = load_invariants(tmp_path)
+        assert loaded.errors[0].error == InvariantError.Malformed
 
     def test_bad_yaml_frontmatter_is_malformed(self, tmp_path: Path) -> None:
-        """Unparseable YAML inside the frontmatter block is `Err(Malformed)`
-        -- proves the `yaml.YAMLError` branch."""
+        """Unparseable YAML inside the frontmatter block becomes a
+        per-file `Malformed` error -- proves the `yaml.YAMLError` branch."""
         (tmp_path / "invariants").mkdir()
         (tmp_path / "invariants" / "INV-001.md").write_text(
             "---\nid: [unterminated\n---\nprose\n"
         )
-        result = load_invariants(tmp_path)
-        assert result.is_err
-        assert result.danger_err == InvariantError.Malformed
+        loaded = load_invariants(tmp_path)
+        assert loaded.errors[0].error == InvariantError.Malformed
 
     def test_non_mapping_frontmatter_is_malformed(self, tmp_path: Path) -> None:
         """A frontmatter block that parses to a YAML scalar/list, not a
-        mapping, is `Err(Malformed)` -- proves the not-a-dict branch."""
+        mapping, becomes a per-file `Malformed` error -- proves the
+        not-a-dict branch."""
         (tmp_path / "invariants").mkdir()
         (tmp_path / "invariants" / "INV-001.md").write_text(
             "---\n- one\n- two\n---\nprose\n"
         )
-        result = load_invariants(tmp_path)
-        assert result.is_err
-        assert result.danger_err == InvariantError.Malformed
+        loaded = load_invariants(tmp_path)
+        assert loaded.errors[0].error == InvariantError.Malformed
 
+    # frob:waive DUP002 reason="T-0160's own evidence cites these three test node ids \
+    # by name (test_empty_statement_is_malformed, \
+    # test_evidence_not_a_list_is_malformed, test_bad_criticality_is_malformed) -- \
+    # consolidating them into one parametrized test (tried, then reverted) orphans \
+    # that evidence (COV003), the exact test-deletion-breaks-other-tickets'-evidence \
+    # class; each proves a DIFFERENT _build_invariant/_validate_invariant_shape \
+    # field-shape branch (statement/evidence/criticality) even though the bodies read \
+    # alike"
     def test_empty_statement_is_malformed(self, tmp_path: Path) -> None:
         """An empty `statement` field fails `_validate_invariant_shape`'s
         non-empty check."""
@@ -956,28 +1018,26 @@ class TestInvariantLoad:
         (tmp_path / "invariants" / "INV-001.md").write_text(
             "---\nid: INV-001\nstatement: ''\ncriticality: high\nevidence: []\n---\n"
         )
-        result = load_invariants(tmp_path)
-        assert result.is_err
-        assert result.danger_err == InvariantError.Malformed
+        loaded = load_invariants(tmp_path)
+        assert loaded.errors[0].error == InvariantError.Malformed
 
     def test_evidence_not_a_list_is_malformed(self, tmp_path: Path) -> None:
-        """A non-list `evidence` field is `Err(Malformed)` -- proves
-        `_build_invariant`'s evidence-shape branch."""
+        """A non-list `evidence` field becomes a per-file `Malformed`
+        error -- proves `_build_invariant`'s evidence-shape branch."""
         (tmp_path / "invariants").mkdir()
         (tmp_path / "invariants" / "INV-001.md").write_text(
             "---\nid: INV-001\nstatement: x\ncriticality: high\nevidence: notalist\n---\n"
         )
-        result = load_invariants(tmp_path)
-        assert result.is_err
-        assert result.danger_err == InvariantError.Malformed
+        loaded = load_invariants(tmp_path)
+        assert loaded.errors[0].error == InvariantError.Malformed
 
     def test_bad_criticality_is_malformed(self, tmp_path: Path) -> None:
-        """A `criticality` value outside the `_Criticality` enum is
-        `Err(Malformed)` -- proves the criticality-membership branch."""
+        """A `criticality` value outside the `_Criticality` enum becomes a
+        per-file `Malformed` error -- proves the criticality-membership
+        branch."""
         (tmp_path / "invariants").mkdir()
         (tmp_path / "invariants" / "INV-001.md").write_text(
             "---\nid: INV-001\nstatement: x\ncriticality: catastrophic\nevidence: []\n---\n"
         )
-        result = load_invariants(tmp_path)
-        assert result.is_err
-        assert result.danger_err == InvariantError.Malformed
+        loaded = load_invariants(tmp_path)
+        assert loaded.errors[0].error == InvariantError.Malformed

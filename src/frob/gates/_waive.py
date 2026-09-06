@@ -261,6 +261,11 @@ _KNOWN_GATE_RULES = frozenset(
         # forms -- see `frob.gates._design_invariants`.
         "INV007",
         "INV008",
+        # T-4019: one `invariants/*.md` file failed to load (malformed
+        # frontmatter/id/statement/criticality/evidence, or a duplicate
+        # id) -- names the exact failing file; every other invariant file
+        # and gate family runs unaffected (the blast-radius fix).
+        "INV009",
         # T-1843: refinement-monotonicity over the real design/ policies --
         # see `frob.gates._policy_weakening_gate`.
         "INV051",
@@ -1325,6 +1330,12 @@ _KNOWN_GATE_RULES = frozenset(
         # like any other rule id so it is waivable/searchable rather than
         # rendering with an empty rule id.
         "QUEUE001",
+        # T-4019: `run_gates`'s own total-abort sentinels (`GateError.
+        # ConfigMalformed`/`GraphUnavailable`) rendered as a hard,
+        # non-zero-exit error by `frob.check._python._gates_error_result`
+        # instead of the old `exit_code=0` "gates skipped: ..." soft
+        # skip -- a stage that never ran must never report pass.
+        "GATES001",
     }
 )
 # frob-zone-end known-gate-rules T-1002

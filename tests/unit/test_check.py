@@ -2894,6 +2894,43 @@ class TestGatesErrorResultQueueUnavailable:
         assert result.diagnostics == []
 
 
+# frob:ticket T-4019
+class TestGatesErrorResultTotalAbort:
+    """T-4019 FOURTH FIXTURE: a stage that did not execute must never
+    report pass. `ConfigMalformed`/`GraphUnavailable` are the two
+    sentinels `frob.gates._load_graph_queue_lock`/`_load_required_state`
+    return when `run_gates` could not assemble its required state at all
+    -- NO gate ran. Measured end to end before this fix: one malformed
+    `invariants/*.md` file made `frob check` print "gates skipped: ..."
+    at `exit_code=0`, a total enforcement failure rendered as a clean
+    pass -- the largest-blast-radius silent zero this repo has measured."""
+
+    def test_config_malformed_is_a_hard_error_not_a_pass(self) -> None:
+        from frob.check._python import _gates_error_result
+        from frob.gates import GateError
+
+        result = _gates_error_result(GateError.ConfigMalformed, GateError)
+
+        assert result.tool == "gates"
+        assert result.exit_code != 0
+        assert len(result.diagnostics) == 1
+        assert result.diagnostics[0].severity == "error"
+        assert result.diagnostics[0].code == "GATES001"
+        assert "skipped" not in result.summary.lower() or "FAILED" in result.summary
+
+    def test_graph_unavailable_is_a_hard_error_not_a_pass(self) -> None:
+        from frob.check._python import _gates_error_result
+        from frob.gates import GateError
+
+        result = _gates_error_result(GateError.GraphUnavailable, GateError)
+
+        assert result.tool == "gates"
+        assert result.exit_code != 0
+        assert len(result.diagnostics) == 1
+        assert result.diagnostics[0].severity == "error"
+        assert result.diagnostics[0].code == "GATES001"
+
+
 # frob:ticket T-2710
 class TestGatesErrorResultRealTicketError:
     """T-2710: `run_gates` now propagates the REAL `TicketError` a

@@ -24,7 +24,23 @@ from frob.yamlio import fast_yaml_loader
 
 _log = get_logger(__name__)
 
-_ID_RE = re.compile(r"^INV-\d{3}$")
+# T-4019: widened from the original `^INV-\d{3}$` to match the id grammar
+# the `frob:invariant` code-comment directive already accepts with NO
+# format restriction of its own (`frob.graph.dsl`'s target parsing takes
+# any bare token) -- a real, working example already lives in this repo:
+# `# frob:invariant INV-RENDER-SOLE-STDOUT` (src/frob/gates/_render_lint.py).
+# The old three-digit-only pattern rejected that shape outright, so a
+# consumer's descriptive id (`INV-ADMIN-DATA-001`) failed this loader's
+# validation while the very directive meant to anchor it accepted the
+# same string -- one concept, two disagreeing spellings. This is the ONE
+# shared definition now: "INV-" followed by one or more dash-separated
+# all-caps/digit segments, covering both the original convention
+# (INV-045) and a descriptive id (INV-ADMIN-DATA-001,
+# INV-RENDER-SOLE-STDOUT) -- never silently permissive (lowercase, empty
+# segments, and bare "INV-" still fail loudly, matching a directive's own
+# de-facto shape: real ids are always dash-separated shouting-case
+# tokens).
+_ID_RE = re.compile(r"^INV-[A-Z0-9]+(?:-[A-Z0-9]+)*$")
 _FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n?(.*)$", re.DOTALL)
 
 # frob:doc docs/modules/gates.md#invariants
@@ -185,10 +201,49 @@ class Invariant(BaseModel):
 
 # frob:doc docs/modules/gates.md#invariants
 class InvariantError(ErrorSet):
-    """Failure values `load_invariants` can return."""
+    """Per-file failure values `load_invariants` can attach to one
+    `InvariantLoadError` (T-4019: no longer the whole load's own Err --
+    see that class's docstring)."""
 
     Malformed = "Invariant file failed schema validation"
     DuplicateId = "Two invariant files share an id"
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:tests \
+# tests/gates_suite/test_invariant.py::TestInvariantLoad.test_malformed_bad_id \
+# kind="unit"
+class InvariantLoadError(BaseModel):
+    """One `invariants/*.md` file that failed to load: its path (relative
+    to root) and why (T-4019). `load_invariants` emits one of these PER
+    bad file instead of aborting -- a malformed file must be loud (it
+    always produces one of these, never silently dropped) and local (it
+    never keeps any OTHER file from loading), the fix for the "one bad
+    file turns off every gate" defect."""
+
+    model_config = ConfigDict(frozen=True)
+
+    path: str
+    error: InvariantError
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:tests \
+# tests/gates_suite/test_invariant.py::TestInvariantLoad.test_one_malformed_file_does_n\
+# ot_block_others kind="unit"
+class LoadedInvariants(BaseModel):
+    """`load_invariants`'s result (T-4019): every invariant that parsed
+    cleanly, plus one `InvariantLoadError` for every file that didn't.
+    Scanning `invariants/` for files it exists to read can't meaningfully
+    fail as a whole (a missing directory is simply zero files) -- the
+    only failure unit that exists is a single file, so `load_invariants`
+    returns this directly rather than wrapping it in `Result`: there is
+    no longer a whole-load failure case left to represent."""
+
+    model_config = ConfigDict(frozen=True)
+
+    invariants: tuple[Invariant, ...] = ()
+    errors: tuple[InvariantLoadError, ...] = ()
 
 
 def _invariants_dir(root: Path) -> Path:
@@ -277,30 +332,69 @@ def _parse_one(path: Path, root: Path) -> Result[Invariant, InvariantError]:
     return _build_invariant(raw.danger_ok, path, root)
 
 
+# frob:waive AFFECT001 reason="T-4019: docs/modules/gates.md's Invariants section was \
+# already rewritten in this same change for load_invariants' new LoadedInvariants \
+# return shape; the frob ack write that clears the DRIFT001 digest stamp needs \
+# frob.lock, which is under a concurrent T-3799 (unrelated Windows PATHEXT work) scope \
+# lease this ticket cannot take -- content is current, only the ack bookkeeping is \
+# blocked, same T-2466 precedent frob/tickets/_evidence.py already carries for this \
+# exact lease-contention shape"
+# frob:waive DRIFT001 reason="same T-3799 frob.lock lease conflict as the AFFECT001 \
+# waiver immediately above -- docs/modules/gates.md is already re-verified accurate \
+# for this change, the ack write alone is blocked"
 # frob:doc docs/modules/gates.md#public-api
-def load_invariants(root: Path) -> Result[tuple[Invariant, ...], InvariantError]:
-    """Parse every `invariants/INV-###.md` under `root`; a missing dir is `Ok(())`."""
+def load_invariants(root: Path) -> LoadedInvariants:
+    """Parse every `invariants/*.md` under `root`; a missing dir loads zero
+    invariants and zero errors.
+
+    T-4019: ONE malformed file used to abort the ENTIRE load
+    (`Err(InvariantError...)` on the first bad file, `frob.gates`'
+    `_load_required_state` then treating that as a hard failure that
+    turned off every OTHER gate too) and, further up the stack, that hard
+    failure rendered as `exit_code=0` "gates skipped ... pass" -- the
+    largest-blast-radius silent zero this repo has measured. Scoped now:
+    every file is parsed independently, a bad one becomes its own
+    `InvariantLoadError` (naming its path) in `errors`, and every OTHER
+    file's invariant still loads into `invariants` normally. A duplicate
+    id is likewise scoped to the SECOND file that declares it -- the
+    first file's invariant is kept, the duplicate becomes an
+    `InvariantLoadError` naming the losing path, and every unrelated file
+    is unaffected either way."""
     directory = _invariants_dir(root)
     if not directory.is_dir():
         _log.info("load_invariants: no invariants/ under %s", root)
-        return Ok(())
+        return LoadedInvariants()
 
     invariants: dict[str, Invariant] = {}
+    errors: list[InvariantLoadError] = []
     inv_paths = sorted(directory.glob("*.md"))
     for path in inv_paths:
+        rel_path = str(path.relative_to(root).as_posix())
         parsed = _parse_one(path, root)
         if parsed.is_err:
-            return Err(parsed.danger_err)
+            errors.append(InvariantLoadError(path=rel_path, error=parsed.danger_err))
+            continue
         invariant = parsed.danger_ok
         if invariant.id in invariants:
             _log.error("load_invariants: duplicate id %s (%s)", invariant.id, path)
-            return Err(InvariantError.DuplicateId)
+            errors.append(
+                InvariantLoadError(path=rel_path, error=InvariantError.DuplicateId)
+            )
+            continue
         invariants[invariant.id] = invariant
 
+    if errors:
+        _log.error(
+            "load_invariants: %d of %d file(s) under %s failed to load: %s",
+            len(errors),
+            len(inv_paths),
+            directory,
+            ", ".join(e.path for e in errors),
+        )
     _log.info(
         "load_invariants: loaded %d invariant(s) from %s", len(invariants), directory
     )
-    return Ok(tuple(invariants.values()))
+    return LoadedInvariants(invariants=tuple(invariants.values()), errors=tuple(errors))
 
 
 __all__ = [
@@ -308,6 +402,8 @@ __all__ = [
     "NORMATIVE_CLAIM_PATTERNS",
     "Invariant",
     "InvariantError",
+    "InvariantLoadError",
+    "LoadedInvariants",
     "_Criticality",
     "find_exclusivity_claims",
     "find_normative_claims",

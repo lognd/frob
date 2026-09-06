@@ -1159,7 +1159,9 @@ def _label_replay(results: list, *, age_s: float) -> list:  # noqa: ANN001
 
 # frob:ticket T-2684
 # frob:ticket T-2710
+# frob:ticket T-4019
 # frob:enforces CHK-GATE-QUEUE001
+# frob:enforces CHK-GATE-GATES001
 # frob:tests \
 # tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable.test_queue_unavailable_sets_real_code_and_no_stale_path  # noqa: E501
 # frob:tests \
@@ -1168,6 +1170,12 @@ def _label_replay(results: list, *, age_s: float) -> list:  # noqa: ANN001
 # tests/unit/test_check.py::TestGatesErrorResultRealTicketError.test_real_ticket_error_names_specific_mode  # noqa: E501
 # frob:tests \
 # tests/unit/test_check.py::TestGatesErrorResultRealTicketError.test_dummy_sentinel_still_a_defensive_fallback  # noqa: E501
+# frob:tests \
+# tests/unit/test_check.py::TestGatesErrorResultTotalAbort.test_config_malformed_is_a_h\
+# ard_error_not_a_pass
+# frob:tests \
+# tests/unit/test_check.py::TestGatesErrorResultTotalAbort.test_graph_unavailable_is_a_\
+# hard_error_not_a_pass
 def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
     """The `ToolResult` for a failed `run_gates` call: a hard ERROR if the
     ticket queue itself failed to load, else a soft skip.
@@ -1199,7 +1207,21 @@ def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
     scope to surface -- but it DOES now say which ledger corruption MODE
     occurred, cutting the remaining `frob ticket list`/`frob ticket show
     <id>` round trip down to confirming a known failure mode rather than
-    discovering it cold."""
+    discovering it cold.
+
+    T-4019: `GraphUnavailable` and `ConfigMalformed` are the two sentinels
+    `frob.gates._load_graph_queue_lock`/`_load_required_state` return when
+    the graph/lock/invariants/policy state EVERY gate depends on could not
+    be assembled at all -- the run aborted before a single gate executed.
+    The old fallback below rendered that as `exit_code=0` / "gates
+    skipped: ...", a total-enforcement-failure indistinguishable from a
+    clean pass (measured end to end: one malformed `invariants/*.md` file
+    made `frob check` report every family "skipped ... pass" while
+    exiting 0). Checked here, second, for the same reason QueueUnavailable
+    is checked first: a stage that did not run must never report pass,
+    and the exit status must say so. Every OTHER `GateError` value (a
+    single stamping operation's own failure, never something `run_gates`
+    itself returns) keeps the soft-skip fallback unchanged."""
     from frob.tickets import TicketError
 
     if isinstance(err, TicketError) or err is gate_error_cls.QueueUnavailable:
@@ -1227,6 +1249,34 @@ def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
             summary=(
                 f"gates FAILED: ticket queue failed to load ({mode}) -- run "
                 "`frob ticket list` for the specific failing artifact"
+            ),
+        )
+    if err in (gate_error_cls.ConfigMalformed, gate_error_cls.GraphUnavailable):
+        # T-4019: the total-abort path -- `_load_required_state` could not
+        # assemble the graph/lock/invariants/policy state every gate reads,
+        # so NO gate ran. Must be a hard, non-zero-exit ERROR like
+        # QueueUnavailable above, never the soft `exit_code=0` skip below
+        # (that rendered a total enforcement failure as a clean pass).
+        return ToolResult(
+            tool="gates",
+            exit_code=1,
+            diagnostics=[
+                Diagnostic(
+                    file=None,
+                    severity="error",
+                    code="GATES001",
+                    message=(
+                        f"GATES001: gates could not load required state "
+                        f"({err.value}): every gate was skipped, not run. "
+                        "This is a hard failure, not a soft skip -- fix "
+                        "the underlying graph/lock/invariant/policy error "
+                        "and re-run `frob check`."
+                    ),
+                )
+            ],
+            summary=(
+                f"gates FAILED to load required state ({err.value}) -- "
+                "no gate ran"
             ),
         )
     return ToolResult(

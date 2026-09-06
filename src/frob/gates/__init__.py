@@ -267,7 +267,12 @@ from frob.gates._walk_lint import walk_lint_gate
 from frob.gates._win32_kill_signal import win32_kill_signal_gate
 from frob.gates._wire import wire_gate
 from frob.gates.decisions import DecisionError
-from frob.gates.invariants import Invariant, InvariantError, load_invariants
+from frob.gates.invariants import (
+    Invariant,
+    InvariantError,
+    InvariantLoadError,
+    load_invariants,
+)
 from frob.gitio import Diff, Hunk, run_argv, working_diff
 from frob.gitio import repo_root as _git_repo_root
 from frob.graph import (
@@ -6284,6 +6289,13 @@ class _GateInputs:
     systems: tuple[SystemSpec, ...]
     ticket: Ticket | None = None
     sweep: Option[PreworkSweep] = field(default_factory=Nothing)
+    # frob:ticket T-4019
+    # T-4019: one `InvariantLoadError` per `invariants/*.md` file that
+    # failed to parse -- `invariants` above already excludes these (they
+    # never became an `Invariant`), so the "invariant" job's own violation
+    # builder is what turns each of these into a loud, file-named ERROR;
+    # every OTHER gate here is entirely unaffected by a non-empty tuple.
+    invariant_load_errors: tuple[InvariantLoadError, ...] = ()
     # frob:ticket T-0550
     diff_load_failed: bool = False
     # frob:ticket T-0719
@@ -6469,14 +6481,65 @@ def _load_graph_queue_lock(
     return Ok((build.danger_ok, queue_result.danger_ok, lock.danger_ok))
 
 
+# frob:ticket T-4019
+# frob:enforces CHK-GATE-INV009
+# frob:tests \
+# tests/gates_suite/test_run.py::TestInvariantLoadBlastRadius.test_must_fire_malformed_\
+# invariant_file_produces_named_error
+def _invariant_load_error_violations(
+    errors: tuple[InvariantLoadError, ...],
+) -> tuple[Violation, ...]:
+    """INV009: one ERROR violation per `InvariantLoadError` (T-4019) --
+    the loud half of "loud and local": a malformed `invariants/*.md` file
+    no longer aborts the whole `gate:invariant` job (`load_invariants`'s
+    own docstring), so this is what keeps it from going quiet instead.
+    Each violation names its own failing file and `InvariantError` reason,
+    never a generic "something failed" -- exactly the file
+    `frob.gates.invariants._parse_one` refused, nothing else."""
+    return tuple(
+        Violation(
+            rule="INV009",
+            severity=Severity.ERROR,
+            file=e.path,
+            line=0,
+            message=(
+                f"INV009: {e.path} failed to load ({e.error.value}) -- "
+                "fix this file's frontmatter (id/statement/criticality/"
+                "evidence) or its YAML syntax; every OTHER invariant file "
+                "and gate still ran normally"
+            ),
+        )
+        for e in errors
+    )
+
+
 def _load_required_state(
     root: Path,
 ) -> Result[
-    tuple[GraphSnapshot, TicketQueue, LockFile, tuple[Invariant, ...], list],
+    tuple[
+        GraphSnapshot,
+        TicketQueue,
+        LockFile,
+        tuple[Invariant, ...],
+        tuple[InvariantLoadError, ...],
+        list,
+    ],
     GateError | TicketError,
 ]:
     """Load the gates' mandatory state -- graph, ticket queue, lock,
-    invariants, policy -- or the first hard failure."""
+    invariants, policy -- or the first hard failure.
+
+    T-4019: `load_invariants` itself can no longer fail the whole run --
+    it returns every invariant that parsed plus a per-file
+    `InvariantLoadError` for every one that didn't (see that function's
+    own docstring). So, unlike graph/queue/lock/policy above and below,
+    a malformed `invariants/*.md` file is NEVER a reason to abort this
+    function: it is threaded through as `invariant_load_errors` so the
+    "invariant" gate job can report it as a loud, file-scoped ERROR while
+    every OTHER gate runs against the invariants that DID parse, exactly
+    as if the bad file were not there. This is the fix for "one malformed
+    invariant file turns off every gate" -- the blast radius is now
+    exactly that one file's own invariant, never the run."""
     from frob.policy import load_policy
 
     first = _load_graph_queue_lock(root)
@@ -6484,16 +6547,26 @@ def _load_required_state(
         return Err(first.danger_err)
     build_ok, queue_ok, lock_ok = first.danger_ok
 
-    invariants = _require(
-        load_invariants(root), "invariants load", GateError.ConfigMalformed
-    )
-    if invariants.is_err:
-        return Err(invariants.danger_err)
+    loaded_invariants = load_invariants(root)
+    if loaded_invariants.errors:
+        _log.error(
+            "run_gates: %d invariant file(s) failed to load (scoped to "
+            "gate:invariant, every other gate runs unaffected): %s",
+            len(loaded_invariants.errors),
+            ", ".join(e.path for e in loaded_invariants.errors),
+        )
     policy = _require(load_policy(root), "policy load", GateError.ConfigMalformed)
     if policy.is_err:
         return Err(policy.danger_err)
     return Ok(
-        (build_ok, queue_ok, lock_ok, invariants.danger_ok, list(policy.danger_ok))
+        (
+            build_ok,
+            queue_ok,
+            lock_ok,
+            loaded_invariants.invariants,
+            loaded_invariants.errors,
+            list(policy.danger_ok),
+        )
     )
 
 
@@ -6519,7 +6592,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
     """Build the full `_GateInputs` from `_load_required_state`'s mandatory
     state plus the remaining optional/derived loads (coverage, test policy,
     active ticket)."""
-    snapshot, queue, lock, invariants, rules = required
+    snapshot, queue, lock, invariants, invariant_load_errors, rules = required
     coverage_result = load_coverage(root, snapshot)
     coverage: Option[CoverageData] = (
         Some(coverage_result.danger_ok) if coverage_result.is_ok else Nothing()
@@ -6538,6 +6611,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
         diff=diff,
         tests=tests,
         invariants=invariants,
+        invariant_load_errors=invariant_load_errors,
         rules=tuple(rules),
         rule_ids=frozenset(r.id for r in rules),
         coverage=coverage,
@@ -7009,6 +7083,7 @@ def _build_thread_jobs(
             st.python_collection_failed,
         ),
         "invariant": lambda: (
+            *_invariant_load_error_violations(st.invariant_load_errors),
             *invariant_gate(st.invariants, st.snapshot, st.tests, st.rule_ids),
             *inv003_gate(st.repo_root, st.invariants),
             *inv004_gate(st.repo_root),
@@ -8719,6 +8794,7 @@ __all__ = [
     "GateStats",
     "Invariant",
     "InvariantError",
+    "InvariantLoadError",
     "PreworkSweep",
     "RatchetEntry",
     "RatchetError",

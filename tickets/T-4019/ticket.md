@@ -2,7 +2,7 @@
 id: T-4019
 title: 'F-232: one malformed invariants/*.md aborts ALL gate loading and the run reports
   ''skipped ... pass'' -- whole-repo enforcement silently off'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -123,7 +123,7 @@ evidence:
 - tests/gates_suite/test_run.py::TestInvariantLoadBlastRadius::test_descriptive_id_directive_and_loader_agree
 - tests/unit/test_check.py::TestGatesErrorResultTotalAbort::test_config_malformed_is_a_hard_error_not_a_pass
 - tests/unit/test_check.py::TestGatesErrorResultTotalAbort::test_graph_unavailable_is_a_hard_error_not_a_pass
-designated_repro_test: null
+designated_repro_test: tests/gates_suite/test_run.py::TestInvariantLoadBlastRadius::test_must_stay_quiet_other_gates_run_normally_beside_one_malformed_file
 threat: null
 component: null
 anchor: false

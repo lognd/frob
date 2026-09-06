@@ -165,6 +165,105 @@ class TestRunGates:
         assert "failed to load" in pre001.message
 
 
+# frob:ticket T-4019
+class TestInvariantLoadBlastRadius:
+    """T-4019: this repo's own `invariants/` is empty (T-3928), so nothing
+    here previously proved this code path -- these fixtures build a real
+    `invariants/*.md` file, including a malformed one, rather than relying
+    on this repo's vacuous invariant gate."""
+
+    def test_must_fire_malformed_invariant_file_produces_named_error(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-FIRE: a malformed `invariants/*.md` file produces an
+        ERROR-severity INV009 violation naming that exact file -- it is
+        NEVER silently dropped, and it is NEVER folded into a generic
+        whole-run failure with no file name attached."""
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "invariants/INV-BROKEN.md",
+            "no frontmatter block at all, just prose\n",
+        )
+        _git_init(tmp_path)
+        cfg = GateConfig(
+            root=str(tmp_path), base="main", gates=frozenset({"invariant"})
+        )
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        inv009 = _first_rule(report.violations, "INV009")
+        assert inv009 is not None
+        assert inv009.severity == Severity.ERROR
+        assert "INV-BROKEN.md" in inv009.file
+
+    def test_must_stay_quiet_other_gates_run_normally_beside_one_malformed_file(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STAY-QUIET, the point of this ticket: with ONE malformed
+        `invariants/*.md` file present, every OTHER gate still runs and
+        reports normally -- `drift`/`coverage` are not aborted, skipped,
+        or otherwise contaminated by the invariant load failure. Before
+        T-4019 this same fixture aborted graph/queue/lock/invariants/
+        policy loading for the WHOLE run (`_load_required_state`), so
+        `run_gates` itself returned `Err` and NOTHING ran."""
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "invariants/INV-BROKEN.md",
+            "no frontmatter block at all, just prose\n",
+        )
+        _git_init(tmp_path)
+        cfg = GateConfig(
+            root=str(tmp_path),
+            base="main",
+            gates=frozenset({"drift", "coverage", "invariant"}),
+        )
+        result = run_gates(cfg)
+        assert result.is_ok, (
+            "one malformed invariant file must never abort the whole run"
+        )
+        report = result.danger_ok
+        assert "drift" in report.stats.counts
+        assert "coverage" in report.stats.counts
+        assert "drift" not in report.stats.skipped
+        assert "coverage" not in report.stats.skipped
+        # the malformed file is still reported -- MUST-STAY-QUIET is about
+        # every OTHER gate, not about hiding the bad file.
+        assert _first_rule(report.violations, "INV009") is not None
+
+    def test_descriptive_id_directive_and_loader_agree(self, tmp_path: Path) -> None:
+        """THIRD FIXTURE: a descriptive id the `frob:invariant` code
+        directive already accepts with no format restriction of its own
+        (`INV-RENDER-SOLE-STDOUT` is a real working example in this
+        repo's own `src/frob/gates/_render_lint.py`) is ALSO accepted by
+        the file loader -- an anchor comment and an `invariants/*.md`
+        file sharing the same descriptive id resolve as a real bound
+        invariant (no INV002 "no code anchor"), proving the two grammars
+        agree rather than merely both compiling in isolation."""
+        _write(
+            tmp_path,
+            "src/frob/pkg/a.py",
+            "# frob:invariant INV-ADMIN-DATA-001\ndef helper(x):\n    return x\n",
+        )
+        _write(
+            tmp_path,
+            "invariants/INV-ADMIN-DATA-001.md",
+            "---\nid: INV-ADMIN-DATA-001\nstatement: admin data stays scoped\n"
+            "criticality: high\nevidence:\n  - tests/test_a.py::test_helper\n"
+            "---\nRationale.\n",
+        )
+        _git_init(tmp_path)
+        cfg = GateConfig(
+            root=str(tmp_path), base="main", gates=frozenset({"invariant"})
+        )
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        assert _first_rule(report.violations, "INV009") is None
+        assert _first_rule(report.violations, "INV002") is None
+
+
 # frob:ticket T-1148
 class TestNativeAvailabilityGate:
     """T-1148: a declared `[[native]]` that fails to import must short-
