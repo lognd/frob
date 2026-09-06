@@ -26,6 +26,8 @@ scope:
 - src/frob/mutate/_journal.py
 - docs/modules/mutate.md
 - tests/test_mutate.py
+- design/frob.strata
+- src/frob/mutate
 evidence_scope:
 - tests/integration/test_gitlog.py
 - tests/test_mutate_journal.py
@@ -206,6 +208,18 @@ scope_changes:
   reason: full SCOPE002 closure on the pre-existing tests/conftest.py::pytest_configure/pytest_sessionfinish
     frob:tests bindings this repo's frob.toml promotes to error; tracking-only, no
     edits intended to the mutate module family
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: design/frob.strata
+  reason: final SCOPE002 closure links for the pre-existing conftest.py binding cascade
+    (design source + package dir supersets of files already added); tracking-only
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/mutate
+  reason: final SCOPE002 closure links for the pre-existing conftest.py binding cascade
+    (design source + package dir supersets of files already added); tracking-only
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
