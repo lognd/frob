@@ -185,6 +185,19 @@ scope_changes:
     SCOPE002 debt on this shared module as pre-existing, not introduced here'
   actor: logan
   at: '2026-09-06'
+body_changes:
+- mode: append
+  reason: BUG002 cannot be satisfied on this platform for a Windows-only path-separator
+    defect; document why and how the mechanism is proven instead
+  actor: logan
+  at: '2026-09-06'
+  old_length: 878
+  new_length: 1686
+evidence:
+- tests/unit/test_cycle_waiver.py::TestCycleWaiverPipeline::test_unwaived_cycle_reports
+- tests/unit/test_cycle_waiver.py::TestCycleWaiverPipeline::test_unrelated_files_waiver_does_not_suppress
+- tests/unit/test_cycle_waiver.py::TestCycleWaiverPipeline::test_missing_reason_is_not_silently_honored
+- tests/unit/test_cycle_waiver.py::test_windows_shaped_relative_path_str_disagrees_with_as_posix
 designated_repro_test: null
 threat: null
 component: null
@@ -193,3 +206,5 @@ anchor_reason: null
 land_commit: null
 ---
 T-3936 cluster C: tests/unit/test_cycle_waiver.py's three cases (including the unwaived positive control) all report zero findings on Windows. Root cause: frob.check._python._build_import_graph builds node ids with bare str(path.relative_to(scan_root)) (backslash-separated on Windows) but resolve_local_import always returns as_posix() (forward-slash) edge targets. So on Windows every add_edge(rel, resolved) links a backslash node id to a forward-slash node id that never equals it -- Tarjan sees only isolated singleton nodes, no cycle of size>1 is ever found, detector silently reports no cycles. This is the SAME shape frob.app.cycle_runner._process_path already fixed at T-3786 (rel_path.as_posix()) -- _build_import_graph in _python.py is a second, unfixed copy of the same node-identity logic. Fix: use rel_path.as_posix() in _build_import_graph, matching cycle_runner.
+
+frob:waive BUG002 reason="the defect is Windows-only (backslash str() vs forward-slash as_posix() node-id mismatch); on this Linux CI runner, path.relative_to(...).__str__() already equals as_posix() since os.sep==\"/\", so the designated reproduction test (test_unwaived_cycle_reports) passes identically before and after the fix on THIS platform -- it cannot fail-then-pass here by construction. The mechanism is instead proven directly (not simulated) via test_windows_shaped_relative_path_str_disagrees_with_as_posix, which asserts PureWindowsPath.__str__() != .as_posix() and cross-checks against ntpath directly (pure string methods, no OS-dispatch dependency of the kind that made T-3947/T-3948 simulation-only proofs wrong). Real confirmation needs a Windows CI run per T-3936 acceptance criteria."
