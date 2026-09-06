@@ -2,7 +2,7 @@
 id: T-3980
 title: 'artifact-smoke CI red: wrong-platform core wheels (ubuntu) + doctor repo-hygiene
   coupling (macOS)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -118,6 +118,11 @@ scope_changes:
     to fully close this shared doc''s scope'
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/test_artifact_smoke_script.py::TestCheckBaseInstall::test_doctor_runs_outside_work_dir_not_process_cwd
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_wrong_platform_wheel_names_the_mismatch
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_matching_platform_wheel_does_not_raise
+- tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_wheel_matches_host_platform_rejects_foreign_tag
 designated_repro_test: null
 threat: null
 component: null

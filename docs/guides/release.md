@@ -504,3 +504,16 @@ surface -- it does not run frob's test suite against the installed
 artifact (slow, and duplicates `ci.yml`). The bar stated in this
 ticket's own acceptance text: does the thing about to be published
 install, start, and report healthy.
+
+**T-3980: `frob doctor` in base-install runs outside the repo
+checkout.** `check_base_install` runs `frob doctor` with its working
+directory set to a scratch folder this check owns, never the smoke
+script's own repo checkout. `doctor`'s ticket/hook/config-drift checks
+inspect whatever git repo happens to surround wherever it runs, which
+has nothing to do with whether the installed artifact works -- a
+checkout with a ticket left in-progress is not a broken wheel, and was
+enough to fail this stage before this change. Outside a repo, those
+checks find nothing to inspect and stay quiet, while the health verdict
+`doctor` still reports keeps reflecting native-extension import
+failures, so a genuinely broken wheel still fails this stage exactly as
+before -- only the unrelated repo-hygiene coupling is gone.

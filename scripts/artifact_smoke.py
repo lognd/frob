@@ -35,6 +35,7 @@ fails -- this script's own exit code is what
 from __future__ import annotations
 
 import argparse
+import platform
 import shutil
 import subprocess
 import sys
@@ -60,12 +61,17 @@ class SmokeCheckError(Exception):
         return f"{self.name}: {self.detail}"
 
 
-def _run(argv: list[str], *, timeout: int = 300) -> subprocess.CompletedProcess:
+def _run(
+    argv: list[str], *, timeout: int = 300, cwd: Path | None = None
+) -> subprocess.CompletedProcess:
     """Run `argv`, capturing output, never raising on a non-zero exit --
     callers inspect `.returncode` themselves so a failure can be wrapped
-    in a `SmokeCheckError` naming which smoke stage it belongs to."""
+    in a `SmokeCheckError` naming which smoke stage it belongs to. `cwd`
+    defaults to inheriting this process's own working directory (T-3980:
+    pass a scratch dir outside the repo checkout for a check that must
+    not pick up this repo's own `.frob`/git state)."""
     return subprocess.run(
-        argv, capture_output=True, text=True, timeout=timeout, check=False
+        argv, capture_output=True, text=True, timeout=timeout, check=False, cwd=cwd
     )
 
 
@@ -81,6 +87,61 @@ _REQUIRED_CORE_WHEEL_GLOBS = {
     "frob-core": "frob_core-*.whl",
     "strata-core": "strata_core-*.whl",
 }
+
+# T-3980: maps sys.platform to the wheel platform-tag prefixes a wheel
+# BUILT FOR THIS HOST may legitimately carry (a wheel filename's final
+# `-`-separated field before `.whl`, e.g. `manylinux_2_39_x86_64` or
+# `macosx_11_0_arm64`). Used by `_wheel_matches_host_platform` below --
+# see that function's docstring for why this check exists at all.
+_HOST_PLATFORM_TAG_PREFIXES = {
+    "linux": ("manylinux", "linux"),
+    "darwin": ("macosx",),
+    "win32": ("win",),
+}
+
+# T-3980: maps `platform.machine()` values to the arch token a wheel's
+# platform tag encodes for that machine -- both sides of the comparison
+# `_wheel_matches_host_platform` needs, since "macosx_11_0_arm64" and
+# "manylinux_2_39_x86_64" differ in BOTH os and arch and either mismatch
+# alone means the wheel cannot install here.
+_HOST_ARCH_TAG_TOKENS = {
+    "x86_64": ("x86_64", "amd64"),
+    "amd64": ("x86_64", "amd64"),
+    "arm64": ("arm64", "aarch64"),
+    "aarch64": ("arm64", "aarch64"),
+}
+
+
+# frob:ticket T-3980
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_wheel_matches_ho\
+# st_platform_rejects_foreign_tag
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_wrong_platform_w\
+# heel_names_the_mismatch
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels.test_matching_platfor\
+# m_wheel_does_not_raise
+def _wheel_matches_host_platform(wheel_path: Path) -> bool:
+    """T-3980: whether `wheel_path`'s filename platform tag is one this
+    host could actually install -- `_require_core_wheels`'s glob match
+    (`frob_core-*.whl`) is platform-blind, so a stale cache entry
+    carrying another platform's wheel (T-3980's root cause: a shared
+    cargo-cache key with no os/arch component let a macOS-built wheel
+    reach an ubuntu runner) glob-matches and was previously invisible
+    until it hit uv's resolver, which reports it as an opaque "no wheels
+    with a matching platform tag" trace with no hint that the wheel WAS
+    present, just for the wrong machine. Unknown `sys.platform`/
+    `platform.machine()` combinations return True (permissive) rather
+    than false-failing a host this check was not taught about."""
+    tag = wheel_path.stem.rsplit("-", 1)[-1]
+    os_prefixes = _HOST_PLATFORM_TAG_PREFIXES.get(sys.platform)
+    arch_tokens = _HOST_ARCH_TAG_TOKENS.get(platform.machine().lower())
+    if os_prefixes is None or arch_tokens is None:
+        return True
+    if not any(tag.startswith(prefix) for prefix in os_prefixes):
+        return False
+    return any(token in tag for token in arch_tokens)
 
 
 # frob:ticket T-3935
@@ -109,12 +170,26 @@ def _require_core_wheels(core_wheels_dir: Path) -> None:
     simply never built (a CI wiring bug) or the version pin itself is
     wrong (a real regression). Checked once, up front, so a wiring bug
     fails fast with a message naming exactly which core is missing,
-    instead of that ambiguity landing in the release gate."""
-    missing = [
-        name
-        for name, pattern in _REQUIRED_CORE_WHEEL_GLOBS.items()
-        if not list(core_wheels_dir.glob(pattern))
-    ]
+    instead of that ambiguity landing in the release gate.
+
+    T-3980: also catches the PRESENT-BUT-WRONG-PLATFORM case -- a wheel
+    that glob-matches (`frob_core-*.whl`) but was built for a different
+    os/arch (see `_wheel_matches_host_platform`). Previously this reached
+    uv's resolver undetected and surfaced as an opaque "no wheels with a
+    matching platform tag" trace deep inside a downstream check; this
+    preflight now names the wrong-platform wheel directly."""
+    missing = []
+    wrong_platform: list[str] = []
+    for name, pattern in _REQUIRED_CORE_WHEEL_GLOBS.items():
+        found = list(core_wheels_dir.glob(pattern))
+        if not found:
+            missing.append(name)
+            continue
+        bad = [w for w in found if not _wheel_matches_host_platform(w)]
+        if bad and len(bad) == len(found):
+            wrong_platform.append(
+                f"{name} ({', '.join(w.name for w in bad)})"
+            )
     if missing:
         raise SmokeCheckError(
             "core-wheels-preflight",
@@ -124,6 +199,18 @@ def _require_core_wheels(core_wheels_dir: Path) -> None:
             "published to any registry -- they must be built and supplied "
             "via --core-wheels-dir before any install can resolve them. "
             "This is 'core not built/supplied', not a bad version pin.",
+        )
+    if wrong_platform:
+        raise SmokeCheckError(
+            "core-wheels-preflight",
+            f"core_wheels_dir ({core_wheels_dir}) contains a wheel for: "
+            f"{', '.join(wrong_platform)}, but it was built for a "
+            f"different platform than this host "
+            f"(sys.platform={sys.platform!r}, "
+            f"machine={platform.machine()!r}). This is a wrong-platform "
+            "wheel reaching the smoke stage (e.g. a shared build cache "
+            "with no os/arch key crossing matrix legs), not a missing "
+            "core or a bad version pin.",
         )
 
 
@@ -168,10 +255,14 @@ def _python_c(python: Path, code: str, *, name: str) -> None:
         raise SmokeCheckError(name, result.stdout + result.stderr)
 
 
-def _run_module(python: Path, *args: str, name: str) -> subprocess.CompletedProcess:
+def _run_module(
+    python: Path, *args: str, name: str, cwd: Path | None = None
+) -> subprocess.CompletedProcess:
     """`python -m frob <args>`; wraps a non-zero exit in a `SmokeCheckError`
-    named `name`."""
-    result = _run([str(python), "-m", "frob", *args])
+    named `name`. `cwd` (T-3980) runs the command from a directory other
+    than this process's own -- used so `frob doctor` inspects the
+    installed artifact, not the smoke script's own repo checkout."""
+    result = _run([str(python), "-m", "frob", *args], cwd=cwd)
     if result.returncode != 0:
         raise SmokeCheckError(name, result.stdout + result.stderr)
     return result
@@ -184,6 +275,9 @@ def _run_module(python: Path, *args: str, name: str) -> subprocess.CompletedProc
 # frob:tests \
 # tests/system/test_artifact_smoke.py::TestArtifactSmokeMustStayQuiet.test_current_pin_\
 # passes_serve_extra_check
+# frob:tests \
+# tests/unit/test_artifact_smoke_script.py::TestCheckBaseInstall.test_doctor_runs_outsi\
+# de_work_dir_not_process_cwd
 def check_base_install(wheel_path: Path, work_dir: Path, core_wheels_dir: Path) -> None:
     """Bare `frob` (no extras) must install into a clean venv and run a
     real command: `frob --version` (entry point wiring) AND `frob
@@ -193,11 +287,28 @@ def check_base_install(wheel_path: Path, work_dir: Path, core_wheels_dir: Path) 
     required even here (T-3845: `frob-core`/`strata-core` are now plain
     DEFAULT dependencies of `frob` itself, not only of the `native`
     extra, so even a bare install needs them resolvable and the index
-    does not have this release's cores yet at smoke-test time)."""
+    does not have this release's cores yet at smoke-test time).
+
+    T-3980: `frob doctor` is run with `cwd=work_dir` (a scratch dir this
+    check owns, not the smoke script's own repo checkout) so it reports
+    ONLY the installed artifact's health -- entry-point wiring plus
+    native-extension import status. This assertion is deliberately about
+    the wheel, not the checkout: `doctor` also inspects whatever git
+    repo/`.frob` state happens to surround wherever it runs (stale
+    ticket leases, hook drift, ...), and that repo hygiene has nothing
+    to do with whether the artifact under test works. Outside a repo,
+    `doctor`'s ticket/hook checks find nothing to inspect and exit 0
+    while `healthy` still reflects native-extension import failures (see
+    `src/frob/doctor.py::_doctor_healthy`) -- exactly the must-fire/
+    must-stay-quiet split this check needs: a broken core still fails
+    here, a messy checkout the script happens to run inside no longer
+    can."""
     python = _make_venv(work_dir / "venv-base")
     _pip_install(python, str(wheel_path), find_links=core_wheels_dir)
     _run_module(python, "--version", name="frob --version")
-    _run_module(python, "doctor", name="frob doctor")
+    doctor_cwd = work_dir / "doctor-cwd"
+    doctor_cwd.mkdir(exist_ok=True)
+    _run_module(python, "doctor", name="frob doctor", cwd=doctor_cwd)
 
 
 # frob:doc docs/guides/release.md#artifact-smoke-stage-t-3884

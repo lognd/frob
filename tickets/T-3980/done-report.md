@@ -1,0 +1,77 @@
+## Done report
+
+Root causes found (both DIFFERENT from the ticket's stated hypothesis for ubuntu):
+
+1. UBUNTU: `.github/workflows/ci.yml`'s `Cache cargo` step keyed the
+frob-core/target and strata-core/target cache (where `maturin build`
+drops target/wheels/*.whl) on `cargo-${{ hashFiles(...) }}` alone -- no
+runner.os/runner.arch. All three matrix legs shared one cache entry, so
+the fastest-finishing leg's (macOS's) wheels got restored onto ubuntu.
+NOT an artifact-upload/download crossing as hypothesized -- the
+standalone-install job (T-3935) builds its own wheels fresh and was
+never the mechanism. Fixed by adding runner.os/runner.arch to the cache
+key. Also hardened _require_core_wheels to detect a
+present-but-wrong-platform core wheel directly (comparing the wheel
+filename's platform tag against the host) and fail with a named
+mismatch instead of surfacing uv's raw resolver trace.
+
+2. MACOS: check_base_install ran `frob doctor` with no cwd override, so
+it inherited the smoke script's own process cwd -- the frob checkout
+itself -- coupling the artifact-health check to repo hygiene (stale
+ticket leases, hook drift, Claude config drift) unrelated to the
+installed wheel. Fixed by running `frob doctor` with cwd set to a
+scratch directory check_base_install owns. Verified directly: `frob
+doctor` run from outside a git repo exits 0 and reports only
+native-extension health; doctor.py's own healthy computation (read, not
+touched -- out of scope) confirms repo-hygiene findings are
+informational-only as of T-3725/T-3873 while native-extension import
+failures always flip healthy, so a genuinely broken wheel still fails
+this check wherever it runs.
+
+Evidence: tests/unit/test_artifact_smoke_script.py 18/18 passed
+(4 new tests covering both fixes); `frob test --base main` exit=0, 79
+python test(s) recorded stable. The two real system-test fixtures this
+ticket targets (test_unbounded_mcp_pin_fails_serve_extra_check and
+test_current_pin_passes_serve_extra_check) require a real uv
+build/network resolve and are slow-marked/skip-without-network in this
+sandbox -- the actual ubuntu/macOS CI runners are the authoritative
+check for these two; verify on the next CI run of this branch.
+
+Filed: T-4010 (docs/guides/release.md scope-closure debt:
+scoping it pulls in doctor.py/verify_release_ci_status.py and cascades
+into ~99 further unrelated scope-closure warnings; out of proportion
+for this ticket to fix, needs either splitting release.md's Decision
+sections or a scope-closure escape hatch for large shared reference
+docs).
+
+Gates: frob check --ticket T-3980 -- gate:AFFECT/gate:PRE/gate:SCOPE for
+this ticket's own touched set clean. Remaining repo-wide FAILs are
+pre-existing and untouched by this diff: gate:DOC 1 error
+(tickets/T-3976/ticket.md, unrelated ticket), gate:DRIFT 1 error
+(src/frob/xref/__init__.py::xref, unrelated file), gate:SCOPE 2 errors
+(docs/guides/release.md's OTHER pre-existing anchors describing
+scripts/verify_release_ci_status.py and
+src/frob/doctor.py::native_degrade_warning -- present since ticket
+creation before any T-3980 edit; pulling either file into scope
+cascades per the filed follow-up; accepted as known debt matching this
+shared doc's own established precedent, see scripts/artifact_smoke.py's
+existing COV001 waiver on the same tension).
+
+### Changed
+```
+ tickets/T-3980/done-report.md      | 73 +++++++++++++++++++++++++++++++
+ tickets/T-3980/ticket.md           | 90 +++++++++++++++++++++++++++++++++++++-
+ tickets/T-4010/ticket.md | 30 +++++++++++++
+ 3 files changed, 191 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_artifact_smoke_script.py::TestCheckBaseInstall::test_doctor_runs_outside_work_dir_not_process_cwd` (pytest node id, verified passing when recorded)
+- `tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_wrong_platform_wheel_names_the_mismatch` (pytest node id, verified passing when recorded)
+- `tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_matching_platform_wheel_does_not_raise` (pytest node id, verified passing when recorded)
+- `tests/unit/test_artifact_smoke_script.py::TestRequireCoreWheels::test_wheel_matches_host_platform_rejects_foreign_tag` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 4 error(s), 4396 warning(s), 929 waived
+- error-findings: DOC006@tickets/T-3976/ticket.md, DRIFT001@src/frob/xref/__init__.py, SCOPE002@tickets.md, invalid-argument-type@tests/unit/test_artifact_smoke_script.py

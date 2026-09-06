@@ -12,6 +12,7 @@ proves the logic, the other proves the actual bug is caught.
 from __future__ import annotations
 
 import importlib.util
+import platform
 import subprocess
 import sys
 from pathlib import Path
@@ -38,15 +39,35 @@ def _fail(stderr: str = "boom") -> subprocess.CompletedProcess:
     return subprocess.CompletedProcess(args=[], returncode=1, stdout="", stderr=stderr)
 
 
+def _host_platform_tag() -> str:
+    """T-3980: a wheel platform tag `_wheel_matches_host_platform` accepts
+    on THIS host, whatever it is -- `_touch_core_wheels` must stay
+    host-agnostic (these unit tests run on every CI platform), so it
+    cannot hardcode a single tag like the pre-T-3980 `linux_x86_64`
+    literal did (that would fail every test on macOS/Windows once the
+    platform check exists)."""
+    machine = platform.machine().lower()
+    if sys.platform == "darwin":
+        return f"macosx_11_0_{machine}"
+    if sys.platform == "win32":
+        return f"win_{machine}"
+    return f"manylinux_2_39_{machine}"
+
+
 def _touch_core_wheels(core_dir: Path) -> None:
     """T-3935: `main`'s `_require_core_wheels` preflight checks the real
     filesystem for `frob_core-*.whl`/`strata_core-*.whl` (it runs before
     any mocked `_run` call), so every `main`-level test that mocks
     installs green must still drop matching placeholder files here or
-    the preflight itself fails the test before the mocked checks run."""
+    the preflight itself fails the test before the mocked checks run.
+    T-3980: the wheel filenames now carry a platform tag matching THIS
+    host (see `_host_platform_tag`), since `_require_core_wheels` also
+    checks platform match as of T-3980 -- a hardcoded tag would fail
+    this helper's callers on any host it does not happen to match."""
     core_dir.mkdir(exist_ok=True)
-    (core_dir / "frob_core-0.1.0-cp311-abi3-linux_x86_64.whl").write_bytes(b"")
-    (core_dir / "strata_core-0.1.0-cp311-abi3-linux_x86_64.whl").write_bytes(b"")
+    tag = _host_platform_tag()
+    (core_dir / f"frob_core-0.1.0-cp311-abi3-{tag}.whl").write_bytes(b"")
+    (core_dir / f"strata_core-0.1.0-cp311-abi3-{tag}.whl").write_bytes(b"")
 
 
 class TestCheckBaseInstall:
@@ -86,6 +107,30 @@ class TestCheckBaseInstall:
                 artifact_smoke.check_base_install(
                     tmp_path / "frob.whl", tmp_path, tmp_path / "cores"
                 )
+
+    def test_doctor_runs_outside_work_dir_not_process_cwd(self, tmp_path: Path) -> None:
+        """T-3980: `frob doctor`'s subprocess call must pass a `cwd` that
+        is NOT `None` (i.e. not "inherit the smoke script's own process
+        cwd", which in CI is the `frob` repo checkout itself) -- doctor
+        inspecting this repo's own ticket/hook hygiene, rather than the
+        installed artifact's health, is exactly the coupling T-3980
+        fixes. The `cwd` must also live under `work_dir` (this check's
+        own scratch area), never `None`/the real repo root."""
+        seen_cwd: dict[str, object] = {}
+
+        def fake_run(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+            if "doctor" in argv:
+                seen_cwd["cwd"] = kwargs.get("cwd")
+            return _ok()
+
+        with patch.object(artifact_smoke, "_run", side_effect=fake_run):
+            artifact_smoke.check_base_install(
+                tmp_path / "frob.whl", tmp_path, tmp_path / "cores"
+            )
+
+        cwd = seen_cwd["cwd"]
+        assert isinstance(cwd, Path)
+        assert cwd.is_relative_to(tmp_path)
 
 
 class TestCheckServeExtra:
@@ -183,7 +228,8 @@ class TestRequireCoreWheels:
         exactly that one, not `frob-core` (which IS present)."""
         core_dir = tmp_path / "cores"
         core_dir.mkdir()
-        (core_dir / "frob_core-0.1.0-cp311-abi3-linux_x86_64.whl").write_bytes(b"")
+        tag = _host_platform_tag()
+        (core_dir / f"frob_core-0.1.0-cp311-abi3-{tag}.whl").write_bytes(b"")
         with pytest.raises(artifact_smoke.SmokeCheckError) as exc_info:
             artifact_smoke._require_core_wheels(core_dir)
         # the missing-list clause names exactly strata-core, not frob-core
@@ -196,6 +242,49 @@ class TestRequireCoreWheels:
         core_dir = tmp_path / "cores"
         _touch_core_wheels(core_dir)
         artifact_smoke._require_core_wheels(core_dir)  # must not raise
+
+    def test_wrong_platform_wheel_names_the_mismatch(self, tmp_path: Path) -> None:
+        """T-3980 MUST-FIRE fixture: a wheel that glob-matches
+        `frob_core-*.whl`/`strata_core-*.whl` but was built for a
+        DIFFERENT platform than this host must fail with a message
+        naming it as a platform mismatch, not silently pass the preflight
+        (only to surface as an opaque resolver trace downstream, or --
+        worse -- actually get pip-installed)."""
+        core_dir = tmp_path / "cores"
+        core_dir.mkdir()
+        # a tag guaranteed to be wrong for whatever host runs this test:
+        # not macosx/win/manylinux-or-linux at all.
+        wrong_tag = "some_other_os_never_a_real_host_9999"
+        (core_dir / f"frob_core-0.1.0-cp311-abi3-{wrong_tag}.whl").write_bytes(b"")
+        (core_dir / f"strata_core-0.1.0-cp311-abi3-{wrong_tag}.whl").write_bytes(b"")
+
+        with pytest.raises(artifact_smoke.SmokeCheckError) as exc_info:
+            artifact_smoke._require_core_wheels(core_dir)
+        message = str(exc_info.value)
+        assert "different platform" in message
+        assert "frob-core" in message
+        assert "strata-core" in message
+
+    def test_matching_platform_wheel_does_not_raise(self, tmp_path: Path) -> None:
+        """T-3980 MUST-STAY-QUIET fixture: a wheel tagged for THIS host
+        must not be flagged as wrong-platform."""
+        core_dir = tmp_path / "cores"
+        _touch_core_wheels(core_dir)
+        artifact_smoke._require_core_wheels(core_dir)  # must not raise
+
+    def test_wheel_matches_host_platform_rejects_foreign_tag(self) -> None:
+        """`_wheel_matches_host_platform` directly: a wheel tagged for a
+        foreign os+arch is rejected regardless of this test's own host."""
+        foreign = Path("strata_core-0.1.0-cp311-abi3-macosx_11_0_arm64.whl")
+        other_foreign = Path("strata_core-0.1.0-cp311-abi3-manylinux_2_39_x86_64.whl")
+        # exactly one of these is a genuine match for the current host (or
+        # neither, on an untaught host) -- never both, since darwin/arm64
+        # and linux/x86_64 are mutually exclusive tags.
+        results = {
+            artifact_smoke._wheel_matches_host_platform(foreign),
+            artifact_smoke._wheel_matches_host_platform(other_foreign),
+        }
+        assert results != {True}
 
     def test_main_reports_missing_core_before_any_install_attempt(
         self, tmp_path: Path

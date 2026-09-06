@@ -59,6 +59,18 @@ jobs:
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable, resolved 2026-09-05
+      # T-3980: the cache key MUST include runner.os (and arch, since
+      # macos-latest can move between arm64/x86_64 runners) -- this path
+      # covers frob-core/target and strata-core/target, which is where
+      # `maturin build` drops target/wheels/*.whl. Without an os/arch
+      # component every matrix leg shares ONE cache entry, so whichever
+      # job finishes first (observed: macos-latest) writes its
+      # platform-tagged wheels into a cache the ubuntu-latest leg then
+      # restores verbatim -- test_artifact_smoke.py's serve-extra checks
+      # then resolve against `strata-core` wheels tagged
+      # `macosx_11_0_arm64` on an x86_64 Linux runner and fail with a
+      # uv "no wheels with a matching platform tag" resolver error that
+      # has nothing to do with the artifact under test.
       - name: Cache cargo
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -66,7 +78,7 @@ jobs:
             ~/.cargo/registry
             frob-core/target
             strata-core/target
-          key: cargo-${{ hashFiles('frob-core/Cargo.lock', 'strata-core/Cargo.lock') }}
+          key: cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('frob-core/Cargo.lock', 'strata-core/Cargo.lock') }}
       - name: Sync deps
         run: uv sync --all-extras --all-groups
       - name: Build native extensions (frob-core + strata-core, Rust/PyO3)
