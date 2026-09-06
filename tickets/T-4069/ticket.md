@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'T-4083 is a fourth instance and the first where BOTH escapes damage something:
+    --allow-cross-ticket writes a false disclosure into the ledger, and reverting
+    the indentation undoes a legitimate improvement. Extends the audit question to
+    cover degrading the RECORD, not only the code'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 4215
+  new_length: 5799
 designated_repro_test: null
 threat: null
 component: null
@@ -96,3 +106,30 @@ ACCEPTANCE
 - The size/drift/parse gate families audited against it, with results per gate.
 - Predicate fixes preferred over severity changes, with each choice justified.
 - LARGE001 specifically addressed, since it has no ticket of its own.
+## A FOURTH INSTANCE, AND THE FIRST WHERE BOTH ESCAPES CAUSE DAMAGE
+
+apollo, 2026-09-06 (now T-4083): re-indenting an existing `frob:ticket` directive
+(moving it from column 0 to method indentation) reads as ADDING a directive that
+names another ticket, so the land refuses it as an undisclosed passenger.
+
+THE TWO AVAILABLE ROUTES PAST IT ARE BOTH DAMAGING, which sharpens this ticket's
+thesis:
+  - `--allow-cross-ticket` DISCLOSES A PASSENGER THAT DOES NOT EXIST -- writing a
+    false statement into the ledger to satisfy a false detection.
+  - Reverting the indentation (what apollo actually did, and correctly judged the
+    cleaner option) UNDOES A LEGITIMATE FORMATTING IMPROVEMENT to appease a
+    lexical check.
+So the cheapest clearing action degrades the RECORD, and the next-cheapest
+degrades the CODE. The three instances above each had one bad escape; this one
+has no good escape at all.
+
+THAT MATTERS FOR THE AUDIT METHOD THIS TICKET ASKS FOR. "Name the cheapest action
+that clears the gate and confirm it does not degrade the codebase" needs a second
+clause: SOME GATES DEGRADE THE LEDGER RATHER THAN THE CODE, and a false
+disclosure is as costly as a deleted comment -- arguably more, because every
+other rule reads the ledger as fact. Extend the audit question to: does the
+cheapest clearing action degrade the code, the documentation, OR THE RECORD?
+
+RUNNING TALLY for the audit's starting set: LARGE001 (delete comments),
+AFFECT001 (accumulate source waivers), PARSE002 (write a cast for the parser),
+PassengerTickets (falsify a disclosure or revert formatting).
