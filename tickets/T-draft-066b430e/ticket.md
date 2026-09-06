@@ -19,7 +19,6 @@ scope:
 - src/frob/strata/_selfconform_core_rules.py
 - tests/unit/strata/test_selfconform_kinds.py
 - tests/unit/strata/test_selfconform_core_rules.py
-- tests/unit/strata/test_selfconform.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +28,12 @@ scope_changes:
   glob: tests/unit/strata/test_selfconform.py
   reason: 'close scope-closure warning: shared frob:tests target for _selfconform_core_rules/_selfconform_kinds
     helpers'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/strata/test_selfconform.py
+  reason: 'revert: dragged in a 76-warning transitive closure across the whole selfconform
+    test file; use a new dedicated test file instead'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
