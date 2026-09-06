@@ -2,7 +2,7 @@
 id: T-4019
 title: 'F-232: one malformed invariants/*.md aborts ALL gate loading and the run reports
   ''skipped ... pass'' -- whole-repo enforcement silently off'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
