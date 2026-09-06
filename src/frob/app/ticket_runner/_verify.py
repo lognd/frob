@@ -2209,6 +2209,56 @@ def _verify_unbucketed_ids(
     return outcomes
 
 
+# frob:ticket T-3925
+# frob:tests tests/unit/test_verify_language_buckets.py::TestOtherLanguageCollectedIds.test_unions_every_non_excluded_registered_language  # noqa: E501
+# frob:tests tests/unit/test_verify_language_buckets.py::TestOtherLanguageCollectedIds.test_collector_error_degrades_to_empty_not_raise  # noqa: E501
+def _other_language_collected_ids(
+    root: Path, *, exclude: frozenset[str]
+) -> frozenset[str]:
+    """T-3925: the union of every `frob.testing.LANGUAGE_COLLECTORS` entry
+    NOT in `exclude` (the languages a caller already collected some other
+    way, e.g. python/rust via `_collect_python_and_rust_ids`) -- for
+    EVIDENCE BINDING (`add_evidence`/`replace_evidence`/`frob ticket
+    land`'s D-05 post-merge re-check), not verification.
+
+    T-3847 wired the registry into VERIFICATION (`_verify_unbucketed_ids`)
+    but consumer report F-134 (an F-039 recurrence) measured that a
+    vitest id was still rejected outright by `frob ticket evidence` --
+    every real CLI binding site built its `collected` set as bare
+    `python_ids | rust_ids` and handed that straight to `add_evidence`'s
+    `collected=` param, so `_check_evidence_resolution`'s `matches_
+    collected` call saw a python-shaped set and rejected the vitest id
+    as `Err(UnknownEvidence)` before verification was ever reached. This
+    function is the fix: callers union its result into their existing
+    `collected_ids` rather than the registry being consulted only at
+    verify time.
+
+    Deliberately reuses `matches_collected` unchanged (D-11: gates and
+    tickets share ONE resolver implementation so they cannot desync) --
+    the per-language handling lives here, in how the collected SET is
+    BUILT, never inside the shared matcher itself. Best-effort per
+    language: a collector `Err` is logged and contributes nothing (never
+    raises, never blocks binding) -- the same resilience posture
+    `_verify_unbucketed_ids` already established for verification."""
+    from frob.testing import LANGUAGE_COLLECTORS
+
+    ids: set[str] = set()
+    for language, collector in LANGUAGE_COLLECTORS.items():
+        if language in exclude:
+            continue
+        collected = collector(root)
+        if collected.is_err:
+            _log.warning(
+                "ticket evidence: %s collection failed (%s); ids for this "
+                "language stay unresolvable",
+                language,
+                collected.danger_err,
+            )
+            continue
+        ids |= collected.danger_ok.node_ids
+    return frozenset(ids)
+
+
 # frob:ticket T-2569
 def _verify_via_direct_pytest_fallback(
     root: Path, items: tuple[str, ...]
@@ -2640,7 +2690,15 @@ def _apply_evidence(
         )
         return collected
     python_ids, rust_ids, runners = collected.danger_ok
-    collected_ids = python_ids | rust_ids
+    # T-3925: bind against every registered language, not just python/rust
+    # (F-134: a vitest id was rejected as unknown evidence before this fix).
+    collected_ids = (
+        python_ids
+        | rust_ids
+        | _other_language_collected_ids(
+            root, exclude=frozenset({"python", "rust"})
+        )
+    )
 
     normalized_ids = [normalize_evidence_separator(n) for n in node_ids]
     from frob.app import ticket_runner as _ticket_runner
@@ -2733,7 +2791,15 @@ def _apply_replace_evidence(
         )
         return collected
     python_ids, rust_ids, runners = collected.danger_ok
-    collected_ids = python_ids | rust_ids
+    # T-3925: bind against every registered language, not just python/rust
+    # (F-134: a vitest id was rejected as unknown evidence before this fix).
+    collected_ids = (
+        python_ids
+        | rust_ids
+        | _other_language_collected_ids(
+            root, exclude=frozenset({"python", "rust"})
+        )
+    )
 
     normalized_new = normalize_evidence_separator(new_node)
     outcomes = _ticket_runner._verify_ids_passing(

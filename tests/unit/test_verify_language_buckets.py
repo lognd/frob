@@ -197,3 +197,93 @@ class TestUnbucketedIdsSkipAlreadyTriedLanguages:
         )
         assert "python" not in calls
         assert "cpp" in calls
+
+
+class TestOtherLanguageCollectedIds:
+    """T-3925: `_other_language_collected_ids` is the BINDING half of the
+    registry wiring T-3847 left incomplete -- callers that build a
+    `collected` set for `add_evidence`/`replace_evidence`/land's D-05
+    post-merge re-check union this in alongside python/rust so a
+    non-python/rust id (vitest, gtest, junit, ...) resolves instead of
+    being rejected as unknown evidence (F-134)."""
+
+    def test_unions_every_non_excluded_registered_language(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/_verify.py::_other_language_collected_ids  # noqa: E501
+        # frob:waive FMT001 reason="single-line frob:tests directive naming a long \
+        # symref -- already at frob fmt's own canonical form (verified: `frob format \
+        # --directives` reports it unchanged), same unwrappable shape as this repo's \
+        # other pre-existing long frob:tests lines"
+        import frob.testing as _testing_mod
+
+        monkeypatch.setitem(
+            _testing_mod.LANGUAGE_COLLECTORS,
+            "cpp",
+            lambda root: Ok(CollectedTests(node_ids=frozenset({"Suite.Case"}))),
+        )
+        monkeypatch.setitem(
+            _testing_mod.LANGUAGE_COLLECTORS,
+            "kotlin",
+            lambda root: Ok(CollectedTests(node_ids=frozenset({"pkg.Foo#bar"}))),
+        )
+        monkeypatch.setitem(
+            _testing_mod.LANGUAGE_COLLECTORS,
+            "ts",
+            lambda root: Ok(CollectedTests(node_ids=frozenset({"x.test.ts::it"}))),
+        )
+        ids = ticket_runner._other_language_collected_ids(
+            tmp_path, exclude=frozenset({"python", "rust"})
+        )
+        assert ids == {"Suite.Case", "pkg.Foo#bar", "x.test.ts::it"}
+
+    def test_excluded_languages_are_never_collected(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/_verify.py::_other_language_collected_ids  # noqa: E501
+        # frob:waive FMT001 reason="single-line frob:tests directive naming a long \
+        # symref -- already at frob fmt's own canonical form (verified: `frob format \
+        # --directives` reports it unchanged), same unwrappable shape as this repo's \
+        # other pre-existing long frob:tests lines"
+        import frob.testing as _testing_mod
+
+        def _boom(root):  # noqa: ANN001, ANN202
+            raise AssertionError("excluded language must not be collected")
+
+        monkeypatch.setitem(_testing_mod.LANGUAGE_COLLECTORS, "python", _boom)
+        monkeypatch.setitem(_testing_mod.LANGUAGE_COLLECTORS, "rust", _boom)
+        for language in ("cpp", "kotlin", "ts"):
+            monkeypatch.setitem(
+                _testing_mod.LANGUAGE_COLLECTORS,
+                language,
+                lambda root: Ok(CollectedTests(node_ids=frozenset())),
+            )
+        ticket_runner._other_language_collected_ids(
+            tmp_path, exclude=frozenset({"python", "rust"})
+        )
+
+    def test_collector_error_degrades_to_empty_not_raise(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/_verify.py::_other_language_collected_ids  # noqa: E501
+        # frob:waive FMT001 reason="single-line frob:tests directive naming a long \
+        # symref -- already at frob fmt's own canonical form (verified: `frob format \
+        # --directives` reports it unchanged), same unwrappable shape as this repo's \
+        # other pre-existing long frob:tests lines"
+        import frob.testing as _testing_mod
+
+        monkeypatch.setitem(
+            _testing_mod.LANGUAGE_COLLECTORS,
+            "cpp",
+            lambda root: Err(TestingError.SpawnFailed),
+        )
+        for language in ("kotlin", "ts"):
+            monkeypatch.setitem(
+                _testing_mod.LANGUAGE_COLLECTORS,
+                language,
+                lambda root: Ok(CollectedTests(node_ids=frozenset())),
+            )
+        ids = ticket_runner._other_language_collected_ids(
+            tmp_path, exclude=frozenset({"python", "rust"})
+        )
+        assert ids == frozenset()

@@ -1,5 +1,5 @@
 ---
-id: T-draft-bec8a221
+id: T-3923
 title: extend frob vet to require SHA-pinned uses in GitHub Actions workflows
 state: queued
 kind: security

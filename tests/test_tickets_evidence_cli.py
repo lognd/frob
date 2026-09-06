@@ -1302,3 +1302,90 @@ class TestEvidenceChangesSurfaced:
         )
         assert created.is_ok
         assert _render_evidence_changes(created.danger_ok) == ""
+
+
+# frob:ticket T-3925
+class TestTicketEvidenceVitestOracle:
+    """T-3925 (F-134/F-039 recurrence): `--evidence` ids must resolve
+    against every OTHER registered `frob.testing.LANGUAGE_COLLECTORS`
+    entry too, not just python/rust -- a vitest node id (collected via
+    `collect_ts_tests`) was rejected as unknown evidence before this fix,
+    even though T-3847 had already wired the SAME registry into
+    verification. Mirrors `TestTicketEvidenceRustOracle` above, one
+    language over."""
+
+    def test_vitest_node_id_from_fake_collect_ts_resolves(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _patch_collect(monkeypatch, frozenset())
+        _patch_passing(monkeypatch)
+
+        import frob.testing as testing_mod
+
+        vitest_node_id = "src/x.test.ts::describes a thing"
+        monkeypatch.setitem(
+            testing_mod.LANGUAGE_COLLECTORS,
+            "ts",
+            lambda root: Ok(CollectedTests(node_ids=frozenset({vitest_node_id}))),
+        )
+        for language in ("cpp", "kotlin"):
+            monkeypatch.setitem(
+                testing_mod.LANGUAGE_COLLECTORS,
+                language,
+                lambda root: Ok(CollectedTests(node_ids=frozenset())),
+            )
+
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="vitest evidence",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=[vitest_node_id],
+        )
+        _new(tmp_path, cfg)
+
+        queue = load_queue(tmp_path).danger_ok
+        ticket = queue.tickets["T-0001"]
+        assert ticket.evidence == (vitest_node_id,)
+
+    def test_non_python_rust_collection_failure_degrades_to_others(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # A cpp-collection failure must not block an unrelated vitest id.
+        from typani import Err
+
+        from frob.testing import TestingError
+
+        _patch_collect(monkeypatch, frozenset())
+        _patch_passing(monkeypatch)
+
+        import frob.testing as testing_mod
+
+        vitest_node_id = "src/y.test.ts::another thing"
+        monkeypatch.setitem(
+            testing_mod.LANGUAGE_COLLECTORS,
+            "cpp",
+            lambda root: Err(TestingError.SpawnFailed),
+        )
+        monkeypatch.setitem(
+            testing_mod.LANGUAGE_COLLECTORS,
+            "ts",
+            lambda root: Ok(CollectedTests(node_ids=frozenset({vitest_node_id}))),
+        )
+        monkeypatch.setitem(
+            testing_mod.LANGUAGE_COLLECTORS,
+            "kotlin",
+            lambda root: Ok(CollectedTests(node_ids=frozenset())),
+        )
+
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="degraded cpp collection",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=[vitest_node_id],
+        )
+        _new(tmp_path, cfg)
+
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].evidence == (vitest_node_id,)
