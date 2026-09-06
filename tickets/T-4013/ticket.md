@@ -2,7 +2,7 @@
 id: T-4013
 title: 'F-226: policy globs use fnmatch, so app/**/*.py silently misses files directly
   under app/ and a security policy under-covers in silence'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-09-06'
