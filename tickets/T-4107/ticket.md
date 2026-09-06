@@ -20,6 +20,9 @@ scope:
 - src/frob/dup/_legacy_common.py
 - src/frob/dup/_legacy_cpp.py
 - src/frob/dup/_legacy_py.py
+- tests/test_excludes.py
+- tests/unit/test_memo.py
+- tests/unit/test_dup_legacy_py.py
 evidence_scope:
 - tests/test_excludes.py
 - tests/unit/test_memo.py
@@ -235,6 +238,24 @@ scope_changes:
     as accepted pre-existing scope debt (structural: the ticket''s whole-file scope
     on _legacy.py inherits doc/test coverage from symbols this fix does not touch),
     not something T-4107''s 3-line fix should absorb.'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/test_excludes.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: promote back to full scope -- evidence-only
+    demotion removed them from the scope list SCOPE002 checks against'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_memo.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: promote back to full scope -- evidence-only
+    demotion removed them from the scope list SCOPE002 checks against'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_dup_legacy_py.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: promote back to full scope -- evidence-only
+    demotion removed them from the scope list SCOPE002 checks against'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
