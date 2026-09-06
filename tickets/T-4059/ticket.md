@@ -20,6 +20,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'apollo reports a second late-detected directive rule: COV002 requires the
+    frob:ticket edge to be directly above its symbol, with other frob: directives
+    permitted between but an ordinary prose comment breaking the binding -- learned
+    only via pre-land sweep refusals. Same shape as the wrong-direction case this
+    ticket covers'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3752
+  new_length: 6467
 designated_repro_test: null
 threat: null
 component: null
@@ -89,3 +100,49 @@ ACCEPTANCE
 - Whether both frob:tests conventions are intended, answered explicitly.
 - A parse-time check consistent with that answer, cross-checked against T-4014.
 - All three fixtures committed.
+## A SECOND LATE-DETECTED DIRECTIVE RULE: COV002 ADJACENCY (apollo, 2026-09-06)
+
+  "COV002 adjacency: a frob:ticket edge SEPARATED FROM ITS SYMBOL BY AN ORDINARY
+   PROSE COMMENT LINE does NOT count (the edge must be the line DIRECTLY ABOVE the
+   def/assignment, other frob: directives permitted between). Changed TEST
+   functions need edges too. BOTH LEARNED VIA T-0136 PRE-LAND SWEEP REFUSALS."
+
+SAME SHAPE AS THIS TICKET'S SUBJECT, DIFFERENT RULE. The wrong-DIRECTION case
+above parses silently and surfaces later as a coverage finding. This is the
+wrong-POSITION case: a directive that is present, correct, and attached to the
+right symbol in every sense a reader would recognise, silently does not count
+because one prose comment sits between it and the def. Both are directive
+problems that the parser could detect and instead surface at land time.
+
+"BOTH LEARNED VIA PRE-LAND SWEEP REFUSALS" IS THE COST. The adjacency rule is not
+discoverable except by violating it, at the most expensive moment -- a pre-land
+sweep refusal, after the work is done and staged. An author who writes
+
+    # frob:ticket T-1234
+    # this constant is the wire format the collector expects
+    KIND = "artifact"
+
+has done something entirely reasonable and gets no signal until land.
+
+THE RULE ITSELF MAY ALSO BE WRONG, and that question should be settled before the
+detection is moved earlier. Permitting other frob: directives between the edge and
+the symbol but NOT a prose comment is a surprising asymmetry: both are comment
+lines, and a prose line explaining WHY a ticket owns a symbol is exactly the kind
+of comment this codebase encourages elsewhere. DETERMINE whether the strictness is
+load-bearing (is there a real ambiguity a prose line introduces?) or incidental to
+how the scan walks upward. If incidental, allow contiguous comment lines of any
+kind; if load-bearing, say so in the message.
+
+THE SECOND HALF -- "changed TEST functions need edges too" -- is a separate
+surprise worth its own line in whatever documents this: authors reasonably assume
+provenance edges are for production symbols.
+
+CROSS-REFERENCE T-4061, which collects the done-report path's undocumented
+micro-grammars. This is the same disease in the directive system: rules that are
+real, enforced, and stated nowhere the author will look before violating them.
+Whoever fixes either should ask whether frob has ANY enumeration of its directive
+placement rules, or whether each is embedded in the scanner that enforces it.
+
+ADDITIONAL FIXTURE: a frob:ticket edge separated from its symbol by a prose
+comment is either accepted, or reported AT PARSE TIME with a message naming the
+adjacency rule -- never silently uncounted until a pre-land sweep.
