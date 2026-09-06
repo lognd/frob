@@ -28,6 +28,15 @@ body_changes:
   at: '2026-09-06'
   old_length: 3802
   new_length: 9351
+- mode: set
+  reason: 'waive BUG002: the diff is test-only so the mutation scorer''s subject set
+    is empty and a zero score is structurally guaranteed, not evidence of confirmatory-only
+    tests. This is a live instance of T-4008; re-kinding (the consumer''s workaround)
+    is the wrong remedy'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 9349
+  new_length: 10288
 evidence:
 - tests/test_serve_socket.py::TestRunSocketDaemon::test_serves_one_request_then_idle_exits
 - tests/test_serve_socket.py::TestRunSocketDaemon::test_stale_socket_file_is_replaced
@@ -189,3 +198,5 @@ the ubuntu and macOS legs -- both legs run the identical `-n auto
 as a config difference, consistent with the coordinator's correction that
 macOS now flakes too).
 
+
+frob:waive BUG002 reason="this ticket's entire diff is TEST-ONLY: it replaces a wall-clock bet (thread.join(timeout=5) then assert not thread.is_alive()) with a poll-until-dead-or-deadline loop in tests/test_serve_socket.py, and removes a pytest.mark.flaky(reruns=2) retry mask. There is NO production code in the diff, so the mutation scorer has an EMPTY mutable subject set and 'killed zero mutants of its own diff-touched code' is structurally guaranteed rather than evidence of weak tests -- the same empty-subject-set shape T-4008 (F-221) was filed to fix, where a consumer's only route past this rule was to re-kind their bug ticket to a feature. Re-kinding is explicitly the wrong remedy (it corrupts the ticket-kind data every other rule depends on), so this is waived honestly instead. The fix's correctness is evidenced by 15/15 clean runs at -n 4 matching ubuntu-latest's core count, plus mixed-load runs" follow_up="T-4008"
