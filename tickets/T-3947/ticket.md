@@ -16,8 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_ffi_boundary.py
-- tests/gates_suite/test_compliance.py
 - src/frob/gates/_exhaustive_handling.py
+- tests/unit/gates/test_ffi_boundary_path_shape.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: docs/modules/gates.md is a single shared reference doc describing
   ~40 gates; this ticket's edit is a narrow, additive scope note under the FFI001/FFI002
@@ -55,6 +55,20 @@ scope_changes:
     files (SCOPE002); resolving AFFECT001 via frob:waive at the two changed sites
     instead, since this is a comment-only internal fix with no documented-behavior
     change
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/gates_suite/test_compliance.py
+  reason: moved new fixtures to a standalone test module to avoid tests/gates_suite/test_compliance.py's
+    shared-file scope-closure explosion (SCOPE002 over dozens of unrelated gates whose
+    own frob:tests directives live in that same shared file)
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/gates/test_ffi_boundary_path_shape.py
+  reason: moved new fixtures to a standalone test module to avoid tests/gates_suite/test_compliance.py's
+    shared-file scope-closure explosion (SCOPE002 over dozens of unrelated gates whose
+    own frob:tests directives live in that same shared file)
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
