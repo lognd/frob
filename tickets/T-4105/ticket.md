@@ -2,7 +2,7 @@
 id: T-4105
 title: the --base flag is dropped by every nested frob check spawn, so off-main ticket
   work is judged against main by all diff-driven gates
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-09-06'
