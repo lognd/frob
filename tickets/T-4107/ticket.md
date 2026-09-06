@@ -20,8 +20,6 @@ scope:
 - src/frob/dup/_legacy_common.py
 - src/frob/dup/_legacy_cpp.py
 - src/frob/dup/_legacy_py.py
-- tests/test_excludes.py
-- tests/unit/test_memo.py
 - tests/unit/test_dup_legacy_py.py
 evidence_scope:
 - tests/test_excludes.py
@@ -256,6 +254,22 @@ scope_changes:
   glob: tests/unit/test_dup_legacy_py.py
   reason: 'T-4107 gate:SCOPE SCOPE002: promote back to full scope -- evidence-only
     demotion removed them from the scope list SCOPE002 checks against'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/test_excludes.py
+  reason: revert -- both test files themselves cover far broader unrelated modules
+    (excludes.py 28 symbols; test_memo.py covers arch/check/graph/lang), so full write-scope
+    promotion diverges again; accept as pre-existing scope debt from the ticket's
+    whole-file scope on _legacy.py, not something this 3-line indexer fix should absorb
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_memo.py
+  reason: revert -- both test files themselves cover far broader unrelated modules
+    (excludes.py 28 symbols; test_memo.py covers arch/check/graph/lang), so full write-scope
+    promotion diverges again; accept as pre-existing scope debt from the ticket's
+    whole-file scope on _legacy.py, not something this 3-line indexer fix should absorb
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
