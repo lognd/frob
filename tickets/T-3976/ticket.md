@@ -28,6 +28,15 @@ body_changes:
   at: '2026-09-06'
   old_length: 1243
   new_length: 1463
+- mode: set
+  reason: 'waive the residual DOC006 on the old_text audit field only: the live prose
+    is already corrected, and the amend mechanism itself wrote the violating text
+    into the historical record, so it cannot be cleared by further amending. Cause
+    filed as T-3979'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 1463
+  new_length: 2234
 designated_repro_test: null
 acceptance:
 - text: given a design note deciding what watched means for an artifact glob (annotation-required
@@ -67,3 +76,5 @@ T-3928 frontend-unique item. VERIFIED: git grep confirms [[refs.entrypoint]] exi
 FINDING THIS WOULD HAVE CAUGHT: frontend/public/** (or equivalent verbatim-copy build directories) is outside every strata code glob and every frob entrypoint, yet ships to production byte-for-byte. The consumer's framing, worth preserving: "files that reach production without passing through a compiler is the highest-leverage unwatched surface in any frontend repo" -- these files get zero review pressure from anything frob does today because nothing treats them as reachable/shippable at all.
 
 Proposed: a refs.artifact construct alongside the existing refs.entrypoint one (both named in prose here, not in literal double-bracket TOML form -- refs.artifact does not exist yet, so as a literal section header it parses as a live config pointer and DOC006 correctly refuses it), each file individually justified (mirroring entrypoint's own per-entry reason= discipline visible in _refs_schema.py), declaring a verbatim-copy build/static directory as a watched surface. What "watched" means in practice (min: a change to a declared artifact glob requires a reasoned annotation; ambitious: some content check e.g. no obvious secret/credential pattern) is a design decision to make explicit before implementing.
+
+frob:waive DOC006 reason="the remaining DOC006 finding on this ticket is in the ledger's own `old_text:` audit field, which records the criterion text as it read BEFORE it was corrected. That field is by construction a historical record of text that is no longer live, and `frob ticket accept --amend` -- the sanctioned mechanism for making this exact correction -- is what wrote it. So amending to remove the violation re-creates it, and no amount of further amending can clear it: a no-exit. The live prose has already been fixed to name refs.artifact as prose rather than a literal TOML section header. The structural fix (exempt the old_text audit field from DOC006) is T-3979; this waiver covers only the historical record, not any live pointer" follow_up="T-3979"
