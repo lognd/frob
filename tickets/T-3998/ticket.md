@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'F-260 is the degenerate case of this ticket''s lifecycle gap: a lease with
+    no worktree or agent at all, held over 40 files indefinitely and reported as Active
+    by doable. Adds the three-state distinction our own fleet proved necessary --
+    holder-gone-with-unlanded-commits must not be pruned as stale'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3491
+  new_length: 6616
 designated_repro_test: null
 threat: null
 component: null
@@ -88,3 +98,56 @@ ACCEPTANCE
 - A release path that does not revoke a sibling's ability to close or land.
 - Refusal (not just a warning) when the holder still has live work.
 - All three fixtures committed.
+## F-260: THE OTHER HALF OF THE MISSING LIFECYCLE -- A LEASE WITH NO HOLDER AT ALL
+
+logand.app-v2, 2026-09-06:
+
+  "T-0088 is `in-progress` on main WITH A LEASE OVER 40 ENGINE FILES, but NO
+   WORKTREE OR AGENT EXISTS for it (its work was merged into sub-17-rust in an
+   earlier session and the ticket was never closed). `frob ticket doable` prints
+   it under 'Active leases' AS IF LIVE, and every new engine ticket collides with
+   it and needs `--steal`."
+
+THIS TICKET records that a FINISHED worktree's lease can only be broken by
+stealing the whole ticket. F-260 is the degenerate case: THERE IS NO WORKTREE AT
+ALL, and the lease still holds -- over forty files, indefinitely, blocking every
+future ticket in that area. So the lifecycle gap is not merely "release is
+awkward"; a lease can outlive its holder entirely and nothing reclaims it.
+
+THE AGGRAVATING DETAIL IS THAT WE REPORT IT AS LIVE. `doable` lists it under
+"Active leases", so the one surface an operator consults to decide what can be
+worked ASSERTS the lease is real. That is the third thing today that `doable`
+reports wrongly or omits:
+  - it offers tickets whose scope collides with a live lease (T-3949 / F-246),
+  - it does not list stale ledger-holding processes (T-4048 / F-247),
+  - and it presents a holder-less lease as active (this).
+Each was reported separately; together they say `doable`'s model of "what can be
+worked now" is incomplete in a consistent direction -- it knows about tickets and
+dependencies but not about the RUNTIME state that actually blocks work. Worth
+saying so explicitly wherever this gets fixed.
+
+CONFIRMED IN THIS REPO TOO, so it is not consumer-specific: this session's own
+fleet_status showed T-3936, T-3940, T-3947 and T-3799 as "in-progress with no
+live lease", and I nearly treated one of them as a reclaimable stale lease when
+it was in fact carrying UNLANDED WORK on a surviving branch. That is the hazard
+in the opposite direction and it is why the fix must distinguish three states,
+not two:
+  (a) holder gone AND no unlanded work        -> genuinely stale, safe to prune
+  (b) holder gone BUT the branch has commits  -> NOT stale; work is stranded and
+                                                 pruning the lease hides it
+  (c) holder alive                             -> live
+The consumer's ask ("a lease whose worktree path no longer exists should be
+reported as STALE and not block start") is correct for (a) and DANGEROUS for (b).
+Detecting (b) is cheap -- `git log --oneline main..<branch>` -- and must be part
+of this.
+
+THEIR PROPOSED `frob ticket lease prune` IS THE RIGHT SHAPE, with that
+three-state check behind it, and it pairs naturally with the release verb this
+ticket already asks for: release is the holder relinquishing deliberately, prune
+is reclaiming after the holder is provably gone.
+
+ADDITIONAL ACCEPTANCE
+- A lease whose worktree no longer exists is distinguished into stale-safe vs
+  work-stranded, never collapsed into one "stale" verdict.
+- `doable` stops presenting a holder-less lease as active.
+- Pruning refuses (loudly) when the branch still carries unlanded commits.
