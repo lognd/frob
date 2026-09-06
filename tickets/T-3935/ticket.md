@@ -20,7 +20,6 @@ scope:
 - scripts/artifact_smoke.py
 - tests/system/test_artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
-- docs/guides/release.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +42,13 @@ scope_changes:
   reason: T-3935's new artifact_smoke.py preflight (_require_core_wheels) cites the
     existing artifact-smoke-stage-t-3884 doc anchor via frob:doc; SCOPE002 requires
     the anchor target in scope even though the doc text itself is unedited
+  actor: logan
+  at: '2026-09-05'
+- op: remove
+  glob: docs/guides/release.md
+  reason: 'reverting: doc-closure pulled in unrelated release.md anchors (verify_release_ci_status.py,
+    doctor.py) outside this tickets scope; dropping the frob:doc citation instead
+    of widening scope further'
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
