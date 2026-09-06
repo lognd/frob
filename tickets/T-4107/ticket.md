@@ -21,7 +21,6 @@ scope:
 - src/frob/dup/_legacy_cpp.py
 - src/frob/dup/_legacy_py.py
 - tests/unit/test_dup_legacy_py.py
-- src/frob/dup
 evidence_scope:
 - tests/test_excludes.py
 - tests/unit/test_memo.py
@@ -277,6 +276,14 @@ scope_changes:
   glob: src/frob/dup
   reason: 'T-4107 gate:SCOPE SCOPE002: directory-coverage marker for the end-to-end
     dup scan test'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/dup
+  reason: revert -- src/frob/dup as a directory pulls in the whole dup subsystem (200+
+    closure warnings incl. _cache.py/_core.py/_template.py/_pipeline), same divergence
+    as docs/modules/dup.md; confirmed unresolvable without absorbing the entire package
+    into this ticket's scope
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
