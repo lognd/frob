@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'second independent consumer report of the same mechanism (logand.app-v2
+    F-313), which usefully narrows it: the orphaned LOCK reclamation already works,
+    only the partial LEDGER write is left behind. Also records that the residue dirties
+    the shared root and so converts one killed land into a fleet-wide land stall'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3900
+  new_length: 5660
 designated_repro_test: null
 threat: null
 component: null
@@ -94,3 +104,32 @@ ACCEPTANCE
 - Identical-criterion refusal shipped (independently useful).
 - A stated list of which ledger verbs are currently safe to kill.
 - All three fixtures committed.
+SECOND CONSUMER REPORT, WITH THE RESIDUE ENUMERATED. logand.app-v2 F-313, after
+an interrupted land: main was left carrying an UNTRACKED ticket directory -- a
+sweep ticket the land was in the middle of filing -- plus both the land lock and
+the ledger lock. Their observation splits the failure cleanly, and the split is
+the useful part:
+
+    frob reclaims the orphaned LOCKS itself. It does not clean up the
+    half-filed TICKET, which had to be removed by hand.
+
+So the lock half of the recovery is already built and works; the ledger half is
+missing. That narrows this ticket considerably -- the fix is not a new recovery
+mechanism, it is extending the existing orphan reclamation to cover a partial
+ledger write.
+
+WHY THE LEFTOVER DIRECTORY IS WORSE THAN UNTIDY, and the reason to prioritise
+this above its apparent severity: an untracked directory under the ledger path
+makes the shared checkout DIRTY. A dirty main blocks every other agent's land.
+So a single killed land does not just fail itself -- it silently converts into a
+fleet-wide stall that presents as unrelated agents parking on a monitor, with no
+message anywhere naming the real cause. This repo has hit that exact chain
+before from a different source (a killed ticket-creation loop leaving an
+untracked ticket dir), which is corroborating evidence that the residue shape,
+not the specific verb, is what does the damage.
+
+NOTE FOR THE FIX: the half-filed ticket here was a SWEEP ticket the land filed
+on its own initiative, not work the user asked for. That matters twice over --
+it means the residue can appear on a land the operator never associated with
+ticket creation, and it means the recovery must not assume the leftover
+directory corresponds to anything the operator knows about.
