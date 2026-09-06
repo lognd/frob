@@ -20,7 +20,6 @@ scope:
 - scripts/artifact_smoke.py
 - tests/system/test_artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
-- docs/guides/release.md
 evidence_scope:
 - docs/guides/release.md
 - scripts/verify_release_ci_status.py
@@ -152,6 +151,15 @@ scope_changes:
   reason: neither file is edited by this ticket -- pulled in only by docs/guides/release.md
     doc-anchor closure; evidence-only avoids an unused write lease and (to be verified)
     the deeper install.md/cli.md closure recursion
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: docs/guides/release.md
+  reason: 'reverting: this doc-closure chain is pre-existing (SmokeCheckError etc
+    already had frob:doc into release.md before T-3935 existed) and spirals into unrelated
+    docs/guides/install.md, docs/modules/cli.md via other unrelated symbols in the
+    same shared doc/file; filing a separate ticket for the structural gap rather than
+    forcing an ever-widening scope onto T-3935'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
