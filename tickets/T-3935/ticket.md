@@ -2,7 +2,7 @@
 id: T-3935
 title: 'ALPHA BLOCKER: frob wheel is uninstallable -- frob-core/strata-core hard-pinned
   but in no registry'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
