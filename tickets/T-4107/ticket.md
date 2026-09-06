@@ -20,6 +20,7 @@ scope:
 - src/frob/dup/_legacy_common.py
 - src/frob/dup/_legacy_cpp.py
 - src/frob/dup/_legacy_py.py
+evidence_scope:
 - tests/test_excludes.py
 - tests/unit/test_memo.py
 - tests/unit/test_dup_legacy_py.py
@@ -181,6 +182,27 @@ scope_changes:
 - op: add
   glob: tests/unit/test_dup_legacy_py.py
   reason: 'T-4107 gate:SCOPE SCOPE002: existing tests covering the touched functions'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/test_excludes.py
+  reason: 'T-4107: these are cited only as pre-existing evidence for the touched functions''
+    coverage, not files this ticket writes to -- migrate to evidence_scope (T-1944)
+    to avoid holding a write lease this ticket never uses'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_memo.py
+  reason: 'T-4107: these are cited only as pre-existing evidence for the touched functions''
+    coverage, not files this ticket writes to -- migrate to evidence_scope (T-1944)
+    to avoid holding a write lease this ticket never uses'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_dup_legacy_py.py
+  reason: 'T-4107: these are cited only as pre-existing evidence for the touched functions''
+    coverage, not files this ticket writes to -- migrate to evidence_scope (T-1944)
+    to avoid holding a write lease this ticket never uses'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
