@@ -18,6 +18,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'DOC006 failed CI on ubuntu and macOS against this ticket''s own prose:
+    a quoted consumer symref (file-colon-symbol form) and a proposed config section
+    in double-bracket TOML form both parse as live pointers into THIS repo, where
+    neither resolves. Rewritten as prose so the gate is satisfied by fixing the cause
+    rather than waiving a correct finding'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 4969
+  new_length: 5514
 designated_repro_test: null
 threat: null
 component: null
@@ -42,15 +53,22 @@ THE DAY-ONE FINDINGS, on the scaffold as generated:
            `frob ticket done-report` writes it. FROB'S OWN LEDGER ARTIFACTS
            SHOULD NEVER BE REF FINDINGS. Worked around by adding an entrypoint
            glob, then widening it.
-  COV001   fires on `scripts/bump_version.py::PYPROJECT` -- a SCAFFOLD-PROVIDED
-           file. Waived inline.
+  COV001   fires on the PYPROJECT constant inside the scaffold-provided
+           scripts/bump_version.py in THEIR repo. Waived inline.
+           (Named in prose rather than as a file-colon-symbol pointer: that
+           form is a live symref into THIS repo, where the symbol does not
+           exist, so writing it verbatim made DOC006 fail CI on ubuntu and
+           macOS. Quote a consumer's symbol as prose, never as a pointer.)
   MILE003  fires for every ticket because the scaffold's frob.toml has no
            [tickets].default_milestone, and "a fresh repo has no way to know it
            must set one until the first frob check".
   WIRE001  fires on every public symbol whose consumer is the NEXT ticket in a
            bottom-up ticket tree, so a first-ticket module needs three lines of
            directive per symbol (frob:doc + frob:tests + frob:waive WIRE001).
-           They propose a [[wire.pending]] or ticket-level follow_up instead of
+           They propose a wire.pending config section (named in prose, not in
+           double-bracket TOML form -- as a literal section header it reads as a
+           live config pointer and DOC006 correctly refuses it, since no such
+           key exists) or a ticket-level follow_up instead of
            per-symbol waives -- which is the same ask as T-3855's tier-3
            framework-wired declaration, reached from a different direction.
   frob-suggest blocked a `sed` on docs/*.md as a "hand-rename of an import
