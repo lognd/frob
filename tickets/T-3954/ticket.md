@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_coverage.py
+- src/frob/graph/dsl.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: narrow to the actual frob:tests directive parser; original scope (_coverage.py)
+    was picked from a plausible module name, not the real parse site
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 acceptance:
 - text: given a docstring containing a conditional-behavior claim (a failure/error-path
