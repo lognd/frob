@@ -19,10 +19,18 @@ scope:
 - src/frob/strata/_selfconform_core_rules.py
 - tests/unit/strata/test_selfconform_kinds.py
 - tests/unit/strata/test_selfconform_core_rules.py
+- tests/unit/strata/test_selfconform.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: 'close scope-closure warning: shared frob:tests target for _selfconform_core_rules/_selfconform_kinds
+    helpers'
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
