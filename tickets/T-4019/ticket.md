@@ -19,6 +19,7 @@ scope:
 - src/frob/gates/__init__.py
 - tests/gates_suite/test_invariant.py
 - tests/gates_suite/test_gates.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,12 @@ scope_changes:
   reason: load_invariants signature changes (per-file scoping, no-longer-aborts-whole-run)
     require rewriting its unit tests, and the fixtures proving the fix live in test_gates.py's
     run_gates integration tests
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/gates.md
+  reason: Invariants section documents load_invariants' abort-on-first-malformed-file
+    contract, which this fix changes to per-file scoping
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
