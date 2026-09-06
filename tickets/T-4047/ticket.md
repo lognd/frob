@@ -1,7 +1,7 @@
 ---
 id: T-4047
 title: 'T-4018 follow-up: _read_root still guards fetchone() with is-not-None'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/cache.py
+- tests/unit/test_graph_cache.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_graph_cache.py
+  reason: add fixture covering _read_root's fetchone() truthiness guard, mirroring
+    T-4018's fixture pattern
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
