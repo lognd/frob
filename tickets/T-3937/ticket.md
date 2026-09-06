@@ -2,7 +2,7 @@
 id: T-3937
 title: 'F-172: evidence BINDING resolves only python+rust collectors; ts/cpp/kotlin
   ids are rejected as UnknownEvidence'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-05'
