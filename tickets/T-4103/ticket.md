@@ -17,10 +17,56 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/conftest.py
 - tests/unit/test_conftest_stackdump.py
+- .github/workflows/ci.yml
+- tests/integration/test_gitlog.py
+- tests/test_mutate_journal.py
+- tests/unit/test_conftest_parse_reset.py
+- tests/unit/test_conftest_suite_result_status.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .github/workflows/ci.yml
+  reason: T-4103's fix touches tests/conftest.py's pytest_sessionfinish plus the CI
+    workaround comment; SCOPE002 requires every file bound via frob:tests to a conftest.py
+    symbol, and SCOPE001 requires ci.yml since the ticket body explicitly directs
+    a comment update there
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/integration/test_gitlog.py
+  reason: T-4103's fix touches tests/conftest.py's pytest_sessionfinish plus the CI
+    workaround comment; SCOPE002 requires every file bound via frob:tests to a conftest.py
+    symbol, and SCOPE001 requires ci.yml since the ticket body explicitly directs
+    a comment update there
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/test_mutate_journal.py
+  reason: T-4103's fix touches tests/conftest.py's pytest_sessionfinish plus the CI
+    workaround comment; SCOPE002 requires every file bound via frob:tests to a conftest.py
+    symbol, and SCOPE001 requires ci.yml since the ticket body explicitly directs
+    a comment update there
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_conftest_parse_reset.py
+  reason: T-4103's fix touches tests/conftest.py's pytest_sessionfinish plus the CI
+    workaround comment; SCOPE002 requires every file bound via frob:tests to a conftest.py
+    symbol, and SCOPE001 requires ci.yml since the ticket body explicitly directs
+    a comment update there
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_conftest_suite_result_status.py
+  reason: T-4103's fix touches tests/conftest.py's pytest_sessionfinish plus the CI
+    workaround comment; SCOPE002 requires every file bound via frob:tests to a conftest.py
+    symbol, and SCOPE001 requires ci.yml since the ticket body explicitly directs
+    a comment update there
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 acceptance:
 - text: given pytest progress output that ended mid-line, when pytest_sessionfinish
