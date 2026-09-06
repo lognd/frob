@@ -2,7 +2,7 @@
 id: T-4121
 title: scope closure is file-granular over multi-anchor doc tables, so a one-row edit
   demands every symbol in the file and consumers revert correct doc fixes instead
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-09-06'
@@ -145,3 +145,6 @@ drop the doc from scope and patch it at close. Both workarounds degrade the
 record. This is not a consumer-only problem and should not be scoped as one; the
 gate module catalog is the exact shape F-308 describes, a table of many
 independent rows each anchored to a different symbol.
+
+## Drop reason
+- 2026-09-06: duplicate of T-4127, which locates the same mechanism precisely (the SCOPE002 closure walking every symbol in a scoped FILE rather than the diff's touched anchors, at scope_doc_code_gaps, plus the frob.toml severity promotion to error) where this ticket only described it. All of this ticket's content -- the F-308 consumer report, the reverted-doc-fix finding, the three independent explosion measurements, and the instruction to evaluate the diff-scoped option before any new declaration syntax -- has been folded into T-4127's body verbatim. Nothing is lost by dropping this one
