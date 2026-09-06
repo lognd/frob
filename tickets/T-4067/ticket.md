@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'F-275 supplies the exact construct behind this ticket''s parse failure
+    (typeof import() inside a generic type argument) and adds two structural points:
+    the whole file is discarded on one unsupported production, and agents insert as-casts
+    purely to satisfy the walker'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3835
+  new_length: 6239
 designated_repro_test: null
 threat: null
 component: null
@@ -95,3 +105,46 @@ ACCEPTANCE
 - Downstream gates cannot render an empty-set verdict for an unparsed file.
 - The TS support contract question answered, cross-referencing T-4016 and T-4064.
 - All three fixtures committed.
+## ROOT CAUSE SUPPLIED BY THE CONSUMER: F-275 -- `typeof import()` in a generic type argument
+
+Filed hours after F-272, the same consumer identified the exact construct:
+
+  "The tree-sitter TS walker PARTIAL-PARSES
+      vi.mock('x', async (importOriginal) => {
+          await importOriginal<typeof import('./x')>()
+      })
+   and reports PARSE002 for the whole file; esbuild/vitest accept it. THAT IS THE
+   CONSTRUCT BEHIND F-272's projects.test.tsx TOO. Agents work around it with an
+   `as` cast, i.e. THE GATE IS SHAPING TEST CODE. The walker needs the
+   `typeof import()` type-query production."
+
+So the investigation this ticket asked for is largely done: the missing grammar
+production is TypeScript's IMPORT TYPE QUERY (`typeof import("...")`) appearing
+inside a generic type argument. STILL REPRODUCE IT before changing the grammar --
+their earlier guess in F-272 offered two candidates and this later report
+narrowed to one, which is exactly the pattern where a plausible answer can still
+be incomplete. But start here rather than from scratch.
+
+TWO THINGS THIS ADDS BEYOND THE CAUSE:
+
+1. "PARTIAL-PARSES ... AND REPORTS PARSE002 FOR THE WHOLE FILE." The failure is
+   not that the file is unparseable -- it is that ONE unsupported production
+   invalidates the entire file's analysis. That is why TEST002 and REF002 cascade.
+   Consider whether a partial parse can yield the symbols it DID recover, with the
+   unparsed region reported, rather than discarding the file. That would shrink
+   this defect class from "one construct blinds three gates on a whole file" to
+   "one construct is reported and skipped".
+
+2. "THE GATE IS SHAPING TEST CODE." Agents insert an `as` cast purely to get past
+   the walker. That is the same wrong incentive recorded elsewhere today --
+   AFFECT001 producing 13 waive comments for class-token swaps (T-4054/F-277),
+   LARGE001 satisfied by DELETING COMMENTS (F-276). In each case the gate is
+   changing the code to suit the tool rather than the tool measuring the code.
+   Worth stating as a principle wherever this is fixed: a gate that can be
+   satisfied by making the code worse has the wrong predicate.
+
+ADDITIONAL ACCEPTANCE
+- The `typeof import()` type-query production supported inside generic type
+  arguments, reproduced first.
+- Whether a partial parse can report the recovered symbols instead of discarding
+  the file, answered explicitly.
