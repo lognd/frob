@@ -18,10 +18,25 @@ scope:
 - scripts/artifact_smoke.py
 - tests/system/test_artifact_smoke.py
 - .github/workflows/ci.yml
+- docs/guides/release.md
+- tests/unit/test_artifact_smoke_script.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/release.md
+  reason: 'scope closure: doc target and covering unit test flagged by frob ticket
+    new'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_artifact_smoke_script.py
+  reason: 'scope closure: doc target and covering unit test flagged by frob ticket
+    new'
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
