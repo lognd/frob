@@ -40,6 +40,16 @@ body_changes:
   at: '2026-09-06'
   old_length: 6616
   new_length: 9458
+- mode: set
+  reason: 'DOC006 fails CI on BOTH ubuntu and macOS against this ticket''s own prose:
+    I quoted the consumer''s PROPOSED lease-prune verb in backticked command form,
+    which parses as a live CLI invocation pointer and does not resolve because the
+    subcommand does not exist. Rewritten as prose -- third time my own ticket text
+    has broken the build this way'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 9458
+  new_length: 9696
 designated_repro_test: null
 threat: null
 component: null
@@ -151,7 +161,10 @@ reported as STALE and not block start") is correct for (a) and DANGEROUS for (b)
 Detecting (b) is cheap -- `git log --oneline main..<branch>` -- and must be part
 of this.
 
-THEIR PROPOSED `frob ticket lease prune` IS THE RIGHT SHAPE, with that
+THEIR PROPOSED LEASE-PRUNE VERB IS THE RIGHT SHAPE (named in prose here, not
+as a literal command invocation: no such subcommand exists yet, so writing it
+in backticked command form parses as a live CLI pointer and DOC006 correctly
+refuses it -- the same trap that broke CI from T-3931 and T-3976), with that
 three-state check behind it, and it pairs naturally with the release verb this
 ticket already asks for: release is the holder relinquishing deliberately, prune
 is reclaiming after the holder is provably gone.
