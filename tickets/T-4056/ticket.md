@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/_python.py
 - tests/unit/test_cycle_waiver.py
-- docs/modules/gates.md
 - tests/system/test_cli_check.py
 - tests/unit/test_capability_and_deploy_cycle_regression.py
 - tests/unit/test_check.py
@@ -105,6 +104,13 @@ scope_changes:
   reason: 'scope closure: _python.py''s pre-existing frob:doc/frob:tests edges from
     unrelated symbols in the same module require these files in scope (SCOPE002),
     not new work introduced by this ticket'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: 'revert: docs/modules/gates.md''s own scope closure recurses into ~470 unrelated
+    gates-module symbols, far outside this ticket''s actual change; treating _diag_severity/_unresolved_count''s
+    pre-existing doc edge as inherited scope debt instead'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
