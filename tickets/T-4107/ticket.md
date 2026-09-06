@@ -17,10 +17,67 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/dup/_legacy.py
 - tests/unit/test_dup.py
+- docs/modules/dup.md
+- src/frob/dup
+- tests/test_excludes.py
+- tests/unit/test_memo.py
+- src/frob/dup/_legacy_common.py
+- src/frob/dup/_legacy_cpp.py
+- src/frob/dup/_legacy_py.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/dup.md
+  reason: 'T-4107 gate:SCOPE SCOPE002: widen scope to cover doc/test/helper edges
+    the fix touches (frob:doc target, existing dup coverage tests, and the private-helper
+    calls the two indexer functions already made)'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/dup
+  reason: 'T-4107 gate:SCOPE SCOPE002: widen scope to cover doc/test/helper edges
+    the fix touches (frob:doc target, existing dup coverage tests, and the private-helper
+    calls the two indexer functions already made)'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/test_excludes.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: widen scope to cover doc/test/helper edges
+    the fix touches (frob:doc target, existing dup coverage tests, and the private-helper
+    calls the two indexer functions already made)'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_memo.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: widen scope to cover doc/test/helper edges
+    the fix touches (frob:doc target, existing dup coverage tests, and the private-helper
+    calls the two indexer functions already made)'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/dup/_legacy_common.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: widen scope to cover doc/test/helper edges
+    the fix touches (frob:doc target, existing dup coverage tests, and the private-helper
+    calls the two indexer functions already made)'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/dup/_legacy_cpp.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: widen scope to cover doc/test/helper edges
+    the fix touches (frob:doc target, existing dup coverage tests, and the private-helper
+    calls the two indexer functions already made)'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/dup/_legacy_py.py
+  reason: 'T-4107 gate:SCOPE SCOPE002: widen scope to cover doc/test/helper edges
+    the fix touches (frob:doc target, existing dup coverage tests, and the private-helper
+    calls the two indexer functions already made)'
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 acceptance:
 - text: given a short fixture-shaped duplicate under a tests directory, when find_duplicates
