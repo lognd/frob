@@ -16,11 +16,28 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/__init__.py
-- tests/unit/test_app_runners_batch7.py
+- tests/unit/test_ticket_runner_bare_root_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: T-4085's new tests moved into a dedicated file (test_ticket_runner_bare_root_guard.py)
+    instead of the giant shared test_app_runners_batch7.py -- that file's hundreds
+    of pre-existing cross-references would otherwise drag SCOPE002 findings for dozens
+    of unrelated symbols into this narrow ticket's scope closure.
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/unit/test_ticket_runner_bare_root_guard.py
+  reason: T-4085's new tests moved into a dedicated file (test_ticket_runner_bare_root_guard.py)
+    instead of the giant shared test_app_runners_batch7.py -- that file's hundreds
+    of pre-existing cross-references would otherwise drag SCOPE002 findings for dozens
+    of unrelated symbols into this narrow ticket's scope closure.
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
