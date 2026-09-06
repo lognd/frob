@@ -18,10 +18,19 @@ scope:
 - src/frob/excludes.py
 - tests/unit/gates/test_ffi_boundary_path_shape.py
 - tests/unit/gates/test_exhaustive_handling_path_shape.py
+- tickets/T-draft-22f16441/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-draft-22f16441/ticket.md
+  reason: T-4102's audit finding (checking other fnmatch-against-path-glob call sites)
+    was filed as a new ticket from this worktree; its own ticket.md is a byproduct
+    of that filing, not code this ticket edits
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 acceptance:
 - text: given a repo with [graph] exclude = vendor/**, when is_excluded is called
