@@ -24,6 +24,7 @@ scope:
 - src/frob/tickets/__init__.py
 - src/frob/app/config.py
 - src/frob/app/ticket_runner/_close_cmd.py
+- tests/test_tickets_evidence_removal.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -78,6 +79,11 @@ scope_changes:
   reason: frob ticket close --evidence-cmd also calls _apply_cmd_evidence; --cwd DIR
     (T-4000) must be threaded through this call site too for consistent behavior with
     frob ticket evidence
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/test_tickets_evidence_removal.py
+  reason: new test file covering part 3 (evidence removal) and part 4 (--cwd) fixtures
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
