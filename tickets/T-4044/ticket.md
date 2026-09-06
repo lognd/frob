@@ -30,6 +30,16 @@ body_changes:
   at: '2026-09-06'
   old_length: 3383
   new_length: 5450
+- mode: set
+  reason: F-301 reports this fires on EVERY run across four more of their tickets,
+    with agents paying a round trip each time to prove the negative -- that frequency
+    is the priority argument. It also offers a cheap testable cause (a glob matching
+    a generated or ignored file) and the right fallback (mark UNMEASURED with the
+    command)
+  actor: logan
+  at: '2026-09-06'
+  old_length: 5450
+  new_length: 7374
 designated_repro_test: null
 threat: null
 component: null
@@ -132,3 +142,36 @@ finding kind rather than as a formatting verdict.
 DO NOT lose the earlier constraint while doing this: the fix must not make us
 blind to prettier's GENUINE failures. A tool exiting nonzero WITH a real
 diagnostic must still be surfaced.
+
+## FIFTH AND SIXTH REPORTS: IT IS EVERY RUN, AND THEY NAME A CAUSE (F-301)
+
+logand.app-v2, 2026-09-06, citing four of their own tickets:
+
+  "T-0247 (and T-0234, T-0242, T-0259 before it): EVERY RUN shows the prettier
+   stage failing with NO FILE NAMED; a direct `npx prettier --check` on every
+   touched file passes. AGENTS SPEND A ROUND TRIP PROVING THE NEGATIVE EACH TIME."
+
+"EVERY RUN" AND "A ROUND TRIP EACH TIME" ARE THE PRIORITY ARGUMENT. This is not an
+occasional confusing failure -- it is a permanent false signal that every agent on
+that repo pays for, repeatedly, by re-running prettier by hand to prove nothing is
+wrong. Four tickets named, plus T-0210 and T-0217 earlier, and T-2521 documented
+the gap before any of them.
+
+THEY ALSO OFFER A CONCRETE HYPOTHESIS worth checking first because it is cheap:
+"likely a glob that matches a GENERATED OR IGNORED FILE". That would explain
+everything observed -- prettier exits nonzero on a file the user never touched and
+would never format, while `--check` on the touched set passes. TEST THAT BEFORE
+ANY REDESIGN: run the stage's own glob and diff it against what `npx prettier
+--check` covers.
+
+THEIR FALLBACK IS THE RIGHT DEFAULT IF THE CAUSE RESISTS: "mark the stage
+UNMEASURED with the command it ran". That is exactly the subject-count posture
+(T-3985) applied to a tool stage -- a stage that cannot produce a legible verdict
+should say so and show its command, not emit a bare FAIL. Note this makes the
+ticket cheap to close even if the root cause is environmental.
+
+RELATED, FILED TODAY: T-4058 is the same defect class in the vitest stage (a
+failure COUNT with no node ids). Both reduce a rich tool result to a number and
+drop what a reader can act on. Whoever takes either should settle the general
+contract: A STAGE REPORTING A NONZERO EXIT OR COUNT MUST ALSO REPORT IDENTITIES,
+A DIAGNOSTIC, OR AN EXPLICIT "COULD NOT DETERMINE" -- never a bare verdict.
