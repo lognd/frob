@@ -126,6 +126,24 @@ class TestParsedArtifacts:
 
 
 # frob:ticket T-4018
+# frob:ticket T-4047
+def _force_empty_rows_for_column(conn: sqlite3.Connection, column: str) -> None:
+    """Make the `fetchone()` of any query selecting only `column` on `conn`
+    return `()`, modeling the row_factory-interaction hypothesis for
+    T-4018/T-4047's empty-row condition without racing for it. Scoped by
+    the query's own column list so it does not also blank unrelated reads
+    this module issues internally (e.g. `PRAGMA database_list`)."""
+
+    def factory(cursor: sqlite3.Cursor, row: tuple[object, ...]) -> object:
+        columns = [d[0] for d in cursor.description]
+        if columns == [column]:
+            return ()
+        return row
+
+    conn.row_factory = factory
+
+
+# frob:ticket T-4018
 class TestEmptyRowGuard:
     """`fetchone()` can return `()` -- present but zero columns -- not just
     `None`, on the empty-row condition CI hit under xdist load (T-4018).
@@ -139,18 +157,8 @@ class TestEmptyRowGuard:
     @staticmethod
     def _force_empty_rows(conn: sqlite3.Connection) -> None:
         """Make the `parsed_artifacts.payload` query's `fetchone()` return
-        `()`, modeling the row_factory-interaction hypothesis for T-4018's
-        empty-row condition without racing for it. Scoped by the query's
-        own column list so it does not also blank unrelated reads this
-        module issues internally (e.g. `PRAGMA database_list`)."""
-
-        def factory(cursor: sqlite3.Cursor, row: tuple[object, ...]) -> object:
-            columns = [d[0] for d in cursor.description]
-            if columns == ["payload"]:
-                return ()
-            return row
-
-        conn.row_factory = factory
+        `()` on `conn` (T-4018) -- see `_force_empty_rows_for_column`."""
+        _force_empty_rows_for_column(conn, "payload")
 
     # frob:ticket T-4018
     def test_empty_row_is_a_clean_miss_not_a_crash(self, tmp_path: Path) -> None:
@@ -203,6 +211,53 @@ class TestEmptyRowGuard:
             )
         warnings = [r.message for r in caplog.records if r.levelname == "WARNING"]
         assert any("parsed_artifacts" in msg and "deadbeef" in msg for msg in warnings)
+
+
+# frob:ticket T-4047
+class TestReadRootEmptyRowGuard:
+    """`_read_root`/`get_root` were missed by T-4018's sweep (T-4047): they
+    carried the identical `row is not None` mis-guard on the `meta.root`
+    lookup. Same fixture technique as `TestEmptyRowGuard` -- a column-scoped
+    `row_factory` override constructs the empty-row condition directly."""
+
+    # frob:ticket T-4047
+    @staticmethod
+    def _force_empty_root_row(conn: sqlite3.Connection) -> None:
+        """Make the `meta.value` root-lookup query's `fetchone()` return
+        `()` on `conn` (T-4047) -- see `_force_empty_rows_for_column`."""
+        _force_empty_rows_for_column(conn, "value")
+
+    # frob:ticket T-4047
+    def test_empty_root_row_is_a_clean_miss_not_a_crash(
+        self, tmp_path: Path
+    ) -> None:
+        """`get_root` returns `None`, not `IndexError`, when `fetchone()`
+        yields `()` for an otherwise-present `meta.root` row (T-4047)."""
+        conn = graph_cache.connect(tmp_path / "cache.db")
+        graph_cache.set_root(conn, "/some/repo")
+        self._force_empty_root_row(conn)
+        assert graph_cache.get_root(conn) is None
+
+    # frob:ticket T-4047
+    def test_genuine_root_still_returns_unchanged(self, tmp_path: Path) -> None:
+        """The truthiness-guard fix does not disturb an ordinary root read."""
+        conn = graph_cache.connect(tmp_path / "cache.db")
+        graph_cache.set_root(conn, "/some/repo")
+        assert graph_cache.get_root(conn) == "/some/repo"
+
+    # frob:ticket T-4047
+    def test_empty_root_row_logs_a_warning_naming_table_and_key(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """An empty-but-present `meta.root` row logs a WARNING naming the
+        table and key rather than silently reading as a clean miss."""
+        conn = graph_cache.connect(tmp_path / "cache.db")
+        graph_cache.set_root(conn, "/some/repo")
+        self._force_empty_root_row(conn)
+        with caplog.at_level("WARNING", logger="frob.graph.cache"):
+            graph_cache.get_root(conn)
+        warnings = [r.message for r in caplog.records if r.levelname == "WARNING"]
+        assert any("meta" in msg and "root" in msg for msg in warnings)
 
 
 # frob:ticket T-3607

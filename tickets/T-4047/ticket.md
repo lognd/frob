@@ -1,7 +1,7 @@
 ---
 id: T-4047
 title: 'T-4018 follow-up: _read_root still guards fetchone() with is-not-None'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -30,6 +30,10 @@ scope_changes:
     T-4018's fixture pattern
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/test_graph_cache.py::TestReadRootEmptyRowGuard::test_empty_root_row_is_a_clean_miss_not_a_crash
+- tests/unit/test_graph_cache.py::TestReadRootEmptyRowGuard::test_genuine_root_still_returns_unchanged
+- tests/unit/test_graph_cache.py::TestReadRootEmptyRowGuard::test_empty_root_row_logs_a_warning_naming_table_and_key
 designated_repro_test: null
 threat: null
 component: null

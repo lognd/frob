@@ -1,0 +1,53 @@
+## Done report
+
+T-4018 fixed 7 fetchone()-guard sites in `src/frob/graph/cache.py` and
+`src/frob/dup/_cache.py`, but missed `_read_root` -- the actual line-1679
+site named in T-4018's original report -- because it was mistakenly
+conflated with `_get_file_hash` during that fix. `_read_root` still did
+`row[0] if row is not None else None`, so an empty-tuple `fetchone()`
+result there still raised `IndexError`.
+
+Fixed: `_read_root` now guards with truthiness (`if row`) and calls
+`_warn_if_empty_row(table="meta", key="root")`, matching the pattern used
+at cache.py's other `meta`-table sites.
+
+Fixtures added to `tests/unit/test_graph_cache.py::TestReadRootEmptyRowGuard`,
+reusing T-4018's fixture technique (a column-scoped `row_factory` override
+constructing the empty-row condition directly, extracted to a shared
+`_force_empty_rows_for_column` module helper to avoid duplicating T-4018's
+existing `TestEmptyRowGuard._force_empty_rows`):
+- MUST-FIRE: `test_empty_root_row_is_a_clean_miss_not_a_crash`.
+- MUST-STAY-QUIET: `test_genuine_root_still_returns_unchanged`.
+- WARNING-NAMES-TABLE-AND-KEY: `test_empty_root_row_logs_a_warning_naming_table_and_key`.
+
+Scope: `src/frob/graph/cache.py` + `tests/unit/test_graph_cache.py`, same as
+T-4018. `frob check --ticket T-4047` reports 26 SCOPE002 findings from the
+same T-3914/T-4018-precedented scope-closure-breadth pattern (cache.py's
+shared meta-table helpers fan out into `docs/modules/graph.md`,
+`tests/test_graph.py`, `tests/test_graph_lock.py`, and dozens of unrelated
+test files via the `_write` helper) -- acknowledged via
+`frob ticket scope-ack`, not chased, for the same out-of-proportion reason
+as T-4018.
+
+`frob test --base main` timed out at 540s because the ticket's own
+`tickets/T-4047/ticket.md` file has no language binding, which triggers a
+suite-wide fallback (`fallback=package`) across python/rust/strata; direct
+`pytest tests/unit/test_graph_cache.py tests/test_graph.py` (183 tests) is
+the real evidence and passed clean (exitstatus=0, failed=0), same file set
+T-4018 verified against.
+
+### Changed
+```
+ tickets/T-4047/ticket.md | 21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_graph_cache.py::TestReadRootEmptyRowGuard::test_empty_root_row_is_a_clean_miss_not_a_crash` (pytest node id, verified passing when recorded)
+- `tests/unit/test_graph_cache.py::TestReadRootEmptyRowGuard::test_genuine_root_still_returns_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_graph_cache.py::TestReadRootEmptyRowGuard::test_empty_root_row_logs_a_warning_naming_table_and_key` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 2 error(s), 4405 warning(s), 930 waived
+- error-findings: SCOPE002@tickets.md, WIRE001@tests/unit/test_graph_cache.py

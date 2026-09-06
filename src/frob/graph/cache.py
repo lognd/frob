@@ -1696,7 +1696,8 @@ def _read_root(conn: sqlite3.Connection) -> str | None:
     not nest a second reconnect layer per snapshot load)."""
     cur = conn.execute("SELECT value FROM meta WHERE key = 'root'")
     row = cur.fetchone()
-    return row[0] if row is not None else None
+    _warn_if_empty_row(row, table="meta", key="root")
+    return row[0] if row else None
 
 
 # frob:doc docs/modules/graph.md#cache
