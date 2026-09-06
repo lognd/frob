@@ -25,6 +25,7 @@ scope:
 - docs/design/registry/check-coverage.yaml
 - docs/modules/gates.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -129,6 +130,12 @@ scope_changes:
   glob: design/frob.strata
   reason: 'SELFAUDIT001/SYS100: declare the new test file''s fs.write capability in
     the testsuite node''s existing enumerated may grant'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'SYS111: bump the fs.write via-list ceiling for the testsuite node, one
+    real new site (the new PROFILE001 subject-count test file)'
   actor: logan
   at: '2026-09-06'
 body_changes:
