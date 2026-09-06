@@ -35,6 +35,14 @@ body_changes:
   at: '2026-09-06'
   old_length: 4648
   new_length: 5741
+- mode: append
+  reason: F-273 M-1 is a second independent instance of T-4025 item 1's reachability
+    gap, now with the most concrete rule proposal yet; cross-referencing rather than
+    filing a third time
+  actor: logan
+  at: '2026-09-06'
+  old_length: 5741
+  new_length: 7071
 designated_repro_test: null
 acceptance:
 - text: given the design step, when it completes, then it states an explicit checkable
@@ -81,3 +89,8 @@ T-4025 item 1 is another instance of this ticket's own primitive, cross-referenc
 
 
 T-4036 item 4, cross-referenced rather than duplicated -- a further instance of this ticket's own subject-count primitive. FINDING: a source file included via a language's include!/#include-style mechanism rather than declared as a proper module (e.g. Rust's mod declaration) is invisible to gate:TEST, gate:DOC, and gate:REF simultaneously -- all three walk the module tree, none of them walk raw includes, so all three report CLEAN on a file with real code, two real callers, and doc comments that none of them ever reads. This is three gates independently examining a subject set that silently excludes a real, live file -- exactly the "0 findings over 0 subjects examined, indistinguishable from 0 over N" shape this ticket exists to fix, just triggered by a walker gap rather than a path-separator or reachability bug. Their own fallback ask is precisely the primitive applied to the walker: report an unwalked-but-tracked source file (present in git, matched by no language walker's subject set) as a finding in its own right, distinct from a clean pass over files the walker DID see.
+
+
+F-273 M-1, cross-referenced rather than refiled -- a SECOND independent instance of T-4025 item 1 (itself appended to this ticket above), now with the MOST CONCRETE proposal yet. VERIFIED: WIRE001 is the closest existing rule and it is explicitly disabled for this shape (see the many frob:waive WIRE001 directives already on this consumer's backend routes) -- so the gap is not that no rule exists, but that the closest rule was deliberately turned off for exactly the case that needed it.
+
+FINDING: COMP-1801..1805 (auth pages) each carry a frob:describes anchor, a frob:doc back-reference, and a passing unit test -- V-model closure satisfied purely by "component exists and is tested" -- while the pages are UNROUTED and unreachable in production. Proposed concrete rule: a frontend WIRE rule asserting every exported page component under pages/** is referenced from a route table, SYMMETRICAL to the backend's existing route-registration check (whatever machinery already verifies a backend route handler is registered, mirror it for frontend page components against their router config). This is the first of the reachability-primitive instances with a fully specified, implementable proposal rather than only a description of the gap -- prioritize it as the design's worked example when this ticket's scope is picked up.
