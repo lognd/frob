@@ -2,7 +2,7 @@
 id: T-3979
 title: DOC006 conflates live pointers with quoted consumer symbols, proposed config
   keys and old_text audit records; amend re-creates the violation
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -16,11 +16,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_docptr.py
+- tests/test_docptr_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: 'T-3979: this ticket''s own new fixtures live in tests/test_docptr_gate.py,
+    touched directly by the fix'
+  actor: logan
+  at: '2026-09-06'
+evidence:
+- tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion::test_old_text_field_not_flagged
+- tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion::test_new_text_field_not_flagged
+- tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion::test_open_ticket_body_still_flagged_alongside_old_text_and_new_text
+- tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion::test_amend_that_removes_a_doc006_violation_leaves_ticket_clean
+- tests/test_docptr_gate.py::TestDoc004Doc006ZeroOnFrobsOwnRepo::test_doc004_doc006_zero_against_live_repo
+designated_repro_test: tests/test_docptr_gate.py::TestDoc006OldTextNewTextFieldExclusion::test_old_text_field_not_flagged
 threat: null
 component: null
 anchor: false
