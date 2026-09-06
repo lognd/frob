@@ -96,6 +96,35 @@ class TestIsSourceStaleVsMain:
         assert hook._is_source_stale_vs_main("x", "y", None) is False
         assert hook._is_source_stale_vs_main("x", None, None) is False
 
+    # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_crlf_working_tree_copy_is_not_mistaken_for_an_edit  # noqa: E501
+    def test_crlf_working_tree_copy_is_not_mistaken_for_an_edit(self, hook) -> None:  # noqa: ANN001
+        """T-4057: on Windows, `source_text` (read from the working tree)
+        can carry CRLF line endings from `core.autocrlf` while `git show`
+        output (`main_text`/`merge_base_text`) is always LF-normalized. A
+        worktree that never touched the file must still read as
+        unmodified -- and therefore, when `main` HAS since changed the
+        file, as genuinely stale -- despite that CRLF/LF difference."""
+        assert (
+            hook._is_source_stale_vs_main(
+                "old content\r\n", "new content\n", "old content\n"
+            )
+            is True
+        )
+
+    # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_crlf_working_tree_own_edit_still_reads_as_an_edit  # noqa: E501
+    def test_crlf_working_tree_own_edit_still_reads_as_an_edit(self, hook) -> None:  # noqa: ANN001
+        """T-4057: the CRLF normalization must not blunt the MUST-STAY-
+        QUIET case -- a genuine worktree edit (content actually differs,
+        not just line endings) is still never flagged stale."""
+        assert (
+            hook._is_source_stale_vs_main(
+                "worktree's own edit\r\n",
+                "main's own different edit\n",
+                "old content\n",
+            )
+            is False
+        )
+
 
 class TestStaleManagedSourcesAndWriteRefusal:
     """`stale_managed_sources`/`main`'s write path (T-3408): an end-to-end

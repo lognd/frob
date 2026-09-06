@@ -548,7 +548,13 @@ def test_redundant_rerun_not_flagged_when_home_claude_config_changed(
     claude_refs.mkdir(parents=True)
     ref_file = claude_refs / "agent-playbook.md"
     ref_file.write_text("v1 -- stale copy")
-    monkeypatch.setenv("HOME", str(home))
+    # T-4057: patch Path.home() directly, not the HOME env var -- on
+    # Windows, Path.home()/os.path.expanduser("~") dispatches to
+    # ntpath.expanduser, which reads USERPROFILE (or HOMEDRIVE+HOMEPATH)
+    # and never consults HOME at all, so monkeypatch.setenv("HOME", ...)
+    # is silently a no-op there and the code under test reads the real
+    # runner profile instead of this fake home.
+    monkeypatch.setattr(Path, "home", staticmethod(lambda: home))
 
     record_cli_event(
         tmp_path,
@@ -589,7 +595,9 @@ def test_redundant_rerun_still_flags_when_nothing_changed_at_all(
     claude_refs = home / ".claude" / "refs"
     claude_refs.mkdir(parents=True)
     (claude_refs / "agent-playbook.md").write_text("unchanged")
-    monkeypatch.setenv("HOME", str(home))
+    # T-4057: see the sibling test above -- Path.home() must be patched
+    # directly, HOME alone does not redirect it on Windows.
+    monkeypatch.setattr(Path, "home", staticmethod(lambda: home))
 
     record_cli_event(
         tmp_path, subcommand="check", args_head="check", duration_ms=500, exit_code=0

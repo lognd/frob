@@ -175,6 +175,8 @@ def _git_merge_base(ref_a: str, ref_b: str) -> str | None:
 # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_worktree_own_edit_is_never_stale_even_if_main_also_moved  # noqa: E501
 # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_source_matches_main_is_not_stale  # noqa: E501
 # frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_unknown_git_readings_fail_open  # noqa: E501
+# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_crlf_working_tree_copy_is_not_mistaken_for_an_edit  # noqa: E501
+# frob:tests tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain.test_crlf_working_tree_own_edit_still_reads_as_an_edit  # noqa: E501
 def _is_source_stale_vs_main(
     source_text: str, main_text: str | None, merge_base_text: str | None
 ) -> bool:
@@ -191,9 +193,25 @@ def _is_source_stale_vs_main(
     STAY-QUIET fixture. Any unknown git reading (`None` for either `main_
     text` or `merge_base_text`) returns `False` -- fail OPEN, matching
     every other best-effort git read in this module; a guard that cannot
-    read git must never treat that as proof of staleness."""
+    read git must never treat that as proof of staleness.
+
+    T-4057: `source_text` is read from the WORKING TREE (`Path.read_
+    text()`), which on Windows can be checked out with CRLF line endings
+    under git's `core.autocrlf`; `main_text`/`merge_base_text` come from
+    `git show`, which returns the blob exactly as stored -- normalized to
+    LF regardless of platform (`autocrlf` converts on checkout, not in
+    the object store). Comparing those two representations directly made
+    `source_text != merge_base_text` spuriously true for every unchanged
+    file on such a machine, so the worktree's OWN unmodified copy always
+    looked like "the worktree's own edit" and this guard could never fire
+    -- silently inert on Windows. All three readings are newline-
+    normalized here before comparison so a pure CRLF/LF difference is
+    never mistaken for a real content edit."""
     if main_text is None or merge_base_text is None:
         return False
+    source_text = source_text.replace("\r\n", "\n")
+    main_text = main_text.replace("\r\n", "\n")
+    merge_base_text = merge_base_text.replace("\r\n", "\n")
     if source_text != merge_base_text:
         return False
     return main_text != merge_base_text

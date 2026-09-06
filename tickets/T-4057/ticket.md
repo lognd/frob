@@ -2,7 +2,7 @@
 id: T-4057
 title: 'Windows CI cluster B: ~/.claude HOME-relative fixtures use HOME env (ignored
   by Path.home() on Windows); stale-guard also has a CRLF/autocrlf false-negative'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -31,7 +31,7 @@ evidence:
 - tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal::test_stale_file_skipped_forward_file_synced
 - tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain::test_crlf_working_tree_copy_is_not_mistaken_for_an_edit
 - tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain::test_crlf_working_tree_own_edit_still_reads_as_an_edit
-designated_repro_test: null
+designated_repro_test: tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain::test_crlf_working_tree_copy_is_not_mistaken_for_an_edit
 threat: null
 component: null
 anchor: false

@@ -338,13 +338,19 @@ class TestRun:
         self, tmp_path: Path, monkeypatch
     ) -> None:
         """No `--claude-dir` falls back to `~/.claude` -- proven against a
-        monkeypatched `HOME` pointed at a temp directory, never the real
-        one."""
+        monkeypatched `Path.home()` pointed at a temp directory, never the
+        real one."""
         repo = tmp_path / "repo"
         fake_home = tmp_path / "fake-home"
         fake_home.mkdir()
         _make_entry(repo, "skills", "baz")
-        monkeypatch.setenv("HOME", str(fake_home))
+        # T-4057: patch Path.home() directly, not the HOME env var -- on
+        # Windows, Path.home()/os.path.expanduser("~") dispatches to
+        # ntpath.expanduser, which reads USERPROFILE (or HOMEDRIVE+
+        # HOMEPATH) and never consults HOME at all, so setenv("HOME", ...)
+        # is silently a no-op there and `_default_claude_dir()` resolves
+        # to the real runner profile instead of this fake home.
+        monkeypatch.setattr(Path, "home", staticmethod(lambda: fake_home))
 
         try:
             run([str(repo)])
