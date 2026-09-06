@@ -1,5 +1,11 @@
 name: release
 
+# T-3922: every third-party `uses:` in this file is pinned to a 40-hex
+# commit SHA with a trailing version comment. Do not hand-unpin one to fix
+# a build -- `.github/dependabot.yml` (github-actions ecosystem) is the
+# expected update path: it resolves the pinned SHA, checks for a newer
+# release, and opens a PR that bumps the SHA and its comment together.
+#
 # T-3011: manual dispatch ONLY. No push/pull_request/tag/schedule/release
 # trigger exists here -- see docs/guides/release.md's "Proof: a normal
 # push does not upload" section, and tests/unit/test_release_workflow_gate.py
@@ -44,9 +50,9 @@ jobs:
     permissions:
       actions: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
       - name: Resolve ci.yml's status for this exact commit SHA
         env:
           GH_TOKEN: ${{ github.token }}
@@ -91,18 +97,18 @@ jobs:
             manylinux: "off"
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
       - name: Build frob-core wheel (abi3-py311)
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: frob-core
           target: ${{ matrix.maturin_target }}
           manylinux: ${{ matrix.manylinux }}
           args: --release --out dist
       - name: Build strata-core wheel (abi3-py311)
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: strata-core
           target: ${{ matrix.maturin_target }}
@@ -120,13 +126,13 @@ jobs:
             frob-core/dist/*.whl strata-core/dist/*.whl
           /tmp/native-check-venv/bin/python -c "import frob_core, strata_core; print(frob_core.__name__, strata_core.__name__)"
       - name: Upload frob-core wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: frob-core-${{ matrix.target }}
           path: frob-core/dist/*.whl
           retention-days: 90
       - name: Upload strata-core wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: strata-core-${{ matrix.target }}
           path: strata-core/dist/*.whl
@@ -135,36 +141,36 @@ jobs:
   build-sdists:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable, resolved 2026-09-05
       - name: frob-core sdist
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: frob-core
           command: sdist
           args: --out dist
       - name: strata-core sdist
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: strata-core
           command: sdist
           args: --out dist
       - name: frob sdist + wheel (pure Python)
         run: uv build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: frob-core-sdist
           path: frob-core/dist/*.tar.gz
           retention-days: 90
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: strata-core-sdist
           path: strata-core/dist/*.tar.gz
           retention-days: 90
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: frob-dist
           path: dist/*
@@ -201,16 +207,16 @@ jobs:
             os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
       - name: Download the universal frob wheel (built once, build-sdists)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: frob-dist
           path: smoke-dist/frob
       - name: Download this platform's frob-core/strata-core wheels
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: "*-core-${{ matrix.target }}"
           path: smoke-dist/cores
@@ -252,31 +258,31 @@ jobs:
       # one flat dir, and likewise for strata-core-*; frob-dist already
       # holds frob's own wheel + sdist as a single artifact.
       - name: Download frob-core artifacts (wheels + sdist)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: frob-core-*
           path: dist-staging/frob-core
           merge-multiple: true
       - name: Download strata-core artifacts (wheels + sdist)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: strata-core-*
           path: dist-staging/strata-core
           merge-multiple: true
       - name: Download frob artifact (wheel + sdist)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: frob-dist
           path: dist-staging/frob
       - name: Publish frob-core to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: dist-staging/frob-core
       - name: Publish strata-core to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: dist-staging/strata-core
       - name: Publish frob to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: dist-staging/frob

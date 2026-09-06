@@ -1,0 +1,14 @@
+# frob:used-by .github/workflows/release.yml
+# Update mechanism for T-3922: GitHub Actions in .github/workflows/*.yml
+# are pinned to 40-hex commit SHAs (not mutable tags/branches) for
+# supply-chain safety. Dependabot's github-actions ecosystem understands
+# SHA pins: it resolves the underlying tag, checks for newer releases, and
+# opens a PR that bumps both the SHA and the trailing version comment. This
+# is the expected path for keeping pins current -- do not hand-unpin an
+# action to fix a build; wait for or trigger the Dependabot PR instead.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

@@ -1,5 +1,10 @@
 name: ci
 
+# T-3922: every third-party `uses:` in this file is pinned to a 40-hex
+# commit SHA with a trailing version comment; `.github/dependabot.yml`
+# (github-actions ecosystem) is the update path -- see the release
+# workflow's matching note for why hand-unpinning is never the fix.
+
 on:
   push:
     branches: [main]
@@ -49,13 +54,13 @@ jobs:
     # before anyone notices.
     timeout-minutes: 150
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable, resolved 2026-09-05
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
             ~/.cargo/registry
@@ -1780,9 +1785,9 @@ jobs:
   standalone-install:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
       - name: Build the bare wheel (no native extras)
         run: uv build --wheel
       - name: Install into a clean venv

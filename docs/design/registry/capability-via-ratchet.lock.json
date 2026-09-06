@@ -246,19 +246,14 @@
       "ticket": "T-3618"
     },
     "testsuite::fs.read": {
-      "accepted_count": 222,
-      "reason": "T-3884: adds tests/system/test_artifact_smoke.py's read of this repo's own pyproject.toml (to rewrite the serve pin for the must-fire fixture) and tests/unit/test_artifact_smoke_script.py's spec-loading read of scripts/artifact_smoke.py -- bumping the ceiling to the current measured count.",
-      "ticket": "T-3884"
+      "accepted_count": 223,
+      "reason": "T-3922: adds tests/test_ci_workflow_actions_pinned.py to the fs.read via-list (Path.read_text() on ci.yml/release.yml for the SHA-pin repro test) -- bumping the ceiling to the current measured count, 222 -> 223, one real new site.",
+      "ticket": "T-3922"
     },
     "testsuite::fs.write": {
       "accepted_count": 505,
       "reason": "T-3884: adds tests/system/test_artifact_smoke.py's tmp_path source-tree copy and rewritten pyproject.toml for its must-fire/must-stay-quiet wheel builds -- bumping the ceiling to the current measured count.",
       "ticket": "T-3884"
-    },
-    "testsuite::net.connect": {
-      "accepted_count": 3,
-      "reason": "T-3593: tests/test_vet.py split into tests/vet_suite/ newly declares net.connect on testsuite (previously ungranted here) for 3 files (test_capability_scan_python.py, test_fingerprint.py, test_opaque_indirection.py) with fail-closed monkeypatched socket/connection tests -- measured live via-list count.",
-      "ticket": "T-3593"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
@@ -274,6 +269,11 @@
       "accepted_count": 1,
       "reason": "T-2488: brand-new capability kind, no prior lock entry (ceiling was 0-by-absence, not a grown ceiling). tests/test_capability_registry.py declares this grant (T-2464, \"Network dangerous-ops needles do not distinguish read vs write HTTP/DB verbs\") -- the declaring code's own comment: \"TestNetMutateVerbSplit's own fire fixtures contain real requests.post(/httpx.delete( needle literals, proving the new net-mutate split actually fires\", confirming this is a real, reasoned fixture-literal declaration, not an accidental one. Traced via git log -S<file> -- design/frob.strata, not assumed.",
       "ticket": "T-2488"
+    },
+    "testsuite::net.connect": {
+      "accepted_count": 3,
+      "reason": "T-3593: tests/test_vet.py split into tests/vet_suite/ newly declares net.connect on testsuite (previously ungranted here) for 3 files (test_capability_scan_python.py, test_fingerprint.py, test_opaque_indirection.py) with fail-closed monkeypatched socket/connection tests -- measured live via-list count.",
+      "ticket": "T-3593"
     },
     "testsuite::process-control": {
       "accepted_count": 2,
