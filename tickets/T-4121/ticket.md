@@ -38,6 +38,16 @@ scope_changes:
     ticket asks to evaluate first would land in one or both'
   actor: logan
   at: '2026-09-06'
+body_changes:
+- mode: set
+  reason: 'records the measurement taken while filing: this repo''s own shared gate-rule
+    catalog reproduces the consumer''s defect at 71 and 345 closure warnings in two
+    independent measurements the same day, and we have been working around it by hand
+    exactly as they did'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 3725
+  new_length: 4943
 designated_repro_test: null
 acceptance:
 - text: given a doc file carrying anchors for many symbols, when a ticket edits one
@@ -115,3 +125,23 @@ ACCEPTANCE
 - The lease-collision symptom on the same files checked against the chosen fix --
   the consumer says one mechanism causes both; confirm or refute that.
 - All three fixtures committed.
+
+MEASURED IN THIS REPO WHILE FILING THIS TICKET, which settles the population
+question the section above asks for on our side at least:
+
+  - Scoping this very ticket to the two closure modules produced 71 closure
+    warnings, of which the overwhelming majority name ONE file: the shared gates
+    module catalog under docs/modules/. Every rule handler in the gate module
+    anchors its doc into that one catalog, so touching any handler pulls the
+    whole catalog in.
+  - Earlier the same day, a planner decomposing an unrelated epic tried to scope
+    a leaf to that same catalog and measured 345 closure warnings plus overlap
+    with 8 unrelated queued tickets. It dropped the catalog from every leaf's
+    scope and left the doc update as an unscoped append at close time.
+
+SO WE HAVE THE CONSUMER'S DEFECT IN OUR OWN TREE, and we have already been
+working around it by hand the way they did -- they reverted a correct edit, we
+drop the doc from scope and patch it at close. Both workarounds degrade the
+record. This is not a consumer-only problem and should not be scoped as one; the
+gate module catalog is the exact shape F-308 describes, a table of many
+independent rows each anchored to a different symbol.
