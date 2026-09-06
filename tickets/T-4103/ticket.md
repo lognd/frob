@@ -21,13 +21,6 @@ scope:
 - tests/integration/test_gitlog.py
 - tests/unit/test_conftest_parse_reset.py
 - tests/unit/test_conftest_suite_result_status.py
-- tests/test_mutate_journal.py
-- src/frob/mutate/__init__.py
-- src/frob/mutate/_journal.py
-- docs/modules/mutate.md
-- tests/test_mutate.py
-- design/frob.strata
-- src/frob/mutate
 evidence_scope:
 - tests/integration/test_gitlog.py
 - tests/test_mutate_journal.py
@@ -220,6 +213,69 @@ scope_changes:
   glob: src/frob/mutate
   reason: final SCOPE002 closure links for the pre-existing conftest.py binding cascade
     (design source + package dir supersets of files already added); tracking-only
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: design/frob.strata
+  reason: 'revert: this SCOPE002 closure path (conftest.py::pytest_configure, pre-existing,
+    untouched by this ticket) cascades unboundedly through design/frob.strata -- a
+    monolithic whole-project design root that touches 227+ further doc edges. Not
+    tractable inside T-4103''s actual scope; ack via scope-ack instead and file a
+    ticket on the cascade itself'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/mutate
+  reason: 'revert: this SCOPE002 closure path (conftest.py::pytest_configure, pre-existing,
+    untouched by this ticket) cascades unboundedly through design/frob.strata -- a
+    monolithic whole-project design root that touches 227+ further doc edges. Not
+    tractable inside T-4103''s actual scope; ack via scope-ack instead and file a
+    ticket on the cascade itself'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/mutate/__init__.py
+  reason: 'revert: this SCOPE002 closure path (conftest.py::pytest_configure, pre-existing,
+    untouched by this ticket) cascades unboundedly through design/frob.strata -- a
+    monolithic whole-project design root that touches 227+ further doc edges. Not
+    tractable inside T-4103''s actual scope; ack via scope-ack instead and file a
+    ticket on the cascade itself'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/mutate/_journal.py
+  reason: 'revert: this SCOPE002 closure path (conftest.py::pytest_configure, pre-existing,
+    untouched by this ticket) cascades unboundedly through design/frob.strata -- a
+    monolithic whole-project design root that touches 227+ further doc edges. Not
+    tractable inside T-4103''s actual scope; ack via scope-ack instead and file a
+    ticket on the cascade itself'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: docs/modules/mutate.md
+  reason: 'revert: this SCOPE002 closure path (conftest.py::pytest_configure, pre-existing,
+    untouched by this ticket) cascades unboundedly through design/frob.strata -- a
+    monolithic whole-project design root that touches 227+ further doc edges. Not
+    tractable inside T-4103''s actual scope; ack via scope-ack instead and file a
+    ticket on the cascade itself'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/test_mutate.py
+  reason: 'revert: this SCOPE002 closure path (conftest.py::pytest_configure, pre-existing,
+    untouched by this ticket) cascades unboundedly through design/frob.strata -- a
+    monolithic whole-project design root that touches 227+ further doc edges. Not
+    tractable inside T-4103''s actual scope; ack via scope-ack instead and file a
+    ticket on the cascade itself'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/test_mutate_journal.py
+  reason: 'revert: this SCOPE002 closure path (conftest.py::pytest_configure, pre-existing,
+    untouched by this ticket) cascades unboundedly through design/frob.strata -- a
+    monolithic whole-project design root that touches 227+ further doc edges. Not
+    tractable inside T-4103''s actual scope; ack via scope-ack instead and file a
+    ticket on the cascade itself'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
