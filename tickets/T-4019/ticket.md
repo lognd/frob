@@ -22,6 +22,7 @@ scope:
 - src/frob/check/_python.py
 - tests/unit/test_check.py
 - tests/gates_suite/test_run.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -76,6 +77,12 @@ scope_changes:
   glob: tests/gates_suite/test_run.py
   reason: test_gates.py does not exist in this repo; the real run_gates integration
     suite (where the must-fire/must-stay-quiet fixtures belong) is test_run.py
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: the two new rule ids this fix introduces (INV009, GATES001) must be registered
+    in _KNOWN_GATE_RULES or GATERULE001 flags them as unregistered
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
