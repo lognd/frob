@@ -21,10 +21,10 @@ scope:
 - tests/system/test_artifact_smoke.py
 - tests/unit/test_artifact_smoke_script.py
 - docs/guides/release.md
-- scripts/verify_release_ci_status.py
-- src/frob/doctor.py
 evidence_scope:
 - docs/guides/release.md
+- scripts/verify_release_ci_status.py
+- src/frob/doctor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -138,6 +138,20 @@ scope_changes:
   reason: docs/guides/release.md (in full scope for artifact_smoke.py frob:doc closure)
     also anchors these two files elsewhere in the doc; adding to close SCOPE002, will
     demote to evidence-only next since neither is edited by this ticket
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: scripts/verify_release_ci_status.py
+  reason: neither file is edited by this ticket -- pulled in only by docs/guides/release.md
+    doc-anchor closure; evidence-only avoids an unused write lease and (to be verified)
+    the deeper install.md/cli.md closure recursion
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/doctor.py
+  reason: neither file is edited by this ticket -- pulled in only by docs/guides/release.md
+    doc-anchor closure; evidence-only avoids an unused write lease and (to be verified)
+    the deeper install.md/cli.md closure recursion
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
