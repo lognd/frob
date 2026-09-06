@@ -43,6 +43,16 @@ scope_changes:
     in _mutate.py and the pre-work sweep/PRE001 lives in gates/_prework.py
   actor: logan
   at: '2026-09-06'
+body_changes:
+- mode: set
+  reason: 'F-297 shows scope --remove invalidates the sweep too, not just --add, so
+    the trigger is any scope MUTATION rather than growth -- a fix keyed on --add would
+    leave --remove broken. Also notes the compounding: they were removing a leased
+    doc, i.e. working around T-3949, which then tripped this'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 1991
+  new_length: 3124
 designated_repro_test: null
 threat: null
 component: null
@@ -88,3 +98,24 @@ disabled check.
 ACCEPTANCE
 - Which of the two fixes was taken, and the measured reason.
 - Both fixtures committed.
+## SECOND INSTANCE, THE OTHER DIRECTION: F-297
+
+logand.app-v2, 2026-09-06: "Removing a leased doc from scope
+(`frob ticket scope --remove`) made gate:PRE fire PRE001 (STALE PRE-WORK SWEEP)
+and needed `frob ticket sweep` again: a scope change should refresh the sweep."
+
+This ticket was filed from F-174, where `scope --add` invalidated the sweep. The
+same defect fires on `--remove`. So it is not about GROWING the scope -- ANY scope
+mutation invalidates the sweep, because the sweep is a measurement OF the scope
+and nothing connects the two.
+
+THAT SIMPLIFIES THE FIX AND SHOULD BE STATED IN IT: the trigger is "the scope
+changed", not "the scope grew". A fix keyed on `--add` would leave `--remove`
+broken and would have to be found again -- which is exactly what happened between
+these two reports.
+
+NOTE THE COMPOUNDING CONTEXT, because it makes this more than a papercut: the
+consumer was removing a LEASED doc from scope, i.e. performing the workaround for
+the lease-granularity defect (T-3949). So one open defect forced a scope
+mutation, which tripped a second open defect, which cost another sweep. Neither
+was their work.
