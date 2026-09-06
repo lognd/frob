@@ -26,8 +26,13 @@ scope:
 - docs/design/registry/check-coverage.yaml
 - tests/unit/strata/test_selfconform.py
 - design/frob.strata
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: design/frob.strata and docs/modules/gates.md are both maximal
+  cross-reference hubs (26 nodes' worth of unrelated frob:doc targets, and the entire
+  ~200-rule gate catalog respectively); this ticket's actual diff to each is a handful
+  of lines (two via-list entries, one dead-via removal, one new rule-catalog section)
+  and widening scope to their full reverse-doc-closure (~140 unrelated files) would
+  be a disproportionate, wrong-shaped fix for a narrow H3-10 bug fix
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
