@@ -20,6 +20,8 @@ scope:
 - src/frob/dup/_legacy_common.py
 - src/frob/dup/_legacy_cpp.py
 - src/frob/dup/_legacy_py.py
+- docs/modules/dup.md
+- src/frob/dup
 evidence_scope:
 - tests/test_excludes.py
 - tests/unit/test_memo.py
@@ -203,6 +205,18 @@ scope_changes:
   reason: 'T-4107: these are cited only as pre-existing evidence for the touched functions''
     coverage, not files this ticket writes to -- migrate to evidence_scope (T-1944)
     to avoid holding a write lease this ticket never uses'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/dup.md
+  reason: 'T-4107 gate:SCOPE SCOPE002: doc target for the file''s classes, and the
+    covering test''s directory target'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/dup
+  reason: 'T-4107 gate:SCOPE SCOPE002: doc target for the file''s classes, and the
+    covering test''s directory target'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
