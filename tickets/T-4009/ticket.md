@@ -15,11 +15,28 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/tickets/_bug_repro.py
+- src/frob/gates/_bug_repro.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/_bug_repro.py
+  reason: filed scope named src/frob/tickets/_bug_repro.py, which does not exist --
+    the guard command in the same invocation ls'd a DIFFERENT file (_mutation_evidence.py),
+    so it proved nothing about the path actually being scoped. The real module is
+    src/frob/gates/_bug_repro.py
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/gates/_bug_repro.py
+  reason: filed scope named src/frob/tickets/_bug_repro.py, which does not exist --
+    the guard command in the same invocation ls'd a DIFFERENT file (_mutation_evidence.py),
+    so it proved nothing about the path actually being scoped. The real module is
+    src/frob/gates/_bug_repro.py
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
