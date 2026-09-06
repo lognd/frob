@@ -30,6 +30,16 @@ body_changes:
   at: '2026-09-06'
   old_length: 2079
   new_length: 5752
+- mode: set
+  reason: 'records the queue census: 9 open SCOPE002-titled tickets, 4 filed today
+    by 3 different agents who each hit the explosion while working something unrelated.
+    Documents why T-4123/T-4128/T-4129 are blocked on this cause fix rather than worked
+    as doc debt, and warns against assuming the five older ones are duplicates without
+    reading them'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 5752
+  new_length: 7809
 designated_repro_test: null
 threat: null
 component: null
@@ -133,3 +143,39 @@ ACCEPTANCE
   the file's anchors into scope.
 - The lease-collision symptom on the same files checked against the chosen fix.
 - All three fixtures committed.
+
+THE QUEUE CENSUS, MEASURED 2026-09-06, AND IT IS THE STRONGEST ARGUMENT ON THIS
+TICKET. Counting tickets whose TITLE names this rule:
+
+    9 open      T-3299, T-3902, T-3926, T-3957, T-4098, T-4123, T-4127,
+                T-4128, T-4129
+    8 done
+    2 dropped today as duplicates (T-4121, T-4122)
+
+FOUR OF THE NINE OPEN ONES WERE FILED TODAY, by three different agents working
+three unrelated tickets. Not one of them set out to work on this rule. Each hit
+the explosion while doing something else, correctly declined to widen scope to
+satisfy it, and filed the debt.
+
+THAT PATTERN IS THE FINDING. A gate that reliably produces a ticket which is
+never fixed is not measuring debt -- it is manufacturing it. Nineteen tickets
+across the rule's life, with eight closed and the population still growing, says
+the closing does not keep up and never will, because every future ticket touching
+a hub file mints another one.
+
+I HAVE BLOCKED T-4123, T-4128 AND T-4129 ON THIS TICKET RATHER THAN DROPPING
+THEM, and the distinction matters. They are kind=docs tickets asking someone to
+declare the missing doc edges -- clearing the symptom. This ticket fixes the
+cause. If the diff-scoped closure lands, those symbols were never legitimately in
+any ticket's scope, so the debt they describe stops existing rather than getting
+paid. Working them FIRST would mean writing doc declarations for dozens of
+unrelated symbols to satisfy a question the gate should not have asked -- the
+wrong-incentive action this ticket exists to stop. Re-evaluate all three after
+this lands; the expected outcome is that they are dropped, not worked.
+
+DO NOT TREAT THE OLDER FIVE (T-3299, T-3902, T-3926, T-3957, T-4098) AS
+AUTOMATICALLY DUPLICATE. I have not read them and they may describe genuinely
+different SCOPE002 behaviour -- T-4098 in particular is about the rule being
+structurally UNWAIVABLE, which is a separate defect from the closure being too
+broad. Read each before folding or dropping it; a census is evidence of a
+pattern, not proof that every member is the same bug.
