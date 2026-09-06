@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/invariants.py
 - src/frob/gates/__init__.py
+- tests/gates_suite/test_invariant.py
+- tests/gates_suite/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +28,20 @@ scope_changes:
   glob: src/frob/gates/__init__.py
   reason: abort-as-pass and blast-radius fix require touching _load_required_state/_load_graph_queue_lock
     in gates/__init__.py; ticket body directs this file explicitly
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/gates_suite/test_invariant.py
+  reason: load_invariants signature changes (per-file scoping, no-longer-aborts-whole-run)
+    require rewriting its unit tests, and the fixtures proving the fix live in test_gates.py's
+    run_gates integration tests
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tests/gates_suite/test_gates.py
+  reason: load_invariants signature changes (per-file scoping, no-longer-aborts-whole-run)
+    require rewriting its unit tests, and the fixtures proving the fix live in test_gates.py's
+    run_gates integration tests
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
