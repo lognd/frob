@@ -251,9 +251,9 @@
       "ticket": "T-3922"
     },
     "testsuite::fs.write": {
-      "accepted_count": 505,
-      "reason": "T-3884: adds tests/system/test_artifact_smoke.py's tmp_path source-tree copy and rewritten pyproject.toml for its must-fire/must-stay-quiet wheel builds -- bumping the ceiling to the current measured count.",
-      "ticket": "T-3884"
+      "accepted_count": 506,
+      "reason": "T-3937: adds tests/unit/test_verify_language_buckets.py's real-collector fixtures (package.json/CTestTestfile.cmake/cache seeding for vitest and cpp evidence-binding tests) -- bumping the ceiling to the current measured count.",
+      "ticket": "T-3937"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,

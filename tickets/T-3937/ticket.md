@@ -2,7 +2,7 @@
 id: T-3937
 title: 'F-172: evidence BINDING resolves only python+rust collectors; ts/cpp/kotlin
   ids are rejected as UnknownEvidence'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -20,6 +20,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_verify_language_buckets.py::TestBindingResolvesRealNonPythonRustCollectors::test_must_fire_real_vitest_node_id_binds_via_apply_evidence
+- tests/unit/test_verify_language_buckets.py::TestBindingResolvesRealNonPythonRustCollectors::test_must_stay_quiet_nonexistent_ts_id_is_still_rejected
+- tests/unit/test_verify_language_buckets.py::TestBindingResolvesRealNonPythonRustCollectors::test_real_cpp_node_id_binds_via_apply_evidence
 designated_repro_test: null
 threat: null
 component: null
