@@ -21,6 +21,7 @@ scope:
 - tests/integration/test_gitlog.py
 - tests/unit/test_conftest_parse_reset.py
 - tests/unit/test_conftest_suite_result_status.py
+- tickets/T-draft-91788a34/ticket.md
 evidence_scope:
 - tests/integration/test_gitlog.py
 - tests/test_mutate_journal.py
@@ -282,6 +283,13 @@ scope_changes:
     monolithic whole-project design root that touches 227+ further doc edges. Not
     tractable inside T-4103''s actual scope; ack via scope-ack instead and file a
     ticket on the cascade itself'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: tickets/T-draft-91788a34/ticket.md
+  reason: artifact of filing+dropping a duplicate-check ticket from this worktree
+    during T-4103's SCOPE002 investigation; the dropped ticket file itself is now
+    part of this branch's diff
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
