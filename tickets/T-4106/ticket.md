@@ -2,7 +2,7 @@
 id: T-4106
 title: frob ticket accept gives a bare argparse error when an agent reaches for an
   evidence flag on it; three consumer agents in a row guessed the wrong verb
-state: queued
+state: in-progress
 kind: ux
 origin: agent
 created: '2026-09-06'
@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/_ticket/*.py
+- tests/unit/test_ticket_accept_evidence_hint_t4106.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_accept_evidence_hint_t4106.py
+  reason: new test evidence for the accept/evidence flag-hint fix
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 acceptance:
 - text: given frob ticket accept invoked with an evidence-shaped unrecognized flag,
