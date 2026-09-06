@@ -8,7 +8,7 @@ Evidence:
 - tests/gates_suite/test_depr003_severity_override.py::test_depr003_survives_repo_severity_overrides
 - tests/gates_suite/test_depr003_severity_override.py::test_depr003_not_forced_to_error_in_this_repo
 
-Filed: T-draft-b368eee4 (SCOPE002 private-helper closure resolves calls by
+Filed: T-3926 (SCOPE002 private-helper closure resolves calls by
 bare short name, not import binding -- found while writing this ticket's
 own regression test; filed from a throwaway worktree off main rather than
 from T-3912's own branch, since filing it there would have polluted
