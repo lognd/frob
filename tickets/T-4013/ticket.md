@@ -19,7 +19,6 @@ scope:
 - tests/test_policy.py
 - pyproject.toml
 - uv.lock
-- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -56,6 +55,13 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: 'closing scope: load_policy/policy_gate''s frob:doc target lives here; T-4013
     changes documented glob-matching semantics (fnmatch -> pathspec gitwildmatch)'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: gates.md is a huge doc file whose closure balloons scope by 343 unrelated
+    anchors; will address the SCOPE002 doc-edge advisory a narrower way instead of
+    pulling in the whole file
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
