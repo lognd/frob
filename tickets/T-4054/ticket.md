@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'F-267 sharpens this ticket: the same undischargeable doc obligation fires
+    with NO refactor and no contract change (a one-token attribute edit), and its
+    escape hatch is worse -- a permanent frob:waive comment in production source for
+    a non-event. Raises the real question of what counts as a doc-affecting change'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 4315
+  new_length: 7068
 designated_repro_test: null
 threat: null
 component: null
@@ -100,3 +110,50 @@ ACCEPTANCE
 - Findings from a move name the owning ticket at minimum.
 - The false-ack path removed, not merely discouraged.
 - All three fixtures committed.
+## F-267: THE SAME TRAP WITH NO REFACTOR AT ALL, AND A DIFFERENT WRONG INCENTIVE
+
+logand.app-v2, 2026-09-06:
+
+  "T-0235 changed `inert={true}` to `inert=""` in ImageCarousel.tsx; AFFECT001
+   demanded the SUB-16 COMP-1605 doc be touched/acked, but THAT DOC WAS NOT IN
+   THE TICKET'S SCOPE (correctly: NO CONTRACT CHANGED), so the agent had to add a
+   `frob:waive AFFECT001` COMMENT TO THE SOURCE. A doc-drift gate that fires on a
+   change with no signature or behaviour delta is noise, and PUSHING WAIVE
+   COMMENTS INTO SOURCE for it is the wrong incentive."
+
+THIS SHARPENS THIS TICKET IN TWO WAYS.
+
+1. THE TRIGGER DOES NOT REQUIRE A REFACTOR. The case above involves symbols
+   MOVING between files -- a substantial change with a genuine doc consequence,
+   just one the ticket could not discharge. Here NOTHING MOVED and no contract
+   changed: a JSX attribute's value went from `{true}` to `""`. The doc is still
+   entirely accurate. So the gate is not detecting real drift and failing to let
+   the ticket fix it; IT IS DETECTING NO DRIFT AT ALL and demanding an
+   acknowledgement anyway. Any fix must distinguish "the doc is now wrong and you
+   cannot reach it" from "the doc is still right and nothing is required".
+
+2. THE ESCAPE HATCH IS WORSE HERE THAN IN THE REFACTOR CASE. Above, the agent
+   acked -- recording a statement ("I re-verified the doc is still true") that
+   was FALSE for a moved symbol. Here the agent had to write a
+   `frob:waive AFFECT001` COMMENT INTO PRODUCTION SOURCE, permanently, for a
+   one-token change. The consumer's phrasing is exactly right: that is the wrong
+   incentive. A waiver in source is a durable artifact that outlives the ticket,
+   the reviewer and the reason; accumulating them for non-events degrades every
+   real waiver's signal.
+
+SO THE UNDERLYING QUESTION IS SHARPER THAN "who may edit the doc": WHAT COUNTS AS
+A CHANGE THAT CAN AFFECT DOCUMENTATION? A signature change, a behaviour change,
+a moved symbol -- plausibly yes. A literal-value edit within one attribute, with
+identical types and identical behaviour -- plausibly no. AFFECT001 currently
+appears to key on the symbol being TOUCHED rather than on anything about the
+change. VERIFY THAT before designing: if it is touch-based, the fix may be to key
+on a meaningful delta (signature, exported surface, docstring text) rather than
+on the diff mentioning the symbol at all.
+
+DO NOT solve this by making AFFECT001 advisory. It exists because docs rot
+silently, and this repo has measured that cost. The goal is to fire on real
+drift, not to fire less.
+
+ADDITIONAL FIXTURE: a change with no signature and no behaviour delta (a literal
+value edit inside one attribute) produces NO AFFECT001 finding and requires no
+waiver in source.
