@@ -19,6 +19,7 @@ scope:
 - src/frob/gates/_profile_boundary.py
 - tests/unit/test_process.py
 - tests/unit/test_check.py
+- docs/modules/process.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -86,6 +87,12 @@ scope_changes:
     the check pipeline's family-result construction and PROFILE001 (the proven T-3941
     positive control) as the proof-of-concept, per the ticket body's own acceptance
     criterion 3
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/process.md
+  reason: subject_count field needs a frob:doc anchor in the existing process.md#public-api
+    section
   actor: logan
   at: '2026-09-06'
 body_changes:
