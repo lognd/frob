@@ -16,8 +16,10 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: 'tier=epic: collects a tenth consumer''s ten findings; most
+  are corroboration routed to existing tickets, and the two genuinely new items (docs
+  absent from the wheel, graph cache stale mid-check) need their own scoped children'
 designated_repro_test: null
 threat: null
 component: null
