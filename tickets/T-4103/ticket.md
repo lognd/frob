@@ -26,8 +26,14 @@ evidence_scope:
 - tests/test_mutate_journal.py
 - tests/unit/test_conftest_parse_reset.py
 - tests/unit/test_conftest_suite_result_status.py
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: T-4103's scope (tests/conftest.py etc.) triggers SCOPE002
+  closure on pytest_configure's pre-existing frob:tests binding to tests/test_mutate_journal.py,
+  which chains through src/frob/mutate -> docs/modules/mutate.md -> design/frob.strata
+  (the whole-project design root) and explodes to 227+ further edges -- the already-tracked
+  SCOPE002 closure-explosion class (T-3299/T-3902/T-3957/T-4098). Not fixable by scoping
+  this ticket wider; acking per that known-defect family rather than absorbing an
+  unrelated production module (mutate) into a SUITE-RESULT newline fix
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
