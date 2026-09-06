@@ -22,6 +22,7 @@ scope:
 - docs/modules/tickets-lifecycle.md
 - docs/modules/tickets-landing.md
 - src/frob/tickets/__init__.py
+- src/frob/app/config.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -63,6 +64,12 @@ scope_changes:
   reason: remove_evidence must be re-exported from frob.tickets.__init__ alongside
     replace_evidence/add_cmd_evidence, the existing pattern for every public evidence-family
     function
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/app/config.py
+  reason: AppConfig needs a ticket_evidence_remove field to carry --remove EVIDENCE-ID
+    through, mirroring ticket_evidence_replace
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
