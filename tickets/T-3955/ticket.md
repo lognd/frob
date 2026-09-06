@@ -14,11 +14,26 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/gates/_arch.py
+- src/frob/lang/_walk_bash.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/_arch.py
+  reason: 'corrected: bash grammar already exists (T-1604, _walk_bash.py) -- the real
+    gap is a starter policy catalogue over ops/**.sh, not a new grammar; original
+    scope was a guessed filename'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/lang/_walk_bash.py
+  reason: 'corrected: bash grammar already exists (T-1604, _walk_bash.py) -- the real
+    gap is a starter policy catalogue over ops/**.sh, not a new grammar; original
+    scope was a guessed filename'
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 acceptance:
 - text: given a cost estimate for a shell/tree-sitter-bash grammar addition, when
