@@ -16,8 +16,10 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: 'tier=epic: decomposition container for the sixth consumer
+  audit list; scope lives on the children, which must be filed before any code is
+  written'
 designated_repro_test: null
 threat: null
 component: null
