@@ -603,12 +603,22 @@ class TestAgentEnvStdoutPurity:
         # frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_bare_eval_succeeds_with_no_filtering  # noqa: E501
         _init_repo(tmp_path)
         script = f'eval "$(uv run frob agent env {shlex.quote(str(tmp_path))})" && echo EVAL_OK'
+        # T-3936: `stdin=subprocess.DEVNULL` -- without it, `bash` (and
+        # the `uv run frob agent env` it spawns) inherits this test
+        # process's own fd 0 unchanged. Proven on Linux with a pty stand-
+        # in for a real console: a child spawned with an inherited tty
+        # stdin sees `isatty() == True` purely from inheritance, nothing
+        # in its own invocation. windows-latest's runner leaves a real
+        # console handle on the job's stdin where ubuntu-latest's does
+        # not, so this command's true behavior should not depend on
+        # which CI runner happens to be underneath it.
         result = subprocess.run(
             ["bash", "-c", script],
             cwd=Path(__file__).resolve().parents[1],
             capture_output=True,
             text=True,
             timeout=60,
+            stdin=subprocess.DEVNULL,
         )
         assert result.returncode == 0, result.stderr
         assert "EVAL_OK" in result.stdout

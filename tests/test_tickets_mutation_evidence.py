@@ -34,7 +34,29 @@ def _init_repo(root: Path) -> None:
     _git(root, "init", "-q")
     _git(root, "config", "user.email", "test@example.com")
     _git(root, "config", "user.name", "Test")
+    # T-3936: without this, a windows-latest runner's default
+    # core.autocrlf=true normalizes committed blobs to LF while
+    # `_write_lf` (below) keeps the working tree byte-for-byte LF too --
+    # forcing autocrlf off makes that normalization explicit and
+    # deterministic instead of depending on the host git install's
+    # global config, which `_matches_base_ref_tip`'s raw `read_bytes()`
+    # vs `git show` byte comparison is NOT tolerant of either way.
+    _git(root, "config", "core.autocrlf", "false")
     _git(root, "checkout", "-q", "-b", "main")
+
+
+def _write_lf(path: Path, content: str) -> None:
+    """`Path.write_text` with the platform newline translation disabled
+    (T-3936): on Windows, plain `write_text(..., encoding="utf-8")`
+    translates every `\\n` in `content` to `\\r\\n` on disk, so a fixture
+    file this module later feeds to `_matches_base_ref_tip` (which
+    compares raw `read_bytes()` against `git show`'s LF-normalized blob
+    content) never byte-matches even when the two are logically
+    identical -- this repo's actual windows CI failure for `test_matches_
+    base_ref_tip_true_for_identical_content` and `test_already_landed_
+    sibling_content_excluded`. Writing with `newline="\\n"` keeps the
+    on-disk bytes identical to the literal string on every platform."""
+    path.write_text(content, encoding="utf-8", newline="\n")
 
 
 def _commit(root: Path, message: str) -> None:
@@ -118,8 +140,8 @@ class TestTouchedPythonFiles:
         (`m.py`) must still be reported."""
         repo = tmp_path / "repo"
         _init_repo(repo)
-        (repo / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
-        (repo / "sibling.py").write_text("def g():\n    return 1\n", encoding="utf-8")
+        _write_lf(repo / "m.py", "def f():\n    return 1\n")
+        _write_lf(repo / "sibling.py", "def g():\n    return 1\n")
         _commit(repo, "init")
 
         # This worktree's own branch (like the agent's real worktree
@@ -127,7 +149,7 @@ class TestTouchedPythonFiles:
         _git(repo, "checkout", "-q", "-b", "feature")
 
         # Simulate this worktree's own earlier sibling-ticket commit.
-        (repo / "sibling.py").write_text("def g():\n    return 2\n", encoding="utf-8")
+        _write_lf(repo / "sibling.py", "def g():\n    return 2\n")
         _commit(repo, "sibling ticket change")
 
         # Simulate the coordinator squash-applying that SAME sibling
@@ -138,12 +160,12 @@ class TestTouchedPythonFiles:
         # merge-base with main is still the ORIGINAL "init" commit (git
         # cannot know the two commits share content just from history).
         _git(repo, "checkout", "-q", "main")
-        (repo / "sibling.py").write_text("def g():\n    return 2\n", encoding="utf-8")
+        _write_lf(repo / "sibling.py", "def g():\n    return 2\n")
         _commit(repo, "land T-sibling")
         _git(repo, "checkout", "-q", "feature")
 
         # This ticket's own genuine, still-unlanded change.
-        (repo / "m.py").write_text("def f():\n    return 2\n", encoding="utf-8")
+        _write_lf(repo / "m.py", "def f():\n    return 2\n")
 
         ticket = _ticket(scope=("m.py", "sibling.py"))
         files = _touched_python_files(repo, ticket, "main")
@@ -156,7 +178,7 @@ class TestTouchedPythonFiles:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_matches_base_ref_tip_true_for_identical_content  # noqa: E501
         repo = tmp_path / "repo"
         _init_repo(repo)
-        (repo / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        _write_lf(repo / "m.py", "def f():\n    return 1\n")
         _commit(repo, "init")
         assert _matches_base_ref_tip(repo, "m.py", "main") is True
 
@@ -167,9 +189,9 @@ class TestTouchedPythonFiles:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_matches_base_ref_tip_false_for_differing_content  # noqa: E501
         repo = tmp_path / "repo"
         _init_repo(repo)
-        (repo / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        _write_lf(repo / "m.py", "def f():\n    return 1\n")
         _commit(repo, "init")
-        (repo / "m.py").write_text("def f():\n    return 2\n", encoding="utf-8")
+        _write_lf(repo / "m.py", "def f():\n    return 2\n")
         assert _matches_base_ref_tip(repo, "m.py", "main") is False
 
 

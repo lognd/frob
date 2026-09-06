@@ -238,6 +238,7 @@ class TestTicketNewNonInteractive:
         assert "?" not in out
 
 
+# frob:ticket T-4028
 class TestTicketAttachNonInteractive:
     def test_attach_without_path_fails_fast_off_tty(self, tmp_path):
         # frob:tests \
@@ -260,11 +261,27 @@ class TestTicketAttachNonInteractive:
         # subprocess has no TTY, so it must fail fast with remedy text
         # instead of attempting clipboard capture (T-0098). A 10s timeout
         # catches a hang if it doesn't.
+        #
+        # T-3936: `stdin` must be explicitly redirected, not merely left
+        # to inherit this test process's own fd 0. Without it, "no TTY"
+        # is only true by accident of whatever the surrounding CI runner
+        # happened to leave on stdin -- proven on Linux with a pty stand-
+        # in for a real console: a child spawned with an inherited tty
+        # stdin reports `sys.stdin.isatty() == True` even though nothing
+        # about ITS OWN invocation asked for one. windows-latest's runner
+        # apparently leaves a real console handle on the job's stdin
+        # (unlike ubuntu-latest's, which is not a tty already), so this
+        # subprocess silently inherited a tty there and never took the
+        # off-tty fast-fail branch this test means to exercise.
+        # `subprocess.DEVNULL` makes "no TTY" true by construction on
+        # every platform, matching the test's own stated intent instead
+        # of depending on ambient runner state.
         r = subprocess.run(
             FROB + ["ticket", "attach", "T-0001", "--path", str(tmp_path)],
             capture_output=True,
             text=True,
             timeout=10,
+            stdin=subprocess.DEVNULL,
         )
         out = r.stdout + r.stderr
         assert r.returncode == 1, out

@@ -1,8 +1,8 @@
 ---
-id: T-draft-61146c03
+id: T-4028
 title: 'Windows CI: fix suite-abort hang plus 3 mandatory-lock/CRLF Windows failures
   (subset of T-3936)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -18,14 +18,14 @@ scope:
 - tests/unit/test_conftest_suite_result_status.py
 - tests/ticket_land_suite/test_land_lock.py
 - tests/test_tickets_mutation_evidence.py
-- tickets/T-draft-fe768f82/ticket.md
+- tickets/T-4029/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
 - op: add
-  glob: tickets/T-draft-fe768f82/ticket.md
+  glob: tickets/T-4029/ticket.md
   reason: 'close scope-closure gaps flagged by frob check: the filed draft ticket
     file itself, plus production/test modules that touched-test-files'' pre-existing
     frob:tests bindings and private-helper fakes reach into'
@@ -173,7 +173,7 @@ Verified on Linux by reproducing each platform-specific mechanism directly
 (no Windows machine available); re-measurement on real Windows CI still
 needed to confirm.
 
-Out of scope, filed separately: T-draft-fe768f82 (land.lock's own
+Out of scope, filed separately: T-4029 (land.lock's own
 post-acquire _read_land_lock_holder hits the same Windows mandatory-locking
 conflict, silently swallowed by a best-effort except OSError -- needs a
 src/frob/tickets/_land.py fix).

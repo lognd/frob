@@ -32,8 +32,20 @@ class TestLandLockHolderMetadataAndTimeout:
 
         from frob.tickets._land import _LAND_LOCK_REL, _land_lock
 
+        # T-3936: the read must happen AFTER the `with` block exits, not
+        # inside it. `_land_lock`'s Windows backend (`msvcrt.locking`,
+        # `frob.process._lock_msvcrt`) takes a mandatory byte-range lock
+        # on the file's first byte -- unlike POSIX `fcntl.flock`, which is
+        # merely advisory, Windows refuses ANY other handle (including a
+        # fresh one opened by this SAME process, exactly what `read_text`
+        # below does) from reading that byte while the lock is held, so a
+        # read taken while still inside the context previously raised
+        # `PermissionError` on windows-latest CI. Content written by
+        # `_land_lock` on acquire is untouched by releasing the lock, so
+        # reading after the context exits observes the identical bytes.
         with _land_lock(tmp_path):
-            content = (tmp_path / _LAND_LOCK_REL).read_text()
+            pass
+        content = (tmp_path / _LAND_LOCK_REL).read_text()
         parsed = json.loads(content)
         assert parsed["pid"] == os.getpid()
         assert "session_id" in parsed

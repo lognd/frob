@@ -9,7 +9,42 @@ ORIGINAL `SUITE-RESULT:` line coverage (T-1596/T-1673) this file extends."""
 
 from __future__ import annotations
 
+import pytest
+
 from tests.unit._conftest_test_helpers import load_conftest_module
+
+
+# frob:ticket T-4028
+@pytest.fixture(autouse=True)
+def _no_real_hard_exit(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T-3936: every test in this module calls a freshly-loaded `tests/
+    conftest.py`'s REAL `pytest_sessionfinish`/`pytest_configure` hooks
+    directly (via `_load_conftest()`), against fakes -- but those hooks
+    read `FROB_TEST_HARD_EXIT`/`FROB_TEST_MIDRUN_WATCHDOG_SECONDS` off
+    the REAL `os.environ`, not anything this test controls. windows-
+    latest CI's own Test step sets `FROB_TEST_HARD_EXIT=1` and
+    `FROB_TEST_MIDRUN_WATCHDOG_SECONDS=1350` for its ENTIRE pytest
+    invocation (ci.yml, T-3675/T-3683) -- so on that leg (and ONLY that
+    leg, which is exactly why this was invisible on Linux/macOS),
+    `test_sessionfinish_labels_did_not_complete_runs`'s `_FakeSession(
+    exitstatus=3)` reached `_maybe_hard_exit_after_session_finish`, saw
+    hard-exit armed, and called the REAL `os._exit(3)` -- killing the
+    actual outer pytest WORKER process running this very test suite,
+    mid-run, with no report ever sent back to the xdist controller. That
+    is the root cause of the measured hang: the crashed worker's `frob`-
+    specific crash handler in `tests/conftest.py` (the same `_WORKER_
+    CRASH_RERUN_CAP = 0` machinery T-0855/T-1741 built for genuine
+    interpreter crashes) declined to reschedule the group ("not
+    rescheduled (rerun cap 0 reached)" in the CI log matches this exactly),
+    and the controller was left waiting on a socket that would never
+    answer until pytest-timeout's own thread-method watchdog eventually
+    intervened, long after the nominal 600s. Clearing both env vars here
+    makes every hook call in this module hermetic -- it only ever sees
+    what its own fakes pass in, never the ambient CI environment -- which
+    is what MUST-STAY-QUIET/MUST-FIRE unit coverage of these hooks is
+    supposed to mean in the first place."""
+    monkeypatch.delenv("FROB_TEST_HARD_EXIT", raising=False)
+    monkeypatch.delenv("FROB_TEST_MIDRUN_WATCHDOG_SECONDS", raising=False)
 
 
 # frob:ticket T-3246
