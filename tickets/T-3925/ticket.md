@@ -19,6 +19,7 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - tests/test_tickets_evidence_cli.py
 - tests/unit/test_verify_language_buckets.py
+- src/frob/app/ticket_runner/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_verify_language_buckets.py
   reason: unit tests for _other_language_collected_ids helper
+  actor: logan
+  at: '2026-09-05'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: export _other_language_collected_ids alongside sibling _verify_* re-exports
   actor: logan
   at: '2026-09-05'
 designated_repro_test: null
