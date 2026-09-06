@@ -2,7 +2,7 @@
 id: T-3922
 title: none of frob's eight third-party GitHub Actions are SHA-pinned, including the
   one that publishes to PyPI
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-09-05'
@@ -18,6 +18,7 @@ scope:
 - .github/workflows/**
 - .github/dependabot.yml
 - tests/test_ci_workflow_actions_pinned.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -40,12 +41,22 @@ scope_changes:
     line, passes against the pinned workflow'
   actor: logan
   at: '2026-09-05'
+- op: add
+  glob: design/frob.strata
+  reason: declare tests/test_ci_workflow_actions_pinned.py's fs.read effect (Path.read_text
+    on the workflow yaml) in the testsuite node's via-list, required by SELFAUDIT001/SYS100
+  actor: logan
+  at: '2026-09-05'
 evidence:
 - tests/unit/test_release_workflow_gate.py::TestReleaseWorkflowNoAutomaticTrigger::test_ci_workflow_never_references_release_or_pypi
 - tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_job_declares_a_matrix_strategy
 - tests/test_ci_workflow_timeout.py::TestBuildJobHasATimeoutBackstop::test_build_job_declares_timeout_minutes
 - tests/test_ci_workflow_timeout.py::TestUbuntuTestStepIsTimedWithStackDump::test_ubuntu_test_step_wraps_pytest_in_timeout_abrt
-designated_repro_test: null
+- tests/test_ci_workflow_actions_pinned.py::TestGitHubActionsArePinnedToShas::test_ci_workflow_uses_are_all_sha_pinned
+- tests/test_ci_workflow_actions_pinned.py::TestGitHubActionsArePinnedToShas::test_release_workflow_uses_are_all_sha_pinned
+- tests/test_ci_workflow_actions_pinned.py::TestGitHubActionsArePinnedToShas::test_ci_workflow_yaml_still_parses
+- tests/test_ci_workflow_actions_pinned.py::TestGitHubActionsArePinnedToShas::test_release_workflow_yaml_still_parses
+designated_repro_test: tests/test_ci_workflow_actions_pinned.py::TestGitHubActionsArePinnedToShas::test_ci_workflow_uses_are_all_sha_pinned
 threat: null
 component: null
 anchor: false
