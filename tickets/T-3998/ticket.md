@@ -30,6 +30,16 @@ body_changes:
   at: '2026-09-06'
   old_length: 3491
   new_length: 6616
+- mode: set
+  reason: 'F-263 contradicts the F-260 note I appended earlier: start did NOT collide
+    with the same lease doable lists as active. The direct observation supersedes
+    the generalisation, and the contradiction reveals a deeper defect -- two readers
+    of lease state with different definitions, which must be reconciled before adding
+    release/prune verbs'
+  actor: logan
+  at: '2026-09-06'
+  old_length: 6616
+  new_length: 9458
 designated_repro_test: null
 threat: null
 component: null
@@ -151,3 +161,54 @@ ADDITIONAL ACCEPTANCE
   work-stranded, never collapsed into one "stale" verdict.
 - `doable` stops presenting a holder-less lease as active.
 - Pruning refuses (loudly) when the branch still carries unlanded commits.
+
+## F-263 CONTRADICTS F-260, AND THE CONTRADICTION IS THE FINDING
+
+The F-260 note above records that T-0088's holder-less lease "blocks every new
+engine ticket, which needs --steal". The SAME CONSUMER reported the opposite a
+short time later:
+
+  "`frob ticket start T-0236` did NOT collide with T-0088's lease on
+   SpinningShape.tsx even though `frob ticket doable` lists T-0088 as an active
+   lease over that file (F-260). So the 'ACTIVE LEASES' LISTING AND THE
+   START-TIME COLLISION CHECK DISAGREE ABOUT WHAT A LEASE IS."
+
+TAKE THE SECOND REPORT AS THE MORE RELIABLE ONE: it is a direct observation of a
+`start` that succeeded, whereas the "blocks every new ticket" phrasing in F-260
+was a generalisation. I appended F-260 at face value; this corrects it, and the
+corrected picture is MORE interesting, not less.
+
+TWO READERS OF LEASE STATE DISAGREE. `doable` presents T-0088 as holding an
+active lease over SpinningShape.tsx; `start` looks at the same ticket and the
+same file and finds no collision. So there is no single answer to "is this file
+leased" -- there are at least two implementations with different notions of what
+makes a lease live, and they are visibly out of step on a real case.
+
+THAT REFRAMES THIS TICKET'S FIX. The earlier analysis assumed the problem was a
+MISSING LIFECYCLE (no release verb, nothing reclaims a dead holder). That is
+still true, but it is downstream of something simpler: THERE IS NO SHARED
+DEFINITION OF A LIVE LEASE. Adding `release` and `prune` to a system where two
+readers already disagree would give us a third opinion. So establish the
+definition first:
+  - What does `doable` consider a live lease, and from what state?
+  - What does `start`'s collision check consider one, and from what state?
+  - Which is right, and why does the other exist?
+Then make both consume it. This is the same producer/validator desync shape
+filed three times today (T-4042 collector vs binder, T-4020 doc anchor vs
+runtime message, T-4043 formatter vs gate) -- one concept, two implementations,
+users caught in between.
+
+NOTE THE SAFETY IMPLICATION, which is why this outranks the ergonomics: if
+`start` is the LENIENT reader, then two agents can hold overlapping scopes while
+`doable` shows only one as active. That is a silent concurrency hazard, and it
+is the opposite failure from the one F-260 complained about. Determine which
+reader is permissive before deciding which to align to -- aligning `start` UP to
+`doable`'s view would fix a hazard; aligning `doable` DOWN to `start`'s view
+would entrench it.
+
+ADDITIONAL ACCEPTANCE
+- One definition of a live lease, consumed by both `doable` and `start`'s
+  collision check -- verified by a fixture that asserts the two agree on the
+  same file.
+- Which reader was permissive, stated, with the concurrency implication
+  addressed rather than assumed benign.
