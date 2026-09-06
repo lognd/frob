@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_ffi_boundary.py
 - tests/unit/gates/test_ffi_boundary_path_shape.py
+- design/frob.strata
 scope_breadth_ack: true
 scope_breadth_ack_reason: docs/modules/gates.md is a single shared reference doc describing
   ~40 gates; this ticket's edit is a narrow, additive scope note under the FFI001/FFI002
@@ -75,6 +76,13 @@ scope_changes:
   reason: T-3948 owns _exhaustive_handling.py in its own scope; T-3947 only needs
     its own gate file plus its own new standalone test module now that the shared
     test_compliance.py/gates.md touches were reverted
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001: declare the new standalone test file''s fs.write capability
+    at the testsuite node''s may clause, per existing per-ticket via-list precedent
+    (T-3516/T-3531/etc in the same block)'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
