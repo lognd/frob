@@ -13,7 +13,8 @@ from pathlib import Path
 from frob.gates import Severity, deprecated_gate
 from frob.gates._waive import _apply_severity_overrides, _severity_overrides
 from frob.tickets import TicketQueue, TicketState
-from tests.conftest import _first_rule, _snapshot, _ticket, _write
+from tests.conftest import _first_rule, _snapshot, _ticket
+from tests.conftest import _write as _write_fixture
 
 
 def test_depr003_survives_repo_severity_overrides(tmp_path: Path) -> None:
@@ -32,8 +33,8 @@ def test_depr003_survives_repo_severity_overrides(tmp_path: Path) -> None:
         '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
         "    return x\n"
     )
-    _write(tmp_path, "src/a.py", source)
-    _write(tmp_path, "frob.toml", '[gates.severity]\nDEPR003 = "error"\n')
+    _write_fixture(tmp_path, "src/a.py", source)
+    _write_fixture(tmp_path, "frob.toml", '[gates.severity]\nDEPR003 = "error"\n')
     snap = _snapshot(tmp_path)
     queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
     violations = deprecated_gate(snap, queue, tmp_path, current_date="2026-01-01")
