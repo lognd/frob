@@ -1280,17 +1280,24 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
 
     def test_a_new_render001_refuses_the_land(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_new_render001_refuses_the_land  # noqa: E501
+        # T-3940 MUST-FIRE fixture: RENDER001's scan set is `src/frob` (plus
+        # `.claude/hooks`/`scripts/fleet_status.py`), so the fixture file
+        # must actually sit under `src/frob` -- the generic `src/printer.py`
+        # this test used before T-3940 was, by construction, OUTSIDE
+        # RENDER001's own pathspec and only "refused" because the land-time
+        # checker ignored the pathspec entirely (the bug this ticket fixes).
         from frob.app.ticket_runner._land_cmd import (
             _assert_diff_does_not_add_new_file_local_errors_pre_land,
         )
 
-        new_file = repo / "src" / "printer.py"
+        (repo / "src" / "frob").mkdir(parents=True, exist_ok=True)
+        new_file = repo / "src" / "frob" / "printer.py"
         new_file.write_text("def run() -> None:\n    print('hello')\n")
         _run(["git", "add", "-A"], repo)
 
         with pytest.raises(SystemExit) as exc_info:
             _assert_diff_does_not_add_new_file_local_errors_pre_land(
-                repo, "T-2280", frozenset({"src/printer.py"})
+                repo, "T-2280", frozenset({"src/frob/printer.py"})
             )
         assert exc_info.value.code == 1
 
@@ -1301,12 +1308,15 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
         # The bare print() already existed at merge-base -- a later diff
         # that only adds a trailing comment must not be blamed on THIS
         # land, the same global-vs-attributable distinction T-2214/T-2198
-        # already established.
+        # already established. Under `src/frob` (T-3940) so this exercises
+        # the does-not-worsen comparison itself, not merely "out of scope
+        # either way".
         from frob.app.ticket_runner._land_cmd import (
             _assert_diff_does_not_add_new_file_local_errors_pre_land,
         )
 
-        already_printing = repo / "src" / "already_printing.py"
+        (repo / "src" / "frob").mkdir(parents=True, exist_ok=True)
+        already_printing = repo / "src" / "frob" / "already_printing.py"
         already_printing.write_text("def run() -> None:\n    print('hello')\n")
         _commit_all(repo, "pre-existing bare print")
 
@@ -1316,8 +1326,35 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
         _run(["git", "add", "-A"], repo)
 
         _assert_diff_does_not_add_new_file_local_errors_pre_land(
-            repo, "T-2280", frozenset({"src/already_printing.py"})
+            repo, "T-2280", frozenset({"src/frob/already_printing.py"})
         )  # must not raise
+
+    def test_a_bare_print_outside_the_render001_pathspec_does_not_refuse(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLoc\
+        # alErrors.test_a_bare_print_outside_the_render001_pathspec_does_not_refuse
+        # T-3940 MUST-STAY-QUIET fixture: `repo` is a real off-repo tree
+        # shape -- no `src/frob`, no `frob.render` importable, exactly a
+        # consumer repo like kicad-libsync. A bare print in its `src/`
+        # tree must NOT refuse the land: RENDER001 (INV-RENDER-SOLE-STDOUT)
+        # is about routing THIS repo's own stdout through `frob.render`,
+        # not a rule a consumer with no such renderer can even honor.
+        # Built from the real predicate/pathspec, not a monkeypatch of it --
+        # a patched predicate would prove nothing about the actual
+        # off-repo condition this bug produced.
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_add_new_file_local_errors_pre_land,
+        )
+
+        new_file = repo / "src" / "printer.py"
+        new_file.write_text("def run() -> None:\n    print('hello')\n")
+        _run(["git", "add", "-A"], repo)
+
+        _assert_diff_does_not_add_new_file_local_errors_pre_land(
+            repo, "T-3940", frozenset({"src/printer.py"})
+        )  # must not raise -- outside RENDER001's own scan set
 
     def test_a_clean_land_is_unaffected(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_clean_land_is_unaffected  # noqa: E501
@@ -1343,7 +1380,8 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
             _assert_diff_does_not_add_new_file_local_errors_pre_land,
         )
 
-        new_file = repo / "src" / "waived_print.py"
+        (repo / "src" / "frob").mkdir(parents=True, exist_ok=True)
+        new_file = repo / "src" / "frob" / "waived_print.py"
         new_file.write_text(
             "def run() -> None:\n"
             '    # frob:waive RENDER001 reason="test fixture, genuine exception"\n'
@@ -1352,7 +1390,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
         _run(["git", "add", "-A"], repo)
 
         _assert_diff_does_not_add_new_file_local_errors_pre_land(
-            repo, "T-2280", frozenset({"src/waived_print.py"})
+            repo, "T-2280", frozenset({"src/frob/waived_print.py"})
         )  # must not raise
 
     def test_an_unrelated_land_touching_no_python_files_is_unaffected(
@@ -1413,6 +1451,45 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
                 repo, "T-2280", frozenset({"src/printer2.py"})
             )  # must not raise
         assert any("SKIPPED-UNMEASURED" in record.message for record in caplog.records)
+
+    def test_render001_checker_agrees_with_render001_scans_in_and_out_of_scope(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLoc\
+        # alErrors.test_render001_checker_agrees_with_render001_scans_in_and_out_of_sco\
+        # pe
+        # T-3940 THIRD fixture: makes the gate/land-time desync itself
+        # checkable, for a path INSIDE the pathspec (src/frob/...) and one
+        # OUTSIDE it (src/...). `_render001_checker` must fire iff
+        # `render001_scans` (the same predicate `render_lint_gate` and
+        # `_waive_audit` consult) says this rule looks at the path at all --
+        # a bare `print(...)` present in BOTH files, so the only variable
+        # is scope, not detector correctness.
+        from frob.app.ticket_runner._land_cmd import _render001_checker
+        from frob.gates._render_lint import render001_scans
+
+        (repo / "src" / "frob").mkdir(parents=True, exist_ok=True)
+        text = "def run() -> None:\n    print('hello')\n"
+        (repo / "src" / "frob" / "in_scope.py").write_text(text)
+        (repo / "src" / "out_of_scope.py").write_text(text)
+        _run(["git", "add", "-A"], repo)
+
+        in_scope_path = "src/frob/in_scope.py"
+        out_of_scope_path = "src/out_of_scope.py"
+
+        assert render001_scans(repo, in_scope_path) is True
+        assert render001_scans(repo, out_of_scope_path) is False
+
+        in_scope_violations = _render001_checker(repo, in_scope_path, text)
+        out_of_scope_violations = _render001_checker(repo, out_of_scope_path, text)
+
+        assert bool(in_scope_violations) == render001_scans(repo, in_scope_path)
+        assert bool(out_of_scope_violations) == render001_scans(
+            repo, out_of_scope_path
+        )
+        assert in_scope_violations
+        assert not out_of_scope_violations
 
 
 # frob:ticket T-2285

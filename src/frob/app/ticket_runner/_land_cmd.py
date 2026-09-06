@@ -4651,6 +4651,7 @@ def _assert_diff_does_not_worsen_long_functions_pre_land(
 
 
 # frob:ticket T-2280
+# frob:ticket T-3940
 # frob:waive WIRE001 reason="stored as a value in _FILE_LOCAL_ERROR_CHECKERS \
 # immediately below and invoked indirectly from there \
 # (_file_local_error_violations_for_content iterates the tuple, calls each entry, \
@@ -4660,6 +4661,15 @@ def _assert_diff_does_not_worsen_long_functions_pre_land(
 # does not expire -- follow_up points at T-3504 (open, unrelated), not the ticket \
 # landing this change: a waiver citing its own landing ticket blocks its close \
 # (T-2280's own LiveTrackerCited lesson)" follow_up="T-3504"
+# frob:tests \
+# tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors\
+# .test_a_new_render001_refuses_the_land
+# frob:tests \
+# tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors\
+# .test_a_bare_print_outside_the_render001_pathspec_does_not_refuse
+# frob:tests \
+# tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors\
+# .test_render001_checker_agrees_with_render001_scans_in_and_out_of_scope
 def _render001_checker(
     worktree: Path, rel_path: str, text: str
 ) -> tuple[Violation, ...]:
@@ -4670,14 +4680,25 @@ def _render001_checker(
     Empty for a non-.py path or unparseable text (this land-time diff
     check degrades to no-op on a parse failure, same fail-open posture
     every other pre-land guard in this module takes; `render_lint_gate`'s
-    own PARSE001 path is for the full unscoped gate run, not here). Takes
-    `worktree` for interface parity with `_doc005_checker` (T-2285),
-    unused here -- RENDER001's finding needs nothing beyond the file's
-    own text."""
-    del worktree
-    from frob.gates._render_lint import _render001_violation, _scan_python_prints
+    own PARSE001 path is for the full unscoped gate run, not here).
 
-    if not rel_path.endswith(".py"):
+    T-3940: scope is derived from `render001_scans(worktree, rel_path)`,
+    the SAME public predicate `render_lint_gate` and `_waive_audit` use --
+    not a second hardcoded `.endswith(".py")`-only condition. Sharing the
+    detector while dropping the pathspec previously made this checker
+    agree with the gate on WHAT is a violation but disagree on WHERE the
+    rule applies, so a bare `print(...)` anywhere in a landing ticket's
+    touched `.py` files refused the land in every consumer repo -- RENDER001
+    is scoped to `src/frob`, `.claude/hooks`, and `scripts/fleet_status.py`
+    (frob's own checkout), never to a consumer repo that has no
+    `frob.render` to route stdout through."""
+    from frob.gates._render_lint import (
+        _render001_violation,
+        _scan_python_prints,
+        render001_scans,
+    )
+
+    if not render001_scans(worktree, rel_path):
         return ()
     try:
         tree = ast.parse(text, filename=rel_path)
