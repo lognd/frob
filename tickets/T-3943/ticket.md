@@ -15,11 +15,40 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/app/ticket_runner/_query.py
+- src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/app/config.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: 'filed scope named _query.py, which carries neither the hardcoded main default
+    nor the base_ref plumbing -- I picked it without checking. Measured: the main
+    default and base_ref both live in _close_cmd.py, with the config surface in app/config.py;
+    those are the two the consumer''s report names (close has no override at all,
+    done-report''s --base-ref governs only the Changed section)'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: 'filed scope named _query.py, which carries neither the hardcoded main default
+    nor the base_ref plumbing -- I picked it without checking. Measured: the main
+    default and base_ref both live in _close_cmd.py, with the config surface in app/config.py;
+    those are the two the consumer''s report names (close has no override at all,
+    done-report''s --base-ref governs only the Changed section)'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'filed scope named _query.py, which carries neither the hardcoded main default
+    nor the base_ref plumbing -- I picked it without checking. Measured: the main
+    default and base_ref both live in _close_cmd.py, with the config surface in app/config.py;
+    those are the two the consumer''s report names (close has no override at all,
+    done-report''s --base-ref governs only the Changed section)'
+  actor: logan
+  at: '2026-09-06'
 designated_repro_test: null
 threat: null
 component: null
