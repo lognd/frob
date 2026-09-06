@@ -20,8 +20,6 @@ scope:
 - .github/workflows/ci.yml
 - tests/unit/test_artifact_smoke_script.py
 - docs/guides/release.md
-- src/frob/doctor.py
-- scripts/verify_release_ci_status.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -94,6 +92,30 @@ scope_changes:
   reason: 'AFFECT001: check_base_install''s frob:doc target changed and must be updated;
     doctor.py/verify_release_ci_status.py added only to close release.md''s pre-existing
     unrelated doc-anchor scope debt (no edits planned to those two files)'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/doctor.py
+  reason: 'reverting: pulling doctor.py into scope cascades into 99+ unrelated pre-existing
+    doc-anchor/test-coverage symbols (docs/guides/install.md, docs/modules/cli.md,
+    tests/test_doctor.py, tests/unit/test_doctor.py, tests/unit/test_verify_release_ci_status.py)
+    that have nothing to do with T-3980; keeping only docs/guides/release.md in scope
+    to satisfy AFFECT001 on check_base_install, accepting the 2 pre-existing SCOPE002
+    findings on release.md''s OTHER anchors (doctor.py/verify_release_ci_status.py,
+    both pre-dating T-3980) as known debt -- matches T-3935''s own precedent of declining
+    to fully close this shared doc''s scope'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: scripts/verify_release_ci_status.py
+  reason: 'reverting: pulling doctor.py into scope cascades into 99+ unrelated pre-existing
+    doc-anchor/test-coverage symbols (docs/guides/install.md, docs/modules/cli.md,
+    tests/test_doctor.py, tests/unit/test_doctor.py, tests/unit/test_verify_release_ci_status.py)
+    that have nothing to do with T-3980; keeping only docs/guides/release.md in scope
+    to satisfy AFFECT001 on check_base_install, accepting the 2 pre-existing SCOPE002
+    findings on release.md''s OTHER anchors (doctor.py/verify_release_ci_status.py,
+    both pre-dating T-3980) as known debt -- matches T-3935''s own precedent of declining
+    to fully close this shared doc''s scope'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
