@@ -19,9 +19,6 @@ scope:
 - src/frob/dup/_cache.py
 - tests/unit/test_graph_cache.py
 - tests/unit/test_dup_cache.py
-- tests/test_graph.py
-- tests/test_graph_lock.py
-- tests/unit/test_graph_build_lock.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -81,6 +78,30 @@ scope_changes:
   reason: 'revert: whole-module docs pulled in transitive closure across unrelated
     files far beyond T-4018''s actual change; the frob:doc directive on the touched
     symbols was pre-existing before this ticket, not introduced by it'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/test_graph.py
+  reason: 'revert: these wide-coverage test files carry frob:tests reverse-edges into
+    dozens of unrelated modules (T-3914 precedent), pulling nearly the whole graph/dup
+    subsystem into scope for a guard-only fix; waiving SCOPE002 for the resulting
+    cross-file suggestions instead'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/test_graph_lock.py
+  reason: 'revert: these wide-coverage test files carry frob:tests reverse-edges into
+    dozens of unrelated modules (T-3914 precedent), pulling nearly the whole graph/dup
+    subsystem into scope for a guard-only fix; waiving SCOPE002 for the resulting
+    cross-file suggestions instead'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: tests/unit/test_graph_build_lock.py
+  reason: 'revert: these wide-coverage test files carry frob:tests reverse-edges into
+    dozens of unrelated modules (T-3914 precedent), pulling nearly the whole graph/dup
+    subsystem into scope for a guard-only fix; waiving SCOPE002 for the resulting
+    cross-file suggestions instead'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
