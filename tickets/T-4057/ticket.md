@@ -24,6 +24,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_telemetry.py::test_redundant_rerun_not_flagged_when_home_claude_config_changed
+- tests/test_telemetry.py::test_redundant_rerun_still_flags_when_nothing_changed_at_all
+- tests/unit/test_skills_sync.py::TestRun::test_run_defaults_to_home_claude_when_no_override_given
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestStaleManagedSourcesAndWriteRefusal::test_stale_file_skipped_forward_file_synced
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain::test_crlf_working_tree_copy_is_not_mistaken_for_an_edit
+- tests/unit/test_sync_claude_config_stale_guard_t3408.py::TestIsSourceStaleVsMain::test_crlf_working_tree_own_edit_still_reads_as_an_edit
 designated_repro_test: null
 threat: null
 component: null
