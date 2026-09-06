@@ -2,7 +2,7 @@
 id: T-3940
 title: RENDER001 land-time checker ignores the gate pathspec and blocks lands in every
   consumer repo
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
