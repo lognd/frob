@@ -2785,7 +2785,16 @@ def _land_collected_fn(worktree: Path):  # noqa: ANN201
     Best-effort -- a collection failure logs and returns an empty set
     (fail-closed: `land`'s post-merge check then treats every non-cmd
     evidence id as unresolved, refusing the landing, rather than silently
-    skipping the check)."""
+    skipping the check).
+
+    T-3925: unions in every OTHER `frob.testing.LANGUAGE_COLLECTORS`
+    entry (cpp/kotlin/ts today), not just python/rust -- this closure
+    feeds `frob.tickets._land_verify`'s D-05 post-merge `matches_
+    collected` re-check, the same evidence-BINDING shape F-134 measured
+    failing for `frob ticket evidence`/`close` (see `_apply_evidence`'s
+    matching T-3925 comment): without this, a vitest evidence id would
+    resolve pre-merge but be reported as "no longer resolves post-merge"
+    here, refusing an otherwise-good land."""
 
     def fn() -> frozenset[str]:
         from frob.app import ticket_runner as _ticket_runner
@@ -2799,7 +2808,13 @@ def _land_collected_fn(worktree: Path):  # noqa: ANN201
             )
             return frozenset()
         python_ids, rust_ids, _runners = collected.danger_ok
-        return python_ids | rust_ids
+        return (
+            python_ids
+            | rust_ids
+            | _ticket_runner._other_language_collected_ids(
+                worktree, exclude=frozenset({"python", "rust"})
+            )
+        )
 
     return fn
 

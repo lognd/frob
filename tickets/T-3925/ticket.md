@@ -2,7 +2,7 @@
 id: T-3925
 title: wire LANGUAGE_COLLECTORS into evidence BINDING (add/replace/land re-verify),
   not just verify
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-09-05'
@@ -41,6 +41,12 @@ scope_changes:
   reason: export _other_language_collected_ids alongside sibling _verify_* re-exports
   actor: logan
   at: '2026-09-05'
+evidence:
+- tests/test_tickets_evidence_cli.py::TestTicketEvidenceVitestOracle::test_vitest_node_id_from_fake_collect_ts_resolves
+- tests/test_tickets_evidence_cli.py::TestTicketEvidenceVitestOracle::test_non_python_rust_collection_failure_degrades_to_others
+- tests/unit/test_verify_language_buckets.py::TestOtherLanguageCollectedIds::test_unions_every_non_excluded_registered_language
+- tests/unit/test_verify_language_buckets.py::TestOtherLanguageCollectedIds::test_excluded_languages_are_never_collected
+- tests/unit/test_verify_language_buckets.py::TestOtherLanguageCollectedIds::test_collector_error_degrades_to_empty_not_raise
 designated_repro_test: null
 threat: null
 component: null

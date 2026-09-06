@@ -1,5 +1,5 @@
 ---
-id: T-draft-b368eee4
+id: T-3926
 title: SCOPE002 private-helper closure resolves calls by bare short name, not import
   binding
 state: queued
