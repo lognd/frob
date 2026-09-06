@@ -2,7 +2,7 @@
 id: T-3980
 title: 'artifact-smoke CI red: wrong-platform core wheels (ubuntu) + doctor repo-hygiene
   coupling (macOS)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-09-06'
@@ -20,6 +20,8 @@ scope:
 - .github/workflows/ci.yml
 - docs/guides/release.md
 - tests/unit/test_artifact_smoke_script.py
+- scripts/verify_release_ci_status.py
+- src/frob/doctor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +37,18 @@ scope_changes:
   glob: tests/unit/test_artifact_smoke_script.py
   reason: 'scope closure: doc target and covering unit test flagged by frob ticket
     new'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: scripts/verify_release_ci_status.py
+  reason: 'scope closure: pre-existing doc anchors in docs/guides/release.md (in scope)
+    describe these symbols'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/doctor.py
+  reason: 'scope closure: pre-existing doc anchors in docs/guides/release.md (in scope)
+    describe these symbols'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
