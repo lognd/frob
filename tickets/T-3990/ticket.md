@@ -28,6 +28,13 @@ body_changes:
   at: '2026-09-06'
   old_length: 1513
   new_length: 2387
+- mode: append
+  reason: T-4036 item 5 is a third independent arrival of the atom-presence-vs-magnitude
+    gap (DOM event listener target breadth); cross-referencing rather than duplicating
+  actor: logan
+  at: '2026-09-06'
+  old_length: 2387
+  new_length: 3429
 designated_repro_test: null
 acceptance:
 - text: given the existing lock format, when this ticket's first step runs, then it
@@ -51,3 +58,6 @@ FIRST STEP: read the actual lock file format and MayGrant.via handling in full (
 
 
 T-4025 item 4 is the same defect as this ticket, on a different atom, cross-referenced rather than duplicated. FINDING: the `may` capability atom has presence but no MAGNITUDE -- granting html_render or frame-src says nothing about the seven permissions actually delegated in an iframe's allow= attribute (e.g. allow="camera; microphone; geolocation; ..."). Exactly this ticket's own shape (a lock/grant records THAT something was declared, not the full content/breadth of what was declared) applied to the capability-ratchet's `may` atom instead of SYS111's via-glob list. When designing the fix for SYS111's glob-list digest, generalize the design to cover both atoms (via-glob-list magnitude and allow=-attribute magnitude) as the same underlying gap -- a declared grant needs its full content digested, not just its existence, for the ceiling to actually be enforced.
+
+
+T-4036 item 5 is the THIRD arrival of "strata atoms are binary where the risk is in the argument" (T-3990's own SYS111 via-glob-list magnitude gap, T-4025 item 4's iframe allow= attribute magnitude gap, now this). Cross-referenced, not refiled. FINDING: strata polices capability PRESENCE but not capability SCOPE -- a decorative UI layer that binds a keydown listener on `window` (capturing every keystroke on the page) is indistinguishable from a well-scoped component listening on its own subtree, because both are recorded identically as `may "dom.event"` with no way to express WHERE the listener attaches or how broad its capture is. When this ticket's design generalizes SYS111's fix to cover magnitude across atoms, include this DOM-event-target-breadth case as a third worked example alongside the via-glob-list and iframe-allow= cases already recorded -- three independent instances now argue for a genuinely general "atoms need an argument-magnitude dimension, not just presence" redesign rather than three separate point fixes.
