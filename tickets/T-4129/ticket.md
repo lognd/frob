@@ -7,6 +7,8 @@ kind: docs
 origin: human
 created: '2026-09-06'
 priority: medium
+blocked_by:
+- T-4127
 parent: null
 tier: ticket
 sprint: null
