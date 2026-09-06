@@ -23,6 +23,7 @@ scope:
 - docs/modules/tickets-landing.md
 - src/frob/tickets/__init__.py
 - src/frob/app/config.py
+- src/frob/app/ticket_runner/_close_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -70,6 +71,13 @@ scope_changes:
   glob: src/frob/app/config.py
   reason: AppConfig needs a ticket_evidence_remove field to carry --remove EVIDENCE-ID
     through, mirroring ticket_evidence_replace
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: frob ticket close --evidence-cmd also calls _apply_cmd_evidence; --cwd DIR
+    (T-4000) must be threaded through this call site too for consistent behavior with
+    frob ticket evidence
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
