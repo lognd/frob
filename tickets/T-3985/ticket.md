@@ -24,6 +24,7 @@ scope:
 - src/frob/gates/_waive.py
 - docs/design/registry/check-coverage.yaml
 - docs/modules/gates.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -122,6 +123,12 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: 'DOCENUM001: docs/modules/gates.md''s frob:enumerates rule-catalog anchor
     must list SUBJECT001 now that it is a registered gate rule id'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001/SYS100: declare the new test file''s fs.write capability in
+    the testsuite node''s existing enumerated may grant'
   actor: logan
   at: '2026-09-06'
 body_changes:
