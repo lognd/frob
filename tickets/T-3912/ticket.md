@@ -40,11 +40,16 @@ scope_changes:
   at: '2026-09-05'
 evidence:
 - tests/gates_suite/test_depr003_severity_override.py::test_depr003_survives_repo_severity_overrides
-- tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr003_not_forced_to_error_in_this_repo
+- tests/gates_suite/test_depr003_severity_override.py::test_depr003_not_forced_to_error_in_this_repo
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr003_survives_repo_severity_overrides
   new_node: tests/gates_suite/test_depr003_severity_override.py::test_depr003_survives_repo_severity_overrides
+  reason: moved test into a dedicated file to avoid test_debt.py's scope-closure fan-out
+  actor: logan
+  at: '2026-09-05'
+- old_node: tests/gates_suite/test_debt.py::TestDeprecatedGate::test_depr003_not_forced_to_error_in_this_repo
+  new_node: tests/gates_suite/test_depr003_severity_override.py::test_depr003_not_forced_to_error_in_this_repo
   reason: moved test into a dedicated file to avoid test_debt.py's scope-closure fan-out
   actor: logan
   at: '2026-09-05'
