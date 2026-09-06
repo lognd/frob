@@ -22,6 +22,7 @@ scope:
 - tests/unit/test_check.py
 - tests/gates_suite/test_run.py
 - src/frob/gates/_waive.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -91,6 +92,16 @@ scope_changes:
     closure cascade over doc anchors this ticket has nothing to do with. Reverted
     the doc edit; filing a follow-up ticket for it instead of paying that closure
     cost here.
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'DRIFT001 flags load_invariants'' frob:doc target as genuinely stale after
+    its signature change -- restoring the doc update from earlier (reverted only to
+    dodge SCOPE002 closure breadth, which is the wrong tradeoff: an honest doc beats
+    a clean scope list). Accepting the SCOPE002 closure cascade as pre-existing/out-of-proportion
+    noise, same class as T-3914''s precedent (docs/modules/gates.md documents the
+    whole gates module; any ticket that touches it inherits that breadth).'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
