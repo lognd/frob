@@ -20,8 +20,6 @@ scope:
 - src/frob/dup/_legacy_common.py
 - src/frob/dup/_legacy_cpp.py
 - src/frob/dup/_legacy_py.py
-- docs/modules/dup.md
-- src/frob/dup
 evidence_scope:
 - tests/test_excludes.py
 - tests/unit/test_memo.py
@@ -217,6 +215,26 @@ scope_changes:
   glob: src/frob/dup
   reason: 'T-4107 gate:SCOPE SCOPE002: doc target for the file''s classes, and the
     covering test''s directory target'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: docs/modules/dup.md
+  reason: 'revert -- docs/modules/dup.md documents the unrelated frob-core rust kernels
+    and src/frob/dup pulls in the whole dup subsystem''s test suite; closure diverges
+    to 27+ errors, not converging. Reverting to the minimal state and leaving these
+    as accepted pre-existing scope debt (structural: the ticket''s whole-file scope
+    on _legacy.py inherits doc/test coverage from symbols this fix does not touch),
+    not something T-4107''s 3-line fix should absorb.'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/dup
+  reason: 'revert -- docs/modules/dup.md documents the unrelated frob-core rust kernels
+    and src/frob/dup pulls in the whole dup subsystem''s test suite; closure diverges
+    to 27+ errors, not converging. Reverting to the minimal state and leaving these
+    as accepted pre-existing scope debt (structural: the ticket''s whole-file scope
+    on _legacy.py inherits doc/test coverage from symbols this fix does not touch),
+    not something T-4107''s 3-line fix should absorb.'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
