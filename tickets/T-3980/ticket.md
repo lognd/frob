@@ -18,10 +18,7 @@ scope:
 - scripts/artifact_smoke.py
 - tests/system/test_artifact_smoke.py
 - .github/workflows/ci.yml
-- docs/guides/release.md
 - tests/unit/test_artifact_smoke_script.py
-- scripts/verify_release_ci_status.py
-- src/frob/doctor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -49,6 +46,30 @@ scope_changes:
   glob: src/frob/doctor.py
   reason: 'scope closure: pre-existing doc anchors in docs/guides/release.md (in scope)
     describe these symbols'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: src/frob/doctor.py
+  reason: 'reverting: docs/guides/release.md scope-closure debt is unrelated pre-existing
+    content (doctor.py/verify_release_ci_status.py anchors), out of proportion to
+    pull in per this repo''s established precedent (see artifact_smoke.py''s own existing
+    COV001 waiver reasoning); documenting via code docstrings instead'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: scripts/verify_release_ci_status.py
+  reason: 'reverting: docs/guides/release.md scope-closure debt is unrelated pre-existing
+    content (doctor.py/verify_release_ci_status.py anchors), out of proportion to
+    pull in per this repo''s established precedent (see artifact_smoke.py''s own existing
+    COV001 waiver reasoning); documenting via code docstrings instead'
+  actor: logan
+  at: '2026-09-06'
+- op: remove
+  glob: docs/guides/release.md
+  reason: 'reverting: docs/guides/release.md scope-closure debt is unrelated pre-existing
+    content (doctor.py/verify_release_ci_status.py anchors), out of proportion to
+    pull in per this repo''s established precedent (see artifact_smoke.py''s own existing
+    COV001 waiver reasoning); documenting via code docstrings instead'
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
