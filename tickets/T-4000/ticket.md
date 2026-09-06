@@ -26,6 +26,7 @@ scope:
 - tests/test_tickets_evidence_removal.py
 - src/frob/app/_config_external.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -109,6 +110,12 @@ scope_changes:
     real files under tmp_path (marker.txt fixtures for --cwd tests), the testsuite
     node''s fs.write capability is an enumerated via list not ambient, so the new
     file must be added to it'
+  actor: logan
+  at: '2026-09-06'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SYS111 ratchet ceiling bump for testsuite::fs.write (506 -> 507) caused
+    by the new test file's real marker.txt fixture
   actor: logan
   at: '2026-09-06'
 designated_repro_test: null
