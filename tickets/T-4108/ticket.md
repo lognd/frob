@@ -2,7 +2,7 @@
 id: T-4108
 title: frob ticket close silently keeps only the last evidence command while accumulating
   every acceptance index, so criteria bind to the wrong evidence and the close succeeds
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-09-06'
@@ -39,14 +39,39 @@ scope_changes:
     a separate ticket for the pre-existing SCOPE002 gap instead'
   actor: logan
   at: '2026-09-06'
+evidence:
+- tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestSecondEvidenceCmdIsRefused::test_second_evidence_cmd_refuses_naming_the_evidence_verb[close]
+- tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestSecondEvidenceCmdIsRefused::test_second_evidence_cmd_refuses_naming_the_evidence_verb[reverify]
+- tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestSecondEvidenceCmdIsRefused::test_second_evidence_cmd_refuses_naming_the_evidence_verb[evidence]
+- tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestOneCommandManyAcceptsUnchanged::test_close_one_command_several_accepts
+- tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestOneCommandManyAcceptsUnchanged::test_reverify_one_command_several_accepts
+- tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestOneCommandManyAcceptsUnchanged::test_evidence_one_command_several_accepts
+- tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestUnaffectedFlagsStillAccumulate::test_close_evidence_node_ids_still_accumulate
+- tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestUnaffectedFlagsStillAccumulate::test_evidence_positional_node_ids_still_accumulate
 designated_repro_test: null
 acceptance:
 - text: given two evidence commands passed to one frob ticket close, when the invocation
     is parsed, then it is refused with a message naming the per-call evidence path
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestSecondEvidenceCmdIsRefused::test_second_evidence_cmd_refuses_naming_the_evidence_verb[close]
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestSecondEvidenceCmdIsRefused::test_second_evidence_cmd_refuses_naming_the_evidence_verb[reverify]
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestSecondEvidenceCmdIsRefused::test_second_evidence_cmd_refuses_naming_the_evidence_verb[evidence]
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestOneCommandManyAcceptsUnchanged::test_close_one_command_several_accepts
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestOneCommandManyAcceptsUnchanged::test_reverify_one_command_several_accepts
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestOneCommandManyAcceptsUnchanged::test_evidence_one_command_several_accepts
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestUnaffectedFlagsStillAccumulate::test_close_evidence_node_ids_still_accumulate
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestUnaffectedFlagsStillAccumulate::test_evidence_positional_node_ids_still_accumulate
 - text: given one evidence command and several acceptance indexes, when the close
     runs, then that command binds to all of them exactly as before
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestSecondEvidenceCmdIsRefused::test_second_evidence_cmd_refuses_naming_the_evidence_verb[close]
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestSecondEvidenceCmdIsRefused::test_second_evidence_cmd_refuses_naming_the_evidence_verb[reverify]
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestSecondEvidenceCmdIsRefused::test_second_evidence_cmd_refuses_naming_the_evidence_verb[evidence]
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestOneCommandManyAcceptsUnchanged::test_close_one_command_several_accepts
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestOneCommandManyAcceptsUnchanged::test_reverify_one_command_several_accepts
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestOneCommandManyAcceptsUnchanged::test_evidence_one_command_several_accepts
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestUnaffectedFlagsStillAccumulate::test_close_evidence_node_ids_still_accumulate
+  - tests/unit/test_ticket_close_evidence_cmd_repeat_t4108.py::TestUnaffectedFlagsStillAccumulate::test_evidence_positional_node_ids_still_accumulate
 threat: null
 component: null
 anchor: false

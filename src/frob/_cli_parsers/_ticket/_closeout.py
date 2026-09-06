@@ -13,6 +13,63 @@ from pathlib import Path
 from frob._cli_parsers._ticket._metadata import _CrossVerbFlagHint
 
 
+# frob:ticket T-4108
+class _RefuseRepeatedEvidenceCmd(argparse.Action):
+    """argparse `Action` that refuses a SECOND `--evidence-cmd` in one
+    invocation (T-4108), instead of argparse's default single-value
+    `store` behavior of silently keeping only the LAST occurrence.
+
+    Reported as F-306 (T-0265): `--evidence-cmd` (this block, no
+    `action=`) LAST-WINS while the adjacent `--accepts` (`action=
+    "append"`) ACCUMULATES every value given -- so `--evidence-cmd A
+    --accepts 1 --evidence-cmd B --accepts 2` silently records ONLY
+    command B, bound to BOTH criteria 1 and 2. The close then SUCCEEDS,
+    with the ticket's own record now asserting command B is the evidence
+    for criterion 1, which is false -- worse than a dropped flag, since a
+    lost flag would have failed the close loudly (an unbound criterion)
+    and the wrong record instead looks clean.
+
+    THE FIX IS NOT `action="append"`: two flat lists whose pairing is
+    implied by position is the exact fragile shape that produced this
+    report, and it would silently change what a single `--evidence-cmd`
+    with several `--accepts` means today (correctly: one command bound to
+    every listed criterion, a legitimate and unchanged use, T-4108's own
+    must-stay-quiet fixture). Refusing the SECOND occurrence outright
+    costs one retry; the correct multi-command shape already exists and
+    already works per call: bind each command with its own `frob ticket
+    evidence <id> --evidence-cmd COMMAND --accepts N` call, then close
+    with no `--evidence-cmd` of its own (T-4106 covers making that verb
+    itself easier to find; this ticket is the accounting fix, not the
+    discoverability one)."""
+
+    # frob:waive OPAQUE001 reason="standard argparse.Action shape: self.dest IS the \
+    # dest= string argparse itself assigned when this Action was registered on the \
+    # parser (never externally-influenced input), and getattr/setattr(namespace, \
+    # self.dest, ...) is exactly how argparse's own builtin Action subclasses (e.g. \
+    # _StoreAction) read/write the parsed namespace -- there is no alternative, \
+    # non-dynamic API for this"  # noqa: E501
+    def __call__(self, parser, namespace, values, option_string=None):  # noqa: ANN001
+        """Raise `argparse.ArgumentError` if `self.dest` was already set
+        by a prior `--evidence-cmd` in this same invocation; otherwise
+        store `values` normally (the ordinary single-command case, T-4108's
+        must-stay-quiet fixture)."""
+        if getattr(namespace, self.dest, None) is not None:
+            raise argparse.ArgumentError(
+                self,
+                f"{option_string} given more than once -- a single "
+                "invocation binds ONE evidence command to every --accepts "
+                "index given (T-0572), never several commands to several "
+                "indexes by position (T-4108: that pairing-by-position "
+                "shape is exactly what silently bound the wrong command "
+                "to a criterion in F-306). To bind DIFFERENT commands to "
+                "different criteria, call `frob ticket evidence <id> "
+                "--evidence-cmd COMMAND --accepts N` once per command "
+                "first, then run this command with no --evidence-cmd of "
+                "its own",
+            )
+        setattr(namespace, self.dest, values)
+
+
 # frob:waive AFFECT001 reason="T-2254 adds --backfill-drafts/--apply flags to the \
 # existing attach subcommand; docs/guides/agentic-workflow.md#the-humanai-split \
 # describes the human/AI ticket-queue split at large, not this parser's individual \
@@ -141,10 +198,17 @@ def _add_ticket_close_parser(ticket_sub):
         metavar="NODE-ID",
         help="pytest node id to record as evidence before closing (repeatable)",
     )
+    # frob:ticket T-4108
     ticket_close_p.add_argument(
-        "--evidence-cmd", dest="ticket_evidence_cmd", metavar="COMMAND",
+        "--evidence-cmd",
+        dest="ticket_evidence_cmd",
+        action=_RefuseRepeatedEvidenceCmd,
+        metavar="COMMAND",
         help="non-pytest evidence channel (T-0215): run COMMAND, record its "
-        "exit/digest as evidence before closing -- " + _EVIDENCE_CMD_KIND_HELP,
+        "exit/digest as evidence before closing -- " + _EVIDENCE_CMD_KIND_HELP
+        + " NOT repeatable (T-4108): a single invocation binds one command "
+        "to every --accepts index given; a second --evidence-cmd is "
+        "refused rather than silently discarding the first.",
     )
     _add_evidence_cwd_arg(ticket_close_p)
     ticket_close_p.add_argument(
@@ -246,10 +310,16 @@ def _add_ticket_reverify_parser(ticket_sub):
         metavar="NODE-ID",
         help="pytest node id to record as evidence before reverifying (repeatable)",
     )
+    # frob:ticket T-4108
     ticket_reverify_p.add_argument(
-        "--evidence-cmd", dest="ticket_evidence_cmd", metavar="COMMAND",
+        "--evidence-cmd",
+        dest="ticket_evidence_cmd",
+        action=_RefuseRepeatedEvidenceCmd,
+        metavar="COMMAND",
         help="non-pytest evidence channel (T-0215), same semantics as "
-        "`close --evidence-cmd`",
+        "`close --evidence-cmd` -- including T-4108's not-repeatable "
+        "refusal, since this verb's own docstring already commits to "
+        "sharing close's evidence flags verbatim",
     )
     _add_evidence_cwd_arg(ticket_reverify_p)
     ticket_reverify_p.add_argument(
@@ -367,10 +437,19 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "commit repro check diffs against (default: main), same semantics "
         "as `close`/`reverify --base-ref`",
     )
+    # frob:ticket T-4108
     ticket_evidence_p.add_argument(
-        "--evidence-cmd", dest="ticket_evidence_cmd", metavar="COMMAND",
+        "--evidence-cmd",
+        dest="ticket_evidence_cmd",
+        action=_RefuseRepeatedEvidenceCmd,
+        metavar="COMMAND",
         help="non-pytest evidence channel (T-0215): run COMMAND, record its "
-        "exit/digest as evidence -- " + _EVIDENCE_CMD_KIND_HELP,
+        "exit/digest as evidence -- " + _EVIDENCE_CMD_KIND_HELP
+        + " NOT repeatable (T-4108): the SAME single-command/accumulating-"
+        "--accepts asymmetry F-306 found on `close` exists here identically "
+        "-- one invocation binds one command to every --accepts index "
+        "given; call this verb once per command instead of repeating "
+        "--evidence-cmd in one call.",
     )
     _add_evidence_cwd_arg(ticket_evidence_p)
     # frob:ticket T-1537
