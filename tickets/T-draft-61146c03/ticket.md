@@ -121,6 +121,14 @@ scope_changes:
     instead'
   actor: logan
   at: '2026-09-06'
+body_changes:
+- mode: append
+  reason: BUG002 blocks land on a defect whose repro is a real process-killing crash,
+    unsafe to run inside the mutation sweep
+  actor: logan
+  at: '2026-09-06'
+  old_length: 2515
+  new_length: 3308
 evidence:
 - tests/unit/test_conftest_suite_result_status.py::TestSuiteResultDidNotComplete::test_sessionfinish_labels_did_not_complete_runs
 - tests/ticket_land_suite/test_land_lock.py::TestLandLockHolderMetadataAndTimeout::test_holder_metadata_written_on_acquire
@@ -176,3 +184,5 @@ the stdout/tty purity pair in worktree_guard/cli_ticket, rapid_sweep_suite,
 arch_suite, strata_gil, telemetry, fuzz, evidence_cli, ticket_leases,
 lint_diff_attribution) plus the confirmation that the hang was the actual
 blocker for measuring the true Windows failure count.
+
+frob:waive BUG002 reason="the designated repro test hangs/crashes for real (a genuine os._exit(3) call) when FROB_TEST_HARD_EXIT=1 is set without the fix, which is the actual production defect this ticket fixes -- it cannot be safely reproduced inside the automated mutation-evidence sweep (which expects a mutated-code run to merely fail, not kill its own subprocess), and running the repro manually with that env var set was how the root cause was confirmed on Linux in the first place (documented in the fix commit message). Verified manually: at main (no autouse fixture), setting FROB_TEST_HARD_EXIT=1 and invoking the real pytest_sessionfinish hook this test exercises calls os._exit(3) for real; at the fix, the autouse fixture clears the env var first and the hook returns normally."
