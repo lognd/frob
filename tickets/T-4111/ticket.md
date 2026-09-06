@@ -1,5 +1,5 @@
 ---
-id: T-draft-eb580dd8
+id: T-4111
 title: 'H3-1: a guard that only reads a lockout, with no reachable writer, is a control
   that fires on nothing'
 state: queued
@@ -8,7 +8,7 @@ origin: human
 created: '2026-09-06'
 priority: critical
 blocked_by:
-- T-draft-066b430e
+- T-4110
 parent: T-4109
 tier: ticket
 sprint: null
